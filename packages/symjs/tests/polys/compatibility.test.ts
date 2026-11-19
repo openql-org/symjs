@@ -29,6 +29,23 @@ const Y = sj.symbols('y')[0];
 void [EX, RR, C, T, p, q, r, Y];
 
 describe('SymPy doctest and suite values', () => {
+  it('finds square-free parts over finite fields and handles constant discriminants', () => {
+    const [F, u] = ring('u', sj.GF(2)) as [PolyRing, PolyElement];
+    const f = u.pow(2).add(1);
+    expect(F.dupSqfP(f)).toBe(false);
+    expect(F.dupSqfPart(f).equals(u.add(1))).toBe(true);
+    const [content, factors] = F.dupSqfList(f);
+    expect(content.equals(1)).toBe(true);
+    expect(factors.map(([g, k]) => [g.equals(u.add(1)), k])).toEqual([[true, 2]]);
+    const [M, v] = ring('u,v', sj.GF(2)) as [PolyRing, PolyElement];
+    expect(M.dmpSqfP(v)).toBe(true);
+    expect(M.dmpSqfPart(v).equals(v)).toBe(true);
+    expect(() => M.dmpSqfList(v)).toThrow(sj.NotImplementedError);
+    expect(show(U.dupDiscriminant(U.zero))).toBe('0');
+    expect(show(R.dmpDiscriminant(R.zero))).toBe('0');
+    const [E, g] = ring('u', EX) as [PolyRing, PolyElement];
+    expect(() => E.dupMaxNorm(g.mulGround(new sj.Sym('a')))).toThrow(sj.DomainError);
+  });
   it('compares ground numbers exactly across rational and floating representations', () => {
     const X = new sj.Sym('x'), Y = new sj.Sym('y'), one = sj.Rational.of(1);
     expect([
@@ -715,4 +732,59 @@ describe('euclidtools methods (SymPy 1.14 values)', () => {
     expect(show(V.dupFfLcm(V.zero, V.zero))).toBe('0');
     expect(show(Q.dmpFfLcm(Q.zero, Q.zero))).toBe('0');
   });
+});
+
+it('exposes domain factorization and cyclotomic decomposition on rings', () => {
+  const [A, u] = ring('u', QQ.algebraicField(sj.sqrt(2))) as [PolyRing, PolyElement];
+  const f = u.pow(2).sub(2);
+  for (const factors of [A.dupExtFactor(f), A.dmpExtFactor(f)]) {
+    expect(factors[1]).toHaveLength(2);
+    expect(factors[1].reduce((p, [g, k]) => p.mul(g.pow(k)), A.groundNew(factors[0])).equals(f)).toBe(true);
+  }
+  const [G, v] = ring('v', sj.QQ_I) as [PolyRing, PolyElement];
+  for (const factors of [G.dupQqIFactor(v.pow(2).add(1)), G.dmpQqIFactor(v.pow(2).add(1))]) {
+    expect(factors[1]).toHaveLength(2);
+    expect(factors[1].reduce((p,[g,k]) => p.mul(g.pow(k)), G.groundNew(factors[0])).equals(v.pow(2).add(1))).toBe(true);
+  }
+  const [Z, w] = ring('w', sj.ZZ_I) as [PolyRing, PolyElement];
+  expect(Z.dupZzIFactor(w.pow(2).add(1))[1]).toHaveLength(2);
+  expect(Z.dmpFactorList(Z.zero)[0].toString()).toBe('0');
+  expect(Z.dupZzIFactor(w.sub(1))[1]).toHaveLength(1);
+  expect(Z.dmpZzIFactor(w.sub(1))[1]).toHaveLength(1);
+  const gaussian = w.mulGround(sj.add(64, sj.mul(-64, sj.I))).add(sj.add(773, sj.mul(596, sj.I))).pow(2).mulGround(sj.I);
+  const [gc, gf] = Z.dupZzIFactor(gaussian);
+  expect(gf).toHaveLength(1);
+  expect(gf[0]?.[1]).toBe(2);
+  expect(gf.reduce((p, [g, k]) => p.mul(g.pow(k)), Z.groundNew(gc)).equals(gaussian)).toBe(true);
+
+  const [B, z] = ring('z', ZZ) as [PolyRing, PolyElement];
+  expect(B.dupZzFactorSqf(z.pow(2).sub(1))[1].map(String)).toEqual(['z - 1','z + 1']);
+  expect(B.dupFactorListInclude(B.groundNew(3))[0]?.[0].toString()).toBe('3');
+  expect(B.dupFactorListInclude(z.pow(2).sub(1).mulGround(3))[0]?.[0].toString()).toBe('3*z - 3');
+  expect(B.dmpFactorListInclude(z.add(1))[0]?.[0].toString()).toBe('z + 1');
+  expect(B.dupZzCyclotomicPoly(6).toString()).toBe('z**2 - z + 1');
+  expect(B.dupZzCyclotomicFactor(z.pow(6).sub(1))).toEqual([1,2,3,6].map(n => B.dupZzCyclotomicPoly(n)));
+  expect(B.dupZzCyclotomicFactor(z.pow(6).add(1))).toEqual([4,12].map(n => B.dupZzCyclotomicPoly(n)));
+  expect(B.dupZzCyclotomicFactor(z.pow(2))).toBe(sj.NoMatch);
+  expect(B.dupZzCyclotomicFactor(z.pow(2).mulGround(2).sub(1))).toBe(sj.NoMatch);
+  expect(B.dupZzCyclotomicFactor(z.pow(2).add(2))).toBe(sj.NoMatch);
+  expect(B.dupIrreducibleP(z.pow(2).add(1))).toBe(true);
+  expect(B.dupZzIrreducibleP(z.pow(2).add(2))).toBe(true);
+  expect(B.dupZzIrreducibleP(z.pow(2).mulGround(2).add(4))).toBe('unknown');
+  expect(B.dupZzIrreducibleP(z.pow(2).add(4))).toBe('unknown');
+  expect(B.dupZzIrreducibleP(z.pow(2))).toBe('unknown');
+});
+
+it('computes algebraic-field gcds and square-free norms', () => {
+  const K = QQ.algebraicField(sj.sqrt(2));
+  const [A, u] = ring('u', K) as [PolyRing, PolyElement];
+  expect(A.dmpGcd(u.pow(2).sub(2), u.sub(sj.sqrt(2))).equals(u.sub(sj.sqrt(2)))).toBe(true);
+  const [shift, shifted, norm] = A.dmpSqfNorm(u.pow(2).sub(2));
+  expect(shift).toEqual([2]);
+  expect(shifted.degree()).toBe(2);
+  expect(norm.degree()).toBe(4);
+});
+
+it('prints finite-field ground elements with their modular representation', () => {
+  expect(C.groundStr(sj.GF(3), sj.rational(2))).toBe('2 mod 3');
 });

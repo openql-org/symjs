@@ -223,3 +223,14 @@ describe('galoistools', () => {
     expect(B(gfFromDict(new Map([[1n, 1]]), 5))).toEqual([1n, 0n]);
   });
 });
+
+it('accepts explicit finite-field algorithms and rejects unknown names', () => {
+  const f = [1, 0, 1];
+  expect(gfIrreducibleP(f, 3, ZZ, 'ben-or')).toBe(true);
+  expect(gfIrreducibleP(f, 3, ZZ, 'rabin')).toBe(true);
+  expect(() => gfIrreducibleP(f, 3, ZZ, 'unknown')).toThrow(RangeError);
+  for (const method of ['berlekamp', 'zassenhaus', 'shoup']) {
+    expect(gfFactor(f, 3, ZZ, method)).toEqual([1n, [[[1n, 0n, 1n], 1]]]);
+  }
+  expect(() => gfFactor(f, 3, ZZ, 'unknown')).toThrow(RangeError);
+});

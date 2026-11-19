@@ -63,3 +63,12 @@ describe('functions of an AccumBounds argument', () => {
     expect(toStr(sj.cosh(A(1, 2)))).toBe('cosh(AccumBounds(1, 2))');
   });
 });
+
+
+it('maps logarithms at zero to negative infinity and rejects negative intervals', () => {
+  expect(s(sj.log(A(0, sj.E)))).toBe('AccumBounds(-oo, 1)');
+  expect(s(sj.log(A(0, oo)))).toBe('AccumBounds(-oo, oo)');
+  expect(s(sj.log(A(-1, sj.E)))).toBe('nan');
+  expect(s(sj.log(A(negOo, 0)))).toBe('nan');
+  expect(s(sj.log(A(negOo, oo)))).toBe('nan');
+});

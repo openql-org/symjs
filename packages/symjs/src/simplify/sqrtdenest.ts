@@ -13,6 +13,7 @@ import type { Expr, ExprLike } from '../core/nodes';
 import { Add, Constant, Mul, Pow, Rational, S, Special, impl, isNum } from '../core/nodes';
 import { isPositive } from '../core/assumptions';
 import { add, mul, pow, sqrt, sympify } from '../core/ops';
+import { Tuple } from '../core/containers';
 import { countOps, ordered } from '../core/match';
 import { asContentPrimitive, asNumerDenom } from '../core/methods';
 import { rebuild } from '../core/traverse';
@@ -34,7 +35,7 @@ const isZero = (e: Expr) => e instanceof Rational && e.isZero;
 const isOne = (e: Expr) => e instanceof Rational && e.isOne;
 const sortedArgs = (e: Expr) => [...e.args].sort((a, b) => compareKeys(sortKey(a), sortKey(b)));
 /** SymPy _mexpand: expand_mul and expand_multinomial. */
-const mexpand = (e: Expr): Expr => expand(e, { power_exp: false, power_base: false, log: false });
+const mexpand = (e: Expr): Expr => expand(e, { basic: false, power_exp: false, power_base: false, log: false });
 const num = (e: Expr): number => e.toComplex().re;
 const termsOf = (e: Expr): readonly Expr[] => (e instanceof Add ? e.args : [e]);
 const factorsOf = (e: Expr): readonly Expr[] => (e instanceof Mul ? e.args : [e]);
@@ -237,9 +238,9 @@ export function radsimp(exIn: ExprLike, opts: { symbolic?: boolean; maxTerms?: n
         if (cur) cur[1].push(mul(...other));
         else collected.set(k, [key, [mul(...other)]]);
       }
-      let rterms: [Expr, Expr][] = [...collected.values()].map(([k, v]) => [mul(...k), add(...v)] as [Expr, Expr]);
-      rterms = rterms.sort((x, y) => compareKeys(sortKey(x[0]), sortKey(y[0])));
-      const nrad = rterms.length - (isOne(first(rterms)[0]) ? 1 : 0);
+      const groups = [...collected.values()].map(([k, v]) => Tuple(Tuple(...k), Tuple(...v)));
+      const rterms = ordered(groups).map((g): [Expr, Expr] => [mul(...first(g.args).args), add(...at(g.args, 1).args)]);
+      const nrad = rterms.filter(([r]) => !isOne(r)).length;
       if (nrad < 1) break;
       if (nrad > maxTerms) {
         keep = false;
@@ -275,7 +276,10 @@ export function radsimp(exIn: ExprLike, opts: { symbolic?: boolean; maxTerms?: n
   const [en, ed] = asNumerDenom(expr);
   if (!isOne(ed)) expr = isNum(ed) ? unevaluatedMul(en, pow(ed, -1)) : mul(en, pow(ed, -1));
   const old = fraction(expr);
-  let [n, d] = fraction(handle(expr));
+  // Keep the conjugate as a separate numerator factor until expand_mul distributes it.
+  const parts = factorsOf(handle(expr)).map((f) => fraction(f));
+  let n = unevaluatedMul(...parts.map(([num]) => num));
+  let d = mul(...parts.map(([, den]) => den));
   if (n.key !== old[0].key || d.key !== old[1].key) {
     if (d.args.length > 0) {
       const was: [Expr, Expr] = [n, d];
@@ -333,7 +337,7 @@ function powersOf(e: Expr): Expr[] {
 
 /** SymPy sqrtdenest: denest the square roots of an expression (at most maxIter passes). */
 export function sqrtdenest(exIn: ExprLike, maxIter = 3): Expr {
-  let expr = expand(sympify(exIn), { power_exp: false, power_base: false, log: false, multinomial: false });
+  let expr = expand(sympify(exIn), { basic: false, power_exp: false, power_base: false, log: false, multinomial: false });
   for (let i = 0; i < maxIter; i++) {
     const z = sqrtdenest0(expr);
     if (z.key === expr.key) return expr;

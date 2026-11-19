@@ -4,7 +4,7 @@
 // Tests of src/solvers/polysys.ts: polynomial systems (solve_poly_system, factor_system); expected values from SymPy 1.14.
 
 import { describe, expect, it } from 'vitest';
-import { factorSystem, factorSystemCond, NotImplementedError, parse, solvePolySystem, solveTriangulated, symbols } from '../../src';
+import { NoMatch, factorSystem, factorSystemCond, factorSystemPoly, Poly, NotImplementedError, parse, solvePolySystem, solveTriangulated, symbols } from '../../src';
 
 const [x, y, z] = symbols('x y z');
 const P = (ss: string[]) => ss.map((s) => parse(s));
@@ -213,4 +213,35 @@ it('preserves polynomial generators and coefficient domains while factoring syst
   expect(sj.factorSystemPoly([])).toEqual([[]]);
   expect(() => sj.factorSystemPoly([sj.Poly.from(x,[x]), sj.Poly.from(y,[y])])).toThrow(TypeError);
   expect(() => sj.factorSystemPoly([sj.Poly.from(x,[x]), sj.Poly.from(x,[x],{domain:'QQ'})])).toThrow(TypeError);
+});
+it('omits unsolvable factors unless strict completeness is requested', async () => {
+  const { UnsolvableFactorError } = await import('../../src');
+  expect(solvePolySystem(P(['x**5-x+1']), [x])).toEqual([]);
+  expect(show(solvePolySystem(P(['(x-1)*(x**5-x+1)', 'y**2-1']), [x, y]))).toBe('[[1, -1], [1, 1]]');
+  expect(() => solvePolySystem(P(['x**5-x+1']), [x], { strict: true })).toThrow(UnsolvableFactorError);
+  expect(show(solvePolySystem(P(['x**2-1']), [x], { strict: true }))).toBe('[[-1], [1]]');
+});
+it('factors systems over algebraic fields and independent function generators', () => {
+  expect(show(factorSystem(P(['x**2+1','y**2+1']), [], { gaussian: true }))).toBe('[[x + I, y + I], [x + I, y - I], [x - I, y + I], [x - I, y - I]]');
+  expect(show(factorSystem(P(['x**2-2']), [], { extension: parse('sqrt(2)') }))).toBe('[[x + sqrt(2)], [x - sqrt(2)]]');
+  expect(show(factorSystemCond(P(['x**2+1']), [], { domain: 'QQ_I' }))).toBe('[[x + I], [x - I]]');
+  expect(show(factorSystem(P(['sin(x)**2+cos(x)**2-1', 'x'])))).toBe('[[x, sin(x)**2 + cos(x)**2 - 1]]');
+});
+
+it('factors polynomial systems in their coefficient domain', () => {
+  const polynomial = Poly.from(parse('x**2 + 1'), [x], { domain: 'QQ_I' });
+  expect(factorSystemPoly([polynomial]).map((row) => row.map(String))).toEqual([
+    ["Poly(x + I, x, domain='QQ_I')"], ["Poly(x - I, x, domain='QQ_I')"],
+  ]);
+});
+
+it('factors symbolic parameters in composite coefficient domains', () => {
+  const f = P(['a*(x - 1)*(x + 1)', 'b*(x - 1)*(x + 1)']);
+  expect(show(factorSystemCond(f, [x], { domain: 'ZZ[a,b]' }))).toBe('[[x + 1], [x - 1], [a, b]]');
+});
+
+it('distinguishes a ground basis from a polynomial without radical roots', () => {
+  const options = { distinguishInconsistent: true } as const;
+  expect(solvePolySystem(P(['y-x', 'y-x-1']), [x, y], options)).toBe(NoMatch);
+  expect(solvePolySystem(P(['x**5-x+1']), [x], options)).toEqual([]);
 });

@@ -10,6 +10,7 @@
 
 import type { ExprLike, Sym } from '../core/nodes';
 import { Expr, Integral, Mul, Pow, Rational } from '../core/nodes';
+import { asIndependent } from '../core/methods';
 import { some } from '../core/traverse';
 import type { NoMatchResult } from '../core/truth';
 import { NoMatch } from '../core/truth';
@@ -49,6 +50,14 @@ export function singularityintegrate(f: ExprLike, x: Sym): Expr | NoMatchResult 
  * @internal
  */
 export function singularityIntegral(f: Expr, x: Sym): Expr | undefined {
+  if (!f.has(x)) return mul(f, x);
+  if (f instanceof Mul) {
+    const [coefficient, dependent] = asIndependent(f, [x]);
+    if (!coefficient.equals(1)) {
+      const r = singularityIntegral(dependent, x);
+      return r === undefined ? undefined : mul(coefficient, r);
+    }
+  }
   // SymPy integrates SingularityFunction(g(x), a, n) as if g(x) were x: wrong unless g(x) = x
   if (some(f, (e) => isSingularityFunction(e) && at(e.args, 0).key !== x.key)) return undefined;
   const r = singularityintegrate(f, x);

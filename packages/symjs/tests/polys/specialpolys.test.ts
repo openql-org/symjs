@@ -71,3 +71,10 @@ describe('interpolatingPoly', () => {
     expect(() => sj.interpolatingPoly(2, 1)).toThrow('Expecting symbol for x');
   });
 });
+
+it('rejects interpolation data containing an equal but separately constructed generator', () => {
+  const variable = new sj.Sym('x');
+  const equalVariable = new sj.Sym('x');
+  expect(() => sj.interpolatingPoly(2, variable, [equalVariable, 2], [1, 3])).toThrow(RangeError);
+  expect(() => sj.interpolatingPoly(2, sj.add(variable, new sj.Sym('y')), [equalVariable, 2], [1, 3])).toThrow(RangeError);
+});

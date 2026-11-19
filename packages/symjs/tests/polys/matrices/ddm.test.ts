@@ -49,6 +49,9 @@ describe('DDM', () => {
     expect(String(a.getitem(-1, -1))).toBe('4');
     a.setitem(0, -1, q(5));
     expect(String(a)).toBe('[[1, 5], [3, 4]]');
+    expect(() => a.setitem(0, 2, q(0))).toThrow(RangeError);
+    expect(() => a.setitem(0, -3, q(0))).toThrow(RangeError);
+    expect(() => a.setitem(0, 0.5, q(0))).toThrow(RangeError);
     expect(String(A().extractSlice([1, null], [null, 1]))).toBe('[[3]]');
     expect(String(A().transpose())).toBe('[[1, 3], [2, 4]]');
     expect(String(A().add(A()))).toBe('[[2, 4], [6, 8]]');

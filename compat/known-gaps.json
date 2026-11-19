@@ -1,10 +1,4 @@
 {
- "cases": [
-  "sympy.combinatorics.fp_groups: f.index([x]) #ac214adb1dc0aa54",
-  "sympy.combinatorics.permutations: [0, 1]*a # no change: 2-element identity #0bc188c3b593b95b",
-  "sympy.combinatorics.permutations: [[0, 1]]*a # exchange first two elements #a772ce8dfa3e8cf1",
-  "sympy.matrices.inverse: B.simplify() #84bc0e4480128e99",
-  "sympy.matrices.matrixbase: B.simplify() #84bc0e4480128e99"
- ],
+ "cases": [],
  "api": []
 }

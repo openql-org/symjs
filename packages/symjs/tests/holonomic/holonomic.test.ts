@@ -723,8 +723,7 @@ describe('the API beyond the SymPy test suite', () => {
     expect(e2h(P('besselj(1, x)'), { initcond: false }).toString()).toBe('HolonomicFunction((x**2 - 1) + (x)*Dx + (x**2)*Dx**2, x)');
     expect(e2h(P('besselj(1, x)'), { x0: 1 }).toString()).toBe('HolonomicFunction((x**2 - 1) + (x)*Dx + (x**2)*Dx**2, x, 1, [besselj(1, 1), -besselj(2, 1)/2 + besselj(0, 1)/2])');
     expect(e2h(P('1/x**2 + x')).toString()).toBe('HolonomicFunction((2 - x**3) + (x**4 + x)*Dx, x, 0, {-2: [1]})');
-    // SymPy: [-log(2)/2 - EulerGamma/2 + Ci(2)/2, 0, 1, 0]; the limit at 0 stays unevaluated here
-    expect(e2h(P('log(x)/2 - Ci(2*x)/2 + Ci(2)/2')).toString()).toContain('Limit');
+    expect(e2h(P('log(x)/2 - Ci(2*x)/2 + Ci(2)/2')).toString()).toBe('HolonomicFunction((4)*Dx + (4*x)*Dx**2 + (3)*Dx**3 + (x)*Dx**4, x, 0, [-log(2)/2 - EulerGamma/2 + Ci(2)/2, 0, 1, 0])');
   });
   it('from_hyper and from_meijerg options', () => {
     expect(fromHyper(hyper([P('1/3')], [P('1/5')], x)).toString()).toBe('HolonomicFunction((-1/3) + (1/5 - x)*Dx + (x)*Dx**2, x, 1, [hyper((1/3,), (1/5,), 1), 5*hyper((4/3,), (6/5,), 1)/3])');
@@ -752,9 +751,9 @@ describe('the API beyond the SymPy test suite', () => {
     expect(fmt(new HF(LQ([2, '-2*x', 'x**2']), x, 0, new Map([[1, [1]]])).toHyper())).toBe('x*(C_1*x + 1)');
     expect(fmt(new HF(LQ(['-1/2', 'x']), x, 0, new Map([[new Float(0.5), [1]]])).toSequence())).toBe('[(HolonomicSequence((n), n), u(0) = 1, 0.500000000000000, 1)]');
     expect(fmt(new HF(LQ(['-1/2', 'x']), x, 0, new Map([[new Sym('a'), [1]]])).toSequence())).toBe('[]');
-    // SymPy: HolonomicFunction((1) + (1)*Dx + (3*x)*Dx**2 + (x**2)*Dx**3, x, 1, [meijerg(((), ()), ((0, 0, 0), ()), 1), ...]);
-    // the derivative of meijerg is not implemented here
-    expect(() => fromMeijerg(meijerg([], [], [0, 0, 0], [], x))).toThrow(NotImplementedError);
+    expect(fromMeijerg(meijerg([], [], [0, 0, 0], [], x)).toString()).toBe(
+      'HolonomicFunction((1) + (1)*Dx + (3*x)*Dx**2 + (x**2)*Dx**3, x, 1, [meijerg(((), ()), ((0, 0, 0), ()), 1), -meijerg(((), ()), ((0, 0, 1), ()), 1), meijerg(((), ()), ((0, 0, 1), ()), 1) + meijerg(((), ()), ((0, 1, 1), ()), 1)])',
+    );
     expect(e2h(P('besseli(0, x)')).toString()).toBe('HolonomicFunction((-1) + (-x)*Dx + (2)*Dx**2 + (x)*Dx**3, x, 0, [1, 0, 1/2])');
     expect(new HF(LQ([1, 0, 1]), x, 0, [0, 1]).evalf([new Float(0.5), 1], { derivatives: true }).map((r) => r.map((v) => sstr(v)))).toEqual([
       ['0.479166666666667', '0.877604166666667'],

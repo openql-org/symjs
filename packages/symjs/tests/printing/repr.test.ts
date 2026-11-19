@@ -4,6 +4,7 @@
 // Tests of src/printing/repr.ts. Expected values from SymPy 1.14 srepr(...).
 
 import { describe, expect, it } from 'vitest';
+import { passingModuleCases, runTestCase } from '../../../../tools/sympy-corpus/tests-harness';
 import * as sj from '../../src';
 import { Dummy, Float, Integral, Limit, Order, Rational, S, Sym, Wild, WildFunction } from '../../src/core/nodes';
 import type { Expr } from '../../src/core/nodes';
@@ -196,4 +197,44 @@ it('respects repr term ordering and rejects unknown settings', () => {
   expect(() => Reflect.apply(srepr, undefined, [x, { method: 'garbage' }])).toThrow(TypeError);
   expect(srepr(sj.CoordSys3D('C').baseScalars()[0])).toBe('C.x');
   expect(srepr(sum)).toBe("Add(Pow(Symbol('x'), Integer(2)), Integer(1))");
+});
+
+it('distinguishes native tuples from lists and symbolic Tuple nodes', () => {
+  expect(srepr({ tupleItems: [] })).toBe('()');
+  expect(srepr({ tupleItems: [x] })).toBe("(Symbol('x'),)");
+  expect(srepr({ tupleItems: [x, { tupleItems: [y, 1] }] })).toBe("(Symbol('x'), (Symbol('y'), 1))");
+});
+
+it('preserves symbolic derivative counts in expression representations', () => {
+  const [x, n] = sj.symbols('x n');
+  expect(srepr(sj.SymFunction('f')(x).diff(x, n))).toContain("(Symbol('x'), Symbol('n'))");
+});
+
+// Replay the serialized algebraic objects that the expression-only test generator cannot reconstruct.
+const algebraicCases = new Set(['test_AlgebraicNumber', 'test_PolyRing', 'test_FracField', 'test_PolyElement', 'test_FracElement', 'test_PolynomialRingBase', 'test_FractionField', 'test_FiniteExtension']);
+for (const c of passingModuleCases('printing', 'sympy.printing.tests.test_repr').filter((c) => algebraicCases.has(c.test))) {
+  it(`${c.test}:${c.line}`, () => expect(runTestCase(c), c.src).toEqual({ status: 'pass' }));
+}
+
+it('prints the ordering of localized rings and unapplied predicates', () => {
+  expect(srepr(new sj.PolynomialRingBase(sj.ZZ, [x], 'ilex'))).toBe("GeneralizedPolynomialRing(ZZ, Symbol('x'), order=ilex)");
+  expect(srepr(sj.Q.even)).toBe('Q.even');
+});
+
+it('passes the recursive repr printer to extension hooks', () => {
+  class Wrapped extends sj.ExtensionExpr {
+    withArgs(args: readonly Expr[]): Expr { return new Wrapped(this.name, args); }
+    printRepr(print: (e: Expr) => string): string { return this.args.map(print).join(' | '); }
+  }
+  expect(srepr(new Wrapped('Wrapper', [x, y]))).toBe("Symbol('x') | Symbol('y')");
+});
+
+it('shows an explicit commutative=True and the monomial order of a fraction field (SymPy srepr)', () => {
+  expect(sj.srepr(new sj.Sym('x', { commutative: true }))).toBe("Symbol('x', commutative=True)");
+  expect(sj.srepr(new sj.Sym('x'))).toBe("Symbol('x')");
+  expect(sj.srepr(new sj.Sym('x', { commutative: false }))).toBe("Symbol('x', commutative=False)");
+  expect(new sj.Sym('x', { commutative: true }).key).toBe(new sj.Sym('x').key);
+  const [x, y] = sj.symbols('x y');
+  expect(sj.srepr(new sj.FractionField(sj.QQ, [x, y], 'grlex'))).toBe("FractionField(FracField((Symbol('x'), Symbol('y')), QQ, grlex))");
+  expect(sj.srepr(sj.QQ.fracField(x, y))).toBe("FractionField(FracField((Symbol('x'), Symbol('y')), QQ, lex))");
 });

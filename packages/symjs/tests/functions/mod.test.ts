@@ -6,13 +6,26 @@
 // Mod. Expected values are str() / latex() results of SymPy 1.14.
 
 import { describe, expect, it } from 'vitest';
-import { add, E, fn, Float, I, latex, Mod, mul, pi, Pow, Rational, sqrt, Sym, SymFunction } from '../../src';
+import { add, E, fn, Float, Fn, I, latex, Mod, mul, pi, Pow, Rational, S, sqrt, Sym, SymFunction } from '../../src';
 
 const x = new Sym('x');
 const y = new Sym('y');
 const n = new Sym('n', { integer: true });
 
 describe('Mod', () => {
+  it('reduces the Ramanujan partition congruences and Wilson remainders', () => {
+    const n = new Sym('n', { integer: true });
+    const p = new Sym('p', { prime: true });
+    for (const [q, r] of [[5, 4], [7, 5], [11, 6]] as const) {
+      expect(Mod(fn('partition', [add(mul(q, n), r)]), q)).toBe(S.Zero);
+    }
+    expect(Mod(fn('partition', [add(mul(5, n), 2)]), 5).has(n)).toBe(true);
+    expect(Mod(fn('partition', [add(mul(3, n), 2)]), 3).has(n)).toBe(true);
+    expect(Mod(fn('factorial', [add(p, -1)]), p)).toEqual(add(p, -1));
+    expect(Mod(fn('factorial', [add(p, -1)]), mul(-1, p))).toBe(S.NegOne);
+    expect(Mod(mul(2, n), 2)).toBe(S.Zero);
+    expect(Mod(add(mul(2, n), 1), 2).equals(S.One)).toBe(true);
+  });
   it('numbers', () => {
     expect(String(Mod(7, 2))).toBe('1');
     expect(String(Mod(-7, 2))).toBe('1');
@@ -106,4 +119,130 @@ describe('Mod', () => {
     // a number without a numeric value
     expect(String(Mod(SymFunction('f')(1), 2))).toBe('Mod(f(1), 2)');
   });
+});
+
+describe('Mod symbolic divisibility and denesting', () => {
+  const k = new Sym('k', { integer: true });
+  const m = new Sym('m', { integer: true, positive: true });
+  it('reduces positive integer powers of divisible bases', () => {
+    expect(String(Mod(new Pow(k, m), k))).toBe('0');
+    expect(String(Mod(new Pow(mul(-2, k), m), k))).toBe('0');
+    expect(String(Mod(new Pow(k, m), 2))).toBe('Mod(k**m, 2)');
+    expect(String(Mod(new Pow(Rational.of(3n), m), 2))).toBe('1');
+    expect(String(Mod(new Pow(k, n), 2))).toBe('Mod(k**n, 2)');
+  });
+  it('uses the range and divisibility of an inner modulus', () => {
+    for (const sign of [1, -1]) {
+      expect(String(Mod(mul(sign, Mod(x, mul(2, y))), y))).toBe(String(Mod(mul(sign, x), y)));
+    }
+    const t = new Sym('t', { positive: true });
+    expect(String(Mod(Mod(x, t), mul(2, t)))).toBe('Mod(x, t)');
+    expect(String(Mod(mul(-1, Mod(x, t)), mul(-2, t)))).toBe('-Mod(x, t)');
+    expect(String(Mod(mul(-1, Mod(x, t)), mul(2, t)))).toBe('Mod(-Mod(x, t), 2*t)');
+  });
+  it('extracts common integer coefficients and negative signs', () => {
+    expect(String(Mod(mul(12, x), mul(15, y)))).toBe('3*Mod(4*x, 5*y)');
+    expect(String(Mod(mul(-3, x), mul(-2, y)))).toBe('-Mod(3*x, 2*y)');
+    expect(String(Mod(mul(Rational.of(1n, 2n), x), y))).toBe('Mod(x/2, y)');
+    expect(String(Mod(x, mul(Rational.of(1n, 2n), y)))).toBe('Mod(x, y/2)');
+    expect(String(Mod(mul(new Float(0.6), x), y))).toBe('Mod(0.6*x, y)');
+    expect(String(Mod(x, mul(new Float(0.3), y)))).toBe('Mod(1.0*x, 0.3*y)');
+  });
+});
+
+describe('Mod bounded symbolic and modular arithmetic', () => {
+  it('compares symbolic dividends against positive and negative moduli', () => {
+    const p = new Sym('p', { positive: true });
+    for (const a of [Rational.of(2), add(p, 5)]) {
+      expect(String(Mod(a, add(p, 3)))).toBe('2');
+      expect(String(Mod(mul(-1, a), add(p, 3)))).toBe('p + 1');
+      expect(String(Mod(a, mul(-1, add(p, 3))))).toBe('-p - 1');
+      expect(String(Mod(mul(-1, a), mul(-1, add(p, 3))))).toBe('-2');
+    }
+    expect(String(Mod(100, add(p, 3)))).toBe('Mod(100, p + 3)');
+    expect(String(Mod(1, new Sym('m', { integer: true, positive: true, even: true })))).toBe('1');
+  });
+  it('uses parity, Wilson and symbolic factorial divisibility', () => {
+    const even = new Sym('a', { even: true });
+    const odd = new Sym('b', { odd: true });
+    expect(String(Mod(even, 2))).toBe('0');
+    expect(String(Mod(odd, 2))).toBe('1');
+    const n = new Sym('n', { integer: true, positive: true });
+    const p = new Sym('p', { prime: true });
+    const fac = (e: ReturnType<typeof add>) => fn('factorial', [e], { evaluate: false });
+    expect(String(Mod(fac(n), n))).toBe('0');
+    expect(String(Mod(fac(add(n, 2)), n))).toBe('0');
+    expect(String(Mod(fac(add(p, -1)), p))).toBe('p - 1');
+    expect(String(Mod(fac(add(p, -1)), mul(-1, p)))).toBe('-1');
+    const c = new Sym('c', { composite: true, odd: true });
+    expect(String(Mod(fac(add(c, -1)), c))).toBe('0');
+    expect(String(Mod(fac(add(n, -1)), n))).toBe('Mod(factorial(n - 1), n)');
+  });
+  it('extracts floating coefficients without repeated extraction', () => {
+    expect(String(Mod(mul(new Float(0.6), pi), mul(new Float(0.3), x, pi)))).toBe('0.3*pi*Mod(2, x)');
+    expect(String(Mod(mul(new Float(0.6), pi), mul(new Float(0.31), x, pi)))).toBe('pi*Mod(0.6, 0.31*x)');
+    expect(String(Mod(mul(new Float(5), x), mul(new Float(0.1), y)))).toBe('0.1*Mod(50*x, y)');
+    expect(String(Mod(add(x, new Float(3)), 1))).toBe('Mod(1.0*x, 1)');
+  });
+  it('reduces nested powers by Euler and leaves undecidable powers unevaluated', () => {
+    const two = Rational.of(2);
+    const tower = (height: number): ReturnType<typeof Mod> => height === 1 ? two : new Pow(two, tower(height - 1));
+    expect([5, 6, 7].map((h) => String(Mod(tower(h), 59049)))).toEqual(['32191', '18016', '5137']);
+    expect(String(Mod(new Pow(new Pow(two, two), new Pow(two, two)), -7))).toBe('-3');
+    expect(String(Mod(new Pow(two, new Pow(two, Rational.of(1000000))), 4))).toBe('0');
+    expect(String(Mod(new Pow(x, two), 7))).toBe('Mod(x**2, 7)');
+    expect(String(Mod(new Pow(two, x), 7))).toBe('Mod(2**x, 7)');
+    expect(String(Mod(new Pow(two, Rational.of(-1)), 7))).toBe('1/2');
+  });
+  it('reduces integer factors and nested remainders', () => {
+    const i = new Sym('i', { integer: true });
+    expect(String(Mod(mul(3, i), 2))).toBe('Mod(i, 2)');
+    expect(String(Mod(mul(Mod(add(i, 2), 4), add(i, 4)), 4))).toBe(String(Mod(mul(i, add(i, 2)), 4)));
+  });
+});
+
+it('rewrites Mod to floor and reduces numeric factors beside nested remainders', () => {
+  expect(String(Mod(x, y).rewrite('floor'))).toBe('x - y*floor(x/y)');
+  const k = new Sym('k', { integer: true });
+  expect(String(Mod(mul(3, Mod(k, 2)), 2))).toBe('Mod(k, 2)');
+  expect(String(Mod(new Pow(Rational.of(2), new Pow(Rational.of(2), Rational.of(2))), 1))).toBe('0');
+});
+
+it('leaves unproved factorial residues symbolic and reduces long noncoprime towers', () => {
+  const n = new Sym('n', { integer: true });
+  const c = new Sym('c', { composite: true, even: true });
+  expect(String(Mod(fn('factorial', [n], { evaluate: false }), 5))).toBe('Mod(factorial(n), 5)');
+  expect(String(Mod(fn('factorial', [add(c, -1)], { evaluate: false }), c))).toBe('Mod(factorial(c - 1), c)');
+  let e: ReturnType<typeof Mod> = Rational.of(2);
+  for (let k = 0; k < 10; k++) e = new Pow(Rational.of(2), e);
+  expect(String(Mod(e, 8))).toBe('0');
+});
+
+it('retains modular power trees when totient evaluation is unavailable', async () => {
+  const { impl } = await import('../../src/core/nodes');
+  const saved = { ...impl };
+  const two = Rational.of(2);
+  let tower: ReturnType<typeof Mod> = two;
+  for (let i = 0; i < 8; i++) tower = new Pow(two, tower);
+  try {
+    impl.fn = undefined;
+    expect(Mod.isApplied(Mod(tower, 8))).toBe(true);
+    impl.fn = (name, args) => new Fn(name, args);
+    expect(Mod.isApplied(Mod(new Pow(tower, two), 8))).toBe(true);
+    let calls = 0;
+    impl.fn = (name, args) => calls++ === 0 ? Rational.of(4) : new Fn(name, args);
+    expect(Mod.isApplied(Mod(tower, 8))).toBe(true);
+  } finally {
+    Object.assign(impl, saved);
+  }
+});
+
+it('computes rational remainders at the precision of the Float operand', () => {
+  const divisor = Rational.of(500n, 41n);
+  const left = Mod(divisor, new Float({ man: 2949n, exp: -13n }, 13));
+  const right = Mod(new Float({ man: 535n, exp: -6n }, 13), divisor);
+  expect(String(left)).toBe('0.316');
+  expect(String(right)).toBe('8.36');
+  expect(left).toMatchObject({ prec: 13 });
+  expect(right).toMatchObject({ prec: 13 });
 });

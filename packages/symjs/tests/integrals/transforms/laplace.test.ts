@@ -616,6 +616,7 @@ describe('laplace: rule table', () => {
   it('table entries', () => {
     const cases: [string, string][] = [
       ['1/(a*sqrt(t)+t**1.5)', '(pi*sqrt(a)*exp(a*s)*erfc(sqrt(a)*sqrt(s)), 0, True)'],
+      ['erf(a/sqrt(t))', '(1/s - exp(-2*a*sqrt(s))/s, 0, True)'],
       ['log(a*t)', '(-log(s*exp(EulerGamma)/a)/s, 0, True)'],
       ['log(2*t)', '(-log(s*exp(EulerGamma)/2)/s, 0, True)'],
       // 4.6.9 is skipped as in SymPy; 4.6.11 with n = -1/2 applies
@@ -699,7 +700,7 @@ describe('laplace: program rules', () => {
     const cases: [string, string][] = [
       // SymPy prints the same terms in the order 2*LaplaceTransform(sqrt(t)*f(t), t, s) + LaplaceTransform(f(t), t, s)
       // - Derivative(LaplaceTransform(f(t), t, s), s) (the str printer's term order is not laplace's)
-      ['f(t)*(sqrt(t)+1)**2', '(-Derivative(LaplaceTransform(f(t), t, s), s) + 2*LaplaceTransform(sqrt(t)*f(t), t, s) + LaplaceTransform(f(t), t, s), -oo, True)'],
+      ['f(t)*(sqrt(t)+1)**2', '(2*LaplaceTransform(sqrt(t)*f(t), t, s) + LaplaceTransform(f(t), t, s) - Derivative(LaplaceTransform(f(t), t, s), s), -oo, True)'],
       // SymPy's match picks the factor exp(t**2), which is not exp(a*t), and gives
       // (LaplaceTransform(f(t)*exp(t)*exp(t**2), t, s), -oo, True); symjs takes exp(t) and shifts s
       ['f(t)*exp(t*(t+1))', '(LaplaceTransform(f(t)*exp(t**2), t, s - 1), -oo, True)'],
@@ -711,7 +712,7 @@ describe('laplace: program rules', () => {
   it('expansion of a logarithm of a positive variable', () => {
     const tp = symbol('t', { positive: true });
     // SymPy prints the second term as LaplaceTransform(f(t), t, s)*log(2) (the str printer's factor order)
-    expect(show(laplaceTransform(parse('f(t)*log(2*t)', { symbols: [tp] }), tp, s))).toBe('(LaplaceTransform(f(t)*log(t), t, s) + log(2)*LaplaceTransform(f(t), t, s), -oo, True)');
+    expect(show(laplaceTransform(parse('f(t)*log(2*t)', { symbols: [tp] }), tp, s))).toBe('(LaplaceTransform(f(t)*log(t), t, s) + LaplaceTransform(f(t), t, s)*log(2), -oo, True)');
   });
   it('a symbolic power of t', () => {
     // SymPy: ((-1)**n*Derivative(LaplaceTransform(besselk(1, t), t, s), (s, n)), -oo, True); symjs's
@@ -782,4 +783,26 @@ describe('laplace: integration and the LaplaceTransform class', () => {
     const G = new LaplaceTransform(2, 2, s);
     expect(String(G.doit())).toBe('LaplaceTransform(2, 2, s)');
   });
+});
+
+
+it('represents an unevaluated Laplace transform as an integral and in LaTeX', async () => {
+  const { latex } = await import('../../../src');
+  const f = SymFunction('f');
+  const transform = new LaplaceTransform(f(t), t, s);
+  expect(String(transform.asIntegral)).toBe('Integral(f(t)*exp(-s*t), (t, 0, oo))');
+  expect(latex(transform)).toBe('\\mathcal{L}_{t}\\left[f{\\left(t \\right)}\\right]\\left(s\\right)');
+});
+
+it('returns the half-plane of convergence for the sine and hyperbolic integrals', () => {
+  const [t, s] = symbols('t s');
+  for (const [name, value, plane] of [
+    ['Si', '(pi/2 - atan(s))/s', '0'],
+    ['Shi', 'acoth(s)/s', '1'],
+    ['Chi', 'log(1/(s**2 - 1))/(2*s)', '1'],
+  ] as const) {
+    const [actual, boundary, condition] = laplaceTransform(parse(name + '(t)'), t, s);
+    expect(actual.equals(parse(value))).toBe(true);
+    expect([String(boundary), String(condition)]).toEqual([plane, 'True']);
+  }
 });

@@ -8,18 +8,21 @@
  */
 
 import type { Expr, FnName } from '../../core/nodes';
+import { isNegative, isZero } from '../../core/assumptions';
 import { S, impl } from '../../core/nodes';
 import { defined } from '../../core/guard';
 
-// SymPy evaluates exp and log of an interval only: asin, atan, sinh, erf, acos, acot, ... of an
-// AccumBounds stay unevaluated (atan(AccumBounds(0, 1)) is kept as it is)
-const INCREASING = new Set(['exp', 'log']);
+// Exponentials are powers and use interval arithmetic. Other monotone functions such as
+// atan and sinh stay unevaluated (SymPy keeps atan(AccumBounds(0, 1)) as it is).
 
 /** f([a, b]) for a function of one AccumBounds argument; undefined when it is not handled. */
 export function accumBoundsFunction(name: FnName, iv: Expr, apply: (name: FnName, x: Expr) => Expr): Expr | undefined {
   const ab = defined(impl.accumBounds, 'AccumBounds support');
   const [lo, hi] = ab.bounds(iv);
-  if (INCREASING.has(name)) return ab.make(apply(name, lo), apply(name, hi));
+  if (name === 'log') {
+    if (isNegative(lo) === true) return S.NaN;
+    return ab.make(isZero(lo) === true ? S.NegativeInfinity : apply(name, lo), apply(name, hi));
+  }
   if (name === 'sin' || name === 'cos') {
     const a = lo.toNumber();
     const b = hi.toNumber();

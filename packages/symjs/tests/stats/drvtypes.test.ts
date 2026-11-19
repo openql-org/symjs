@@ -117,7 +117,7 @@ describe('Poisson (SymPy test_PoissonDistribution, test_Poisson)', () => {
     expect(str(expectation(ff(Z, n)))).toBe('5**n');
     expect(str(new PoissonDistribution([R(5)]).expectation(x, x, { evaluate: false }))).toBe('Sum(5**x*x*exp(-5)/factorial(x), (x, 0, oo))');
     // the falling factorial shortcut needs a positive integer order
-    expect(str(expectation(ff(Z, R(1, 2))))).toBe('Sum(5**z*exp(-5)*FallingFactorial(z, 1/2)/factorial(z), (z, 0, oo))');
+    expect(str(expectation(ff(Z, R(1, 2))))).toBe('sqrt(5)*(sqrt(5)*exp(-5)/5 + sqrt(pi)*erf(sqrt(5)))/sqrt(pi)');
     // an expression that is not a polynomial is summed (SymPy: exp(-lamda)*exp(E*lamda))
     const l = new Sym('lamda', { positive: true });
     expect(str(expectation(exp(Poisson('X', l))))).toBe('exp(-lamda)*exp(E*lamda)');

@@ -103,3 +103,16 @@ describe('commonAssumptions and failingAssumptions', () => {
     expect(sorted(sj.failingAssumptions(x, { negative: true, real: null, foo: true }))).toEqual([['foo', 'unknown'], ['negative', false], ['real', true]]);
   });
 });
+
+
+it('keeps cancellation of imaginary terms undecided and rejects irrational phases', () => {
+  const [a, b] = sj.symbols('a b', { imaginary: true });
+  const r = sj.symbol('r', { irrational: true });
+  expect(sj.assumptions(sj.add(a, b)).get('real')).toBeUndefined();
+  expect(sj.assumptions(sj.exp(sj.mul(sj.I, sj.pi, r))).get('extended_real')).toBe(false);
+});
+
+it('restricts the returned facts to the distinct requested names', () => {
+  expect(sj.assumptions(sj.S.One, ['positive', 'positive', 'unknown'])).toEqual(new Map([['positive', true]]));
+  expect(sj.assumptions(sj.symbol('x'), ['integer'])).toEqual(new Map());
+});

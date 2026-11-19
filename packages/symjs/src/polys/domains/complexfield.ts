@@ -17,7 +17,7 @@ import { evalf } from '../../numeric/evalf';
 import { str } from '../../printing/str';
 import { CoercionFailed, Domain, domainHooks, type UnificationKind } from '../domains';
 import { MPContext, type ComplexElement } from './mpelements';
-import { QQ_I } from './gaussiandomains';
+import { GaussianElement, QQ_I } from './gaussiandomains';
 
 /** The field of complex floats (SymPy ComplexField); CC has 53 bits. */
 export class ComplexField extends Domain {
@@ -51,6 +51,10 @@ export class ComplexField extends Domain {
   }
   fromSympy(e: ExprLike): Expr {
     return this.canon(sympify(e));
+  }
+  override convert(value: unknown, base?: Domain): unknown {
+    if (value instanceof GaussianElement && base === undefined) return this.fromSympy(QQ_I.toSympy(value));
+    return super.convert(value, base);
   }
   getField(): Domain {
     return this;

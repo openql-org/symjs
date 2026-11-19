@@ -46,6 +46,18 @@ const f = SymFunction('f');
 const s = (e: unknown): string => (e instanceof Expr ? str(e) : 'None');
 const pairStr = (p: readonly unknown[]): string => `(${p.map(s).join(', ')})`;
 
+it('allows integer-order J and I at zero and rejects the logarithmic Y and K branches', () => {
+  expect(isMeromorphic(sj.besselj(2, x), x, 0)).toBe(true);
+  expect(isMeromorphic(sj.besseli(2, x), x, 0)).toBe(true);
+  expect(isMeromorphic(sj.bessely(2, x), x, 0)).toBe(false);
+  expect(isMeromorphic(sj.besselk(2, x), x, 0)).toBe(false);
+  expect(isMeromorphic(sj.besselk(2, x), x, 1)).toBe(true);
+  expect(isMeromorphic(sj.besselj(x, x), x, 1)).toBe(false);
+  expect(isMeromorphic(sj.besselj(1, x), x, sj.oo)).toBe(false);
+  expect(isMeromorphic(sj.besselj(2, log(x)), x, 0)).toBe('unknown');
+  expect(isMeromorphic(sj.bessely(2, add(x, y)), x, 0)).toBe('unknown');
+});
+
 describe('keepCoeff and argsCnc', () => {
   it('_keep_coeff', () => {
     expect(String(sj.keepCoeff(E('x + 1'), E('2')))).toBe('2*(x + 1)');
@@ -691,4 +703,213 @@ describe('canonicalVariables, assumptions0 and isScalar (SymPy 1.14)', () => {
     expect(sj.assumptions0(sj.add(x, 1)).size).toBe(0);
     expect([sj.isScalar(x), sj.isScalar(sj.MatrixSymbol('A', 2, 2))]).toEqual([true, false]);
   });
+});
+
+it('compares renamed periodic unions and intersections independently of operand order', () => {
+  const d = new sj.Dummy('n', { integer: true }), n = new sj.Sym('n');
+  const image = (v: sj.Expr, sign: number) => new sj.ImageSet(v, sj.add(sj.mul(2, sj.pi, v), sj.mul(sign, sj.acos(y))), sj.Integers);
+  for (const op of ['Union', 'Intersection'] as const) {
+    const a = new sj.ConditionSet(x, sj.Le(y, 1), new sj.SetOp(op, [image(d, -1), image(d, 1)]));
+    const b = new sj.ConditionSet(x, sj.Le(y, 1), new sj.SetOp(op, [image(n, 1), image(n, -1)]));
+    expect(sj.dummyEq(a, b)).toBe(true);
+  }
+  expect(sj.dummyEq(new sj.SetOp('Complement', [image(d, 1), sj.Reals]), new sj.SetOp('Complement', [image(n, 1), sj.Reals]))).toBe(true);
+});
+
+it('extracts additive order terms and preserves floating primitive parts', () => {
+  const order = new sj.Order([sj.pow(x, 2), x, sj.S.Zero]);
+  expect(sj.getO(order)).toBe(order);
+  expect(sj.getO(new sj.Add([x, order]))).toBe(order);
+  expect(sj.getO(new sj.Add([x, y]))).toBe(sj.NoMatch);
+  expect(sj.getO(x)).toBe(sj.NoMatch);
+  expect(sj.primitive(sj.parseExpr('1.5*x+y')).map(String)).toEqual(['1', '1.5*x + y']);
+  expect(sj.asIndependent(x, [x], { asAdd: false })).toEqual([sj.S.One, x]);
+  const matrix = new sj.MatrixSymbol('A', 2, 2);
+  expect(sj.asRealImag(matrix).map(String)).toEqual(['(1/2)*Adjoint(A.T) + (1/2)*A', '-(I/2)*(-Adjoint(A.T) + A)']);
+  class ScalarExtension extends sj.ExtensionExpr {
+    withArgs(args: readonly sj.Expr[]): sj.Expr { return new ScalarExtension(this.name, args); }
+  }
+  expect(sj.asRealImag(new ScalarExtension('f', [x])).length).toBe(2);
+});
+
+it('separates rational coefficients from floating factors and sums', () => {
+  for (const value of [3, -3]) expect(sj.asCoeffAdd(new Float(value)).map(String)).toEqual(['0', String(new Float(value))]);
+  const x = new sj.Sym('x');
+  expect(sj.asCoeffAdd(sj.add(new Float(3), x)).map(String)).toEqual(['0', '3.00000000000000,x']);
+  expect(sj.asCoeffMul(new Float(3)).map(String)).toEqual(['1', '3.00000000000000']);
+  expect(sj.asCoeffMul(new Float(-3)).map(String)).toEqual(['-1', '3.00000000000000']);
+  expect(sj.asCoeffMul(sj.mul(new Float(1.1), x)).map(String)).toEqual(['1', '1.10000000000000,x']);
+  expect(sj.asCoeffMul(sj.mul(sj.S.NegativeInfinity, x)).map(String)).toEqual(['-1', 'oo,x']);
+});
+
+it('extracts a common exponent from a sum and splits NaN into NaN components', () => {
+  const x = new sj.Sym('x');
+  expect(sj.asCoeffExponent(sj.add(sj.mul(2, sj.pow(x, 3)), sj.mul(sj.S.Pi, sj.pow(x, 3))), x).map(String)).toEqual(['2 + pi', '3']);
+  expect(sj.asCoeffExponent(sj.add(x, sj.pow(x, 2)), x).map(String)).toEqual(['x**2 + x', '0']);
+  expect(sj.asRealImag(sj.S.NaN)).toEqual([sj.S.NaN, sj.S.NaN]);
+});
+
+it('keeps a negative unit coefficient and handles unavailable differentiation conservatively', () => {
+  expect(String(sj.keepCoeff(sj.S.NegOne, x))).toBe('-x');
+  expect(sj.asCoeffMul(sj.S.Infinity).map(String)).toEqual(['1', 'oo']);
+  class UnsupportedDerivative extends sj.ExtensionExpr {
+    withArgs(args: readonly sj.Expr[]): sj.Expr { return new UnsupportedDerivative(this.name, args); }
+    override diffSelf(): sj.Expr { throw new sj.NotImplementedError('derivative'); }
+  }
+  expect(sj.isConstant(new UnsupportedDerivative('g', [x]))).toBe(false);
+});
+
+it('optionally includes nonrational numeric coefficients in asCoeffMul', () => {
+  expect(sj.asCoeffMul(new Float(-3), [], false).map(String)).toEqual(['-3.00000000000000', '']);
+  expect(sj.asCoeffMul(sj.S.Infinity, [], false).map(String)).toEqual(['oo', '']);
+  expect(sj.asCoeffMul(sj.mul(new Float(1.1), x), [], false).map(String)).toEqual(['1.10000000000000', 'x']);
+  expect(sj.asCoeffMul(x, [], false).map(String)).toEqual(['1', 'x']);
+  expect(sj.asCoeffMul(sj.mul(x, y), [], false).map(String)).toEqual(['1', 'x,y']);
+});
+
+it('respects integral bindings when looking for a free subexpression', () => {
+  const [x, y] = sj.symbols('x y');
+  const pattern = sj.sin(x);
+  const integral = new sj.Integral([pattern, x, sj.S.Zero, y]);
+  expect(sj.hasFree(integral, pattern)).toBe(false);
+  expect(sj.hasFree(integral, integral)).toBe(true);
+  expect(sj.hasFree(sj.add(integral, pattern), pattern)).toBe(true);
+});
+
+it('combines numerators that share only some denominators', () => {
+  const [a, b, x, y] = sj.symbols('a b x y');
+  const expr = sj.add(a.div(x), b.div(x), sj.pow(y, -1));
+  const [num, den] = sj.asNumerDenom(expr);
+  expect(den.key).toBe(x.mul(y).key);
+  expect(num.key).toBe(sj.add(x, sj.mul(y, sj.add(a, b))).key);
+});
+it('splits complex products with a symbolic imaginary factor', () => {
+  const i = sj.symbol('i', { imaginary: true });
+  const x = sj.symbol('x');
+  const [a, b] = sj.asRealImag(sj.mul(i, x));
+  expect(a.key).toBe(sj.mul(sj.I, i, sj.im(x)).key);
+  expect(b.key).toBe(sj.mul(-1, sj.I, i, sj.re(x)).key);
+});
+
+it('keeps a canonical name for each integral limit and respects occurrences in endpoints', () => {
+  const [a, b, t] = sj.symbols('a b t');
+  const inner = new sj.Integral([sj.add(a, b), a, sj.S.Zero, t]);
+  const all = new sj.Integral([inner, b, sj.S.Zero, sj.S.One]);
+  expect([...sj.canonicalVariables(all)].map(([u,v]) => [String(u), String(v)])).toEqual([['a', '_0'], ['b', '_1']]);
+  expect(String(sj.asDummy(all))).toBe('Integral(_0 + _1, (_0, 0, t), (_1, 0, 1))');
+  expect([...sj.iterFreeArgs(all)].map(String)).toEqual([String(all), '0', 't', '0', '1']);
+  expect([...sj.iterFreeArgs(a.add(1))].map(String)).toEqual(['a + 1', '1', 'a']);
+  expect([...sj.exprFreeSymbols(sj.Tuple(a, b))]).toEqual([]);
+  expect([...sj.exprFreeSymbols(sj.Eq(a, b))]).toEqual([]);
+  expect([...sj.exprFreeSymbols(a.add(1))].map(String)).toEqual(['1', 'a']);
+  expect([...sj.exprFreeSymbols(all)].map(String)).toEqual(['a', 'b']);
+  expect([...sj.exprFreeSymbols(sj.Basic(a))]).toEqual([]);
+  expect([...sj.exprFreeSymbols(sj.Subs(a, a, b))]).toEqual([]);
+  const indexed = new sj.Indexed([a, b]);
+  expect([...sj.exprFreeSymbols(indexed)]).toEqual([indexed]);
+});
+it('extracts common radicals of matching degree', () => {
+  const e = sj.parse('6**(1/3) + (-6)**(1/3)');
+  expect(String(sj.asContentPrimitive(e, { radical: true })[1])).toBe('6**(1/3)*(1 + (-1)**(1/3))');
+  expect(sj.asContentPrimitive(sj.parse('sqrt(2) + sqrt(3)'), { radical: true })[1].key).toBe(sj.parse('sqrt(2) + sqrt(3)').key);
+  expect(sj.asContentPrimitive(sj.parse('1 + sqrt(2)'), { radical: true })[1].key).toBe(sj.parse('1 + sqrt(2)').key);
+});
+
+it('keeps free endpoints of sums separate from their bound occurrences', () => {
+  const [x, y] = sj.symbols('x y');
+  const sum = new sj.Concrete('Sum', [x, x, sj.S.Zero, x]);
+  expect(String(sj.asDummy(sum))).toBe('Sum(_0, (_0, 0, x))');
+  expect([...sj.iterFreeArgs(sum)].map(String)).toEqual([String(sum), '0', 'x']);
+  expect(String(sj.asDummy(sj.add(sum, y)))).toBe('y + Sum(_0, (_0, 0, x))');
+  const mixed = new sj.Add([sj.sqrt(2), sj.pow(3, sj.Rational.of(1, 3))]);
+  expect(sj.asContentPrimitive(mixed, { radical: true })[1].key).toBe(mixed.key);
+});
+
+it('extracts additive terms from the remainder of a factored expression', () => {
+  const [x, y] = sj.symbols('x y');
+  const sum = x.add(y);
+  expect(String(sj.extractAdditively(sum.mul(x.add(1)).add(sum).add(3), sum))).toBe('x*(x + y) + 3');
+  expect(String(sj.extractAdditively(sum.mul(x.add(1)).add(sum).add(2).add(x), sum))).toBe('x*(x + y) + x + 2');
+  const partial = sum.mul(x.add(1)).add(sum.mul(2));
+  expect(String(sj.extractAdditively(partial, sum))).toBe('x*(x + y) + x + y');
+});
+describe('Piecewise series and meromorphic branches', () => {
+  const [x, y] = sj.symbols('x y', { real: true });
+  const p = sj.piecewise([sj.sqrt(sj.sub(1, x)), sj.Gt(x, 0)], [1, true]);
+
+  it('tests meromorphicity at interior points and leaves boundary points undecided', () => {
+    expect(sj.isMeromorphic(p, x, -1)).toBe(true);
+    expect(sj.isMeromorphic(p, x, 1)).toBe(false);
+    expect(sj.isMeromorphic(p, x, 2)).toBe(true);
+    expect(sj.isMeromorphic(p, x, 0)).toBe('unknown');
+    expect(sj.isMeromorphic(p, x, sj.I)).toBe('unknown');
+    expect(sj.isMeromorphic(p, x, y)).toBe('unknown');
+    expect(sj.isMeromorphic(sj.piecewise([x, sj.Gt(x, 0)]), x, -1)).toBe('unknown');
+    expect(sj.isMeromorphic(sj.piecewise([x, sj.Gt(x, 0)], [2, sj.Gt(y, 0)]), x, -1)).toBe('unknown');
+  });
+
+  it('expands each branch separately at the origin', () => {
+    const branches = sj.piecewise([sj.sin(x), sj.Lt(x, 0)], [sj.cos(x), sj.Gt(x, 0)]);
+    expect(sj.sstr(sj.nseries(branches, x, 0, 2))).toBe('Piecewise((x + O(x**2), x < 0), (1 + O(x**2), x > 0))');
+    expect(sj.sstr(sj.nseries(branches, x, 1, 1))).toBe('cos(1) + O(x - 1, (x, 1))');
+  });
+
+  it('passes a logarithm placeholder through explicit and inferred expansion variables', () => {
+    const branches = sj.piecewise([sj.log(x), sj.Gt(x, 0)], [sj.cos(x), true]);
+    const expected = 'Piecewise((y, x > 0), (1 + O(x**2), True))';
+    expect(sj.sstr(sj.nseries(branches, x, 0, 2, '+', { logx: y }))).toBe(expected);
+    expect(sj.sstr(sj.nseries(branches, x, 0, 2, undefined, { logx: y }))).toBe(expected);
+    expect(sj.sstr(sj.nseries(branches, undefined, 0, 2, { logx: y }))).toBe(expected);
+    expect(sj.sstr(sj.nseries(sj.sqrt(x), x, 0, 2, '-'))).toBe('I*sqrt(-x)');
+  });
+});
+
+it('checks a varying second argument for meromorphicity', () => {
+  expect(sj.isMeromorphic(sj.atan2(y, x), x, 0)).toBe(false);
+});
+
+it('passes directions to the local expansion', () => {
+  const step = sj.SingularityFunction(x, 0, 0);
+  expect(sj.nseries(step, x, 0, 6, { cdir: 1 })).toBe(sj.S.One);
+  expect(sj.nseries(step, x, 0, 6, { cdir: -1 })).toBe(sj.S.Zero);
+});
+
+it('treats a random variable as an atom when checking rational functions', () => {
+  const r = sj.Normal('r', 0, 1);
+  expect(sj.isRationalFunction(r.add(1), [r])).toBe(true);
+  expect(sj.isRationalFunction(r.add(sj.oo), [r])).toBe(false);
+});
+
+it('reports possible poles in the fuzzy constancy test', () => {
+  const x = new sj.Sym('x', { real: true });
+  const z = new sj.Sym('z', { zero: true });
+  const p = new sj.Sym('p', { positive: true });
+  expect(sj.isConstantTruth(x)).toBe(false);
+  expect(sj.isConstantTruth(x, [p])).toBe(true);
+  expect(sj.isConstantTruth(4)).toBe(true);
+  expect(sj.isConstantTruth(sj.add(z, sj.mul(2, z)))).toBe(true);
+  const set = { symbols: { x, p, z } };
+  expect(sj.isConstantTruth(sj.parse('(-1+x)/(1-x)', set))).toBe('unknown');
+  expect(sj.isConstantTruth(sj.parse('tan(x)**2 - 1/cos(x)**2', set))).toBe('unknown');
+  expect(sj.isConstantTruth(sj.parse('sin(x)**2+cos(x)**2', set))).toBe(true);
+});
+
+it('distinguishes a known pole from a denominator known to be nonzero', () => {
+  class ConstantWithArgument extends sj.ExtensionExpr {
+    constructor(argument: sj.Expr) { super('ConstantWithArgument', [argument]); }
+    withArgs(args: readonly sj.Expr[]): sj.Expr { return new ConstantWithArgument(args[0] ?? sj.S.Zero); }
+    override diffSelf(): sj.Expr { return sj.S.Zero; }
+  }
+  const t = new sj.Sym('t');
+  const zero = new sj.Sym('z', { zero: true });
+  const v = (denominator: sj.Expr) => new ConstantWithArgument(new sj.Pow(denominator, sj.S.NegOne));
+  expect(sj.isConstantTruth(v(sj.S.Two), [t])).toBe(true);
+  expect(sj.isConstantTruth(v(zero))).toBe(false);
+  expect(sj.isConstantTruth(new ConstantWithArgument(new sj.Mul([t, new sj.Pow(sj.S.Two, sj.S.NegOne)])))).toBe(true);
+});
+
+it('returns all independent additive orders', () => {
+  const [a, b] = sj.symbols('a b');
+  const orders = sj.add(sj.O(a), sj.O(b));
+  expect(sj.getO(sj.add(1, orders))).toEqual(orders);
 });

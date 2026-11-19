@@ -3,7 +3,7 @@
 
 // Tests of src/polys/rootsum.ts: RootSum, apart_list and assemble_partfrac_list; expected values from SymPy 1.14.
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import * as sj from '../../src';
 import { RootSumNode } from '../../src/polys/rootsum';
 
@@ -89,4 +89,41 @@ describe('apart_list and assemble_partfrac_list', () => {
     expect(String(sj.RootSum(parse('2*t*x**2 + 2*t*x + 2*t'), x, lam(b, '1/(b + 1)')))).toBe('RootSum(x**2 + x + 1, Lambda(b, 1/(b + 1)))');
     expect(String(sj.RootSum(parse('2*x**3 + 2*x + 2'), x, lam(b, 'b**2')))).toBe('RootSum(x**3 + x + 1, Lambda(b, b**2))');
   });
+});
+
+it('evaluates polynomial and rational root sums using the quotient algebra', () => {
+  const p = parse('x**3+x+3');
+  expect(String(sj.RootSum(p, x, lam(b, 'b**2'), { auto: true }))).toBe('-2');
+  expect(String(sj.RootSum(p, x, lam(b, '1/(b+b**2)'), { auto: true }))).toBe('11/3');
+  expect(String(sj.RootSum(parse('x**2-y'), x, lam(b, '3*b**2'), { auto: true }))).toBe('6*y');
+  expect(String(sj.RootSum(parse('x**2+1'), x, lam(b, 'b**2'), { quadratic: true }))).toBe('-2');
+});
+
+it('keeps transcendental root sums and resolves scaled polynomial roots', () => {
+  const normalized = sj.RootSum(parse('a**3*x**3 + a*x + 1'), x, lam(b, 'tan(b)'), { auto: true });
+  expect(String(normalized)).toBe('RootSum(x**3 + x + 1, Lambda(b, tan(b/a)))');
+  expect(String(sj.RootSum(1, x, lam(b, 'exp(b)'), { auto: true }))).toBe('0');
+  expect(String(sj.RootSum(parse('x**3+x+1'), x, lam(b, 'exp(b)'), { auto: true }))).toBe('RootSum(x**3 + x + 1, Lambda(b, exp(b)))');
+});
+
+it('keeps a root sum when its summand has poles at the roots or radicals are unavailable', () => {
+  const p = parse('x**3+x+1');
+  expect(sj.RootSum(p, x, lam(b, '1/(b**3+b+1)'), { auto: true })).toBeInstanceOf(RootSumNode);
+  const symbolic = new RootSumNode([parse('x**5+y*x+1'), lam(b, 'sin(b)'), x]);
+  expect(symbolic.doitSelf()).toBe(symbolic);
+  expect(String(symbolic.subs([[y, sj.S.One]]))).toBe('RootSum(x**5 + x + 1, Lambda(b, sin(b)))');
+  expect(() => Reflect.apply(symbolic.subs.bind(symbolic), symbolic, [y])).toThrow(TypeError);
+});
+
+it('propagates errors unrelated to the availability of a root-sum formula', () => {
+  const p = parse('x**3+x+1');
+  const badVariable = new RootSumNode([p, lam(b, 'sin(b)'), sj.S.One]);
+  expect(() => badVariable.doitSelf()).toThrow('RootSum variable is not a Sym');
+  const error = new RangeError('coefficient growth limit');
+  const invert = vi.spyOn(sj.Poly.prototype, 'invert').mockImplementation(() => { throw error; });
+  try {
+    expect(() => sj.RootSum(p, x, lam(b, '1/(b+1)'), { auto: true })).toThrow(error);
+  } finally {
+    invert.mockRestore();
+  }
 });

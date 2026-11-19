@@ -9,6 +9,7 @@ import type { CriticalPair, LabeledPolynomial } from '../../src/polys/groebnerto
 import { QQ, ZZ } from '../../src/polys/domains';
 import { grevlex, grlex, lex } from '../../src/polys/orderings';
 import { PolyElement, PolyRing } from '../../src/polys/rings';
+import * as sjGroebner from '../../src';
 
 const ref = JSON.parse(readFileSync(new URL('./groebnertools.references.json', import.meta.url), 'utf8'));
 const ORDERS = { lex, grlex, grevlex } as const;
@@ -92,4 +93,32 @@ describe('lcm and gcd by Groebner bases', () => {
     expect(() => sj.groebnerLcm(R.gens[0]!, S.gens[0]!)).toThrow(RangeError);
     expect(() => sj.groebnerGcd(R.gens[0]!, S.gens[0]!)).toThrow(RangeError);
   });
+});
+
+it('computes reduced bases over fields and clears denominators over integer rings', () => {
+  for (const domain of [sjGroebner.QQ, sjGroebner.ZZ]) {
+    const ring = new sjGroebner.PolyRing(sjGroebner.symbols('x y'), domain);
+    const basis = sjGroebner.groebnerInRing(['2*x+y', 'x-y'].map((p) => ring.fromExpr(sjGroebner.parse(p))), ring);
+    expect(basis.map(String)).toEqual(['x', 'y']);
+    expect(basis.every((p) => p.ring === ring)).toBe(true);
+    expect(sjGroebner.groebnerInRing([], ring)).toEqual([]);
+  }
+});
+
+it('computes sparse Gröbner bases using Buchberger or F5B over rings and fields', () => {
+  const ring = new PolyRing('x y z', QQ);
+  const seq = ['x*y - z', 'y*z - x', 'z*x - y', 'x**2 + y**2 - 1'].map((e) => ring.fromExpr(sj.parse(e)));
+  const expected = sj.groebnerInRing(seq, ring, 'f5b').map(String);
+  expect(sj.groebnerInRing(seq, ring).map(String)).toEqual(expected);
+  const integer = ring.withDomain(ZZ);
+  expect(sj.groebnerInRing(seq.map((p) => p.setRing(integer)), integer).map(String)).toEqual(expected);
+  expect(() => sj.groebnerInRing(seq, ring, 'unknown')).toThrow(RangeError);
+});
+
+it('retains coefficient domains in the public Gröbner basis', () => {
+  const [x, y] = sj.symbols('x y');
+  const seq = ['x**2 - y', 'y**2 - 2'].map((e) => sj.parse(e));
+  for (const opts of [{ extension: true }, { domain: QQ }, { modulus: 5, symmetric: false }, { domain: sj.RR }]) {
+    expect(sj.groebner(seq, [x, y], 'lex', opts).polys).toHaveLength(2);
+  }
 });

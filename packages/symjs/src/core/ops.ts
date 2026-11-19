@@ -12,7 +12,7 @@
  * - distribution of a numeric coefficient over a sum (2*(x+1) -> 2*x+2)
  */
 
-import { isIntegerQ, isNegative, isNonNegative, isNonZero, isPolar, isPositive, isReal } from './assumptions';
+import { isIntegerQ, isKnownExtendedReal, isNegative, isNonNegative, isNonZero, isPolar, isPositive, isReal } from './assumptions';
 import type { ComplexValue, ExprLike, Num } from './nodes';
 import {
   Add,
@@ -40,7 +40,7 @@ import {
 import { mkFloat, numAdd, numDiv, numInv, numMul, numNeg, numPowInt, ratFloor, toMpf } from './num';
 import { ZERO as MPF_ZERO, precToDps } from '../numeric/mpf';
 import { cpow as mpCpow, powReal as mpPowReal } from '../numeric/mpfun';
-import { factorInt, gcd, iroot, ipow } from './numbers';
+import { factorInt, gcd, iroot, ipow, perfectPower } from './numbers';
 import { NotLoadedError, SympifyError, errorSettings } from './errors';
 import { at, cast, pair } from './guard';
 import { globalParameters } from './parameters';
@@ -86,6 +86,14 @@ export function splitCoeff(e: Expr): [Num, Expr] {
 /** Return [base, exponent] of e (exponent 1 for non-powers). */
 export function asBaseExp(e: Expr): [Expr, Expr] {
   if (e instanceof Pow) return [e.base, e.exp];
+  if (e instanceof Mul) {
+    const pairs = e.args.map(asBaseExp);
+    const exponent = pairs[0]?.[1];
+    if (exponent instanceof Rational && exponent.isInteger && !exponent.isOne &&
+        pairs.every(([, x]) => x.key === exponent.key) && pairs.filter(([b]) => !b.isCommutative).length <= 1) {
+      return [mul(...pairs.map(([b]) => b)), exponent];
+    }
+  }
   return [e, S.One];
 }
 
@@ -234,11 +242,13 @@ export function add(...xs: ExprLike[]): Expr {
   if (own !== undefined) return own;
   const ab = impl.accumBounds;
   if (ab && sx.some((e) => ab.is(e) || (e instanceof Add && e.args.some((a) => ab.is(a))))) {
-    // interval arithmetic: the intervals absorb a numeric remainder, symbolic terms stay beside them
+    // AccumBounds shifts its endpoints by a known real remainder.
     const flat = sx.flatMap((e) => (e instanceof Add ? e.args : [e]));
-    const abs = flat.filter((e) => ab.is(e));
+    const complexInfinity = flat.lastIndexOf(S.ComplexInfinity);
+    const abs = flat.filter((e, i) => ab.is(e) && (i > complexInfinity || ab.bounds(e).some((bound) => bound instanceof Special)));
     const rest = add(...flat.filter((e) => !ab.is(e)));
-    if (rest.freeSymbols().size === 0) return ab.add(abs, rest);
+    if (abs.length === 0) return rest;
+    if (rest.freeSymbols().size === 0 || isKnownExtendedReal(rest)) return ab.add(abs, rest);
     // like SymPy, the interval absorbs the numeric term: x + 1 + AccumBounds(1, 2) = x + AccumBounds(2, 3)
     const [c, terms] = rest instanceof Add && isNum(at(rest.args, 0)) ? [at(rest.args, 0), rest.args.slice(1)] : [S.Zero, [rest]];
     return new Add([...terms, ab.add(abs, c)]);
@@ -298,27 +308,16 @@ export function add(...xs: ExprLike[]): Expr {
 type RatPow = readonly [bigint, Rational];
 
 /**
- * The largest k with n = r**k (SymPy perfect_power), or undefined.
- */
-function perfectPower(n: bigint): [bigint, bigint] | undefined {
-  for (let k = BigInt(n.toString(2).length); k >= 2n; k--) {
-    const r = iroot(n, k);
-    if (r > 1n && ipow(r, k) === n) return [r, k];
-  }
-  return undefined;
-}
-
-/**
  * SymPy Integer._eval_power for a positive integer n and a rational e that is
  * not an integer: an exact coefficient times powers with exponents in (0, 1)
  * ((2**12)**(1/10) -> 2*2**(1/5), 12**(2/3) -> 2*18**(1/3)).
  */
 function intPow(n: bigint, e: Rational): [Rational, RatPow[]] {
   if (e.isNegative) {
-    // SymPy Rational._eval_power of 1/n: n**(p*(q - 1)/q) / n**p
-    const ne = numNeg(e);
-    const [c, rads] = intPow(n, Rational.of(ne.p * (ne.q - 1n), ne.q));
-    return [numMul(c, Rational.of(1n, ipow(n, ne.p))), rads];
+    // n**(-p/q) = n**(ceil(p/q) - p/q) / n**ceil(p/q).
+    const whole = (-e.p + e.q - 1n) / e.q;
+    const [c, rads] = intPow(n, Rational.of(whole * e.q + e.p, e.q));
+    return [numMul(c, Rational.of(1n, ipow(n, whole))), rads];
   }
   const root = iroot(n, e.q);
   if (ipow(root, e.q) === n) return [Rational.of(ipow(root, e.p)), []];
@@ -742,6 +741,14 @@ function keepCoeffMul(c: Num, t: Expr): Expr {
 let IPI: Expr | undefined;
 const iPi = (): Expr => (IPI ??= new Mul([S.I, S.Pi]));
 
+// A sum of extended-real terms and exactly one nonreal term cannot be real.
+export function knownNonreal(e: Expr): boolean {
+  const real = (x: Expr) => x instanceof Sym ? x.assumptions0.get('extended_real') : isReal(x);
+  if (!(e instanceof Add)) return real(e) === false;
+  const terms = e.args.map(real);
+  return terms.filter((v) => v === false).length === 1 && !terms.includes(undefined);
+}
+
 export function pow(bx: ExprLike, ex: ExprLike): Expr {
   const b = sympify(bx);
   const e = sympify(ex);
@@ -750,7 +757,13 @@ export function pow(bx: ExprLike, ex: ExprLike): Expr {
   if (!globalParameters.evaluate) return new Pow(b, e);
   const own = impl.arithmetic?.('pow', [b, e]);
   if (own !== undefined) return own;
-  if (impl.accumBounds?.is(b) && e.freeSymbols().size === 0) return impl.accumBounds.pow(b, e);
+  if (impl.accumBounds?.is(b)) return impl.accumBounds.pow(b, e);
+  if (isNum(b) && b.isZero && impl.accumBounds?.is(e)) {
+    const [lo] = impl.accumBounds.bounds(e);
+    if (lo.equals(S.Zero)) return impl.accumBounds.make(S.Zero, S.One);
+    if (isPositive(lo)) return S.Zero;
+    return new Pow(b, e);
+  }
   if (impl.accumBounds?.is(e) && b.freeSymbols().size === 0 && b.toNumber() > 0) {
     // a positive base: b**x is monotone in x (exp(AccumBounds(0, 1)) = AccumBounds(1, E))
     const [lo, hi] = impl.accumBounds.bounds(e);
@@ -792,8 +805,14 @@ export function pow(bx: ExprLike, ex: ExprLike): Expr {
   if ((b instanceof Rational || b instanceof Float) && b.isNegative && e instanceof Sym && e.assumptions0.get('odd') === true) return mul(-1, pow(numNeg(b), e));
 
   if (b instanceof Rational && b.isZero) {
+    if (e instanceof Sym && e.assumptions.zero) return S.One;
+    if (knownNonreal(e)) return S.NaN;
     if (isPositive(e)) return S.Zero;
     if (isNegative(e)) return S.ComplexInfinity;
+    if (e instanceof Mul) {
+      const [c, rest] = splitCoeff(e);
+      if (c instanceof Float || !c.isOne) return pow(c.isNegative ? S.ComplexInfinity : S.Zero, rest);
+    }
   }
 
   if (isI(b) && e instanceof Rational && e.isInteger) {
@@ -1091,6 +1110,7 @@ function powSpecial(b: Expr, e: Expr): Expr | undefined {
   if (b instanceof Special) {
     if (b.name === 'oo') return infPow(e);
     if (b.name === 'zoo') {
+      if (e instanceof Sym && e.assumptions.zero) return S.One;
       // SymPy gives zoo**oo = 0; |zoo|**oo is infinite, so zoo**oo = zoo here
       if (e instanceof Special && e.name === 'zoo') return S.NaN;
       if (isPositive(e)) return b;
@@ -1152,6 +1172,9 @@ export function sub(a: ExprLike, b: ExprLike): Expr {
 export function div(a: ExprLike, b: ExprLike): Expr {
   const x = sympify(a), y = sympify(b);
   if (isNum(x) && isNum(y) && !y.isZero) return numDiv(x, y);
+  if (isNum(x) && x.isZero && impl.accumBounds?.is(y)) return S.Zero;
+  // Preserve the direction of approach before the reciprocal collapses to zero.
+  if (y === S.NegativeInfinity && impl.accumBounds?.is(x)) return neg(mul(x, S.Zero));
   return mul(x, pow(y, S.NegOne));
 }
 
@@ -1207,10 +1230,10 @@ impl.pow = pow;
 impl.couldExtractMinusSign = couldExtractMinusSign;
 
 /** SymPy root(x, n, k): the k-th n-th root, x**(1/n)*(-1)**(2*k/n). */
-export function root(x: ExprLike, n: ExprLike, k: ExprLike = 0): Expr {
+export function root(x: ExprLike, n: ExprLike, k: ExprLike = 0, opts: { evaluate?: boolean } = {}): Expr {
   const nn = sympify(n);
   const kk = sympify(k);
-  const r = pow(x, pow(nn, -1));
+  const r = opts.evaluate === false ? new Pow(sympify(x), pow(nn, -1)) : pow(x, pow(nn, -1));
   if (kk instanceof Rational && kk.isZero) return r;
   return mul(r, pow(S.NegOne, mul(2, kk, pow(nn, -1))));
 }
@@ -1220,16 +1243,28 @@ export function cbrt(x: ExprLike): Expr {
   return pow(x, Rational.of(1n, 3n));
 }
 
-/** SymPy real_root(x, n): the real n-th root for real x and odd n. */
-export function realRoot(xIn: ExprLike, nIn: ExprLike): Expr {
+/** SymPy real_root: real odd roots, or conversion of principal odd roots when n is omitted. */
+export function realRoot(xIn: ExprLike, nIn?: ExprLike, opts: { evaluate?: boolean } = {}): Expr {
   const x = sympify(xIn);
+  if (nIn === undefined) {
+    const replacements: [Expr, Expr][] = [];
+    const visit = (e: Expr): void => {
+      if (e instanceof Pow && isNegative(e.base) === true && e.exp instanceof Rational && e.exp.p === 1n && e.exp.q % 2n !== 0n) {
+        replacements.push([e, mul(-1, pow(mul(-1, e.base), e.exp))]);
+      }
+      e.args.forEach(visit);
+    };
+    visit(x);
+    return impl.xreplace(x, replacements);
+  }
   const n = sympify(nIn);
   if (n instanceof Rational && n.isInteger) {
-    if (n.p === 1n || n.p === -1n) return root(x, n);
+    if (n.p === 1n || n.p === -1n) return root(x, n, 0, opts);
     if (n.p % 2n !== 0n && isReal(x) === true) {
       if (impl.sign === undefined) throw new NotLoadedError("sign is not available: import '@symjs/symjs/core' (or '@symjs/symjs')");
-      return mul(impl.sign(x), root(impl.abs(x), n));
+      const factors = [impl.sign(x), root(impl.abs(x), n, 0, opts)];
+      return opts.evaluate === false ? new Mul(factors) : mul(...factors);
     }
   }
-  return root(x, n);
+  return root(x, n, 0, opts);
 }

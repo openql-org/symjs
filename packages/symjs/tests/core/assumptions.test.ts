@@ -9,12 +9,44 @@ import { describe, expect, it } from 'vitest';
 import * as sj from '../../src';
 import { isIntegerQ, isMinMax, isNegative, isNonNegative, isNonZero, isPolar, isPositive, isReal, isZero, torf } from '../../src/core/assumptions';
 import { at } from '../../src/core/guard';
-import { Pow, S } from '../../src/core/nodes';
+import { Pow, S, impl } from '../../src/core/nodes';
 import { add, mul } from '../../src/core/ops';
 
 const [x] = sj.symbols('x');
 
 const { I } = sj;
+
+it('decides the zeros of unevaluated sinc and cosine of inverse sine', () => {
+  const raw = { evaluate: false };
+  expect(isZero(sj.fn('sinc', [0], raw))).toBe(false);
+  for (const value of [-1, 1]) expect(isZero(sj.fn('cos', [sj.fn('asin', [value], raw)], raw))).toBe(true);
+  expect(isZero(sj.fn('cos', [sj.fn('asin', [S.Half], raw)], raw))).toBe(false);
+  expect(isZero(sj.fn('cos', [sj.fn('asin', [x], raw)], raw))).toBeUndefined();
+});
+
+it('uses the hyperbolic phase to determine real values and signs', () => {
+  const raw = { evaluate: false };
+  const c = (factor: sj.ExprLike) => sj.fn('cosh', [mul(factor, I, sj.pi)], raw);
+  expect(isReal(c(1))).toBe(true);
+  expect(isNegative(c(1))).toBe(true);
+  expect(isPositive(c(1))).toBe(false);
+  expect(isPositive(c(sj.rational(1, 3)))).toBe(true);
+  expect(isNegative(c(sj.rational(2, 3)))).toBe(true);
+  expect(isReal(sj.fn('tanh', [mul(I, sj.pi, S.Half)], raw))).toBeUndefined();
+  expect(isReal(sj.fn('tanh', [add(2, mul(I, sj.pi, S.Half))], raw))).toBe(true);
+});
+
+it('leaves phase assumptions undecided without the core function dispatcher', () => {
+  const expression = sj.fn('cosh', [x], { evaluate: false });
+  const apply = impl.fn;
+  delete impl.fn;
+  try {
+    expect(isReal(expression)).toBeUndefined();
+    expect(isPositive(expression)).toBeUndefined();
+  } finally {
+    if (apply) impl.fn = apply;
+  }
+});
 
 describe('assumption queries (SymPy test_assumptions)', () => {
   it('knows that 0 to a negative power is not a real number', () => {
@@ -71,6 +103,9 @@ describe('signs of numbers and powers (SymPy Expr._eval_is_extended_positive_neg
     // a term without a numeric value (an undefined function of a number)
     const f = sj.SymFunction('f');
     expect(isPositive(add(f(1), 1))).toBeUndefined();
+    const huge = 10n ** 500n;
+    expect(isPositive(new sj.Add([sj.Rational.of(huge), sj.Rational.of(-huge)]))).toBeUndefined();
+    expect(isZero(S.NaN)).toBeUndefined();
   });
 });
 
@@ -392,4 +427,53 @@ describe('function assumptions (SymPy test_miscellaneous, test_integers, test_co
     expect(isMinMax(sj.Max(x, r))).toBe(true);
     expect(isMinMax(x)).toBe(false);
   });
+});
+
+
+it('does not infer the magnitude of the negative of a negative symbol', () => {
+  const n = new sj.Sym('n', { negative: true });
+  expect(isPositive(sj.add(sj.neg(n), -1))).toBeUndefined();
+});
+
+describe('symbols that are not real', () => {
+  it('are neither positive nor negative (SymPy Symbol(real=False).is_positive is False)', () => {
+    const nr = new sj.Sym('nonreal151', { real: false });
+    expect(isPositive(nr)).toBe(false);
+    expect(isNegative(nr)).toBe(false);
+    expect(isPositive(new sj.Sym('notpositive151', { positive: false }))).toBe(false);
+    expect(isNegative(new sj.Sym('notnegative151', { negative: false }))).toBe(false);
+    expect(isPositive(new sj.Sym('plain151'))).toBe(undefined);
+    expect(isNegative(new sj.Sym('plain151'))).toBe(undefined);
+  });
+});
+
+it('answers for an undefined function from the facts it was declared with (SymPy Function(name, **assumptions))', () => {
+  const x = new sj.Sym('x');
+  const f = sj.SymFunction('f', { assumptions: { positive: true } })(x);
+  const g = sj.SymFunction('g')(x);
+  const k = sj.SymFunction('k', { assumptions: { integer: true, negative: true } })(x);
+  expect([isPositive(f), isNegative(f), isNonNegative(f), isReal(f), isZero(f), isNonZero(f)]).toEqual([true, false, true, true, false, true]);
+  expect([isPositive(g), isNegative(g), isNonNegative(g), isReal(g), isZero(g), isIntegerQ(g)]).toEqual([undefined, undefined, undefined, undefined, undefined, undefined]);
+  expect([isIntegerQ(k), isNegative(k), isPositive(k)]).toEqual([true, true, false]);
+  expect(String(sj.sqrt(sj.pow(f, 2)))).toBe('f(x)');
+  expect(String(sj.Abs(f))).toBe('f(x)');
+  expect(String(sj.sign(f))).toBe('1');
+  expect(String(sj.Abs(k))).toBe('-k(x)');
+});
+
+it('a sum of real terms and one term that is not real is neither real nor zero', () => {
+  const i = new sj.Sym('i', { imaginary: true });
+  const r = new sj.Sym('r', { real: true });
+  const x = new sj.Sym('x');
+  expect([isReal(sj.add(r, i)), isZero(sj.add(r, i)), isReal(sj.add(r, sj.mul(2, i), 1))]).toEqual([false, false, false]);
+  expect([isReal(sj.add(r, i, x)), isZero(sj.add(r, i, x)), isReal(sj.add(i, sj.mul(sj.I, r)))]).toEqual([undefined, undefined, undefined]);
+  expect(String(sj.Ne(sj.add(r, i), 0))).toBe('True');
+});
+
+it('recognizes real powers that include the zero exponent', () => {
+  const n = sj.symbol('n', { nonnegative: true });
+  const k = sj.symbol('k', { nonnegative: true });
+  expect(isReal(sj.pow(n, k))).toBe(true);
+  expect(isNonNegative(sj.pow(n, k))).toBe(true);
+  expect(isNonNegative(sj.mul(n, k))).toBe(true);
 });

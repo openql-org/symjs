@@ -46,10 +46,12 @@ import {
 import type { Monom } from './compatibility';
 import type { Domain } from './domains';
 import { CoercionFailed, EX, FractionField, IntegerRing, PolynomialRing as PolynomialDomain, QQ, RR, ZZ } from './domains';
+import { AlgebraicField } from './domains/algebraicfield';
+import { constructDomain } from './constructor';
 import type { MonomialOrdering } from './orderings';
 import { grevlex, grlex, igrevlex, igrlex, ilex, lex } from './orderings';
 import { GeneratorsError, MultivariatePolynomialError } from './polyerrors';
-import { Poly, inferDomain, sortGens } from './sympoly';
+import { Poly, sortGens } from './sympoly';
 
 export type { Monom } from './compatibility';
 
@@ -71,8 +73,10 @@ const mkey = (m: Monom): string => m.join(',');
 function parseSymbols(symbols: RingSymbols): Expr[] {
   if (typeof symbols === 'string') return expandSymbolNames(symbols).map((n) => new Sym(n));
   if (symbols instanceof Expr) return [symbols];
-  if (symbols.every((s) => typeof s === 'string')) return symbols.flatMap((s) => expandSymbolNames(s).map((n) => new Sym(n)));
-  if (symbols.every((s) => s instanceof Expr)) return [...symbols];
+  if (Array.isArray(symbols)) {
+    if (symbols.every((s) => typeof s === 'string')) return symbols.flatMap((s) => expandSymbolNames(s).map((n) => new Sym(n)));
+    if (symbols.every((s) => s instanceof Expr)) return [...symbols];
+  }
   throw new GeneratorsError('expected a string, Symbol or expression or a non-empty sequence of strings, Symbols or expressions');
 }
 
@@ -301,6 +305,7 @@ export class PolyRing extends IPolys<PolyElement> {
   /** The ring over the ground domain of a composite domain (SymPy to_ground). */
   toGround(): PolyRing {
     const K = this.domain;
+    if (K instanceof AlgebraicField) return this.clone({ domain: K.dom });
     if (K instanceof PolynomialDomain || K instanceof FractionField) return this.clone({ domain: groundOfSymbolic(K) });
     throw new PolynomialError(`${K.toString()} is not a composite domain`);
   }
@@ -506,7 +511,13 @@ export class PolyElement {
   /** Equality with a polynomial of the same ring or a ground value (SymPy ==). */
   equals(other: unknown): boolean {
     if (other instanceof PolyElement) {
-      if (!this.ring.isElement(other)) return this.isZero && other.isZero;
+      if (!this.ring.isElement(other)) {
+        const containsRing = (a: PolyElement, b: PolyElement): boolean => a.K instanceof PolynomialDomain && a.K.dom.equals(b.K)
+          && a.K.gens.length === b.ring.ngens && a.K.gens.every((s, i) => s.key === at(b.ring.symbols, i).key);
+        if (this.isGround && containsRing(this, other)) return groundEq(this.const(), other.asExpr());
+        if (other.isGround && containsRing(other, this)) return groundEq(other.const(), this.asExpr());
+        return this.isZero && other.isZero;
+      }
       if (other.length !== this.length) return false;
       return this.listterms().every(([m, c]) => groundEq(other.get(m), c));
     }
@@ -1025,7 +1036,15 @@ export class PolyElement {
   truncGround(p: ExprLike): PolyElement {
     const K = this.K;
     const q = this.ring.domainNew(p);
-    const half = groundQuo(K, q, Rational.of(2));
+    if (K instanceof PolynomialDomain) {
+      const ring = new PolyRing(K.gens, K.dom);
+      const modulus = ring.fromExpr(q);
+      return this.make(this.listterms().map(([m, c]) => {
+        const f = ring.fromExpr(c);
+        return [m, (modulus.isGround ? f.truncGround(modulus.const()) : f.rem(modulus)).asExpr()] as const;
+      }));
+    }
+    const half = K instanceof IntegerRing ? groundQuo(K, q, Rational.of(2)) : K.zero;
     return this.make(
       this.listterms().map(([m, c]) => {
         const r = groundRem(K, c, q);
@@ -1399,6 +1418,15 @@ export class PolyElement {
   sqfList(all = false): [Expr, [PolyElement, number][]] {
     return this.ring.dmpSqfList(this, all);
   }
+  /** Field norm of the polynomial over the ground domain of an algebraic extension. */
+  norm(): PolyElement {
+    const polynomial = Poly.from(this.asExpr(), this.ring.symbols, { domain: this.K });
+    return this.ring.toGround().fromExpr(polynomial.norm().asExpr());
+  }
+  /** Translate a polynomial so its norm over the ground field is square-free. */
+  sqfNorm(): [number[], PolyElement, PolyElement] {
+    return this.ring.dmpSqfNorm(this);
+  }
   /** The factorization (SymPy factor_list). */
   factorList(): [Expr, [PolyElement, number][]] {
     return this.ring.dmpFactorList(this);
@@ -1438,6 +1466,8 @@ export function vring(symbols: RingSymbols, domain: DomainLike = ZZ, order: Orde
 export interface SringOptions {
   domain?: DomainLike;
   order?: OrderLike;
+  field?: boolean;
+  extension?: boolean;
 }
 
 /**
@@ -1451,15 +1481,16 @@ export function sring(exprs: ExprLike | readonly ExprLike[], ...rest: (Expr | Sr
   const single = !isExprList(exprs);
   const es = (isExprList(exprs) ? [...exprs] : [exprs]).map((e) => expand(sympify(e)));
   const opts: SringOptions = rest.find((r): r is SringOptions => !(r instanceof Expr)) ?? {};
+  const extension = opts.extension === true ? true : undefined;
   let gens: Expr[] = rest.filter((r): r is Expr => r instanceof Expr);
   if (!gens.length) {
     const all = new Map<string, Expr>();
-    for (const e of es) for (const g of Poly.from(e).gens) all.set(g.key, g);
+    for (const e of es) for (const g of Poly.from(e, undefined, { extension }).gens) all.set(g.key, g);
     gens = sortGens([...all.values()]);
   }
-  const polys = es.map((e) => Poly.from(e, gens, opts.domain === undefined ? {} : { domain: String(opts.domain) }));
+  const polys = es.map((e) => Poly.from(e, gens, { domain: opts.domain, extension }));
   const coeffs = polys.flatMap((p) => p.coeffs());
-  const domain = opts.domain ?? inferDomain(coeffs);
+  const domain = opts.domain ?? constructDomain(coeffs, { extension, field: opts.field })[0];
   const R = new PolyRing(gens, domain, opts.order ?? lex);
   const elems = polys.map((p) => R.fromTerms(p.isZero ? [] : p.terms().map(([m, c]) => [m, R.domainNew(c)] as const)));
   return [R, single ? first(elems) : elems];

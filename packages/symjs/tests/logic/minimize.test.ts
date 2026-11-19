@@ -96,17 +96,17 @@ describe('minimization', () => {
     const f2 = L.SOPform([a, b, c], [[1, 0, 1], [1, 0, 0]]);
     const r1 = L.boolMap(f1, f2);
     expect(sj.isNoMatch(r1)).toBe(false);
-    if (!sj.isNoMatch(r1)) expect(`(${s(r1[0])}, ${dict(r1[1])})`).toBe('(y & ~z, {y: a, z: b})');
+    if (r1 && !sj.isNoMatch(r1)) expect(`(${s(r1[0])}, ${dict(r1[1])})`).toBe('(y & ~z, {y: a, z: b})');
     const eq = Or(And(Not(y), w), And(Not(y), z), And(x, y));
     const eq2 = Or(And(Not(c), a), And(Not(c), d), And(b, c));
     const r2 = L.boolMap(eq, eq2);
-    if (sj.isNoMatch(r2)) throw new TypeError('no match');
+    if (!r2 || sj.isNoMatch(r2)) throw new TypeError('no match');
     expect(`(${s(r2[0])}, ${dict(r2[1])})`).toBe('((x & y) | (w & ~y) | (z & ~y), {w: a, x: b, y: c, z: d})');
     // eq.subs(c, x) built directly (the core substitution does not rebuild And/Xor nodes)
     const eq3 = And(Xor(a, b), c, And(c, d));
     const eq4 = And(Xor(a, b), x, And(x, d));
     const r3 = L.boolMap(eq3, eq4);
-    if (sj.isNoMatch(r3)) throw new TypeError('no match');
+    if (!r3 || sj.isNoMatch(r3)) throw new TypeError('no match');
     expect(`(${s(r3[0])}, ${dict(r3[1])})`).toBe('(c & d & (a | b) & (~a | ~b), {a: a, b: b, c: d, d: x})');
     expect(L.boolMap(And(x, y), Or(a, b))).toBe(sj.NoMatch);
     expect(L.boolMap(T, T)).toBe(sj.NoMatch);
@@ -156,9 +156,9 @@ describe('minimization', () => {
   it('bool_map without a match', () => {
     // SymPy gives None or False
     expect(L.boolMap(boolalg.orFn(x, y), boolalg.orFn(x, y, z))).toBe(sj.NoMatch);
-    expect(L.boolMap(boolalg.orFn(boolalg.andFn(x, y), z), boolalg.orFn(boolalg.andFn(x, boolalg.notFn(y)), z))).toBe(sj.NoMatch);
-    expect(L.boolMap(boolalg.orFn(boolalg.andFn(x, y), z), boolalg.orFn(boolalg.andFn(x, y), boolalg.notFn(z)))).toBe(sj.NoMatch);
-    expect(L.boolMap(boolalg.orFn(x, y, boolalg.notFn(z)), boolalg.orFn(x, boolalg.notFn(y), boolalg.notFn(z)))).toBe(sj.NoMatch);
+    expect(L.boolMap(boolalg.orFn(boolalg.andFn(x, y), z), boolalg.orFn(boolalg.andFn(x, boolalg.notFn(y)), z))).toBe(false);
+    expect(L.boolMap(boolalg.orFn(boolalg.andFn(x, y), z), boolalg.orFn(boolalg.andFn(x, y), boolalg.notFn(z)))).toBe(false);
+    expect(L.boolMap(boolalg.orFn(x, y, boolalg.notFn(z)), boolalg.orFn(x, boolalg.notFn(y), boolalg.notFn(z)))).toBe(false);
     // SymPy: NotImplementedError unexpected level of nesting
     expect(() => L.boolMap(boolalg.orFn(boolalg.andFn(x, sj.Gt(y, 1)), z), boolalg.orFn(boolalg.andFn(w, sj.Gt(y, 1)), z))).toThrow(sj.NotImplementedError);
     // SymPy: KeyError f(x)
@@ -171,7 +171,7 @@ describe('minimization', () => {
     const e1 = boolalg.orFn(boolalg.andFn(x, y), boolalg.andFn(x, boolalg.notFn(z), w));
     const e2 = boolalg.orFn(boolalg.andFn(a, b), boolalg.andFn(a, boolalg.notFn(c), d));
     const m = L.boolMap(e1, e2);
-    if (sj.isNoMatch(m)) throw new Error('no match');
+    if (!m || sj.isNoMatch(m)) throw new Error('no match');
     expect(strOf(m[0])).toBe('x & (w | y) & (y | ~z)');
     expect([...m[1]].map(([k, v]) => `${strOf(k)}: ${strOf(v)}`).sort()).toEqual(['w: d', 'x: a', 'y: b', 'z: c']);
   });

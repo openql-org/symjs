@@ -18,10 +18,11 @@
  * `polys/domains.ts` do not provide and the rings need.
  */
 
-import { DomainError, ExactQuotientFailed, PolynomialError } from '../core/errors';
+import { DomainError, ExactQuotientFailed, NotImplementedError, PolynomialError } from '../core/errors';
 import { at, first, last } from '../core/guard';
 import type { Expr, ExprLike } from '../core/nodes';
-import { Dummy, Float, Rational, S, Sym } from '../core/nodes';
+import { Dummy, Float, Rational, S, Sym, isNum } from '../core/nodes';
+import { numCmp } from '../core/num';
 import { gcd as igcd, iroot, lcm as ilcm } from '../core/numbers';
 import { add, mul, pow, splitCoeff, sympify } from '../core/ops';
 import { asInt } from '../ntheory/intutil';
@@ -33,13 +34,19 @@ import type { Domain } from './domains';
 import { EX, FractionField, groundRational, IntegerRing, PolynomialRing, QQ, RationalField, RealField, ZZ } from './domains';
 import { AlgebraicField } from './domains/algebraicfield';
 import { FiniteField } from './domains/finitefield';
-import { GaussianIntegerRing, GaussianRationalField } from './domains/gaussiandomains';
+import { GaussianIntegerRing, GaussianRationalField, QQ_I } from './domains/gaussiandomains';
 import { mgcd } from './mpoly';
 import { MultivariatePolynomialError } from './polyerrors';
 import { Poly, discriminant, polyGcd, resultant } from './sympoly';
+import { sortExtensionFactors } from './factortools';
 
 import { dmpSqfNorm } from './sqfreetools';
 import { dmpFromDict, dmpToDict } from './densebasic';
+import { cyclotomicCoeffs } from './numberfields';
+import { factorint, divisors } from '../ntheory/factor';
+import type { Truth } from '../core/truth';
+import { NoMatch } from '../core/truth';
+import type { NoMatchResult } from '../core/truth';
 import { FieldPoly } from './fieldpoly';
 
 /** An exponent vector. */
@@ -124,6 +131,7 @@ export function groundExquo(K: Domain, a: Expr, b: Expr): Expr {
     return Rational.of(x / y);
   }
   if (K.isField) return K.quo(a, b);
+  if (K instanceof GaussianIntegerRing) return K.toSympy(K.exquo(a, b));
   try {
     return K.fromSympy(cancel(K.quo(a, b)));
   } catch {
@@ -143,6 +151,7 @@ export function groundGcd(K: Domain, a: Expr, b: Expr): Expr {
     return Rational.of(igcd(x.p, y.p), ilcm(x.q, y.q));
   }
   if (K instanceof PolynomialRing) return K.canon(polyGcd(a, b));
+  if (K instanceof GaussianIntegerRing || K instanceof GaussianRationalField) return K.toSympy(K.gcd(a, b));
   return K.one;
 }
 
@@ -174,7 +183,10 @@ export function groundRing(K: Domain): Domain {
 export const hasAssocRing = (K: Domain): boolean => K instanceof RationalField || K instanceof IntegerRing;
 
 /** SymPy K.canonical_unit(a): -1 for a negative element, else 1. */
-export const canonicalUnit = (K: Domain, a: Expr): Expr => (groundIsNegative(K, a) ? K.neg(K.one) : K.one);
+export function canonicalUnit(K: Domain, a: Expr): Expr {
+  if (K instanceof GaussianIntegerRing || K instanceof GaussianRationalField) return K.toSympy(K.canonicalUnit(a));
+  return groundIsNegative(K, a) ? K.neg(K.one) : K.one;
+}
 
 /** SymPy K.is_unit(a). */
 export function groundIsUnit(K: Domain, a: Expr): boolean {
@@ -187,6 +199,7 @@ export function groundStr(K: Domain, a: Expr): string {
   if (K instanceof FiniteField) return String(K.convert(a));
   if (K instanceof RealField && a instanceof Float) return floatString(a, true);
   if (K === EX) return `EX(${str(a)})`;
+  if (K instanceof PolynomialRing && K.dom === EX && !K.symbols.some((s) => a.has(s))) return groundStr(EX, a);
   return str(a);
 }
 
@@ -613,8 +626,11 @@ export abstract class IPolys<P extends CompatElement<P>> {
   /** The largest absolute value of a coefficient (SymPy dup_max_norm). */
   dupMaxNorm(f: P): Expr {
     const K = this.domain;
-    const cs = f.listterms().map(([, c]) => rat(groundAbs(K, c)));
-    return cs.reduce((a, b) => (a.value >= b.value ? a : b), Rational.of(0));
+    const cs = f.listterms().map(([, c]) => groundAbs(K, c));
+    return cs.reduce((a, b) => {
+      if (!isNum(a) || !isNum(b)) throw new DomainError('max_norm requires ordered coefficients');
+      return numCmp(a, b) >= 0 ? a : b;
+    }, K.zero);
   }
   /** The largest absolute value of a coefficient (SymPy dmp_max_norm). */
   dmpMaxNorm(f: P): Expr {
@@ -1065,6 +1081,7 @@ export abstract class IPolys<P extends CompatElement<P>> {
 
   dmpSqfP(f: P): boolean {
     if (f.isZero) return true;
+    if (this.domain instanceof FiniteField && this.ngens === 1) return this.toPoly(f).isSqf;
     for (let i = 0; i < this.ngens; i++) {
       const fp = this.diffIn(f, 1, i);
       if (fp.isZero) continue;
@@ -1080,6 +1097,7 @@ export abstract class IPolys<P extends CompatElement<P>> {
   dmpSqfPart(f0: P): P {
     const K = this.domain;
     if (f0.isZero) return f0;
+    if (K instanceof FiniteField && this.ngens === 1) return this.fromPoly(this.toPoly(f0).sqfPart());
     const f = groundIsNegative(K, this.groundLC(f0)) ? f0.neg() : f0;
     let gcd = f;
     for (let i = 0; i < this.ngens; i++) gcd = this.dmpGcd(gcd, this.diffIn(f, 1, i));
@@ -1131,10 +1149,15 @@ export abstract class IPolys<P extends CompatElement<P>> {
   }
   /** The square-free decomposition (coefficient, [(factor, multiplicity)]) (SymPy dup_sqf_list). */
   dupSqfList(f: P, all = false): [Expr, [P, number][]] {
-    return this.sqfListIn(f, 0, all);
+    return this.dmpSqfList(f, all);
   }
   /** The square-free decomposition (SymPy dmp_sqf_list). */
   dmpSqfList(f: P, all = false): [Expr, [P, number][]] {
+    if (this.domain instanceof FiniteField) {
+      if (this.ngens > 1) throw new NotImplementedError('multivariate square-free decomposition in finite fields');
+      const [c, factors] = this.toPoly(f).sqfListAll(all);
+      return [c, factors.map(([p, k]) => [this.fromPoly(p), k])];
+    }
     return this.sqfListIn(f, 0, all);
   }
   /** The square-free decomposition with the coefficient in the first factor (SymPy dup_sqf_list_include). */
@@ -1170,8 +1193,36 @@ export abstract class IPolys<P extends CompatElement<P>> {
 
   /** The factorization (content, [(factor, multiplicity)]) (SymPy dmp_factor_list). */
   dmpFactorList(f: P): [Expr, [P, number][]] {
+    if (this.domain instanceof GaussianIntegerRing) {
+      const K = this.domain;
+      const [c, factors] = Poly.from(f.asExpr(), this.symbols, { domain: QQ_I }).factorList();
+      let coefficient = c;
+      const result: [P, number][] = [];
+      for (const [p, multiplicity] of factors) {
+        const terms = p.terms().map(([m, a]) => [m, QQ_I.convert(a)] as const);
+        const denominator = terms.reduce((d, [, a]) => ilcm(d, ilcm(a.re.denominator, a.im.denominator)), 1n);
+        const integral = terms.map(([m, a]) => [m, K.convert(a.mul(denominator))] as const);
+        const content = integral.reduce((g, [, a]) => K.gcd(g, a), K.convert(0));
+        coefficient = mul(coefficient, pow(mul(K.toSympy(content), Rational.of(1, denominator)), multiplicity));
+        result.push([this.fromTerms(integral.map(([m, a]) => [m, K.toSympy(a.divmod(content)[0])])), multiplicity]);
+      }
+      return [K.fromSympy(cancel(coefficient)), sortExtensionFactors(result, K, this.ngens - 1)];
+    }
+    if (this.domain instanceof RealField) {
+      const K = this.domain;
+      const [content, factors] = this.toPoly(f).toExact().factorList();
+      let coefficient = content;
+      const result = factors.map(([p, multiplicity]): [P, number] => {
+        const norm = p.maxNorm();
+        coefficient = mul(coefficient, pow(norm, multiplicity));
+        return [this.fromPoly(p.mulGround(pow(norm, -1))), multiplicity];
+      });
+      return [K.fromSympy(coefficient), result];
+    }
     const [c, fs] = this.toPoly(f).factorList();
-    return [groundConvert(this.domain, c), fs.map(([p, k]) => [this.fromPoly(p), k] as [P, number])];
+    const result = fs.map(([p, k]): [P, number] => [this.fromPoly(p), k]);
+    const K = this.domain;
+    return [groundConvert(K, c), K instanceof AlgebraicField || K instanceof GaussianRationalField ? sortExtensionFactors(result, K, this.ngens - 1) : result];
   }
   /** The factorization (SymPy dup_factor_list). */
   dupFactorList(f: P): [Expr, [P, number][]] {
@@ -1184,6 +1235,76 @@ export abstract class IPolys<P extends CompatElement<P>> {
   /** The factorization over ZZ (SymPy dmp_zz_factor). */
   dmpZzFactor(f: P): [Expr, [P, number][]] {
     return this.dmpFactorList(f);
+  }
+  /** Factorization over the coefficient domain. */
+  dupExtFactor(f: P): [Expr, [P, number][]] {
+    return this.dmpFactorList(f);
+  }
+  /** Factorization over the coefficient domain. */
+  dmpExtFactor(f: P): [Expr, [P, number][]] {
+    return this.dmpFactorList(f);
+  }
+  /** Factorization over the coefficient domain. */
+  dupQqIFactor(f: P): [Expr, [P, number][]] {
+    return this.dmpFactorList(f);
+  }
+  /** Factorization over the coefficient domain. */
+  dmpQqIFactor(f: P): [Expr, [P, number][]] {
+    return this.dmpFactorList(f);
+  }
+  /** Factorization over the coefficient domain. */
+  dupZzIFactor(f: P): [Expr, [P, number][]] {
+    return this.dmpFactorList(f);
+  }
+  /** Factorization over the coefficient domain. */
+  dmpZzIFactor(f: P): [Expr, [P, number][]] {
+    return this.dmpFactorList(f);
+  }
+  /** Factorization of a square-free integer polynomial. */
+  dupZzFactorSqf(f: P): [Expr, P[]] {
+    const [c, factors] = this.dmpFactorList(f);
+    return [c, factors.map(([p]) => p)];
+  }
+  /** Include the content in a factor with multiplicity one. */
+  dupFactorListInclude(f: P): [P, number][] {
+    const [c, factors] = this.dmpFactorList(f);
+    const head = factors[0];
+    if (head === undefined) return [[this.groundNew(c), 1]];
+    return [[head[0].mulGround(c), head[1]], ...factors.slice(1)];
+  }
+  /** Multivariate factorization including the content. */
+  dmpFactorListInclude(f: P): [P, number][] {
+    return this.dupFactorListInclude(f);
+  }
+  /** The n-th cyclotomic polynomial over the integers. */
+  dupZzCyclotomicPoly(n: number): P {
+    const cs = cyclotomicCoeffs(n);
+    return this.fromTerms(cs.map((c, i) => [this.unit(0, cs.length - 1 - i), Rational.of(c)]));
+  }
+  /** Cyclotomic factorization of x**n - 1 or x**n + 1. */
+  dupZzCyclotomicFactor(f: P): P[] | NoMatchResult {
+    const terms = f.listterms();
+    if (terms.length !== 2 || !groundEq(this.groundLC(f), this.domain.one)) return NoMatch;
+    const constant = this.groundOf(this.coeffIn(f, 0, 0));
+    if (!(groundEq(constant, this.domain.one) || groundEq(constant, this.domain.neg(this.domain.one)))) return NoMatch;
+    const n = this.degIn(f, 0);
+    const positive = groundEq(constant, this.domain.one);
+    return divisors(positive ? 2 * n : n).filter(d => !positive || BigInt(n) % d !== 0n).map(d => this.dupZzCyclotomicPoly(Number(d)));
+  }
+  /** Univariate irreducibility over the coefficient domain. */
+  dupIrreducibleP(f: P): boolean {
+    return this.dmpIrreducibleP(f);
+  }
+  /** Univariate irreducibility over the integers. */
+  dupZzIrreducibleP(f: P): Truth {
+    const coeffs = this.toPoly(f).allCoeffs().map(c => rat(c).p);
+    const content = coeffs.slice(1).reduce((a, b) => igcd(a, b), 0n);
+    if (content !== 0n) {
+      for (const p of factorint(content).keys()) {
+        if (first(coeffs) % p !== 0n && last(coeffs) % (p * p) !== 0n) return true;
+      }
+    }
+    return 'unknown';
   }
   /** f is irreducible (SymPy dmp_irreducible_p). */
   dmpIrreducibleP(f: P): boolean {
@@ -1246,10 +1367,12 @@ export abstract class IPolys<P extends CompatElement<P>> {
   }
   /** The discriminant in x_0 (SymPy dmp_discriminant). */
   dmpDiscriminant(f: P): P | Expr {
+    if (this.degIn(f, 0) <= 0) return this.dropIn(this.zero, 0);
     return this.dropIn(this.fromExprPoly(discriminant(f.asExpr(), this.gen0())), 0);
   }
   /** The discriminant (SymPy dup_discriminant). */
   dupDiscriminant(f: P): Expr {
+    if (this.degIn(f, 0) <= 0) return this.domain.zero;
     return this.groundOf(this.fromExprPoly(discriminant(f.asExpr(), this.gen0())));
   }
   private gen0(): Sym {

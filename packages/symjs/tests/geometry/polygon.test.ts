@@ -5,7 +5,7 @@
 // sympy/geometry/tests/test_polygon.py). Expected values are those of SymPy 1.14.
 
 import { describe, expect, it } from 'vitest';
-import { And as and, Expr, Le, Lt, Rational, S, Sym, cos, pi, sqrt, symbols } from '../../src';
+import { And as and, Expr, Le, Lt, Rational, Rel, S, Sym, cos, parse, pi, sqrt, symbols } from '../../src';
 import { conditionHolds } from '../../src/geometry/polygon';
 import {
   Circle,
@@ -414,6 +414,12 @@ describe('Polygon (SymPy test_polygon)', () => {
     const T0 = new Sym('T0', { real: true });
     const both = and(Le(sqrt(2).add(sqrt(3)).pow(2), T0), Le(T0, sqrt(6).add(1).pow(2).sub(2)));
     expect(conditionHolds(both.subs(T0, sqrt(6).mul(2).add(5)))).toBe(true);
+    // a comparison that the relation does not decide by itself (log(8)/log(2) is 3) is decided by simplifying it
+    const undecided = parse('log(8)/log(2) <= 3');
+    expect(undecided).toBeInstanceOf(Rel);
+    expect(conditionHolds(undecided)).toBe(true);
+    expect(conditionHolds(parse('log(8)/log(2) < 3'))).toBe(false);
+    expect(conditionHolds(parse('(log(8)/log(2) <= 3) & (log(9)/log(3) <= 2)'))).toBe(true);
   });
 
   it('cut sections (SymPy test_cut_section)', () => {

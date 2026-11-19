@@ -57,6 +57,16 @@ describe('ntheory: results equal SymPy 1.14', () => {
   });
 });
 
+it('reduces positive symbolic periods and applies the finite prefix', () => {
+  const s = new Sym('s', { positive: true, integer: true });
+  expect(continuedFractionReduce([[s.mul(2)]]).equals(s.add(sqrt(s.pow(2).add(1))))).toBe(true);
+  // y = s + 1/(1 + 1/y), hence y**2 = s*y + s.
+  const center = s.div(2);
+  const tail = center.add(sqrt(center.pow(2).add(s)));
+  expect(continuedFractionReduce([3, [s, 1]]).equals(tail.pow(-1).add(3))).toBe(true);
+  expect(continuedFractionReduce([s, [2]]).equals(continuedFractionReduce([[2]]).pow(-1).add(s))).toBe(true);
+});
+
 /**
  * Coverage of ntheory/continued.ts, with the expected values computed by
  * SymPy 1.14 (Python's printed form).

@@ -12,6 +12,8 @@
  * conditions together imply one more).
  */
 
+import { at } from './guard';
+
 /** The facts each fact implies (a fact `name` is true, `!name` false). */
 const FULL_IMPLICATIONS: Readonly<Record<string, string>> = {
   '!algebraic': '!composite !even !integer !odd !prime !rational !zero',
@@ -174,3 +176,108 @@ export const FACT_PREREQUISITES: ReadonlyMap<string, readonly string[]> = /* @__
   }
   return new Map([...prereq].map(([k, s]) => [k, [...s].sort()]));
 })();
+
+
+/** A conjunction of clauses. Each clause is a disjunction of signed fact names. */
+type Clauses = readonly (readonly string[])[];
+const opposite = (literal: string): string => literal.startsWith('!') ? literal.slice(1) : `!${literal}`;
+const factName = /^!?[A-Za-z_]\w*$/;
+
+function conjunction(a: Clauses, b: Clauses): Clauses {
+  return [...a, ...b];
+}
+
+function disjunction(a: Clauses, b: Clauses): Clauses {
+  return a.flatMap((left) => b.map((right) => [...new Set([...left, ...right])]));
+}
+
+/** SymPy's whitespace-delimited logical grammar combines operators from left to right. */
+function factExpression(text: string, negate = false): Clauses {
+  const tokens = text.trim().split(/\s+/);
+  const read = (token: string | undefined): string => {
+    if (token === undefined || !factName.test(token)) throw new RangeError(`invalid fact expression: ${text}`);
+    return negate ? opposite(token) : token;
+  };
+  let clauses: Clauses = [[read(tokens[0])]];
+  for (let i = 1; i < tokens.length; i += 2) {
+    const op = tokens[i];
+    if (op !== '&' && op !== '|') throw new RangeError(`invalid fact connective: ${String(op)}`);
+    const next = [[read(tokens[i + 1])]];
+    clauses = (op === '&') !== negate ? conjunction(clauses, next) : disjunction(clauses, next);
+  }
+  return clauses;
+}
+
+/** Compile user-defined implications and equivalences into a forward-chaining fact system. */
+export class FactRules {
+  readonly definedFacts: ReadonlySet<string>;
+  private readonly clauses: Clauses;
+
+  constructor(rules: string | Iterable<string>) {
+    const statements = typeof rules === 'string' ? rules.split(/\r?\n/) : [...rules];
+    const clauses: string[][] = [];
+    const names = new Set<string>();
+    const alpha = new Map<string, Set<string>>();
+    for (const text of statements) {
+      if (text.trim() === '') continue;
+      const rule = /^\s*(!?[A-Za-z_]\w*)\s+(->|==)\s+(.+?)\s*$/.exec(text);
+      if (rule?.[1] === undefined || rule[3] === undefined) throw new RangeError(`invalid fact rule: ${text}`);
+      const [, left, op, right] = rule;
+      const add = (clause: readonly string[]) => {
+        for (const literal of clause) names.add(parse(literal)[0]);
+        if (clause.some((literal) => clause.includes(opposite(literal)))) return;
+        clauses.push([...clause]);
+        // Retain the two endpoints even when equal: a -> !a is an inconsistent rule.
+        if (clause.length !== 2) return;
+        const a = at(clause, 0), b = at(clause, 1);
+        for (const [from, to] of [[a, b], [b, a]] as const) {
+          const key = opposite(from);
+          const targets = alpha.get(key) ?? new Set<string>();
+          targets.add(to);
+          alpha.set(key, targets);
+        }
+      };
+      for (const clause of factExpression(right)) add([opposite(left), ...clause]);
+      if (op === '==') for (const clause of factExpression(right, true)) add([left, ...clause]);
+    }
+    for (const root of alpha.keys()) {
+      const implied = new Set([root]);
+      for (const literal of implied) {
+        for (const next of alpha.get(literal) ?? []) {
+          if (implied.has(opposite(next))) throw new RangeError(`inconsistent fact rules for ${root}`);
+          implied.add(next);
+        }
+      }
+    }
+    this.definedFacts = names;
+    this.clauses = clauses;
+  }
+
+  /** Derive the consequences of the supplied fact values. */
+  deduce(facts: Readonly<Record<string, boolean>>): Map<string, boolean> {
+    const known = new Map(Object.entries(facts));
+    let changed = true;
+    while (changed) {
+      changed = false;
+      for (const clause of this.clauses) {
+        const unsatisfied = new Set<string>();
+        let satisfied = false;
+        for (const literal of clause) {
+          const [name, sign] = parse(literal);
+          const value = known.get(name);
+          if (value === undefined) unsatisfied.add(literal);
+          else if (value === sign) {
+            satisfied = true;
+            break;
+          }
+        }
+        if (satisfied || unsatisfied.size > 1) continue;
+        const [unit] = unsatisfied;
+        if (unit === undefined) throw new RangeError('inconsistent facts');
+        known.set(...parse(unit));
+        changed = true;
+      }
+    }
+    return known;
+  }
+}

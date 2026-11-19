@@ -23,7 +23,7 @@ import { Add, Constant, Expr, Pow, S, Sym } from './nodes';
 import { mul, pow, sympify } from './ops';
 import { deduceAllFacts } from './facts';
 import { isPolar } from './assumptions';
-import { Q, ask } from './refine';
+import { Q, ask, askExpressionFact } from './refine';
 import type { FuzzyLike, Truth } from './truth';
 
 /** The assumption facts of SymPy (`_assume_defined`), in alphabetical order. */
@@ -80,7 +80,7 @@ function factsOf(e: Expr): Map<string, boolean> {
     const given: Record<string, boolean> = {};
     for (const k of ASSUMPTION_NAMES) {
       const p = Q[k];
-      const v: Truth = p === undefined ? (isPolar(e) ? true : 'unknown') : ask(p(e));
+      const v: Truth = p === undefined ? (isPolar(e) ? true : 'unknown') : askExpressionFact(p(e));
       if (v !== 'unknown') given[k] = v;
     }
     // SymPy Add._eval_is_hermitian/_eval_is_antihermitian: the fuzzy group of the terms' core facts
@@ -92,9 +92,15 @@ function factsOf(e: Expr): Map<string, boolean> {
       }
     }
     // SymPy Add._eval_is_extended_real: exactly one term that is not extended real makes the sum not extended real
-    if (given['extended_real'] === undefined && e instanceof Add) {
-      const r = fuzzyGroup(e.args.map((a) => factsOf(a).get('extended_real')));
-      if (r !== undefined) given['extended_real'] = r;
+    if (e instanceof Add) {
+      const values = e.args.map((a) => factsOf(a).get('extended_real'));
+      if (values.filter((v) => v === false).length > 1) {
+        for (const k of ['real', 'extended_real', 'nonzero', 'extended_nonzero', 'positive', 'negative', 'nonpositive', 'nonnegative', 'extended_positive', 'extended_negative', 'extended_nonpositive', 'extended_nonnegative']) if (given[k] === false) delete given[k];
+      }
+      if (given['extended_real'] === undefined) {
+        const r = fuzzyGroup(values);
+        if (r !== undefined) given['extended_real'] = r;
+      }
     }
     // SymPy exp._eval_is_extended_real: exp(a) for an imaginary a is real when a/(I*pi) is an integer, -2*a/(I*pi) even
     if (given['extended_real'] === undefined && e instanceof Pow && e.base instanceof Constant && e.base.name === 'E' && factsOf(e.exp).get('imaginary') === true) {
@@ -132,9 +138,10 @@ const fuzzy = (v: FuzzyLike): Truth => v ?? 'unknown';
  * `assumptions(x + I)` for a positive x is `{finite: true, complex: true,
  * real: false, zero: false, ...}`.
  */
-export function assumptions(expr: ExprLike): Map<AssumptionName, boolean> {
+export function assumptions(expr: ExprLike, check?: Iterable<string>): Map<AssumptionName, boolean> {
   const f = factsOf(sympify(expr));
-  return new Map(ASSUMPTION_NAMES.flatMap((k): [AssumptionName, boolean][] => {
+  const names = check === undefined ? ASSUMPTION_NAMES : [...new Set(check)].filter(isName);
+  return new Map(names.flatMap((k): [AssumptionName, boolean][] => {
     const v = f.get(k);
     return v === undefined ? [] : [[k, v]];
   }));

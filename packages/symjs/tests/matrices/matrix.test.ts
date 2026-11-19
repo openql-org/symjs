@@ -17,6 +17,13 @@ const s = (v: unknown): string => String(v);
 const M = Matrix.of([[1, 2], [3, 4]]);
 
 describe('Matrix', () => {
+  it('updates dimensions when mutable rows and columns are deleted', () => {
+    const m = MutableMatrix.of([[1, 2], [3, 4]]);
+    m.rowDel(0);
+    expect([m.rows, m.cols, String(m)]).toEqual([1, 2, 'Matrix([[3, 4]])']);
+    m.colDel(0);
+    expect([m.rows, m.cols, String(m)]).toEqual([1, 1, 'Matrix([[4]])']);
+  });
   it('does not treat an unsimplified numerical zero as provably nonzero', () => {
     const zero = parse('sin(1)**2 + cos(1)**2 - 1');
     expect(zero.isNumber).toBe(true);
@@ -31,6 +38,17 @@ describe('Matrix', () => {
     expect(m.transpose().toString()).toBe('Matrix([[a, c], [b, d]])');
     expect(m.mul(Matrix.eye(2)).equals(m)).toBe(true);
     expect(m.inv().mul(m).simplify().equals(Matrix.eye(2))).toBe(true);
+  });
+  it('simplifies rational-function characteristic polynomial coefficients', () => {
+    const [ki, kw, ua] = symbols('K_i K_w UA');
+    const m = Matrix.of([
+      [parse('-K_i - UA + K_i**2/(K_i + K_w)'), parse('K_i*K_w/(K_i + K_w)')],
+      [parse('K_i*K_w/(K_i + K_w)'), parse('-K_w + K_w**2/(K_i + K_w)')],
+    ]);
+    expect(m.charpolyCoeffs().map(String)).toEqual([
+      '1', '(2*K_i*K_w + K_i*UA + K_w*UA)/(K_i + K_w)', 'K_i*K_w*UA/(K_i + K_w)',
+    ]);
+    expect(m.charpoly(lam).subs([[ki, 1], [kw, 2], [ua, 3]]).simplify().toString()).toBe('lambda**2 + 13*lambda/3 + 2');
   });
 
   it('determinant of 3x3 via Berkowitz', () => {
@@ -457,4 +475,37 @@ it('validates minor coordinates and insertion positions', () => {
   expect(() => M.minor(4, 5)).toThrow(RangeError);
   expect(() => M.minorSubmatrix(4, 5)).toThrow(RangeError);
   expect(() => M.rowInsert(4.7, M)).toThrow(TypeError);
+});
+
+it('joins empty left and top operands and preserves element replacement maps', async () => {
+  expect(Matrix.zeros(4, 0).rowJoin(M).equals(M)).toBe(true);
+  expect(Matrix.zeros(0, 4).colJoin(M).equals(M)).toBe(true);
+  expect(M.rowJoin(M).shape).toEqual([2, 4]);
+  expect(M.colJoin(M).shape).toEqual([4, 2]);
+  const [matrix, changes] = Matrix.col(x, x).replace(x, a, { map: true });
+  expect(matrix.equals(Matrix.col(a, a))).toBe(true);
+  expect([...changes]).toEqual([[x, a]]);
+  const { classof } = await import('../../src');
+  expect(classof(M, MutableMatrix.eye(1))).toBe(Matrix);
+  expect(classof(MutableMatrix.eye(1), M)).toBe(Matrix);
+  // @ts-expect-error Non-matrix operands have no class priority.
+  expect(() => classof(M, x)).toThrow(TypeError);
+  // @ts-expect-error Non-matrix operands have no class priority.
+  expect(() => classof(x, M)).toThrow(TypeError);
+});
+
+it('keeps known eigenvalues when an unresolved polynomial block is allowed', () => {
+  const matrix = Matrix.fromFunction(6, 6, (i, j) => {
+    if (i === 5 && j === 5) return 3;
+    if (i === 0 && j === 4) return a;
+    if (i === 0 && j === 3) return b;
+    return i < 5 && i === j + 1 ? 1 : 0;
+  });
+  expect(() => matrix.eigenvals()).toThrow();
+  expect(matrix.eigenvals(true, false).map(String)).toEqual(['3']);
+});
+
+it('specializes a symbolic matrix power at an integer exponent', () => {
+  const matrix = Matrix.of([[a, 1], [1, a]]);
+  expect(matrix.pow(x).subs(x, 2).expand().equals(matrix.mul(matrix).expand())).toBe(true);
 });

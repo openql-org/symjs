@@ -10,9 +10,9 @@ import { isNegative, isNonZero, isPositive, isReal } from '../core/assumptions';
 import { Eq, piecewise } from '../core/logic';
 import { ExprMap } from '../core/exprmap';
 import type { Expr, ExprLike } from '../core/nodes';
-import { Add, Dummy, Mul, Pow, Rational, S, Sym, compareExpr, impl } from '../core/nodes';
+import { Add, Dummy, Float, Mul, Pow, Rational, S, Sym, compareExpr, impl } from '../core/nodes';
 import { zassenhaus } from './zassenhaus';
-import { numCmp } from '../core/num';
+import { numAdd as qAdd, numCmp, numMul as qMul, numNeg as qNeg } from '../core/num';
 import { at, defined, expectType, first, getOrThrow, last } from '../core/guard';
 import { countOps, ordered } from '../core/match';
 import { gcd as gcdBig, iroot, lcm } from '../core/numbers';
@@ -24,7 +24,16 @@ import { decomposePower, factorTerms } from '../simplify/exprtools';
 import type { PolynomialDomainOptions } from './sympoly';
 
 /** cancel, registered by simplify/rational (which imports this module). @internal */
-export const polyHooks: { cancel?: (e: Expr) => Expr; cancelDomain?: (e: Expr, opts: PolynomialDomainOptions) => Expr; factorList?: (e: Expr) => [Expr, [Expr, number][]]; quintic?: (e: Expr, x: Sym) => Expr[] } = {};
+export const polyHooks: {
+  cancel?: (e: Expr) => Expr;
+  cancelDomain?: (e: Expr, opts: PolynomialDomainOptions) => Expr;
+  factorList?: (e: Expr) => [Expr, [Expr, number][]];
+  quintic?: (e: Expr, x: Sym) => Expr[];
+  cyclotomic?: (e: Expr, x: Sym) => Expr[];
+  numericRoots?: (e: Expr, x: Sym) => Expr[];
+  matchRootDomain?: (root: Expr, filter: 'Z' | 'Q' | 'I') => boolean;
+  algebraicFactors?: (e: Expr, x: Sym) => readonly [Expr, number][];
+} = {};
 const cancel = (e: Expr): Expr => defined(polyHooks.cancel, 'cancel hook')(e);
 /** factor, registered by polys/sympoly (loaded with this module by every entry point). */
 const factorE = (e: Expr): Expr => defined(impl.factor?.(e), 'factor hook');
@@ -56,10 +65,6 @@ export function polyCoefficients(ex: ExprLike, x: Expr): Map<number, Expr> | und
 
 const R = (n: bigint | number, d: bigint | number = 1n) => Rational.of(n, d);
 
-// Exact rational arithmetic (the Rational cases of core/num, typed as Rational).
-const qAdd = (a: Rational, b: Rational): Rational => (a.q === b.q ? Rational.of(a.p + b.p, a.q) : Rational.of(a.p * b.q + b.p * a.q, a.q * b.q));
-const qMul = (a: Rational, b: Rational): Rational => (a.isOne ? b : b.isOne ? a : Rational.of(a.p * b.p, a.q * b.q));
-const qNeg = (a: Rational): Rational => Rational.of(-a.p, a.q);
 /** 1/a for a nonzero a (leading coefficients and scale factors). */
 const qInv = (a: Rational): Rational => Rational.of(a.q, a.p);
 /** a**n for n >= 0. */
@@ -252,7 +257,11 @@ function sqrtRemoveSquares(d: Expr): Expr {
   return mul(...outside, sqrt(mul(...inside)));
 }
 
-/** Roots of a quadratic a x^2 + b x + c (symbolic coefficients allowed). */
+function cubeRootsOfUnity(): [Expr, Expr, Expr] {
+  const imaginary = mul(S.I, sqrt(3), S.Half);
+  return [S.One, add(S.NegHalf, imaginary), add(S.NegHalf, neg(imaginary))];
+}
+
 /** SymPy roots_cubic (Cardano) for x**3 + a*x**2 + b*x + c with rational coefficients. */
 function cubicRoots(lc: Rational, c2: Rational, c1: Rational, c0: Rational): Expr[] {
   const a = qMul(c2, qInv(lc));
@@ -272,16 +281,15 @@ function cubicRoots(lc: Rational, c2: Rational, c1: Rational, c0: Rational): Exp
   } else if (q.isNegative) {
     u1 = neg(cbrt(add(mul(-1, q, Rational.of(1n, 2n)), sqrt(add(mul(pow(q, 2), Rational.of(1n, 4n)), pow(pon3, 3))))));
   }
-  const coeff = mul(S.I, sqrt(3), Rational.of(1n, 2n));
+  const uks = cubeRootsOfUnity();
   if (u1 === undefined) {
-    const uks = [S.One, add(Rational.of(-1n, 2n), coeff), add(Rational.of(-1n, 2n), neg(coeff))];
     const D0 = add(pow(a, 2), mul(-3, b));
     const D1 = add(mul(2, pow(a, 3)), mul(-9, a, b), mul(27, c));
     const C = cbrt(mul(add(D1, sqrt(add(pow(D1, 2), mul(-4, pow(D0, 3))))), Rational.of(1n, 2n)));
     return uks.map((uk) => mul(-1, third, add(a, mul(uk, C), mul(D0, pow(C, -1), pow(uk, -1)))));
   }
-  const u2 = mul(u1, add(Rational.of(-1n, 2n), coeff));
-  const u3 = mul(u1, add(Rational.of(-1n, 2n), neg(coeff)));
+  const u2 = mul(u1, uks[1]);
+  const u3 = mul(u1, uks[2]);
   if (pz) return [u1, u2, u3].map((u) => add(u, neg(aon3)));
   return [u1, u2, u3].map((u) => add(neg(u), mul(pon3, pow(u, -1)), neg(aon3)));
 }
@@ -350,9 +358,9 @@ function quadraticRoots(a: Expr, b: Expr, c: Expr): [Expr, Expr] {
  * of irreducible factors of degree 5 or more are omitted. `{ quintics: true }`
  * enables Dummit's radical formula for solvable quintics, as in SymPy.
  */
-export function rootsDict(ex: ExprLike, x: Sym, opts: { multiple: true; skipQuintic?: boolean; quintics?: boolean }): Expr[];
-export function rootsDict(ex: ExprLike, x: Sym, opts?: { multiple?: false; skipQuintic?: boolean; quintics?: boolean }): ExprMap<number>;
-export function rootsDict(ex: ExprLike, x: Sym, opts: { multiple?: boolean; skipQuintic?: boolean; quintics?: boolean } = {}): ExprMap<number> | Expr[] {
+export function rootsDict(ex: ExprLike, x: Sym, opts: RootOptions & { multiple: true }): Expr[];
+export function rootsDict(ex: ExprLike, x: Sym, opts?: RootOptions & { multiple?: false }): ExprMap<number>;
+export function rootsDict(ex: ExprLike, x: Sym, opts: RootOptions & { multiple?: boolean } = {}): ExprMap<number> | Expr[] {
   const m = new ExprMap<number>();
   for (const r of roots(ex, x, opts)) m.set(r, (m.get(r) ?? 0) + 1);
   if (!opts.multiple) return m;
@@ -361,11 +369,43 @@ export function rootsDict(ex: ExprLike, x: Sym, opts: { multiple?: boolean; skip
 }
 
 /** Roots repeated by multiplicity (the list form used internally). */
-export function roots(ex: ExprLike, x: Sym, opts: { skipQuintic?: boolean; quintics?: boolean } = {}): Expr[] {
+export function roots(ex: ExprLike, x: Sym, opts: RootOptions = {}): Expr[] {
+  const { filter, strict, ...formulas } = opts;
+  const result = findRoots(ex, x, formulas);
+  const selected = result.filter((r) => {
+    switch (filter) {
+      case undefined:
+      case 'C': return true;
+      case 'Z':
+      case 'Q':
+      case 'I': return defined(polyHooks.matchRootDomain, 'root domain filter')(r, filter);
+      case 'R': return isReal(r) === true;
+      default: throw new RangeError(`invalid root filter: ${String(filter)}`);
+    }
+  });
+  if (strict && selected.length < Math.max(0, ...defined(polyCoefficients(ex, x)).keys())) throw new NotImplementedError('not all roots are expressible with the selected formulas');
+  return selected;
+}
+
+export interface RootOptions {
+  skipQuintic?: boolean;
+  cubics?: boolean;
+  quartics?: boolean;
+  quintics?: boolean;
+  trig?: boolean;
+  filter?: 'Z' | 'Q' | 'R' | 'I' | 'C';
+  strict?: boolean;
+}
+
+function findRoots(ex: ExprLike, x: Sym, opts: RootOptions): Expr[] {
   const coeffs = polyCoefficients(ex, x);
   if (!coeffs) throw new PolynomialError('roots: expression is not a polynomial in the given symbol');
   const deg = Math.max(-1, ...coeffs.keys());
   if (deg <= 0) return [];
+  if (opts.skipQuintic && [...coeffs.values()].some((c) => c instanceof Float)
+    && [...coeffs.values()].every((c) => c instanceof Rational || c instanceof Float)) {
+    return defined(polyHooks.numericRoots, 'numeric roots')(sympify(ex), x);
+  }
   const p = UPoly.fromExpr(ex, x);
   if (p && deg >= 2 && p.coeffs.filter((c) => !c.isZero).length === 2 && !first(p.coeffs).isZero) {
     return binomialRoots(at(p.coeffs, deg), first(p.coeffs), deg);
@@ -377,11 +417,14 @@ export function roots(ex: ExprLike, x: Sym, opts: { skipQuintic?: boolean; quint
       const [c0 = S.Zero, c1 = S.Zero, c2 = S.Zero, c3 = S.Zero] = f.coeffs;
       if (f.degree === 1) rs = [qMul(qNeg(c0), qInv(c1))];
       else if (f.degree === 2) rs = quadraticRoots(c2, c1, c0);
-      else if (f.degree === 3) rs = cubicRoots(c3, c2, c1, c0);
-      else if (f.degree === 4) rs = symbolicQuarticRoots(qMul(c3, qInv(f.lc)), qMul(c2, qInv(f.lc)), qMul(c1, qInv(f.lc)), qMul(c0, qInv(f.lc)), opts);
-      else if (f.degree === 5 && opts.quintics) rs = defined(polyHooks.quintic, 'quintic solver')(f.toExpr(x), x);
-      else if (opts.skipQuintic && f.degree >= 5) continue; // SymPy roots() omits roots it cannot express in radicals
-      else throw new NotImplementedError(`roots: cannot solve irreducible factor of degree ${f.degree}`);
+      else if (f.degree === 3 && opts.cubics !== false) rs = opts.trig ? rootsCubicFormula(c3, c2, c1, c0, true) : cubicRoots(c3, c2, c1, c0);
+      else if (f.degree === 4 && opts.quartics !== false) rs = symbolicQuarticRoots(qMul(c3, qInv(f.lc)), qMul(c2, qInv(f.lc)), qMul(c1, qInv(f.lc)), qMul(c0, qInv(f.lc)), opts);
+      else if (f.degree <= 4) continue;
+      else {
+        rs = polyHooks.cyclotomic?.(f.toExpr(x), x) ?? [];
+        if (!rs.length && f.degree === 5 && opts.quintics) rs = defined(polyHooks.quintic, 'quintic solver')(f.toExpr(x), x);
+        else if (!rs.length && !opts.skipQuintic) throw new NotImplementedError(`roots: cannot solve irreducible factor of degree ${f.degree}`);
+      }
       for (const r of rs) for (let i = 0; i < m; i++) out.push(r);
     }
     return out;
@@ -400,15 +443,22 @@ export function roots(ex: ExprLike, x: Sym, opts: { skipQuintic?: boolean; quint
   const zeros: Expr[] = Array.from({ length: low }, () => S.Zero);
   const effDeg = deg - low;
   // SymPy preprocess_roots: x -> c*x removes symbols from the coefficients (x**3 - a**3 -> a*roots(x**3 - 1))
-  const pre = preprocessRootCoefficients(new Map([...coeffs].map(([k, v]) => [k - low, v] as const)));
+  const pre = effDeg > 1 ? preprocessRootCoefficients(new Map([...coeffs].map(([k, v]) => [k - low, v] as const))) : undefined;
   if (pre) {
     const [c, q] = pre;
     return [...roots(add(...[...q].map(([k, v]) => mul(v, pow(x, k)))), x, opts).map((r) => mul(c, r)), ...zeros];
   }
   // SymPy roots(): a polynomial that factors over its coefficient ring is solved factor by factor
   if (coeffs.size > 2 && effDeg > 1) {
-    const split = splitFactors(add(...[...coeffs].map(([k, v]) => mul(v, pow(x, k - low)))), x);
+    const reduced = add(...[...coeffs].map(([k, v]) => mul(v, pow(x, k - low))));
+    const split = splitFactors(reduced, x);
     if (split) return [...split.flatMap(([f, k]) => roots(f, x, opts).flatMap((r) => Array.from({ length: k }, () => r))), ...zeros];
+    if (effDeg > 4 && [...coeffs.values()].every((c) => c.isNumber) && polyHooks.algebraicFactors !== undefined) {
+      const factors = polyHooks.algebraicFactors(reduced, x);
+      if (factors.length > 1 || (factors[0]?.[1] ?? 0) > 1) {
+        return [...factors.flatMap(([f, k]) => roots(f, x, opts).flatMap((r) => Array.from({ length: k }, () => r))), ...zeros];
+      }
+    }
   }
   if (effDeg === 1) {
     // SymPy roots_linear: over a polynomial ring the root is factored (x/(y - 1), not -x/(1 - y))
@@ -422,14 +472,15 @@ export function roots(ex: ExprLike, x: Sym, opts: { skipQuintic?: boolean; quint
     return [...symbolicQuadraticRoots(orig(low + 2), orig(low + 1), orig(low)), ...zeros];
   }
   // SymPy roots(): a binomial a*x**n + b by roots_binomial
-  if (normalized.size === 2) return [...symbolicBinomialRoots(get(low), effDeg), ...zeros];
-  if (effDeg === 3) return [...symbolicCubicRoots(get(low + 2), get(low + 1), get(low)), ...zeros];
+  if (normalized.size === 2) return [...symbolicBinomialRoots(get(low), effDeg, lead, getOrThrow(coeffs, low)), ...zeros];
+  if (effDeg === 3) return opts.cubics === false ? zeros : [...rootsCubicFormula(S.One, get(low + 2), get(low + 1), get(low), opts.trig), ...zeros];
   // a polynomial in x**2 (SymPy's decomposition f = g(x**2)): the square roots of the roots of g
   if ([...normalized.keys()].every((k) => (k - low) % 2 === 0)) {
     const g = add(...[...normalized].map(([k, v]) => mul(v, pow(x, (k - low) / 2))));
     return [...roots(g, x, opts).flatMap((r) => [neg(sqrt(r)), sqrt(r)]), ...zeros];
   }
-  if (effDeg === 4) return [...symbolicQuarticRoots(get(low + 3), get(low + 2), get(low + 1), get(low), opts), ...zeros];
+  if (effDeg === 4) return opts.quartics === false ? zeros : [...symbolicQuarticRoots(get(low + 3), get(low + 2), get(low + 1), get(low), opts), ...zeros];
+  if (opts.skipQuintic) return zeros;
   throw new NotImplementedError(`roots: symbolic polynomials of degree ${effDeg} are not supported`);
 }
 
@@ -606,48 +657,46 @@ function splitFactors(e: Expr, x: Sym): [Expr, number][] | undefined {
  * undefined when neither a symbolic scale nor an integer basis is removable.
  */
 export function preprocessRootCoefficients(coeffs: ReadonlyMap<number, Expr>): [Expr, Map<number, Expr>] | undefined {
-  // the terms by decreasing degree in x, each as [numeric coefficient, symbol -> exponent]
-  const terms: [number, Map<Sym, number>][] = [];
+  if (coeffs.size < 2) return undefined;
+  // A coefficient generator can be removed when its exponent is affine in
+  // the degree. Substituting x = generator**(-slope)*y makes it a common factor.
+  const terms: [number, Map<string, number>][] = [];
+  const gens = new Map<string, Expr>();
   for (const [k, c] of [...coeffs].sort((u, v) => v[0] - u[0])) {
-    const exps = new Map<Sym, number>();
+    if (c instanceof Add) return undefined;
+    const exps = new Map<string, number>();
     for (const f of c instanceof Mul ? c.args : [c]) {
-      if (f instanceof Rational) continue;
-      const [b, e] = f instanceof Pow ? [f.base, f.exp] : [f, S.One];
-      if (!(b instanceof Sym && e instanceof Rational && e.isInteger && e.isPositive)) return undefined;
-      exps.set(b, Number(e.p));
+      if (f instanceof Rational || f instanceof Float) continue;
+      const [b, e] = f instanceof Pow && f.exp instanceof Rational && f.exp.isInteger ? [f.base, f.exp] : [f, S.One];
+      if (b instanceof Rational || b instanceof Add) return undefined;
+      gens.set(b.key, b);
+      exps.set(b.key, Number(e.p));
     }
     terms.push([k, exps]);
   }
-  const gens = new Set(terms.flatMap(([, m]) => [...m.keys()]));
   let scale: Expr = S.One;
-  const removed: Sym[] = [];
-  for (const g of gens) {
-    let strip = terms.map(([, m]) => m.get(g) ?? 0);
-    const reverse = first(strip) < last(strip);
-    if (reverse) strip = strip.reverse();
-    let ratio: number | undefined;
-    let ok = true;
-    for (const [i, [a]] of terms.entries()) {
-      const b = at(strip, i);
-      if (!a && !b) continue;
-      if (!a || !b || b % a !== 0 || (ratio !== undefined && ratio !== b / a)) {
-        ok = false;
-        break;
-      }
-      ratio = b / a;
-    }
-    if (!ok || ratio === undefined) continue;
-    scale = mul(scale, pow(g, reverse ? ratio : -ratio));
-    removed.push(g);
+  const removed = new Set<string>();
+  const [high, top] = first(terms);
+  const [low, bottom] = last(terms);
+  for (const [key, gen] of gens) {
+    const intercept = bottom.get(key) ?? 0;
+    const slope = ((top.get(key) ?? 0) - intercept) / (high - low);
+    if (!slope || !Number.isInteger(slope)) continue;
+    if (!terms.every(([degree, exps]) => (exps.get(key) ?? 0) === intercept + slope * (degree - low))) continue;
+    scale = mul(scale, pow(gen, -slope));
+    removed.add(gen.key);
   }
-  const rest = new Map([...coeffs].map(([k, c]) => [k, xreplaceOnes(c, removed)] as const));
-  if (![...rest.values()].every((c) => c instanceof Rational && c.isInteger)) return removed.length ? [scale, rest] : undefined;
+  const rest = new Map([...coeffs].map(([k, c]) => [
+    k, mul(...(c instanceof Mul ? c.args : [c]).filter((f) => !removed.has(f.key)
+      && !(f instanceof Pow && f.exp instanceof Rational && f.exp.isInteger && removed.has(f.base.key)))),
+  ] as const));
+  if (![...rest.values()].every((c) => c instanceof Rational && c.isInteger)) return removed.size ? [scale, rest] : undefined;
   // SymPy _integer_basis on the primitive integer polynomial: x -> div*x makes the coefficients smaller
   const ints = new Map([...rest].map(([k, c]) => [k, expectRational(c).p] as const));
   const g = [...ints.values()].reduce((u, v) => gcdBig(u, v), 0n);
   const prim = new Map([...ints].map(([k, c]) => [k, c / g] as const));
   const div = integerBasis(prim);
-  if (div === undefined) return removed.length ? [scale, rest] : undefined;
+  if (div === undefined) return removed.size ? [scale, rest] : undefined;
   const n = Math.max(...prim.keys());
   return [mul(scale, Rational.of(div)), new Map([...prim].map(([k, c]) => [k, Rational.of(c / div ** BigInt(n - k))] as const))];
 }
@@ -672,15 +721,62 @@ function integerBasis(cs: ReadonlyMap<number, bigint>): bigint | undefined {
 }
 
 /** c with the given symbols set to 1. */
-const xreplaceOnes = (c: Expr, syms: readonly Sym[]): Expr => syms.reduce((e, s) => e.subs(s, S.One), c);
-
 /** SymPy roots_binomial for x**n + c with a symbolic c (in SymPy's order). */
-function symbolicBinomialRoots(c: Expr, n: number): Expr[] {
+function symbolicBinomialRoots(c: Expr, n: number, leading: Expr = S.One, constant: Expr = c): Expr[] {
   const base = neg(c);
-  const alpha = pow(base, Rational.of(1n, BigInt(n)));
+  const exponent = Rational.of(1n, BigInt(n));
+  // the powers of sums in the constant term come out of the root; a symbolic leading coefficient stays in it
+  // (a*x**3 + (a + 1)**5: (-1/a)**(1/3)*(a + 1)**(5/3), and 4*(a + b)*x**4 + 1: (-1/(4*a + 4*b))**(1/4))
+  const symbolicLeading = freeSymbols(leading).size > 0;
+  const fs = factorE(symbolicLeading ? constant : base);
+  const factors = fs instanceof Mul ? fs.args : fs instanceof Pow ? [fs] : [];
+  if (factors.length) {
+    const powers = factors.filter((f): f is Pow => f instanceof Pow && f.base instanceof Add && f.exp instanceof Rational && f.exp.isInteger);
+    const extracted: readonly Expr[] = powers;
+    const rest = mul(...factors.filter((f) => !extracted.includes(f)));
+    const remaining = symbolicLeading ? mul(-1, rest, pow(expand(leading), -1)) : rest;
+    // (a power alone under the root comes out only when it is a perfect power: (-1/(a + b))**(1/4) stays)
+    const alone = remaining.equals(S.One) || remaining.equals(S.NegOne);
+    if (powers.length && !(alone && powers.some((f) => !(f.exp instanceof Rational && f.exp.p % BigInt(n) === 0n)))) {
+      const scale = mul(...powers.map((f) => pow(f.base, mul(f.exp, exponent))));
+      const alpha = mul(pow(remaining, exponent), scale);
+      return binomialOrder(n, isNegative(base) === true, false).map((k) => mul(alpha, unitRoot(k, n)));
+    }
+  }
+  const alpha = pow(base, exponent);
   const negB = isNegative(base) === true;
   const big = negB && even(n) && isPositive(add(base, S.One)) === true;
   return binomialOrder(n, negB, big).map((k) => expand(mul(alpha, unitRoot(k, n))));
+}
+
+/** Cardano's formula, with the trigonometric form for three distinct real roots. @internal */
+export function rootsCubicFormula(lc: Expr, c2: Expr, c1: Expr, c0: Expr, trig = false): Expr[] {
+  const a = cancel(mul(c2, pow(lc, -1)));
+  const b = cancel(mul(c1, pow(lc, -1)));
+  const c = cancel(mul(c0, pow(lc, -1)));
+  const third = Rational.of(1, 3);
+  const offset = mul(-1, a, third);
+  if (trig) {
+    const p = expand(add(b, mul(-1, pow(a, 2), third)));
+    const q = expand(add(c, mul(-1, a, b, third), mul(2, pow(a, 3), Rational.of(1, 27))));
+    if (isPositive(add(mul(-4, pow(p, 3)), mul(-27, pow(q, 2)))) === true) {
+      const argument = mul(Rational.of(3, 2), q, pow(p, -1), sqrt(mul(-3, pow(p, -1))));
+      const angle = mul(third, defined(impl.fn?.('acos', [argument]), 'acos'));
+      const radius = mul(2, sqrt(mul(-1, third, p)));
+      return [0, 1, 2].map((k) => add(offset, mul(radius, defined(impl.cos?.(add(angle, mul(Rational.of(-2 * k, 3), S.Pi))), 'cos'))));
+    }
+  }
+  if (isZeroE(c)) {
+    const [lo, hi] = quadraticRoots(S.One, a, b);
+    return [lo, S.Zero, hi];
+  }
+  const p = expand(add(b, mul(-1, pow(a, 2), third)));
+  const q = expand(add(c, mul(-1, a, b, third), mul(2, pow(a, 3), Rational.of(1, 27))));
+  if (isZeroE(q) && !isZeroE(p)) {
+    const k = sqrt(mul(-1, p));
+    return [add(offset, mul(-1, k)), offset, add(offset, k)];
+  }
+  return symbolicCubicRoots(a, b, c);
 }
 
 /** SymPy roots_quadratic over a polynomial ring (coefficients factored). */
@@ -717,8 +813,7 @@ function symbolicCubicRoots(a: Expr, b: Expr, c: Expr): Expr[] {
   // (expanded; q = 0 gives the root -a/3, which factor() splits off before)
   const p = expand(add(b, mul(-1, pow(a, 2), third)));
   const q = expand(add(c, mul(-1, a, b, third), mul(2, pow(a, 3), Rational.of(1n, 27n))));
-  const coeff = mul(S.I, sqrt(3), Rational.of(1n, 2n));
-  const uks = [S.One, add(Rational.of(-1n, 2n), coeff), add(Rational.of(-1n, 2n), neg(coeff))];
+  const uks = cubeRootsOfUnity();
   if (isZeroE(p) || (isReal(q) === true && isNegative(q) === true)) {
     // the cases with u1 (SymPy): x**3 + a*x**2 + ... with p = 0 or q < 0
     const pon3 = mul(p, third);
@@ -728,7 +823,7 @@ function symbolicCubicRoots(a: Expr, b: Expr, c: Expr): Expr[] {
         ? neg(pow(q, third))
         : pow(neg(q), third)
       : neg(pow(add(mul(-1, q, Rational.of(1n, 2n)), sqrt(add(mul(pow(q, 2), Rational.of(1n, 4n)), pow(pon3, 3)))), third));
-    const us = [u1, mul(u1, at(uks, 1)), mul(u1, at(uks, 2))];
+    const us = [u1, mul(u1, uks[1]), mul(u1, uks[2])];
     if (isZeroE(p)) return us.map((u) => add(u, neg(aon3)));
     return us.map((u) => add(neg(u), mul(pon3, pow(u, -1)), neg(aon3)));
   }

@@ -9,7 +9,10 @@
 // every entry point brings the core with its registrations
 import './core';
 import { impl } from './core/nodes';
-import { asSet as asSetOf } from './solvers/inequalities';
+import type { ExprLike } from './core/nodes';
+import { booleanAsSet } from './logic/boolalg';
+import { EmptySet, Reals, type SetExpr } from './sets/sets';
+import { asSet as asSetOf, periodicity as periodOf } from './solvers/inequalities';
 
 export {
   linsolve,
@@ -31,18 +34,27 @@ export {
 
 export {
   solve,
+  solveForSymbols,
+  solveComplexComponents,
+  solveRelation,
+  solveVariables,
+  isLinearSolveSystem,
+  nonlinsolve as solveSystem,
   denoms,
   unrad,
   checksol,
   solveLinear,
   solveUndeterminedCoeffs,
   nsolve,
+  detPerm,
+  detMinor,
   detQuick,
   invQuick,
   solveLinearSystemLU,
 } from './solvers/solve';
-export { nonlinsolve, substitution, domainCheck, linearCoeffs, solvesetReal, solvesetComplex, solvify, invertComplex, invertReal } from './solvers/solveset';
-export { dsolveSystem, canonicalOdes, linodesolveType, checkodesol, checksysodesol, subFuncDoit } from './solvers/odesystem';
+export type { SolveOptions } from './solvers/solve';
+export { nonlinsolve, substitution, domainCheck, linearCoeffs, solvesetReal, solvesetComplex, solveDecomposition, solvify, invertComplex, invertReal } from './solvers/solveset';
+export { dsolveSystem, matrixExp as odeMatrixExp, canonicalOdes, linodesolveType, checkodesol, checksysodesol, subFuncDoit } from './solvers/odesystem';
 export {
   diophantine,
   classifyDiop,
@@ -64,6 +76,9 @@ export {
   diopTernaryQuadraticNormal,
   sqfNormal,
   squareFactor,
+  reconstruct,
+  checkParam,
+  partition as diopPartition,
   ldescent,
   descent,
   gaussianReduce,
@@ -92,7 +107,7 @@ export {
   GeneralSumOfEvenPowers,
 } from './solvers/diophantine';
 export type { DiophantineOptions, DiophantineSolveOptions, PowerRepresentationOptions } from './solvers/diophantine';
-export { classifyOde } from './solvers/dsolve';
+export { classifyOde } from './solvers/ode';
 export { constantsimp, constantRenumber, odeSolSimplicity, solveIcs } from './solvers/odesimp';
 export {
   dsolve,
@@ -104,7 +119,6 @@ export { infinitesimals, checkinfsol } from './solvers/liegroup';
 export {
   solveset,
   solveUnivariateInequality,
-  asSet,
   solvePolyInequality,
   solveRationalInequalities,
   solvePolyInequalities,
@@ -150,9 +164,16 @@ export { continuousDomain, functionRange, lcim } from './solvers/calculusutil';
 export { lpmin, lpmax, linprog, showLinprog, UnboundedLPError, InfeasibleLPError } from './solvers/simplex';
 export type { LPMatrixLike, LPBound, LPBounds } from './solvers/simplex';
 export { bivariateType } from './solvers/bivariate';
-export { SingleODEProblem, SingleODESolver, NthAlgebraic, ODEMatchError } from './solvers/ode/single';
+export { SingleODEProblem, SingleODESolver, FirstLinear, getNumberedConstants, NthAlgebraic, ODEMatchError } from './solvers/ode/single';
 
-impl.asSet = asSetOf;
+/** The real solution set of a univariate Boolean condition. */
+export function asSet(input: ExprLike | boolean): SetExpr {
+  return booleanAsSet(input, asSetOf, periodOf, EmptySet, Reals);
+}
+impl.asSet = asSet;
 
 export { linodesolve } from './solvers/linodesolve';
 export type { LinodesolveOptions } from './solvers/linodesolve';
+
+export { matchRiccati, valAtInf, checkNecessaryConds, limitAtInf, inverseTransformPoly, rationalLaurentSeries, constructCCase1, constructCCase2, constructCCase3, constructC, constructDCase4, constructDCase5, constructDCase6, constructD } from './solvers/ode/riccati';
+export { linearOdeToMatrix, ODEOrderError, ODENonlinearError } from './solvers/odesystem';

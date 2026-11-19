@@ -13,7 +13,7 @@
  */
 
 import type { Assumptions, Expr as ExprNode, ExprLike as ExprLikeT } from './core/nodes';
-import { Add as AddNode, Expr as ExprClass, Derivative as DerivativeNode, Dummy as DummyNode, Mul as MulNode, Piecewise as PiecewiseNode, Pow as PowNode, Sym as SymbolNode, registerHead } from './core/nodes';
+import { Add as AddNode, Expr as ExprClass, Derivative as DerivativeNode, Dummy as DummyNode, Mul as MulNode, Piecewise as PiecewiseNode, Pow as PowNode, Sym as SymbolNode, registerHead, Rational as RationalNode, impl } from './core/nodes';
 import type { Head } from './core/nodes';
 import { expandSymbolNames as expandNames } from './core/numberutils';
 import { derivative as derivativeFn } from './core/undef';
@@ -61,7 +61,8 @@ export {
 } from './core/nodes';
 export { ExprMap } from './core/exprmap';
 export { Indexed, IndexedBase } from './core/indexed';
-export { Factors } from './core/factors';
+export { Factors, Term } from './core/factors';
+export { FactRules } from './core/facts';
 export { AccumBounds, AccumBoundsNode } from './core/accumbounds';
 export {
   isReal,
@@ -80,7 +81,7 @@ export {
 export { isIrrational, isAlgebraic, isComplex, isFinite, isPrime, isEven, isOdd, isImaginary, isHermitian, isAntihermitian, isExtendedNegative, isExtendedPositive, isPolar } from './core/public';
 export { isNonnegative, isNonpositive, isNonzero, isComposite, isExtendedNonpositive, isExtendedNonzero, isNoninteger, isTranscendental, isCommutative, isSingular } from './core/public';
 export { canonicalRelation } from './core/logic';
-export { Relational, isEq, isNeq, isGe, isLe, isGt, isLt, reversed, reversedSign, negated } from './core/relational';
+export { Relational, isEq, isNeq, isGe, isLe, isGt, isLt, reversed, reversedSign, negated, relationalEquals } from './core/relational';
 export { disambiguate, uniquelyNamedSymbol } from './core/symbol';
 export type { UniqueSymbolOptions } from './core/symbol';
 export { unchanged } from './core/expr';
@@ -88,7 +89,7 @@ export { isTrue, isFalse, isUnknown, truthNot, truthAnd, truthOr, fuzzyBool, fuz
 export type { Truth, FuzzyLike } from './core/truth';
 export { classKey } from './printing/sortkey';
 export { expand_power_base as separate } from './simplify/expand';
-export { Q, ask, refine, AppliedPredicate, Predicate, registerHandler, removeHandler, AssumptionsContext, globalAssumptions, assuming } from './core/refine';
+export { Q, ask, refine, AppliedPredicate, Predicate, AskHandler, registerHandler, removeHandler, AssumptionsContext, globalAssumptions, assuming } from './core/refine';
 export type { Assumption, PredicateName, PredicateHandler } from './core/refine';
 export { assumptions, checkAssumptions, commonAssumptions, failingAssumptions } from './core/checkassumptions';
 export type { AssumptionName, AssumptionValues } from './core/checkassumptions';
@@ -155,6 +156,7 @@ export {
   isPolynomial,
   isRationalFunction,
   isConstant,
+  isConstantTruth,
   asRealImag,
   asNumerDenom,
   atoms,
@@ -172,6 +174,8 @@ export {
   asDummy,
   assumptions0,
   canonicalVariables,
+  iterFreeArgs,
+  exprFreeSymbols,
   isScalar,
   asExpr,
   copy,
@@ -188,6 +192,7 @@ export {
 } from './core/ops';
 export {
   subs,
+  subsFunction,
   xreplace,
   freeSymbols,
   mapBottomUp as bottomUp,
@@ -197,7 +202,7 @@ export {
   PreorderTraversal,
   piecewiseFold,
 } from './core/traverse';
-export { Tuple, TupleNode, Dict, DictNode } from './core/containers';
+export { iterArgs, Tuple, TupleNode, Dict, DictNode } from './core/containers';
 export {
   replace,
   find,
@@ -247,11 +252,25 @@ export {
   sinc,
   period,
 } from './functions/elementary/trigext';
+import { diff as scalarDiff } from './calculus/diff';
+import { booleanCalculus } from './core/boolalg';
+export { fdiff } from './calculus/diff';
+
+/** Differentiate an expression, including Boolean functions of binary symbols. */
+export function diff(ex: ExprLikeT, x: ExprNode, order: ExprLikeT = 1): ExprNode {
+  const e = sympifyFn(ex);
+  if (e.kind === 'BoolOp' || e.kind === 'Extension') {
+    const count = sympifyFn(order);
+    if (count instanceof RationalNode && count.isInteger && count.p > 0n && count.p <= BigInt(globalThis.Number.MAX_SAFE_INTEGER)) {
+      const first = booleanCalculus.derivative?.(e, x);
+      if (first !== undefined) return scalarDiff(first, x, count.p - 1n);
+    }
+  }
+  return scalarDiff(e, x, order);
+}
+impl.diff = diff;
 export {
-  diff,
-  fdiff,
-} from './calculus/diff';
-export {
+  FunctionHead,
   SymFunction,
 } from './core/undef';
 export type { UndefinedFunction, FunctionClassLike } from './core/undef';
@@ -282,7 +301,7 @@ export {
   toComplex,
   lambdify,
 } from './numeric/evalf';
-export type { ScaledZero, RawMpfTuple } from './numeric/evalf';
+export type { RawEvalfResult, ScaledZero, RawMpfTuple } from './numeric/evalf';
 export {
   float,
 } from './numeric/floatctor';
@@ -359,6 +378,9 @@ export {
   integerLog,
   igcd,
   igcdex,
+  igcdLehmer,
+  intValued,
+  approximationInterval,
   ilcm,
   integerNthroot,
   isqrt,
@@ -366,6 +388,7 @@ export {
   numDigits,
   modInverse,
   limitDenominator,
+  mpfNorm,
 } from './core/numberutils';
 export {
   nfloat,
@@ -375,9 +398,14 @@ export {
 export {
   and as And,
   or as Or,
-  not as Not,
   xor as Xor,
 } from './core/boolalg';
+
+/** Logical negation of one proposition. */
+export function Not(x: ExprLikeT | boolean): ExprNode {
+  if (arguments.length !== 1) throw new TypeError('Not requires one argument');
+  return _not_(x);
+}
 
 const isCountPair = (v: ExprNode | readonly [ExprNode, number]): v is readonly [ExprNode, number] => Array.isArray(v);
 
@@ -676,3 +704,8 @@ export const Number = _SymNumber_;
 
 /** @deprecated Use `SymFunction` (`Function` shadows the JavaScript global); removed in 1.0. */
 export const Function = _SymFunction_;
+
+export { complexAccuracy, evalfRaw, getIntegerPart } from './numeric/evalf';
+export type { EvalfResult } from './numeric/evalf';
+export { LatticeOp } from './core/operations';
+export type { LatticeOperation } from './core/operations';

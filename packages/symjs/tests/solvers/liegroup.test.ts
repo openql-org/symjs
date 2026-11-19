@@ -70,8 +70,7 @@ describe('infinitesimals (SymPy test_lie_group)', () => {
   });
   it('abaco2_unique_unknown', () => {
     expect(showInf(inf('tan(F(x**2 + f(x)**2) + atan(x/f(x))) + Derivative(f(x), x)', 'abaco2_unique_unknown'))).toBe('[{xi(x, f(x)): -f(x), eta(x, f(x)): x}]');
-    // SymPy: [{xi: x/x**a, eta: -f(x)/f(x)**b}], which its own checkinfsol rejects; not found here
-    expect(() => inf('-x**(a - 1)*F(f(x)**b/b + x**a/a)*f(x)**(1 - b) + Derivative(f(x), x)', 'abaco2_unique_unknown')).toThrow(RangeError);
+    expect(showInf(inf('-x**(a - 1)*F(f(x)**b/b + x**a/a)*f(x)**(1 - b) + Derivative(f(x), x)', 'abaco2_unique_unknown'))).toBe('[{xi(x, f(x)): x**(1 - a), eta(x, f(x)): -f(x)**(1 - b)}]');
   });
   it('default, all and errors', () => {
     expect(showInf(inf('Derivative(f(x), x) - x**2*f(x)'))).toBe('[{xi(x, f(x)): 0, eta(x, f(x)): exp(x**3/3)}]');
@@ -114,18 +113,13 @@ describe('dsolve with the lie_group hint (SymPy)', () => {
     expect(lie('Derivative(f(x), x) - f(x)**2/(-x**2 + 2*x*f(x) - sin(x - f(x)))')).toBe('Eq(C1 - Integral(1/(_r**2 - sin(_r)), (_r, -x + f(x))) - 1/f(x), 0)');
   });
   it('user-given infinitesimals', () => {
-    // SymPy test_user_infinitesimals uses xi = sqrt(f(x) - 1)/sqrt(f(x) + 1), eta = 0 for x*f' + 1 - f**2 and gets
-    // Eq(f(x), (C1 + x**2)/(C1 - x**2)); here simplify takes too long on its coordinates and solve does not invert
-    // x*sqrt(y + 1)/sqrt(y - 1) = C1, so cases SymPy also solves this way are used
+    expect(String(dsolve(parse('x*Derivative(f(x),x)+1-f(x)**2'), fx, { hint: 'lie_group', xi: parse('sqrt(f(x)-1)/sqrt(f(x)+1)'), eta: 0 }))).toBe('Eq(f(x), -(C1 + x**2)/(-C1 + x**2))');
     expect(String(dsolve(parse('Derivative(f(x), x) - x**2*f(x)'), fx, { hint: 'lie_group', xi: 0, eta: fx }))).toBe('Eq(f(x), C1*exp(x**3/3))');
     expect(String(dsolve(parse('Derivative(f(x), x) - 1/(x + f(x))'), fx, { hint: 'lie_group', xi: 1, eta: -1 }))).toBe('Eq(f(x), -x - LambertW(C1*exp(-x - 1)) - 1)');
   });
   it('where SymPy fails', () => {
-    // SymPy raises a TypeError (in abaco2_similar). The canonical coordinates give ds/dr = tanh(r/2)/2 (SymPy's
-    // simplify form), and the implicit solution is kept as solve does not invert log(cosh(u)); differentiating it
-    // gives f' = (1 + tanh(u))/(1 - tanh(u)) = exp(x + f(x)) with u = (x + f(x))/2. The separable solution is
-    // Eq(f(x), log(-1/(C1 + exp(x))))
-    expect(lie('-exp(x + f(x)) + Derivative(f(x), x)')).toBe('Eq(C1 - x/2 + f(x)/2 - log(cosh((x + f(x))/2)), 0)');
+    // SymPy raises a TypeError (in abaco2_similar); the explicit solution satisfies f' = exp(x + f(x))
+    expect(lie('-exp(x + f(x)) + Derivative(f(x), x)')).toBe('Eq(f(x), -x + log(1/(C1*exp(-x) - 1)))');
   });
 });
 

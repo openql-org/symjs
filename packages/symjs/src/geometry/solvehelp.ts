@@ -13,6 +13,7 @@
 
 import type { Expr, Sym } from '../core/nodes';
 import { Float, Rational, Special } from '../core/nodes';
+import { add, mul, pow, sqrt, sub } from '../core/ops';
 import { xreplace } from '../core/traverse';
 import { isReal, isZero } from '../core/assumptions';
 import { NotImplementedError } from '../core/errors';
@@ -20,9 +21,12 @@ import { at } from '../core/guard';
 import { asNumerDenom, isPolynomial } from '../core/methods';
 import { ordered } from '../core/match';
 import { simplify } from '../simplify/simplify';
+import { expand } from '../simplify/expand';
+import { fraction, together } from '../simplify/rational';
+import { radsimp } from '../simplify/sqrtdenest';
 import { solve, nonlinsolve } from '../solvers/solve';
 import { solvePolySystem } from '../solvers/polysys';
-import { resultant } from '../polys/sympoly';
+import { Poly, resultant } from '../polys/sympoly';
 import { nroots } from '../polys/nroots';
 import { im } from '../functions/elementary/elementary';
 
@@ -72,6 +76,29 @@ function noRealSolution(system: readonly Expr[], syms: readonly Sym[]): boolean 
   });
 }
 
+/** Eliminate the linear difference of two conics with the same quadratic part. */
+function solveLinearDifference(system: readonly Expr[], syms: readonly Sym[]): Expr[][] | undefined {
+  if (system.length !== 2 || syms.length !== 2) return undefined;
+  const x = at(syms, 0), y = at(syms, 1);
+  const f = at(system, 0), g = at(system, 1);
+  const axis = Poly.from(expand(sub(f, g)), syms);
+  if (!axis.isLinear || !axis.coeffs().every((c) => c.isNumber && !(c instanceof Float))) return undefined;
+  const a = axis.coeffMonomial([1, 0]);
+  if (isZeroNumber(a)) return undefined;
+  const over = (n: Expr, d: Expr): Expr => expand(radsimp(mul(n, pow(d, -1))));
+  const slope = over(mul(-1, axis.coeffMonomial([0, 1])), a), intercept = over(mul(-1, axis.TC()), a);
+  const linear = add(mul(slope, y), intercept);
+  const equation = Poly.from(expand(xreplace(f, [[x, linear]])), [y]);
+  if (equation.degree() !== 2) return undefined;
+  const [p, q, r] = [equation.coeffMonomial([2]), equation.coeffMonomial([1]), equation.TC()];
+  const center = over(mul(-1, q), mul(2, p));
+  const squaredOffset = over(sub(pow(q, 2), mul(4, p, r)), pow(mul(2, p), 2));
+  const [numerator, denominator] = fraction(together(squaredOffset));
+  const offset = mul(sqrt(numerator), pow(sqrt(denominator), -1));
+  const ys = isZeroNumber(offset) ? [center] : [add(center, offset), sub(center, offset)];
+  return ys.map((v) => [add(mul(slope, v), intercept), v]);
+}
+
 /**
  * The solutions of the equations e = 0 for the unknowns, as tuples in the
  * order of the unknowns (SymPy solve(eqs, syms, dict=True)).
@@ -101,7 +128,7 @@ export function solveEquations(eqs: readonly Expr[], syms: readonly Sym[]): Expr
     sols = found.filter((v) => eqsInOrder.every((e) => e === main || isZeroNumber(simplify(xreplace(e, [[s, v]]))))).map((v) => [v]);
   } else if (system.every((e) => isPolynomial(e, syms))) {
     try {
-      sols = solvePolySystem(system, syms);
+      sols = solveLinearDifference(system, syms) ?? solvePolySystem(system, syms, { strict: true });
     } catch {
       // NotImplementedError: an eliminant without supported radical roots: there is nothing to give
       // when the eliminant has no real root; else a system with infinitely many solutions

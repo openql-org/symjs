@@ -38,6 +38,8 @@ describe('gruntz: limits as in SymPy 1.14', () => {
     ['besselk(1, x)*exp(x)*sqrt(x)', 'oo', 'sqrt(2)*sqrt(pi)/2'],
     ['besselk(0, x)*besseli(0, x)*x', 'oo', '1/2'],
     ['besseli(0, x + 1)/besseli(0, x)', 'oo', 'E'],
+    ['Ei(x + exp(-x))*exp(-x)*x', 'oo', '1'],
+    ['exp(x + x**2)*(erf(x + exp(-x)) - erf(x))', 'oo', '2/sqrt(pi)'],
     ['(x**(-x - 1)*(x**(x + 1) + (x + 1)**x))**x', 'oo', 'exp(E)'],
   ])('gruntz(%s, x, %s) = %s', (e, z0, expected) => {
     expect(G(e, z0)).toBe(expected);
@@ -65,6 +67,7 @@ describe('gruntz: the sign at infinity', () => {
   const g = new Gruntz();
   const S = (s: string) => sstr(g.sign(parse(s).subs(x, p), p));
   it('follows SymPy sign()', () => {
+    expect(sstr(g.sign(x, x))).toBe('1');
     expect(sstr(g.sign(p, p))).toBe('1');
     expect(S('1 - x')).toBe('-1');
     expect(S('(1 - x)**3')).toBe('-1');
@@ -78,6 +81,18 @@ describe('gruntz: the sign at infinity', () => {
     // constants whose sign the assumptions leave open (SymPy: 1 and -1)
     expect(S('besselj(0, 1)')).toBe('1');
     expect(S('besselj(0, 3)')).toBe('-1');
+  });
+});
+
+describe('Gruntz.compare', () => {
+  it.each([
+    ['log(x)', 'x', '<'],
+    ['x', 'exp(x)', '<'],
+    ['exp(x)', 'x**5', '>'],
+    ['exp(x)', 'exp(-x)', '='],
+    ['exp(x)', 'exp(x + exp(-x))', '='],
+  ])('compares %s and %s at infinity', (a, b, expected) => {
+    expect(new Gruntz().compare(P(a), P(b), x)).toBe(expected);
   });
 });
 
@@ -114,4 +129,33 @@ describe('gruntz: the leading monomial with real exponents', () => {
     }
     expect(() => monomialLead(parse('f(x)').subs(x, w), w, L, x, mul(-1, x))).toThrow(GruntzError);
   });
+});
+
+it('expands gamma near zero and scaled Ei at a moving center', () => {
+  expect(G('gamma(1/x)/x')).toBe('1');
+  expect(G('(Ei(x-exp(-exp(x)))-Ei(x))*exp(-x)*exp(exp(x))*x')).toBe('-1');
+});
+
+it('takes signed, imaginary and scaled limits', async () => {
+  const sj = await import('../../src');
+  expect(G('2*I*exp(x)')).toBe('oo*I');
+  expect(G('I*x*exp(x)')).toBe('oo*I');
+  expect(G('erfc(x)*exp(x**2)*x')).toBe('1/sqrt(pi)');
+  expect(G('x*tanh(1/x)')).toBe('1');
+  expect(String(new Gruntz().limitinf(sj.fn('tanh', [sj.neg(x)], { evaluate: false }), x))).toBe('-1');
+  expect(() => G('x**y')).toThrow('the sign of the exponent');
+  expect(new Gruntz().mrv(exp(exp(x)), x)[0].size).toBe(1);
+  expect(G('x*log(x/E) - loggamma(x+1)')).toBe('-oo');
+});
+
+it('cancels the logarithm of the most rapidly varying exponential', async () => {
+  const sj = await import('../../src');
+  const scale = exp(sj.neg(x));
+  const logarithm = sj.fn('log', [scale], { evaluate: false });
+  const expression = add(x, logarithm, scale);
+  expect(new Gruntz().mrvLeadterm(expression, x).map(String)).toEqual(['1', '1']);
+});
+
+it('rewrites nested exponentials when combining comparable growth rates', () => {
+  expect(G('(exp(x) + exp(x - exp(-x)))*exp(-x)')).toBe('2');
 });

@@ -72,19 +72,20 @@ describe('limit_seq', () => {
       ['gamma(n)', 'oo'],
       ['exp(n)*(-1)**n', 'AccumBounds(-oo, oo)'],
       ['n**(-1)**n', 'AccumBounds(0, oo)'],
+      ['sin(pi*(n + 1/2))', 'AccumBounds(-1, 1)'],
       ['sin(pi*n/2)**2', 'AccumBounds(0, 1)'],
-      // SymPy finds exp(-1), 1 and 0 (symjs does not decide them yet)
-      ['subfactorial(n)/factorial(n)', 'None'],
-      ['harmonic(n)/log(n)', 'None'],
+      // Discrete factorial and harmonic growth.
+      ['subfactorial(n)/factorial(n)', 'exp(-1)'],
+      ['harmonic(n)/log(n)', '1'],
       ['Abs(sin(n))/n', 'None'],
       ['(1+I)**n/2**n', '0'],
       ['(-1)**(n**2)/n', '0'],
       // x is not a number: no bounds of the odd and even limits -x and x (SymPy None)
       ['(-1)**n*x', 'None'],
       // SymPy: 0, AccumBounds(0, 2), 2 and a RecursionError (its XFAIL test expects 2)
-      ['(I/2)**n*harmonic(n)', 'None'],
-      ['((-1)**n + 1)*harmonic(n)/log(n)', 'None'],
-      ['harmonic(n)/log(n) + 1', 'None'],
+      ['(I/2)**n*harmonic(n)', '0'],
+      ['((-1)**n + 1)*harmonic(n)/log(n)', 'AccumBounds(0, 2)'],
+      ['harmonic(n)/log(n) + 1', '2'],
       ['n**3*Sum(2**k/k**2, (k, 1, n))**2 / (2**n * Sum(2**k/k, (k, 1, n)))', 'None'],
     ];
   it.each(cases)('limit_seq(%s, n) = %s', (e, v) => {
@@ -97,7 +98,7 @@ describe('limit_seq', () => {
     expect(show(sj.limitSeq(div(sj.Sum(div(1, k), [k, 1, n]), sj.log(n)), n))).toBe('1');
     expect(show(sj.limitSeq(sj.sub(sj.Sum(div(1, k), [k, 1, n]), div(1, n)), n))).toBe('oo');
     // SymPy: EulerGamma
-    expect(show(sj.limitSeq(sj.sub(sj.Sum(div(1, k), [k, 1, n]), sj.log(n)), n))).toBe('None');
+    expect(show(sj.limitSeq(sj.sub(sj.Sum(div(1, k), [k, 1, n]), sj.log(n)), n))).toBe('EulerGamma');
     expect(show(sj.limitSeq(5))).toBe('5');
     expect(show(sj.limitSeq(P('1/n')))).toBe('0');
     expect(show(sj.limitSeq(x, n))).toBe('x');
@@ -125,4 +126,13 @@ it('exposes dominant with NoMatch for tied growth', () => {
   expect(String(sj.dominant(P('5*n**3 + 4*n**2 + n + 1'), n))).toBe('5*n**3');
   expect(String(sj.dominant(sj.add(sj.pow(2, n), sj.Sum(k, [k, 0, n])), n))).toBe('2**n');
   expect(sj.dominant(P('sin(n) + cos(n)'), n)).toBe(sj.NoMatch);
+});
+
+it('preserves undecidable terms and parity-dependent subsequences', () => {
+  expect(sj.dominant(n, n)).toBe(n);
+  expect(show(sj.limitSeq(P('Sum(1/k,(k,1,n))/log(n)+Sum(k**2,(k,1,n))/n**3'), n, 1))).toBe('4/3');
+  expect(show(sj.limitSeq(P('Sum(2**k/k**2,(k,1,n))*n**2/2**n+Sum(2**k/k,(k,1,n))*n/2**n'), n, 1))).toBe('None');
+  expect(show(sj.limitSeq(P('f(n)+n'), n, 0))).toBe('None');
+  expect(show(sj.limitSeq(P('((-1)**n+1)*f(n)'), n))).toBe('None');
+  expect(show(sj.limitSeq(P('(2**n * Sum(2**k/k, (k, 1, n)))/(n**3*Sum(2**k/k**2,(k,1,n))**2)'), n))).toBe('None');
 });

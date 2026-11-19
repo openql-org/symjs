@@ -11,6 +11,14 @@ import { DomainScalar } from '../../../src/polys/matrices/domainscalar';
 const z = (n: number) => new DomainScalar(Rational.of(BigInt(n)), ZZ);
 
 describe('DomainScalar', () => {
+  it('rejects fractional exponents and invalid domains', () => {
+    expect(() => z(2).pow(Rational.of(1, 2))).toThrow(TypeError);
+    expect(() => Reflect.construct(DomainScalar, [Rational.of(1), 1])).toThrow(TypeError);
+  });
+  it('raises a domain scalar to a bigint exponent exactly', () => {
+    expect(String(z(-1).pow(10n ** 20n + 1n))).toBe('-1');
+    expect(String(z(3).pow(0n))).toBe('1');
+  });
   it('does arithmetic', () => {
     const [d, e] = [z(7), z(2)];
     expect([d.add(e), d.sub(e), d.mul(e), d.mul(3), d.floordiv(e), d.mod(e), d.pow(2), d.neg(), d.pos()].map(String)).toEqual(['9', '5', '14', '21', '3', '1', '49', '-7', '7']);

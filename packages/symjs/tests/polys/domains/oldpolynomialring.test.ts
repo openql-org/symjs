@@ -81,3 +81,16 @@ it('matches SymPy fraction fields over finite, polynomial, rational and algebrai
   const F = new PolynomialRingBase(GF(5), [x]).getField();
   expect(str(F.fromSympy(p('(x+6)/(x+2)')))).toBe('(x + 1)/(x + 2)');
 });
+
+it('uses Mora localization for a mixed product order', async () => {
+  const { buildProductOrder } = await import('../../../src/polys');
+  const order = buildProductOrder([['lex', x], ['ilex', y]], [x, y]);
+  const R = new PolynomialRingBase(QQ, [x, y], order);
+  expect(R.order.isGlobal).toBe('unknown');
+  expect(R.contains(p('1/(1+y)'))).toBe(true);
+  expect(R.isUnit(p('1+y'))).toBe(true);
+  expect(R.isUnit(p('1+x'))).toBe(false);
+  expect(R.contains(p('1/(1+x)'))).toBe(false);
+  const F = R.freeModule(1);
+  expect(F.submodule([p('1+y')]).contains([1])).toBe(true);
+});

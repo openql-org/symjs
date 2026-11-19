@@ -13,6 +13,14 @@ import { mul, parse, S, tan } from '../../../src';
 // ---- table harness: each case is [kind, SymPy source, str() of the SymPy 1.14 result or [re, im]] ----
 type Case = [kind: string, src: string, expected: string | [number, number]];
 const x = new sj.Sym('x');
+it('reduces unevaluated inverse compositions by exact multiples of pi', () => {
+  expect(sj.sstr(sj.expandMul(sj.asinh(sj.fn('sinh', [parse('2 + 6*I')], { evaluate: false }))))).toBe('2 - 2*I*pi + 6*I');
+  expect(String(sj.asinh(sj.fn('sinh', [S.ComplexInfinity], { evaluate: false })))).toBe('asinh(sinh(zoo))');
+  expect(String(sj.atanh(sj.fn('tanh', [mul(S.Infinity, S.I)], { evaluate: false })))).toBe('atanh(tanh(oo*I))');
+  const value = sj.add(2, mul(10n ** 30n, S.I));
+  const expected = sj.parse('2 - 318309886183790671537767526745*I*pi + 1000000000000000000000000000000*I');
+  expect(sj.expandMul(sj.atanh(sj.fn('tanh', [value], { evaluate: false }))).equals(expected)).toBe(true);
+});
 it('evaluates acos on imaginary arguments and logs of negative constants', () => {
   for (const [source, expected] of [
     ['acos(I)', 'pi/2 - I*log(1 + sqrt(2))'],
@@ -21,6 +29,16 @@ it('evaluates acos on imaginary arguments and logs of negative constants', () =>
     ['log(-1-sqrt(2))', 'log(1 + sqrt(2)) + I*pi'],
     ['log(-x-1)', 'log(-x - 1)'],
   ] as const) expect(String(sj.parse(source))).toBe(expected);
+});
+it('recognizes the exact binary scale of floating-point cotangent arguments', () => {
+  const e = new sj.Sym('e', { even: true });
+  const n = new sj.Sym('n', { integer: true });
+  const angle = (scale: number, factor: sj.Expr) => mul(new sj.Float(scale), S.Pi, factor);
+  expect(sj.cot(angle(4.5, e))).toBe(S.ComplexInfinity);
+  expect(sj.cot(angle(4, n))).toBe(S.ComplexInfinity);
+  expect(String(sj.cot(angle(4.5, n)))).toBe('cot(pi*n/2)');
+  expect(String(sj.cot(angle(4.5, x)))).toBe('cot(9*pi*x/2)');
+  expect(String(sj.cot(angle(4.375, x)))).toBe('cot(4.375*pi*x)');
 });
 const locals = {
   p: new sj.Sym('p', { positive: true }),
@@ -331,6 +349,7 @@ const TRIG_CASES: Case[] = [
   ["s", "acsc(zoo)", "0"],
   ["s", "acsc(nan)", "nan"],
   ["s", "asech(nan)", "nan"],
+  ["s", "asech(0)", "oo"],
   ["s", "asech(-1)", "I*pi"],
   ["s", "asech(oo)", "I*pi/2"],
   ["s", "asech(-oo)", "I*pi/2"],
@@ -338,6 +357,7 @@ const TRIG_CASES: Case[] = [
   ["s", "asech(2)", "I*pi/3"],
   ["s", "asech(1/2)", "asech(1/2)"],
   ["s", "acsch(nan)", "nan"],
+  ["s", "acsch(0)", "zoo"],
   ["s", "acsch(oo)", "0"],
   ["s", "acsch(-oo)", "0"],
   ["s", "acsch(-1)", "-log(1 + sqrt(2))"],
@@ -452,4 +472,53 @@ describe('period (SymPy TrigonometricFunction.period)', () => {
     expect(() => sj.period(parse('exp(x)'), x)).toThrow(TypeError);
     expect(() => sj.period(parse('besselj(1, x)'), x)).toThrow(TypeError);
   });
+});
+
+it('reduces a numeric tanh argument to the principal atanh strip', () => {
+  const inverse = (argument: sj.ExprLike): sj.Expr => sj.atanh(sj.fn('tanh', [argument], { evaluate: false }));
+  expect(String(sj.expandMul(inverse(sj.parse('-11*I'))))).toBe('-11*I + 4*I*pi');
+  expect(String(sj.expandMul(inverse(sj.parse('11*I'))))).toBe('-4*I*pi + 11*I');
+  expect(inverse(2).equals(2)).toBe(true);
+  expect(String(inverse(x))).toBe('atanh(tanh(x))');
+  const imaginary = new sj.Integral([sj.SymFunction('h')(x), x, S.Zero, S.One]).mul(S.I);
+  const evaluated = inverse(imaginary);
+  expect(String(evaluated)).toContain('atanh(tanh(');
+});
+
+it('evaluates signed arguments of the inverse hyperbolic and sinc functions', () => {
+  const cases = [
+    ['asinh(-x)', '-asinh(x)'],
+    ['acosh(1/2)', 'I*pi/3'],
+    ['atanh(2*I)', 'I*atan(2)'],
+    ['acoth(0)', 'I*pi/2'],
+    ['acoth(2*I)', '-I*acot(2)'],
+    ['sinc(-x)', 'sinc(x)'],
+  ] as const;
+  for (const [input, expected] of cases) expect(String(parse(input))).toBe(expected);
+});
+
+it('uses the partial derivative registered for each reciprocal or inverse function', () => {
+  const cases = [
+    ['cot', '-cot(x)**2 - 1'],
+    ['sec', 'tan(x)*sec(x)'],
+    ['csc', '-cot(x)*csc(x)'],
+    ['coth', '-1/sinh(x)**2'],
+    ['sech', '-tanh(x)*sech(x)'],
+    ['csch', '-coth(x)*csch(x)'],
+    ['asinh', '1/sqrt(x**2 + 1)'],
+    ['acoth', '1/(1 - x**2)'],
+    ['acot', '-1/(x**2 + 1)'],
+    ['asec', '1/(x**2*sqrt(1 - 1/x**2))'],
+    ['acsc', '-1/(x**2*sqrt(1 - 1/x**2))'],
+    ['asech', '-1/(x*sqrt(1 - x**2))'],
+    ['acsch', '-1/(x**2*sqrt(1 + x**(-2)))'],
+    ['sinc', 'cos(x)/x - sin(x)/x**2'],
+  ] as const;
+  for (const [name, expected] of cases) expect(String(sj.diff(sj.fn(name, [x], { evaluate: false }), x))).toBe(expected);
+});
+
+it('reflects the inverse sinh on odd periods', () => {
+  const u = sj.mul(3, sj.S.I);
+  const expr = sj.asinh(sj.fn('sinh', [u], { evaluate: false }));
+  expect(sj.expandMul(expr).key).toBe(sj.add(sj.mul(-3, sj.S.I), sj.mul(sj.S.I, sj.pi)).key);
 });

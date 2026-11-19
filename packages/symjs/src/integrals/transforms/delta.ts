@@ -11,10 +11,10 @@
  * the others.
  */
 
-import type { DefinedFunction } from '../../core/defun';
+import type { DefinedFunction, FunctionDefinition } from '../../core/defun';
 import type { Expr, ExprLike, RelOp } from '../../core/nodes';
-import { defineFunction } from '../../core/defun';
-import { Add, Dummy, Rational, S, Sym } from '../../core/nodes';
+import { DefinedFunctionCall, defineFunction } from '../../core/defun';
+import { Add, Dummy, Mul, Rational, S, Sym, impl } from '../../core/nodes';
 import { isNegative, isNonNegative, isNonZero, isPositive, isReal, isZero } from '../../core/assumptions';
 import { add, couldExtractMinusSign, mul, neg, pow, splitCoeff, sub } from '../../core/ops';
 import { at, first, getOrThrow } from '../../core/guard';
@@ -22,13 +22,12 @@ import { piecewise, rel } from '../../core/logic';
 import { freeSymbols, subs } from '../../core/traverse';
 import { derivative } from '../../core/undef';
 import { SubsNode } from '../../core/subsnode';
-import { abs, fn } from '../../functions/elementary/elementary';
+import { abs, fn, im } from '../../functions/elementary/elementary';
 import { sign } from '../../functions/special/special';
 import { registerRewrite } from '../../simplify/rewrite';
-import { diff, fnPartials } from '../../calculus/diff';
+import { diff, fnPartials, unavailablePartials } from '../../calculus/diff';
 import { polyCoefficients, rootsDict } from '../../polys/poly';
 
-const isMinusOne = (c: Expr): boolean => c instanceof Rational && c.p === -1n && c.q === 1n;
 const isNaN = (e: Expr): boolean => e.key === S.NaN.key;
 
 const FLIP: Record<RelOp, RelOp> = { Lt: 'Gt', Le: 'Ge', Gt: 'Lt', Ge: 'Le', Eq: 'Eq', Ne: 'Ne' };
@@ -78,7 +77,24 @@ function unevaluatedPartial(f: DefinedFunction, args: readonly Expr[], i: number
   return new SubsNode([derivative(f(...args.map((b, j) => (j === i ? xi : b))), [[xi, 1]]), xi, a]);
 }
 
-const heavisideDef: DefinedFunction = defineFunction('Heaviside', {
+/** Real distributions are unchanged by conjugation and adjunction. */
+class RealDistributionCall extends DefinedFunctionCall {
+  override conjugateSelf(): Expr {
+    return this;
+  }
+  override adjointSelf(): Expr {
+    return this;
+  }
+  /** Arguments excluding the default value at the step's discontinuity. */
+  get pargs(): readonly Expr[] {
+    return this.name === 'Heaviside' && at(this.args, 1).key === S.Half.key ? this.args.slice(0, 1) : this.args;
+  }
+  override printStr(print: (e: Expr) => string): string {
+    return `${this.name}(${this.pargs.map(print).join(', ')})`;
+  }
+}
+
+const heavisideDefinition: FunctionDefinition = {
   nargs: [1, 2],
   eval: (x: Expr, h0?: Expr) => {
     const H0 = h0 ?? S.Half;
@@ -86,21 +102,21 @@ const heavisideDef: DefinedFunction = defineFunction('Heaviside', {
     if (isNegative(x) === true) return S.Zero;
     if (isPositive(x) === true) return S.One;
     if (isZero(x) === true) return H0;
-    // SymPy stores Heaviside(x) with H0 = 1/2 and prints only the argument
-    if (h0 !== undefined && h0.key === S.Half.key) return heavisideDef(x);
-    return undefined;
+    if (isNonZero(im(x)) === true) throw new RangeError('Heaviside is defined only for real arguments');
+    return new RealDistributionCall('Heaviside', [x, H0], heavisideDefinition);
   },
-  fdiff: (args) => DiracDelta(at(args, 0)),
+  fdiff: (args, i) => {
+    if (i !== 0) throw new RangeError('Heaviside has a derivative only in its first argument');
+    return DiracDelta(at(args, 0));
+  },
   rewrite: {
-    Piecewise: (arg: Expr, h0?: Expr) => {
-      const H0 = h0 ?? S.Half;
+    Piecewise: (arg: Expr, H0: Expr) => {
       if (H0.key === S.Zero.key) return piecewise([0, canonicalCondition('Le', arg)], [1, true]);
       if (H0.key === S.One.key) return piecewise([0, canonicalCondition('Lt', arg)], [1, true]);
       return piecewise([0, canonicalCondition('Lt', arg)], [H0, canonicalCondition('Eq', arg)], [1, true]);
     },
-    sign: (arg: Expr, h0?: Expr) => {
+    sign: (arg: Expr, H0: Expr) => {
       if (isReal(arg) !== true) return undefined;
-      const H0 = h0 ?? S.Half;
       const half = mul(add(sign(arg), 1), S.Half);
       const atZero = Heaviside(0, H0);
       const pw1 = piecewise([half, rel('Ne', arg, 0)], [atZero, true]);
@@ -115,9 +131,10 @@ const heavisideDef: DefinedFunction = defineFunction('Heaviside', {
       return SingularityFunction(x, neg(mul(l[1], pow(l[0], -1))), 0);
     },
   },
-});
+};
+const heavisideDef: DefinedFunction = defineFunction('Heaviside', heavisideDefinition);
 
-const diracDef: DefinedFunction = defineFunction('DiracDelta', {
+const diracDefinition: FunctionDefinition = {
   nargs: [1, 2],
   eval: (x: Expr, k?: Expr) => {
     const kk = k ?? S.Zero;
@@ -125,16 +142,17 @@ const diracDef: DefinedFunction = defineFunction('DiracDelta', {
       throw new RangeError(`the second argument of DiracDelta must be a non-negative integer, ${String(kk)} given instead`);
     }
     if (isNaN(x)) return S.NaN;
+    if (isNonZero(im(x)) === true) throw new RangeError('DiracDelta is defined only for real arguments');
     if (isNonZero(x) === true) return S.Zero;
-    const [c, rest] = splitCoeff(x);
-    if (isMinusOne(c)) {
+    if (x instanceof Mul && isNegative(first(x.args)) === true) {
       const odd = kk.p % 2n === 1n;
-      const d = kk.isZero ? diracDef(rest) : diracDef(rest, kk);
+      const positive = neg(x);
+      const d = kk.isZero ? diracDef(positive) : diracDef(positive, kk);
       return odd ? neg(d) : d;
     }
     // DiracDelta(x, 0) is stored as DiracDelta(x)
     if (k !== undefined && kk.isZero) return diracDef(x);
-    return undefined;
+    return new RealDistributionCall('DiracDelta', k === undefined ? [x] : [x, kk], diracDefinition);
   },
   fdiff: (args) => {
     const k = args[1] ?? S.Zero;
@@ -160,7 +178,8 @@ const diracDef: DefinedFunction = defineFunction('DiracDelta', {
   expand: {
     diracdelta: (self: Expr, hints) => expandDiracDelta(self, hints['wrt']),
   },
-});
+};
+const diracDef: DefinedFunction = defineFunction('DiracDelta', diracDefinition);
 
 /**
  * SymPy DiracDelta._eval_expand_diracdelta: DiracDelta(g(x)) as the sum of
@@ -196,6 +215,8 @@ function expandDiracDelta(self: Expr, wrt0: unknown): Expr {
 
 const NEGATIVE_ORDERS = new Set(['-1', '-2', '-3', '-4']);
 const isNegativeOrder = (n: Expr): n is Rational => n instanceof Rational && NEGATIVE_ORDERS.has(String(n));
+
+unavailablePartials.SingularityFunction = [2, 3];
 
 const singularityDef: DefinedFunction = defineFunction('SingularityFunction', {
   nargs: 3,
@@ -243,7 +264,10 @@ function singularityAsHeaviside(x: Expr, a: Expr, n: Expr): Expr | undefined {
   if (isNegativeOrder(n)) {
     const v = [...freeSymbols(x)].filter((s) => s instanceof Sym)[0];
     // SymPy raises KeyError for a variable without free symbols
-    return v === undefined ? undefined : diff(Heaviside(sub(x, a)), v, -Number(n.p));
+    if (v === undefined) return undefined;
+    const shift = sub(x, a), order = -Number(n.p);
+    if (order % 2 === 0 && couldExtractMinusSign(shift)) return neg(diff(Heaviside(neg(shift)), v, order));
+    return diff(Heaviside(shift), v, order);
   }
   if (isNonNegative(n) === true) return mul(pow(sub(x, a), n), Heaviside(sub(x, a), 1));
   return undefined;
@@ -273,6 +297,8 @@ export function SingularityFunction(variable: ExprLike, offset: ExprLike, expone
 
 /** True when e is an application of Heaviside. */
 export const isHeaviside = (e: Expr): boolean => heavisideDef.isApplied(e);
+
+impl.heaviside = (x) => Heaviside(x);
 
 /** True when e is an application of DiracDelta. */
 export const isDiracDelta = (e: Expr): boolean => diracDef.isApplied(e);

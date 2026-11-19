@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 // Based on SymPy 1.14 polys/numberfields/subfield.py, BSD-3-Clause; see LICENSE.
 import type { Expr, ExprLike, Sym } from '../../core/nodes';
-import { Dummy, ExtensionExpr, Pow, Rational, S } from '../../core/nodes';
+import { Dummy, ExtensionExpr, Float, Pow, Rational, S } from '../../core/nodes';
 import { at, defined, expectType } from '../../core/guard';
 import { add, mul, pow, sympify } from '../../core/ops';
 import { asCoefficientsDict } from '../../core/methods';
@@ -12,12 +12,59 @@ import { NotImplementedError, DomainError } from '../../core/errors';
 import { expand } from '../../simplify/expand';
 import { Matrix } from '../../matrices/matrix';
 import { rref } from '../../matrices/linalg';
+import { isReal } from '../../core/assumptions';
+import { evalfPrec } from '../../numeric/evalf';
+import { pslq } from '../../numeric/identification';
+import * as F from '../../numeric/mpf';
+import { nextprime } from '../../ntheory/generate';
 import { AlgebraicNumber, minimalPolynomial } from '../numberfields';
 import { Poly, resultant } from '../sympoly';
 import { algebraicEnclosure, type AlgebraicBox } from './interval';
 
 type AlgebraicInput = ExprLike | AlgebraicNumber;
 const value = (a: AlgebraicInput): Expr => a instanceof AlgebraicNumber ? a.asExpr() : sympify(a);
+
+/** Necessary degree and discriminant conditions for an embedding of Q(a) into Q(b). */
+export function isIsomorphismPossible(a: AlgebraicNumber, b: AlgebraicNumber): boolean {
+  const n = a.minpoly().degree(), m = b.minpoly().degree();
+  if (m % n !== 0) return false;
+  if (n === m) return true;
+  const da = expectType(a.minpoly().discriminant(), (e): e is Rational => e instanceof Rational, 'rational discriminant').p;
+  const db = expectType(b.minpoly().discriminant(), (e): e is Rational => e instanceof Rational, 'rational discriminant').p;
+  const k = BigInt(m / n), half = db / 2n;
+  for (let p = 3n; p ** k <= half; p = nextprime(p)) {
+    const residue = ((da % p) + p) % p;
+    if (residue % 2n !== 0n && db % (p ** k) === 0n) return false;
+  }
+  return true;
+}
+
+/** Recover a real field embedding by PSLQ and verify the candidate modulo the target minimal polynomial. */
+export function fieldIsomorphismPslq(a: AlgebraicNumber, b: AlgebraicNumber): Rational[] | NoMatchResult {
+  if (isReal(a.root) !== true || isReal(b.root) !== true) throw new NotImplementedError("PSLQ doesn't support complex coefficients");
+  const t = new Dummy('t'), f = Poly.from(a.minpoly().asExprAt([t]), [t]), g = Poly.from(b.minpoly().asExprAt([t]), [t]);
+  let previous = '', prec = 336;
+  for (let attempt = 0; attempt < 4; attempt++, prec *= 2) {
+    const numeric = (e: Expr): F.Mpf => {
+      const v = evalfPrec(e, prec);
+      if (v instanceof Float) return v.mpf;
+      const rational = expectType(v, (x): x is Rational => x instanceof Rational, 'real number');
+      return F.fromRational(rational.p, rational.q, prec);
+    };
+    const B = numeric(b.root), A = numeric(a.root);
+    const basis = [F.ONE];
+    for (let i = 1; i < g.degree(); i++) basis.push(F.mul(at(basis, i - 1), B, prec));
+    const relation = pslq([...basis, F.neg(A)], prec, undefined, 10 ** 10, 1000);
+    if (relation === undefined || relation.join(',') === previous) return NoMatch;
+    previous = relation.join(',');
+    const denominator = at(relation, relation.length - 1);
+    const coefficients = relation.slice(0, -1).map((c) => Rational.of(c, denominator)).reverse();
+    while (coefficients.length > 1 && at(coefficients, 0).isZero) coefficients.shift();
+    const h = Poly.from(add(...coefficients.map((c, i) => mul(c, pow(t, coefficients.length - i - 1)))), [t]);
+    if (f.compose(h).rem(g).isZero) return coefficients;
+  }
+  return NoMatch;
+}
 
 /**
  * a in the power basis of b by exact rational linear algebra: expanded
@@ -154,10 +201,15 @@ export function primitiveElement(extension: readonly AlgebraicInput[], x: Sym = 
   if (!extension.length) throw new RangeError('At least one extension is required');
   const maxCandidates = options.maxCandidates ?? Infinity;
   if (options.maxCandidates !== undefined && (!Number.isInteger(maxCandidates) || maxCandidates < 1)) throw new RangeError('maxCandidates must be a positive integer');
-  const generators = extension.map(value), coeffs = generators.map(() => 0);
-  let theta: Expr = S.Zero;
-  let representations: Rational[][] = [];
-  for (const [i, generator] of generators.entries()) {
+  const generators = extension.map(value), coeffs: number[] = generators.map((_, index) => index === 0 ? 1 : 0);
+  if (options.ex && generators.every((g) => g instanceof Rational)) {
+    return [x, generators.map(() => 0), generators.map((g) => g.isZero ? [] : [g])];
+  }
+  const basis = (g: Expr): Rational[] => g instanceof Rational ? g.isZero ? [] : [g] : [S.One, S.Zero];
+  let theta: Expr = at(generators, 0);
+  let representations: Rational[][] = [basis(theta)];
+  for (const [index, generator] of generators.slice(1).entries()) {
+    const i = index + 1;
     const existing = representation(generator, theta);
     if (!isNoMatch(existing)) { representations.push(existing); continue; }
     let found = false;
@@ -172,7 +224,7 @@ export function primitiveElement(extension: readonly AlgebraicInput[], x: Sym = 
   }
   const polynomial = minimalPolynomial(theta, x);
   if (!options.ex) return [polynomial, coeffs];
-  return [polynomial, coeffs, representations];
+  return [polynomial, coeffs, representations.map((coefficients) => coefficients.length === 1 && at(coefficients, 0).isZero ? [] : coefficients)];
 }
 
 /** Embed one or several algebraic values in an explicitly represented number field. */

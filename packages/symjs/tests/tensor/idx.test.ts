@@ -104,3 +104,18 @@ it('reports bounds and missing bounds for indexed expressions', async () => {
   const r = a.ranges(new a.IndexedBase('A').at(i,j,2));
   expect(r.map((v) => a.isNoMatch(v) ? 'none' : v.map(String))).toEqual([['0','2'],'none','none']);
 });
+
+it('reconstructs and substitutes index labels and bounds through the public API', async () => {
+  const a = await import('../../src');
+  const n = a.symbol('n', {integer: true});
+  for (const q of [a.Idx('i'), a.Idx('i', n), a.Idx('i', [1, n])]) {
+    expect(q.func(...q.args).equals(q)).toBe(true);
+    expect(q.isAtom).toBe(true);
+    expect(String(q.subs((q as Idx).label, 2))).toBe('2');
+  }
+  const q = a.Idx('i', [0, n]) as Idx;
+  expect(q.substituteInner((e) => e).equals(q)).toBe(true);
+  expect((a.Idx('i') as Idx).substituteInner((e) => e).equals(a.Idx('i'))).toBe(true);
+  expect(String(a.xreplace(q, [[n, a.Rational.of(3)]]))).toBe('i');
+  expect(() => q.subs(n, 1.5)).toThrow(TypeError);
+});

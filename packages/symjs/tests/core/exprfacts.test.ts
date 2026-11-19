@@ -45,6 +45,28 @@ const FACTS = [
   'zero',
 ] as const;
 
+it.each([
+  ['besseli(k, r)', 'extended_real', true], ['bessely(k, p)', 'extended_real', true],
+  ['airyai(r)', 'extended_real', true], ['airybiprime(i)', 'extended_real', false],
+  ['erf(ep)', 'positive', true], ['erf(en)', 'negative', true], ['erf(c)', 'finite', true],
+  ['erfc(I)', 'real', false], ['erf2(I, 0)', 'real', false], ['fresnelc(r)', 'finite', true],
+  ['gamma(ne+1/2)', 'positive', true], ['gamma(ne-1/2)', 'positive', false],
+  ['loggamma(np)', 'real', false], ['polygamma(2, -2.5)', 'negative', true],
+  ['polygamma(-2, -2.5)', 'positive', undefined], ['polygamma(0, I)', 'real', undefined],
+  ['zeta(1+p)', 'finite', true], ['zeta(x)', 'finite', undefined],
+] as const)('finds the %s %s fact', (source, predicate, expected) => {
+  expect(fact(parse(source), predicate)).toBe(expected);
+});
+
+it('distinguishes multivariate gamma poles from regular points', () => {
+  const expression = (a: sj.ExprLike) => sj.fn('multigamma', [a, 3], { evaluate: false });
+  expect(fact(expression(2), 'real')).toBe(true);
+  expect(fact(expression(sj.rational(1, 3)), 'real')).toBe(true);
+  expect(fact(expression(-1), 'real')).toBe(false);
+  expect(fact(expression(new sj.Float(-1)), 'real')).toBe(false);
+  expect(fact(expression(sj.symbol('u')), 'real')).toBeUndefined();
+});
+
 /**
  * Expressions (raw: unevaluated) and SymPy 1.14's value of each fact of FACTS in order, each
  * asked of a new expression: T True, F False, . None.
@@ -942,4 +964,226 @@ describe('facts SymPy decides wrongly or that need unevaluated nodes', () => {
     expect(fact(g(x), 'commutative')).toBe(true);
     expect(fact(g(x), 'positive')).toBe(undefined);
   });
+});
+
+
+it('uses the nonempty assumptions of indexed bases', () => {
+  const base = new sj.IndexedBase('A', { positive: true });
+  expect(fact(base, 'positive')).toBe(true);
+  expect(fact(base.at(0), 'real')).toBe(true);
+});
+
+it('sin and cos of extended real arguments are finite, as are their sums and products', () => {
+  const x = new sj.Sym('x', { extendedReal: true });
+  const s = sj.sin(x);
+  const c = sj.cos(x);
+  for (const e of [s, c, sj.mul(1024, s), sj.mul(s, c), sj.add(s, -67), sj.pow(s, 2)]) expect(fact(e, 'finite')).toBe(true);
+  expect(fact(sj.sin(new sj.Sym('z')), 'finite')).toBeUndefined();
+});
+
+it('reads assumption knowledge bases supplied by extension nodes', () => {
+  class Known extends sj.ExtensionExpr {
+    readonly assumptions0 = new Map([['finite', true]]);
+    constructor() { super('Known', []); }
+    withArgs(): sj.Expr { return this; }
+  }
+  expect(fact(new Known(), 'finite')).toBe(true);
+});
+
+it('decides rationality after reducing an unevaluated function', () => {
+  const three = Rational.of(3);
+  expect(fact(sj.fn('log', [sj.exp(three)], { evaluate: false }), 'rational')).toBe(true);
+  expect(fact(sj.fn('sin', [sj.asin(three)], { evaluate: false }), 'rational')).toBe(true);
+});
+
+it('classifies integer powers on the complex diagonals', () => {
+  const a = sj.symbol('a', { negative: true });
+  const b = sj.add(a, sj.mul(-1, sj.I, a));
+  for (const n of [-4, -3, -2, 2, 3, 4]) {
+    const e = new Pow(b, Rational.of(n));
+    expect(fact(e, 'real')).toBe(n % 4 === 0);
+    expect(fact(e, 'imaginary')).toBe(Math.abs(n) % 4 === 2);
+  }
+});
+
+it('reasons about zero integrands, finite logarithms and shifted factorials', () => {
+  const x = sj.symbol('x', { complex: true, zero: false });
+  const n = sj.symbol('n', { integer: true, nonnegative: true });
+  const p = sj.symbol('p', { positive: true });
+  expect(fact(new sj.Integral([S.Zero, p, S.Zero, S.One]), 'zero')).toBe(true);
+  expect(fact(new sj.Fn('log', [x]), 'complex')).toBe(true);
+  expect(fact(new sj.Fn('factorial', [n.add(2)]), 'even')).toBe(true);
+  expect(fact(new sj.Fn('factorial', [n]), 'even')).toBeUndefined();
+  expect(fact(new sj.Fn('factorial', [n]), 'positive')).toBe(true);
+  expect(fact(new sj.Fn('factorial', [n]), 'integer')).toBe(true);
+  expect(fact(p.add(2).pow(3).sub(S.Half), 'positive')).toBe(true);
+});
+
+it('keeps the dyadic coefficients of imaginary sums exact', () => {
+  const e = new sj.Add([sj.mul(new sj.Float(0.866025403784439), S.I), sj.mul(Rational.of(-1, 2), sj.sqrt(3), S.I)]);
+  expect(fact(e, 'imaginary')).toBe(true);
+  const p = sj.symbol('p', { positive: true });
+  expect(fact(p.add(2).pow(3).sub(100), 'positive')).toBeUndefined();
+  const y = sj.symbol('y');
+  expect(fact(new sj.Fn('factorial', [y]), 'integer')).toBeUndefined();
+  expect(fact(new sj.Fn('log', [y]), 'complex')).toBeUndefined();
+});
+
+it('detects imaginary sums with both floating and exact parts', () => {
+  const e = new sj.Add([new Mul([new sj.Float(1.5), S.I]), new Mul([Rational.of(3, 2), S.I])]);
+  expect(fact(e, 'imaginary')).toBe(true);
+});
+
+it('classifies an imaginary floating product before the rational conversion hook is loaded', async () => {
+  const { impl } = await import('../../src/core/nodes');
+  const saved = { ...impl };
+  try {
+    impl.rationalFromFloat = undefined;
+    const e = new sj.Add([sj.mul(new sj.Float(1.5), S.I), S.I]);
+    expect(fact(e, 'imaginary')).toBe(true);
+  } finally {
+    Object.assign(impl, saved);
+  }
+});
+
+it('infers gamma signs from the floor on negative real intervals', () => {
+  const positiveGamma = (z: Expr) => fact(sj.fn('gamma', [z], { evaluate: false }), 'positive');
+  expect(positiveGamma(sj.rational(-5, 2))).toBe(false);
+  expect(positiveGamma(parse('x + y'))).toBeUndefined();
+  expect(positiveGamma(parse('x + 1/2'))).toBeUndefined();
+  expect(fact(sj.fn('multigamma', [new sj.Float(0.4), 3], { evaluate: false }), 'real')).toBe(true);
+});
+
+it('uses numerical gamma signs when the floor evaluator is unavailable', async () => {
+  const { impl } = await import('../../src/core/nodes');
+  const evaluator = Object.getOwnPropertyDescriptor(impl, 'fn');
+  try {
+    delete impl.fn;
+    expect(fact(sj.fn('gamma', [sj.rational(-5, 2)], { evaluate: false }), 'positive')).toBe(false);
+  } finally {
+    if (evaluator) Object.defineProperty(impl, 'fn', evaluator);
+  }
+});
+
+it('queries special-function assumptions at real and undetermined arguments', () => {
+  const p = sj.symbol('p', { positive: true });
+  const n = sj.symbol('n', { integer: true });
+  const r = sj.symbol('r', { real: true });
+  const f = sj.symbol('f', { real: true, integer: false });
+  const w = sj.symbol('w');
+  const cases: readonly [sj.FnName, string, readonly sj.ExprLike[], boolean | undefined][] = [
+    ['erf', 'real', [p], true],
+    ['erf', 'real', [w], undefined],
+    ['erf', 'imaginary', [w], undefined],
+    ['erf', 'finite', [S.Infinity], true],
+    ['erfc', 'real', [p], true],
+    ['erfc', 'real', [w], undefined],
+    ['erf2', 'extended_real', [r, p], true],
+    ['erf2', 'extended_real', [w, r], undefined],
+    ['beta', 'real', [r, p], true],
+    ['beta', 'real', [w, r], undefined],
+    ['betainc', 'real', [r, p, 0, 1], true],
+    ['betainc', 'real', [w, r, 0, 1], undefined],
+    ['besselj', 'extended_real', [n, w], undefined],
+    ['gamma', 'real', [-1], false],
+    ['gamma', 'real', [new sj.Float(-1)], false],
+    ['gamma', 'real', [new sj.Float(2)], true],
+    ['gamma', 'real', [new sj.Float(-1.5)], true],
+    ['gamma', 'real', [f], true],
+    ['gamma', 'positive', [p], true],
+    ['loggamma', 'real', [p], true],
+    ['loggamma', 'real', [w], undefined],
+    ['polygamma', 'real', [p, p], true],
+    ['polygamma', 'positive', [1, r], true],
+    ['polygamma', 'positive', [2, p], false],
+    ['polygamma', 'positive', [1, w], undefined],
+    ['polygamma', 'negative', [1, r], false],
+    ['polygamma', 'negative', [2, p], true],
+    ['polygamma', 'negative', [p, w], undefined],
+  ];
+  for (const [name, property, args, expected] of cases) {
+    expect(fact(sj.fn(name, args, { evaluate: false }), property), `${name}.${property}(${args.join(', ')})`).toBe(expected);
+  }
+});
+
+it('recognizes factorials and exact values of unevaluated elementary calls', () => {
+  const k = sj.symbol('k', { integer: true, nonnegative: true });
+  const n = sj.symbol('n', { negative: true, integer: false });
+  const w = sj.symbol('w');
+  expect(fact(new sj.Fn('factorial', [k.add(3)]), 'composite')).toBe(true);
+  expect(fact(new sj.Fn('factorial', [S.Two]), 'composite')).toBe(false);
+  expect(fact(new sj.Fn('factorial', [w]), 'composite')).toBeUndefined();
+  expect(fact(new sj.Fn('factorial', [k]), 'real')).toBe(true);
+  expect(fact(new sj.Fn('factorial', [n]), 'real')).toBe(true);
+  expect(fact(new sj.Fn('factorial', [w]), 'real')).toBeUndefined();
+  expect(fact(new sj.Fn('sinh', [sj.mul(2, S.I, S.Pi)]), 'zero')).toBe(true);
+  expect(fact(new sj.Fn('cosh', [sj.mul(Rational.of(5, 2), S.I, S.Pi)]), 'zero')).toBe(true);
+  expect(fact(new sj.Fn('acosh', [S.One]), 'zero')).toBe(true);
+  expect(fact(new sj.Fn('sinc', [S.Pi]), 'zero')).toBe(true);
+  expect(fact(new sj.Fn('sec', [sj.mul(S.Half, S.Pi)]), 'finite')).toBe(false);
+  expect(fact(new sj.Fn('csc', [S.Zero]), 'finite')).toBe(false);
+});
+
+it('recognizes exact constants in unevaluated exponentials and trigonometric calls', () => {
+  const logThree = new sj.Fn('log', [Rational.of(3)]);
+  expect(fact(new Pow(S.E, logThree), 'rational')).toBe(true);
+  expect(fact(new Pow(S.E, new sj.Fn('log', [sj.symbol('x')])), 'rational')).toBeUndefined();
+  expect(fact(sj.expPolar(0), 'rational')).toBe(true);
+  expect(fact(sj.expPolar(sj.symbol('x')), 'rational')).toBeUndefined();
+  expect(fact(new sj.Fn('cos', [new sj.Fn('asin', [S.NegOne])]), 'zero')).toBe(true);
+});
+
+it('proves zeros of real radicals through exact algebraic identities', () => {
+  const radical = sj.sqrt(3);
+  const e = sj.add(sj.sqrt(sj.add(1, radical)), sj.sqrt(sj.add(3, sj.mul(3, radical))), sj.neg(sj.sqrt(sj.add(10, sj.mul(6, radical)))));
+  expect(fact(e, 'zero')).toBe(true);
+  expect(fact(e, 'positive')).toBe(false);
+  expect(fact(sj.parse('1 + sqrt(5)'), 'zero')).toBe(false);
+  expect(fact(new sj.Add([sj.neg(sj.mul(2, sj.I)), new sj.Pow(sj.add(1, sj.I), sj.S.Two)]), 'zero')).toBeUndefined();
+});
+
+it('certifies exact algebraic cancellation before reporting an extended sign', () => {
+  const e = sj.parse('-3-sqrt(5)+(-sqrt(10)/2-sqrt(2)/2)**2');
+  expect(fact(e, 'extended_positive')).toBe(false);
+});
+
+it('keeps declared assumption facts on applications of undefined functions', () => {
+  const f = sj.SymFunction('f', { assumptions: { positive: true } });
+  expect(fact(f(sj.symbol('x')), 'positive')).toBe(true);
+});
+
+it('proves zero after expanding a power of a numeric sum', () => {
+  expect(sj.isZero(sj.parse('-45 + (5 - 2*sqrt(5))**2 + 20*sqrt(5)'))).toBe(true);
+  expect(sj.isZero(sj.parse('-9 + 5*(1 - 2*sqrt(5)/5)**2 + 4*sqrt(5)'))).toBe(true);
+  expect(sj.isZero(sj.parse('1 + (1 + sqrt(2))**2'))).toBe(false);
+  expect(sj.isZero(sj.parse('1 + (1 + sqrt(2))**(-2)'))).toBe(false);
+  expect(sj.isZero(sj.parse('-2*I + (1 + I)**2'))).toBe('unknown');
+});
+
+it('evaluates special-function facts without evaluating the calls', () => {
+  const x = new sj.Sym('x'), r = new sj.Sym('r', { real: true }), p = new sj.Sym('p', { positive: true });
+  const query = (name: ConstructorParameters<typeof sj.Fn>[0], key: string, ...args: Expr[]) => fact(new sj.Fn(name, args), key);
+  expect(query('erf', 'real', r)).toBe(true);
+  expect(query('erf', 'real', x)).toBeUndefined();
+  expect(query('erf', 'imaginary', r)).toBe(false);
+  expect(query('erf', 'finite', sj.oo)).toBe(true);
+  expect(query('erfc', 'real', r)).toBe(true);
+  expect(query('erfc', 'real', x)).toBeUndefined();
+  expect(query('erf2', 'extended_real', r, r)).toBe(true);
+  expect(query('besselj', 'extended_real', x, r)).toBeUndefined();
+  expect(query('betainc', 'real', r, r, r, r)).toBe(true);
+  expect(query('betainc_regularized', 'real', x, r, r, r)).toBeUndefined();
+  expect(query('beta', 'real', r, r)).toBe(true);
+  expect(query('gamma', 'real', new sj.Float(1))).toBe(true);
+  expect(query('gamma', 'real', new sj.Float(-1))).toBe(false);
+  expect(query('gamma', 'real', new sj.Float(-1.125))).toBe(true);
+  expect(query('gamma', 'real', sj.S.NegOne)).toBe(false);
+  expect(query('gamma', 'positive', p)).toBe(true);
+  expect(query('loggamma', 'real', p)).toBe(true);
+  expect(query('loggamma', 'real', x)).toBeUndefined();
+  expect(query('polygamma', 'real', p, p)).toBe(true);
+  expect(query('polygamma', 'positive', sj.rational(3), r)).toBe(true);
+  expect(query('polygamma', 'positive', sj.rational(2), p)).toBe(false);
+  expect(query('polygamma', 'positive', sj.rational(2), x)).toBeUndefined();
+  expect(query('polygamma', 'negative', sj.rational(2), x)).toBeUndefined();
 });

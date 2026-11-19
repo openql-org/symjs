@@ -293,3 +293,25 @@ it('prints vector components with unit and negative coefficients', () => {
 it('prints the zero vector as a bold hatted zero', () => {
   expect(mathml(sj.Vector.zero, { printer: 'presentation' })).toBe('<mover><mi mathvariant="bold">0</mi><mo>^</mo></mover>');
 });
+
+it('prints symbolic derivative orders in both MathML forms', () => {
+  const [x, n] = sj.symbols('x n');
+  const d = sj.SymFunction('f')(x).diff(x, n);
+  expect(mathml(d)).toContain('<degree><ci>n</ci></degree>');
+  expect(mathml(d, { printer: 'presentation' })).toContain('<mi>n</mi>');
+});
+
+it('prints differential and binary vector operators with their operand grouping', () => {
+  const c = sj.CoordSys3D('C');
+  const [i, j] = c.baseVectors(), [x] = c.baseScalars();
+  const sum = sj.VectorAdd(i, j), scaled = sj.VectorMul(2, i);
+  const print = (e: Expr) => mathml(e, { printer: 'presentation' });
+  const grouped = (e: Expr) => `<mrow><mo>(</mo>${print(e)}<mo>)</mo></mrow>`;
+  expect(print(x)).toBe('<msub><mi mathvariant="bold">x</mi><mi mathvariant="bold">C</mi></msub>');
+  expect(print(sj.Cross(j, sum))).toBe(`<mrow>${print(j)}<mo>&#xD7;</mo>${grouped(sum)}</mrow>`);
+  expect(print(sj.Dot(j, scaled))).toBe(`<mrow>${print(j)}<mo>&#xB7;</mo>${grouped(scaled)}</mrow>`);
+  expect(print(sj.Curl(sum))).toBe(`<mrow><mo>&#x2207;</mo><mo>&#xD7;</mo>${grouped(sum)}</mrow>`);
+  expect(print(sj.Divergence(scaled))).toBe(`<mrow><mo>&#x2207;</mo><mo>&#xB7;</mo>${grouped(scaled)}</mrow>`);
+  expect(print(sj.Gradient(x))).toBe(`<mrow><mo>&#x2207;</mo>${print(x)}</mrow>`);
+  expect(print(sj.Laplacian(x))).toBe(`<mrow><mo>&#x2206;</mo>${print(x)}</mrow>`);
+});

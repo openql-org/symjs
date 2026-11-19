@@ -19,7 +19,7 @@ import type { Expr, ExprLike } from '../../core/nodes';
 import { Sym } from '../../core/nodes';
 import { Add, Constant, Dummy, Fn, Integral, Mul, Pow, Rational, S } from '../../core/nodes';
 import { add, exp, mul, neg, pow, sqrt, sub, sympify } from '../../core/ops';
-import { isNonZero, isPositive, isReal } from '../../core/assumptions';
+import { isNonZero, isPositive, isNegative, isReal } from '../../core/assumptions';
 import { solve } from '../../solvers/solve';
 
 import { mapBottomUp, subs, xreplace } from '../../core/traverse';
@@ -30,6 +30,7 @@ import { diff } from '../../calculus/diff';
 import { Poly } from '../../polys/sympoly';
 import { expand } from '../../simplify/expand';
 import { posify, powdenest, powsimp } from '../../simplify/powsimp';
+import { cancel } from '../../simplify/rational';
 import { simplify as simplifyExpr } from '../../simplify/simplify';
 import { rewrite } from '../../simplify/rewrite';
 import type { TransformHints, TransformResult } from './base';
@@ -226,7 +227,7 @@ function halfLineIntegral(f0: Expr, x: Sym, k: Expr, kernel: Kernel): Expr | und
       }
     }
   }
-  r ??= meijerHalfLine(f0, x, kp, kernel);
+  r ??= meijerHalfLine(mul(pow(x, sub(mu, 1)), ...rest), x, kp, kernel);
   if (r === undefined) return undefined;
   return xreplace(mul(C, r), [[kp, k]]);
 }
@@ -299,6 +300,18 @@ function realLineIntegral(f: Expr, x: Sym, Bk: Expr): Expr | undefined {
   }
   if (rest.length === 1) {
     const g = at(rest, 0);
+    // A simple imaginary pole contributes a residue on only one side of the frequency axis.
+    if (n === 0 && E.equals(S.Zero) && g instanceof Pow && g.exp.equals(S.NegOne) && isPolyIn(g.base, x)) {
+      const p = Poly.from(g.base, [x]);
+      if (p.degree() === 1) {
+        const [slope, a] = pair(p.allCoeffs()), c = cancel(mul(slope, pow(S.I, -1)));
+        if (isPositive(re(a)) === true && isReal(c) === true && isNonZero(c) === true) {
+          const frequency = cancel(mul(Bk, pow(c, -1)));
+          if (isPositive(frequency) === true) return mul(C, 2, S.Pi, pow(abs(c), -1), exp(mul(-1, a, frequency)));
+          if (isNegative(frequency) === true) return S.Zero;
+        }
+      }
+    }
     if (isDiracDelta(g) && g.args.length === 1 && isPolyIn(at(g.args, 0), x)) {
       // DiracDelta(p(x)) = Sum(DiracDelta(x - x0)/|p'(x0)|) over the simple real roots x0
       const arg = at(g.args, 0);
@@ -314,9 +327,9 @@ function realLineIntegral(f: Expr, x: Sym, Bk: Expr): Expr | undefined {
       if (roots.length > 0 && roots.every((x0) => isReal(x0) === true) && slopes.every((d) => isNonZero(d) === true)) return add(...roots.map((x0, i) => value(x0, at(slopes, i))));
     }
   }
-  if (rest.some((g) => isHeaviside(g) && g.args.length === 1 && at(g.args, 0).key === x.key)) {
+  if (rest.some((g) => isHeaviside(g) && at(g.args, 0).key === x.key)) {
     // Heaviside(x)*x**n*exp(-c*x)*(sines and cosines): sum of n!/(c - I*B*k)**(n + 1)
-    const others = rest.filter((g) => !(isHeaviside(g) && g.args.length === 1 && at(g.args, 0).key === x.key));
+    const others = rest.filter((g) => !(isHeaviside(g) && at(g.args, 0).key === x.key));
     const body = expand(rewrite(mul(pow(x, n), exp(E), ...others), 'exp'));
     const out: Expr[] = [];
     for (const term of addArgs(body)) {
@@ -388,7 +401,8 @@ export abstract class FourierTypeTransform extends GenericIntegralTransform {
     return new Integral([mul(this.a(), this.function, exp(mul(this.b(), S.I, x, this.transformVariable))), x, S.NegativeInfinity, S.Infinity]);
   }
   protected computeTransform(f: Expr, x: Sym, k: Sym, hints: TransformHints & { simplify: boolean }): TransformResult {
-    const r = realLineIntegral(f, x, mul(this.b(), k)) ?? meijerRealLine(f, x, mul(this.b(), k));
+    const frequency = this.transformVariable instanceof Sym ? k : this.transformVariable;
+    const r = realLineIntegral(f, x, mul(this.b(), frequency)) ?? meijerRealLine(f, x, mul(this.b(), k));
     if (r === undefined) throw new IntegralTransformError(this.transformName, f, 'could not compute integral');
     const F = finish(mul(this.a(), r), hints.simplify);
     return hints.noconds === false ? [F, S.true] : F;

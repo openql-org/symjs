@@ -18,8 +18,8 @@
 import { isNegative, isNonZero, isPositive, isReal, isZero as isZeroQ } from '../core/assumptions';
 import { callableClass } from '../core/callable';
 import { at, cast } from '../core/guard';
-import type { Expr, ExprLike, Sym } from '../core/nodes';
-import { Add, Derivative, ExtensionExpr, Integral, Limit, Mul, Pow, Rational, S, Special, UndefFn, impl, registerArithmetic } from '../core/nodes';
+import type { Expr, ExprLike } from '../core/nodes';
+import { Add, Derivative, ExtensionExpr, Integral, Limit, Mul, Pow, Rational, S, Special, Sym, UndefFn, impl, registerArithmetic } from '../core/nodes';
 import { add, exp, mul, pow, sqrt, sympify } from '../core/ops';
 import { freeSymbols } from '../core/traverse';
 import type { Truth } from '../core/truth';
@@ -80,12 +80,12 @@ const hasUndef = (e: Expr): boolean => e instanceof UndefFn || e.args.some(hasUn
 
 /**
  * SymPy is_complex as far as it decides the arithmetic: a finite value
- * whose symbols are real. A value that may be non-complex (an unknown
+ * whose symbols are real or explicitly complex. A value that may be non-complex (an unknown
  * symbol) is added or multiplied as a whole.
  */
 function isComplexValue(e: Expr): boolean {
   if (!e.isCommutative || hasSpecial(e) || hasUndef(e)) return false;
-  for (const s of freeSymbols(e)) if (isReal(s) !== true) return false;
+  for (const s of freeSymbols(e)) if (!(s instanceof Sym && s.assumptions.complex === true) && isReal(s) !== true) return false;
   return true;
 }
 

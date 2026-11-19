@@ -1128,23 +1128,50 @@ export function smoothness(nIn: IntLike): [bigint, bigint] {
   return [a, b];
 }
 
+type SmoothnessResult = [bigint, [bigint, [bigint, bigint, bigint]][]];
+type SmoothnessInput = IntLike | string | ReadonlyMap<bigint | number, bigint | number> | SmoothnessResult;
+type SmoothnessOptions = { m?: bigint | number; power?: boolean; visual?: boolean };
 /**
  * The smoothness of p + m for the prime factors p of n (SymPy
  * smoothness_p): [m, [[p, [exponent, B, B-pow]], ...]] sorted by B (by
  * B-pow with `power`), or with `visual: true` the descriptive text.
+ * Factor maps and result tuples default to text; text defaults to a factor map.
  */
-export function smoothnessP(n: IntLike, opts?: { m?: bigint | number; power?: boolean; visual?: false }): [bigint, [bigint, [bigint, bigint, bigint]][]];
-export function smoothnessP(n: IntLike, opts: { m?: bigint | number; power?: boolean; visual: true }): string;
-export function smoothnessP(nIn: IntLike, opts: { m?: bigint | number; power?: boolean; visual?: boolean } = {}): [bigint, [bigint, [bigint, bigint, bigint]][]] | string {
+export function smoothnessP(n: SmoothnessInput, opts: SmoothnessOptions & { visual: false }): SmoothnessResult;
+export function smoothnessP(n: SmoothnessInput, opts: SmoothnessOptions & { visual: true }): string;
+export function smoothnessP(n: ReadonlyMap<bigint | number, bigint | number> | SmoothnessResult, opts?: SmoothnessOptions & { visual?: undefined }): string;
+export function smoothnessP(n: string, opts?: SmoothnessOptions & { visual?: undefined }): Map<bigint, bigint>;
+export function smoothnessP(n: IntLike, opts?: SmoothnessOptions & { visual?: false }): SmoothnessResult;
+export function smoothnessP(n: SmoothnessInput, opts: SmoothnessOptions): SmoothnessResult | string | Map<bigint, bigint>;
+export function smoothnessP(nIn: SmoothnessInput, opts: SmoothnessOptions = {}): SmoothnessResult | string | Map<bigint, bigint> {
   const m = BigInt(opts.m ?? -1);
   const k = opts.power === true ? 2 : 1;
-  const facs = factorintInt(asInt(nIn), {});
-  const rows: [bigint, [bigint, bigint, bigint]][] = [...facs].map(([f, M]) => {
-    const [a, b] = smoothness(f + m);
-    return [f, [M, a, b]];
-  });
-  rows.sort((x, y) => cmpBig(x[1][k], y[1][k]) || cmpBig(x[0], y[0]));
-  if (opts.visual !== true) return [m, rows];
+  let input = nIn;
+  if (typeof input === 'string') {
+    if (opts.visual === true) return input;
+    const factors = new Map<bigint, bigint>();
+    for (const line of input.split('\n')) {
+      const match = /^p\*\*i=(-?\d+)\*\*(-?\d+) has /.exec(line);
+      if (match === null) throw new RangeError('invalid smoothness description');
+      factors.set(BigInt(at(match, 1)), BigInt(at(match, 2)));
+    }
+    if (opts.visual === undefined) return factors;
+    input = factors;
+  }
+  const isTuple = (v: Exclude<SmoothnessInput, string>): v is SmoothnessResult => Array.isArray(v);
+  let result: SmoothnessResult;
+  if (isTuple(input)) result = input;
+  else {
+    const facs = isFactorMap(input) ? factorint(input, { visual: false }) : factorint(input, { visual: false });
+    const rows: SmoothnessResult[1] = [...facs].map(([f, M]) => {
+      const [a, b] = smoothness(f + m);
+      return [f, [M, a, b]];
+    });
+    rows.sort((x, y) => cmpBig(x[1][k], y[1][k]) || cmpBig(x[0], y[0]));
+    result = [m, rows];
+  }
+  if (opts.visual === false || opts.visual === undefined && !(nIn instanceof Map) && !isTuple(input)) return result;
+  const rows = result[1];
   return rows.map(([p, [i, B, Bp]]) => `p**i=${p}**${i} has p${m < 0n ? '' : '+'}${m} B=${B}, B-pow=${Bp}`).join('\n');
 }
 

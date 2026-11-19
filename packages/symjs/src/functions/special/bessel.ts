@@ -15,8 +15,9 @@ import { at, defined, first, pair } from '../../core/guard';
 import '../../numeric/mpspecialfns';
 import { isIntegerQ, isNegative, isPositive, isReal, isZero as isZeroQ } from '../../core/assumptions';
 import type { ComplexValue as C, Expr, ExprLike } from '../../core/nodes';
-import { Fn, Mul, Rational, S, Special, Sym, Dummy, registerFunctionHeads } from '../../core/nodes';
+import { Fn, Integral, Mul, Pow, Rational, S, Special, Sym, Dummy, registerFunctionHeads } from '../../core/nodes';
 import { derivative } from '../../core/undef';
+import { Sum } from '../../core/concrete';
 import { SubsNode } from '../../core/subsnode';
 import { add, couldExtractMinusSign, exp, mul, neg, pow, sqrt } from '../../core/ops';
 import { fnPartials, fnTaylorAtZero } from '../../calculus/diff';
@@ -25,8 +26,9 @@ import { numericFns } from '../../numeric/evalf';
 import { mpFns } from '../../numeric/mpeval';
 import * as M from '../../numeric/mpfun';
 import { registerRewrite } from '../../simplify/rewrite';
+import { expandMul } from '../../simplify/expand';
 import { Ne, piecewise } from '../../core/logic';
-import { abs, conjugate, conjugateCommutes, conjugateRules, evaluators, fn, re } from '../elementary/elementary';
+import { abs, conjugate, conjugateCommutes, conjugateRules, evaluators, fn, log, re } from '../elementary/elementary';
 import { extractBranchFactor, unpolarify } from '../elementary/complexes';
 import { cgamma, funcExpanders } from './special';
 
@@ -70,6 +72,7 @@ function evalBessel(name: BName) {
       return undefined;
     }
     const iz = imagPart(z);
+    if (name === 'besselk' && !(nu instanceof Special) && isNegative(nu) === true) return fn(name, [neg(nu), z]);
     if (name === 'besselj' || name === 'bessely') {
       if (isOo(z)) return S.Zero;
       if (name === 'bessely' && iz !== undefined && isOo(iz)) {
@@ -109,6 +112,54 @@ function evalBessel(name: BName) {
     const nnu = unpolarify(nu);
     return nnu.key === nu.key ? undefined : fn(name, [nnu, z]);
   };
+}
+
+/** Local Frobenius expansions at zero, with z of valuation d. */
+export function besselLocalExpansion(name: BName, order: Rational, z: Expr, d: number, n: number,
+  monomial?: { base: Expr; coefficient: Expr; exponent: Expr }): Expr {
+  const r = mul(S.Half, monomial?.coefficient ?? z);
+  const power = (p: Expr): Expr => monomial === undefined ? pow(r, p) : mul(pow(r, p), pow(monomial.base, mul(monomial.exponent, p)));
+  const nu = order.toNumber();
+  const gamma = (a: Expr) => fn('gamma', [a]);
+  const psi = (k: number) => fn('polygamma', [0, k + 1]);
+  const terms: Expr[] = [];
+  if (name === 'besselk' && !order.isInteger) {
+    for (const a of [order, Rational.of(-order.p, order.q)]) {
+      let c = mul(S.Half, gamma(a));
+      for (let k = 0; d * (2 * k - a.value) < n; k++) {
+        terms.push(mul(c, power(add(2 * k, neg(a)))));
+        c = mul(c, pow(mul(k + 1, add(k + 1, neg(a))), -1));
+      }
+    }
+    return add(...terms);
+  }
+  const y = name === 'bessely', kFunction = name === 'besselk';
+  const j = name === 'besselj' || y;
+  const sign = kFunction ? pow(-1, order) : S.One;
+  if (y || kFunction) {
+    let c = mul(gamma(order), y ? neg(pow(S.Pi, -1)) : S.Half);
+    for (let k = 0; k < nu; k++) {
+      terms.push(mul(c, power(Rational.of(2 * k - nu))));
+      if (k + 1 < nu) c = mul(c, Rational.of(kFunction ? -1 : 1, (k + 1) * (nu - k - 1)));
+    }
+  }
+  let c = pow(gamma(add(order, 1)), -1);
+  const logr = monomial === undefined ? log(r) : add(log(r), mul(monomial.exponent, log(monomial.base)));
+  for (let k = 0; d * (nu + 2 * k) < n; k++) {
+    const p = add(order, 2 * k);
+    if (y || kFunction) {
+      const psiSum = add(psi(k), psi(nu + k));
+      const factor = y ? neg(pow(S.Pi, -1)) : mul(S.Half, sign);
+      if (monomial === undefined) terms.push(mul(c, factor, power(p), add(mul(-2, logr), psiSum)));
+      else {
+        const cp = mul(c, factor, pow(r, p));
+        const coefficient = add(expandMul(mul(-2, cp, logr)), mul(cp, psiSum));
+        terms.push(mul(pow(monomial.base, mul(monomial.exponent, p)), coefficient));
+      }
+    } else terms.push(mul(c, power(p)));
+    c = mul(c, j ? -1 : 1, pow(mul(k + 1, add(order, k + 1)), -1));
+  }
+  return add(...terms);
 }
 
 // ---- numerics (double precision series) -------------------------------------------
@@ -349,6 +400,16 @@ registerRewrite('besselk', 'besseli', (args) => {
   return mul(S.Pi, S.Half, fn('csc', [mul(S.Pi, nu)]), add(fn('besseli', [neg(nu), z]), mul(-1, fn('besseli', [nu, z]))));
 });
 
+// SymPy besselj/besseli._eval_rewrite_as_besseli/besselj.
+registerRewrite('besselj', 'besseli', (args) => {
+  const [nu, z] = pair(args);
+  return mul(exp(mul(S.Half, S.I, S.Pi, nu)), fn('besseli', [nu, mul(fn('exp_polar', [mul(S.NegHalf, S.I, S.Pi)]), z)]));
+});
+registerRewrite('besseli', 'besselj', (args) => {
+  const [nu, z] = pair(args);
+  return mul(exp(mul(S.NegHalf, S.I, S.Pi, nu)), fn('besselj', [nu, mul(fn('exp_polar', [mul(S.Half, S.I, S.Pi)]), z)]));
+});
+
 // ---- expand_func ----------------------------------------------------------------------
 
 /** The recurrence coefficients (_a, _b) of SymPy's Bessel classes. */
@@ -358,7 +419,7 @@ const RECURRENCE: Record<BName | HName, [number, number]> = { besselj: [1, 1], b
 function expandBessel(name: BName | HName, nu: Expr, z: Expr): Expr {
   const [a, b] = RECURRENCE[name];
   const f = (k: number) => expandBessel(name, add(nu, k), z);
-  if (isReal(nu) === true) {
+  if (isReal(nu) === true && !isOo(nu)) {
     if (isPositive(add(nu, -1)) === true) return add(mul(-a * b, f(-2)), mul(mul(2 * a, add(nu, -1), f(-1)), pow(z, -1)));
     if (isNegative(add(nu, 1)) === true) return add(mul(mul(2 * b, add(nu, 1), f(1)), pow(z, -1)), mul(-a * b, f(2)));
   }
@@ -393,6 +454,18 @@ fnPartials.marcumq = (args, i) => {
   throw new NotImplementedError('diff: marcumq w.r.t. its order');
 };
 // marcumq(m, a, a) = 1/2 + exp(-a**2)*besseli(0, a**2)/2 + exp(-a**2)*sum(besseli(i, a**2), (i, 1, m - 1)) for an integer m >= 1
+registerRewrite('marcumq', 'Integral', (args, _self, hints) => {
+  const [m, a, b] = [at(args, 0), at(args, 1), at(args, 2)];
+  const x = hints?.['x'] ?? new Dummy('x');
+  return mul(pow(a, add(1, neg(m))), new Integral([
+    mul(pow(x, m), exp(add(mul(S.NegHalf, pow(x, 2)), mul(S.NegHalf, pow(a, 2)))), besseli(add(m, -1), mul(a, x))), x, b, S.Infinity,
+  ]));
+});
+registerRewrite('marcumq', 'Sum', (args, _self, hints) => {
+  const [m, a, b] = [at(args, 0), at(args, 1), at(args, 2)];
+  const k = hints?.['k'] ?? new Dummy('k');
+  return mul(exp(mul(S.NegHalf, add(pow(a, 2), pow(b, 2)))), Sum(mul(pow(mul(a, pow(b, -1)), k), besseli(k, mul(a, b))), [k, add(1, neg(m)), S.Infinity]));
+});
 registerRewrite('marcumq', 'besseli', (args) => {
   const [m, a, b] = [at(args, 0), at(args, 1), at(args, 2)];
   if (a.key !== b.key || !(m instanceof Rational && m.isInteger && m.p >= 1n)) return undefined;
@@ -401,6 +474,49 @@ registerRewrite('marcumq', 'besseli', (args) => {
   const terms = Array.from({ length: Number(m.p) - 1 }, (_, k) => fn('besseli', [k + 1, a2]));
   return add(S.Half, mul(S.Half, e, fn('besseli', [0, a2])), mul(e, add(...terms)));
 });
+
+for (const name of ['airyai', 'airybi', 'airyaiprime', 'airybiprime'] as const) {
+  const prime = name.endsWith('prime'), bi = name.startsWith('airybi');
+  const nu = Rational.of(prime ? 2 : 1, 3);
+  const twoThirds = Rational.of(2, 3), threeHalves = Rational.of(3, 2);
+  const scale = bi ? pow(3, S.NegHalf) : Rational.of(1, 3);
+  registerRewrite(name, 'besselj', (args) => {
+    const z = first(args);
+    if (isNegative(re(z)) !== true) return undefined;
+    const t = mul(twoThirds, pow(neg(z), threeHalves));
+    const factor = prime ? bi ? neg(z) : z : sqrt(neg(z));
+    return mul(scale, factor, add(besselj(neg(nu), t), mul(prime !== bi ? -1 : 1, besselj(nu, t))));
+  });
+  registerRewrite(name, 'besseli', (args) => {
+    const z = first(args), a = pow(z, threeHalves), t = mul(twoThirds, a);
+    if (isPositive(re(z)) === true) return mul(scale, prime ? z : sqrt(z),
+      add(mul(!bi && prime ? -1 : 1, besseli(neg(nu), t)), mul(!bi && !prime ? -1 : 1, besseli(nu, t))));
+    const low = pow(a, nu);
+    const high = mul(pow(z, prime ? 2 : 1), pow(a, neg(nu)));
+    return mul(scale, add(mul(!bi && prime ? -1 : 1, low, besseli(neg(nu), t)), mul(!bi && !prime ? -1 : 1, high, besseli(nu, t))));
+  });
+  funcExpanders[name] = (args) => {
+    const z = first(args), symbols = z.freeSymbols();
+    if (symbols.size !== 1) return undefined;
+    const x = first([...symbols]);
+    const factors = z instanceof Mul ? z.args : [z];
+    const nested = factors.find((factor) => factor.has(x));
+    if (!(nested instanceof Pow && nested.exp instanceof Rational && 3n * nested.exp.p % nested.exp.q === 0n)) return undefined;
+    if (factors.some((factor) => factor !== nested && factor.has(x))) return undefined;
+    const bases = nested.base instanceof Mul ? nested.base.args : [nested.base];
+    const power = bases.find((base) => base.has(x));
+    if (power === undefined || bases.some((base) => base !== power && base.has(x))) return undefined;
+    const exponent = power.key === x.key ? S.One : power instanceof Pow && power.base.key === x.key && !power.exp.has(x) ? power.exp : undefined;
+    if (exponent === undefined) return undefined;
+    const principal = mul(pow(mul(...bases.filter((base) => base !== power)), nested.exp), pow(x, mul(exponent, nested.exp)));
+    if (principal.key === nested.key) return undefined;
+    const ratio = prime ? mul(principal, pow(nested, -1)) : mul(nested, pow(principal, -1));
+    const argument = mul(principal, ...factors.filter((factor) => factor !== nested));
+    const other = bi ? prime ? 'airyaiprime' : 'airyai' : prime ? 'airybiprime' : 'airybi';
+    const coefficient = mul(bi ? sqrt(3) : pow(3, S.NegHalf), prime ? add(ratio, -1) : add(1, neg(ratio)));
+    return mul(S.Half, add(mul(add(1, ratio), fn(name, [argument])), mul(coefficient, fn(other, [argument]))));
+  };
+}
 
 export const besselj = (nu: ExprLike, z: ExprLike): Expr => fn('besselj', [nu, z]);
 export const bessely = (nu: ExprLike, z: ExprLike): Expr => fn('bessely', [nu, z]);

@@ -42,3 +42,9 @@ describe('matrix FGLM', () => {
     expect(() => matrixFglm([at(R.gens, 0)], R, 'ilex')).toThrow('global');
   });
 });
+
+it('rejects mixed product orders in FGLM', async () => {
+  const { ProductOrder, ilex } = await import('../../src');
+  const order = new ProductOrder([lex, [0]], [ilex, [1]]);
+  expect(() => matrixFglm([], new PolyRing('x y', QQ, order), 'lex')).toThrow('global');
+});

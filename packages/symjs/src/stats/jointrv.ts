@@ -261,7 +261,17 @@ export class MarginalDistribution extends Distribution {
     } else {
       syms = this.rvs.map((r) => (r instanceof RandomSymbol ? r.symbol : at(r.args, 0)));
     }
-    const marginaliseOut = randomSymbols(expr).filter((r) => !keys.has(r.key));
+    // SymPy's atoms(RandomSymbol) also reaches the random parameters inside a variable's probability space
+    const nested = new Map<string, RandomSymbol>();
+    const collect = (e: Expr): void => {
+      for (const r of randomSymbols(e)) {
+        if (nested.has(r.key)) continue;
+        nested.set(r.key, r);
+        collect(r.pspace);
+      }
+    };
+    collect(expr);
+    const marginaliseOut = [...nested.values()].sort((p, q) => (p.symbol.name < q.symbol.name ? -1 : p.symbol.name > q.symbol.name ? 1 : 0)).filter((r) => !keys.has(r.key));
     return Lambda(syms, this.computePdf(expr, marginaliseOut)).call(...x);
   }
   /** The density times the densities of the random variables, each marginalised out (SymPy compute_pdf). */
@@ -274,6 +284,9 @@ export class MarginalDistribution extends Distribution {
   marginaliseOut(exprIn: Expr, rv: RandomSymbol): Expr {
     const sym = rv.symbol;
     const expr = xreplace(exprIn, [[rv, sym]]);
+    // a joint space is neither continuous nor discrete in SymPy (PSpace.is_Continuous and is_Discrete are None):
+    // the variable is only replaced by its symbol
+    if (rv.pspace instanceof JointPSpace) return expr;
     const [x, a, b] = limitOf(sym, rv.pspace.domain.set);
     if (rv.pspace.isContinuous) return makeIntegral(expr, [[x, a, b]]);
     return Sum(expr, [x, a, b]);

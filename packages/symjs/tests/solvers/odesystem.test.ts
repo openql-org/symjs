@@ -186,7 +186,7 @@ describe('checkodesol', () => {
     // SymPy solves Eq(f(x) + x, C1) for f(x); here only explicit solutions are supported
     expect(() => checkodesol(diff(fx, x!), Eq(add(fx, x!), C1!))).toThrow(NotImplementedError);
     expect(() => checkodesol([Eq(diff(fx, x!), fx), Eq(diff(g(x!), x!), g(x!))], [Eq(fx, C1!)])).toThrow('number of solutions provided does not match the number of equations');
-    expect(() => checkodesol(diff(fx, x!) as never, [Eq(fx, C1!)] as never)).toThrow(TypeError);
+    expect(checkodesol(diff(fx, x!), [Eq(fx, C1!)])).toEqual([[true, sj.S.Zero]]);
   });
 });
 
@@ -350,4 +350,124 @@ it('classifies commuting linear systems and validates their dimensions', () => {
   expect(() => sj.linodesolveType(A,t,sj.Matrix.col(1))).toThrow(RangeError);
   expect(() => sj.linodesolveType(A,t,A)).toThrow(RangeError);
   expect(() => sj.linodesolveType(sj.Matrix.of([[t,1],[0,0]]),t)).toThrow(NotImplementedError);
+});
+
+it('extracts all derivative matrices with the leading-order sign convention', () => {
+  const x = new sj.Sym('x'), f = new sj.UndefFn('f', [x]);
+  const d = new sj.Derivative([f, x, sj.S.One]);
+  const [matrices, rhs] = sj.linearOdeToMatrix([sj.Eq(d, sj.add(f, 2))], [f], x, 1);
+  expect(matrices.map(String)).toEqual(['Matrix([[1]])', 'Matrix([[1]])']);
+  expect(String(rhs)).toBe('Matrix([[2]])');
+  expect(() => sj.linearOdeToMatrix([d], [f], x, 0)).toThrow(sj.ODEOrderError);
+  expect(() => sj.linearOdeToMatrix([sj.pow(f, 2)], [f], x, 0)).toThrow(sj.ODENonlinearError);
+  expect(() => sj.linearOdeToMatrix([f], [f], x, -1)).toThrow(RangeError);
+  expect(() => sj.linearOdeToMatrix([f], [f], x, 0.5)).toThrow(RangeError);
+});
+
+import { readFileSync } from 'node:fs';
+import { runTestCase } from '../../../../tools/sympy-corpus/tests-harness';
+import type { TestCase } from '../../../../tools/sympy-corpus/tests-harness';
+const matrixCases: TestCase[] = JSON.parse(readFileSync(new URL('../../../../tools/sympy-corpus/tests-corpus/solvers.json', import.meta.url), 'utf8'));
+for (const [i, c] of matrixCases.filter((c) => c.fn === 'linear_ode_to_matrix' || (c.fn === 'matrix_exp' && c.raises === undefined) || (c.fn === 'checksysodesol' && (c.line === 203 || c.line === 2490)) || (c.module.endsWith('test_systems') && [1607,1639,1690,1721,1876,1902,2233,2345].includes(c.line) && ['dsolve', 'dsolve_system'].includes(c.fn)) || (c.fn === 'checkodesol' && c.test === 'test_2nd_nonlinear_autonomous_conserved_integral')).entries()) {
+  it(`${c.test}:${c.line} (${i})`, () => expect(['pass', 'equivalent']).toContain(runTestCase(c).status));
+}
+
+it('handles symbolic Jordan blocks and a triangular symbolic matrix', () => {
+  for (const rhs of [['a*f(t)+g(t)','a*g(t)'],['a*f(t)','f(t)+b*g(t)']]) {
+    const fs = [f(t),g(t)];
+    const eqs = fs.map((v,i) => sj.sub(diff(v,t),parse(at(rhs,i))));
+    expect(solvesOdeSystem(eqs,t,at(sj.dsolveSystem(eqs),0))).toBe(true);
+  }
+  expect(() => sj.dsolveSystem([parse('Derivative(f(t,x),t)')])).toThrow(RangeError);
+  expect(() => sj.dsolveSystem([parse('Derivative(f(t),x)')])).toThrow(RangeError);
+  expect(() => sj.odeMatrixExp(sj.Matrix.of([[t]]),t)).toThrow(RangeError);
+  expect(() => sj.odeMatrixExp(sj.Matrix.col(1,2),t)).toThrow(RangeError);
+  expect(String(sj.odeMatrixExp(sj.Matrix.of([[2]]),t).get(0,0))).toBe('exp(2*t)');
+});
+
+it('checks the derivative of an implicit quadrature and the order of a Taylor residual', () => {
+  const u = new sj.Sym('u'), ft = f(t);
+  const velocity = diff(ft, t);
+  expect(checkodesol(sub(velocity, 1), Eq(new Integral([sj.S.One,u,ft]),t))[0]).toBe(true);
+  expect(() => checkodesol(velocity, Eq(new Integral([t,u,ft]),t))).toThrow();
+  const remainder = new sj.Order([sj.pow(t,4),t,sj.S.Zero]);
+  expect(checkodesol(sub(velocity,1),Eq(ft,add(t,remainder)))[0]).toBe(true);
+});
+
+it('reduces mixed orders without reusing an existing function name', () => {
+  const ft = new UndefFn('f',[t]), other = new UndefFn('f_1',[t]);
+  const equations = [sub(diff(ft,t,2),other),sub(diff(other,t),diff(ft,t))];
+  const family = at(sj.dsolveSystem(equations,[ft,other]),0);
+  expect(sj.checksysodesol(equations,family)[0]).toBe(true);
+});
+
+it('rejects a component without distinct derivative owners', () => {
+  const ft = f(t), gt = g(t);
+  const derivative = diff(ft,t);
+  expect(() => sj.dsolveSystem([sub(derivative,sj.mul(ft,gt)),sub(derivative,sj.pow(gt,2))],
+    [new UndefFn('f',[t]),new UndefFn('g',[t])])).toThrow();
+});
+
+it('keeps forcing in quadrature when requested for a variable matrix', () => {
+  const ft = f(t), gt = g(t);
+  const eqs = [sub(diff(ft,t),add(sj.mul(t,gt),1)),sub(diff(gt,t),sj.mul(t,ft))];
+  for (const simplify of [false,true]) {
+    const sol = at(sj.dsolveSystem(eqs,undefined,t,undefined,{ simplify, doit: false }),0);
+    expect(String(sol)).toContain('Integral(');
+  }
+});
+
+it('falls back when second-order modal reduction does not apply', () => {
+  const ft = f(t), gt = g(t);
+  for (const [a,b] of [['t*f(t)','t**2*g(t)'],['t**3*f(t)','t**3*g(t)']] as const) {
+    const eqs = [sub(diff(ft,t,2),parse(a)),sub(diff(gt,t,2),parse(b))];
+    expect(String(sj.dsolveSystem(eqs))).toContain('O(t**6)');
+  }
+  const defective = [sub(diff(ft,t,2),parse('t*(f(t)+g(t))')),sub(diff(gt,t,2),parse('t*g(t)'))];
+  expect(() => sj.dsolveSystem(defective)).toThrow(NotImplementedError);
+});
+
+it('solves a forced triangular system with noncommuting coefficient matrices', () => {
+  const equations = ['Derivative(f(t),t)-f(t)-1','Derivative(g(t),t)-t*g(t)-t**2*f(t)'].map((e) => parse(e));
+  expect(at(sj.dsolveSystem(equations),0)).toHaveLength(2);
+});
+
+it('handles a constant diagonal matrix with independent symbolic eigenvalues', () => {
+  const equations = ['Derivative(f(t),t)-a*f(t)','Derivative(g(t),t)-b*g(t)','Derivative(h(t),t)-c*h(t)'].map((e) => parse(e));
+  const sol = at(sj.dsolveSystem(equations),0);
+  expect(sj.checksysodesol(equations,sol)[0]).toBe(true);
+});
+
+it('checks explicit solutions with constant-order error terms', () => {
+  const ft = f(t);
+  expect(checkodesol(diff(ft,t), Eq(ft,new sj.Order([sj.S.One])))[0]).toBe(true);
+});
+
+it('uses the scalar solver for higher-order and nonlinear triangular components', () => {
+  for (const first of ['Derivative(f(t),t)**2-1','Derivative(f(t),t,2)-f(t)']) {
+    const equations = [first,'Derivative(g(t),t)-f(t)**2-g(t)'].map((e) => parse(e));
+    expect(at(sj.dsolveSystem(equations,undefined,t,undefined,{doit:false}),0)).toHaveLength(2);
+  }
+});
+
+it('preserves unevaluated forcing in a constant-coefficient system', () => {
+  const equations = ['Derivative(f(t),t)-f(t)-t','Derivative(g(t),t)-f(t)'].map((e) => parse(e));
+  const solution = at(sj.dsolveSystem(equations,undefined,t,undefined,{doit:false,simplify:false}),0);
+  expect(String(solution)).toContain('Integral');
+});
+
+it.each([
+  [['f(t) + 1', '2*g(t) - 3'], ['C1*exp(t) - 1', 'C2*exp(2*t) + 3/2']],
+  [['a*f(t)', '2*a*g(t)', '3*a*h(t)'], ['C1*exp(a*t)', 'C2*exp(2*a*t)', 'C3*exp(3*a*t)']],
+  [['f(t) + a*g(t)', '2*g(t)'], ['a*C1*exp(t) + a*C2*exp(2*t)', 'C2*exp(2*t)']],
+])('solves the constant coefficient system with velocities %s', (rhs, expected) => {
+  const fs = ['f', 'g', 'h'].slice(0, rhs.length).map((name) => new UndefFn(name, [t]));
+  const eqs = fs.map((v, i) => sub(diff(v, t), parse(at(rhs, i))));
+  const family = at(sj.dsolveSystem(eqs, fs), 0);
+  expect(family).toEqual(fs.map((v, i) => Eq(v, parse(at(expected, i)))));
+});
+
+it.each([0, 1])('solves a constant acceleration equation with forcing %i', (forcing) => {
+  const ft = new UndefFn('f', [t]), eq = diff(ft, t, 2).sub(ft).sub(forcing);
+  expect(sj.dsolveSystem([eq], [ft])).toEqual([[Eq(ft, parse('C1*exp(-t) + C2*exp(t)').sub(forcing))]]);
 });

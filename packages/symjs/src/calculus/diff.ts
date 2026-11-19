@@ -7,17 +7,17 @@
 
 import { NotImplementedError } from '../core/errors';
 import { at, first, last } from '../core/guard';
-import { isReal } from '../core/assumptions';
-import { piecewise } from '../core/logic';
+import { isPositive, isReal } from '../core/assumptions';
+import { Eq, piecewise } from '../core/logic';
 import type { Expr, ExprLike } from '../core/nodes';
-import { Add, ExtensionExpr, Constant, Derivative, Dummy, Fn, Integral, Mul, Order, Piecewise, Pow, S, Sym, UndefFn, impl, isNum } from '../core/nodes';
-import { derivative } from '../core/undef';
+import { Add, ExtensionExpr, Constant, Derivative, Dummy, Fn, Integral, Mul, Order, Piecewise, Pow, Rational, S, Sym, UndefFn, impl, isNum } from '../core/nodes';
+import { derivative, derivativeCount } from '../core/undef';
 import { SubsNode } from '../core/subsnode';
 import { Concrete } from '../core/concrete';
 import { DefinedFunctionCall } from '../core/defun';
 import { Indexed } from '../core/indexed';
 import { add, mul, pow, sympify } from '../core/ops';
-import { rebuild, xreplace } from '../core/traverse';
+import { mapBottomUp, rebuild, xreplace } from '../core/traverse';
 import { conjugate, cos, cosh, fn, im as fnIm, log, re as fnRe, sin, sinh, tan, tanh } from '../functions/elementary/elementary';
 
 /**
@@ -28,6 +28,9 @@ import { conjugate, cos, cosh, fn, im as fnIm, log, re as fnRe, sin, sinh, tan, 
  */
 export const fnPartials: Partial<Record<Fn['name'], (args: readonly Expr[], i: number) => Expr | undefined>> = {};
 
+/** Argument positions for which a class's explicit fdiff raises. */
+export const unavailablePartials: Partial<Record<string, readonly number[]>> = {};
+
 /**
  * Taylor coefficients at 0 of one-argument functions whose derivatives at 0
  * are 0/0 forms (elliptic_k, elliptic_e): fnTaylorAtZero[name](j) is the
@@ -36,7 +39,7 @@ export const fnPartials: Partial<Record<Fn['name'], (args: readonly Expr[], i: n
 export const fnTaylorAtZero: Partial<Record<Fn['name'], (j: number) => Expr>> = {};
 
 /** Late-bound pieces of higher layers: the reduction of an Order to its leading term (set by series/series.ts). */
-export const diffHooks: { order: (e: Expr, variables: readonly Sym[], point: Expr) => Expr } = { order: orderUnreduced };
+export const diffHooks: { order: (e: Expr, variables: readonly Sym[], point: Expr) => Expr; array?: (e: Expr, x: Expr, n: number) => Expr } = { order: orderUnreduced };
 
 /** The Order of e without the reduction to its leading term (when series/series.ts is not loaded). */
 export function orderUnreduced(e: Expr, variables: readonly Sym[], point: Expr): Expr {
@@ -58,14 +61,14 @@ const fnDerivative: Partial<Record<Fn['name'], (u: Expr) => Expr>> = {
 };
 
 /**
- * A matrix element X[i, j] as the variable (told apart by name: the matrix
- * module builds on this one). An expression depends on it through X, as
+ * An array or matrix entry as the variable. Both modules build on calculus.
+ * An expression may depend on an entry through its parent, as
  * Trace(X) does, so it is not replaced by a dummy.
  */
-const isMatrixElement = (x: Expr): x is ExtensionExpr => x instanceof ExtensionExpr && x.name === 'MatrixElement';
+const isIndexedElement = (x: Expr): x is ExtensionExpr => x instanceof ExtensionExpr && (x.name === 'MatrixElement' || x.name === 'ArrayElement');
 
 /** e may depend on x: it contains x, or the matrix of a matrix element x. */
-const dependsOn = (e: Expr, x: Expr): boolean => e.has(x) || (isMatrixElement(x) && e.has(first(x.args)));
+const dependsOn = (e: Expr, x: Expr): boolean => e.has(x) || (isIndexedElement(x) && e.has(first(x.args)));
 
 function d(e: Expr, x: Expr): Expr {
   if (e.key === x.key) return S.One;
@@ -77,7 +80,7 @@ function d(e: Expr, x: Expr): Expr {
     const r = e.diffSelf(x, d);
     if (r !== undefined) return r;
     // SymPy keeps Derivative(Determinant(X), X[0, 0]) unevaluated
-    if (isMatrixElement(x)) return derivative(e, [[x, 1]]);
+    if (isIndexedElement(x)) return derivative(e, [[x, 1]]);
     throw new NotImplementedError(`diff: ${e.name} does not define a derivative`);
   }
 
@@ -116,10 +119,13 @@ function d(e: Expr, x: Expr): Expr {
     }
     const u = first(e.args);
     if (e.name === 'conjugate' || e.name === 're' || e.name === 'im') {
-      // linear, but not holomorphic: the derivative is taken inside only for a real variable (SymPy keeps Derivative(conjugate(x), x))
-      if (isReal(x) !== true) return derivative(e, [[x, 1]]);
+      const imaginary = (a: Expr): boolean => a instanceof Sym && a.assumptions.imaginary === true;
+      const realAxis = isReal(x) === true || e.name !== 'conjugate' && isReal(u) === true;
+      if (!realAxis && !imaginary(x) && (e.name === 'conjugate' || !imaginary(u))) return derivative(e, [[x, 1]]);
       const du = d(u, x);
-      return e.name === 'conjugate' ? conjugate(du) : e.name === 're' ? fnRe(du) : fnIm(du);
+      if (realAxis) return e.name === 'conjugate' ? conjugate(du) : e.name === 're' ? fnRe(du) : fnIm(du);
+      if (e.name === 'conjugate') return mul(-1, conjugate(du));
+      return mul(-1, S.I, e.name === 're' ? fnIm(du) : fnRe(du));
     }
     const du = d(u, x);
     // SymPy Abs._eval_derivative: sign(conjugate(u))*u' for a real or imaginary u, otherwise
@@ -148,7 +154,7 @@ function d(e: Expr, x: Expr): Expr {
     const terms: Expr[] = [];
     for (const [i, a] of e.args.entries()) {
       if (!a.has(x)) continue;
-      if (a.key === x.key) terms.push(derivative(e, [[x, 1]], true));
+      if (a.key === x.key && !e.args.some((other, j) => j !== i && other.has(a))) terms.push(derivative(e, [[x, 1]], true));
       // f(g(x)): Derivative(f(g(x)), g(x))*Derivative(g(x), x) like SymPy
       else if (a instanceof UndefFn) terms.push(mul(derivative(e, [[a, 1]]), d(a, x)));
       else {
@@ -169,23 +175,37 @@ function d(e: Expr, x: Expr): Expr {
     return diffHooks.order(de, vars, point);
   }
   if (e instanceof Derivative) {
-    if (e.expr instanceof UndefFn && e.expr.args.some((a) => a.key === x.key)) return derivative(e, [[x, 1]], true);
+    if (e.expr instanceof UndefFn) {
+      if (e.variableOrders.some(([v]) => v.equals(x))) return derivative(e, [[x, 1]], true);
+      const inner = d(e.expr, x);
+      if (inner instanceof Derivative) {
+        const orders = [...e.variableOrders, ...inner.variableOrders];
+        return derivative(inner.expr, orders, orders.every(([variable]) => !(variable instanceof Dummy)));
+      }
+      return e.variableOrders.reduce((value, [v, n]) => diff(value, v, n), inner);
+    }
     // otherwise x enters through the expression: evaluate the inner derivative first, like SymPy
     // (diff(Derivative(f(x*y), y), x) = x*y*Subs(Derivative(f(xi), (xi, 2)), xi, x*y) + Subs(Derivative(f(xi), xi), xi, x*y))
-    const inner = e.variableCount.reduce((acc, [v, k]) => diff(acc, v, k), e.expr);
+    const inner = e.doit();
     // a derivative that stays unevaluated (Derivative(floor(x*y), y)) gets x appended
     return inner.key === e.key ? derivative(e, [[x, 1]]) : d(inner, x);
   }
-  if (e instanceof Concrete && e.kind2 === 'Sum') {
-    // SymPy Sum._eval_derivative: the sum of the derivatives when the limits do not depend on x
+  if (e instanceof Concrete) {
+    // SymPy Sum/Product._eval_derivative: peel the outermost limit.
+    if (x instanceof Sym && ![...e.freeSymbols()].some((s) => s.key === x.key)) return S.Zero;
     const limits = e.limits;
-    if (limits.every(([k, a, b]) => k.key !== x.key && !dependsOn(a, x) && !dependsOn(b, x))) return new Concrete('Sum', [d(e.function, x), ...e.args.slice(1)]);
-    throw new NotImplementedError('diff: derivative of a sum whose limits depend on the variable is not supported');
+    const [i, a, b] = last(limits);
+    if ([a, b].some((bound) => [...bound.freeSymbols()].some((s) => s.key === x.key))) return derivative(e, [[x, 1]]);
+    const f = limits.length === 1 ? e.function : new Concrete(e.kind2, [e.function, ...limits.slice(0, -1).flat()]);
+    const df = d(f, x);
+    if (e.kind2 === 'Sum') return new Concrete('Sum', [df, i, a, b]);
+    const h = new Dummy();
+    const before = new Concrete('Product', [f, i, a, add(h, -1)]);
+    const after = new Concrete('Product', [f, i, add(h, 1), b]);
+    return new Concrete('Sum', [mul(before, after, xreplace(df, [[i, h]])), h, a, b]);
   }
   if (e instanceof Piecewise) return piecewise(...e.pairs.map(([v, c]) => [d(v, x), c] as const));
   if (e instanceof Integral) return diffIntegral(e, x);
-  // SymPy Product._eval_derivative gives a Sum of products of the factors
-  if (e instanceof Concrete) throw new NotImplementedError('diff: derivative of a product is not supported');
   // relations, limits and other objects without a derivative rule stay unevaluated (SymPy Derivative(x < 1, x))
   return derivative(e, [[x, 1]]);
 }
@@ -225,7 +245,22 @@ function diffIntegral(e: Integral, x: Expr): Expr {
 /** The derivative with respect to a subexpression t, which is treated as a symbol. */
 function diffWrtTerm(e: Expr, t: Expr, n: number): Expr {
   const xi = new Dummy('xi');
-  return xreplace(diff(xreplace(e, [[t, xi]]), xi, n), [[xi, t]]);
+  const result = diff(xreplace(e, [[t, xi]]), xi, n);
+  if (!(t instanceof UndefFn)) return xreplace(result, [[xi, t]]);
+  const partials = mapBottomUp(result, (term) => {
+    if (term instanceof Derivative && term.expr instanceof UndefFn) {
+      const orders = term.variableOrders;
+      const partial = orders.find(([v]) => v.equals(xi));
+      if (partial !== undefined && orders.some(([v]) => !v.equals(xi) && t.has(v) && term.expr.args.some((arg) => arg.equals(v)))) {
+        const bound = new Dummy('xi');
+        const body = xreplace(term.expr, [[xi, bound]]);
+        const rest = orders.filter(([v]) => !v.equals(xi));
+        return new SubsNode([derivative(body, [[bound, partial[1]], ...rest]), bound, t]);
+      }
+    }
+    return term;
+  });
+  return xreplace(partials, [[xi, t]]);
 }
 
 /** The distinct indexed objects with the given base in e. */
@@ -241,6 +276,10 @@ function indexedTerms(e: Expr, base: Expr, out = new Map<string, Indexed>()): Ma
  * the A[k] in e.
  */
 function diffIndexed(e: Expr, x: Indexed): Expr {
+  if (e instanceof Concrete && e.kind2 === 'Sum') {
+    if (e.limits.some(([, a, b]) => indexedTerms(a, x.base).size > 0 || indexedTerms(b, x.base).size > 0)) throw new NotImplementedError('diff: derivative of a sum whose limits depend on the variable is not supported');
+    return new Concrete('Sum', [diffIndexed(e.function, x), ...e.args.slice(1)]);
+  }
   const terms: Expr[] = [];
   for (const t of indexedTerms(e, x.base).values()) {
     if (t.indices.length !== x.indices.length) throw new RangeError(`diff: different number of indices: d(${t.toString()})/d(${x.toString()})`);
@@ -251,17 +290,38 @@ function diffIndexed(e: Expr, x: Indexed): Expr {
 }
 
 /** n-th derivative of e with respect to x. */
-export function diff(ex: ExprLike, x: Expr, n = 1): Expr {
-  if (!Number.isInteger(n) || n < 0) throw new RangeError('diff: order must be a non-negative integer');
+export function diff(ex: ExprLike, x: Expr, order: ExprLike = 1): Expr {
+  const count = derivativeCount(order);
   let e = sympify(ex);
+  if (count === S.Zero) return e;
+  // SymPy permits symbols, applied undefined functions and elementary derivatives
+  // as scalar variables. Products and evaluated functions are ambiguous variables.
+  if (x instanceof Derivative) {
+    const evaluated = x.doit();
+    if (!(x.expr instanceof UndefFn) || !(evaluated instanceof Derivative)) throw new RangeError(`diff: invalid variable ${x.toString()}`);
+  } else if (!(x instanceof Sym || x instanceof UndefFn || x instanceof ExtensionExpr)) {
+    throw new RangeError(`diff: invalid variable ${x.toString()}`);
+  }
+  if (!(count instanceof Rational) || count.p > BigInt(Number.MAX_SAFE_INTEGER)) {
+    if (!e.has(x) && isPositive(count) === true) return S.Zero;
+    if (e instanceof Sym) {
+      const cases: [Expr, Expr][] = [[e, Eq(count, S.Zero)]];
+      if (e.key === x.key) cases.push([S.One, Eq(count, S.One)]);
+      return piecewise(...cases, [S.Zero, S.true]);
+    }
+    return derivative(e, [[x, count]], true);
+  }
+  const n = Number(count.p);
   if (x instanceof Indexed) {
     for (let i = 0; i < n; i++) e = diffIndexed(e, x);
     return e;
   }
-  // SymPy: a variable that is not a scalar (is_scalar = False) keeps the derivative unevaluated
-  if (x instanceof ExtensionExpr && !x.isScalar && n > 0 && e.has(x)) return derivative(e, [[x, n]]);
+  if (x instanceof ExtensionExpr && !x.isScalar) {
+    if (diffHooks.array) return diffHooks.array(e, x, n);
+    if (e.has(x)) return derivative(e, [[x, n]]);
+  }
   // differentiate with respect to an expression such as f(x): treat it as a symbol
-  if (!(x instanceof Sym) && !isMatrixElement(x)) return diffWrtTerm(e, x, n);
+  if (!(x instanceof Sym) && !isIndexedElement(x)) return diffWrtTerm(e, x, n);
   for (let i = 0; i < n; i++) e = d(e, x);
   return e;
 }
@@ -279,8 +339,10 @@ export function fdiff(f: ExprLike, argindex = 1): Expr {
   const e = sympify(f);
   if (!(e instanceof Fn || e instanceof UndefFn || e instanceof DefinedFunctionCall)) throw new TypeError(`fdiff: ${e.toString()} is not a function application`);
   if (!Number.isInteger(argindex) || argindex < 1 || argindex > e.args.length) throw new RangeError(`fdiff: invalid argument index ${argindex} of ${e.toString()}`);
+  if (unavailablePartials[e.name]?.includes(argindex)) throw new RangeError(`fdiff: invalid argument index ${argindex} of ${e.toString()}`);
   const i = argindex - 1;
   const a = at(e.args, i);
+  if (e instanceof Fn && e.name === 'abs') return fn('sign', [a]);
   const xi = new Dummy(`xi_${argindex}`);
   const dg = diff(rebuild(e, e.args.map((b, j) => (j === i ? xi : b))), xi);
   const unevaluated = (x: Expr): boolean => ((x instanceof Derivative || x instanceof SubsNode) && x.has(xi)) || x.args.some(unevaluated);

@@ -7,18 +7,19 @@
 
 import { accumBoundsFunction } from './accumbounds';
 import { AccumBounds } from '../../core/accumbounds';
-import { first } from '../../core/guard';
+import { piecewise } from '../../core/logic';
+import { expectType, first } from '../../core/guard';
 import { precToDps } from '../../numeric/mpf';
-import { isIntegerQ, isNegative, isNonNegative, isPositive, isReal } from '../../core/assumptions';
-import type {
-  Expr,
-  ExprLike,
-  FnName } from '../../core/nodes';
+import { isIntegerQ, isNegative, isNonNegative, isNonZero, isPositive, isReal } from '../../core/assumptions';
+import type { ExprLike, FnName } from '../../core/nodes';
 import {
   Add,
   Constant,
+  Expr,
   Fn,
   Mul,
+  Order,
+  Piecewise,
   Pow,
   Float,
   Rational,
@@ -27,8 +28,10 @@ import {
   impl,
   isNum,
   ExtensionExpr,
-  Sym, registerFunctionHeads } from '../../core/nodes';
-import { numAbs, numNeg, ratMod } from '../../core/num';
+  Sym, registerFunctionHeads,
+  UndefFn,
+} from '../../core/nodes';
+import { numAbs, numNeg, ratFloor, ratMod } from '../../core/num';
 import { add, couldExtractMinusSign, exp, mul, neg, pow, splitCoeff, sqrt, sympify } from '../../core/ops';
 
 export type Evaluator = (x: Expr, ...rest: Expr[]) => Expr | undefined;
@@ -134,8 +137,7 @@ function cosOfPiMultiple(c: Rational): Expr | undefined {
 /** SymPy _peeloff_pi: the multiple of pi/2 in c*pi, c - (c mod 1/2). */
 function peelHalfPi(c: Rational): Rational {
   const twice = Rational.of(c.p * 2n, c.q);
-  const fl = twice.p >= 0n ? twice.p / twice.q : -((-twice.p + twice.q - 1n) / twice.q);
-  return Rational.of(fl, 2n);
+  return Rational.of(ratFloor(twice), 2n);
 }
 
 /** sin(c*pi) for rational c (SymPy sin.eval of a rational multiple of pi). */
@@ -176,6 +178,8 @@ const evalSin: Evaluator = (x) => {
   if (x instanceof Rational && x.isZero) return S.Zero;
   const [rest, c] = splitPiTerm(x);
   if (rest instanceof Rational && rest.isZero) return sinPi(c);
+  const k = integerPiCoeff(x);
+  if (k !== undefined && isIntegerQ(k) === true) return S.Zero;
   if (couldExtractMinusSign(x)) return neg(sin(neg(x)));
   const m = peelHalfPi(c);
   if (!m.isZero) {
@@ -194,6 +198,8 @@ const evalCos: Evaluator = (x) => {
   if (x instanceof Rational && x.isZero) return S.One;
   const [rest, c] = splitPiTerm(x);
   if (rest instanceof Rational && rest.isZero) return cosPi(c);
+  const k = integerPiCoeff(x);
+  if (k !== undefined && isIntegerQ(k) === true) return pow(-1, k);
   if (couldExtractMinusSign(x)) return cos(neg(x));
   const m = peelHalfPi(c);
   if (!m.isZero) {
@@ -264,6 +270,7 @@ const evalAcos: Evaluator = (x) => {
 };
 
 const evalAtan: Evaluator = (x) => {
+  if (x === S.ComplexInfinity) return AccumBounds(mul(S.NegHalf, S.Pi), mul(S.Half, S.Pi));
   if (x instanceof Special && x.name === 'oo') return mul(S.Half, S.Pi);
   if (x instanceof Special && x.name === '-oo') return mul(S.NegHalf, S.Pi);
   if (x instanceof Rational && x.isZero) return S.Zero;
@@ -309,6 +316,17 @@ const evalLog: Evaluator = (x, ...more) => {
     if (x.p === 1n && x.q !== 1n) return neg(log(Rational.of(x.q, 1n)));
   }
   if (x instanceof Constant && x.name === 'E') return S.One;
+  if (x instanceof Mul && x.freeSymbols().size === 0) {
+    const reciprocal = x.args.find((term): term is Pow => term instanceof Pow && term.exp.equals(S.NegOne)
+      && term.base instanceof Fn && term.base.name === 'abs');
+    if (reciprocal) {
+      const value = first(reciprocal.base.args);
+      if (mul(...x.args.filter((term) => term !== reciprocal)).equals(value) && isNonZero(value) === true) {
+        // Dividing by the modulus puts a nonzero number on the unit circle.
+        return mul(S.I, arg(value));
+      }
+    }
+  }
   // SymPy log.eval splits the principal argument of negative numeric
   // expressions, including sums of radicals. Symbolic signs stay unevaluated.
   if (x.freeSymbols().size === 0 && isNegative(x) === true) return add(log(neg(x)), mul(S.I, S.Pi));
@@ -318,6 +336,11 @@ const evalLog: Evaluator = (x, ...more) => {
   const [c, rest] = splitCoeff(x);
   if (isI(rest) && c instanceof Rational) {
     return c.isNegative ? add(mul(S.NegHalf, S.I, S.Pi), log(numNeg(c))) : add(mul(S.Half, S.I, S.Pi), log(c));
+  }
+  if (x instanceof Mul && x.args.some(isI)) {
+    const coefficient = mul(...x.args.filter((a) => !isI(a)));
+    if (isPositive(coefficient) === true) return add(log(coefficient), mul(S.Half, S.I, S.Pi));
+    if (isNegative(coefficient) === true) return add(log(neg(coefficient)), mul(S.NegHalf, S.I, S.Pi));
   }
   // a + b*I whose argument is a rational multiple of pi
   if (x instanceof Add && x.freeSymbols().size === 0 && !isReal(x) && !x.args.some((a) => a instanceof Float)) {
@@ -347,6 +370,7 @@ function isEven(e: Expr): boolean {
 }
 
 const evalAbs: Evaluator = (x) => {
+  if (x.kind === 'Set') throw new TypeError('Abs requires an expression');
   if (isNum(x)) return numAbs(x);
   if (!isNonNegative(x) && !isNegative(x)) {
     const sg = numericSign(x);
@@ -366,6 +390,10 @@ const evalAbs: Evaluator = (x) => {
     const known: Expr[] = [];
     const unknown: Expr[] = [];
     for (const t of x.args) {
+      if (t instanceof Pow && t.exp instanceof Rational && t.exp.isNegative && isReal(t.base) !== true) {
+        unknown.push(t);
+        continue;
+      }
       const v = abs(t);
       if (v instanceof Fn && v.name === 'abs') unknown.push(t);
       else known.push(v);
@@ -428,28 +456,41 @@ function unitRoot(x: Expr): [Expr, Expr] | undefined {
 /** SymPy re/im: an imaginary argument (or one whose product with I is real) is I times a real. */
 const isImaginaryArg = (x: Expr): boolean => (x instanceof Sym && x.assumptions.imaginary === true) || isReal(mul(S.I, x)) === true;
 
+/** log of a nonnegative argument: an extended real number (-oo at 0), as SymPy's re and im take it. */
+const isExtendedRealLog = (x: Expr): boolean => x instanceof Fn && x.name === 'log' && isNonNegative(first(x.args)) === true;
+
+/** For a product of real factors and z, take the component of z after extracting a factor I. */
+function productComponent(x: Mul, imaginary: boolean): Expr | undefined {
+  const component = imaginary ? im : re;
+  const rotated = (z: Expr): Expr => imaginary ? re(z) : neg(im(z));
+  const real: Expr[] = [];
+  const other: Expr[] = [];
+  for (const factor of x.args) (isReal(factor) === true ? real : other).push(factor);
+  if (real.length) {
+    const rest = mul(...other);
+    if (isI(rest)) return imaginary ? mul(...real) : S.Zero;
+    if (rest instanceof Mul && rest.args.filter(isI).length === 1) {
+      return mul(...real, rotated(mul(...rest.args.filter((a) => !isI(a)))));
+    }
+    return mul(...real, component(rest));
+  }
+  if (x.args.some(isI)) return rotated(mul(...x.args.filter((a) => !isI(a))));
+  return undefined;
+}
+
 const evalRe: Evaluator = (x) => {
-  if (isReal(x)) return x;
+  if (x instanceof ExtensionExpr) {
+    const parts = x.asRealImagSelf();
+    if (parts !== undefined) return parts[0];
+  }
+  if (isReal(x) || isExtendedRealLog(x)) return x;
   if (isI(x)) return S.Zero;
   const ur = unitRoot(x);
   if (ur) return ur[0];
   if (x instanceof Add) return add(...x.args.map(re));
   if (x instanceof Mul) {
-    const real = x.args.filter((a) => isReal(a) === true);
-    const others = x.args.filter((a) => isReal(a) !== true);
-    if (real.length > 0) {
-      const o = mul(...others);
-      if (isI(o)) return S.Zero;
-      if (o instanceof Mul && o.args.some(isI) && o.args.filter(isI).length === 1) {
-        const w = mul(...o.args.filter((a) => !isI(a)));
-        return mul(...real, neg(im(w)));
-      }
-      return mul(...real, re(o));
-    }
-    if (x.args.some(isI)) {
-      const w = mul(...x.args.filter((a) => !isI(a)));
-      return neg(im(w));
-    }
+    const part = productComponent(x, false);
+    if (part !== undefined) return part;
   }
   if (x instanceof Fn && x.name === 'conjugate') return re(first(x.args));
   if (isImaginaryArg(x)) return S.Zero;
@@ -457,27 +498,18 @@ const evalRe: Evaluator = (x) => {
 };
 
 const evalIm: Evaluator = (x) => {
+  if (x instanceof ExtensionExpr) {
+    const parts = x.asRealImagSelf();
+    if (parts !== undefined) return parts[1];
+  }
   const ur = unitRoot(x);
   if (ur) return ur[1];
-  if (isReal(x)) return S.Zero;
+  if (isReal(x) || isExtendedRealLog(x)) return S.Zero;
   if (isI(x)) return S.One;
   if (x instanceof Add) return add(...x.args.map(im));
   if (x instanceof Mul) {
-    const real = x.args.filter((a) => isReal(a) === true);
-    const others = x.args.filter((a) => isReal(a) !== true);
-    if (real.length > 0) {
-      const o = mul(...others);
-      if (isI(o)) return mul(...real);
-      if (o instanceof Mul && o.args.filter(isI).length === 1) {
-        const w = mul(...o.args.filter((a) => !isI(a)));
-        return mul(...real, re(w));
-      }
-      return mul(...real, im(o));
-    }
-    if (x.args.some(isI)) {
-      const w = mul(...x.args.filter((a) => !isI(a)));
-      return re(w);
-    }
+    const part = productComponent(x, true);
+    if (part !== undefined) return part;
   }
   if (x instanceof Fn && x.name === 'conjugate') return neg(im(first(x.args)));
   if (isImaginaryArg(x)) return mul(-1, S.I, x);
@@ -496,18 +528,24 @@ const evalArg: Evaluator = (x) => {
     }
     if (depth === 3 || (depth === 2 && isReal(a) === true)) return S.NaN;
   }
-  if (isPositive(x)) return S.Zero;
-  {
-    const sg = numericSign(x);
-    if (sg === 1) return S.Zero;
-    if (sg === -1) return S.Pi;
+  // the sign of a factor (SymPy sign(a) of 1 or -1: positive or negative, an infinite value included for a
+  // function declared extended_positive or extended_negative)
+  const knownSign = (t: Expr): 1 | -1 | undefined =>
+    isPositive(t) === true ? 1 : isNegative(t) === true ? -1
+      : t instanceof UndefFn ? (t.givenFacts.get('extended_positive') === true ? 1 : t.givenFacts.get('extended_negative') === true ? -1 : undefined) : undefined;
+  const sign = knownSign(x) ?? numericSign(x);
+  if (sign !== undefined) return sign === 1 ? S.Zero : S.Pi;
+  // SymPy arg.eval: a factor of known sign counts by that sign only (arg((3 + I)*p) = arg(3 + I) for positive p)
+  if (x instanceof Mul) {
+    const reduced = mul(...x.args.map((t) => knownSign(t) ?? t));
+    if (reduced.key !== x.key) return arg(reduced);
   }
   // a + b*I with real numeric a, b
   if (x.freeSymbols().size === 0 && !isReal(x)) {
     const a = re(x);
     const b = im(x);
     if (isNum(a) && isNum(b) && (a instanceof Float || b instanceof Float)) {
-      return new Float(Math.atan2(b instanceof Rational ? b.value : (b).value, a instanceof Rational ? a.value : (a).value));
+      return new Float(Math.atan2(b.value, a.value));
     }
     if (!(a instanceof Fn) && !(b instanceof Fn) && a.freeSymbols().size === 0) {
       // signs decided by the assumptions, else numerically (SymPy evaluates is_positive by evalf)
@@ -523,7 +561,6 @@ const evalArg: Evaluator = (x) => {
       }
     }
   }
-  if (isNegative(x)) return S.Pi;
   if (x instanceof Pow && x.base instanceof Constant && x.base.name === 'E') {
     const t = im(x.exp);
     // a rational angle reduced into (-pi, pi]
@@ -541,9 +578,18 @@ export const conjugateCommutes = new Set<string>();
 /** Functions with their own conjugate (SymPy _eval_conjugate), by name; filled by the modules that define them. */
 export const conjugateRules: Partial<Record<string, (args: readonly Expr[]) => Expr>> = {};
 
+function transformOrder(order: Order, name: 'conjugate' | 'transpose' | 'adjoint', transform: (expr: Expr) => Expr): Expr {
+  const expr = transform(order.expr);
+  if (expr instanceof Fn && expr.name === name && first(expr.args).equals(order.expr)) return new Fn(name, [order]);
+  const args = [expr, ...order.args.slice(1)];
+  return impl.rebuildOrder?.(args) ?? new Order(args);
+}
+
 /** Complex conjugate, pushed through the expression tree. */
 export function conjugate(xx: ExprLike): Expr {
   const x = sympify(xx);
+  if (x instanceof Order) return transformOrder(x, 'conjugate', conjugate);
+  if (x instanceof Piecewise) return piecewise(...x.pairs.map(([value, condition]) => [conjugate(value), condition] as const));
   if (x instanceof ExtensionExpr) {
     const r = x.conjugateSelf();
     if (r !== undefined) return r;
@@ -593,6 +639,7 @@ export function conjugate(xx: ExprLike): Expr {
  */
 export function adjoint(xx: ExprLike): Expr {
   const x = sympify(xx);
+  if (x instanceof Piecewise) return piecewise(...x.pairs.map(([value, condition]) => [adjoint(value), condition] as const));
   if (x instanceof ExtensionExpr) {
     const r = x.adjointSelf();
     if (r !== undefined) return r;
@@ -601,6 +648,7 @@ export function adjoint(xx: ExprLike): Expr {
   if (x instanceof Sym && x.assumptions.hermitian === true) return x;
   if (x instanceof Sym && x.assumptions.antihermitian === true) return neg(x);
   if (x.isCommutative && !(x instanceof Add) && !(x instanceof Mul)) return conjugate(x);
+  if (x instanceof Order) return transformOrder(x, 'adjoint', adjoint);
   if (x instanceof Add) return add(...x.args.map(adjoint));
   if (x instanceof Mul) return mul(...[...x.args].reverse().map(adjoint));
   if (x instanceof Pow && x.exp.isCommutative && isReal(x.exp)) return pow(adjoint(x.base), x.exp);
@@ -619,11 +667,15 @@ export function adjoint(xx: ExprLike): Expr {
 /** Transpose (SymPy transpose): commutative scalars are unchanged, products reverse. */
 export function transpose(xx: ExprLike): Expr {
   const x = sympify(xx);
+  if (x instanceof Order) return transformOrder(x, 'transpose', transpose);
+  if (x instanceof Piecewise) return piecewise(...x.pairs.map(([value, condition]) => [transpose(value), condition] as const));
   if (x instanceof ExtensionExpr) {
     const r = x.transposeSelf();
     if (r !== undefined) return r;
   }
   if (x.isCommutative) return x;
+  if (x instanceof Sym && x.assumptions.hermitian === true) return conjugate(x);
+  if (x instanceof Sym && x.assumptions.antihermitian === true) return neg(conjugate(x));
   if (x instanceof Add) return add(...x.args.map(transpose));
   if (x instanceof Mul) return mul(...[...x.args].reverse().map(transpose));
   if (x instanceof Pow && x.exp.isCommutative && isReal(x.exp)) return pow(transpose(x.base), x.exp);
@@ -636,15 +688,17 @@ export function transpose(xx: ExprLike): Expr {
   return new Fn('transpose', [x]);
 }
 
+/** A symbolic involution that returns its own unevaluated call leaves evaluation to fn. */
+function involutionEvaluator(name: FnName, apply: (x: Expr) => Expr): Evaluator {
+  return (x) => {
+    const result = apply(x);
+    return result instanceof Fn && result.name === name && result.args[0] === x ? undefined : result;
+  };
+}
+
 export const evaluators: Partial<Record<FnName, Evaluator>> = {
-  adjoint: (x) => {
-    const c = adjoint(x);
-    return c instanceof Fn && c.name === 'adjoint' && c.args[0] === x ? undefined : c;
-  },
-  transpose: (x) => {
-    const c = transpose(x);
-    return c instanceof Fn && c.name === 'transpose' && c.args[0] === x ? undefined : c;
-  },
+  adjoint: involutionEvaluator('adjoint', adjoint),
+  transpose: involutionEvaluator('transpose', transpose),
   sin: evalSin,
   cos: evalCos,
   tan: evalTan,
@@ -659,10 +713,7 @@ export const evaluators: Partial<Record<FnName, Evaluator>> = {
   re: evalRe,
   im: evalIm,
   arg: evalArg,
-  conjugate: (x) => {
-    const c = conjugate(x);
-    return c instanceof Fn && c.name === 'conjugate' && c.args[0] === x ? undefined : c;
-  },
+  conjugate: involutionEvaluator('conjugate', conjugate),
 };
 
 /** The sign of a finite part, undefined when it is not decided. */
@@ -731,6 +782,10 @@ const signedOo = (k: number): Expr => (k > 0 ? S.Infinity : S.NegativeInfinity);
 /** zoo where the modulus grows without bound (the limit on the Riemann sphere). */
 const zooUnless = (f: InfiniteForm, kinds: readonly string[]): Expr | undefined => (kinds.includes(f.kind) ? S.ComplexInfinity : undefined);
 
+/** Reciprocal functions vanish at a directed infinity. The evaluator handles a pure real infinity. */
+const reciprocalLimit = (f: InfiniteForm): Expr | undefined =>
+  f.kind === 'zoo' || (f.kind === 'R' && f.c === 0) ? undefined : S.Zero;
+
 /**
  * The values of functions at a number with an infinite part, where SymPy leaves them
  * unevaluated: the limit when it exists (zoo when the modulus grows without bound in no fixed
@@ -772,18 +827,18 @@ const INFINITE_LIMITS: Partial<Record<FnName, (f: InfiniteForm) => Expr | undefi
     return zooUnless(f, ['D']);
   },
   atanh: (f) => (f.kind === 'R' ? (!f.c ? undefined : iHalfPi(f.c)) : f.kind === 'zoo' ? undefined : iHalfPi(f.t)),
-  acoth: (f) => (f.kind === 'zoo' || (f.kind === 'R' && f.c === 0) ? undefined : S.Zero),
+  acoth: reciprocalLimit,
   // asech(z) = acosh(1/z) with 1/z -> 0 from the side opposite to z
   asech: (f) => (f.kind === 'R' ? (!f.c ? undefined : iHalfPi(-f.c)) : f.kind === 'zoo' ? undefined : iHalfPi(-f.t)),
-  acsch: (f) => (f.kind === 'zoo' || (f.kind === 'R' && f.c === 0) ? undefined : S.Zero),
+  acsch: reciprocalLimit,
   atan: (f) => {
     if (f.kind === 'R') return !f.c ? undefined : halfPi(f.s);
     if (f.kind === 'I') return !f.a ? undefined : halfPi(f.a);
     return f.kind === 'D' ? halfPi(f.s) : undefined;
   },
-  acot: (f) => (f.kind === 'zoo' || (f.kind === 'R' && f.c === 0) ? undefined : S.Zero),
+  acot: reciprocalLimit,
   asec: (f) => (f.kind === 'zoo' ? undefined : halfPi(1)),
-  acsc: (f) => (f.kind === 'zoo' || (f.kind === 'R' && f.c === 0) ? undefined : S.Zero),
+  acsc: reciprocalLimit,
   // arg and sign of a direction; arg of a D form has no limit: SymPy's values, arg(oo + oo*I) = pi/4,
   // arg(oo - oo*I) = -pi/4, arg(-oo + oo*I) = pi, arg(-oo - oo*I) = -3*pi/4 (SymPy arg(-1 + oo*I) = nan,
   // its limit pi/2 here)
@@ -809,6 +864,12 @@ export function fn(name: FnName, args: readonly ExprLike[], opts: { evaluate?: b
   const xs = args.map(sympify);
   if (opts.evaluate === false) return new Fn(name, xs);
   const [x0, ...rest] = xs;
+  if (x0 instanceof ExtensionExpr && x0.name === 'SetExpr' && rest.length === 0
+    && ['sin', 'cos', 'tan', 'cot', 'sec', 'csc'].includes(name)
+    && 'applyfunc' in x0 && typeof x0.applyfunc === 'function') {
+    const mapped: unknown = x0.applyfunc((value: Expr) => fn(name, [value]));
+    return expectType(mapped, (value): value is Expr => value instanceof Expr, 'mapped set expression');
+  }
   if (x0 !== undefined && rest.length === 0 && impl.accumBounds?.is(x0)) {
     const r = accumBoundsFunction(name, x0, (n, x) => fn(n, [x]));
     if (r !== undefined) return r;

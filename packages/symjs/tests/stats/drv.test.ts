@@ -99,7 +99,7 @@ describe('probabilities (SymPy test_discrete_probability)', () => {
     const X2 = Geometric('X2', R(1, 3));
     // SymPy: Sum(Piecewise((1/(4*2**n), n >= -1), (0, True)), (n, -oo, -1))/3 (a Piecewise whose condition
     // bounds X2 by a parameter is not summed here)
-    expect(str(rewrite(P(Lt(add(X1, X2), 3)), 'Sum'))).toBe('Sum(Sum((2/3)**(X2 - 1)*Piecewise(((1/2)**(-X2 + n + 2)/2, X2 - n <= 2), (0, True))/3, (X2, 1, oo)), (n, -oo, -1))');
+    expect(str(rewrite(P(Lt(add(X1, X2), 3)), 'Sum'))).toBe('Sum(Sum((2/3)**(X2 - 1)*Piecewise(((1/2)**(-X2 + n + 3), X2 - n <= 2), (0, True))/3, (X2, 1, oo)), (n, -oo, -1))');
     // SymPy's 1/12 is wrong: X1 + X2 = 3 for (1, 2) and (2, 1), with probability (1/2)*(2/9) + (1/4)*(1/3) = 7/36
     expect(str(P(Eq(add(X1, X2), 3)))).toBe('7/36');
   });
@@ -151,8 +151,8 @@ describe('the summation fallbacks of SingleDiscreteDistribution', () => {
   });
   it('expectations that are not polynomials', () => {
     const X = Geometric('X', S.Half);
-    // SymPy: oo ((1/2)**(X - 1)*2**X is not combined to 2 here)
-    expect(str(expectation(pow(2, X)))).toBe('Sum((1/2)**(X - 1)*2**X/2, (X, 1, oo))');
+    // Every summand is one, so the infinite expectation diverges (SymPy: oo).
+    expect(str(expectation(pow(2, X)))).toBe('oo');
     // SymPy: Sum(2**(1 - X)*cos(X)/2, (X, 1, oo))
     expect(str(expectation(cos(X)))).toBe('Sum((1/2)**(X - 1)*cos(X)/2, (X, 1, oo))');
   });
@@ -198,7 +198,7 @@ describe('DiscretePSpace.probability', () => {
     const X = Poisson('X', 1);
     const Y = Poisson('Y', 2);
     // SymPy: Sum((sqrt(2)/2)**n*exp(-3)*besseli(n, 2*sqrt(2)), (n, 1, oo)) (its inner sums see n > 0)
-    expect(str(P(Gt(X, Y)))).toBe('Sum(Sum(2**Y*exp(-2)*Piecewise((exp(-1)/factorial(Y + n), Y + n >= 0), (0, True))/factorial(Y), (Y, 0, oo)), (n, 1, oo))');
+    expect(str(P(Gt(X, Y)))).toBe('Sum(Sum(2**Y*Piecewise((exp(-1)/factorial(Y + n), Y + n >= 0), (0, True))*exp(-2)/factorial(Y), (Y, 0, oo)), (n, 1, oo))');
   });
   it('a set it cannot sum over gives an unevaluated Probability', () => {
     // where() gives sets of integers that eval_prob sums over; another set (here an interval) is not summed

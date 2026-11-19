@@ -98,7 +98,12 @@ function dmRrefDenFF(M: DomainMatrix): [DomainMatrix, Expr, number[]] {
 
 /** SymPy _dm_rref_choose_method: [method, format]. */
 export function dmRrefChooseMethod(M: DomainMatrix, methodIn: RrefMethod, denominator: boolean): [string, Fmt] {
-  if (methodIn !== 'auto') return methodIn.endsWith('_dense') ? [methodIn.slice(0, -'_dense'.length), 'dense'] : [methodIn, 'sparse'];
+  if (methodIn !== 'auto') {
+    const dense = methodIn.endsWith('_dense');
+    const method = dense ? methodIn.slice(0, -'_dense'.length) : methodIn;
+    if (!['GJ', 'FF', 'CD'].includes(method)) throw new RangeError(`unknown rref method: ${methodIn}`);
+    return [method, dense ? 'dense' : 'sparse'];
+  }
   const K = M.domain;
   if (isZZ(K)) return [dmRrefChooseMethodZZ(M), 'sparse'];
   if (isQQ(K)) return [dmRrefChooseMethodQQ(M), 'sparse'];

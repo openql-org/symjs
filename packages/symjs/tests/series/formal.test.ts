@@ -7,6 +7,9 @@ import { describe, expect, it } from 'vitest';
 import * as sj from '../../src';
 import { Sym, parse } from '../../src';
 import { Expr } from '../../src/core/nodes';
+import { readFileSync } from 'node:fs';
+import { runTestCase } from '../../../../tools/sympy-corpus/tests-harness';
+import type { TestCase } from '../../../../tools/sympy-corpus/tests-harness';
 
 const P = (s: string) => parse(s);
 const V = (s: string): Sym => {
@@ -15,6 +18,20 @@ const V = (s: string): Sym => {
   return v;
 };
 const [x, y] = [V('x'), V('y')];
+
+describe('rationalAlgorithm', () => {
+  const cases: TestCase[] = JSON.parse(readFileSync(new URL('../../../../tools/sympy-corpus/tests-corpus/series.json', import.meta.url), 'utf8'));
+  it.each(cases.filter((c) => c.fn === 'rational_algorithm'))('matches the upstream coefficient formula at line $line', (c) => {
+    expect(['pass', 'equivalent']).toContain(runTestCase(c).status);
+  });
+  it('separates Laurent terms and rejects finite polynomials', () => {
+    const k = V('k');
+    const result = sj.rationalAlgorithm(P('1/x**2 + 1/(1-x)'), x, k);
+    expect(Array.isArray(result) ? result.map(String) : result).toEqual(['1', 'x**(-2)', '0']);
+    expect(sj.rationalAlgorithm(P('x + 1'), x, k)).toBe(sj.NoMatch);
+    expect(sj.rationalAlgorithm(P('cos(x)'), x, k, 0)).toBe(sj.NoMatch);
+  });
+});
 const show = (v: unknown): string => (Array.isArray(v) ? `[${v.map(show).join(', ')}]` : v instanceof Expr ? v.toString() : JSON.stringify(v));
 
 describe('fps without a variable', () => {
@@ -101,7 +118,7 @@ describe('coefficient sequence representation', () => {
   });
   it('prints logarithmic, geometric and binomial coefficient formulas', () => {
     // (-1)^k and 1/(-1)^k agree for every integer sequence index.
-    expect(String(sj.fps(P('log(1+x)'), x))).toContain('SeqFormula(-(-1)**_k/_k, (_k, 1, oo))');
+    expect(String(sj.fps(P('log(1+x)'), x))).toContain('SeqFormula(-1/((-1)**_k*_k), (_k, 1, oo))');
     expect(String(sj.fps(P('1/(1-x)'), x))).toBe('FormalPowerSeries(1/(1 - x), x, 0, 1, (SeqFormula(1, (_k, 0, oo)), SeqFormula(x**_k, (_k, 0, oo)), 0))');
     expect(String(sj.fps(P('sqrt(1+x)'), x))).toContain('SeqFormula(binomial(1/2, _k), (_k, 0, oo))');
   });
@@ -180,4 +197,33 @@ it('declines recurrences with unresolved denominator roots', () => {
   const k = V('k'), g = sj.SymFunction('g');
   const de = sj.add(g(x), ...[-29,210,-285,125,-20,1].map((c,i) => sj.mul(c, x.pow(i), sj.diff(g(x),x,i+1))));
   expect(sj.solveDe(0,x,de,6,g,k)).toBe(sj.NoMatch);
+});
+
+it('computes infinite coefficient sums and respects algorithm selection', () => {
+  const logSeries = sj.fps(P('log(1+x)'), x);
+  expect(String(logSeries.asLeadingTerm())).toBe('x');
+  expect(String(logSeries.infinite)).toContain('Sum(');
+  expect(String(sj.fps(P('exp(x)'), x, 0, '-').infinite)).toContain('factorial');
+  expect(() => sj.fps(P('exp(sin(x))'), x).infinite).toThrow(sj.NotImplementedError);
+  expect(String(sj.fps(x, x).truncate(3))).toBe('x + O(x**3)');
+  expect(String(sj.fps(2, x))).toBe('2');
+  const f = P('log(1+x)');
+  expect(sj.fps(f, x, 0, '+', { rational: false, hyper: false })).toBe(f);
+  expect(sj.fps(f, x, 0, '-', { hyper: false })).toBeInstanceOf(sj.FormalPowerSeries);
+  expect(sj.fps(P('exp(x)'), x, 0, '+', { rational: false })).toBeInstanceOf(sj.FormalPowerSeries);
+  expect(sj.fps(P('log(1+1/x)'), x, 0, '+', { rational: false })).toEqual(P('log(1+1/x)'));
+  expect(sj.fps(P('exp(x)'), x, 0, '+', { hyper: false })).toEqual(P('exp(x)'));
+  expect(logSeries.add(x)).toBeInstanceOf(sj.Add);
+  expect(logSeries.add(sj.fps(f.neg(), x))).toBe(sj.S.Zero);
+  expect(logSeries.add(logSeries)).toBeInstanceOf(sj.FormalPowerSeries);
+  expect(() => logSeries.product(sj.fps(f, x, 0, '-'))).toThrow(RangeError);
+  const symbolic = sj.fps(P('x**(n-2)*sin(x) + x**n*exp(x)'), x);
+  expect(String(symbolic.truncate())).toContain('5*x**(n + 1)/6');
+  expect(sj.fps(P('x**n + x**m'), x).fn.equals(P('x**n + x**m'))).toBe(true);
+  expect(String(sj.fps(P('x**n + x**(n+1)'), x).truncate(3))).toContain('x**n');
+});
+
+it('retains symbolic powers in expansions at infinity', () => {
+  expect(String(sj.fps(P('x**n*atan(x)'), x, sj.oo).truncate(4))).toContain('O(x**(n - 4), (x, oo))');
+  expect(String(sj.fps(P('x**n/x'), x, sj.oo).truncate(4))).toContain('x**(n - 1)');
 });

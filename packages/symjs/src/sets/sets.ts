@@ -16,7 +16,7 @@
 import { NotImplementedError } from '../core/errors';
 import type { Truth } from '../core/truth';
 import type { ExprLike } from '../core/nodes';
-import { Add, BoolAtom, Constant, Expr, ExtensionExpr, Float, Mul, Rational, S, Special, Sym, WildFunction, impl } from '../core/nodes';
+import { Add, BoolAtom, Constant, Expr, ExtensionExpr, Float, Fn, Dummy, Mul, Piecewise, Pow, Rational, Rel, S, Special, Sym, WildFunction, impl } from '../core/nodes';
 import type { UndefinedFunction } from '../core/undef';
 import { isNoMatch, truthAnd } from '../core/truth';
 import { add, div, mul, neg, pow, sympify } from '../core/ops';
@@ -37,7 +37,17 @@ import { xreplace } from '../core/traverse';
 import { gcdext } from '../ntheory/intutil';
 import { gcd } from '../core/numbers';
 import { registerRewrite } from '../simplify/rewrite';
-import { floatToString } from '../numeric/mpf';
+import { BasicNode } from '../core/basic';
+import { DefinedFunctionCall } from '../core/defun';
+import { integerNthroot } from '../core/numberutils';
+import { divisors } from '../ntheory/factor';
+import { asCoeffAdd, asCoeffMul, asNumerDenom } from '../core/methods';
+import { asBoolean, binarySymbols } from '../logic/boolalg';
+import { toMpf } from '../core/num';
+import { setArgsOrdered } from '../printing/sets';
+import { ordered } from '../core/match';
+import { iproduct, roundrobin } from '../utilities/iterables';
+import { floatToString, precToDps } from '../numeric/mpf';
 
 /** Base class of all sets. */
 export abstract class SetExpr extends Expr {
@@ -46,6 +56,17 @@ export abstract class SetExpr extends Expr {
   override add(other: ExprLike): SetExpr { return union(this, cast(sympify(other), SetExpr)); }
   override sub(other: ExprLike): SetExpr { return complement(this, cast(sympify(other), SetExpr)); }
   override mul(other: ExprLike): SetExpr { return productSet(this, cast(sympify(other), SetExpr)); }
+  override pow(exponent: ExprLike): SetExpr {
+    const n = sympify(exponent);
+    if (!(n instanceof Rational && n.isInteger && !n.isNegative)) throw new RangeError('Cartesian powers require a nonnegative integer');
+    return productSet(...Array.from({ length: Number(n.p) }, () => this));
+  }
+  /** Definite membership, as required by the in operator. */
+  hasElement(x: Expr): boolean {
+    const result = contains(this, x);
+    if (result instanceof BoolAtom) return result.value;
+    throw new TypeError('cannot determine symbolic set membership');
+  }
   abstract get className(): string;
   /** Set order is inclusion, with strict order excluding equality. */
   le(other: SetExpr): Truth { return isSubset(this, other) ?? 'unknown'; }
@@ -59,6 +80,7 @@ export abstract class SetExpr extends Expr {
   }
   get isEmptyQ(): Truth { return this.isEmpty; }
   get isIterable(): boolean { return false; }
+
   /** Topological boundary in the real line. */
   get boundary(): SetExpr { throw new NotImplementedError(`boundary of ${this.className}`); }
   get closure(): SetExpr { return union(this, this.boundary); }
@@ -74,6 +96,14 @@ export abstract class SetExpr extends Expr {
   /** SymPy Set._contains for the set classes that define it: true, false or 'unknown'. */
   elementOf(_x: Expr): Truth {
     return 'unknown';
+  }
+  /** SymPy intersection_sets of this class: its intersection with another set, or undefined without a rule. */
+  intersectSelf(_other: SetExpr): SetExpr | undefined {
+    return undefined;
+  }
+  /** SymPy union_sets of this class: its union with another set, or undefined when the two do not combine. */
+  unionSelf(_other: SetExpr): SetExpr | undefined {
+    return undefined;
   }
 }
 
@@ -91,7 +121,13 @@ export function realValue(e: Expr): number | undefined {
     const v = impl.toComplex(e);
     return Math.abs(v.im) > 1e-12 * Math.max(1, Math.abs(v.re)) ? undefined : v.re;
   } catch {
-    return undefined;
+    // a number without a machine evaluation (an indexed root) is evaluated in arbitrary precision
+    try {
+      const v = impl.evalf(e, 15);
+      return v instanceof Float || v instanceof Rational ? v.value : undefined;
+    } catch {
+      return undefined;
+    }
   }
 }
 
@@ -110,6 +146,11 @@ export function cmpReal(a: Expr, b: Expr): number | undefined {
   if (!near) return x < y ? -1 : 1;
   // equal within rounding (or both too large for a double): the floor and ceiling of the exact
   // difference d decide its sign, else it is not known
+  // An odd power is injective on the reals. Expand a small radical's power
+  // before asking floor/ceiling to separate algebraically equal expressions.
+  const radical = [a, b].find((v) => v instanceof Pow && v.exp instanceof Rational && v.exp.q > 1n && v.exp.q <= 5n && v.exp.q % 2n === 1n);
+  if (radical instanceof Pow && radical.exp instanceof Rational && isReal(a) === true && isReal(b) === true &&
+      pow(a, radical.exp.q).expand().key === pow(b, radical.exp.q).expand().key) return 0;
   const d = add(a, mul(-1, b));
   const lo = fn('floor', [d]);
   const hi = fn('ceiling', [d]);
@@ -123,9 +164,33 @@ export function cmpReal(a: Expr, b: Expr): number | undefined {
 
 class NamedSet extends SetExpr {
   override get isFiniteSet(): boolean { return this.name === 'EmptySet'; }
-  override get isIterable(): boolean { return ['EmptySet', 'Integers', 'Naturals', 'Naturals0'].includes(this.name); }
+  override get isIterable(): boolean { return ['EmptySet', 'Integers', 'Naturals', 'Naturals0', 'Rationals'].includes(this.name); }
+  *elements(): Generator<Expr> {
+    if (this === EmptySet) return;
+    if (!this.isIterable) throw new TypeError(`${this.name} is not iterable`);
+    if (this === Rationals) {
+      yield S.Zero;
+      yield S.One;
+      yield S.NegOne;
+      for (let d = 2n; ; d++) {
+        for (let n = 1n; n < d; n++) {
+          if (gcd(n, d) !== 1n) continue;
+          yield Rational.of(n, d);
+          yield Rational.of(d, n);
+          yield Rational.of(-n, d);
+          yield Rational.of(-d, n);
+        }
+      }
+    }
+    for (let i = this === Naturals ? 1n : 0n; ; i++) {
+      yield Rational.of(i);
+      if (this === Integers && i) yield Rational.of(-i);
+    }
+  }
   override get boundary(): SetExpr {
-    if (this.name === 'Reals' || this.name === 'EmptySet') return EmptySet;
+    if (this.name === 'Reals' || this.name === 'EmptySet' || this.name === 'UniversalSet') return EmptySet;
+    if (this.name === 'Rationals') return Reals;
+    if (['Integers', 'Naturals', 'Naturals0'].includes(this.name)) return this;
     throw new NotImplementedError(`boundary of ${this.name}`);
   }
   override get measure(): Expr {
@@ -164,6 +229,13 @@ export const Naturals0 = new NamedSet('Naturals0');
 export const Complexes = new NamedSet('Complexes');
 export const UniversalSet = new NamedSet('UniversalSet');
 
+/** Dispatch iteration to the domain, including the infinite standard number sets. */
+function elements(s: SetExpr): Iterable<Expr> {
+  if (s instanceof NamedSet) return s.elements();
+  if (s instanceof Range || s instanceof FiniteSet || s instanceof ImageSet || s instanceof ProductSetNode || s instanceof SetOp) return s;
+  throw new TypeError(`${s.className} is not iterable`);
+}
+
 /** The allowed argument counts of an undefined or wildcard function. */
 export function nargs(f: UndefinedFunction | WildFunction): SetExpr {
   const arities = f instanceof WildFunction ? f.nargs : f.arity;
@@ -193,6 +265,17 @@ export class Interval extends SetExpr {
   /** SymPy `Interval(a, b, left_open, right_open)` (EmptySet or a point when degenerate). */
   static of(a: ExprLike, b: ExprLike, leftOpen = false, rightOpen = false): SetExpr {
     return interval(a, b, leftOpen, rightOpen);
+  }
+  /** The numeric endpoints at the requested binary precision (SymPy to_mpi). */
+  toMpi(precision = 53): readonly [Expr, Expr] {
+    if (!Number.isSafeInteger(precision) || precision < 1) throw new RangeError('Expected positive precision');
+    const endpoint = (x: Expr): Expr => {
+      if (isInf(x)) return x;
+      const n = x instanceof Rational || x instanceof Float ? x : x.evalf(precToDps(precision) + 2);
+      if (!(n instanceof Float || n instanceof Rational)) throw new TypeError('Expected a numeric interval endpoint');
+      return new Float(toMpf(n, precision), precision);
+    };
+    return [endpoint(this.start), endpoint(this.end)];
   }
   /** SymPy `Interval.open(a, b)`. */
   static open(a: ExprLike, b: ExprLike): SetExpr {
@@ -295,6 +378,15 @@ export class FiniteSet extends SetExpr {
     const items = this.args.map(p).join(', ');
     return this.args.some(hasFiniteSet) ? `FiniteSet(${items})` : `{${items}}`;
   }
+  [Symbol.iterator](): Iterator<Expr> { return this.args[Symbol.iterator](); }
+  /** SymPy FiniteSet._eval_rewrite_as_PowerSet: all subsets of the largest member. */
+  rewriteAsPowerSet(): SetExpr {
+    if (!this.args.includes(EmptySet)) return this;
+    const members = this.args.filter((a) => a instanceof FiniteSet);
+    const largest = members.sort((a, b) => b.args.length - a.args.length)[0] ?? EmptySet;
+    if (BigInt(this.args.length) !== 2n ** BigInt(largest.args.length)) return this;
+    return powerset(largest).key === this.key ? PowerSet(largest) : this;
+  }
   /** SymPy FiniteSet._eval_powerset: the FiniteSet of all subsets. */
   powerset(): SetExpr {
     let subsets: Expr[][] = [[]];
@@ -338,6 +430,7 @@ const extPositive = (n: Expr): boolean => isPositive(n) === true || infSign(n) =
  * known when the assumptions tell.
  */
 export class Range extends SetExpr {
+  override get boundary(): SetExpr { return this; }
   override get isIterable(): boolean {
     const n = this.count();
     return n instanceof Rational && n.isInteger && !n.isNegative && this.args.every((a) => isIntegerQ(a) === true);
@@ -382,6 +475,15 @@ export class Range extends SetExpr {
     if (isNonNegative(n) === true && this.args.every((a) => isIntegerQ(a) === true)) return impl.abs(fn('floor', [n]));
     throw new RangeError(INVALID_SYMBOLIC);
   }
+  *[Symbol.iterator](): Generator<Expr> {
+    const size = this.size;
+    if (isInf(this.start)) throw new RangeError('Cannot iterate a range with an infinite start');
+    if (isOo(size)) {
+      for (let x = this.start; ; x = add(x, this.step)) yield x;
+    }
+    const count = asRat(size).p;
+    for (let i = 0n; i < count; i++) yield add(this.start, mul(i, this.step));
+  }
   /** SymPy is_finite_set. */
   override get isFiniteSet(): boolean {
     if (isIntegerQ(this.start) === true && isIntegerQ(this.stop) === true) return true;
@@ -419,6 +521,66 @@ export class Range extends SetExpr {
     if (rel) return rv;
     if (isNonNegative(val) === false || isPositive(add(n, neg(val))) === false) throw new RangeError('Range index out of range');
     throw new RangeError(INVALID_SYMBOLIC);
+  }
+  /** A slice of the range, with omitted bounds interpreted as in SymPy Range. */
+  slice(start?: number, stop?: number, step = 1): Range {
+    for (const value of [start, stop, step]) if (value !== undefined && !Number.isSafeInteger(value)) throw new TypeError('slice indices must be integers');
+    if (step === 0) throw new RangeError('slice step cannot be zero');
+    const size = this.size;
+    const stride = mul(step, this.step);
+    const empty = (): Range => new Range(S.Zero, S.Zero, S.One);
+    const make = (a: Expr, b: Expr): Range => cast(range(a, b, stride), Range);
+    if (size instanceof Rational) {
+      const n = size.p;
+      const lower = step < 0 ? -1n : 0n;
+      const upper = step < 0 ? n - 1n : n;
+      const clip = (v: number | undefined, fallback: bigint): bigint => {
+        if (v === undefined) return fallback;
+        const index = BigInt(v);
+        const position = index < 0n ? index + n : index;
+        return position < lower ? lower : position > upper ? upper : position;
+      };
+      const a = clip(start, step < 0 ? upper : lower);
+      const b = clip(stop, step < 0 ? lower : upper);
+      const distance = step > 0 ? b - a : a - b;
+      if (distance <= 0n) return empty();
+      const magnitude = BigInt(Math.abs(step));
+      const count = (distance + magnitude - 1n) / magnitude;
+      const endpoint = a + count * BigInt(step);
+      return make(add(this.start, mul(Rational.of(a), this.step)), add(this.start, mul(Rational.of(endpoint), this.step)));
+    }
+    const infinite = 'cannot slice from the end with an infinite value';
+    const ambiguous = 'cannot unambiguously re-stride from the end with an infinite value';
+    if (isInf(this.start) && isInf(this.stop)) throw new RangeError('slicing not possible on range with infinite start');
+    if (isInf(this.stop)) return this.reversed.slice(stop === undefined ? undefined : -stop + 1, start === undefined ? undefined : -start, step).reversed;
+    if (start === undefined) {
+      if (stop === undefined) {
+        if (step < 0) return make(this.at(-1), this.start);
+        if (step > 1) throw new RangeError(ambiguous);
+        return this;
+      }
+      if (stop < 0) return make(step < 0 ? this.at(-1) : this.start, this.at(stop));
+      if (stop === 0 && step > 0) return empty();
+      throw new RangeError(infinite);
+    }
+    if (start < 0) {
+      if (stop === undefined) return make(this.at(start), step < 0 ? this.start : this.stop);
+      if (stop < 0) return make(this.at(start), this.at(stop));
+      if (stop === 0 && step > 0) return empty();
+      throw new RangeError(infinite);
+    }
+    if (start === 0) {
+      if (stop === undefined) {
+        if (step < 0) throw new RangeError(infinite);
+        if (step > 1) throw new RangeError(ambiguous);
+        return this;
+      }
+      if (stop < 0) {
+        if (step > 1) throw new RangeError(ambiguous);
+        return step === 1 ? make(this.start, this.at(stop)) : empty();
+      }
+    }
+    throw new RangeError(infinite);
   }
   /** (stop - start)/step. */
   count(): Expr {
@@ -483,7 +645,10 @@ function rangeEnd(r: Range, sign: 1 | -1): Expr {
 function rangeAsRelational(r: Range, x: Expr): Expr {
   const a0 = isInf(r.start) ? r.reversed.start : r.start;
   const step = r.step;
-  const inSeq = Eq(Mod(add(x, neg(a0)), step), 0);
+  const offset = add(x, neg(a0));
+  const residue = Mod(offset, step);
+  const inSeq = Eq(step.freeSymbols().size > 0 && Mod.isApplied(residue) && at(residue.args, 1).key === step.key && offset.key !== first(residue.args).key && first(ordered([offset, first(residue.args)])) === offset
+    ? new DefinedFunctionCall('Mod', [offset, step], residue.definition) : residue, 0);
   const ints = and(Eq(Mod(a0, 1), 0), Eq(Mod(step, 1), 0));
   const n = r.count();
   if (n instanceof Rational && n.isZero) return S.false;
@@ -536,6 +701,7 @@ export function range(startIn: ExprLike, stopIn?: ExprLike, stepIn: ExprLike = 1
   let [start, stop, step] = stopIn === undefined ? [S.Zero, sympify(startIn), sympify(stepIn)] : [sympify(startIn), sympify(stopIn), sympify(stepIn)];
   if (step instanceof Rational && step.isZero) throw new TypeError('Range: step cannot be 0');
   for (const w of [start, stop, step]) {
+    if (w instanceof Sym && (w.assumptions.infinite === true || w.assumptions.finite === false)) throw new RangeError('Range requires a finite integer or signed infinity');
     if (isInf(w) || (hasSymbol(w) && isIntegerQ(w) !== false)) continue;
     if (!(w instanceof Rational && w.isInteger)) throw new TypeError('Range: finite arguments to Range must be integers');
   }
@@ -609,33 +775,73 @@ function integersIn(iv: Interval, low: Expr): SetExpr | undefined {
 
 /** { expr(v) : v in base } (SymPy ImageSet(Lambda(v, expr), base)). */
 export class ImageSet extends SetExpr {
-  override get isIterable(): boolean { return this.base.isIterable; }
+  override get isIterable(): boolean { return this.baseSets.every((set) => set.isIterable); }
+  /** Construct an ImageSet from the Lambda signature and its corresponding domains. */
+  static of(this: void, lambda: LambdaNode, ...sets: SetExpr[]): SetExpr {
+    if (!(lambda instanceof LambdaNode)) throw new RangeError('First argument must be a Lambda');
+    const vars = lambda.args.slice(0, -1);
+    if (vars.length !== sets.length || !sets.length) throw new RangeError('Incompatible ImageSet signature');
+    if (sets.some((s) => !(s instanceof SetExpr))) throw new TypeError('ImageSet requires set domains');
+    if (sets.some((s) => s.isEmptyQ === true)) return EmptySet;
+    if (vars.length === 1 && first(vars).key === lambda.expr.key) return first(sets);
+    if (!lambda.variables.some((v) => lambda.expr.has(v)) && sets.every((s) => s.isEmptyQ === false)) return finiteSet(lambda.expr);
+    return new ImageSet(vars.length === 1 ? first(vars) : new TupleNode(vars), lambda.expr, first(sets), ...sets.slice(1));
+  }
+  *[Symbol.iterator](): Generator<Expr> {
+    const seen = new Set<string>();
+    for (const row of iproduct(...this.baseSets.map(elements))) {
+      const value = this.lamda.call(...row);
+      if (!seen.has(value.key)) yield value;
+      seen.add(value.key);
+    }
+  }
+  get basePset(): SetExpr { return productSet(...this.baseSets); }
+  doit(): SetExpr {
+    if (this.baseSets.length === 1) return imageSet(this.variable, this.expr, this.base);
+    return this.baseSets.every((s) => s instanceof FiniteSet) ? finiteSet(...this) : this;
+  }
+  override freeSymbols(): Set<Expr> {
+    return new Set([...this.lamda.freeSymbols(), ...this.baseSets.flatMap((s) => [...s.freeSymbols()])]);
+  }
+  asDummy(): ImageSet {
+    const reps = this.lamda.canonicalVariables;
+    return new ImageSet(xreplace(this.variable, reps), xreplace(this.expr, reps), canonicalSet(first(this.baseSets)), ...this.baseSets.slice(1).map(canonicalSet));
+  }
+
   readonly args: readonly Expr[];
   constructor(
     readonly variable: Expr,
     readonly expr: Expr,
-    readonly base: SetExpr,
+    firstBase: SetExpr,
+    ...otherBases: SetExpr[]
   ) {
     super();
-    this.args = [variable, expr, base];
+    this.domains = [firstBase, ...otherBases];
+    this.base = otherBases.length ? productSet(...this.baseSets) : firstBase;
+    this.args = [variable, expr, ...this.baseSets];
   }
   get className(): string {
     return 'ImageSet';
   }
   /** SymPy ImageSet.lamda: the mapping as a Lambda. */
   get lamda(): LambdaNode {
-    return new LambdaNode([this.variable, this.expr]);
+    const vars = this.baseSets.length > 1 ? this.variable.args : [this.variable];
+    return new LambdaNode([...vars, this.expr]);
   }
   /** SymPy ImageSet.base_sets. */
-  get baseSets(): SetExpr[] {
-    return [this.base];
-  }
+  get baseSets(): SetExpr[] { return [...this.domains]; }
+  private readonly domains: readonly SetExpr[];
+  readonly base: SetExpr;
   protected computeKey(): string {
-    return `ImageSet(${this.variable.key},${this.expr.key},${this.base.key})`;
+    return `ImageSet(${this.variable.key},${this.expr.key},${this.baseSets.map((s) => s.key).join(',')})`;
   }
   printStr(p: (e: Expr) => string): string {
-    return `ImageSet(Lambda(${p(this.variable)}, ${p(this.expr)}), ${p(this.base)})`;
+    return `ImageSet(Lambda(${p(this.variable)}, ${p(this.expr)}), ${this.baseSets.map(p).join(', ')})`;
   }
+}
+
+function canonicalSet(s: SetExpr): SetExpr {
+  return s instanceof ImageSet || s instanceof ConditionSet || s instanceof SetOp ? s.asDummy() : s;
 }
 
 /** { v in base : condition } (SymPy ConditionSet). */
@@ -660,14 +866,30 @@ export class ConditionSet extends SetExpr {
   get baseSet(): SetExpr {
     return this.base;
   }
-  override elementOf(x: Expr): Truth {
+  get boundSymbols(): Expr[] { return this.predicate.variables; }
+  private get predicate(): LambdaNode { return new LambdaNode([this.variable, this.condition]); }
+  override freeSymbols(): Set<Expr> {
+    return new Set([...this.predicate.freeSymbols(), ...this.base.freeSymbols()]);
+  }
+  asDummy(): ConditionSet {
+    const reps = this.predicate.canonicalVariables;
+    return new ConditionSet(xreplace(this.variable, reps), xreplace(this.condition, reps), canonicalSet(this.base));
+  }
+  membership(x: Expr): Expr {
+    if (!sameSignature(this.variable, x)) return S.false;
     const inBase = containsQ(this.base, x);
-    if (inBase === false) return false;
-    const replacements: [Expr, Expr][] = this.variable instanceof TupleNode && x instanceof TupleNode && this.variable.args.length === x.args.length
-      ? this.variable.args.map((s, i) => [s, at(x.args, i)]) : [[this.variable, x]];
-    const condition = xreplace(this.condition, replacements);
-    const satisfied = condition === S.true ? true : condition === S.false ? false : 'unknown';
-    return truthAnd(inBase ?? 'unknown', satisfied);
+    if (inBase === false) return S.false;
+    try {
+      const predicate = this.predicate.call(x);
+      return inBase === true ? predicate : and(new Contains(x, this.base), predicate);
+    } catch (error) {
+      if (!(error instanceof TypeError)) throw error;
+      return new Contains(x, this);
+    }
+  }
+  override elementOf(x: Expr): Truth {
+    const result = this.membership(x);
+    return result === S.true ? true : result === S.false ? false : 'unknown';
   }
   /** SymPy ConditionSet(sym, condition, base) with the evaluation of its constructor. */
   static of(sym: Expr, condition: ExprLike | boolean, base: SetExpr = UniversalSet): SetExpr {
@@ -701,12 +923,30 @@ export function imageSet(v: Expr, exprIn: ExprLike, base: SetExpr): SetExpr {
 /** SymPy _set_function(Lambda(v, expr), base), or undefined when it does not apply. */
 function setFunction(v: Expr, expr: Expr, base: SetExpr): SetExpr | undefined {
   if (base === EmptySet) return EmptySet;
-  if (base instanceof FiniteSet) return finiteSet(...base.args.map((a) => expr.subs([[v, a]])));
+  if (base instanceof FiniteSet) return finiteSet(...base.args.map((a) => v instanceof TupleNode ? new LambdaNode([v, expr]).call(a) : expr.subs([[v, a]])));
+  if (base instanceof Range && v instanceof Sym) {
+    const linear = linearIn(expr, v);
+    if (linear) {
+      const n = base.size;
+      if (n instanceof Rational) {
+        const start = linear[0].mul(base.start).add(linear[1]).expand();
+        return new ImageSet(v, add(start, mul(v, linear[0], base.step)), range(0, n));
+      }
+    }
+  }
   if (base instanceof SetOp && base.op === 'Union') return union(...base.args.map((a) => imageSet(v, expr, a)));
   // a constant on a set that is not empty
   const standard: readonly SetExpr[] = [Integers, Naturals, Naturals0, Reals, Rationals, Complexes];
   const nonEmpty = standard.includes(base) || (base instanceof Interval && cmpReal(base.start, base.end) === -1);
   if (nonEmpty && v instanceof Sym && ![...expr.freeSymbols()].some((u) => u.key === v.key)) return finiteSet(expr);
+  if ((base === Naturals || base === Naturals0) && v instanceof Sym) {
+    const coefficients = polyCoefficients(expr, v);
+    const slope = coefficients?.get(1);
+    if (coefficients && [...coefficients.keys()].every((degree) => degree <= 1) && slope instanceof Rational && slope.isInteger && !slope.isZero) {
+      const offset = coefficients.get(0) ?? S.Zero;
+      if (isIntegerQ(offset) === true) return range(add(offset, base === Naturals ? slope : S.Zero), slope.isPositive ? S.Infinity : S.NegativeInfinity, slope);
+    }
+  }
   if (base === Integers && v instanceof Sym) return integersImage(v, expr);
   if (base === Reals && v instanceof Sym) return intervalImage(v, expr, new Interval(S.NegativeInfinity, S.Infinity, true, true));
   if (base instanceof Interval && v instanceof Sym) return intervalImage(v, expr, base);
@@ -773,8 +1013,27 @@ function integersImage(n: Sym, expr0: Expr): SetExpr | undefined {
  * which can close an end that is not attained.
  */
 function intervalImage(v: Sym, expr: Expr, iv: Interval): SetExpr | undefined {
+  if (expr instanceof Piecewise) {
+    let available: SetExpr = iv;
+    const images: SetExpr[] = [];
+    for (const [value, condition] of expr.pairs) {
+      let part = available;
+      if (condition !== S.true) {
+        if (!(condition instanceof Rel) || condition.lhs.key !== v.key || condition.rhs.has(v)) return undefined;
+        const b = condition.rhs;
+        const domains = { Lt: () => interval(S.NegativeInfinity, b, true, true), Le: () => interval(S.NegativeInfinity, b),
+          Gt: () => interval(b, S.Infinity, true, true), Ge: () => interval(b, S.Infinity), Eq: () => finiteSet(b), Ne: () => complement(Reals, finiteSet(b)) };
+        part = intersection(available, domains[condition.op]());
+      }
+      images.push(imageSet(v, value, part));
+      available = complement(available, part);
+      if (available === EmptySet) break;
+    }
+    return union(...images);
+  }
   const pc = polyCoefficients(expr, v);
-  if (!pc || ![...pc.values()].every((c) => !c.freeSymbols().size && isComparable(c))) return undefined;
+  if (!pc) return rationalIntervalImage(v, expr, iv);
+  if (![...pc.values()].every((c) => !c.freeSymbols().size && isComparable(c))) return undefined;
   const deg = Math.max(...pc.keys());
   if (deg < 1) return undefined;
   const lead = getOrThrow(pc, deg);
@@ -817,6 +1076,41 @@ function intervalImage(v: Sym, expr: Expr, iv: Interval): SetExpr | undefined {
   return interval(lo[0], hi[0], !lo[1], !hi[1]);
 }
 
+/** Real rational images on the components between poles and stationary points. */
+function rationalIntervalImage(v: Sym, expr: Expr, iv: Interval): SetExpr | undefined {
+  const [p, q] = asNumerDenom(expr);
+  if (!q.has(v) || !polyCoefficients(p, v) || !polyCoefficients(q, v)) return undefined;
+  if ([...expr.freeSymbols()].some((x) => x.key !== v.key) || iv.freeSymbols().size) return undefined;
+  try {
+    const poles = rootsDict(q, v, { multiple: true });
+    const derivative = add(mul(p.diff(v), q), neg(mul(p, q.diff(v)))).expand();
+    const critical = rootsDict(derivative, v, { multiple: true });
+    const inside = openInterval(iv.start, iv.end);
+    const cuts = [...new Map([...poles, ...critical].filter((x) => isReal(x) === true && containsQ(inside, x) === true).map((x) => [x.key, x])).values()];
+    cuts.sort((a, b) => expectType(cmpReal(a, b), (k): k is number => typeof k === 'number', 'ordered real critical points'));
+    const endpoints = [iv.start, ...cuts, iv.end];
+    const images = endpoints.slice(1).map((hi, i) => {
+      const lo = at(endpoints, i);
+      const singular = (x: Expr): boolean => isInf(x) || poles.some((r) => r.key === x.key);
+      const left = singular(lo) ? expr.limit(v, lo, '+') : expr.subs([[v, lo]]);
+      const right = singular(hi) ? expr.limit(v, hi, '-') : expr.subs([[v, hi]]);
+      const leftOpen = singular(lo) || i === 0 && iv.leftOpen;
+      const rightOpen = singular(hi) || hi.key === iv.end.key && iv.rightOpen;
+      const order = cmpReal(left, right);
+      if (order === undefined) throw new NotImplementedError('Cannot order rational image endpoints');
+      return order <= 0 ? interval(left, right, leftOpen, rightOpen) : interval(right, left, rightOpen, leftOpen);
+    });
+    return union(...images);
+  } catch {
+    return undefined;
+  }
+}
+
+function sameSignature(a: Expr, b: Expr): boolean {
+  if (!(a instanceof TupleNode)) return !(b instanceof TupleNode);
+  return b instanceof TupleNode && a.args.length === b.args.length && a.args.every((v, i) => sameSignature(v, at(b.args, i)));
+}
+
 /**
  * SymPy ConditionSet(sym, condition, base) with its evaluation: a true
  * condition gives the base set and a false one the empty set, a finite base
@@ -826,14 +1120,25 @@ export function conditionSet(symIn: Expr, conditionIn: ExprLike | boolean, baseI
   let sym = symIn;
   let base = baseIn;
   let condition: Expr = typeof conditionIn === 'boolean' ? (conditionIn ? S.true : S.false) : sympify(conditionIn);
+  if (!(base instanceof SetExpr)) throw new TypeError('ConditionSet requires a set domain');
+  if (condition instanceof FiniteSet) condition = and(...condition.args.map((e) => Eq(e, 0)));
+  else if (!(condition instanceof Contains)) condition = asBoolean(condition);
   if (condition === S.true) return base;
   if (condition === S.false || base === EmptySet) return EmptySet;
+  const predicate = new LambdaNode([sym, condition]);
+  if (base instanceof ConditionSet && !sameSignature(sym, base.variable)) throw new TypeError('Incompatible ConditionSet signatures');
+  if (base instanceof Interval && contains(base, sym) === S.false) throw new TypeError('ConditionSet symbol lies outside the domain');
   let know: SetExpr | undefined;
   if (base instanceof FiniteSet) {
     const yes: Expr[] = [];
     const maybe: Expr[] = [];
     for (const a of base.args) {
-      const c = condition.subs([[sym, a]]);
+      if (condition instanceof Rel && !['Eq', 'Ne'].includes(condition.op) && isReal(a) === undefined &&
+        ((condition.lhs.key === sym.key && condition.rhs.key === a.key) || (condition.rhs.key === sym.key && condition.lhs.key === a.key))) {
+        maybe.push(a);
+        continue;
+      }
+      const c = sameSignature(sym, a) ? predicate.call(a) : S.false;
       if (c === S.true) yes.push(a);
       else if (c !== S.false) maybe.push(a);
     }
@@ -843,14 +1148,20 @@ export function conditionSet(symIn: Expr, conditionIn: ExprLike | boolean, baseI
   }
   if (base instanceof ConditionSet) {
     const { variable: s, condition: c, base: b } = base;
+    const innerVars = base.boundSymbols;
+    const outerVars = predicate.variables;
+    const overlaps = (expr: Expr, variable: Expr): boolean => {
+      const names = new Set([...variable.freeSymbols()].map((v) => v.key));
+      return [...expr.freeSymbols()].some((v) => names.has(v.key));
+    };
     if (s.key === sym.key) {
       condition = and(condition, c);
       base = b;
-    } else if (![...c.freeSymbols()].some((u) => u.key === sym.key)) {
-      condition = and(condition, xreplace(c, [[s, sym]]));
+    } else if (!overlaps(c, sym)) {
+      condition = and(condition, xreplace(c, innerVars.map((v, i) => [v, at(outerVars, i)])));
       base = b;
-    } else if (![...condition.freeSymbols()].some((u) => u.key === s.key)) {
-      condition = and(xreplace(condition, [[sym, s]]), c);
+    } else if (!overlaps(condition, s)) {
+      condition = and(xreplace(condition, outerVars.map((v, i) => [v, at(innerVars, i)])), c);
       sym = s;
       base = b;
     }
@@ -866,6 +1177,16 @@ export function conditionSet(symIn: Expr, conditionIn: ExprLike | boolean, baseI
 // ---------------------------------------------------------------------------
 
 class SetOp extends SetExpr {
+  asDummy(): SetOp { return new SetOp(this.op, this.args.map(canonicalSet)); }
+  *[Symbol.iterator](): Generator<Expr> {
+    if (this.op === 'Union') {
+      yield* roundrobin(...this.args.map(elements));
+      return;
+    }
+    const source = this.op === 'Complement' ? first(this.args) : this.args.find((s) => s.isIterable);
+    if (!source) throw new TypeError('Intersection needs an iterable operand');
+    for (const x of elements(source)) if (this.hasElement(x)) yield x;
+  }
   /** SymPy: a Union of iterable sets, an Intersection with an iterable set and a Complement of an iterable set iterate. */
   override get isIterable(): boolean {
     if (this.op === 'Union') return this.args.every((s) => s.isIterable);
@@ -902,7 +1223,7 @@ class SetOp extends SetExpr {
     args: readonly SetExpr[],
   ) {
     super();
-    this.args = op === 'Complement' ? args : sortSets([...args]);
+    this.args = op === 'Complement' ? args : op === 'Union' ? setArgsOrdered(args).map((s) => cast(s, SetExpr)) : sortSets([...args]);
   }
   get className(): string {
     return this.op;
@@ -911,7 +1232,8 @@ class SetOp extends SetExpr {
     return `${this.op}(${this.args.map((a) => a.key).join(',')})`;
   }
   printStr(p: (e: Expr) => string): string {
-    return `${this.op}(${this.args.map(p).join(', ')})`;
+    const args = this.op === 'Union' ? sortSets([...this.args]) : this.args;
+    return `${this.op}(${args.map(p).join(', ')})`;
   }
 }
 export { SetOp };
@@ -920,6 +1242,15 @@ export { SetOp };
 // ProductSet / PowerSet / DisjointUnion / SymmetricDifference
 // ---------------------------------------------------------------------------
 
+/** Cardinality for sets with an explicit finite length. */
+function finiteLength(s: SetExpr): number {
+  if (s === EmptySet) return 0;
+  if (s instanceof FiniteSet) return s.args.length;
+  if (s instanceof Range && s.isIterable) return Number(asRat(s.size).p);
+  if (s instanceof ProductSetNode || s instanceof PowerSetNode || s instanceof DisjointUnionNode) return s.length;
+  throw new TypeError(`Cannot determine a finite length for ${s.className}`);
+}
+
 /** The Cartesian product of sets (SymPy ProductSet); its elements are Tuples. */
 export class ProductSetNode extends SetExpr {
   override get isEmptyQ(): Truth {
@@ -927,9 +1258,13 @@ export class ProductSetNode extends SetExpr {
     return values.includes(true) ? true : values.every((v) => v === false) ? false : 'unknown';
   }
   get length(): number {
-    return this.args.reduce((n, s) => n * (s instanceof FiniteSet ? s.args.length : s instanceof ProductSetNode || s instanceof PowerSetNode ? s.length : (() => { throw new TypeError('ProductSet length requires finite factors'); })()), 1);
+    return this.args.reduce((n, s) => n * finiteLength(s), 1);
   }
   override get measure(): Expr { return mul(...this.args.map((s) => s.measure)); }
+  override get isIterable(): boolean { return this.args.every((s) => s.isIterable); }
+  *[Symbol.iterator](): Generator<Expr> {
+    for (const row of iproduct(...this.args.map(elements))) yield new TupleNode(row);
+  }
   override get boundary(): SetExpr {
     return union(...this.args.map((_, i) => productSet(...this.args.map((s, j) => i === j ? s.boundary : s.closure))));
   }
@@ -994,10 +1329,7 @@ export type ProductSet = ProductSetNode;
 export class PowerSetNode extends SetExpr {
   /** Number of subsets of an explicitly finite base set. */
   get length(): number {
-    if (this.arg === EmptySet) return 1;
-    if (this.arg instanceof FiniteSet) return 2 ** this.arg.args.length;
-    if (this.arg instanceof PowerSetNode) return 2 ** this.arg.length;
-    throw new TypeError('PowerSet length requires an explicitly finite base set');
+    return 2 ** finiteLength(this.arg);
   }
   override get isFiniteSet(): Truth { return this.arg.isFiniteSet; }
   readonly args: readonly Expr[];
@@ -1044,8 +1376,12 @@ export function powerset(s: SetExpr): SetExpr {
 export class DisjointUnionNode extends SetExpr {
   override get isIterable(): boolean { return !this.isEmpty && this.args.every((s) => s.isEmpty || s.isIterable); }
   override get isFiniteSet(): Truth { return truthAnd(...this.args.map((s) => s.isFiniteSet)); }
+  get length(): number {
+    return this.args.reduce((count, s) => count + finiteLength(s), 0);
+  }
   constructor(readonly args: readonly SetExpr[]) {
     super();
+    if (args.some((s) => !(s instanceof SetExpr))) throw new TypeError('DisjointUnion requires sets');
   }
   get className(): string {
     return 'DisjointUnion';
@@ -1142,7 +1478,7 @@ export function containsQ(s: SetExpr, x: Expr): boolean | undefined {
     return parts.includes(false) ? false : parts.every((a) => a === true) ? true : undefined;
   }
   const numericDomain = s instanceof NamedSet || s instanceof Interval;
-  if (numericDomain && (x instanceof SetExpr || x instanceof TupleNode || x instanceof BoolAtom)) return false;
+  if (numericDomain && ((x instanceof ExtensionExpr && !x.isScalar) || x instanceof BasicNode || x instanceof SetExpr || x instanceof TupleNode || x instanceof BoolAtom)) return false;
   if (s === Rationals) {
     if (x instanceof Rational || isIntegerQ(x) === true) return true;
     // oo, I and the irrational constants pi, E, GoldenRatio and TribonacciConstant are not rational
@@ -1150,9 +1486,12 @@ export function containsQ(s: SetExpr, x: Expr): boolean | undefined {
     return undefined;
   }
   if (s === Reals) {
-    if (isInf(x)) return false;
+    if (x instanceof Special || x.has(S.ComplexInfinity) || x.has(S.NaN)) return false;
+    if (isReal(x) === false) return false;
     const v = realValue(x);
-    return v === undefined ? (impl.isReal?.(x) ?? undefined) : true;
+    if (v !== undefined) return true;
+    if (!x.freeSymbols().size && isComparable(fn('im', [x])) && isZero(fn('im', [x])) === false) return false;
+    return impl.isReal?.(x) ?? undefined;
   }
   if (s === Complexes) {
     // oo, -oo, zoo and nan are not complex numbers; a symbol may be infinite unless it is real
@@ -1170,17 +1509,26 @@ export function containsQ(s: SetExpr, x: Expr): boolean | undefined {
   if (s instanceof ImageSet) return imageContains(s, x);
   if (s instanceof FiniteSet) {
     if (s.args.some((a) => a.key === x.key)) return true;
-    const unknown = s.args.some((a) => cmpReal(a, x) === undefined);
+    // an element differs when its numeric order or the evaluated equality says so (SymPy FiniteSet._contains)
+    const unknown = s.args.some((a) => cmpReal(a, x) === undefined && Eq(a, x) !== S.false);
     return unknown ? undefined : false;
   }
   if (s instanceof Interval) {
     if (isInf(x) || isReal(x) === false) return false;
-    const lo = cmpReal(s.start, x);
-    const hi = cmpReal(x, s.end);
-    if (lo === undefined || hi === undefined) return undefined;
-    const okLo = s.leftOpen ? lo < 0 : lo <= 0;
-    const okHi = s.rightOpen ? hi < 0 : hi <= 0;
-    return okLo && okHi;
+    // each end by its numeric order, else by the assumptions of the difference (SymPy evaluates start <= x <= end)
+    const side = (from: Expr, to: Expr, open: boolean): boolean | undefined => {
+      const order = cmpReal(from, to);
+      if (order !== undefined) return open ? order < 0 : order <= 0;
+      if (isInf(from) || isInf(to)) return isReal(x) === true ? true : undefined;
+      const width = add(to, neg(from));
+      const holds = open ? isPositive(width) : isNonNegative(width);
+      if (holds === true) return true;
+      return (open ? isNonNegative(neg(width)) : isNegative(width)) === true ? false : undefined;
+    };
+    const okLo = side(s.start, x, s.leftOpen);
+    const okHi = side(x, s.end, s.rightOpen);
+    if (okLo === false || okHi === false) return false;
+    return okLo === true && okHi === true ? true : undefined;
   }
   if (s instanceof SetOp) {
     const parts = s.args.map((a) => containsQ(a, x));
@@ -1195,6 +1543,18 @@ export function containsQ(s: SetExpr, x: Expr): boolean | undefined {
   return v === 'unknown' ? undefined : v;
 }
 
+/** A number cannot equal a tuple, a set, or a matrix. */
+function elementEquality(a: Expr, b: Expr): Expr {
+  const nonScalar = (e: Expr): boolean => e instanceof SetExpr || e instanceof TupleNode || (e instanceof ExtensionExpr && !e.isScalar);
+  if ((nonScalar(a) && (b instanceof Rational || b instanceof Float)) || (nonScalar(b) && (a instanceof Rational || a instanceof Float))) return S.false;
+  return Eq(a, b);
+}
+
+function membershipTruth(s: SetExpr, x: Expr): Truth {
+  const result = contains(s, x);
+  return result === S.true ? true : result === S.false ? false : 'unknown';
+}
+
 /** A decided membership, or 'unknown'. */
 const tri = (v: boolean | undefined): Truth => v ?? 'unknown';
 
@@ -1204,18 +1564,50 @@ const tri = (v: boolean | undefined): Truth => v ?? 'unknown';
  */
 function imageContains(s: ImageSet, x: Expr): boolean | undefined {
   const v = s.variable;
-  if (!(v instanceof Sym) || x.freeSymbols().size) return undefined;
+  if (!sameSignature(s.expr, x)) return false;
+  if (x instanceof SetExpr) return s.expr instanceof SetExpr ? undefined : false;
+  if (s.variable instanceof TupleNode && s.base instanceof ProductSetNode) {
+    const base = s.base;
+    // Polar coordinates have a unique inverse at nonzero radius for a
+    // nonnegative radial domain and angles in [0, 2*pi).
+    if (v.args.length === 2 && x instanceof TupleNode && x.args.length === 2 && s.expr instanceof TupleNode) {
+      const [r, t] = [at(v.args, 0), at(v.args, 1)];
+      const domainR = at(base.args, 0), domainT = at(base.args, 1);
+      const polar = new TupleNode([mul(r, fn('cos', [t])), mul(r, fn('sin', [t]))]);
+      if (s.expr.key === polar.key && isSubset(domainR, interval(0, S.Infinity)) === true && isSubset(domainT, interval(0, mul(2, S.Pi), false, true)) === true &&
+          x.args.every((c) => isReal(c) === true)) {
+        const z = add(at(x.args, 0), mul(S.I, at(x.args, 1)));
+        if (isZero(z) === true) return containsQ(domainR, S.Zero);
+        if (isZero(z) === false) {
+          const radius = fn('abs', [z]), theta = Mod(fn('arg', [z]), mul(2, S.Pi));
+          const result = truthAnd(tri(containsQ(domainR, radius)), tri(containsQ(domainT, theta)));
+          return result === 'unknown' ? undefined : result;
+        }
+      }
+    }
+    const values = x instanceof TupleNode ? x.args : [x];
+    const outputs = s.expr instanceof TupleNode ? s.expr.args : [s.expr];
+    // A coordinate depending on just one parameter can rule out membership independently.
+    for (const [i, output] of outputs.entries()) {
+      const parameters = s.variable.args.filter((p) => output.has(p));
+      if (parameters.length !== 1) continue;
+      const p = first(parameters);
+      if (imageContains(new ImageSet(p, output, at(base.args, s.variable.args.indexOf(p))), at(values, i)) === false) return false;
+    }
+  }
+  if (!(v instanceof Sym) || x.freeSymbols().size || x instanceof Float || x instanceof TupleNode) return undefined;
   const eq = add(s.expr, mul(-1, x));
-  const pc = polyCoefficients(eq, v);
+  const [numerator, denominator] = asNumerDenom(eq);
+  const pc = polyCoefficients(numerator, v);
   if (!pc) return undefined;
   let rs: Expr[];
   try {
-    rs = rootsDict(eq, v, { multiple: true });
+    rs = rootsDict(numerator, v, { multiple: true });
   } catch {
     // no formula for the roots
     return undefined;
   }
-  const inBase = rs.map((r) => containsQ(s.base, r));
+  const inBase = rs.map((r) => isZero(denominator.subs([[v, r]])) === true ? false : containsQ(s.base, r));
   if (inBase.some((c) => c === true)) return true;
   // all the roots are known and none is in the base set
   return rs.length === Math.max(...pc.keys()) && inBase.every((c) => c === false) ? false : undefined;
@@ -1230,7 +1622,7 @@ export class Contains extends ExtensionExpr {
     super('Contains', [element, set]);
     if (!(set instanceof SetExpr)) throw new TypeError('Contains requires a set');
   }
-  get binarySymbols(): Set<Expr> { return new Set(this.set.args.filter((s) => s instanceof Sym)); }
+  get binarySymbols(): Set<Expr> { return new Set(this.set.args.flatMap((s) => [...binarySymbols(s).values()])); }
   asSet(): SetExpr { return this.set; }
   /** Rebuilding evaluates (Contains(x, Integers).subs(x, 2) is true). */
   withArgs(args: readonly Expr[]): Expr {
@@ -1248,10 +1640,12 @@ export class Contains extends ExtensionExpr {
  * unevaluated Contains.
  */
 export function contains(s: SetExpr, x: Expr): Expr {
+  if (s instanceof Interval && (x === S.ComplexInfinity || x === S.NaN)) return S.false;
   const v = containsQ(s, x);
   if (v !== undefined) return v ? S.true : S.false;
   if (s === Reals || s instanceof Interval) return asRelational(s, x);
-  if (s instanceof FiniteSet) return or(...s.args.map((a) => Eq(a, x)));
+  if (s instanceof FiniteSet) return or(...s.args.map((a) => elementEquality(a, x)));
+  if (s instanceof ConditionSet) return s.membership(x);
   if (s instanceof Range) {
     // a condition on the symbols of the Range (SymPy Range._contains)
     const c = rangeContains(s, x);
@@ -1282,9 +1676,29 @@ export function union(...sets0: SetExpr[]): SetExpr {
   const sets = sets0.flatMap((s) => (s instanceof SetOp && s.op === 'Union' ? s.args : [s])).filter((s) => s !== EmptySet);
   if (!sets.length) return EmptySet;
   if (sets.includes(UniversalSet)) return UniversalSet;
+  // Coordinate unions commute with either complex-region parametrization.
+  const region = sets.find((s) => s.className === 'CartesianComplexRegion' || s.className === 'PolarComplexRegion');
+  if (region) {
+    const compatible = sets.filter((s) => s.className === region.className || (region.className === 'CartesianComplexRegion' && isSubset(s, Reals) === true));
+    if (compatible.length > 1) {
+      const coordinates = compatible.map((s) => s.className === region.className ? cast(at(s.args, 0), SetExpr) : productSet(s, finiteSet(0)));
+      const merged = cast(region.withArgs([union(...coordinates)]), SetExpr);
+      return union(merged, ...sets.filter((s) => !compatible.includes(s)));
+    }
+  }
+  // the classes with their own rule combine pairwise (SymPy union_sets)
+  if (sets.some((s) => s.unionSelf !== SetExpr.prototype.unionSelf)) {
+    for (const [i, a] of sets.entries()) {
+      for (const [j, b] of sets.entries()) {
+        const merged = i === j ? undefined : a.unionSelf(b);
+        if (merged !== undefined) return union(merged, ...sets.filter((_, k) => k !== i && k !== j));
+      }
+    }
+  }
+  if (sets.includes(Complexes) && sets.every((s) => isSubset(s, Complexes) === true)) return Complexes;
   // the rationals contain the integers and the naturals (SymPy union_sets)
   if (sets.includes(Rationals) && sets.every((s) => s === Rationals || s === Integers || s === Naturals || s === Naturals0)) return Rationals;
-  if (sets.some((s) => s === Reals) && sets.every((s) => s === Reals || s instanceof Interval || (s instanceof FiniteSet && s.args.every((a) => containsQ(Reals, a) === true)))) return Reals;
+  if (sets.some((s) => s === Reals) && sets.every((s) => s === Reals || s === Rationals || s === Integers || s === Naturals || s === Naturals0 || (s instanceof Interval && cmpReal(s.start, s.end) !== undefined) || (s instanceof FiniteSet && s.args.every((a) => containsQ(Reals, a) === true)))) return Reals;
   let ivs: Interval[] = [];
   const points: Expr[] = [];
   const others: SetExpr[] = [];
@@ -1306,11 +1720,11 @@ export function union(...sets0: SetExpr[]): SetExpr {
         absorbed = true;
         return iv;
       }
-      if (iv.leftOpen && cmpReal(iv.start, pt) === 0) {
+      if (!isInf(pt) && iv.leftOpen && cmpReal(iv.start, pt) === 0) {
         absorbed = true;
         return new Interval(iv.start, iv.end, false, iv.rightOpen);
       }
-      if (iv.rightOpen && cmpReal(iv.end, pt) === 0) {
+      if (!isInf(pt) && iv.rightOpen && cmpReal(iv.end, pt) === 0) {
         absorbed = true;
         return new Interval(iv.start, iv.end, iv.leftOpen, false);
       }
@@ -1399,10 +1813,33 @@ function mergeTwo(aIn: Interval, bIn: Interval): Interval | undefined {
   return new Interval(a.start, end, leftOpen, rightOpen);
 }
 
+function intersectFinite(sets: readonly SetExpr[]): SetExpr {
+  const finite = sets.filter((s) => s instanceof FiniteSet);
+  const rest = sets.filter((s) => !(s instanceof FiniteSet));
+  const other = intersection(...rest);
+  if (other === EmptySet) return EmptySet;
+  const others = other instanceof SetOp && other.op === 'Intersection' ? other.args : [other];
+  const candidates = new Map(finite.flatMap((s) => s.args.map((x) => [x.key, x] as const)));
+  const possible = [...candidates.values()].filter((x) => others.every((s) => membershipTruth(s, x) !== false));
+  const common = possible.filter((x) => finite.every((s) => s.args.some((v) => v.key === x.key)));
+  const unresolved = possible.filter((x) => !common.includes(x));
+  const residues = finite.map((s) => finiteSet(...s.args.filter((v) => unresolved.includes(getOrThrow(candidates, v.key)))));
+  const remaining = unresolved.filter((x) => residues.every((s) => membershipTruth(s, x) !== false));
+  const fs = residues.map((s) => finiteSet(...common, ...s.args.filter((x) => remaining.some((v) => v.key === x.key))));
+  const min = fs.find((s) => s.args.length === common.length);
+  const reduced = min ? [min] : fs;
+  if (reduced.includes(EmptySet)) return EmptySet;
+  const needed = others.filter((s) => reduced.some((f) => f.args.some((x) => membershipTruth(s, x) !== true)));
+  const result = [...new Map([...reduced, ...needed].map((s) => [s.key, s])).values()];
+  return result.length === 1 ? first(result) : new SetOp('Intersection', result);
+}
+
 /** Intersection of sets. */
 export function intersection(...sets: SetExpr[]): SetExpr {
   if (sets.some((s) => s === EmptySet)) return EmptySet;
   if (!sets.length) return UniversalSet;
+  const flat = sets.flatMap((s) => s instanceof SetOp && s.op === 'Intersection' ? s.args : [s]);
+  if (flat.length > 1 && flat.some((s) => s instanceof FiniteSet) && !flat.some((s) => s instanceof ConditionSet)) return intersectFinite(flat);
   let acc: SetExpr = first(sets);
   for (const s of sets.slice(1)) acc = intersectTwo(acc, s);
   return acc;
@@ -1412,20 +1849,12 @@ function intersectTwo(a: SetExpr, b: SetExpr): SetExpr {
   if (a === EmptySet || b === EmptySet) return EmptySet;
   if (a === UniversalSet) return b;
   if (b === UniversalSet) return a;
-  const fo: [FiniteSet, SetExpr] | undefined = a instanceof FiniteSet ? [a, b] : b instanceof FiniteSet ? [b, a] : undefined;
-  if (fo !== undefined) {
-    const [f, o] = fo;
-    const keep: Expr[] = [];
-    const unknown: Expr[] = [];
-    for (const x of f.args) {
-      const c = containsQ(o, x);
-      if (c === true) keep.push(x);
-      else if (c === undefined) unknown.push(x);
-    }
-    // like SymPy, the elements known to be in o stay in the unevaluated intersection
-    if (unknown.length) return new SetOp('Intersection', sortSets([finiteSet(...keep, ...unknown), o]));
-    return finiteSet(...keep);
-  }
+  if (a.key === b.key) return a;
+  const own = a.intersectSelf(b) ?? b.intersectSelf(a);
+  if (own !== undefined) return own;
+  if (a instanceof ConditionSet) return conditionSet(a.variable, a.condition, intersection(a.base, b));
+  if (b instanceof ConditionSet) return conditionSet(b.variable, b.condition, intersection(a, b.base));
+  if (a instanceof FiniteSet || b instanceof FiniteSet) return intersectFinite([a, b]);
   const intIv = (u: SetExpr, v: SetExpr) => (u === Integers || u === Naturals || u === Naturals0) && v instanceof Interval;
   const ints: [SetExpr, Interval] | undefined = intIv(a, b) ? [a, cast(b, Interval)] : intIv(b, a) ? [b, cast(a, Interval)] : undefined;
   if (ints) {
@@ -1434,7 +1863,7 @@ function intersectTwo(a: SetExpr, b: SetExpr): SetExpr {
     if (r) return r;
   }
   if ((a === Reals && (b === Integers || b === Naturals || b === Naturals0)) || (b === Reals && (a === Integers || a === Naturals || a === Naturals0))) return a === Reals ? b : a;
-  if (a === Reals && (b instanceof Interval || b === Reals)) return b;
+  if (a === Reals && b instanceof Interval) return b;
   if (b === Reals && a instanceof Interval) return a;
   const special = intersectSpecial(a, b) ?? intersectSpecial(b, a);
   if (special) return special;
@@ -1459,7 +1888,36 @@ function intersectSpecial(a: SetExpr, b: SetExpr): SetExpr | undefined {
     const left = cast(at(a.args, 0), SetExpr), right = cast(at(b.args, 0), SetExpr);
     if (isSubset(left, right) === true) return a;
     if (isSubset(right, left) === true) return b;
+    if (a.className === 'CartesianComplexRegion') {
+      const coordinates = intersection(left, right);
+      return coordinates === EmptySet ? EmptySet : cast(a.withArgs([coordinates]), SetExpr);
+    }
+    // A positive-radius polar coordinate has a unique normalized angle.
+    // Zero belongs to every angle, so preserve it even for disjoint sectors.
+    const coordinates = intersection(left, right);
+    const origin = containsQ(a, S.Zero) === true && containsQ(b, S.Zero) === true;
+    const region = coordinates === EmptySet ? EmptySet : cast(a.withArgs([coordinates]), SetExpr);
+    return origin && containsQ(region, S.Zero) !== true ? union(region, finiteSet(0)) : region;
   }
+  if ((a.className === 'CartesianComplexRegion' || a.className === 'PolarComplexRegion') && isSubset(b, Reals) === true) {
+    const coordinates = cast(at(a.args, 0), SetExpr);
+    const parts = coordinates instanceof SetOp && coordinates.op === 'Union' ? coordinates.args : [coordinates];
+    const realParts: SetExpr[] = [];
+    for (const part of parts) {
+      const p = cast(part, ProductSetNode);
+      const radius = at(p.args, 0), angle = at(p.args, 1);
+      if (containsQ(angle, S.Zero) === true) realParts.push(radius);
+      if (a.className === 'PolarComplexRegion') {
+        if (containsQ(angle, S.Pi) === true) {
+          const variable = new Sym('x', { real: true });
+          realParts.push(imageSet(variable, neg(variable), radius));
+        }
+        if (containsQ(radius, S.Zero) === true) realParts.push(finiteSet(0));
+      }
+    }
+    return intersection(union(...realParts), b);
+  }
+  if (a === Complexes && isSubset(b, Complexes) === true) return b;
   const integral = (s: SetExpr): boolean => s === Integers || s === Naturals || s === Naturals0 || s instanceof Range;
   if (a === Rationals && (integral(b) || b === Rationals)) return b;
   if (a === Rationals && b === Reals) return a;
@@ -1483,7 +1941,7 @@ function roundInt(e: Expr, up: boolean): Expr | undefined {
 
 /** SymPy intersection_sets(Range, Integers / Reals / Naturals / Interval / Range). */
 function intersectRange(r: Range, o: SetExpr): SetExpr | undefined {
-  if (o === Integers || o === Reals || o === Rationals) return r;
+  if (o === Integers || o === Reals || o === Rationals || o === Complexes) return r;
   // (SymPy does not intersect a symbolic Range with an interval or a Range)
   if (hasSymbol(r)) return undefined;
   if (o === Naturals || o === Naturals0) return intersectRange(r, new Interval(o === Naturals ? S.One : S.Zero, S.Infinity, false, true));
@@ -1561,6 +2019,37 @@ function linearIn(e: Expr, n: Expr): [Expr, Expr] | undefined {
   return [getOrThrow(pc, 1), pc.get(0) ?? S.Zero];
 }
 
+/** A translated, possibly reflected, even power of an integer parameter. */
+function integerPowerImage(s: ImageSet): { offset: bigint; sign: bigint; degree: bigint } | undefined {
+  if (s.base !== Integers) return undefined;
+  const [offset, terms] = asCoeffAdd(s.expr);
+  if (!(offset instanceof Rational && offset.isInteger) || terms.length !== 1) return undefined;
+  const [sign, factors] = asCoeffMul(first(terms));
+  if (!(sign instanceof Rational && (sign.isOne || sign.key === S.NegOne.key)) || factors.length !== 1) return undefined;
+  const power = first(factors);
+  if (!(power instanceof Pow && power.exp instanceof Rational && power.exp.isInteger && power.exp.p > 0n && power.exp.p % 2n === 0n)) return undefined;
+  const linear = linearIn(power.base, s.variable);
+  if (!linear || !(linear[0] instanceof Rational && (linear[0].isOne || linear[0].key === S.NegOne.key)) || !(linear[1] instanceof Rational && linear[1].isInteger)) return undefined;
+  return { offset: offset.p, sign: sign.p, degree: power.exp.p };
+}
+
+/** Oppositely directed even powers intersect in a bounded integer interval. */
+function intersectPowerImages(a: ImageSet, b: ImageSet): SetExpr | undefined {
+  const left = integerPowerImage(a), right = integerPowerImage(b);
+  if (!left || !right || left.sign === right.sign) return undefined;
+  const span = left.sign * (right.offset - left.offset);
+  if (span < 0n) return EmptySet;
+  const [bound] = integerNthroot(span, left.degree);
+  // Large finite searches remain represented by the symbolic intersection.
+  if (bound > 10000n) return undefined;
+  const points: Expr[] = [];
+  for (let n = 0n; n <= bound; n++) {
+    const term = n ** left.degree;
+    if (integerNthroot(span - term, right.degree)[1]) points.push(Rational.of(left.offset + left.sign * term));
+  }
+  return finiteSet(...points);
+}
+
 /**
  * SymPy intersection_sets(ImageSet, Set): for images of the integers under
  * linear maps with rational coefficients the common values (solving the
@@ -1568,12 +2057,61 @@ function linearIn(e: Expr, n: Expr): [Expr, Expr] | undefined {
  * interval the image of the integers whose values fall in the interval.
  */
 function intersectImage(s: ImageSet, o: SetExpr): SetExpr | undefined {
+  const n = s.variable;
+  if (n instanceof Sym && (o === Reals || o instanceof Interval) && isSubset(s.base, Reals) === true) {
+    const parameter = new Dummy('t', { real: true });
+    const expr = s.expr.subs([[n, parameter]]);
+    if (expr.has(S.I)) {
+      const im = fn('im', [expr]);
+      const [numerator] = asNumerDenom(im);
+      const pc = polyCoefficients(numerator, parameter);
+      // SymPy keeps an unfactored nonlinear imaginary part as a condition on the parameter.
+      if (o === Reals && im instanceof Add && pc && Math.max(...pc.keys()) > 1 && !asNumerDenom(expr)[1].has(parameter)) {
+        const real = fn('re', [expr]).subs([[parameter, n]]);
+        const index = real.has(n) && real.freeSymbols().size === 1 ? new Sym('x') : n;
+        return new ImageSet(index, real.subs([[n, index]]), conditionSet(n, Eq(im.subs([[parameter, n]]), 0), s.base));
+      }
+      if (pc?.size && Math.max(...pc.keys()) > 0) {
+        try {
+          const roots = rootsDict(numerator, parameter, { multiple: true });
+          if (roots.every((r) => containsQ(s.base, r) !== undefined)) {
+            const values = roots.filter((r) => containsQ(s.base, r) === true).map((r) => expr.subs([[parameter, r]]));
+            return intersection(finiteSet(...values), o);
+          }
+        } catch {
+          // An unresolved imaginary-part equation leaves the intersection symbolic.
+        }
+      }
+    } else if (o === Reals && polyCoefficients(expr, parameter) && isReal(expr) === true) return imageSet(n, s.expr, s.base);
+    if (o instanceof Interval && s.expr instanceof Fn && s.expr.name === 'log' && first(s.expr.args).key === n.key && s.base === Integers) {
+      const indices = intersection(Integers, interval(pow(S.E, o.start), pow(S.E, o.end), o.leftOpen, o.rightOpen));
+      if (indices instanceof Range && indices.isIterable) return finiteSet(...[...indices].map((r) => fn('log', [r])));
+    }
+  }
   const f = linearIn(s.expr, s.variable);
-  if (!f) return undefined;
+  if (!f) {
+    if (o instanceof ImageSet) return intersectPowerImages(s, o);
+    if (o === Integers && s.base === Integers && n instanceof Sym) {
+      // If P(n)/(c*n) is an integer, n must divide the integer constant P(0).
+      const [num, den] = asNumerDenom(s.expr);
+      const poly = polyCoefficients(num, n), linear = linearIn(den, n);
+      const c = poly?.get(0);
+      if (poly && [...poly.values()].every((a) => a instanceof Rational && a.isInteger) && c instanceof Rational && !c.isZero &&
+          linear && isZ(linear[1]) && linear[0] instanceof Rational && linear[0].isInteger) {
+        const candidates = divisors(c.p).flatMap((d) => [Rational.of(d), Rational.of(-d)]);
+        return finiteSet(...candidates.map((d) => s.expr.subs([[n, d]])).filter((v) => isIntegerQ(v) === true));
+      }
+    }
+    return undefined;
+  }
   if (s.base === Integers && (o === Integers || (o instanceof ImageSet && o.base === Integers))) {
     const g = o instanceof ImageSet ? linearIn(o.expr, o.variable) : ([S.One, S.Zero] as [Expr, Expr]);
-    if (!g || ![...f, ...g].every((c) => c instanceof Rational)) return undefined;
-    const [a1, b1, a2, b2] = [asRat(f[0]), asRat(f[1]), asRat(g[0]), asRat(g[1])];
+    if (!g) return undefined;
+    const scale = f[0] instanceof Rational ? S.One : f[0];
+    if (scale.freeSymbols().size || isZero(scale) !== false) return undefined;
+    const coefficients = [...f, ...g].map((c) => div(c, scale));
+    if (!coefficients.every((c) => c instanceof Rational)) return undefined;
+    const [a1, b1, a2, b2] = [at(coefficients, 0), at(coefficients, 1), at(coefficients, 2), at(coefficients, 3)];
     // a1*n - a2*m = b2 - b1, scaled to integers
     const D = [a1, b1, a2, b2].reduce((d, c) => (d * c.q) / gcd(d, c.q), 1n);
     const scaled = (c: Rational): bigint => (c.p * D) / c.q;
@@ -1584,7 +2122,7 @@ function intersectImage(s: ImageSet, o: SetExpr): SetExpr | undefined {
     const n0 = (rhs / gg) * u;
     // n = n0 + (A2/g)*t: the values f(n0) + a1*(A2/g)*t
     const n = s.variable;
-    return imageSet(n, add(mul(a1, Rational.of(A2 / gg), n), mul(a1, Rational.of(n0)), b1), Integers);
+    return imageSet(n, add(mul(scale, a1, Rational.of(A2 / gg), n), mul(scale, a1, Rational.of(n0)), mul(scale, b1)), Integers);
   }
   if (o instanceof Interval && f.every((c) => !c.freeSymbols().size && isComparable(c))) {
     const [a, b] = f;
@@ -1613,8 +2151,13 @@ function intersectIntervals(a: Interval, b: Interval): SetExpr {
   const cs = cmpReal(a.start, b.start);
   const ce = cmpReal(a.end, b.end);
   if (cs === undefined || ce === undefined) return new SetOp('Intersection', sortSets([a, b]));
-  const [start, lo] = cs > 0 ? [a.start, a.leftOpen] : cs < 0 ? [b.start, b.leftOpen] : [hasFloat(b.start) && !hasFloat(a.start) ? b.start : a.start, a.leftOpen || b.leftOpen];
-  const [end, ro] = ce < 0 ? [a.end, a.rightOpen] : ce > 0 ? [b.end, b.rightOpen] : [hasFloat(b.end) && !hasFloat(a.end) ? b.end : a.end, a.rightOpen || b.rightOpen];
+  const canonical = (u: Expr, v: Expr): Expr => {
+    if (u.key === v.key) return u;
+    if (hasFloat(u) !== hasFloat(v)) return hasFloat(u) ? u : v;
+    return first(ordered([u, v]));
+  };
+  const [start, lo] = cs > 0 ? [a.start, a.leftOpen] : cs < 0 ? [b.start, b.leftOpen] : [canonical(a.start, b.start), a.leftOpen || b.leftOpen];
+  const [end, ro] = ce < 0 ? [a.end, a.rightOpen] : ce > 0 ? [b.end, b.rightOpen] : [canonical(a.end, b.end), a.rightOpen || b.rightOpen];
   return interval(start, end, lo, ro);
 }
 
@@ -1629,7 +2172,15 @@ export function complement(a: SetExpr, b: SetExpr): SetExpr {
   if (b instanceof SetOp && b.op === 'Union' && !(intervalParts(a) && intervalParts(b))) {
     return [...b.args.filter((s) => s instanceof FiniteSet), ...b.args.filter((s) => !(s instanceof FiniteSet))].reduce(complement, a);
   }
-  if (a instanceof ProductSetNode && b instanceof ProductSetNode && a.args.length !== b.args.length) return a;
+  if (a instanceof NamedSet && b instanceof NamedSet && isSubset(a, b) === true) return EmptySet;
+  if (a instanceof ProductSetNode && b instanceof ProductSetNode) {
+    if (a.args.length !== b.args.length) return a;
+    return union(...a.args.map((_, i) => productSet(...a.args.map((factor, j) => i === j ? complement(factor, at(b.args, j)) : factor))));
+  }
+  if (a instanceof FiniteSet && b instanceof FiniteSet) {
+    const remaining = a.args.filter((x) => !b.args.some((y) => x.key !== y.key && cmpReal(x, y) === 0));
+    if (remaining.length !== a.args.length) return complement(finiteSet(...remaining), b);
+  }
   if (b instanceof FiniteSet) {
     const relevant = b.args.filter((x) => containsQ(a, x) !== false);
     if (relevant.length !== b.args.length) return complement(a, finiteSet(...relevant));
@@ -1642,11 +2193,29 @@ export function complement(a: SetExpr, b: SetExpr): SetExpr {
       if (c === false) keep.push(x);
       else if (c === undefined) unknown.push(x);
     }
-    if (unknown.length) return union(finiteSet(...keep), new SetOp('Complement', [finiteSet(...unknown), b]));
+    if (unknown.length) {
+      // Cancel identical formal symbols. A value or compound expression can still
+      // specialize to an excluded element, so keep that exclusion unresolved.
+      if (b instanceof FiniteSet && b.args.some((y) => a.args.some((v) => v.equals(y)) && unknown.some((v) => !(v instanceof Sym && y instanceof Sym) && containsQ(finiteSet(y), v) === undefined))) {
+        return union(finiteSet(...keep), new SetOp('Complement', [finiteSet(...unknown), b]));
+      }
+      // SymPy FiniteSet._complement: the elements of b that are elements of a are taken out of both; what is
+      // subtracted from the rest are the elements of b whose membership in a is open ({i, j, k} - {j} = {i, k})
+      const open = b instanceof FiniteSet ? finiteSet(...b.args.filter((y) => containsQ(a, y) === undefined)) : b;
+      // (a smaller difference is reduced again, as SymPy's Complement does)
+      const reduced = unknown.length < a.args.length || open.key !== b.key;
+      return union(finiteSet(...keep), reduced ? complement(finiteSet(...unknown), open) : new SetOp('Complement', [finiteSet(...unknown), open]));
+    }
     return finiteSet(...keep);
   }
   const pa = intervalParts(a);
   const points = b instanceof FiniteSet ? b.args.map((x) => [x, realValue(x)] as const) : undefined;
+  if (pa && points && points.some(([, v]) => v !== undefined) && points.some(([, v]) => v === undefined)) {
+    const known = finiteSet(...points.filter(([, v]) => v !== undefined).map(([p]) => p));
+    const rest = finiteSet(...points.filter(([, v]) => v === undefined).map(([p]) => p));
+    const split = complement(a, known);
+    return a === Reals ? new SetOp('Complement', [split, rest]) : complement(split, rest);
+  }
   if (pa && points?.every((pv): pv is readonly [Expr, number] => pv[1] !== undefined)) {
     let parts: SetExpr[] = pa;
     for (const [pt] of [...points].sort((p, q) => p[1] - q[1])) {
@@ -1678,7 +2247,27 @@ export function complement(a: SetExpr, b: SetExpr): SetExpr {
 
 /** Is a a subset of b (true/false/undefined)? */
 export function isSubset(a: SetExpr, b: SetExpr): boolean | undefined {
+  if (!(a instanceof SetExpr && b instanceof SetExpr)) throw new RangeError('Inclusion requires two sets');
   if (a === EmptySet || b === UniversalSet || a.key === b.key) return true;
+  if (a instanceof Interval && b === Complexes) return true;
+  if (a instanceof SetOp && a.op === 'Union') {
+    const parts = a.args.map((s) => isSubset(s, b));
+    return parts.includes(false) ? false : parts.every((c) => c === true) ? true : undefined;
+  }
+  if (a instanceof ImageSet && b === Reals && a.variable instanceof Sym && isSubset(a.base, Reals) === true) {
+    const p = polyCoefficients(a.expr, a.variable);
+    if (p && [...p.values()].every((c) => isReal(c) === true)) return true;
+  }
+  if (a instanceof ProductSetNode && b instanceof FiniteSet && a.args.every((s) => s instanceof FiniteSet)) {
+    if (a.length > b.args.length) return false;
+    const points = b.args.filter((p) => a.elementOf(p) === true);
+    if (points.length === a.length) return true;
+  }
+  if (a instanceof Range && b instanceof FiniteSet && a.isIterable) {
+    if (asRat(a.size).p > BigInt(b.args.length)) return false;
+    return isSubset(finiteSet(...a), b);
+  }
+  if (a instanceof Range && b instanceof Interval && a.isIterable) return a.isEmpty || isSubset(finiteSet(a.at(0), a.at(-1)), b);
   if (a === UniversalSet) return false;
   if (a instanceof PowerSetNode && b instanceof PowerSetNode) return isSubset(a.arg, b.arg);
   if (a.isFiniteSet === false && b.isFiniteSet === true) return false;
@@ -1696,7 +2285,7 @@ export function isSubset(a: SetExpr, b: SetExpr): boolean | undefined {
   if ((a === Reals || a === Integers) && b instanceof Interval && !(isNegOo(b.start) && isOo(b.end))) return false;
   if (b === Reals && (a instanceof Interval || (a instanceof FiniteSet && a.args.every((x) => containsQ(Reals, x) === true)))) return true;
   if (a instanceof FiniteSet) {
-    const cs = a.args.map((x) => containsQ(b, x));
+    const cs = a.args.map((x) => membershipTruth(b, x));
     return cs.every((c) => c === true) ? true : cs.some((c) => c === false) ? false : undefined;
   }
   // an interval of more than one point is uncountable
@@ -1722,9 +2311,18 @@ export function asRelational(s: SetExpr, x: Expr): Expr {
     return and(left, right);
   }
   if (s instanceof FiniteSet) return or(...s.args.map((a) => Eq(x, a)));
-  if (s instanceof SetOp && s.op === 'Union') return or(...s.args.map((a) => asRelational(a, x)));
+  if (s instanceof SetOp && s.op === 'Union') {
+    const [a, b] = s.args;
+    // SymPy combines two intervals separated by a single excluded endpoint.
+    if (s.args.length === 2 && a instanceof Interval && b instanceof Interval && a.rightOpen && b.leftOpen && a.end.key === b.start.key) {
+      return and(asRelational(interval(a.start, b.end, a.leftOpen, b.rightOpen), x), not(Eq(x, a.end)));
+    }
+    return or(...s.args.map((a) => asRelational(a, x)));
+  }
   if (s instanceof SetOp && s.op === 'Intersection') return and(...s.args.map((a) => asRelational(a, x)));
-  if (s instanceof ProductSetNode && x instanceof TupleNode && s.args.length === x.args.length) return and(...s.args.map((a, i) => asRelational(a, at(x.args, i))));
+  if (s instanceof ProductSetNode && x instanceof TupleNode && s.args.length === x.args.length && x.args.every((v) => v instanceof Sym)) return and(...s.args.map((a, i) => asRelational(a, at(x.args, i))));
+  if (s instanceof ConditionSet) return sameSignature(s.variable, x)
+    ? and(contains(s.base, x), new LambdaNode([s.variable, s.condition]).call(x)) : S.false;
   if (s instanceof SetOp && s.op === 'Complement') return and(asRelational(at(s.args, 0), x), not(asRelational(at(s.args, 1), x)));
   if (s instanceof Range) return rangeAsRelational(s, x);
   throw new NotImplementedError('as_relational: unsupported set');
@@ -1770,7 +2368,7 @@ function rebuildSet(e: Expr, args: readonly Expr[]): Expr {
   if (e instanceof FiniteSet) return finiteSet(...args);
   if (e instanceof Range) return range(at(args, 0), at(args, 1), at(args, 2));
   // SymPy rebuilds an ImageSet without evaluating it (imageset() evaluates, ImageSet() does not)
-  if (e instanceof ImageSet) return new ImageSet(at(args, 0), at(args, 1), cast(at(args, 2), SetExpr, 'base set'));
+  if (e instanceof ImageSet) return new ImageSet(at(args, 0), at(args, 1), cast(at(args, 2), SetExpr, 'base set'), ...args.slice(3).map((s) => cast(s, SetExpr)));
   if (e instanceof ConditionSet) return conditionSet(at(args, 0), at(args, 1), cast(at(args, 2), SetExpr, 'base set'));
   if (e instanceof SetOp) return e.op === 'Union' ? union(...sets()) : e.op === 'Intersection' ? intersection(...sets()) : complement(...pairOf(sets()));
   if (e instanceof ProductSetNode) return productSet(...sets());
@@ -1789,12 +2387,12 @@ const pairOf = (xs: SetExpr[]): [SetExpr, SetExpr] => [at(xs, 0), at(xs, 1)];
  * first (and in its condition unless the variable is replaced).
  */
 function subsSet(e: Expr, old: Expr, nw: Expr, sub: (x: Expr) => Expr): Expr | undefined {
-  if (e instanceof ImageSet && e.variable.key === old.key) {
-    const base = cast(sub(e.base), SetExpr, 'base set');
-    return base === e.base ? e : new ImageSet(e.variable, e.expr, base);
+  if (e instanceof ImageSet && (e.variable.key === old.key || e.variable instanceof TupleNode && e.lamda.variables.some((v) => v.key === old.key))) {
+    const bases = e.baseSets.map((b) => cast(sub(b), SetExpr, 'base set'));
+    return bases.every((b, i) => b === at(e.baseSets, i)) ? e : new ImageSet(e.variable, e.expr, first(bases), ...bases.slice(1));
   }
   if (e instanceof ConditionSet) {
-    const insym = e.variable.key === old.key;
+    const insym = e.variable.key === old.key || e.boundSymbols.some((v) => v.key === old.key);
     const base = cast(sub(e.base), SetExpr, 'base set');
     if (base.key !== e.base.key) return conditionSet(e.variable, insym ? e.condition : sub(e.condition), base);
     if (insym) return e;
@@ -1803,6 +2401,17 @@ function subsSet(e: Expr, old: Expr, nw: Expr, sub: (x: Expr) => Expr): Expr | u
   }
   return undefined;
 }
+
+const previousRelation = impl.relational?.bind(impl);
+impl.relational = (op, a, b) => {
+  if ((op === 'Eq' || op === 'Ne') && (a instanceof SetExpr || b instanceof SetExpr)) {
+    let equal: Truth = 'unknown';
+    if (a instanceof SetExpr && b instanceof SetExpr) equal = truthAnd(tri(isSubset(a, b)), tri(isSubset(b, a)));
+    else if (a instanceof Rational || b instanceof Rational || a instanceof Float || b instanceof Float) equal = false;
+    if (equal !== 'unknown') return equal === (op === 'Eq') ? S.true : S.false;
+  }
+  return previousRelation?.(op, a, b);
+};
 
 impl.rebuildSet = rebuildSet;
 impl.subsSet = subsSet;
@@ -1813,4 +2422,5 @@ impl.setIntersection = (a, b) => intersection(cast(a, SetExpr, 'intersection ope
 // SymPy PowerSet.rewrite(FiniteSet) and DisjointUnion.rewrite(Union) through rewrite(e, target); sets are
 // classified by their kind ('Set') in the rewrite rules
 registerRewrite('Set', 'FiniteSet', (_args, e) => (e instanceof PowerSetNode ? e.rewriteAsFiniteSet() : undefined));
+registerRewrite('Set', 'PowerSet', (_args, e) => e instanceof FiniteSet ? e.rewriteAsPowerSet() : undefined);
 registerRewrite('Set', 'Union', (_args, e) => (e instanceof DisjointUnionNode ? e.rewriteAsUnion() : undefined));

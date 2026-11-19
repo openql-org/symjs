@@ -21,6 +21,27 @@ const R = (p: bigint, q = 1n): sj.Rational => sj.Rational.of(p, q);
 const P = (s: string): sj.Expr => sj.parse(s, { symbols: { x, y, a } } as never);
 
 const f = sj.SymFunction('f');
+it('normalizes unevaluated arithmetic and preserves polar powers', () => {
+  expect(sympify(2n).key).toBe(Rational.of(2n).key);
+  expect(add(new sj.Mul([Rational.of(2n), S.One])).key).toBe(Rational.of(2n).key);
+  expect(mul(new sj.Mul([S.NaN, x]))).toBe(S.NaN);
+  expect(s(pow(new sj.Fn('exp_polar', [x]), y))).toBe('exp_polar(x*y)');
+  expect(Add.fromiter([x, x]).key).toBe(mul(2, x).key);
+  expect(sj.Mul.fromiter([x, x]).key).toBe(pow(x, 2).key);
+  expect(Pow.fromiter([x, S.One])).toBe(x);
+  expect(pow(S.One, S.ComplexInfinity)).toBe(S.NaN);
+  expect(pow(S.NegOne, S.Infinity)).toBe(S.NaN);
+  expect(s(sj.root(x, 3, y))).toBe('(-1)**(2*y/3)*x**(1/3)');
+  expect(add(S.Infinity, x, mul(-1, x))).toBe(S.Infinity);
+  expect(mul(S.ComplexInfinity, new Sym('p', { positive: true }))).toBe(S.ComplexInfinity);
+  expect(mul(new Pow(S.I, rational(1, 3)), new Pow(S.I, rational(2, 3)))).toBe(S.I);
+  expect(exp(add(log(x), log(y))).key).toBe(mul(x, y).key);
+  expect(pow(0, rational(-1, 2))).toBe(S.ComplexInfinity);
+  expect(s(add(S.Infinity, x, y))).toBe('x + y + oo');
+  expect(s(mul(S.ComplexInfinity, x, y))).toBe('zoo*x*y');
+  expect(mul(new Pow(Rational.of(2n), new Float(1)), new Pow(Rational.of(3n), new Float(1))).toNumber()).toBe(6);
+  expect(pow(S.E, new Float(1)).toNumber()).toBeCloseTo(Math.E, 14);
+});
 const P2 = (s: string): sj.Expr => sj.parse(s, { symbols: { x, y }, functions: { f } } as never);
 
 const { oo, zoo, nan } = sj;
@@ -418,6 +439,16 @@ describe('powers with infinities and nan (SymPy Infinity/NegativeInfinity/Comple
 });
 
 describe('root, cbrt and realRoot (SymPy root, cbrt, real_root)', () => {
+  it('converts only principal odd roots when the root order is omitted', () => {
+    const odd = new sj.Pow(sj.rational(-2), sj.rational(1, 3));
+    const even = new sj.Pow(sj.rational(-7), sj.rational(1, 4));
+    const nonprincipal = new sj.Pow(sj.rational(-1), sj.rational(2, 3));
+    expect(s(sj.realRoot(odd))).toBe('-2**(1/3)');
+    expect(s(sj.realRoot(even))).toBe('(-7)**(1/4)');
+    expect(s(sj.realRoot(sj.add(odd, even, nonprincipal)))).toBe('-2**(1/3) + (-1)**(2/3) + (-7)**(1/4)');
+    expect(s(sj.root(4, 2, 0, { evaluate: false }))).toBe('sqrt(4)');
+    expect(s(sj.realRoot(-8, 3, { evaluate: false }))).toBe('-8**(1/3)');
+  });
   it('takes principal and other roots', () => {
     expect(s(sj.root(8, 3))).toBe('2');
     expect(s(sj.root(x, 3, 1))).toBe('(-1)**(2/3)*x**(1/3)');
@@ -671,4 +702,58 @@ it('uses symbolic parity when raising negative numbers to integer powers', () =>
   expect(String(sj.pow(-2, sj.symbol('k', { integer: true })))).toBe('(-2)**k');
   expect(sj.pow(new sj.Float(-2.5), odd).equals(sj.mul(-1, sj.pow(new sj.Float(2.5), odd)))).toBe(true);
   expect(String(sj.pow(2, odd))).toBe('2**n');
+});
+
+it('uses the sign of rational and symbolic exponents of zero', () => {
+  const z = sj.symbol('z', { zero: true });
+  expect(pow(0, z)).toBe(S.One);
+  expect(pow(S.ComplexInfinity, z)).toBe(S.One);
+  expect(pow(0, sj.I)).toBe(S.NaN);
+  expect(pow(0, sj.add(-1, sj.I))).toBe(S.NaN);
+  expect(pow(0, sj.symbol('w', { real: false }))).toBeInstanceOf(Pow);
+  expect(pow(0, Rational.of(1, 2))).toBe(S.Zero);
+  expect(pow(0, Rational.of(-1, 2))).toBe(S.ComplexInfinity);
+  expect(mul(sj.expPolar(x), sj.expPolar(mul(2, x))).key).toBe(sj.expPolar(mul(3, x)).key);
+  expect(mul(sj.expPolar(x), sj.expPolar(sj.neg(x))).key).toBe(S.One.key);
+});
+
+it('splits integer powers with a common exponent without reordering noncommutative factors', () => {
+  const a = sj.symbol('a', { commutative: false });
+  const b = sj.symbol('b', { commutative: false });
+  expect(sj.asBaseExp(sj.mul(x.pow(2), y.pow(2))).map(String)).toEqual(['x*y', '2']);
+  expect(sj.asBaseExp(sj.mul(x.pow(2), y.pow(3))).map(String)).toEqual(['x**2*y**3', '1']);
+  expect(sj.asBaseExp(sj.mul(a.pow(2), b.pow(2))).map(String)).toEqual(['a**2*b**2', '1']);
+  expect(sj.asBaseExp(sj.mul(a.pow(2), x.pow(2))).map(String)).toEqual(['x*a', '2']);
+  expect(sj.asBaseExp(sj.mul(a, b)).map(String)).toEqual(['a*b', '1']);
+});
+
+it('keeps the order of interval and complex infinity terms in a raw sum', () => {
+  const finite = sj.AccumBounds(1, 2);
+  const unbounded = sj.AccumBounds(S.NegativeInfinity, 2);
+  expect(sj.neg(new Add([x, finite, S.ComplexInfinity])).equals(add(sj.neg(x), S.ComplexInfinity))).toBe(true);
+  expect(String(sj.neg(new Add([S.ComplexInfinity, finite, x])))).toContain('AccumBounds');
+  expect(String(add(unbounded, S.ComplexInfinity, x))).toContain('AccumBounds');
+});
+
+it('preserves zero-, one- and multiple-operand constructors when evaluation is disabled', () => {
+  sj.evaluate(false, () => {
+    expect(add()).toBe(S.Zero);
+    expect(add(x)).toBe(x);
+    expect(add(1, 2)).toBeInstanceOf(sj.Add);
+    expect(mul()).toBe(S.One);
+    expect(mul(x)).toBe(x);
+    expect(mul(1, 2)).toBeInstanceOf(sj.Mul);
+    expect(pow(x, 1)).toBeInstanceOf(sj.Pow);
+  });
+});
+
+it('collects polar exponentials with numeric and symbolic exponents', () => {
+  expect(mul(sj.expPolar(2), sj.expPolar(3)).equals(sj.expPolar(5))).toBe(true);
+  expect(mul(sj.expPolar(mul(0.5, x)), sj.expPolar(x)).equals(sj.expPolar(mul(1.5, x)))).toBe(true);
+});
+
+it('dispatches powers to the base and keeps a unit term in an exponential', () => {
+  const q = sj.Quaternion(0, 1, 0, 0);
+  expect(pow(q, 2).equals(q.pow(2))).toBe(true);
+  expect(String(sj.exp(add(1, x)))).toBe('exp(x + 1)');
 });

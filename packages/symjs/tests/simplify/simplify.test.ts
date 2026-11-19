@@ -3,10 +3,65 @@
 
 // Tests of src/simplify/simplify.ts.
 
-import { describe, expect, it } from 'vitest';
-import { I, KroneckerDelta, add, cancel, cos, countOps, exp, exptotrig, hyper, mul, parse, pow, rational, simplify, sin, symbol, symbols, together, trigsimp } from '../../src';
+import { describe, expect, it, vi } from 'vitest';
+import { UndefFn, SymFunction, piecewise, Eq, Ne, Ge, Gt, Le, Lt, and, I, KroneckerDelta, add, cancel, cos, countOps, exp, exptotrig, hyper, mul, parse, pow, rational, simplify, sin, symbol, symbols, together, trigsimp } from '../../src';
 import type { Expr } from '../../src';
 import { clearCoefficients, factorSum, inversecombine, ncSimplify, nthroot, fn, S, Sum, Mul, Pow } from '../../src';
+import { Add, And, Or, Piecewise, Rel, Tuple, pi, sstr } from '../../src';
+
+it('cancels reciprocal principal square roots on the negative real axis', () => {
+  const z = symbol('z', { negative: true });
+  expect(simplify(parse('sqrt(1/z) + 1/sqrt(z)', { symbols: [z] })).equals(0)).toBe(true);
+});
+
+it('retains a short logarithmic change-of-base ratio', () => {
+  const y = symbol('y', { positive: true });
+  const expr = parse('log(y/10)/log(y/5)', { symbols: [y] });
+  expect(simplify(expr).equals(expr)).toBe(true);
+});
+
+describe('simplifying Piecewise intervals and equalities', () => {
+  const [x, y] = symbols('x y', { real: true });
+  it.each([
+    [Piecewise([x, Gt(x, 2)]), 'Piecewise((x, x > 2), (nan, True))'],
+    [Piecewise([1, Gt(x, 3)], [2, Lt(x, 2)], [3, Gt(x, 1)]), 'Piecewise((1, x > 3), (2, x < 2), (3, True))'],
+    [Piecewise([1, Lt(x, 2)], [2, Lt(x, 1)], [3, true]), 'Piecewise((1, x < 2), (3, True))'],
+    [Piecewise([1, And(Gt(x, 1), Lt(x, 3))], [2, And(Gt(x, 2), Lt(x, 4))]), 'Piecewise((1, (x > 1) & (x < 3)), (2, (x >= 3) & (x < 4)), (nan, True))'],
+    [Piecewise([1, And(Ge(x, 1), Le(x, 3))], [2, Gt(x, 2)]), 'Piecewise((1, (x >= 1) & (x <= 3)), (2, x > 3), (nan, True))'],
+    [Piecewise([1, Lt(x, 1)], [2, Le(x, 3)], [3, true]), 'Piecewise((1, x < 1), (2, x <= 3), (3, True))'],
+    [Piecewise([x, and(Eq(x, y), Eq(pow(x, 2), 2))], [2, true]), 'Piecewise((y, Eq(x, y) & Eq(y**2, 2)), (2, True))'],
+    [Piecewise([x, and(Eq(x, y), Gt(x, 2))], [2, true]), 'Piecewise((y, Eq(x, y) & (y > 2)), (2, True))'],
+    [Piecewise([x, Eq(mul(x, y), 2)], [2, true]), 'Piecewise((x, Eq(x*y, 2)), (2, True))'],
+    [add(x, Piecewise([x, Gt(x, 1)], [2, true])), 'Piecewise((2*x, x > 1), (x + 2, True))'],
+    [Piecewise([x, Eq(x, pi)], [pi, true]), 'pi'],
+    [Piecewise([9, Lt(x, 0)], [8, Eq(x, 3)], [7, true]), 'Piecewise((9, x < 0), (8, Eq(x, 3)), (7, True))'],
+    [Piecewise([x, Or(Gt(x, y), Lt(x, 1))], [1, true]), 'Piecewise((x, (x > y) | (x < 1)), (1, True))'],
+  ])('simplifies %s', (value, expected) => {
+    expect(sstr(simplify(value))).toBe(expected);
+  });
+
+  it('substitutes equalities through conjunctions and tuple values', () => {
+    const value = Piecewise([Tuple(x, y), And(Eq(x, 2), Eq(y, 1))], [Tuple(0, 0), true]);
+    expect(sstr(simplify(value))).toBe('Piecewise(((2, 1), Eq(x, 2) & Eq(y, 1)), ((0, 0), True))');
+  });
+
+  it('simplifies Boolean bounds in raw Piecewise nodes and collapses a folded sum', () => {
+    const never = new Piecewise([x, S.false, S.One, Gt(x, 0), S.Two, S.true]);
+    expect(sstr(simplify(never))).toBe('Piecewise((1, x > 0), (2, True))');
+    const reversed = Piecewise([x, new Rel('Lt', S.Zero, x)], [0, true], { evaluate: false });
+    expect(sstr(simplify(reversed))).toBe('Piecewise((x, x > 0), (0, True))');
+    const nonlinear = Piecewise([1, And(Gt(x, 0), Gt(pow(x, 2), 3))], [0, true]);
+    const simplified = simplify(nonlinear);
+    expect(simplified.subs(x, 2).equals(S.One)).toBe(true);
+    expect(simplified.subs(x, -2).equals(S.Zero)).toBe(true);
+    expect(simplify(new Add([reversed, mul(-1, reversed)])).equals(S.Zero)).toBe(true);
+  });
+
+  it('removes positive rational content from the complex sign', () => {
+    expect(sstr(simplify(fn('sign', [add(2, mul(2, I))])))).toBe('sign(1 + I)');
+    expect(sstr(simplify(fn('sign', [add(1, I)])))).toBe('sign(1 + I)');
+  });
+});
 
 it('strips coefficients while preserving the transformed equation', () => {
   expect(clearCoefficients(parse('4*y*(6*x + 3) - 2'))).toEqual([parse('y*(2*x + 1)'), parse('1/6')]);
@@ -286,4 +341,202 @@ describe('the SymPy simplify pipeline (sympy/simplify/simplify.py)', () => {
     expect(String(simplify(parse('sqrt(y + 1)/sqrt(y - 1) + (y**2 - 1)*(x/(2*sqrt(y - 1)*sqrt(y + 1)) - x*sqrt(y + 1)/(2*(y - 1)**(3/2)))/x')))).toBe('0');
     expect(Date.now() - t).toBeLessThan(1000);
   });
+});
+
+it('respects relational measures and recognizes algebraic zero identities', async () => {
+  const sj = await import('../../src');
+  const { impl } = await import('../../src/core/nodes');
+  const x = new sj.Sym('x');
+  const relation = new sj.Rel('Lt', sj.S.One, x);
+  expect(sj.simplify(relation, { ratio: 0 })).toBe(relation);
+  expect(String(sj.simplify(relation, { measure: (e) => sj.Rational.of(sj.countOps(e) + 1) }))).toBe('x > 1');
+  expect(impl.equalsZero?.(sj.S.Zero)).toBe(true);
+  expect(impl.equalsZero?.(sj.S.One)).toBeUndefined();
+  expect(impl.equalsZero?.(x)).toBeUndefined();
+  expect(impl.equalsZero?.(sj.I)).toBeUndefined();
+  expect(impl.equalsZero?.(sj.add(sj.sqrt(2), 1))).toBeUndefined();
+  expect(impl.equalsZero?.(sj.mul(sj.sqrt(2), sj.sqrt(3)))).toBeUndefined();
+});
+
+it('simplifies nested special functions and extension expressions', async () => {
+  const sj = await import('../../src');
+  expect(sj.simplify(sj.Quaternion(sj.add(sj.pow(sj.sin(x), 2), sj.pow(sj.cos(x), 2)), 0, 0, 0)).key).toBe(sj.Quaternion(1, 0, 0, 0).key);
+  expect(String(sj.simplify(sj.add(x, sj.hyper([], [], x))))).toBe('x + hyper((), (), x)');
+  expect(sj.simplify(sj.add(x, sj.fn('besselj', [sj.S.Half, x])))).toBeDefined();
+  expect(sj.simplify(sj.fn('binomial', [x, sj.S.Two]), { ratio: 0 }).key).toBe(sj.fn('binomial', [x, sj.S.Two]).key);
+});
+
+it('uses expression-valued measures and the algebraic zero certificate', async () => {
+  const sj = await import('../../src');
+  const { impl } = await import('../../src/core/nodes');
+  expect(sj.simplify(sj.add(x, sj.symbol('y')), { measure: (e) => sj.Rational.of(sj.countOps(e) + 1) }).key).toBe(sj.add(x, sj.symbol('y')).key);
+  const factorial = new sj.Fn('factorial', [x]);
+  expect(sj.simplify(factorial, { ratio: 0 }).key).toBe(factorial.key);
+  expect(sj.simplify(factorial, { ratio: Infinity }).key).toBe(sj.combsimp(factorial).key);
+  const zero = sj.parse('sqrt(2) + sqrt(3) - sqrt(5 + 2*sqrt(6))');
+  expect(impl.equalsZero?.(zero)).toBe(true);
+});
+
+it('cancels shifted powers of the roots of a characteristic polynomial', () => {
+  const n = symbol('n', {integer:true});
+  for (const base of [parse('(1+sqrt(5))/2'),parse('(1-sqrt(5))/2')]) {
+    const residual = add(pow(base,add(n,2)),mul(-1,pow(base,add(n,1))),mul(-1,pow(base,n)));
+    expect(simplify(residual)).toBe(S.Zero);
+  }
+});
+
+it('decides mathematical equality independently of structural equality', async () => {
+  const sj = await import('../../src');
+  const f = (s: string) => sj.parse(s);
+  expect(sj.exprEquals(f('x'), f('x'))).toBe(true);
+  expect(sj.exprEquals(f('sqrt(x)'), 0)).toBe(false);
+  expect(sj.exprEquals(f('sqrt(3)+sqrt(5)'), 0)).toBe(false);
+  expect(sj.exprEquals(f('sqrt(1+sqrt(3))+sqrt(3+3*sqrt(3))'), f('sqrt(10+6*sqrt(3))'))).toBe(true);
+  expect(sj.exprEquals(f('(9*3**(2/3)+30+27*3**(1/3))**(1/3)'), f('3+3**(1/3)'))).toBe(true);
+  expect(sj.exprEquals(f('x/(1+y)'), 0)).toBe(false);
+  expect(sj.exprEquals(f('sin(x)+y'), 0)).toBe('unknown');
+});
+
+it('chooses an exactly equivalent simpler primitive element for an algebraic number', async () => {
+  const sj = await import('../../src');
+  const root = sj.parse('(41+29*sqrt(2))**(1/5)');
+  const a = new sj.AlgebraicNumber(root);
+  expect(sj.simplify(a).root.equals(sj.parse('1+sqrt(2)'))).toBe(true);
+  expect(sj.simplify(a, { ratio: 0 })).toBe(a);
+  const t = new sj.AlgebraicNumber(sj.sqrt(2));
+  expect(sj.simplify(t, { measure: (e) => sj.Rational.of(sj.countOps(e)) })).toBe(t);
+  const alias = sj.symbol('theta');
+  expect(sj.simplify(new sj.AlgebraicNumber(root, [1, 0], { alias })).alias).toBe(alias);
+  expect(sj.exprEquals(sj.parse('sin(x)+2'), 0)).toBe('unknown');
+  expect(sj.exprEquals(sj.Mod(x, 3), 0)).toBe('unknown');
+  expect(sj.exprEquals(sj.parse('x*sin(x)/(1+y)'), 0)).toBe(false);
+  const zero = sj.parse('(9*3**(2/3)+30+27*3**(1/3))**(1/3)-3-3**(1/3)');
+  expect(sj.exprEquals(sj.mul(zero, x), 0)).toBe(true);
+});
+
+it('leaves symbolic products undecided when a factor may be zero', async () => {
+  const sj = await import('../../src');
+  const { impl } = await import('../../src/core/nodes');
+  expect(sj.exprEquals(sj.parse('(sin(x)+y)*(1+z)'), 0)).toBe('unknown');
+  expect(impl.equalsZero?.(new sj.Pow(sj.S.Zero, sj.S.NegOne))).toBeUndefined();
+});
+
+it('folds the absolute-value rewrite of sign before simplifying products', async () => {
+  const sj = await import('../../src');
+  const r = sj.symbol('r', { real: true });
+  const lhs = sj.parse('2*sign(r+3)/(5*Abs(r+3)**(3/5))', { symbols: { r } });
+  const relation = sj.simplify(sj.Eq(lhs, 0));
+  expect(String(relation)).toContain('Piecewise((0, Eq(r, -3))');
+  expect(sj.subs(relation, [[r, -3]])).toBe(sj.S.true);
+});
+
+it('simplifies an unevaluated integral without extracting a unit coefficient', async () => {
+  const sj = await import('../../src');
+  const v = sj.symbol('v');
+  const integral = new sj.Integral([sj.sin(v), v]);
+  expect(sj.simplify(integral, { doit: false }).equals(integral)).toBe(true);
+});
+
+it('keeps sign intact when no rewrite applies', async () => {
+  const sj = await import('../../src');
+  const { impl } = await import('../../src/core/nodes');
+  const rewrite = Object.getOwnPropertyDescriptor(impl, 'rewrite');
+  const e = sj.parse('sign(x)/Abs(x)**(3/5)');
+  try {
+    impl.rewrite = (input) => input;
+    expect(String(sj.simplify(e))).toContain('sign(x)');
+  } finally {
+    if (rewrite !== undefined) Object.defineProperty(impl, 'rewrite', rewrite);
+  }
+});
+
+it('handles an indeterminate minimal polynomial for an algebraic difference', async () => {
+  const sj = await import('../../src');
+  const numberfields = await import('../../src/polys/numberfields');
+  const mock = vi.spyOn(numberfields, 'minimalPolynomial').mockImplementationOnce(() => {
+    throw new sj.NotImplementedError('minimal polynomial is indeterminate');
+  });
+  try {
+    expect(sj.exprEquals(sj.sqrt(2), 0)).toBe(false);
+  } finally {
+    mock.mockRestore();
+  }
+});
+
+it('honors explicitly requested inverse cancellation for user functions', () => {
+  const x = symbol('x'), g = SymFunction('g');
+  class F extends UndefFn { inverse() { return g; } }
+  expect(simplify(new F('f', [g(x)]), { inverse: true })).toEqual(x);
+  for (const args of [[x], [sin(x)], [g(x), x]]) {
+    const f = new F('f', args);
+    expect(inversecombine(f)).toEqual(f);
+  }
+});
+
+it('cancels an unevaluated logarithm of an exponential in explicit inverse mode', () => {
+  const x = symbol('x');
+  const raw = { evaluate: false };
+  expect(simplify(fn('log', [exp(x)], raw), { inverse: true })).toEqual(x);
+  const based = fn('log', [exp(x), 2], raw);
+  expect(simplify(based, { inverse: true })).toEqual(x.div(fn('log', [2])));
+  const unmatched = fn('log', [exp(x), 2, 3], raw);
+  expect(inversecombine(unmatched)).toEqual(unmatched);
+});
+
+it('preserves an unevaluated logarithm of a symbolic sum', () => {
+  const [n, x] = symbols('n x');
+  const log = fn('log', [Sum(n, [n, 1, x])], { evaluate: false });
+  expect(simplify(log)).toEqual(log);
+});
+
+it('retains the strongest comparable conjunct and preserves independent conditions', () => {
+  const [x, y, z] = symbols('x y z');
+  for (const op of [Ge, Gt, Le, Lt]) {
+    const bound = op === Ge || op === Gt ? 2 : 1;
+    expect(simplify(and(op(x, 1), op(x, 2))).equals(op(x, bound))).toBe(true);
+  }
+  for (const condition of [and(Ge(x, 1), Lt(x, 2)), and(Ne(x, y), Ne(x, z))]) {
+    expect(simplify(condition).equals(condition)).toBe(true);
+  }
+});
+
+it('preserves piecewise values that do not define a Kronecker delta', () => {
+  const [x, y] = symbols('x y');
+  const delta = KroneckerDelta(x, y);
+  for (const condition of [
+    piecewise([1, Ge(x, y)], [0, true]), piecewise([2, Eq(x, y)], [0, true]),
+    piecewise([1, Eq(x, y)], [2, true]), piecewise([0, Ne(x, y)], [2, true]),
+    piecewise([1, Eq(x, y)], [0, Ge(x, y)]),
+  ]) {
+    const result = simplify(add(delta, condition));
+    expect(result.has(delta)).toBe(true);
+  }
+});
+
+it('preserves endpoints and substitutions when simplifying folded branches', () => {
+  const x = symbol('x', { real: true }), y = symbol('y', { real: true });
+  const closed = Piecewise([3, Le(fn('abs', [x]), 2)], [4, true]);
+  expect(String(simplify(closed))).toBe('Piecewise((3, (x >= -2) & (x <= 2)), (4, True))');
+  const overlapping = Piecewise([1, Lt(x, 0)], [2, Lt(fn('abs', [x]), 1)], [3, true]);
+  expect(String(simplify(overlapping))).toBe('Piecewise((1, x < 0), (2, x < 1), (3, True))');
+  const mixed = Piecewise([x.add(y), And(Eq(x, 1), Lt(x.add(y), 5))], [9, true]);
+  expect(simplify(mixed).subs(x, 1).subs(y, 2).equals(3)).toBe(true);
+  const nonlinear = Piecewise([5, Eq(x.pow(2), 1)], [0, true]);
+  expect(simplify(nonlinear).subs(x, -1).equals(5)).toBe(true);
+  expect(simplify(add(closed, 1)).subs(x, 3).equals(5)).toBe(true);
+});
+
+it('preserves interval boundaries and solves branch equalities when simplifying Piecewise', () => {
+  const [x, y] = symbols('x y');
+  const start = Piecewise([1, Le(x, 0)], [2, And(Ge(x, 0), Le(x, 2))], [3, true]);
+  expect(simplify(start)).toEqual(Piecewise([1, Le(x, 0)], [2, Le(x, 2)], [3, true]));
+  const eq = Eq(add(mul(x, add(1, x)), mul(-1, pow(x, 2))), 0);
+  expect(simplify(Piecewise([x, eq], [y, true])).equals(Piecewise([0, Eq(x, 0)], [y, true]))).toBe(true);
+  const point = Piecewise([x, And(Eq(x, 2), Ge(y, 0))], [0, true]);
+  expect(simplify(point).equals(Piecewise([2, And(Eq(x, 2), Ge(y, 0))], [0, true]))).toBe(true);
+  const multi = Piecewise([1, Eq(add(x, y), 2)], [x, true]);
+  expect(simplify(multi).subs([[x, 0], [y, 2]]).equals(S.One)).toBe(true);
+  expect(simplify(add(Piecewise([x, Lt(x, 0)], [y, true]), 1))
+    .equals(Piecewise([add(1, x), Lt(x, 0)], [add(1, y), true]))).toBe(true);
+  expect(simplify(new Piecewise([S.One, S.true])).equals(S.One)).toBe(true);
 });

@@ -371,7 +371,8 @@ function lcgRandInt(): RandInt {
  * positive leading coefficient in lexicographic order, unless f is
  * irreducible, which is returned as it is.
  */
-export function wangFactor(f: ZPoly, n: number, lcFactor: (lc: ZPoly) => [bigint, ZPoly[]], randint: RandInt = lcgRandInt(), mod0?: number): ZPoly[] {
+export function wangFactor(f: ZPoly, n: number, lcFactor: (lc: ZPoly) => [bigint, ZPoly[]], seed?: RandInt, mod0?: number): ZPoly[] {
+  const randint = seed ?? lcgRandInt();
   const u = n - 1;
   const [ct, T] = lcFactor(lc0(f));
   const p = nextprime(mignotte(f, n));
@@ -410,7 +411,7 @@ export function wangFactor(f: ZPoly, n: number, lcFactor: (lc: ZPoly) => [bigint
   const lead = leadCoeffs(f, T, best.cs, best.E, best.H, best.A, n);
   const factors = lead && henselLifting(lead[0], lead[1], lead[2], best.A, p, n);
   // an extraneous univariate factorization: SymPy restarts with a larger range of points
-  if (!factors) return wangFactor(f, n, lcFactor, randint, mod + 1);
+  if (!factors) return wangFactor(f, n, lcFactor, undefined, mod + 1);
   return factors.map((g) => {
     const c = terms(g).reduce((x, t) => igcd(x, t.c), 0n);
     const s = leadTerm(g).c < 0n ? -c : c;

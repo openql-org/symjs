@@ -10,7 +10,8 @@
  */
 
 import type { Expr, ExprLike } from './nodes';
-import { ExtensionExpr } from './nodes';
+import { Derivative, ExtensionExpr, Integral, Piecewise } from './nodes';
+import { Concrete } from './concrete';
 import { sympify } from './ops';
 import { callableClass } from './callable';
 import { at, cast } from './guard';
@@ -72,6 +73,7 @@ export class TupleNode extends ExtensionExpr {
 /** SymPy Tuple(a, b, ...). */
 export const Tuple = /* @__PURE__ */ callableClass(TupleNode, (...xs: ExprLike[]): TupleNode => new TupleNode(xs.map(sympify)));
 export type Tuple = TupleNode;
+
 
 type DictInput = ReadonlyMap<ExprLike, ExprLike> | readonly (readonly [ExprLike, ExprLike])[];
 const isMapInput = (x: DictInput): x is ReadonlyMap<ExprLike, ExprLike> => !Array.isArray(x);
@@ -142,3 +144,30 @@ export const Dict = /* @__PURE__ */ callableClass(DictNode, (items: DictInput): 
   return new DictNode([...m.values()]);
 });
 export type Dict = DictNode;
+
+/** The symbolic arguments in the public traversal API. */
+export function traversalArgs(e: Expr): readonly Expr[] {
+  const tuple = (args: readonly Expr[]) => new TupleNode(args);
+  if (e instanceof Piecewise) return e.pairs.map(([value, condition]) => tuple([value, condition]));
+  if (e instanceof Integral) {
+    const limits: Expr[] = [];
+    let body: Expr = e;
+    while (body instanceof Integral) {
+      limits.unshift(tuple(body.args.slice(1)));
+      body = body.integrand;
+    }
+    return [body, ...limits];
+  }
+  if (e instanceof Concrete) return [e.function, ...e.limits.map((limit) => tuple(limit))];
+  if (e instanceof Derivative) return [e.expr, ...e.variableOrders.map(([v, n]) => tuple([v, n]))];
+  return e.args;
+}
+
+/** Visit the expression and its arguments breadth first. */
+export function* iterArgs(e: Expr): Generator<Expr, void, undefined> {
+  const queue = [e];
+  for (const node of queue) {
+    yield node;
+    queue.push(...traversalArgs(node));
+  }
+}

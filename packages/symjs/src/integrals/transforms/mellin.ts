@@ -26,7 +26,7 @@ import { isNegative, isPositive, isReal } from '../../core/assumptions';
 import { asCoeffAdd, asCoeffMul, asIndependent, asNumerDenom, asRealImag, isRationalFunction } from '../../core/methods';
 import { mapBottomUp, some, subs } from '../../core/traverse';
 import { igcd, ilcm } from '../../core/numberutils';
-import { abs, arg, fn, re, sin } from '../../functions/elementary/elementary';
+import { abs, arg, fn, log, re, sin, tan } from '../../functions/elementary/elementary';
 import { Max, Min, ceiling, gamma } from '../../functions/special/special';
 import { besselj, besselk } from '../../functions/special/bessel';
 import { MeijerG, meijerg } from '../../functions/special/hyper';
@@ -79,6 +79,31 @@ function mellinTable(f: Expr, x: Sym, s: Expr): [Expr, Expr, Expr, Expr] | undef
   const b = wild('b', x);
   const p = wild('p', x);
   const r = wild('r', x);
+  // Difference quotient: combine the terms before imposing their common strip.
+  const quotient = matchByName(f, mul(sub(pow(x, r), pow(b, r)), pow(sub(x, b), -1)));
+  if (quotient && isPositive(mget(quotient, 'b')) === true) {
+    const B = mget(quotient, 'b'), A = mget(quotient, 'r');
+    return [mul(S.Pi, pow(B, sub(add(A, s), 1)), sin(mul(S.Pi, A)), pow(mul(sin(mul(S.Pi, s)), sin(mul(S.Pi, add(A, s)))), -1)), Max(0, neg(re(A))), Min(1, sub(1, re(A))), S.true];
+  }
+  // Algebraic Mellin pairs obtained by x = 4*b**2*u/(1-u)**2.
+  const radicand = add(pow(b, 2), x), algebraic = pow(add(b, sqrt(radicand)), r);
+  const plain = matchByName(mul(...rest), algebraic);
+  const weighted = plain ? undefined : matchByName(mul(...rest), mul(algebraic, pow(radicand, S.NegHalf)));
+  const algebraicMatch = plain ?? weighted;
+  if (algebraicMatch?.has('b') && algebraicMatch.has('r') && isPositive(mget(algebraicMatch, 'b')) === true) {
+    const B = mget(algebraicMatch, 'b'), A = mget(algebraicMatch, 'r'), exponent = add(A, mul(2, sp));
+    const F = plain
+      ? mul(-1, A, pow(mul(2, B), exponent), gamma(sp), gamma(neg(exponent)), pow(gamma(sub(sub(1, A), sp)), -1))
+      : mul(pow(2, exponent), pow(B, sub(exponent, 1)), gamma(sp), gamma(sub(1, exponent)), pow(gamma(sub(sub(1, A), sp)), -1));
+    return [mul(C, F), neg(re(alpha)), sub(weighted ? S.Half : S.Zero, add(mul(S.Half, re(A)), re(alpha))), S.true];
+  }
+  if (rest.length === 1) {
+    const g = at(rest, 0);
+    const directLog = log(abs(sub(x, 1))), inverseLog = log(abs(sub(1, pow(x, -1))));
+    if (g.equals(directLog) || g.equals(inverseLog)) {
+      return [mul(C, S.Pi, pow(mul(sp, tan(mul(S.Pi, sp))), -1)), sub(g.equals(directLog) ? -1 : 0, re(alpha)), sub(g.equals(directLog) ? 0 : 1, re(alpha)), S.true];
+    }
+  }
   if (rest.length === 1) {
     const g = at(rest, 0);
     // exp(-b*x**p)

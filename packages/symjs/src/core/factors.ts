@@ -7,13 +7,15 @@
  */
 
 import type { Expr, ExprLike } from './nodes';
-import { Add, Mul, Rational, S, isNum } from './nodes';
+import { Add, Float, Mul, Rational, S, isNum } from './nodes';
 import { ExprMap } from './exprmap';
 import { add, asBaseExp, mul, neg, pow, sub, sympify } from './ops';
-import { argsCncSplit, asPowersDict, extractAdditively } from './methods';
+import { argsCncSplit, asCoeffMul, asPowersDict, decomposePower, extractAdditively, primitive } from './methods';
 import { str } from '../printing/str';
 import { getOrThrow } from './guard';
 import { ordered } from './match';
+import { gcd, lcm } from './numbers';
+import { isNegative } from './assumptions';
 
 const isNumber = (e: Expr): boolean => isNum(e);
 const isZero = (e: Expr): boolean => e instanceof Rational && e.isZero;
@@ -50,7 +52,7 @@ export class Factors {
     if (isExprMap(input)) {
       const f = new ExprMap<Expr>([...input].map(([k, v]) => [k, sympify(v)] as const));
       // powers of -1 and I are made canonical
-      const handle = [...f.keys()].filter((k) => k.key === S.I.key || k.key === S.NegOne.key || k.key === S.One.key);
+      const handle = [...f.keys()].filter((k) => k.key === S.I.key || k.key === S.NegOne.key || k.key === S.One.key || (k instanceof Float && Math.abs(k.toNumber()) === 1));
       let i1: Expr = S.One;
       for (const k of handle) {
         const v = f.get(k);
@@ -60,7 +62,10 @@ export class Factors {
       }
       if (!isOne(i1)) {
         for (const a of i1 instanceof Mul ? i1.args : [i1]) {
-          if (a.key === S.NegOne.key || a.key === S.I.key) f.set(a, S.One);
+          if (a instanceof Float && a.isNegative) {
+            f.set(neg(a), S.One);
+            f.set(S.NegOne, S.One);
+          } else if (a.key === S.NegOne.key || a.key === S.I.key) f.set(a, S.One);
           else {
             const [b, e] = asBaseExp(a);
             f.set(b, add(f.get(b) ?? S.Zero, e));
@@ -88,6 +93,7 @@ export class Factors {
       }
       return f;
     }
+    if (e.key === S.NegativeInfinity.key || (e instanceof Float && e.isNegative)) return new ExprMap([[S.NegOne, S.One], [neg(e), S.One]]);
     if (isNum(e) || e.args.length === 0) return new ExprMap([[e, S.One]]);
     const [c0, nc] = argsCncSplit(e);
     const nI = c0.filter((x) => x.key === S.I.key).length;
@@ -201,7 +207,7 @@ export class Factors {
               }
             }
             // a numeric exponent of other would have been extracted above, so otherExp is not zero
-            rem.set(factor, otherExp);
+            if (!isZero(otherExp)) rem.set(factor, otherExp);
           }
           continue;
         }
@@ -209,6 +215,55 @@ export class Factors {
       rem.set(factor, e);
     }
     return [new Factors(quo), new Factors(rem)];
+  }
+
+  /** Remove the common factors, allowing a zero denominator (SymPy normal). */
+  normal(other: Factors | ExprLike): [Factors, Factors] {
+    if (!(other instanceof Factors)) {
+      const o = new Factors(other);
+      if (o.isZero) return [new Factors(), o];
+      if (this.isZero) return [new Factors(S.Zero), new Factors()];
+      return this.div(o);
+    }
+    return this.div(other);
+  }
+
+  /** Raise the product to a nonnegative integer power. */
+  pow(other: Factors | ExprLike): Factors {
+    const e = other instanceof Factors ? other.asExpr() : sympify(other);
+    if (!(e instanceof Rational) || !e.isInteger || e.p < 0n) throw new RangeError('expected non-negative integer');
+    return new Factors(new ExprMap(e.isZero ? [] : [...this.factors].map(([b, x]) => [b, mul(x, e)] as const)));
+  }
+
+  /** Common bases with the smaller provable exponent (SymPy gcd). */
+  gcd(other: Factors | ExprLike): Factors {
+    const o = other instanceof Factors ? other : new Factors(other);
+    if (!(other instanceof Factors) && o.isZero) return new Factors(this);
+    const factors = new ExprMap<Expr>();
+    for (const [b, e] of this.factors) {
+      const x = o.factors.get(b);
+      if (x === undefined) continue;
+      const negative = isNegative(sub(e, x));
+      if (negative !== undefined) factors.set(b, negative ? e : x);
+    }
+    return new Factors(factors);
+  }
+
+  /** Union of bases with their larger exponent (SymPy lcm). */
+  lcm(other: Factors | ExprLike): Factors {
+    const o = other instanceof Factors ? other : new Factors(other);
+    if (!(other instanceof Factors) && (this.isZero || o.isZero)) return new Factors(S.Zero);
+    const factors = new ExprMap(this.factors);
+    for (const [b, e] of o.factors) {
+      const x = factors.get(b);
+      if (x === undefined) factors.set(b, e);
+      else {
+        const negative = isNegative(sub(e, x));
+        if (negative === undefined) throw new TypeError('cannot compare symbolic exponents');
+        factors.set(b, negative ? x : e);
+      }
+    }
+    return new Factors(factors);
   }
 
   /** The numerator Factors of self / other (SymPy quo, the / operator). */
@@ -225,4 +280,90 @@ export class Factors {
     const items = ordered([...this.factors.keys()]).map((k) => `${str(k)}: ${str(getOrThrow(this.factors, k))}`);
     return `Factors({${items.join(', ')}})`;
   }
+}
+
+/** A commutative term as a coefficient times a quotient of two factor products. */
+export class Term {
+  readonly coeff: Expr;
+  readonly numer: Factors;
+  readonly denom: Factors;
+
+  constructor(term: ExprLike, numer?: Factors, denom?: Factors) {
+    const expr = sympify(term);
+    if (numer !== undefined || denom !== undefined) {
+      this.coeff = expr;
+      this.numer = numer ?? new Factors();
+      this.denom = denom ?? new Factors();
+      return;
+    }
+    if (!expr.isCommutative) throw new TypeError('Term requires a commutative expression');
+    const [coefficient, factors] = asCoeffMul(expr);
+    let c = coefficient;
+    const numerator = new ExprMap<bigint>();
+    const denominator = new ExprMap<bigint>();
+    for (const factor of factors) {
+      const [base, exponent] = decomposePower(factor);
+      const [content, prim] = base instanceof Add ? primitive(base) : [S.One, base];
+      c = mul(c, pow(content, exponent));
+      const target = exponent > 0n ? numerator : denominator;
+      const power = exponent > 0n ? exponent : -exponent;
+      if (power !== 0n) target.set(prim, (target.get(prim) ?? 0n) + power);
+    }
+    this.coeff = c;
+    this.numer = new Factors(numerator);
+    this.denom = new Factors(denominator);
+  }
+
+  asExpr(): Expr {
+    return mul(this.coeff, this.numer.asExpr(), pow(this.denom.asExpr(), -1));
+  }
+
+  mul(other: Term): Term {
+    const [numer, denom] = this.numer.mul(other.numer).normal(this.denom.mul(other.denom));
+    return new Term(mul(this.coeff, other.coeff), numer, denom);
+  }
+
+  inv(): Term {
+    return new Term(pow(this.coeff, -1), this.denom, this.numer);
+  }
+
+  quo(other: Term): Term {
+    return this.mul(other.inv());
+  }
+
+  pow(exponent: ExprLike): Term {
+    const n = sympify(exponent);
+    if (!(n instanceof Rational && n.isInteger)) throw new TypeError('Term powers require integer exponents');
+    if (n.isNegative) return this.inv().pow(Rational.of(-n.p));
+    return new Term(pow(this.coeff, n), this.numer.pow(n), this.denom.pow(n));
+  }
+
+  gcd(other: Term): Term {
+    return new Term(termContent(this.coeff, other.coeff, false), this.numer.gcd(other.numer), this.denom.gcd(other.denom));
+  }
+
+  lcm(other: Term): Term {
+    return new Term(termContent(this.coeff, other.coeff, true), this.numer.lcm(other.numer), this.denom.lcm(other.denom));
+  }
+
+  equals(other: Term): boolean {
+    const sameFactors = (a: Factors, b: Factors): boolean => a.factors.size === b.factors.size &&
+      [...a.factors].every(([base, exponent]) => b.factors.get(base)?.key === exponent.key);
+    return this.coeff.key === other.coeff.key && sameFactors(this.numer, other.numer) && sameFactors(this.denom, other.denom);
+  }
+
+  toString(): string {
+    return `Term(${str(this.coeff)}, ${String(this.numer)}, ${String(this.denom)})`;
+  }
+}
+
+function termContent(a: Expr, b: Expr, multiple: boolean): Expr {
+  if (a instanceof Rational && b instanceof Rational) {
+    return multiple ? Rational.of(lcm(a.p, b.p), gcd(a.q, b.q)) : Rational.of(gcd(a.p, b.p), lcm(a.q, b.q));
+  }
+  if (a instanceof Float || b instanceof Float) {
+    const prec = Math.max(a instanceof Float ? a.prec : 0, b instanceof Float ? b.prec : 0);
+    return multiple ? mul(a, b) : new Float(1, prec);
+  }
+  throw new TypeError('Term coefficients must be real numbers');
 }

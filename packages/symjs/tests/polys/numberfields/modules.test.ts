@@ -92,6 +92,7 @@ describe('PowerBasis and Submodule', () => {
     expect(h.T).toBe(A.T);
     expect([g.equiv(A.call(toCol([3, 3, 3, 3]))), g.equiv(e), A.call(0).mul(3).equiv(3), C.call(0).mul(1).equiv(3)]).toEqual(m.g_equiv);
     expect(A.call(0).equiv(A.call(0))).toBe(true);
+    expect(A.call(0).equiv(3.14)).toBe(false);
     expect(s(h.column())).toBe('DomainMatrix([[1], [2], [3], [4]], (4, 1), ZZ)');
     expect(s(h.column(QQ))).toBe('DomainMatrix([[1], [2], [3], [4]], (4, 1), QQ)');
     expect(s(A.elementFromPoly(poly('x**6 + 1/2')))).toBe('[1, 2, 0, 0]/2');

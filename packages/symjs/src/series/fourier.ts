@@ -7,9 +7,13 @@
  */
 
 import type { Expr, ExprLike } from '../core/nodes';
-import { Rational, S, Sym } from '../core/nodes';
+import { Dummy, Piecewise, Rational, Rel, S, Sym } from '../core/nodes';
 import { add, mul, pow, sub, sympify } from '../core/ops';
-import { subs } from '../core/traverse';
+import { and } from '../core/boolalg';
+import { piecewise } from '../core/logic';
+import { asIndependent } from '../core/methods';
+import { SeqFormula } from './sequences';
+import { piecewiseFold, subs } from '../core/traverse';
 import { cos, fn, sin } from '../functions/elementary/elementary';
 import { integrate } from '../integrals/integrate';
 import { simplify } from '../simplify/simplify';
@@ -56,6 +60,42 @@ export class FourierSeries extends SeriesBase {
       source: at(args, 4), xmap: at(args, 5), factor: at(args, 6), offset: at(args, 7),
     });
   }
+  override printStr(print: (e: Expr) => string): string {
+    const n = new Dummy('n');
+    const [constant, dependent] = asIndependent(this.source, [this.x], { asAdd: false });
+    const sequence = (trig: (e: Expr) => Expr): Expr => {
+      const harmonic = trig(mul(n, S.Pi, this.x, pow(this.L, -1)));
+      let integral = piecewiseFold(integrate(mul(dependent, harmonic), this.x, [this.a, this.b]));
+      if (integral instanceof Piecewise) {
+        const finite = and(new Rel('Gt', n, S.NegativeInfinity), new Rel('Lt', n, S.Infinity));
+        integral = piecewise(...integral.pairs.map(([value, cond]) => [value, cond === S.true ? cond : and(finite, cond)] as const));
+      }
+      const term = mul(this.factor, constant, integral, trig(this.arg(n)), pow(this.L, -1));
+      return SeqFormula(term, [term.equals(0) ? new Dummy('k') : n, S.One, S.Infinity]);
+    };
+    return `FourierSeries(${print(this.fn)}, (${print(this.x)}, ${print(this.a)}, ${print(this.b)}), (${print(this.a0())}, ${print(sequence(cos))}, ${print(sequence(sin))}))`;
+  }
+  get period(): readonly [Expr, Expr] { return [this.a, this.b]; }
+  asLeadingTerm(): Expr { return this.truncate(1); }
+  override subsSelf(old: Expr): Expr | undefined {
+    return old.has(this.x) ? this : undefined;
+  }
+  override add(other: ExprLike): Expr {
+    if (!(other instanceof FourierSeries)) return super.add(other);
+    if (!this.a.equals(other.a) || !this.b.equals(other.b)) throw new RangeError('Both series should have the same period');
+    const rename = (e: Expr) => subs(e, [[other.x, this.x]]);
+    if (!this.xmap.equals(rename(other.xmap))) return super.add(other);
+    const source = add(mul(this.factor, this.source), rename(mul(other.factor, other.source)));
+    const offset = add(this.offset, rename(other.offset));
+    if (!source.has(this.x)) return add(source, offset);
+    return new FourierSeries(add(this.fn, rename(other.fn)), this.x, this.a, this.b, {
+      source, xmap: this.xmap, factor: S.One, offset,
+    });
+  }
+  override sub(other: ExprLike): Expr {
+    return other instanceof FourierSeries ? this.add(other.neg()) : super.sub(other);
+  }
+  override neg(): FourierSeries { return this.scale(-1); }
   override get interval(): SetExpr { return interval(0, S.Infinity); }
   override get start(): Expr { return S.Zero; }
   override get stop(): Expr { return S.Infinity; }
@@ -143,6 +183,15 @@ export class FourierSeries extends SeriesBase {
 }
 
 /** SymPy fourier_series(f, (x, a, b)): the Fourier series of f on (a, b); (-pi, pi) by default. */
-export function fourierSeries(ex: ExprLike, x: Sym, limits: readonly [ExprLike, ExprLike] = [S.Pi.neg(), S.Pi]): FourierSeries {
-  return new FourierSeries(sympify(ex), x, sympify(limits[0]), sympify(limits[1]));
+export function fourierSeries(ex: ExprLike, x: Sym, limits?: readonly [ExprLike, ExprLike]): FourierSeries;
+export function fourierSeries(ex: ExprLike, x: undefined, limits?: readonly [ExprLike, ExprLike]): Expr;
+export function fourierSeries(ex: ExprLike, variable: Sym | undefined, limits: readonly [ExprLike, ExprLike] = [S.Pi.neg(), S.Pi]): Expr {
+  const e = sympify(ex);
+  const free = [...e.freeSymbols()];
+  if (!variable && free.length > 1) throw new RangeError('Specify the Fourier series variable');
+  const x = variable ?? free[0];
+  if (variable !== undefined && !(variable instanceof Sym)) throw new RangeError('Fourier series variable must be a symbol');
+  if (limits.some((end) => sympify(end) === S.Infinity || sympify(end) === S.NegativeInfinity)) throw new RangeError('Fourier series requires finite bounds');
+  if (!(x instanceof Sym)) return e;
+  return new FourierSeries(e, x, sympify(limits[0]), sympify(limits[1]));
 }

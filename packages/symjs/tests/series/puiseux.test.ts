@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest';
 import * as sj from '../../src';
 import { Rational, Sym, add, beta, hyper, mul, parse, pow, series, str } from '../../src';
 import type { Expr } from '../../src';
-import { Expander, SCALED_BESSELI, SCALED_EI, SCALED_ERFC, SeriesError } from '../../src/series/puiseux';
+import { Expander, SCALED_BESSELK, SCALED_BESSELI, SCALED_EI, SCALED_ERFC, SeriesError } from '../../src/series/puiseux';
 import { ExtensionExpr, UndefFn } from '../../src/core/nodes';
 
 // Remaining branches of the limit, series and summation code. Expected values are the str() forms printed by SymPy 1.14
@@ -210,4 +210,110 @@ describe('Taylor series of extension function applications', () => {
   it('rethrows other errors', () => {
     expect(() => series(new Broken([add(x, 1)]), x, 0, 3)).toThrow('no rebuild');
   });
+});
+
+class TractableRecip extends Recip {
+  override rewriteSelf(): Expr {
+    return pow(this.args[0] ?? sj.S.One, -1);
+  }
+}
+
+describe('singular and multivariate function arguments', () => {
+  const t = new Sym('t', { positive: true });
+  const e = new Expander(t);
+  const p = (s: string) => parse(s, { symbols: [t] });
+  const terms = (expression: Expr, n = 3) => e.ser(expression, Rational.of(n)).terms.map((term) => [str(term.c), str(term.e)]);
+  it('expands extension applications and their tractable rewrites', () => {
+    expect(terms(new Recip([add(t, 1), t]))).toEqual([['Recip(1, 0)', '0'], ['-1', '1'], ['1', '2']]);
+    expect(terms(new Recip([add(t, 1), Rational.of(7)]))).toEqual([['Recip(1, 7)', '0'], ['-1', '1'], ['1', '2']]);
+    expect(() => terms(new Recip([pow(t, -1)]))).toThrow(SeriesError);
+    expect(terms(new TractableRecip([t]))).toEqual([['1', '-1']]);
+  });
+  it('rejects multivariate and singular ordinary function arguments', () => {
+    expect(() => terms(new sj.Fn('atan2', [t, t]))).toThrow(SeriesError);
+    expect(() => terms(new sj.Fn('atan2', [pow(t, -1), sj.S.One]))).toThrow(SeriesError);
+  });
+  it('keeps constant terms when the perturbation is smaller than all powers', () => {
+    expect(terms(new sj.Fn('sign', [p('1 + exp(-1/t)')]))).toEqual([['1', '0']]);
+    expect(terms(new sj.Fn('floor', [p('1 + exp(-1/t)')]))).toEqual([['1', '0']]);
+  });
+  it('uses the Taylor coefficients of elliptic integrals at zero', () => {
+    expect(terms(p('elliptic_k(t)'), 2)).toEqual([['pi/2', '0'], ['pi/8', '1']]);
+    expect(terms(p('elliptic_k(t + 2)'), 0)).toEqual([['elliptic_k(2)', '0']]);
+    expect(terms(p('elliptic_k(t + a)'), 0)).toEqual([['elliptic_k(a)', '0']]);
+  });
+  it('expands inverse functions to non-positive order at regular and branch points', () => {
+    expect(terms(p('asin(t)'), 0)).toEqual([]);
+    expect(terms(p('acosh(1 + t)'), 2)).toEqual([['sqrt(2)', '1/2'], ['-sqrt(2)/12', '3/2']]);
+    expect(terms(p('acosh(t)'), 1)).toEqual([['I*pi/2', '0']]);
+  });
+  it('expands loggamma and digamma at infinity using Bernoulli coefficients', () => {
+    expect(terms(p('polygamma(0, 1/t)'))).toEqual([['-_L', '0'], ['-1/2', '1'], ['-1/12', '2']]);
+    expect(terms(p('loggamma(1/t)'))).toEqual([['-_L - 1', '-1'], ['_L/2 + log(2*pi)/2', '0'], ['1/12', '1']]);
+    expect(() => terms(p('loggamma(-1/t)'))).toThrow(SeriesError);
+  });
+  it('expands both scaled Bessel helpers at infinity', () => {
+    expect(terms(new UndefFn(SCALED_BESSELI, [sj.S.Zero, pow(t, -1)]), 2)).toEqual([['sqrt(2)/(2*sqrt(pi))', '1/2'], ['sqrt(2)/(16*sqrt(pi))', '3/2']]);
+    expect(terms(new UndefFn(SCALED_BESSELK, [sj.S.Zero, pow(t, -1)]), 2)).toEqual([['sqrt(2)*sqrt(pi)/2', '1/2'], ['-sqrt(2)*sqrt(pi)/16', '3/2']]);
+    expect(() => terms(new UndefFn(SCALED_BESSELI, [sj.S.Zero, pow(mul(-1, t), -1)]))).toThrow(SeriesError);
+  });
+});
+
+it('expands acot at its zero branch point through logarithms', () => {
+  const t = new Sym('t', { positive: true });
+  expect(str(series(new sj.Fn('acot', [t]), t, 0, 2))).toBe('pi/2 - t + O(t**2)');
+});
+
+it('expands the logarithmic coefficients of reciprocal inverse functions', () => {
+  const x = new Sym('x');
+  expect(sj.sstr(series(sj.asec(x), x, 0, 5))).toBe('I*log(2) - I*log(x) - I*x**2/4 - 3*I*x**4/32 + O(x**5)');
+  expect(sj.sstr(series(sj.acsc(x), x, 0, 5))).toBe('-I*log(2) + pi/2 + I*log(x) + I*x**2/4 + 3*I*x**4/32 + O(x**5)');
+});
+
+it('expands smooth functions at finite arguments and real absolute-value displacements', () => {
+  const t = new Sym('t', { positive: true });
+  const f = sj.SymFunction('f');
+  expect(() => sj.series(f(t.pow(-1)), t)).toThrow(SeriesError);
+  expect(String(sj.series(f(t), t, 0, 0))).toContain('O(');
+  expect(String(sj.series(sj.erfc(t.pow(-1)), t))).toBe('O(t**6)');
+  const a = new Sym('a', { real: true });
+  expect(() => new Expander(t).ser(sj.erf(a.mul(t.pow(-1))), sj.rational(3))).toThrow(SeriesError);
+  const z = new Sym('z');
+  const radius = sj.series(sj.abs(z.add(t)), t, 0, 3);
+  expect(String(radius)).toContain('re(sign(z))');
+});
+
+it('handles signs and zero truncation at the edge of the expansion', () => {
+  const t = new Sym('t', { positive: true }), r = new Sym('r', { real: true });
+  const engine = new Expander(t,x);
+  expect(engine.ser(new UndefFn('f',[t]),sj.S.Zero).coeff(sj.S.Zero).toString()).toBe('f(0)');
+  expect(() => engine.ser(sj.erf(sj.mul(r,sj.pow(t,-1))),sj.S.One)).toThrow(SeriesError);
+  expect(engine.ser(new sj.Fn('erfc', [sj.mul(-1,sj.pow(t,-1))]),sj.S.One).coeff(sj.S.Zero).equals(2)).toBe(true);
+  expect(String(series(P('frac(-x**8)'),x,0,4))).toBe('1 + O(x**4)');
+  expect(String(series(P('frac(x**8)'),x,0,4))).toBe('O(x**4)');
+});
+
+it('expands the local distribution on the positive ray', () => {
+  const expander = new Expander(t);
+  const F = sj.SingularityFunction;
+  expect(expander.ser(F(t, 0, -1), Rational.of(3)).terms).toEqual([]);
+  expect(expander.ser(F(t, 1, 2), Rational.of(3)).terms).toEqual([]);
+  expect(expander.ser(F(t, 0, 2), Rational.of(3)).terms).toEqual([{ e: Rational.of(2), c: sj.S.One }]);
+});
+
+it('expands scaled and logarithmic special functions at zero', () => {
+  expect(String(sj.series(sj.fn('_erfs', [x]), x, 0, 2))).toBe('1 - 2*x/sqrt(pi) + O(x**2)');
+  expect(String(sj.series(sj.fn('_eis', [x]), x, 0, 2))).toBe('EulerGamma + log(x) + x*(-log(x) - EulerGamma + 1) + O(x**2*log(x))');
+  expect(String(sj.series(sj.Ci(x), x, 0, 4))).toBe('EulerGamma + log(x) - x**2/4 + O(x**4)');
+});
+
+it('delegates expansions when the special-function order also varies', () => {
+  const expander = new Expander(t);
+  expect(() => expander.ser(sj.polylog(t, t), Rational.of(2))).toThrow(SeriesError);
+  expect(() => expander.ser(sj.expint(y, t), Rational.of(2))).not.toThrow();
+  expect(expander.ser(sj.expint(t, 2), Rational.of(2)).coeff(sj.S.Zero).equals(sj.exp(-2).div(2))).toBe(true);
+  expect(expander.ser(sj.expint(1, t), Rational.of(2)).coeff(sj.S.One).equals(1)).toBe(true);
+  expect(String(expander.ser(sj.expint(2, t), Rational.of(2)).coeff(sj.S.One))).toBe('_L - 1 + EulerGamma - I*pi');
+  const ei = new UndefFn(SCALED_EI, [t.add(1)]);
+  expect(String(expander.ser(ei, Rational.of(2)).coeff(sj.S.One))).toBe('1 - _eis(1)');
 });

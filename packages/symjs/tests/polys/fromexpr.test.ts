@@ -19,3 +19,7 @@ describe('multivariate gcd, exact division and factorization (polys/mpoly)', () 
     expect(String(sj.polyFromExpr(parse('x**2 + 1'))[0])).toBe("Poly(x**2 + 1, x, domain='ZZ')");
   });
 });
+
+it('requires a generator when constructing parallel polynomials', () => {
+  expect(() => sj.parallelPolyFromExpr([0, 1])).toThrow('polynomial generators are required');
+});

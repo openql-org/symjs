@@ -6,14 +6,15 @@
  */
 
 import { Special } from './nodes';
-import type { Expr, ExprLike, RelOp } from './nodes';
-import { Add, BoolAtom, Float, Mul, Piecewise, Pow, Rational, Rel, S, Sym, impl, isNum, registerHeadResolver } from './nodes';
+import type { ExprLike, RelOp } from './nodes';
+import { Expr } from './nodes';
+import { Add, BoolAtom, ExtensionExpr, Float, Fn, Mul, Piecewise, Pow, Rational, Rel, S, Sym, impl, isNum, registerHeadResolver } from './nodes';
 import { numCmp } from './num';
-import { add, couldExtractMinusSign, mul, sympify } from './ops';
+import { add, couldExtractMinusSign, knownNonreal, mul, sympify } from './ops';
 import { BoolOp, and, or } from './boolalg';
 import { compareKeys, sortKey } from '../printing/sortkey';
-import { at, cast } from './guard';
-import { isNegative, isNonNegative, isNonZero, isPositive, isReal, isZero } from './assumptions';
+import { at } from './guard';
+import { isIntegerQ, isKnownExtendedReal, isNegative, isNonNegative, isNonZero, isPositive, isReal, isZero } from './assumptions';
 
 const isBoolean = (e: Expr): boolean => e instanceof Rel || e instanceof BoolAtom || e instanceof BoolOp;
 const isSpecial = (name: string) => (x: Expr): boolean => x instanceof Special && x.name === name;
@@ -26,12 +27,21 @@ function isFiniteReal(e: Expr): boolean {
 }
 
 /** Create a relation, evaluating it to True/False when the difference is a number. */
+/** Lower bound on factorial(n) when n is a nonnegative integer. */
+export function factorialLowerBound(e: Expr): Rational | undefined {
+  if (!(e instanceof Fn) || e.name !== 'factorial') return undefined;
+  const n = at(e.args, 0);
+  if (isIntegerQ(n) !== true || isNonNegative(n) !== true) return undefined;
+  return isNonNegative(add(n, -2)) === true ? Rational.of(2) : S.One;
+}
+
 export function rel(op: RelOp, a: ExprLike, b: ExprLike): Expr {
   const lhs = sympify(a);
   const rhs = sympify(b);
   const equality = op === 'Eq' || op === 'Ne';
   const bounds = impl.accumBounds;
   if (!equality && bounds !== undefined && (bounds.is(lhs) || bounds.is(rhs))) {
+    if ([lhs, rhs].some((e) => !isKnownExtendedReal(e))) throw new TypeError('AccumBounds comparisons require extended real operands');
     const [a, b] = bounds.is(lhs) ? bounds.bounds(lhs) : [lhs, lhs];
     const [c, d] = bounds.is(rhs) ? bounds.bounds(rhs) : [rhs, rhs];
     const lower = op === 'Lt' || op === 'Le';
@@ -47,9 +57,19 @@ export function rel(op: RelOp, a: ExprLike, b: ExprLike): Expr {
   if (!equality) {
     for (const operand of [lhs, rhs]) {
       if (isBoolean(operand)) throw new TypeError('Can only compare inequalities with expressions');
-      if (isSpecial('zoo')(operand) || (operand instanceof Sym ? operand.assumptions0.get('extended_real') === false : isReal(operand) === false)) {
+      if (isSpecial('zoo')(operand) || knownNonreal(operand)) {
         throw new TypeError(`Invalid comparison of non-real ${String(operand)}`);
       }
+    }
+  }
+  if (equality && lhs instanceof BoolAtom && rhs instanceof BoolAtom) return (lhs.value === rhs.value) === (op === 'Eq') ? S.true : S.false;
+  if (equality) {
+    const symbol = lhs instanceof Sym ? lhs : rhs;
+    const number = lhs instanceof Float ? lhs : rhs;
+    if (symbol instanceof Sym && number instanceof Float) {
+      const integer = number.isZero || number.mpf.exp >= 0n;
+      if (symbol.assumptions0.get('rational') === false || symbol.assumptions.integer === false && integer) return op === 'Eq' ? S.false : S.true;
+      if (symbol.assumptions.integer === true && integer) return new Rel(op, lhs, rhs);
     }
   }
   const decided = impl.relational?.(op, lhs, rhs);
@@ -63,10 +83,33 @@ export function rel(op: RelOp, a: ExprLike, b: ExprLike): Expr {
     }
   }
   if (!equality && isNum(lhs) && isNum(rhs)) return byCmp(numCmp(lhs, rhs));
+  if (!equality && (lhs instanceof Rational || rhs instanceof Rational)) {
+    const reverse = lhs instanceof Rational;
+    const numeric = reverse ? lhs : rhs;
+    const bound = factorialLowerBound(reverse ? rhs : lhs);
+    if (numeric instanceof Rational && bound !== undefined) {
+      const compared = numCmp(bound, numeric);
+      const test = reverse ? REVERSED[op] : op;
+      if (compared > 0 || compared === 0 && (test === 'Ge' || test === 'Lt')) return test === 'Gt' || test === 'Ge' ? S.true : S.false;
+    }
+  }
   // equal sides (such as oo and oo, whose difference is nan)
-  if (lhs.key === rhs.key) return byCmp(0);
+  if (lhs.key === rhs.key) {
+    if (equality || (lhs instanceof Sym ? lhs.assumptions0.get('extended_real') === true : isReal(lhs) === true)) return byCmp(0);
+    return new Rel(op, lhs, rhs);
+  }
+  // SymPy compares bounded integer indices through the extrema of their ranges.
+  if (!equality) {
+    const interval = (e: Expr): readonly [Expr, Expr] => e instanceof Sym && 'lower' in e && 'upper' in e && e.lower instanceof Expr && e.upper instanceof Expr ? [e.lower, e.upper] : [e, e];
+    const [lo, hi] = interval(lhs), [rlo, rhi] = interval(rhs);
+    if (lo !== lhs || rlo !== rhs) {
+      const lower = op === 'Lt' || op === 'Le';
+      if (rel(op, lower ? hi : lo, lower ? rlo : rhi) === S.true) return S.true;
+      if (rel(op, lower ? lo : hi, lower ? rhi : rlo) === S.false) return S.false;
+    }
+  }
   // a relation is not a number: Eq(Eq(F, G), C1) of the exact ODE solution stays unevaluated (SymPy)
-  if (equality && (lhs instanceof Rel || rhs instanceof Rel)) return new Rel(op, lhs, rhs);
+  if (equality && (isBoolean(lhs) || isBoolean(rhs))) return new Rel(op, lhs, rhs);
   const d = add(lhs, mul(-1, rhs));
   if (d instanceof Rational) return byCmp(numCmp(d, S.Zero));
   if (d instanceof Float) return byCmp(numCmp(d, S.Zero));
@@ -78,9 +121,17 @@ export function rel(op: RelOp, a: ExprLike, b: ExprLike): Expr {
   if (equality && d.freeSymbols().size === 0) {
     try {
       const v = d.toComplex();
-      if (Math.hypot(v.re, v.im) > 1e-9) return op === 'Eq' ? S.false : S.true;
+      if ((v.im === 0 || !hasUnevaluatedComplexPower(d)) && Math.hypot(v.re, v.im) > 1e-9) return op === 'Eq' ? S.false : S.true;
     } catch {
       // not numerically evaluable
+    }
+    if (lhs.isNumber && rhs.isNumber) {
+      for (const [real, other] of [[lhs, rhs], [rhs, lhs]] as const) {
+        if (isReal(real) !== true || isReal(other) === true || hasUnevaluatedComplexPower(other)) continue;
+        try {
+          if (Math.abs(other.toComplex().im) > 1e-9) return op === 'Eq' ? S.false : S.true;
+        } catch { /* The complex part is unknown. */ }
+      }
     }
   }
   // SymPy is_eq: a difference whose is_zero is known decides the equality (Eq(a, 0) is False for a positive a)
@@ -91,8 +142,24 @@ export function rel(op: RelOp, a: ExprLike, b: ExprLike): Expr {
   if (!equality) {
     const decided = orderTruth(op, d);
     if (decided !== undefined) return decided ? S.true : S.false;
+    if ((lhs instanceof Float || rhs instanceof Float) && d.isComparable) {
+      const numeric = impl.evalf(d, 15);
+      if (isNum(numeric) && !numeric.isZero) return byCmp(numCmp(numeric, S.Zero));
+    }
+    if (d instanceof Add && isRadicalExpression(d) && impl.equalsZero?.(d)) return byCmp(0);
   }
   return new Rel(op, lhs, rhs);
+}
+
+/** Exact arithmetic expressions over rationals and their radicals. */
+function isRadicalExpression(e: Expr): boolean {
+  return e instanceof Rational || (e instanceof Add || e instanceof Mul || e instanceof Pow && e.exp instanceof Rational) && e.args.every(isRadicalExpression);
+}
+
+/** A branch-bearing power that has not been reduced to real and imaginary parts. */
+function hasUnevaluatedComplexPower(e: Expr): boolean {
+  return e instanceof Pow && e.base instanceof Add && knownNonreal(e.base)
+    || e.args.some(hasUnevaluatedComplexPower);
 }
 
 /**
@@ -123,7 +190,7 @@ const relationHeads = { Eq, Ne, Lt, Le, Gt, Ge } as const;
 registerHeadResolver(Rel, (e) => relationHeads[e.op]);
 
 /** SymPy is_number: an expression without symbols (pi/2, sqrt(2)). */
-const isNumber = (e: Expr): boolean => e.freeSymbols().size === 0;
+const isNumber = (e: Expr): boolean => e.kind !== 'Set' && e.freeSymbols().size === 0;
 
 const REVERSED: Record<RelOp, RelOp> = { Lt: 'Gt', Le: 'Ge', Gt: 'Lt', Ge: 'Le', Eq: 'Eq', Ne: 'Ne' };
 
@@ -147,8 +214,8 @@ export function canonicalRelation(r: Rel): Expr {
 
 /** SymPy _canonical_coeff: the canonical relation with the rational term and coefficient of the left side moved right (-2*x + 1 < 0 is x > 1/2). */
 function canonicalCoeff(r0: Rel): Expr {
-  // reordering or negating the sides keeps a relation undecided
-  const r = cast(canonicalRelation(r0), Rel, 'canonical relation');
+  const r = canonicalRelation(r0);
+  if (!(r instanceof Rel) || isBoolean(r.lhs) || isBoolean(r.rhs)) return r;
   const terms = r.lhs instanceof Add ? r.lhs.args : [r.lhs];
   const b = terms.find((t): t is Rational => t instanceof Rational) ?? S.Zero;
   const l = add(r.lhs, mul(-1, b));
@@ -165,7 +232,7 @@ const NEGATED: Record<RelOp, RelOp> = { Lt: 'Ge', Le: 'Gt', Gt: 'Le', Ge: 'Lt', 
 
 /** The key of the canonical negation of a relation (SymPy c.negated.canonical). */
 function negatedKey(r: Rel): string {
-  return canonicalRelation(cast(rel(NEGATED[r.op], r.lhs, r.rhs), Rel, 'negated relation')).key;
+  return canonicalRelation(new Rel(NEGATED[r.op], r.lhs, r.rhs)).key;
 }
 
 /** The relations of a condition made canonical (SymPy Piecewise.eval: cond.replace(is_Relational, _canonical_coeff)). */
@@ -185,17 +252,36 @@ const isFalse = (c: Expr) => c instanceof BoolAtom && !c.value;
  * Piecewise((e1, c1), (e2, c2), ...). Pairs with a False condition are dropped,
  * pairs after a True condition are unreachable, and Piecewise((e, True)) is e.
  */
-export function piecewise(...pairs: readonly (readonly [ExprLike, ExprLike | boolean])[]): Expr {
+type PiecewisePair = readonly [ExprLike, ExprLike | boolean];
+type PiecewiseOptions = { evaluate?: boolean };
+const isPiecewisePair = (value: PiecewisePair | PiecewiseOptions): value is PiecewisePair => Array.isArray(value);
+
+export function piecewise(...args: (PiecewisePair | PiecewiseOptions)[]): Expr {
+  const last = args.at(-1);
+  const evaluate = last === undefined || isPiecewisePair(last) || last.evaluate !== false;
   const out: Expr[] = [];
   const seen = new Set<string>();
-  for (const [e, c0] of pairs) {
+  for (const pair of args.filter(isPiecewisePair)) {
+    const [e, c0] = pair;
     let c = typeof c0 === 'boolean' ? (c0 ? S.true : S.false) : sympify(c0);
+    if (c instanceof Rational && (c.isOne || c.isZero)) c = c.isOne ? S.true : S.false;
+    if (c instanceof Rel && c.args.some((operand) => operand instanceof Piecewise)) {
+      c = impl.piecewiseFold?.(c) ?? c;
+    }
     // a boolean Piecewise as a condition is the if-then-else ITE(c1, a, b) (SymPy rewrite(ITE))
     if (c instanceof Piecewise && c.args.length === 4 && isTrue(at(c.args, 3)) && isBoolean(at(c.args, 0)) && isBoolean(at(c.args, 2))) {
       // the relations are canonical (a number on the right: 2 < y -> y > 2)
       const flip: Record<RelOp, RelOp> = { Lt: 'Gt', Le: 'Ge', Gt: 'Lt', Ge: 'Le', Eq: 'Eq', Ne: 'Ne' };
       const canon = (r: Expr): Expr => (r instanceof Rel && isNum(r.lhs) && !isNum(r.rhs) ? new Rel(flip[r.op], r.rhs, r.lhs) : r);
       c = new BoolOp('ITE', [canon(at(c.args, 1)), canon(at(c.args, 0)), canon(at(c.args, 2))]);
+    }
+    if (!(isBoolean(c) || c instanceof Sym || c instanceof ExtensionExpr)) {
+      throw new TypeError('Piecewise condition must be Boolean');
+    }
+    if (!evaluate) {
+      if (!isFalse(c)) out.push(sympify(e), c);
+      if (isTrue(c)) break;
+      continue;
     }
     c = canonicalCondition(c);
     // SymPy _piecewise_collapse_arguments: repeated and redundant conditions
@@ -214,9 +300,15 @@ export function piecewise(...pairs: readonly (readonly [ExprLike, ExprLike | boo
       }
       c = none ? S.false : and(...kept);
     } else if (c instanceof Rel && seen.has(negatedKey(c))) c = S.true;
-    seen.add(c.key);
     if (isFalse(c)) continue;
-    const ex = sympify(e);
+    let ex = sympify(e);
+    if (ex instanceof Piecewise) {
+      const inner = ex.pairs;
+      const firstReachable = inner.findIndex(([, test]) => !seen.has(test.key));
+      if (firstReachable < 0) ex = S.NaN;
+      else if (firstReachable > 0) ex = piecewise(...inner.slice(firstReachable));
+    }
+    seen.add(c.key);
     if (out.length && at(out, -2).key === ex.key) {
       // successive pairs with the same expression: one pair with the conditions or-ed
       out[out.length - 1] = or(c, at(out, -1));

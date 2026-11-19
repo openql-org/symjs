@@ -44,7 +44,7 @@ describe("sympy/combinatorics/tests/test_generators.py", () => {
     const v1 = dihedral(5);
     expect(sympyStr(pyItems([v1.next().value, v1.next().value, v1.next().value, v1.next().value, v1.next().value, v1.next().value, v1.next().value, v1.next().value, v1.next().value, v1.next().value]))).toBe('[Permutation(4), Permutation(0, 4)(1, 3), Permutation(0, 1, 2, 3, 4), Permutation(1, 4)(2, 3), Permutation(0, 2, 4, 1, 3), Permutation(0, 1)(2, 4), Permutation(0, 3, 1, 4, 2), Permutation(0, 2)(3, 4), Permutation(0, 4, 3, 2, 1), Permutation(4)(0, 3)(1, 2)]');
   });
-  // no adapter for rubik
+  // the generated test does not reproduce the replay
   //   raises(ValueError, lambda: rubik(1))
   //   => None
   it.todo("test_generators:105");

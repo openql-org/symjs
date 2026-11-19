@@ -27,6 +27,7 @@ import { expandMul } from '../simplify/expand';
 import { cancel } from '../simplify/rational';
 import { exp } from '../core/ops';
 import { Matrix } from './matrix';
+import { uniquelyNamedSymbol } from '../core/symbol';
 import { lcm } from '../core/numbers';
 
 /** SymPy simplify, late-bound as in matrix.ts (the matrices entry loads it). */
@@ -86,7 +87,9 @@ export function rref(m: Matrix, opts: { iszerofunc?: (e: Expr) => boolean } = {}
     if (p < 0) continue;
     const rowP = at(A, p);
     A[p] = at(A, r);
-    const inv = pow(at(rowP, c), -1);
+    const pivot = at(rowP, c);
+    const reciprocal = pow(pivot, -1);
+    const inv = pivot.freeSymbols().size === 0 && impl.radsimp ? impl.radsimp(reciprocal) : reciprocal;
     const pivotRow = rowP.map((v) => tidy(mul(v, inv)));
     pivotRow[c] = S.One;
     A[r] = pivotRow;
@@ -101,6 +104,18 @@ export function rref(m: Matrix, opts: { iszerofunc?: (e: Expr) => boolean } = {}
     r++;
   }
   return [fromRows(A, m.cols), pivots];
+}
+
+/** All zero rows follow the nonzero rows and leading entries move strictly right. */
+export function isEchelon(m: Matrix): boolean {
+  let pivotRow = 0;
+  for (let col = 0; col < m.cols && pivotRow < m.rows; col++) {
+    for (let row = pivotRow + 1; row < m.rows; row++) {
+      if (isZero(m.get(row, col)) !== true) return false;
+    }
+    if (isZero(m.get(pivotRow, col)) !== true) pivotRow++;
+  }
+  return true;
 }
 
 /** Echelon form by fraction-free cross-multiplication (SymPy echelon_form). */
@@ -131,8 +146,12 @@ export function echelonForm(m: Matrix): Matrix {
   return fromRows(A, m.cols);
 }
 
-export function rank(m: Matrix): number {
-  return rref(m)[1].length;
+export function rank(m: Matrix, opts: { iszerofunc?: (e: Expr) => boolean } = {}): number {
+  if (opts.iszerofunc && m.rows === 2 && m.cols === 2) {
+    if (m.data.every(opts.iszerofunc)) return 0;
+    return opts.iszerofunc(m.det()) ? 1 : 2;
+  }
+  return rref(m, opts)[1].length;
 }
 
 export function nullspace(m: Matrix): Matrix[] {
@@ -288,8 +307,8 @@ export function isDiagonalizable(m: Matrix, realsOnly = false): boolean {
 }
 
 /** (P, D) with M = P D P^-1. */
-export function diagonalize(m: Matrix): [Matrix, Matrix] {
-  if (!isDiagonalizable(m)) throw new MatrixError('Matrix is not diagonalizable');
+export function diagonalize(m: Matrix, realsOnly = false): [Matrix, Matrix] {
+  if (!isDiagonalizable(m, realsOnly)) throw new MatrixError('Matrix is not diagonalizable');
   const cols: Matrix[] = [];
   const vals: Expr[] = [];
   for (const [v, , vecs] of eigenvects(m)) {
@@ -304,8 +323,13 @@ export function diagonalize(m: Matrix): [Matrix, Matrix] {
   return [P, Matrix.diag(...vals)];
 }
 
-/** Matrix exponential via diagonalization. */
+/** Matrix exponential by Hermite interpolation, including defective matrices. */
 export function matrixExp(m: Matrix): Matrix {
+  if (!m.isSquare) throw new NonSquareMatrixError('Matrix exponential requires a square matrix');
+  if (!isDiagonalizable(m)) {
+    const x = new Dummy('x');
+    return analyticFunc(m, exp(x), x);
+  }
   const [P, D] = diagonalize(m);
   const E = Matrix.diag(...Array.from({ length: D.rows }, (_, i) => exp(D.get(i, i))));
   return P.mul(E).mul(P.inv()).map((e) => expandMul(e));
@@ -319,6 +343,8 @@ export function matrixExp(m: Matrix): Matrix {
 export function analyticFunc(m: Matrix, fIn: ExprLike, x: Sym): Matrix {
   if (!m.isSquare) throw new NonSquareMatrixError('analytic_func: square matrix expected');
   const f = sympify(fIn);
+  const dependsOnX = (e: Expr): boolean => [...e.freeSymbols()].some((v) => v.key === x.key);
+  if (!dependsOnX(f) || m.data.some(dependsOnX)) throw new RangeError('analyticFunc requires an independent function parameter');
   const n = m.rows;
   const eig = new Map<string, [Expr, number]>();
   for (const v of m.eigenvals()) {
@@ -344,7 +370,11 @@ export function analyticFunc(m: Matrix, fIn: ExprLike, x: Sym): Matrix {
         row.push(mul(c, pow(lam, a - d)));
       }
       r.push(row);
-      fv.push([subsValue(at(derivs, d), x, lam)]);
+      const value = subsValue(at(derivs, d), x, lam);
+      if ([S.NaN, S.Infinity, S.NegativeInfinity, S.ComplexInfinity].some((pole) => value.has(pole))) {
+        throw new RangeError(`Function is not analytic at eigenvalue ${String(lam)}`);
+      }
+      fv.push([value]);
     }
   }
   const c = Matrix.of(r).inv().mul(Matrix.of(fv));
@@ -364,6 +394,7 @@ function subsValue(e: Expr, x: Sym, v: Expr): Expr {
 /** Matrix logarithm (SymPy Matrix.log) via analytic_func. */
 export function matrixLog(m: Matrix): Matrix {
   const x = new Dummy('x');
+  if (m.isSquare && m.eigenvals().some(isExactZero)) throw new MatrixError('Matrix logarithm requires nonzero eigenvalues');
   return analyticFunc(m, log(x), x);
 }
 
@@ -556,6 +587,9 @@ function isNotPositive(e: Expr): boolean {
 
 /** LDL^H decomposition: (L, D). */
 export function ldl(m: Matrix, hermitian = true): [Matrix, Matrix] {
+  if (!m.isSquare) throw new NonSquareMatrixError('Matrix must be square.');
+  if (hermitian && m.isHermitian() !== true) throw new MatrixError('Matrix must be Hermitian.');
+  if (!hermitian && !m.equalsSimplified(m.transpose())) throw new MatrixError('Matrix must be symmetric.');
   const n = m.rows;
   const L: Expr[][] = Array.from({ length: n }, (_, i) => Array.from({ length: n }, (_, j) => (i === j ? S.One : S.Zero) as Expr));
   const D: Expr[] = [];
@@ -570,7 +604,9 @@ export function ldl(m: Matrix, hermitian = true): [Matrix, Matrix] {
     }
     let d: Expr = m.get(i, i);
     for (let k = 0; k < i; k++) d = add(d, mul(-1, at(Li, k), cj(at(Li, k)), at(D, k)));
-    D.push(tidy(d));
+    const pivot = tidy(d);
+    if (hermitian && isPositive(pivot) === false) throw new NonPositiveDefiniteMatrixError('Matrix must be positive-definite');
+    D.push(pivot);
   }
   return [Matrix.of(L), Matrix.diag(...D)];
 }
@@ -715,8 +751,14 @@ function threeEntries(v: Matrix): [Expr, Expr, Expr] {
 
 export function singularValues(m: Matrix): Expr[] {
   // eigenvals of the cols x cols matrix A^H A gives all cols values (or throws)
-  const vals = m.adjoint().mul(m).eigenvals().map((v) => sqrt(v));
-  return vals.sort((a, b) => compareKeys(sortKey(b), sortKey(a)));
+  const vals = m.adjoint().mul(m).eigenvals(false).map((v) => sqrt(v));
+  return vals.sort((a, b) => {
+    if (a.isNumber && b.isNumber) {
+      try { return b.toNumber() - a.toNumber(); }
+      catch { /* A symbolic function may have no numerical evaluator. */ }
+    }
+    return compareKeys(sortKey(b), sortKey(a));
+  });
 }
 
 /** SymPy Matrix.norm(ord). */
@@ -746,11 +788,12 @@ export function norm(m: Matrix, ord?: ExprLike | string): Expr {
   throw new RangeError(`norm: unsupported order ${String(ord)}`);
 }
 
-/** Moore-Penrose pseudo-inverse (full rank matrices). */
+/** Moore-Penrose pseudo-inverse via a full rank factorization. */
 export function pinv(m: Matrix): Matrix {
-  const H = m.adjoint();
-  if (m.rows >= m.cols) return H.mul(m).inv().mul(H).map(tidy);
-  return H.mul(m.mul(H).inv()).map(tidy);
+  const [B, C] = rankDecomposition(m);
+  if (B.cols === 0) return Matrix.zeros(m.cols, m.rows);
+  const BH = B.adjoint(), CH = C.adjoint();
+  return CH.mul(C.mul(CH).inv()).mul(BH.mul(B).inv()).mul(BH).map(tidy);
 }
 
 export function jacobian(X: Matrix, Y: Matrix | readonly Expr[]): Matrix {
@@ -792,9 +835,22 @@ export const colInsert = (m: Matrix, pos: number, o: Matrix): Matrix => m.colIns
 
 /** Block-diagonal matrix from scalars and matrices (SymPy diag). */
 export function blockDiag(...blocks: (Matrix | ExprLike)[]): Matrix {
+  return blockDiagSized(blocks);
+}
+
+export interface BlockDiagOptions {
+  readonly rows?: number;
+  readonly cols?: number;
+}
+
+/** SymPy Matrix.diag block placement with optional result dimensions. */
+export function blockDiagSized(blocks: readonly (Matrix | ExprLike)[], opts: BlockDiagOptions = {}): Matrix {
   const ms = blocks.map((b) => (b instanceof Matrix ? b : Matrix.of([[b]])));
-  const rows = ms.reduce((s, m) => s + m.rows, 0);
-  const cols = ms.reduce((s, m) => s + m.cols, 0);
+  const minimumRows = ms.reduce((s, m) => s + m.rows, 0);
+  const minimumCols = ms.reduce((s, m) => s + m.cols, 0);
+  const rows = opts.rows ?? opts.cols ?? minimumRows;
+  const cols = opts.cols ?? opts.rows ?? minimumCols;
+  if (rows < minimumRows || cols < minimumCols) throw new RangeError(`The constructed matrix is ${minimumRows} x ${minimumCols} but a size of ${rows} x ${cols} was specified.`);
   const out = Matrix.zeros(rows, cols).toArray();
   let r0 = 0;
   let c0 = 0;
@@ -848,7 +904,7 @@ export function companion(p: readonly Expr[] | { allCoeffs(): Expr[]; toString()
   return Matrix.fromFunction(n, n, (i, j) => (j === n - 1 ? mul(-1, at(coeffs, n - i)) : i === j + 1 ? 1 : 0));
 }
 
-/** Permanent of a square matrix (Laplace expansion). */
+/** Rectangular permanent by subset dynamic programming of the Laplace recurrence. */
 export function permanent(mIn: Matrix): Expr {
   let m = mIn;
   let [r, c] = m.shape;
@@ -858,9 +914,22 @@ export function permanent(mIn: Matrix): Expr {
   }
   if (r === 0) return S.One;
   if (r === 1) return add(...m.row(0).data);
-  const terms: Expr[] = [];
-  for (let j = 0; j < c; j++) terms.push(mul(m.get(0, j), permanent(m.minor(0, j))));
-  return add(...terms);
+  const cache = new Map<bigint, Expr>();
+  const visit = (row: number, used: bigint): Expr => {
+    if (row === r) return S.One;
+    const cached = cache.get(used);
+    if (cached !== undefined) return cached;
+    const terms: Expr[] = [];
+    for (let col = 0; col < c; col++) {
+      const bit = 1n << BigInt(col), entry = m.get(row, col);
+      if ((used & bit) !== 0n || isExactZero(entry)) continue;
+      terms.push(mul(entry, visit(row + 1, used | bit)));
+    }
+    const result = add(...terms);
+    cache.set(used, result);
+    return result;
+  };
+  return visit(0, 0n);
 }
 
 /** SymPy connected_components / strongly_connected_components of a graph or of a matrix's nonzero pattern (one definition, in utilities). */
@@ -896,7 +965,10 @@ export function gaussJordanSolve(A: Matrix, b: Matrix, opts: { freevar?: boolean
   const pv = pivots.filter((p) => p < n);
   const free = Array.from({ length: n }, (_, j) => j).filter((j) => !pv.includes(j));
   const cols = b.cols;
-  const taus = Matrix.fromFunction(free.length, cols, (i, c) => new Sym(`tau${i * cols + c}`));
+  const prefix = uniquelyNamedSymbol('tau', [...A.data, ...b.data], {
+    compare: (name) => name.replace(/\d+$/, ''), modify: (name) => `_${name}`,
+  }).name;
+  const taus = Matrix.fromFunction(free.length, cols, (i, c) => new Sym(`${prefix}${i * cols + c}`));
   const sol = Matrix.fromFunction(n, cols, (j, c) => {
     const f = free.indexOf(j);
     if (f >= 0) return taus.get(f, c);
@@ -944,10 +1016,17 @@ export function normalized(v: Matrix): Matrix {
   return v.map((e) => mul(e, pow(n, -1)));
 }
 
-/** SymPy hessian(f, varlist): the matrix of second derivatives. */
-export function hessian(f: ExprLike, vars: readonly Expr[]): Matrix {
+/** SymPy hessian(f, varlist, constraints): the optionally bordered Hessian. */
+export function hessian(f: ExprLike, vars: readonly Expr[], constraints: readonly ExprLike[] = []): Matrix {
+  if (!vars.length) throw new ShapeError('hessian: variable list must not be empty');
   const e = sympify(f);
-  return Matrix.fromFunction(vars.length, vars.length, (i, j) => diff(diff(e, at(vars, i)), at(vars, j)));
+  const gs = constraints.map(sympify), m = gs.length;
+  return Matrix.fromFunction(m + vars.length, m + vars.length, (i, j) => {
+    if (i < m && j < m) return S.Zero;
+    if (i < m) return diff(at(gs, i), at(vars, j - m));
+    if (j < m) return diff(at(gs, j), at(vars, i - m));
+    return diff(diff(e, at(vars, i - m)), at(vars, j - m));
+  });
 }
 
 /** SymPy wronskian(functions, var): det of the derivatives 0..n-1 of the functions. */
@@ -966,8 +1045,8 @@ export function casoratian(seqs: readonly ExprLike[], n: Expr, zero = true): Exp
 
 /** SymPy Matrix.rref_rhs(rhs): [rref of A, the right-hand side transformed alike]. */
 export function rrefRhs(A: Matrix, rhs: Matrix): [Matrix, Matrix] {
-  const [R] = rref(A.hstack(rhs));
-  return [R.slice(range(0, A.rows), range(0, A.cols)), R.slice(range(0, A.rows), range(A.cols, A.cols + rhs.cols))];
+  const [R] = rref(A.hstack(Matrix.eye(A.rows), rhs));
+  return [R.slice(range(0, A.rows), range(0, A.cols)), R.slice(range(0, A.rows), range(R.cols - rhs.cols, R.cols))];
 }
 
 /** SymPy Matrix.rank_decomposition: [C, F] with A = C*F, C the pivot columns of A and F the nonzero rows of rref(A). */
@@ -1027,6 +1106,7 @@ export function jordanForm(A: Matrix): [Matrix, Matrix] {
     else counts.set(v.key, [v, 1]);
   }
   const eig = [...counts.values()].sort((a, b) => {
+    if (a[0].freeSymbols().size || b[0].freeSymbols().size) return compareKeys(sortKey(a[0]), sortKey(b[0]));
     const ca = impl.toComplex(a[0]);
     const cb = impl.toComplex(b[0]);
     return ca.re - cb.re || ca.im - cb.im;

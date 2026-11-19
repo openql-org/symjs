@@ -14,7 +14,9 @@
 import * as sj from '../../packages/symjs/src';
 import { parseLatex } from '../../packages/symjs/src/parsing';
 import { Expr } from '../../packages/symjs/src';
-import { JsDict, JsList, JsSet, JsTuple } from './harness';
+import { withPermCyclic } from '../../packages/symjs/src/printing/str';
+import type { Case } from './harness';
+import { fmt, JsDict, JsList, JsSet, JsTuple } from './harness';
 import { DifferentialExtension } from '../../packages/symjs/src/integrals/risch';
 import { partition as unifyPartition } from '../../packages/symjs/src/unify/core';
 
@@ -191,6 +193,61 @@ class ModOpNode extends sj.ExtensionExpr {
   }
 }
 const modOp = (how: ModOpNode['how'], a: sj.ExprLike, b: sj.ExprLike): Expr => new ModOpNode(how, [sj.sympify(a), sj.sympify(b)]);
+
+/** The local R subclasses in the upstream printer tests implement the active printer's hook. */
+class PrinterHookFixture extends sj.ExtensionExpr {
+  constructor(args: readonly Expr[], private readonly showArgument: boolean) { super('R', args); }
+  withArgs(args: readonly Expr[]): Expr { return new PrinterHookFixture(args, this.showArgument); }
+  override printStr(print: (e: Expr) => string): string { return this.showArgument ? `foo(${print(this.args[0]!)})` : 'foo'; }
+  override printLatex(print: (e: Expr) => string): string { return this.printStr(print); }
+  printRepr(print: (e: Expr) => string): string { return this.printStr(print); }
+}
+
+/** The low- and high-precedence infix functions in test_precedence.py. */
+class InfixFixture extends sj.DefinedFunctionCall {
+  constructor(name: string, args: readonly Expr[]) { super(name, args, {}); }
+  withArgs(args: readonly Expr[]): Expr { return new InfixFixture(this.name, args); }
+  strPrecedence(): number { return this.name === 'LowPrecedenceF' ? sj.PRECEDENCE.Mul - 5 : sj.PRECEDENCE.Func; }
+  override printStr(print: (e: Expr) => string): string { return this.args.map(print).join(' F '); }
+}
+
+/** Reconstruct locally defined classes using the enclosing test, before invoking the normal adapter. */
+export function printingFixtureFunction(c: Case, name: string): ((args: Expr[]) => Expr) | undefined {
+  if (!('test' in c)) return;
+  if (c.test === 'test_printmethod' && name === 'R' && 'line' in c) {
+    return (args) => new PrinterHookFixture(args, c.line !== 67 && c.line !== 115);
+  }
+  if (c.test === 'test_custom_function_precedence_comparison' && ['LowPrecedenceF', 'HighPrecedenceF'].includes(name)) {
+    return (args) => new InfixFixture(name, args);
+  }
+  if (c.test === 'test_function_subclass_different_name' && name === 'mygamma') {
+    const mygamma = sj.defineFunction(name, { eval: (a) => {
+      const value = sj.gamma(a);
+      return value instanceof sj.Fn && value.name === 'gamma' ? undefined : value;
+    } });
+    return (args) => mygamma(...args);
+  }
+  return undefined;
+}
+
+/** The upstream permutation tests temporarily set Permutation.print_cyclic to False. */
+export function withPrintingContext<T>(c: Case, run: () => T): T {
+  if (!('test' in c) || !('line' in c)) return run();
+  if (c.test === 'test_global_settings' && c.line === 3126) {
+    const { imaginaryUnit } = sj.LatexPrinter.globalSettings;
+    try {
+      sj.LatexPrinter.setGlobalSettings({ imaginaryUnit: 'j' });
+      return run();
+    } finally {
+      sj.LatexPrinter.setGlobalSettings({ imaginaryUnit });
+    }
+  }
+  const arrayForm = c.test === 'test_pretty_Permutation' && (c.line === 417 || c.line === 420)
+    || c.test === 'test_latex_permutation' && c.line === 336
+    || c.test === 'test_Permutation_Cycle' && c.line === 396
+    || c.test === 'test_Permutation' && c.fn === 'srepr';
+  return arrayForm ? withPermCyclic(false, run) : run();
+}
 
 // ---- sympy.utilities.memoization: the doctest's memoized factorial after factorial(4) and factorial(3)
 function memoFactorial(): sj.RecurrenceMemo<number> {
@@ -640,4 +697,132 @@ PORTS['sympy.polys.orderings:O((1, 2, 3, 4))'] = () => {
   const f = [[[n(2)], [n(1), n(0)]], [[]]];
   PORTS[`${m}DMP([[[ZZ(2)], [ZZ(1), ZZ(0)]], [[]]], ZZ).permute([1, 0, 2])`] = () => dmp(sj.dmpPermute(f, [1, 0, 2], 2, sj.ZZ));
   PORTS[`${m}DMP([[[ZZ(2)], [ZZ(1), ZZ(0)]], [[]]], ZZ).permute([1, 2, 0])`] = () => dmp(sj.dmpPermute(f, [1, 2, 0], 2, sj.ZZ));
+}
+
+// Function subclass fixtures from the upstream unit tests.
+const functionTestModule = 'sympy.core.tests.test_function';
+const argumentCounts = (f: (...args: never[]) => unknown): unknown => {
+  const counts = sj.arity(f);
+  return sj.isNoMatch(counts) ? sj.Naturals0 : sj.finiteSet(...(typeof counts === 'number' ? [counts] : counts));
+};
+const zeroArgumentFunction = sj.defineFunction('myfunc', { eval: () => undefined });
+const oneArgumentFunction = sj.defineFunction('myfunc', { eval: (_x) => undefined });
+const variadicFunction = sj.defineFunction('myfunc', { eval: (..._args) => undefined });
+for (const [line, f, applied, args] of [
+  [143, zeroArgumentFunction, false, []], [144, zeroArgumentFunction, true, []],
+  [152, oneArgumentFunction, false, [x]], [153, oneArgumentFunction, true, [x]],
+  [161, variadicFunction, false, [x]], [162, variadicFunction, true, [x]],
+] as const) {
+  const src = `assert myfunc${applied ? `(${args.length ? 'x' : ''})` : ''}.nargs == ${line < 150 ? 'FiniteSet(0)' : line < 160 ? 'FiniteSet(1)' : 'S.Naturals0'}`;
+  PORTS[`${functionTestModule}:${line}:${src}`] = () => {
+    return argumentCounts(applied ? sj.func(f(...args)) : f);
+  };
+}
+const f1: sj.FunctionDefinition = { nargs: 2 };
+const f2: sj.FunctionDefinition = { ...f1 };
+const f3: sj.FunctionDefinition = { ...f2 };
+const f4: sj.FunctionDefinition = { ...f3, nargs: [1, 2] };
+const f5: sj.FunctionDefinition = { ...f4 };
+const f6: sj.FunctionDefinition = { ...f5 };
+const f7: sj.FunctionDefinition = { ...f6, nargs: undefined };
+const f8: sj.FunctionDefinition = { ...f7 };
+const f9: sj.FunctionDefinition = { ...f8 };
+const f10: sj.FunctionDefinition = { ...f9, nargs: 1 };
+const f11: sj.FunctionDefinition = { ...f10 };
+[f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11].forEach((definition, i) => {
+  const name = `f${i + 1}`;
+  const expected = i < 3 ? 'FiniteSet(2)' : i < 6 ? 'FiniteSet(1, 2)' : i < 9 ? 'S.Naturals0' : 'FiniteSet(1)';
+  PORTS[`${functionTestModule}:assert ${name}.nargs == ${expected}`] = () => argumentCounts(sj.defineFunction(name, definition));
+});
+PORTS[`${functionTestModule}:assert mf.diff(x) == Derivative(mf, x)`] = () => sj.diff(sj.defineFunction('myfunc', { nargs: 1, fdiff: () => sj.NoMatch })(x), x);
+const myFunction = sj.defineFunction('my_function', {
+  eval: (arg) => arg.equals(0) ? 0 : undefined,
+  fdiff: (args) => sj.cos(args[0] ?? sj.S.Zero),
+});
+const myFunction2 = sj.defineFunction('my_function2', {
+  eval: (arg) => arg.equals(0) ? 1 : undefined,
+  fdiff: (args) => sj.mul(-1, sj.sin(args[0] ?? sj.S.Zero)),
+});
+const interfaceModule = 'sympy.functions.elementary.tests.test_interface';
+PORTS[`${interfaceModule}:assert my_function(x).series(x, 0, 10) == sin(x).series(x, 0, 10)`] = () => sj.series(myFunction(x), x, 0, 10);
+PORTS[`${interfaceModule}:assert limit(my_function(x)/x, x, 0) == 1`] = () => sj.limit(sj.mul(myFunction(x), sj.pow(x, -1)), x, 0);
+PORTS[`${interfaceModule}:assert my_function2(x).series(x, 0, 10) == cos(x).series(x, 0, 10)`] = () => sj.series(myFunction2(x), x, 0, 10);
+
+// Local predicates and print callbacks from test_query.py and test_iterables.py.
+class MyAskHandler extends sj.AskHandler {
+  static Symbol(): sj.Truth { return true; }
+}
+
+class MersenneHandler extends sj.AskHandler {
+  static Integer(expr: Expr): sj.Truth {
+    return sj.ask(sj.Q.integer(sj.log(sj.add(expr, 1), 2))) === true ? true : 'unknown';
+  }
+  static Symbol(expr: Expr, assumptions: Expr): sj.Truth {
+    return sj.conjuncts(assumptions).some((a) => a.equals(expr)) ? true : 'unknown';
+  }
+}
+
+function sexyPrimes(args: sj.Rational[], assumptions: Expr): boolean {
+  const sorted = args.sort((a, b) => Number(a.p - b.p));
+  return sorted.every((a, i) => {
+    const previous = sorted[i - 1];
+    return sj.ask(sj.Q.prime(a), assumptions) === true && (!previous || a.sub(previous).equals(6));
+  });
+}
+
+const queryFixtures: Record<string, (p: sj.Predicate) => void> = {
+  'test_key_extensibility:my_key': (p) => sj.registerHandler(p, MyAskHandler),
+  'test_key_extensibility:MyPredicate': (p) => p.register([sj.Sym], MyAskHandler.Symbol),
+  'test_custom_AskHandler:mersenne': (p) => sj.registerHandler(p, MersenneHandler),
+  'test_custom_AskHandler:MersennePredicate': (p) => {
+    p.register(['Integer'], MersenneHandler.Integer);
+    p.register([sj.Sym], MersenneHandler.Symbol);
+  },
+  'test_polyadic_predicate:SexyPredicate': (p) => {
+    p.register(['Integer', 'Integer'], (a, b, assumptions) => sexyPrimes([a, b], assumptions));
+    p.register(['Integer', 'Integer', 'Integer'], (a, b, c, assumptions) => sexyPrimes([a, b, c], assumptions));
+  },
+};
+
+/** Install the predicate under its serialized name while the normal ask adapter replays the assertion. */
+export function withQueryFixture<T>(c: Case & { test: string }, run: () => T): T {
+  if (c.module !== 'sympy.assumptions.tests.test_query') return run();
+  const name = c.args?.[0]?.name;
+  if (typeof name !== 'string') return run();
+  const setup = queryFixtures[`${c.test}:${name}`];
+  if (!setup) return run();
+  const previous = sj.Q[name];
+  try {
+    const predicate = sj.Predicate(name);
+    sj.Q[name] = predicate;
+    setup(predicate);
+    return run();
+  } finally {
+    if (previous) sj.Q[name] = previous;
+    else delete sj.Q[name];
+  }
+}
+
+function printBins(values: number[]): string {
+  return sj.capture((print) => {
+    for (const ordered of [null, 0, 1, 10, 11]) {
+      print('ordered =', ordered ?? 'None');
+      for (const bins of sj.kbins(values, 2, ordered)) print('   ', fmt(new JsList(bins.map((bin) => new JsList(bin)))));
+    }
+  });
+}
+
+export function capturedIterable(c: Case & { test: string; line: number }): string | undefined {
+  if (c.module !== 'sympy.utilities.tests.test_iterables' || c.fn !== 'capture') return;
+  if (c.test === 'test_kbins' && c.line === 741) return printBins([0, 0, 1]);
+  if (c.test === 'test_kbins' && c.line === 770) return printBins([0, 1, 2]);
+  if (c.test === 'test_multiset_permutations' && c.line === 425) {
+    return sj.capture((print) => {
+      for (let i = 1; i <= 6; i++) {
+        print(i);
+        for (const permutation of sj.multisetPermutations([0, 0, 1, 0, 1], i)) print(fmt(new JsList(permutation)));
+      }
+    });
+  }
+  return undefined;
 }

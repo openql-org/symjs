@@ -6,10 +6,10 @@
  */
 
 import type { Expr, ExprLike } from '../core/nodes';
-import { Add, Dummy, ExtensionExpr, Float, Mul, Pow, Rational, S, Special } from '../core/nodes';
+import { Add, Dummy, ExtensionExpr, Float, Fn, Mul, Pow, Rational, S, Special } from '../core/nodes';
 import { add, mul, pow, sympify } from '../core/ops';
-import { rebuild, xreplace } from '../core/traverse';
-import { evalf } from './evalf';
+import { mapBottomUp, rebuild, xreplace } from '../core/traverse';
+import { evalf, toComplex } from './evalf';
 import { float } from './floatctor';
 import { at, pair } from '../core/guard';
 import * as F from './mpf';
@@ -30,6 +30,7 @@ export function nfloat(exIn: ExprLike, n = 15, exponent = false): Expr {
   const back: [Expr, Expr][] = [];
   if (!exponent) {
     const visit = (x: Expr) => {
+      if (x instanceof ExtensionExpr && x.freeSymbols().size === 0) return;
       x.args.forEach(visit);
       if (x instanceof Pow && !reps.some(([p]) => p.key === x.key)) {
         const d = new Dummy('e');
@@ -53,31 +54,37 @@ export function nfloat(exIn: ExprLike, n = 15, exponent = false): Expr {
     };
     rv = fix(rv);
   }
-  return rv;
+  return mapBottomUp(rv, (term) => term instanceof Fn && term.name !== 'Min' && term.name !== 'Max' ? rebuild(term, term.args.map((arg) => nfloat(arg, n, exponent))) : term);
 }
 
 /** Are z1 and z2 equal within tolerance (SymPy comp)? */
-export function comp(z1In: ExprLike, z2In: ExprLike, tol?: number | ''): boolean {
+export function comp(z1In: ExprLike, z2In: ExprLike | string, tol?: number | ''): boolean {
   let z1 = sympify(z1In);
+  if (typeof z2In === 'string') {
+    if (!(z1 instanceof Rational || z1 instanceof Float)) throw new RangeError('when z2 is a string z1 must be a Number');
+    return z1.toString() === z2In;
+  }
+  if (tol === '' && typeof z2In === 'number') return z1.toString() === String(z2In);
   let z2 = sympify(z2In);
   if (z1 instanceof Rational && z1.isZero) [z1, z2] = [z2, z1];
   if (z1 instanceof Rational && z1.isZero) return true;
   if (tol === undefined || tol === '' || tol === 0) {
     if (tol === '') return z1.toString() === z2.toString();
+    if (z1.freeSymbols().size || z2.freeSymbols().size) throw new RangeError('expecting 2 numbers');
     const fa = floats(z1);
     const fb = floats(z2);
     if (!fa.length && !fb.length) return z1.key === z2.key;
     const prec = Math.min(...[...fa, ...fb].map((f) => f.prec));
-    const a = evalf(z1, F.precToDps(prec)).toNumber();
-    const b = evalf(z2, F.precToDps(prec)).toNumber();
+    const a = toComplex(evalf(z1, F.precToDps(prec)));
+    const b = toComplex(evalf(z2, F.precToDps(prec)));
     const t = 10 ** F.precToDps(Math.min(fa.length ? Math.min(...fa.map((f) => f.prec)) : prec, fb.length ? Math.min(...fb.map((f) => f.prec)) : prec));
-    return Math.trunc(Math.abs(a - b) * t) <= 5;
+    return Math.trunc(Math.abs(a.re - b.re) * t) <= 5 && Math.trunc(Math.abs(a.im - b.im) * t) <= 5;
   }
-  const a = z1.toNumber();
-  const b = z2.toNumber();
-  const diff = Math.abs(a - b);
-  const az1 = Math.abs(a);
-  if (b && az1 > 1) return diff / az1 <= tol;
+  const a = toComplex(z1);
+  const b = toComplex(z2);
+  const diff = Math.hypot(a.re - b.re, a.im - b.im);
+  const az1 = Math.hypot(a.re, a.im);
+  if ((b.re || b.im) && az1 > 1) return diff / az1 <= tol;
   return diff <= tol;
 }
 

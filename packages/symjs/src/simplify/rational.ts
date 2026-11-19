@@ -6,7 +6,8 @@
  */
 
 import type { Expr, ExprLike } from '../core/nodes';
-import { Add, Constant, Dummy, Float, Fn, impl, isMulLike, Mul, Pow, Rational, S, Sym, isNum } from '../core/nodes';
+import { Add, Constant, Dummy, Float, Fn, impl, isMulLike, Mul, Piecewise, Pow, Rational, Rel, S, Sym, isNum } from '../core/nodes';
+import { piecewise } from '../core/logic';
 import { fromRational } from '../numeric/mpf';
 import { add, couldExtractMinusSign, mul, pow, splitCoeff, sympify } from '../core/ops';
 import { rebuild, xreplace } from '../core/traverse';
@@ -14,7 +15,7 @@ import { str } from '../printing/str';
 import { divExact, heuGcdCofactors, mgcd } from '../polys/mpoly';
 import { gcd as igcd, lcm as ilcm } from '../core/numbers';
 import { UPoly, polyHooks } from '../polys/poly';
-import { expandMul as expand } from './expand';
+import { expandMul as expand, expand_log as expandLog } from './expand';
 import { isNegative, isPositive } from '../core/assumptions';
 import { at, defined, first } from '../core/guard';
 import { decomposePower } from './exprtools';
@@ -37,7 +38,9 @@ export function fraction(ex: ExprLike, opts: { exact?: boolean } = {}): [Expr, E
   const num: Expr[] = [];
   const den: Expr[] = [];
   for (const f of factors) {
-    if (f instanceof Rational) {
+    if (!f.isCommutative) {
+      num.push(f);
+    } else if (f instanceof Rational) {
       num.push(Rational.of(f.p));
       den.push(Rational.of(f.q));
     } else if (opts.exact && f instanceof Pow) {
@@ -130,9 +133,30 @@ function radicalContentRatio(n: Expr, d: Expr): Expr | undefined {
  * PolyElement.cancel does: denominators cleared, p and q with integer (Gaussian) coefficients and
  * the leading coefficient of q (lex order of the generators) canonical.
  */
-export function cancel(ex: ExprLike, opts: PolynomialDomainOptions = {}): Expr {
-  if (opts.domain !== undefined || opts.modulus !== undefined || opts.extension !== undefined) return defined(polyHooks.cancelDomain, 'polynomial domain cancellation')(sympify(ex), opts);
-  const e = together(sympify(ex));
+export function cancel(ex: ExprLike, opts: PolynomialDomainOptions & { greedy?: boolean } = {}): Expr {
+  const input = sympify(ex);
+  if (input instanceof Rel) return input;
+  if (input instanceof Piecewise) return piecewise(...input.pairs.map(([value, condition]) => [cancel(value, opts), condition] as const));
+  if (input instanceof Mul && !input.isCommutative) {
+    const product = together(input);
+    if (product instanceof Mul) {
+      const inverse = at(product.args, -1);
+      if (inverse instanceof Pow && inverse.exp.key === S.NegOne.key) {
+        const ratio = radicalContentRatio(expand(mul(...product.args.slice(0, -1))), expand(inverse.base));
+        if (ratio !== undefined) return ratio;
+      }
+    }
+  }
+  if ((input instanceof Add || input instanceof Mul) && (!input.isCommutative || input.args.some(containsPiecewise))) {
+    const ordinary = input.args.filter((e) => e.isCommutative && !containsPiecewise(e));
+    const special = input.args.filter((e) => !e.isCommutative || containsPiecewise(e));
+    const combine = input instanceof Add ? add : mul;
+    return combine(cancel(combine(...ordinary), opts), ...special.map((e) => cancel(e, opts)));
+  }
+  if (opts.domain !== undefined || opts.modulus !== undefined || opts.extension !== undefined || opts.greedy === false) {
+    return defined(polyHooks.cancelDomain, 'polynomial domain cancellation')(input, opts.greedy === false && opts.extension === undefined ? { ...opts, extension: true } : opts);
+  }
+  const e = together(input);
   let [n, d] = fraction(e);
   // SymPy as_numer_denom of sums (also inside products): the terms' denominators, also those of exp(-x) = 1/exp(x)
   if (n instanceof Add || n instanceof Mul) {
@@ -140,6 +164,8 @@ export function cancel(ex: ExprLike, opts: PolynomialDomainOptions = {}): Expr {
     [n, d] = [n1, mul(d, d1)];
   }
   n = expand(n);
+  // Numeric logarithms can be algebraically dependent as polynomial generators.
+  if (n instanceof Add && n.isNumber && n.args.some((v) => v instanceof Fn && v.name === 'log') && expandLog(n).equals(0)) return S.Zero;
   d = expand(d);
   // (with Float coefficients SymPy works over RR or CC: 1.0*x + 1 = 1.0*x + 1.0, (1.0*x + 1)/3 = 0.333333333333333*x + 0.333333333333333)
   const exact = !(d instanceof Float) && floatsToRationals(n)[1] === 0;
@@ -175,6 +201,10 @@ export function cancel(ex: ExprLike, opts: PolynomialDomainOptions = {}): Expr {
   return q instanceof Rational && q.isOne ? p : mul(p, pow(q, -1));
 }
 
+function containsPiecewise(e: Expr): boolean {
+  return e instanceof Piecewise || e.args.some(containsPiecewise);
+}
+
 /**
  * SymPy mpmath MPContext.to_rational(x, limit=True) for a Float of precision prec: its exact
  * value, or the best rational approximation with a denominator up to 1/tolerance (tolerance =
@@ -199,6 +229,7 @@ function floatToRational(f: Float, prec: number): Rational {
   const x = Rational.of(p, q);
   const b1 = Rational.of(p0 + k * p1, q0 + k * q1);
   const b2 = Rational.of(p1, q1);
+  if (b1.isZero || b2.isZero) return x;
   const dist = (b: Rational): Rational => {
     const t = Rational.of(b.p * x.q - x.p * b.q, b.q * x.q);
     return t.isNegative ? Rational.of(-t.p, t.q) : t;
@@ -226,9 +257,9 @@ function floatsToRationals(e: Expr): [Expr, number] {
 function floatCancel(n: Expr, d: Expr, vars: readonly Expr[]): [Expr, Expr] {
   const [nq, pn] = floatsToRationals(n);
   const [dq, pd] = floatsToRationals(d);
-  // (the Floats are the only factors of the terms that are not generators or rationals)
-  const tn = defined(coeffTable(nq, vars), 'the coefficients of n');
-  const td = defined(coeffTable(dq, vars), 'the coefficients of d');
+  const tn = coeffTable(nq, vars);
+  const td = coeffTable(dq, vars);
+  if (tn === undefined || td === undefined) return [n, d];
   const complex = [...tn.values(), ...td.values()].some(([, c]) => c[1] !== 0n);
   const prec = Math.max(pn, pd);
   let g = gcdOf(nq, dq, vars);
@@ -420,7 +451,7 @@ function leadingUnit(d: Expr, gens: readonly Expr[]): Expr | undefined {
 const lexGreater = (a: readonly number[], b: readonly number[]): boolean =>
   a.reduce<boolean | undefined>((r, v, i) => r ?? (v !== at(b, i) ? v > at(b, i) : undefined), undefined) === true;
 
-impl.fraction = (e) => fraction(e);
+impl.fraction = fraction;
 
 /** SymPy ratsimp: polynomial part plus a cancelled remainder over a single denominator. */
 export function ratsimp(ex: ExprLike): Expr {

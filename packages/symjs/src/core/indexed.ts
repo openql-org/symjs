@@ -6,8 +6,8 @@
  * usable as unknowns and inside sums.
  */
 
-import type { Expr, ExprLike } from './nodes';
-import { ExtensionExpr, S, Sym } from './nodes';
+import type { Assumptions, Expr, ExprLike, Head } from './nodes';
+import { ExtensionExpr, Rational, S, Sym } from './nodes';
 import { sympify } from './ops';
 import { at } from './guard';
 import { cast } from './guard';
@@ -15,10 +15,18 @@ import { TupleNode } from './containers';
 import { NoMatch, isNoMatch } from './truth';
 import type { NoMatchResult } from './truth';
 
+/** An explicit N-dimensional array (tensor/ndimarray), recognised without importing it. */
+function isExplicitArray(base: Expr): base is Expr & { get(...index: number[]): Expr } {
+  return base instanceof ExtensionExpr && base.name.endsWith('NDimArray') && 'get' in base && typeof base.get === 'function';
+}
+
 /** SymPy Indexed(base, *indices): args are [base symbol, ...indices]; printed base[i, j]. */
 export class Indexed extends ExtensionExpr {
   constructor(args: readonly Expr[]) {
-    super('Indexed', args);
+    if (args.length < 2) throw new RangeError('Indexed needs at least one index.');
+    const base = at(args, 0);
+    if (base instanceof Indexed) throw new TypeError('Indexed requires an unindexed base.');
+    super('Indexed', [base instanceof Sym ? new IndexedBase(base) : base, ...args.slice(1)]);
   }
   get rank(): number { return this.args.length - 1; }
   get base(): Expr {
@@ -27,8 +35,30 @@ export class Indexed extends ExtensionExpr {
   get indices(): Expr[] {
     return this.args.slice(1);
   }
+  get assumptions0(): Map<string, boolean> {
+    return this.base instanceof IndexedBase ? this.base.assumptions0 : new Map();
+  }
+  override isRealSelf(): boolean | undefined {
+    return this.assumptions0.get('real');
+  }
   withArgs(args: readonly Expr[]): Expr {
+    const base = at(args, 0), index = at(args, 1);
+    if (base instanceof TupleNode && args.length === 2 && index instanceof Rational && index.isInteger) {
+      const n = Number(index.p);
+      const value = base.args[n < 0 ? base.args.length + n : n];
+      if (value === undefined) throw new RangeError('Indexed sequence index out of range.');
+      return value;
+    }
+    // an explicit array with integer indices gives its element (SymPy Indexed.__new__ on an NDimArray base)
+    const indices = args.slice(1);
+    if (isExplicitArray(base) && indices.every((i): i is Rational => i instanceof Rational && i.isInteger)) {
+      return base.get(...indices.map((i) => Number(i.p)));
+    }
     return new Indexed(args);
+  }
+  override subsSelf(old: Expr, nw: Expr): Expr | undefined {
+    if (this.base instanceof IndexedBase && this.base.label.key === old.key) return this.withArgs([nw, ...this.indices]);
+    return undefined;
   }
   override freeSymbolsSelf(): ReadonlySet<Expr> {
     // An indexed entry is an independent scalar as well as containing the
@@ -52,30 +82,49 @@ export class Indexed extends ExtensionExpr {
 
 /** SymPy IndexedBase(name): base.at(i, ...) builds A[i, ...]. */
 export class IndexedBase extends ExtensionExpr {
-  readonly label: Sym;
-  constructor(name: string | Sym, options: { readonly shape?: readonly ExprLike[] } = {}) {
-    const label = typeof name === 'string' ? new Sym(name) : name;
-    super('IndexedBase', [label, ...(options.shape === undefined ? [] : [new TupleNode(options.shape.map(sympify))])]);
+  override get func(): Head {
+    return indexedBaseFromArgs;
+  }
+  readonly label: Sym | Expr;
+  readonly #assumptionSymbol: Sym;
+  constructor(name: string | Sym | Expr, options: Assumptions & { readonly shape?: readonly ExprLike[] } = {}) {
+    const { shape, ...assumptions } = options;
+    const label = typeof name === 'string' ? new Sym(name, assumptions) : name;
+    super('IndexedBase', [label, ...(shape === undefined ? [] : [new TupleNode(shape.map(sympify))])]);
     this.label = label;
+    // a label that is an expression (IndexedBase(a/b)) has no name: its assumptions live on a fixed placeholder
+    this.#assumptionSymbol = label instanceof Sym ? new Sym(label.name, { ...label.assumptions, ...assumptions }) : new Sym('IndexedBase_label', assumptions);
+  }
+  get assumptions0(): Map<string, boolean> {
+    return this.#assumptionSymbol.assumptions0;
+  }
+  protected override computeKey(): string {
+    return `${super.computeKey()}:${this.#assumptionSymbol.key}`;
+  }
+  protected override computeCommutative(): boolean {
+    return this.#assumptionSymbol.isCommutative;
+  }
+  override isRealSelf(): boolean | undefined {
+    return this.assumptions0.get('real');
   }
   get shape(): readonly Expr[] | NoMatchResult {
     return this.args.length === 1 ? NoMatch : cast(at(this.args, 1), TupleNode).args;
   }
   withArgs(args: readonly Expr[]): Expr {
-    return new IndexedBase(cast(at(args, 0), Sym), args.length === 1 ? {} : { shape: cast(at(args, 1), TupleNode).args });
+    return new IndexedBase(at(args, 0), { ...this.#assumptionSymbol.assumptions, ...(args.length === 1 ? {} : { shape: cast(at(args, 1), TupleNode).args }) });
   }
   equals(other: unknown): boolean {
     return other instanceof IndexedBase && this.key === other.key;
   }
   /** The real assumption inherited from the base label. */
   get isReal(): boolean | 'unknown' {
-    return this.label.assumptions.real ?? 'unknown';
+    return this.assumptions0.get('real') ?? 'unknown';
   }
   /** A[i, j] */
   at(...indices: ExprLike[]): Indexed {
     const shape = this.shape;
     if (!isNoMatch(shape) && shape.length !== indices.length) throw new RangeError('Rank mismatch.');
-    return new Indexed([isNoMatch(shape) ? this.label : this, ...indices.map(sympify)]);
+    return new Indexed([this, ...indices.map(sympify)]);
   }
   override printStr(print: (e: Expr) => string): string {
     return print(this.label);
@@ -84,3 +133,5 @@ export class IndexedBase extends ExtensionExpr {
     return print(this.label);
   }
 }
+
+const indexedBaseFromArgs = (...args: ExprLike[]): IndexedBase => new IndexedBase(cast(sympify(at(args, 0)), Sym), args[1] === undefined ? {} : { shape: cast(sympify(args[1]), TupleNode).args });

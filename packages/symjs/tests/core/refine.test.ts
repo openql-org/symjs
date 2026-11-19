@@ -8,11 +8,54 @@
 import { describe, expect, it } from 'vitest';
 import * as sj from '../../src';
 import { defined } from '../../src/core/guard';
+import { askExpressionFact } from '../../src/core/refine';
 
 const { Q, ask, refine } = sj;
 const x = sj.symbol('x');
 const y = sj.symbol('y');
 const s = (e: unknown): string => String(e);
+
+it('determines rationality for exponentials of unevaluated natural logarithms', () => {
+  const ofLog = (...args: sj.ExprLike[]) => new sj.Pow(sj.S.E, sj.fn('log', args, { evaluate: false }));
+  expect(ask(Q.rational(ofLog(3)))).toBe(true);
+  expect(ask(Q.rational(ofLog(sj.pi)))).toBe(false);
+  expect(ask(Q.rational(ofLog(3, 10)))).toBe('unknown');
+});
+
+it('queries the extended log and polar exponential on raw inputs', () => {
+  const raw = { evaluate: false };
+  expect(ask(Q.extended_positive(sj.fn('log', [sj.oo], raw)))).toBe(true);
+  expect(ask(Q.extended_positive(sj.fn('log', [sj.S.NegativeInfinity], raw)))).toBe('unknown');
+  expect(ask(Q.rational(sj.fn('exp_polar', [0], raw)))).toBe(true);
+});
+
+it('recognizes exact rational and algebraic values of unevaluated elementary functions', () => {
+  const raw = { evaluate: false };
+  for (const e of [sj.fn('cos', [0], raw), sj.fn('asin', [0], raw), sj.fn('atan', [0], raw), sj.fn('log', [1], raw), sj.fn('acos', [1], raw)]) {
+    expect(ask(Q.rational(e))).toBe(true);
+    expect(ask(Q.algebraic(e))).toBe(true);
+  }
+  expect(ask(Q.rational(sj.fn('log', [1, 1], raw)))).toBe('unknown');
+  expect(ask(Q.rational(sj.fn('abs', [0], raw)))).toBe(true);
+});
+
+it('rejects an imaginary result when a symbolic sum has a nonzero real part', () => {
+  const p = sj.symbol('p', { positive: true });
+  const j = sj.symbol('j', { imaginary: true });
+  expect(ask(Q.imaginary(p.add(j)))).toBe(false);
+});
+
+it('recognizes a product of three imaginary factors', () => {
+  const [u, v, w] = sj.symbols('u v w', { imaginary: true });
+  expect(ask(Q.real(sj.mul(u, v, w)))).toBe(false);
+});
+
+it('distinguishes nonreal inverse sine and cosine values from extended reals', () => {
+  expect(ask(Q.extended_real(sj.asin(2)))).toBe(false);
+  expect(ask(Q.extended_real(sj.acos(2)))).toBe(false);
+  expect(sj.isReal(sj.asin(-2))).toBe(false);
+  expect(ask(Q.extended_real(sj.asin(x)))).toBe('unknown');
+});
 
 const locals: Record<string, (...a: sj.Expr[]) => sj.Expr> = {
   ...Object.fromEntries(Object.keys(Q).map((k) => [`Q_${k}`, (...a: sj.Expr[]) => defined(Q[k], k)(...a)])),
@@ -191,7 +234,7 @@ const CASES: readonly Case[] = [
   ["ask", "Q.complex(x**y)", "Q.complex(x) & Q.complex(y) & Q.positive(x)", "true"],
   ["ask", "Q.complex(x**y)", "True", "unknown"],
   ["ask", "Q.complex(sin(x))", "Q.complex(x)", "true"],
-  ["ask", "Q.complex(sin(x))", "True", "unknown"],  // SymPy 1.14: true (SymPy answers True for any argument; x may be infinite)
+  ["ask", "Q.complex(sin(x))", "True", "true"],  // SymPy's handler: sin and cos are complex for any argument
   ["ask", "Q.complex(gamma(x))", "Q.complex(x)", "unknown"],
   ["ask", "Q.complex(exp(x))", "Q.complex(x)", "true"],
   ["ask", "Q.imaginary(2)", "True", "false"],
@@ -223,7 +266,7 @@ const CASES: readonly Case[] = [
   ["ask", "Q.finite(sin(x))", "Q.real(x)", "true"],
   ["ask", "Q.finite(Abs(x))", "Q.finite(x)", "true"],
   ["ask", "Q.finite(gamma(x))", "True", "unknown"],
-  ["ask", "Q.finite(sin(x))", "True", "unknown"],  // SymPy 1.14: true (SymPy answers True for any argument; x may be infinite)
+  ["ask", "Q.finite(sin(x))", "True", "true"],  // SymPy's handler: sin and cos are bounded for any argument
   ["ask", "Q.finite(oo)", "True", "false"],
   ["ask", "Q.finite(pi)", "True", "true"],
   ["ask", "Q.finite(x)", "Q.algebraic(x)", "true"],
@@ -714,7 +757,7 @@ it('tracks zero, sign and cancellation in finite scalar expressions', () => {
     ['ask', 'Q.finite((-2)**y)', 'Q.extended_negative(y)', 'true'],
     ['ask', 'Q.finite(2**y)', '~Q.finite(y) & Q.extended_positive(y)', 'false'],
     ['ask', 'Q.finite(x+y)', 'Q.negative_infinite(x) & Q.extended_negative(y)', 'false'],
-    ['ask', 'Q.finite(x+y)', '~Q.finite(x) & ~Q.finite(y) & ~Q.extended_positive(x) & ~Q.extended_positive(y)', 'unknown'],
+    ['ask', 'Q.finite(x+y)', '~Q.finite(x) & ~Q.finite(y) & ~Q.extended_positive(x) & ~Q.extended_positive(y)', 'false'],
     ['ask', 'Q.hermitian(I*x)', 'Q.real(x) & Q.nonzero(x)', 'false'],
     ['ask', 'Q.hermitian(I*x)', 'Q.real(x)', 'unknown'],
     ['ask', 'Q.antihermitian(x+y)', 'Q.imaginary(x) & Q.imaginary(y)', 'true'],
@@ -771,4 +814,235 @@ it('an infinite base gives a finite power for a negative exponent and an infinit
   // and with a positive exponent an infinite power
   const positive = new sj.Sym('positive_power_exponent', { positive: true });
   expect(sj.ask(sj.Q.finite(sj.pow(base, positive)))).toBe(false);
+});
+
+it('queries exponential phases and their integer powers', () => {
+  const { Fn, Pow, S, mul } = sj;
+  const phase = mul(S.I, S.Pi, x);
+  const forms = [new Pow(S.E, phase)];
+  for (const base of forms) {
+    expect(ask(Q.real(new Pow(base, y)), sj.And(Q.integer(x), Q.integer(y)))).toBe(true);
+    expect(ask(Q.imaginary(new Pow(base, y)), sj.And(Q.integer(x), Q.integer(y)))).toBe(false);
+    expect(ask(Q.real(new Pow(base, y)), Q.imaginary(y))).toBe('unknown');
+    expect(ask(Q.imaginary(new Pow(base, y)), Q.imaginary(y))).toBe('unknown');
+    expect(ask(Q.real(new Pow(base, y)), sj.And(Q.imaginary(phase), Q.imaginary(y)))).toBe(true);
+    expect(ask(Q.imaginary(new Pow(base, y)), sj.And(Q.imaginary(phase), Q.imaginary(y)))).toBe(false);
+  }
+  expect(ask(Q.algebraic(new Pow(S.E, phase)), Q.rational(x))).toBe(true);
+  expect(ask(Q.odd(new Fn('re', [x])), Q.odd(x))).toBe(true);
+  expect(ask(Q.odd(new Fn('im', [x])), Q.real(x))).toBe(false);
+  expect(ask(Q.finite(new Pow(x, y)), sj.And(sj.Not(Q.finite(x)), Q.extended_positive(y)))).toBe(false);
+  expect(ask(Q.hermitian(sj.add(x, y)), sj.And(sj.Not(Q.hermitian(x)), Q.hermitian(y)))).toBe(false);
+  expect(ask(Q.extended_real(new sj.Add([S.NegativeInfinity, x])), Q.real(x))).toBe(true);
+  expect(refine(new Pow(new Pow(x, S.NegOne), S.Half), Q.positive(x)).toString()).toBe('1/sqrt(x)');
+  const reciprocalRoot = new Pow(new Pow(x, S.NegOne), S.Half);
+  expect(refine(reciprocalRoot)).toBe(reciprocalRoot);
+});
+
+it('keeps unknown numerical coordinates undecided', () => {
+  const e = new sj.Pow(new sj.Fn('erf2inv', [sj.S.One]), sj.S.Half);
+  expect(ask(Q.imaginary(e))).toBe('unknown');
+});
+
+it('infers facts about held powers without evaluating them first', () => {
+  const { Add, And, Fn, Mul, Pow, S, mul, rational, symbol } = sj;
+  const real = symbol('real', { real: true });
+  const negative = symbol('negative', { negative: true });
+  const imaginary = symbol('imaginary', { imaginary: true });
+  const integer = symbol('integer', { integer: true });
+  const even = symbol('even', { even: true, positive: true });
+  const odd = symbol('odd', { odd: true, positive: true });
+  const prime = symbol('prime', { prime: true });
+  const irrational = symbol('irrational', { irrational: true });
+  const phase = (n: sj.Expr) => new Pow(S.E, mul(S.I, S.Pi, n));
+  const held: readonly [sj.Expr, sj.Truth][] = [
+    [Q.real(new Pow(S.E, real)), true],
+    [Q.negative(new Pow(S.E, real)), false],
+    [Q.positive(phase(even)), true],
+    [Q.negative(phase(odd)), true],
+    [Q.imaginary(phase(mul(S.Half, odd))), true],
+    [Q.real(new Pow(imaginary, even)), true],
+    [Q.real(new Pow(imaginary, integer)), 'unknown'],
+    [Q.real(new Pow(S.I, imaginary)), true],
+    [Q.real(new Pow(mul(-1, S.I), imaginary)), true],
+    [Q.real(new Pow(S.NegOne, imaginary)), true],
+    [Q.imaginary(new Pow(imaginary, odd)), true],
+    [Q.imaginary(new Pow(negative, irrational)), false],
+    [Q.imaginary(new Pow(negative, rational(1, 3))), false],
+    [Q.positive(new Pow(negative, even)), true],
+    [Q.negative(new Pow(negative, odd)), true],
+    [Q.nonnegative(new Pow(real, even)), true],
+    [Q.integer(new Pow(negative, S.Zero)), true],
+    [Q.even(new Mul([integer, sj.add(integer, 1)])), true],
+    [Q.odd(new Pow(S.NegOne, integer)), true],
+    [Q.even(new Fn('re', [even])), true],
+    [Q.even(new Fn('im', [real])), true],
+    [Q.prime(new Pow(prime, S.One)), true],
+    [Q.prime(new Pow(prime, even)), false],
+    [Q.finite(new Pow(S.Half, S.Infinity)), true],
+    [Q.finite(new Pow(S.Two, S.Infinity)), false],
+    [Q.finite(new Pow(S.Two, x)), 'unknown'],
+    [Q.positive(new Fn('acot', [imaginary])), false],
+    [Q.rational(new Fn('cot', [integer])), false],
+    [Q.algebraic(new Fn('cot', [integer])), false],
+    [Q.finite(new Fn('log', [S.Zero])), false],
+    [Q.finite(new Fn('log', [negative])), true],
+    [Q.finite(new Fn('log', [x])), 'unknown'],
+    [Q.antihermitian(new Add([S.One, S.I])), false],
+  ];
+  for (const [predicate, expected] of held) expect(ask(predicate), String(predicate)).toBe(expected);
+  const asin = new Fn('asin', [x]);
+  expect(ask(Q.positive(asin), And(Q.positive(x), Q.nonpositive(sj.add(x, -1))))).toBe(true);
+  expect(ask(Q.positive(asin), And(Q.negative(x), Q.nonnegative(sj.add(x, 1))))).toBe(false);
+  expect(ask(Q.positive(asin))).toBe('unknown');
+  expect(ask(Q.antihermitian(new Mul([x, y])))).toBe('unknown');
+  expect(ask(Q.antihermitian(new Mul([x, y])), And(Q.antihermitian(x), Q.hermitian(y)))).toBe(true);
+  expect(ask(Q.hermitian(new Add([x, y])))).toBe('unknown');
+  expect(ask(Q.finite(new Add([x, y])), And(Q.extended_positive(x), Q.extended_positive(y)))).toBe('unknown');
+});
+
+it('handles core boolean atoms and relation normalization without optional proposition handlers', async () => {
+  const { vi } = await import('vitest');
+  vi.resetModules();
+  const core = await import('../../src/core/refine');
+  await import('../../src/core');
+  const nodes = await import('../../src/core/nodes');
+  const bool = await import('../../src/core/boolalg');
+  const n = new nodes.Sym('n', { integer: true, positive: true });
+  expect(nodes.functionFactHandlers.factorial).toBeUndefined();
+  expect(core.ask(core.Q.positive(new nodes.Fn('factorial', [n])))).toBe(true);
+  expect(core.ask(true)).toBe(true);
+  expect(core.ask(false)).toBe(false);
+  expect(() => core.ask(bool.or(core.Q.real(new nodes.Sym('u')), core.Q.real(new nodes.Sym('v'))), false)).toThrow(RangeError);
+  const a = new nodes.Sym('a'), b = new nodes.Sym('b');
+  const relation = new nodes.Rel('Gt', a, b);
+  expect(core.ask(relation, core.Q.real(a))).toBe('unknown');
+  expect(core.ask(relation, relation)).toBe(true);
+  expect(core.ask(bool.or(core.Q.real(nodes.S.I), core.Q.positive(nodes.S.NegOne)))).toBe(false);
+  expect(core.ask(core.Q.eq(a, b), core.Q.eq(b, a))).toBe(true);
+  expect(core.ask(bool.or(core.Q.real(a), core.Q.real(b)), bool.and(core.Q.positive(a), core.Q.positive(b)))).toBe(true);
+});
+
+it('classifies unevaluated elementary functions at zero as rational and algebraic', () => {
+  const t = new sj.Fn('tan', [sj.S.Zero]);
+  const e = new sj.Pow(sj.S.E, sj.S.Zero);
+  expect(sj.ask(sj.Q.rational(e))).toBe(true);
+  expect(sj.ask(sj.Q.rational(t))).toBe(true);
+  expect(sj.ask(sj.Q.algebraic(t))).toBe(true);
+});
+
+it('follows the SymPy handlers for finite, complex, prime and zero products', () => {
+  const [x, y] = sj.symbols('x y');
+  const Q = sj.Q;
+  const q = (name: string, ...args: sj.Expr[]) => (Q[name] as (...a: sj.Expr[]) => sj.Expr)(...args);
+  // sin and cos are bounded and complex for every argument
+  expect([sj.ask(q('finite', sj.sin(x))), sj.ask(q('finite', sj.cos(x)), sj.not(q('finite', x))), sj.ask(q('finite', sj.add(sj.cos(x), sj.sin(x))))]).toEqual([true, true, true]);
+  expect([sj.ask(q('complex', sj.sin(sj.add(sj.mul(2, x), 1)))), sj.ask(q('complex', sj.exp(x)))]).toEqual([true, true]);
+  // log is infinite at 0 and at an infinite argument only
+  expect(sj.ask(q('finite', sj.log(x)), sj.not(q('zero', x)))).toBe(true);
+  expect(sj.ask(q('finite', sj.log(x)), q('infinite', x))).toBe(false);
+  // a base of modulus at least 1 to an infinite power
+  expect(sj.ask(q('finite', sj.pow(2, x)), sj.not(q('finite', x)))).toBe(false);
+  // a sum: the terms that are not finite agree in sign
+  const sum = sj.add(x, y);
+  expect(sj.ask(q('finite', sum), sj.and(sj.not(q('finite', x)), sj.not(q('finite', y)), sj.not(q('extended_positive', x)), sj.not(q('extended_positive', y))))).toBe(false);
+  expect(sj.ask(q('finite', sum), sj.and(q('positive_infinite', x), sj.not(q('finite', y)), sj.not(q('extended_positive', y))))).toBe('unknown');
+  expect(sj.ask(q('finite', sum), sj.and(sj.not(q('extended_positive', x)), sj.not(q('finite', y)), sj.not(q('extended_positive', y))))).toBe(false);
+  // an exact number that is numerically an integer
+  const one = sj.add(sj.pow(sj.cos(1), 2), sj.pow(sj.sin(1), 2));
+  expect(sj.ask(q('prime', sj.add(sj.parse('12345678901234567890'), one)))).toBe(true);
+  expect(sj.ask(q('prime', sj.add(3, one)))).toBe(false);
+  expect(sj.ask(q('prime', sj.add(2, sj.cos(1))))).toBe(false);
+  expect(ask(Q.prime(sj.add(sj.sin(1), sj.cos(1))))).toBe(false);
+  expect(ask(Q.prime(sj.add(2, sj.SymFunction('f')(1))))).toBe('unknown');
+  expect(sj.ask(q('prime', sj.add(new sj.Float(2), one)))).toBe('unknown');
+  // a product is zero exactly when a factor is
+  expect(sj.ask(sj.or(q('zero', x), q('zero', y)), q('zero', sj.mul(x, y)))).toBe(true);
+  expect(sj.ask(q('zero', x), q('zero', sj.mul(x, y)))).toBe('unknown');
+});
+
+it('retains unknown bounds for sums and transcendental functions', () => {
+  const p = sj.symbol('p', { extendedPositive: true }), q = sj.symbol('q', { extendedPositive: true });
+  expect(ask(Q.finite(x.add(y)), sj.And(sj.Not(Q.finite(x)), sj.Not(Q.finite(y))))).toBe('unknown');
+  expect(ask(Q.complex(sj.sinh(x)))).toBe('unknown');
+  expect(ask(Q.complex(sj.sinh(sj.symbol('c', { complex: true }))))).toBe(true);
+  expect(askExpressionFact(Q.finite(new sj.Add([x, y])))).toBe('unknown');
+  expect(askExpressionFact(Q.finite(new sj.Add([p, q])))).toBe('unknown');
+  expect(askExpressionFact(Q.finite(new sj.Add([p, sj.oo])))).toBe(false);
+});
+
+describe('runtime predicate registration', () => {
+  it('selects the most specific signature of the right arity and forwards assumptions', () => {
+    const p = sj.Predicate('typed');
+    p.register(['Integer', sj.Sym], (_i, s, assumptions) => ask(Q.positive(s), assumptions));
+    p.register([sj.Rational, sj.Expr], () => false);
+    p.register(['Integer', 'Integer', 'Integer'], () => true);
+    expect(ask(p(3, x), Q.positive(x))).toBe(true);
+    expect(ask(p(3, x))).toBe('unknown');
+    expect(ask(p(3, 4))).toBe(false);
+    expect(ask(p(sj.S.Half, x))).toBe(false);
+    expect(ask(p(3, 4, 5))).toBe(true);
+    expect(ask(p(x, 3))).toBe('unknown');
+    expect(ask(p(3))).toBe('unknown');
+    expect(() => p.register([], () => false)).toThrow(RangeError);
+    p.register(['Integer', sj.Sym], () => false);
+    expect(ask(p(3, x), Q.positive(x))).toBe(false);
+  });
+
+  it('keeps registered methods on the applied predicate when a Q key is replaced', () => {
+    const p = sj.Predicate('local');
+    Q.local = p;
+    try {
+      p.register([sj.Sym], () => true);
+      const applied = Q.local(x);
+      Q.local = sj.Predicate('local');
+      expect(ask(Q.local(x))).toBe('unknown');
+      expect(applied.function).toBe(p);
+      expect(ask(applied.withArgs([y]))).toBe(true);
+      expect(new sj.AppliedPredicate('local', [x]).function).toBe(Q.local);
+      expect(new sj.AppliedPredicate('unregistered', [x]).function.predicateName).toBe('unregistered');
+    } finally {
+      delete Q.local;
+    }
+  });
+
+  it('tries legacy static methods from derived to base, and removes the registered class', () => {
+    class CustomSymbol extends sj.Sym {}
+    class Handler extends sj.AskHandler {
+      static CustomSymbol(): boolean { return false; }
+      static Integer(): sj.Truth { return 'unknown'; }
+      static Rational(): boolean { return false; }
+      static Symbol(expr: sj.Expr, assumptions: sj.Expr): sj.Truth { return ask(Q.positive(expr), assumptions); }
+    }
+    sj.registerHandler('legacy', Handler);
+    try {
+      const p = defined(Q.legacy);
+      expect(ask(p(x), Q.positive(x))).toBe(true);
+      expect(ask(p(new CustomSymbol('z')))).toBe(false);
+      expect(ask(p(1))).toBe(false);
+      expect(ask(p(x.add(1)))).toBe('unknown');
+      expect(() => ask(p(x, y))).toThrow(RangeError);
+      sj.removeHandler(p, Handler);
+      expect(ask(p(1))).toBe('unknown');
+      class Disagrees extends sj.AskHandler {
+        static Rational(): boolean { return true; }
+      }
+      sj.registerHandler(p, sj.AskHandler);
+      sj.registerHandler(p, Disagrees);
+      sj.registerHandler(p, Disagrees);
+      expect(ask(p(1))).toBe(true);
+      sj.registerHandler(p, Handler);
+      expect(() => ask(p(1))).toThrow(/Incompatible/);
+      expect(() => ask(sj.Predicate('legacy')(1))).toThrow(/Incompatible/);
+      Q.noHandlers = sj.Predicate('noHandlers');
+      try {
+        sj.removeHandler('noHandlers', Handler);
+        expect(ask(Q.noHandlers(x))).toBe('unknown');
+      } finally {
+        delete Q.noHandlers;
+      }
+    } finally {
+      delete Q.legacy;
+    }
+  });
 });

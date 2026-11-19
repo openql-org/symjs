@@ -347,7 +347,7 @@ describe("sympy/combinatorics/tests/test_coset_table.py", () => {
   //   assert c.omega == [0, 1, 2, 3]
   //   => [0, 1, 2, 3]
   it.todo("test_scan_1:123");
-  // a primitive result that no library call returned
+  // the arguments do not type-check against the public API
   //   assert C.P == [[identity, None, None, None],
   //                       [None, identity, None, None]]
   //   => [[<identity>, None, None, None], [None, <identity>, None, None]]
@@ -363,13 +363,13 @@ describe("sympy/combinatorics/tests/test_coset_table.py", () => {
   //                           [None, 1, None, None]]
   //   => [[1, None, None, None], [2, 0, None, None], [None, 1, None, None]]
   it.todo("test_modified_methods:736");
-  // a primitive result that no library call returned
+  // the arguments do not type-check against the public API
   //   assert C.P == [[identity, None, None, None],
   //                       [identity, identity, None, None],
   //                       [None, identity, None, None]]
   //   => [[<identity>, None, None, None], [<identity>, <identity>, None, None], [None, <identity>, None, None]]
   it.todo("test_modified_methods:739");
-  // a primitive result that no library call returned
+  // the arguments do not type-check against the public API
   //   assert C.P == [[identity, identity, None, None],
   //                        [identity, identity, None, None],
   //                        [identity, identity, None, None]]
@@ -381,7 +381,7 @@ describe("sympy/combinatorics/tests/test_coset_table.py", () => {
   //                           [0, 1, None, None]]
   //   => [[1, 2, None, None], [2, 0, None, None], [0, 1, None, None]]
   it.todo("test_modified_methods:747");
-  // a primitive result that no library call returned
+  // the arguments do not type-check against the public API
   //   assert C.P == [[identity, identity, None, a_0**-1],
   //                       [identity, identity, a_0, None],
   //                       [identity, identity, None, None]]
@@ -400,7 +400,7 @@ describe("sympy/combinatorics/tests/test_coset_table.py", () => {
   //                           [None, None, 2, None]]
   //   => [[1, 2, None, 1], [2, 0, 0, None], [0, 1, None, 3], [None, None, 2, None]]
   it.todo("test_modified_methods:760");
-  // a primitive result that no library call returned
+  // the arguments do not type-check against the public API
   //   assert C.P == [[identity, identity, None, a_0**-1],
   //                       [identity, identity, a_0, None],
   //                       [identity, identity, None, identity],
@@ -414,7 +414,7 @@ describe("sympy/combinatorics/tests/test_coset_table.py", () => {
   //                           [3, 3, 2, None]]
   //   => [[1, 2, None, 1], [2, 0, 0, None], [0, 1, None, 3], [3, 3, 2, None]]
   it.todo("test_modified_methods:770");
-  // a primitive result that no library call returned
+  // the arguments do not type-check against the public API
   //   assert C.P == [[identity, identity, None, a_0**-1],
   //                       [identity, identity, a_0, None],
   //                       [identity, identity, None, identity],
@@ -428,7 +428,7 @@ describe("sympy/combinatorics/tests/test_coset_table.py", () => {
   //                           [3, 3, 2, 0]]
   //   => [[1, 2, 3, 1], [2, 0, 0, None], [0, 1, None, 3], [3, 3, 2, 0]]
   it.todo("test_modified_methods:780");
-  // a primitive result that no library call returned
+  // the arguments do not type-check against the public API
   //   assert C.P == [[identity, identity, a_1**-1, a_0**-1],
   //                       [identity, identity, a_0, None],
   //                       [identity, identity, None, identity],
@@ -443,7 +443,7 @@ describe("sympy/combinatorics/tests/test_coset_table.py", () => {
   //                           [None, None, None, 2]]
   //   => [[1, 2, 3, 1], [2, 0, 0, None], [0, 1, 4, 3], [3, 3, 2, 0], [None, None, None, 2]]
   it.todo("test_modified_methods:790");
-  // a primitive result that no library call returned
+  // the arguments do not type-check against the public API
   //   assert C.P == [[identity, identity, a_1**-1, a_0**-1],
   //                       [identity, identity, a_0, None],
   //                       [identity, identity, identity, identity],
@@ -455,7 +455,7 @@ describe("sympy/combinatorics/tests/test_coset_table.py", () => {
   //   assert C.table == [[1, 2, 3, 1], [2, 0, 0, 4], [0, 1, 4, 3], [3, 3, 2, 0], [None, None, 1, 2]]
   //   => [[1, 2, 3, 1], [2, 0, 0, 4], [0, 1, 4, 3], [3, 3, 2, 0], [None, None, 1, 2]]
   it.todo("test_modified_methods:802");
-  // a primitive result that no library call returned
+  // the arguments do not type-check against the public API
   //   assert C.P == [[identity, identity, a_1**-1, a_0**-1],
   //                       [identity, identity, a_0, a_0*a_1**-1],
   //                       [identity, identity, identity, identity],
@@ -471,14 +471,12 @@ describe("sympy/combinatorics/tests/test_coset_table.py", () => {
   //                           [4, 4, 1, 2]]
   //   => [[1, 2, 3, 1], [2, 0, 0, 4], [0, 1, 4, 3], [3, 3, 2, 0], [4, 4, 1, 2]]
   it.todo("test_modified_methods:810");
-  // a primitive result that no library call returned
-  //   assert C.P == [[identity, identity, a_1**-1, a_0**-1],
-  //                       [identity, identity, a_0, a_0*a_1**-1],
-  //                       [identity, identity, identity, identity],
-  //                       [a_1, a_1**-1, identity, a_1],
-  //                       [a_0*a_1**-1, a_1*a_0**-1, a_1*a_0**-1, identity]]
-  //   => [[<identity>, <identity>, a_1**-1, a_0**-1], [<identity>, <identity>, a_0, a_0*a_1**-1], [<identity>, <identity>, <identity>, <identity>], [a_1, a_1**-1, <identity>, a_1], [a_0*a_1**-1, a_1*a_0**-1, a_1*a_0**-1, <identity>]]
-  it.todo("test_modified_methods:815");
+  it("test_modified_methods:815", () => {
+    const [x, y, a_1, a_0] = symbols('x y a_1 a_0');
+    const v1 = new FreeGroup([x, y]);
+    const v2 = new CosetTable(new FpGroup(v1, [new FreeGroup([x, y]).dtype([[x, 3]]), new FreeGroup([x, y]).dtype([[y, 5]]), v1.dtype([[x, 1], [y, 1], [x, 1], [y, 1]])]), [new FreeGroup([x, y]).dtype([[x, 1], [y, 1]]), new FreeGroup([x, y]).dtype([[x, -1], [y, -1], [x, 1], [y, 1], [x, 1]])], 4096000);
+    expect(sympyStr([[v2.grp.dtype([]), v2.grp.dtype([]), v2.grp.dtype([[a_1, -1]]), v2.grp.dtype([[a_0, -1]])], [v2.grp.dtype([]), v2.grp.dtype([]), v2.grp.dtype([[a_0, 1]]), v2.grp.dtype([[a_0, 1], [a_1, -1]])], [v2.grp.dtype([]), v2.grp.dtype([]), v2.grp.dtype([]), v2.grp.dtype([])], [v2.grp.dtype([[a_1, 1]]), v2.grp.dtype([[a_1, -1]]), v2.grp.dtype([]), v2.grp.dtype([[a_1, 1]])], [v2.grp.dtype([[a_0, 1], [a_1, -1]]), v2.grp.dtype([[a_1, 1], [a_0, -1]]), v2.grp.dtype([[a_1, 1], [a_0, -1]]), v2.grp.dtype([])]])).toBe('[[<identity>, <identity>, a_1**-1, a_0**-1], [<identity>, <identity>, a_0, a_0*a_1**-1], [<identity>, <identity>, <identity>, <identity>], [a_1, a_1**-1, <identity>, a_1], [a_0*a_1**-1, a_1*a_0**-1, a_1*a_0**-1, <identity>]]');
+  });
   // a primitive result that no library call returned
   //   assert C_m.table == C.table
   //   => [[0, 0, 1, 2], [1, 1, 2, 0], [2, 2, 0, 1], [None, 1, None, None], [1, 3, None, None]]

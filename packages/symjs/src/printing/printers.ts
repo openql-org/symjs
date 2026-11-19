@@ -7,17 +7,30 @@
  * `StrPrinter` class, `sstr`, `sstrrepr`, `print_latex` and `multiline_latex`.
  */
 
+import type { FracElement, GaussianIntegerRing, GaussianRationalField, PolyElement } from '../polys';
+import type { Predicate } from '../core/refine';
 import type { ExprLike } from '../core/nodes';
-import { Expr, isNum } from '../core/nodes';
+import { Expr, ExtensionExpr, isNum } from '../core/nodes';
 import { mul, sympify } from '../core/ops';
-import { first } from '../core/guard';
+import { at, first } from '../core/guard';
 import { str, withFullPrec, withPermCyclic } from './str';
 import { latex } from './latex';
 import type { LatexOptions, LatexPrintable } from './latex';
-import { asOrderedFactors, asOrderedTerms } from './sortkey';
+import { asOrderedFactors, asOrderedTerms, compareKeys, sortKey } from './sortkey';
 
-/** A value the str printers accept: an expression, a number, a string, or a list, tuple, set or dict of them. */
-export type StrPrintable = ExprLike | string | boolean | null | readonly StrPrintable[] | ReadonlySet<StrPrintable> | ReadonlyMap<StrPrintable, StrPrintable>;
+/** A matrix supplied by a higher layer, with entries printed by the str printer. */
+interface StrMatrix {
+  readonly rows: number;
+  readonly cols: number;
+  get(i: number, j: number): Expr;
+}
+
+/** A value the str printers accept, including matrices and native containers. */
+interface FrozenSetItems {
+  readonly frozenItems: ReadonlySet<StrPrintable>;
+}
+
+export type StrPrintable = FrozenSetItems | Predicate | { asExpr(): Expr; toString(): string } | StrMatrix | ExprLike | string | boolean | null | readonly StrPrintable[] | ReadonlySet<StrPrintable> | ReadonlyMap<StrPrintable, StrPrintable>;
 
 /** Python's repr of a string ('abc', or "it's" when it contains a single quote). */
 function reprString(s: string): string {
@@ -29,14 +42,54 @@ const isExprLike = (x: StrPrintable): x is ExprLike => x instanceof Expr || type
 const isMap = (x: StrPrintable): x is ReadonlyMap<StrPrintable, StrPrintable> => x instanceof Map;
 const isSet = (x: StrPrintable): x is ReadonlySet<StrPrintable> => x instanceof Set;
 
+const isMatrix = (v: object): v is StrMatrix => 'rows' in v && 'cols' in v && 'get' in v && typeof v.get === 'function';
+
+const isPolyElement = (v: object): v is PolyElement => 'listterms' in v && 'ring' in v;
+const isFracElement = (v: object): v is FracElement => 'numer' in v && 'denom' in v && 'field' in v;
+const isGaussian = (v: object): v is GaussianIntegerRing | GaussianRationalField => 'imagUnit' in v;
+
+function polynomialString(poly: PolyElement): string {
+  const domain = poly.ring.domain;
+  if (!isGaussian(domain)) return String(poly);
+  return poly.terms().map(([powers, coeff]) => {
+    const monomial = powers.flatMap((n, j) => n === 0 ? [] : [str(at(poly.ring.symbols, j)) + (n === 1 ? '' : `**${n}`)]).join('*');
+    if (monomial && coeff.equals(1)) return monomial;
+    const c = domain.convert(coeff);
+    const factor = `(${c.re.toString()} + ${c.im.toString()}*I)`;
+    return monomial ? factor + '*' + monomial : factor;
+  }).join(' + ') || '(0 + 0*I)';
+}
+
 function printValue(v: StrPrintable, strings: (s: string) => string): string {
   const go = (x: StrPrintable): string => printValue(x, strings);
+  if (v instanceof ExtensionExpr && v.name === 'Str' && strings === reprString) return `Str(${strings(str(v))})`;
   if (isExprLike(v)) return str(sympify(v));
   if (v === null) return 'None';
   if (typeof v === 'boolean') return v ? 'True' : 'False';
   if (typeof v === 'string') return strings(v);
+  if ('predicateName' in v) return String(v);
+  if (isMatrix(v)) {
+    if (v.rows === 0 || v.cols === 0) return `Matrix(${v.rows}, ${v.cols}, [])`;
+    const rows = Array.from({ length: v.rows }, (_, i) => Array.from({ length: v.cols }, (_, j) => go(v.get(i, j))));
+    const widths = Array.from({ length: v.cols }, (_, j) => Math.max(...rows.map((r) => at(r, j).length)));
+    const lines = rows.map((r) => `[${r.map((s, j) => s.padStart(at(widths, j))).join(', ')}]`);
+    return `Matrix([${v.rows === 1 ? '' : '\n'}${lines.join(',\n')}])`;
+  }
   if (isMap(v)) return `{${[...v].map(([k, x]) => `${go(k)}: ${go(x)}`).join(', ')}}`;
-  if (isSet(v)) return v.size ? `{${[...v].map(go).join(', ')}}` : 'set()';
+  if (isSet(v)) {
+    const items = [...v];
+    if (items.every((x) => isExprLike(x))) items.sort((a, b) => compareKeys(sortKey(sympify(a)), sortKey(sympify(b))));
+    return items.length ? `{${items.map(go).join(', ')}}` : 'set()';
+  }
+  if ('frozenItems' in v) return `frozenset(${v.frozenItems.size ? go(v.frozenItems) : ''})`;
+  if (isPolyElement(v)) return polynomialString(v);
+  if (isFracElement(v)) {
+    const n = polynomialString(v.numer);
+    if (v.denom.equals(1)) return n;
+    const d = polynomialString(v.denom);
+    return (v.numer.length > 1 ? `(${n})` : n) + '/' + (v.denom.isGenerator || v.denom.isGround ? d : `(${d})`);
+  }
+  if ('asExpr' in v) return String(v);
   return `[${v.map(go).join(', ')}]`;
 }
 
@@ -49,6 +102,10 @@ export class StrPrinter {
   constructor(readonly settings: Readonly<Record<string, unknown>> = {}) {}
   /** The str form of expr (SymPy StrPrinter.doprint). */
   doprint(expr: StrPrintable): string {
+    return sstr(expr, this.settings);
+  }
+  /** SymPy's fallback printer for strings, expressions and scalar values. */
+  emptyPrinter(expr: StrPrintable): string {
     return printValue(expr, (s) => s);
   }
 }
@@ -61,6 +118,10 @@ export interface SstrOptions {
    * ('auto', the default; SymPy full_prec).
    */
   fullPrec?: boolean | 'auto';
+  sympyIntegers?: boolean;
+  min?: number;
+  max?: number;
+  dps?: number;
   /** Permutations in cycle notation (default true) or as Permutation([...]) (SymPy perm_cyclic). */
   permCyclic?: boolean;
 }
@@ -71,7 +132,8 @@ export interface SstrOptions {
  * a container).
  */
 export function sstr(expr: StrPrintable, opts: SstrOptions = {}): string {
-  return withPermCyclic(opts.permCyclic, () => withFullPrec(opts.fullPrec ?? 'auto', () => printValue(expr, (s) => s)));
+  for (const key of Object.keys(opts)) if (!['fullPrec', 'permCyclic', 'order', 'sympyIntegers', 'abbrev', 'min', 'max', 'dps'].includes(key)) throw new TypeError(`Unknown setting '${key}'.`);
+  return withPermCyclic(opts.permCyclic, () => withFullPrec(opts, () => printValue(expr, (s) => s)));
 }
 
 /** SymPy sstrrepr: like sstr, but strings are printed with their quotes (Python repr). */

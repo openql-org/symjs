@@ -4,11 +4,11 @@
 // Tests of src/core/logic.ts.
 // Relations and Piecewise. Expected values are SymPy 1.14's (sympy.core.tests.test_relational).
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import * as sj from '../../src';
 import { and } from '../../src/core/boolalg';
 import { Eq, Ge, Gt, Le, Lt, Ne, piecewise, rel } from '../../src/core/logic';
-import { Expr, Rational, S } from '../../src/core/nodes';
+import { Add, Expr, Rational, S, impl } from '../../src/core/nodes';
 import { add, mul, pow, sub } from '../../src/core/ops';
 
 const [x, y, z] = sj.symbols('x y z');
@@ -19,7 +19,64 @@ const s = (e: Expr): string => e.toString();
 const R = (p: number, q = 1) => Rational.of(p, q);
 const negOo = mul(-1, oo);
 
+it('uses bounded index endpoints when deciding relations', () => {
+  const k = sj.Idx('k', [1, 3]);
+  expect(Lt(k, 4)).toBe(S.true);
+  expect(Lt(k, 0)).toBe(S.false);
+});
+
+it('canonicalizes Boolean and evaluated branch conditions', () => {
+  expect(piecewise([1, 0], [2, true]).equals(R(2))).toBe(true);
+  expect(s(piecewise([1, Eq(x, S.true)], [0, true]))).toBe('Piecewise((1, Eq(x, True)), (0, True))');
+  expect(piecewise([1, new sj.Rel('Lt', R(1), R(2))], [0, true]).equals(R(1))).toBe(true);
+});
+
+it('keeps a Piecewise geometric sum stable when evaluated again', () => {
+  const series = sj.doit(sj.Sum(sj.pow(y, x), [x, -1, S.Infinity]));
+  expect(String(series)).toBe('Piecewise((1/(y*(1 - y)), Abs(y) < 1), (Sum(y**x, (x, -1, oo)), True))');
+  expect(sj.doit(series).equals(series)).toBe(true);
+  const condition = Lt(sj.abs(y), 1);
+  const partial = piecewise([1, condition]);
+  expect(piecewise([3, condition], [partial, true]).subs(y, 2)).toBe(S.NaN);
+});
+
+it('keeps a relational condition when the folding dispatcher is unavailable', () => {
+  const fold = impl.piecewiseFold;
+  delete impl.piecewiseFold;
+  try {
+    const value = piecewise([1, Gt(x, 0)], [2, true]);
+    const condition = new sj.Rel('Lt', value, y);
+    const result = piecewise([x, condition]);
+    expect(result instanceof sj.Piecewise && result.pairs[0]?.[1] instanceof sj.Rel).toBe(true);
+  } finally {
+    if (fold) impl.piecewiseFold = fold;
+  }
+});
+
 describe('relations (SymPy test_relational)', () => {
+  it('compares numeric root expressions', () => {
+    const root = sj.rootof(sj.parse('x**3 + x + 1'), 0);
+    const complex = new Add([S.One, S.I]);
+    expect(Eq(root, complex)).toBe(S.false);
+    expect(Ne(complex, root)).toBe(S.true);
+    const close = new Add([S.One, mul(R(1, 10 ** 12), S.I)]);
+    expect(String(Eq(root, close))).toBe('Eq(CRootOf(x**3 + x + 1, 0), 1 + I/1000000000000)');
+    const complexPower = new sj.Pow(new Add([R(3), mul(-1, S.I)]), S.Two);
+    expect(Eq(new Add([S.I, mul(S.Half, complexPower)]), 0)).toBeInstanceOf(sj.Rel);
+    expect(Eq(x.add(S.I.div(10 ** 12)), x)).toBe(S.false);
+    const error = sj.abs(sub(new sj.Float(0.8660254037844386), mul(R(1, 2), sj.sqrt(3))));
+    expect(Lt(error, new sj.Float(1e-12))).toBe(S.true);
+    const evalf = vi.spyOn(impl, 'evalf').mockReturnValue(S.Zero);
+    try {
+      expect(Lt(error, new sj.Float(2e-12))).toBeInstanceOf(sj.Rel);
+    } finally {
+      evalf.mockRestore();
+    }
+    const index = sj.Idx('i', [2, 4]);
+    expect(Lt(index, 5)).toBe(S.true);
+    expect(Lt(index, 1)).toBe(S.false);
+    expect(Gt(5, index)).toBe(S.true);
+  });
   it('compares with nan', () => {
     // SymPy: Eq(nan, nan) = False, Ne(nan, 1) = True, Lt(nan, 1) raises TypeError
     expect(Eq(nan, nan)).toBe(S.false);
@@ -110,15 +167,22 @@ describe('ordering relations decided like SymPy (is_lt, is_le, is_gt, is_ge)', (
     expect([Ge(e1, r('pi')), Gt(e1, r('pi')), Le(e1, r('pi')), Lt(e1, r('pi'))].map(s)).toEqual(['True', 'True', 'False', 'False']);
     const c1 = r('cos(1)');
     expect([Ge(c1, S.Half), Gt(c1, S.Half), Le(c1, S.Half), Lt(c1, S.Half)].map(s)).toEqual(['True', 'True', 'False', 'False']);
-    // undecided: complex, near zero, not evaluable
+    // A real algebraic zero is decided exactly.
     expect(s(Lt(r('I*x'), 2))).toBe('I*x < 2');
-    expect(s(Lt(r('sqrt(2) + sqrt(3)'), r('sqrt(5 + 2*sqrt(6))')))).toBe('sqrt(2) + sqrt(3) < sqrt(2*sqrt(6) + 5)');
+    expect(s(Lt(r('sqrt(2) + sqrt(3)'), r('sqrt(5 + 2*sqrt(6))')))).toBe('False');
     expect(s(Lt(r('f(1)'), 2))).toBe('f(1) < 2');
     expect(s(Lt(r('oo'), 2))).toBe('False');
   });
 });
 
 describe('Piecewise conditions made canonical and collapsed (SymPy Piecewise.eval, _piecewise_collapse_arguments)', () => {
+  it('keeps unevaluated conditions after dropping false and unreachable branches', () => {
+    const unevaluated = new sj.Rel('Eq', sj.S.One, x);
+    const expr = piecewise([1, unevaluated], [0, false], [2, true], [3, true], { evaluate: false });
+    expect(s(expr)).toBe('Piecewise((1, Eq(1, x)), (2, True))');
+    expect(piecewise([x, 1])).toBe(x);
+    expect(() => piecewise([x, 2])).toThrow(TypeError);
+  });
   const [x, y] = [new sj.Sym('x'), new sj.Sym('y')];
   const a = new sj.Sym('a', { positive: true });
   const s = (e: Expr): string => sj.str(e);
@@ -288,4 +352,62 @@ describe('inequality operand validation', () => {
 
 it('keeps a symbolic leading coefficient in Piecewise conditions', () => {
   expect(String(piecewise([1, Lt(mul(x, y), 2)], [0, true]))).toBe('Piecewise((1, x*y < 2), (0, True))');
+});
+
+it('retains undecidable inequalities for overlapping index ranges', () => {
+  const a = sj.Idx('a', [1, 4]), b = sj.Idx('b', [3, 5]);
+  for (const op of [sj.Lt, sj.Le, sj.Gt, sj.Ge]) expect(op(a, b)).toBeInstanceOf(sj.Rel);
+  expect(sj.Lt(a, x)).toBeInstanceOf(sj.Rel);
+});
+
+it('compares Boolean atoms and uses exact facts about finite floats', () => {
+  expect(Eq(S.true, S.true)).toBe(S.true);
+  expect(Ne(S.true, S.false)).toBe(S.true);
+  expect(Eq(S.true, S.false)).toBe(S.false);
+  const irrational = sj.symbol('u', { irrational: true });
+  const noninteger = sj.symbol('v', { integer: false });
+  expect(Eq(irrational, new sj.Float(0.5))).toBe(S.false);
+  expect(Ne(new sj.Float(2), noninteger)).toBe(S.true);
+  expect(Eq(noninteger, new sj.Float(0))).toBe(S.false);
+  expect(Eq(noninteger, new sj.Float(0.5))).toBeInstanceOf(sj.Rel);
+  expect(() => Gt(sj.add(sj.symbol('r', { real: true }), sj.I), 0)).toThrow(TypeError);
+});
+
+it('compares a bounded index against disjoint numeric bounds', () => {
+  const i = sj.Idx('i', [1, 3]);
+  expect(Lt(i, 5)).toBe(S.true);
+  expect(Lt(i, 0)).toBe(S.false);
+});
+
+it('checks realness before ordering identical expressions and bounds factorials', () => {
+  const x = sj.symbol('u');
+  const n = sj.symbol('n', { integer: true, nonnegative: true });
+  const r = sj.symbol('r', { real: true });
+  expect(Lt(x, x)).toBeInstanceOf(sj.Rel);
+  expect(Le(r, r)).toBe(S.true);
+  const f = new sj.Fn('factorial', [n]);
+  const g = new sj.Fn('factorial', [n.add(2)]);
+  expect(Ge(f, 1)).toBe(S.true);
+  expect(Lt(f, 1)).toBe(S.false);
+  expect(Gt(g, 1)).toBe(S.true);
+  expect(Lt(1, g)).toBe(S.true);
+  expect(Gt(f, 2)).toBeInstanceOf(sj.Rel);
+});
+
+it('leaves a factorial comparison undecided when the argument can be negative', () => {
+  const x = sj.symbol('x', { integer: true });
+  expect(Ge(new sj.Fn('factorial', [x]), 1)).toBeInstanceOf(sj.Rel);
+});
+
+it('distinguishes the two Boolean atoms in equality and inequality', () => {
+  expect(Eq(sj.S.true, sj.S.false)).toBe(sj.S.false);
+  expect(Ne(sj.S.true, sj.S.false)).toBe(sj.S.true);
+});
+
+it('keeps undecided integral Float comparisons and evaluates Cartesian numeric inequalities', () => {
+  const integer = new sj.Sym('n', { integer: true });
+  expect(Eq(integer, new sj.Float(1))).toBeInstanceOf(sj.Rel);
+  expect(Ne(new sj.Float(1), integer)).toBeInstanceOf(sj.Rel);
+  expect(Eq(sj.add(1, sj.I), 0)).toBe(S.false);
+  expect(Eq(new sj.Add([sj.I, sj.mul(sj.S.Half, new sj.Pow(sj.add(3, sj.neg(sj.I)), sj.S.Two))]), 0)).toBeInstanceOf(sj.Rel);
 });

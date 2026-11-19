@@ -137,3 +137,13 @@ it('converts a native ANP through its explicit source field',()=>{
   expect(String(C.convert(A.convert(sqrt(2)),A).rep)).toBe('1/2,0,-9/2,0');
   expect(()=>A.convert(B.convert(sqrt(3)),B)).toThrow(CoercionFailed);
 });
+
+it('reduces powers of each summand of a composite primitive element', () => {
+  const r = CRootOf(P('r**3 + r**2 - 1'), 0), s = CRootOf(P('s**5 + s**2 - 1'), 0);
+  const K = new AlgebraicField(QQ, r.add(s));
+  expect(K.toSympy(K.convert(r)).equals(r)).toBe(true);
+  expect(K.toSympy(K.convert(s)).equals(s)).toBe(true);
+  expect(K.toSympy(K.convert(r.pow(3))).equals(r.pow(2).neg().add(1))).toBe(true);
+  const offset = new AlgebraicField(QQ, sqrt(2).add(1));
+  expect(offset.toSympy(offset.convert(sqrt(2))).equals(sqrt(2))).toBe(true);
+});

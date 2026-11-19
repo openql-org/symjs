@@ -5,15 +5,15 @@
 
 import { describe, expect, it } from 'vitest';
 import { CoordSystem, Manifold, Patch } from '../../src/diffgeom';
-import { AccumBounds, Add, And, Array, ArrayElement, ArraySymbol, Category, Circle, Complement, CovarianceNode, Cycle, Dict, DieDistribution, Dummy, Ellipse, Equivalent, ExpectationNode, ExponentialDistribution, Float, FracField, Heaviside, I, Identity, IdentityMorphism, IndependentProductPSpace, Integral, Lambda, Limit, MatAdd, MatMul, Matrix, MatrixElement, MatrixSlice, MatrixSymbol, Mul, MutableSparseMatrix, NamedMorphism, Naturals, NormalDistribution, Not, O, OneMatrix, Or, PSpace, Partition, Perm, Point2D, Poly, PolyRing, Polygon, Pow, ProbabilityNode, Product, PythonMPQ, Q, QQ, QQ_I, Quaternion, RandomSymbol, Reals, Relational, S, SingleContinuousPSpace, SingleFinitePSpace, Str, StrPrinter, Subs, Sum, Sym, SymFunction, SymObject, SymmetricDifference, Triangle, Tuple, UnevaluatedExpr, VarianceNode, Wild, WildFunction, ZZ, ZZ_I, ZeroMatrix, abs, add, derivative, exp, factor, finiteSet, float, fn, groebner, interval, isUnsolved, mul, oo, pi, pow, pprintUseUnicode, precedence, rational, rationalFromString, rootof, round, series, sortGens, sqrt, sstr, sstrrepr, str, symbols, sympify, where } from '../../src';
-import { at, pyStr, sympyStr, text } from '../sympy-str';
+import { AccumBounds, Add, And, AppliedUndef, Array, ArrayElement, ArraySymbol, Category, Circle, Complement, CovarianceNode, Cycle, Dict, DieDistribution, Dummy, E, Ellipse, Equivalent, ExpectationNode, ExponentialDistribution, Float, FracField, Heaviside, I, Identity, IdentityMorphism, IndependentProductPSpace, Lambda, Limit, MatAdd, MatMul, Matrix, MatrixElement, MatrixSlice, MatrixSymbol, Mul, MutableSparseMatrix, NamedMorphism, Naturals, NormalDistribution, O, OneMatrix, Or, PSpace, Partition, Perm, Point2D, Poly, PolyRing, Polygon, Pow, ProbabilityNode, Product, PythonMPQ, Q, QQ, QQ_I, Quaternion, RandomSymbol, Rational, Reals, Relational, S, SingleContinuousPSpace, SingleFinitePSpace, Str, StrPrinter, Subs, Sum, Sym, SymObject, SymmetricDifference, Triangle, Tuple, UnevaluatedExpr, VarianceNode, Wild, WildFunction, ZZ, ZZ_I, ZeroMatrix, abs, add, derivative, exp, factor, finiteSet, float, fn, groebner, integral, interval, isUnsolved, not, oo, pi, pprintUseUnicode, precedence, rationalFromString, rootof, round, series, sqrt, sstr, sstrrepr, symbols, sympify, where, xreplace } from '../../src';
+import { pyStr, sympyStr, text } from '../sympy-str';
 
 describe("doctests of sympy.printing.str", () => {
   it("sstr(Eq(a + b, 0))", () => {
     const [a, b] = symbols('a b');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(sstr(Relational(add(a, b), rational(0), '==', { evaluate: false }), {}))).toBe('Eq(a + b, 0)');
+      expect(text(sstr(Relational(add(a, b), Rational.of(0n, 1n, { gcd: 1n }), '==', { evaluate: false }), {}))).toBe('Eq(a + b, 0)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -27,11 +27,11 @@ describe("sympy/printing/tests/test_precedence.py", () => {
   });
   it("test_Add:18", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(precedence(new Add([rational(1), new Mul([x, y])])))).toBe('40');
+    expect(sympyStr(precedence(new Add([Rational.of(1n, 1n, { gcd: 1n }), new Mul([x, y])])))).toBe('40');
   });
   it("test_Function:22", () => {
     const x = new Sym('x');
-    expect(sympyStr(precedence(fn('sin', [x])))).toBe('70');
+    expect(sympyStr(precedence(fn('sin', [x], { evaluate: false })))).toBe('70');
   });
   it("test_Derivative:25", () => {
     const [x, y] = symbols('x y');
@@ -39,7 +39,7 @@ describe("sympy/printing/tests/test_precedence.py", () => {
   });
   it("test_Integral:28", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(precedence(new Integral([x, y])))).toBe('1000');
+    expect(sympyStr(precedence(integral(x, [y])))).toBe('1000');
   });
   it("test_Mul:32", () => {
     const [x, y] = symbols('x y');
@@ -47,25 +47,25 @@ describe("sympy/printing/tests/test_precedence.py", () => {
   });
   it("test_Mul:33", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(precedence(new Mul([rational(-1), x, y])))).toBe('40');
+    expect(sympyStr(precedence(new Mul([Rational.of(-1n, 1n, { gcd: 1n }), x, y])))).toBe('40');
   });
   it("test_Number:37", () => {
-    expect(sympyStr(precedence(rational(0)))).toBe('1000');
+    expect(sympyStr(precedence(Rational.of(0n, 1n, { gcd: 1n })))).toBe('1000');
   });
   it("test_Number:38", () => {
-    expect(sympyStr(precedence(rational(1)))).toBe('1000');
+    expect(sympyStr(precedence(Rational.of(1n, 1n, { gcd: 1n })))).toBe('1000');
   });
   it("test_Number:39", () => {
-    expect(sympyStr(precedence(rational(-1)))).toBe('40');
+    expect(sympyStr(precedence(Rational.of(-1n, 1n, { gcd: 1n })))).toBe('40');
   });
   it("test_Number:40", () => {
-    expect(sympyStr(precedence(rational(10)))).toBe('1000');
+    expect(sympyStr(precedence(Rational.of(10n, 1n, { gcd: 1n })))).toBe('1000');
   });
   it("test_Number:41", () => {
-    expect(sympyStr(precedence(rational(5, 2)))).toBe('50');
+    expect(sympyStr(precedence(Rational.of(5n, 2n, { gcd: 1n })))).toBe('50');
   });
   it("test_Number:42", () => {
-    expect(sympyStr(precedence(rational(-5, 2)))).toBe('40');
+    expect(sympyStr(precedence(Rational.of(-5n, 2n, { gcd: 1n })))).toBe('40');
   });
   it("test_Number:43", () => {
     expect(sympyStr(precedence(new Float({ man: 5n, exp: 0n }, 53)))).toBe('1000');
@@ -81,7 +81,7 @@ describe("sympy/printing/tests/test_precedence.py", () => {
   });
   it("test_Order:50", () => {
     const x = new Sym('x');
-    expect(sympyStr(precedence(O(x, x, rational(0))))).toBe('1000');
+    expect(sympyStr(precedence(O(x, x, Rational.of(0n, 1n, { gcd: 1n }))))).toBe('1000');
   });
   it("test_Pow:54", () => {
     const [x, y] = symbols('x y');
@@ -89,15 +89,15 @@ describe("sympy/printing/tests/test_precedence.py", () => {
   });
   it("test_Pow:55", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(precedence(new Mul([rational(-1), new Pow(x, y)])))).toBe('40');
+    expect(sympyStr(precedence(new Mul([Rational.of(-1n, 1n, { gcd: 1n }), new Pow(x, y)])))).toBe('40');
   });
   it("test_Pow:56", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(precedence(new Pow(x, new Mul([rational(-1), y]))))).toBe('60');
+    expect(sympyStr(precedence(new Pow(x, new Mul([Rational.of(-1n, 1n, { gcd: 1n }), y]))))).toBe('60');
   });
   it("test_Product:60", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(precedence(Product(x, [x, y, new Add([rational(1), y])])))).toBe('1000');
+    expect(sympyStr(precedence(Product(x, [x, y, new Add([Rational.of(1n, 1n, { gcd: 1n }), y])])))).toBe('1000');
   });
   it("test_Relational:64", () => {
     const [x, y] = symbols('x y');
@@ -105,7 +105,7 @@ describe("sympy/printing/tests/test_precedence.py", () => {
   });
   it("test_Sum:68", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(precedence(Sum(x, [x, y, new Add([rational(1), y])])))).toBe('1000');
+    expect(sympyStr(precedence(Sum(x, [x, y, new Add([Rational.of(1n, 1n, { gcd: 1n }), y])])))).toBe('1000');
   });
   it("test_Symbol:72", () => {
     const x = new Sym('x');
@@ -121,32 +121,32 @@ describe("sympy/printing/tests/test_precedence.py", () => {
   });
   it("test_And_Or:89", () => {
     const y = new Sym('y');
-    expect(sympyStr(precedence(Not(y)))).toBe('100');
+    expect(sympyStr(precedence(not(y)))).toBe('100');
   });
-  // function LowPrecedenceF
+  // the generated test does not reproduce the replay
   //   assert str(expr1) == "2*(x F y)"
   //   => 2*(x F y)
   it.todo("test_custom_function_precedence_comparison:115");
-  // function LowPrecedenceF
+  // the generated test does not reproduce the replay
   //   assert str(expr2) == "-2*(x F y)"
   //   => -2*(x F y)
   it.todo("test_custom_function_precedence_comparison:118");
-  // function HighPrecedenceF
+  // the generated test does not reproduce the replay
   //   assert str(expr1) == "2*x F y"
   //   => 2*x F y
   it.todo("test_custom_function_precedence_comparison:122");
-  // function HighPrecedenceF
+  // the generated test does not reproduce the replay
   //   assert str(expr2) == "-2*x F y"
   //   => -2*x F y
   it.todo("test_custom_function_precedence_comparison:125");
 });
 
 describe("sympy/printing/tests/test_str.py", () => {
-  // function R
+  // the arguments do not type-check against the public API
   //   assert sstr(R(x)) == "foo(x)"
   //   => foo(x)
   it.todo("test_printmethod:62");
-  // function R
+  // the arguments do not type-check against the public API
   //   assert sstr(R(x)) == "foo"
   //   => foo
   it.todo("test_printmethod:67");
@@ -162,7 +162,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_Abs:72", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(abs(rational(1, 6)))).toBe('1/6');
+      expect(pyStr(abs(Rational.of(1n, 6n, { gcd: 1n })))).toBe('1/6');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -170,7 +170,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_Abs:73", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(abs(rational(-1, 6)))).toBe('1/6');
+      expect(pyStr(abs(Rational.of(-1n, 6n, { gcd: 1n })))).toBe('1/6');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -188,7 +188,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(x.add(rational(1)))).toBe('x + 1');
+      expect(pyStr(x.add(Rational.of(1n, 1n, { gcd: 1n })))).toBe('x + 1');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -197,7 +197,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(x.add(new Pow(x, rational(2))))).toBe('x**2 + x');
+      expect(pyStr(x.add(new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))))).toBe('x**2 + x');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -205,7 +205,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_Add:80", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(new Add([rational(0), rational(1)]))).toBe('0 + 1');
+      expect(pyStr(new Add([Rational.of(0n, 1n, { gcd: 1n }), Rational.of(1n, 1n, { gcd: 1n })]))).toBe('0 + 1');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -213,7 +213,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_Add:81", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(new Add([rational(0), rational(0), rational(1)]))).toBe('0 + 0 + 1');
+      expect(pyStr(new Add([Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(1n, 1n, { gcd: 1n })]))).toBe('0 + 0 + 1');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -231,7 +231,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const [x, y] = symbols('x y');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(new Add([rational(5), x, y, new Pow(x, rational(2)), new Mul([x, y])]).add(new Pow(y, rational(2))))).toBe('x**2 + x*y + x + y**2 + y + 5');
+      expect(pyStr(new Add([Rational.of(5n, 1n, { gcd: 1n }), x, y, new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), new Mul([x, y])]).add(new Pow(y, Rational.of(2n, 1n, { gcd: 1n }))))).toBe('x**2 + x*y + x + y**2 + y + 5');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -240,7 +240,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(new Add([rational(1), x, new Mul([rational(1, 2), new Pow(x, rational(2))])]).add(new Mul([rational(1, 3), new Pow(x, rational(3))])))).toBe('x**3/3 + x**2/2 + x + 1');
+      expect(pyStr(new Add([Rational.of(1n, 1n, { gcd: 1n }), x, new Mul([Rational.of(1n, 2n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))])]).add(new Mul([Rational.of(1n, 3n, { gcd: 1n }), new Pow(x, Rational.of(3n, 1n, { gcd: 1n }))])))).toBe('x**3/3 + x**2/2 + x + 1');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -249,7 +249,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const [x, y] = symbols('x y');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(new Add([rational(2), new Mul([rational(-7), new Pow(x, rational(2))]), new Mul([rational(2), x])]).add(new Mul([rational(3), y])))).toBe('-7*x**2 + 2*x + 3*y + 2');
+      expect(pyStr(new Add([Rational.of(2n, 1n, { gcd: 1n }), new Mul([Rational.of(-7n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))]), new Mul([Rational.of(2n, 1n, { gcd: 1n }), x])]).add(new Mul([Rational.of(3n, 1n, { gcd: 1n }), y])))).toBe('-7*x**2 + 2*x + 3*y + 2');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -267,7 +267,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(rational(2).sub(x))).toBe('2 - x');
+      expect(pyStr(Rational.of(2n, 1n, { gcd: 1n }).sub(x))).toBe('2 - x');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -276,7 +276,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(x.sub(rational(2)))).toBe('x - 2');
+      expect(pyStr(x.sub(Rational.of(2n, 1n, { gcd: 1n })))).toBe('x - 2');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -285,7 +285,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const [x, y, z, w] = symbols('x y z w');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(new Add([x, new Mul([rational(-1), y]), new Mul([rational(-1), z])]).sub(w))).toBe('-w + x - y - z');
+      expect(pyStr(new Add([x, new Mul([Rational.of(-1n, 1n, { gcd: 1n }), y]), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), z])]).sub(w))).toBe('-w + x - y - z');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -294,7 +294,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const [x, w, y, z] = symbols('x w y z');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(x.sub(new Mul([w, new Pow(y, rational(2)), new Pow(z, rational(2))])))).toBe('-w*y**2*z**2 + x');
+      expect(pyStr(x.sub(new Mul([w, new Pow(y, Rational.of(2n, 1n, { gcd: 1n })), new Pow(z, Rational.of(2n, 1n, { gcd: 1n }))])))).toBe('-w*y**2*z**2 + x');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -303,7 +303,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const [x, y] = symbols('x y');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(x.sub(new Mul([x, new Pow(y, rational(2))])))).toBe('-x*y**2 + x');
+      expect(pyStr(x.sub(new Mul([x, new Pow(y, Rational.of(2n, 1n, { gcd: 1n }))])))).toBe('-x*y**2 + x');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -312,34 +312,34 @@ describe("sympy/printing/tests/test_str.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(series(fn('sin', [x]), x, rational(0), 15, '+', {}))).toBe('x - x**3/6 + x**5/120 - x**7/5040 + x**9/362880 - x**11/39916800 + x**13/6227020800 + O(x**15)');
+      expect(pyStr(series(fn('sin', [x], { evaluate: false }), x, Rational.of(0n, 1n, { gcd: 1n }), 15, '+', {}))).toBe('x - x**3/6 + x**5/120 - x**7/5040 + x**9/362880 - x**11/39916800 + x**13/6227020800 + O(x**15)');
     } finally {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_Add:93", () => {
+  it("test_Add:93", () => {
     const [w, x, y, z] = symbols('w x y z');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(new Add([new Add([new Mul([rational(-1), w]), x]), new Add([new Mul([rational(-1), y]), z])]))).toBe('(-w + x) + (-y + z)');
+      expect(pyStr(new Add([new Add([new Mul([Rational.of(-1n, 1n, { gcd: 1n }), w]), x]), new Add([new Mul([Rational.of(-1n, 1n, { gcd: 1n }), y]), z])]))).toBe('(-w + x) + (-y + z)');
     } finally {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_Add:94", () => {
+  it("test_Add:94", () => {
     const [x, y, z] = symbols('x y z');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(new Add([new Add([new Mul([rational(-1), x]), new Mul([rational(-1), y])]), new Mul([rational(-1), z])]))).toBe('-z + (-x - y)');
+      expect(pyStr(new Add([new Add([new Mul([Rational.of(-1n, 1n, { gcd: 1n }), x]), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), y])]), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), z])]))).toBe('-z + (-x - y)');
     } finally {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_Add:95", () => {
+  it("test_Add:95", () => {
     const [x, y, z, t] = symbols('x y z t');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(new Add([new Add([new Add([new Mul([rational(-1), x]), new Mul([rational(-1), y])]), new Mul([rational(-1), z])]), new Mul([rational(-1), t])]))).toBe('-t + (-z + (-x - y))');
+      expect(pyStr(new Add([new Add([new Add([new Mul([Rational.of(-1n, 1n, { gcd: 1n }), x]), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), y])]), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), z])]), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), t])]))).toBe('-t + (-z + (-x - y))');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -357,7 +357,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(derivative(new Pow(x, rational(2)), [[x, 1]]))).toBe('Derivative(x**2, x)');
+      expect(pyStr(derivative(new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), [[x, 1]]))).toBe('Derivative(x**2, x)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -366,7 +366,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const [x, y] = symbols('x y');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(derivative(new Mul([new Pow(x, rational(2)), new Pow(y, rational(-1))]), [[x, 1], [y, 1]]))).toBe('Derivative(x**2/y, x, y)');
+      expect(pyStr(derivative(new Mul([new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), new Pow(y, Rational.of(-1n, 1n, { gcd: 1n }))]), [[x, 1], [y, 1]]))).toBe('Derivative(x**2/y, x, y)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -375,7 +375,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(sstr(new Map([[1, new Add([rational(1), x])]])))).toBe('{1: x + 1}');
+      expect(text(sstr(new Map([[Rational.of(1n, 1n, { gcd: 1n }), new Add([Rational.of(1n, 1n, { gcd: 1n }), x])]]), {}))).toBe('{1: x + 1}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -388,7 +388,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(Dict([[rational(1), new Add([rational(1), x])]]))).toBe('{1: x + 1}');
+      expect(pyStr(Dict([[Rational.of(1n, 1n, { gcd: 1n }), new Add([Rational.of(1n, 1n, { gcd: 1n }), x])]]))).toBe('{1: x + 1}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -397,7 +397,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(sstr(new Map([[1, new Add([rational(1), x])]])))).toBe('{1: x + 1}');
+      expect(text(sstr(new Map([[Rational.of(1n, 1n, { gcd: 1n }), new Add([Rational.of(1n, 1n, { gcd: 1n }), x])]]), {}))).toBe('{1: x + 1}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -427,7 +427,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_factorial:143", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(fn('factorial', [rational(-2)]))).toBe('zoo');
+      expect(pyStr(fn('factorial', [Rational.of(-2n, 1n, { gcd: 1n })], { evaluate: true }))).toBe('zoo');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -435,7 +435,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_factorial:144", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(fn('factorial', [rational(0)]))).toBe('1');
+      expect(pyStr(fn('factorial', [Rational.of(0n, 1n, { gcd: 1n })], { evaluate: true }))).toBe('1');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -443,7 +443,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_factorial:145", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(fn('factorial', [rational(7)]))).toBe('5040');
+      expect(pyStr(fn('factorial', [Rational.of(7n, 1n, { gcd: 1n })], { evaluate: true }))).toBe('5040');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -452,7 +452,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const n = new Sym('n', { integer: true });
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(fn('factorial', [n]))).toBe('factorial(n)');
+      expect(pyStr(fn('factorial', [n], { evaluate: true }))).toBe('factorial(n)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -461,7 +461,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const n = new Sym('n', { integer: true });
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(fn('factorial', [new Mul([rational(2), n])]))).toBe('factorial(2*n)');
+      expect(pyStr(fn('factorial', [new Mul([Rational.of(2n, 1n, { gcd: 1n }), n])], { evaluate: true }))).toBe('factorial(2*n)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -470,7 +470,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const n = new Sym('n', { integer: true });
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(fn('factorial', [fn('factorial', [n])]))).toBe('factorial(factorial(n))');
+      expect(pyStr(fn('factorial', [fn('factorial', [n])], { evaluate: true }))).toBe('factorial(factorial(n))');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -479,7 +479,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const n = new Sym('n', { integer: true });
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(fn('factorial', [fn('factorial2', [n])]))).toBe('factorial(factorial2(n))');
+      expect(pyStr(fn('factorial', [fn('factorial2', [n])], { evaluate: true }))).toBe('factorial(factorial2(n))');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -488,7 +488,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const n = new Sym('n', { integer: true });
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(fn('factorial2', [fn('factorial', [n])]))).toBe('factorial2(factorial(n))');
+      expect(pyStr(fn('factorial2', [fn('factorial', [n])], { evaluate: true }))).toBe('factorial2(factorial(n))');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -497,7 +497,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const n = new Sym('n', { integer: true });
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(fn('factorial2', [fn('factorial2', [n])]))).toBe('factorial2(factorial2(n))');
+      expect(pyStr(fn('factorial2', [fn('factorial2', [n])], { evaluate: true }))).toBe('factorial2(factorial2(n))');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -505,7 +505,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_factorial:152", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(fn('subfactorial', [rational(3)]))).toBe('2');
+      expect(pyStr(fn('subfactorial', [Rational.of(3n, 1n, { gcd: 1n })], { evaluate: true }))).toBe('2');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -514,7 +514,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const n = new Sym('n', { integer: true });
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(fn('subfactorial', [n]))).toBe('subfactorial(n)');
+      expect(pyStr(fn('subfactorial', [n], { evaluate: true }))).toBe('subfactorial(n)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -523,7 +523,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const n = new Sym('n', { integer: true });
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(fn('subfactorial', [new Mul([rational(2), n])]))).toBe('subfactorial(2*n)');
+      expect(pyStr(fn('subfactorial', [new Mul([Rational.of(2n, 1n, { gcd: 1n }), n])], { evaluate: true }))).toBe('subfactorial(2*n)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -543,7 +543,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_Geometry:167", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(sstr(Point2D(rational(0), rational(0), { evaluate: false }), {}))).toBe('Point2D(0, 0)');
+      expect(text(sstr(Point2D(Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), { evaluate: false }), {}))).toBe('Point2D(0, 0)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -551,7 +551,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_Geometry:168", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(sstr(Circle(Point2D(rational(0), rational(0), { evaluate: false }), rational(3)), {}))).toBe('Circle(Point2D(0, 0), 3)');
+      expect(text(sstr(Circle(Point2D(Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), { evaluate: false }), Rational.of(3n, 1n, { gcd: 1n })), {}))).toBe('Circle(Point2D(0, 0), 3)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -559,7 +559,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_Geometry:169", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(sstr(Ellipse(Point2D(rational(1), rational(2), { evaluate: false }), rational(3), rational(4)), {}))).toBe('Ellipse(Point2D(1, 2), 3, 4)');
+      expect(text(sstr(Ellipse(Point2D(Rational.of(1n, 1n, { gcd: 1n }), Rational.of(2n, 1n, { gcd: 1n }), { evaluate: false }), Rational.of(3n, 1n, { gcd: 1n }), Rational.of(4n, 1n, { gcd: 1n })), {}))).toBe('Ellipse(Point2D(1, 2), 3, 4)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -567,7 +567,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_Geometry:170", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(sstr(Triangle(Point2D(rational(1), rational(1), { evaluate: false }), Point2D(rational(7), rational(8), { evaluate: false }), Point2D(rational(0), rational(-1), { evaluate: false })), {}))).toBe('Triangle(Point2D(1, 1), Point2D(7, 8), Point2D(0, -1))');
+      expect(text(sstr(Triangle(Point2D(Rational.of(1n, 1n, { gcd: 1n }), Rational.of(1n, 1n, { gcd: 1n }), { evaluate: false }), Point2D(Rational.of(7n, 1n, { gcd: 1n }), Rational.of(8n, 1n, { gcd: 1n }), { evaluate: false }), Point2D(Rational.of(0n, 1n, { gcd: 1n }), Rational.of(-1n, 1n, { gcd: 1n }), { evaluate: false })), {}))).toBe('Triangle(Point2D(1, 1), Point2D(7, 8), Point2D(0, -1))');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -575,7 +575,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_Geometry:172", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(sstr(Polygon(Point2D(rational(5), rational(6), { evaluate: false }), Point2D(rational(-2), rational(-3), { evaluate: false }), Point2D(rational(0), rational(0), { evaluate: false }), Point2D(rational(4), rational(7), { evaluate: false })), {}))).toBe('Polygon(Point2D(5, 6), Point2D(-2, -3), Point2D(0, 0), Point2D(4, 7))');
+      expect(text(sstr(Polygon(Point2D(Rational.of(5n, 1n, { gcd: 1n }), Rational.of(6n, 1n, { gcd: 1n }), { evaluate: false }), Point2D(Rational.of(-2n, 1n, { gcd: 1n }), Rational.of(-3n, 1n, { gcd: 1n }), { evaluate: false }), Point2D(Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), { evaluate: false }), Point2D(Rational.of(4n, 1n, { gcd: 1n }), Rational.of(7n, 1n, { gcd: 1n }), { evaluate: false })), {}))).toBe('Polygon(Point2D(5, 6), Point2D(-2, -3), Point2D(0, 0), Point2D(4, 7))');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -603,7 +603,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(Heaviside(x, rational(1, 2)))).toBe('Heaviside(x)');
+      expect(pyStr(Heaviside(x, Rational.of(1n, 2n, { gcd: 1n })))).toBe('Heaviside(x)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -612,7 +612,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(Heaviside(x, rational(1)))).toBe('Heaviside(x, 1)');
+      expect(pyStr(Heaviside(x, Rational.of(1n, 1n, { gcd: 1n })))).toBe('Heaviside(x, 1)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -628,7 +628,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_Integer:203", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(rational(-1))).toBe('-1');
+      expect(pyStr(Rational.of(-1n, 1n, { gcd: 1n }))).toBe('-1');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -636,7 +636,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_Integer:204", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(rational(1))).toBe('1');
+      expect(pyStr(Rational.of(1n, 1n, { gcd: 1n }))).toBe('1');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -644,7 +644,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_Integer:205", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(rational(-3))).toBe('-3');
+      expect(pyStr(Rational.of(-3n, 1n, { gcd: 1n }))).toBe('-3');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -652,7 +652,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_Integer:206", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(rational(0))).toBe('0');
+      expect(pyStr(Rational.of(0n, 1n, { gcd: 1n }))).toBe('0');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -660,7 +660,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_Integer:207", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(rational(25))).toBe('25');
+      expect(pyStr(Rational.of(25n, 1n, { gcd: 1n }))).toBe('25');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -669,7 +669,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const [x, y] = symbols('x y');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(new Integral([fn('sin', [x]), y]))).toBe('Integral(sin(x), y)');
+      expect(pyStr(integral(fn('sin', [x], { evaluate: false }), y))).toBe('Integral(sin(x), y)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -678,19 +678,24 @@ describe("sympy/printing/tests/test_str.py", () => {
     const [x, y] = symbols('x y');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(new Integral([fn('sin', [x]), y, rational(0), rational(1)]))).toBe('Integral(sin(x), (y, 0, 1))');
+      expect(pyStr(integral(fn('sin', [x], { evaluate: false }), [y, Rational.of(0n, 1n, { gcd: 1n }), Rational.of(1n, 1n, { gcd: 1n })]))).toBe('Integral(sin(x), (y, 0, 1))');
     } finally {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_AccumBounds:227", () => {
+  it("test_AccumBounds:227", () => {
     const a = new Sym('a', { real: true });
-    expect(sympyStr(AccumBounds(rational(0), a))).toBe('AccumBounds(0, a)');
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(pyStr(AccumBounds(Rational.of(0n, 1n, { gcd: 1n }), a))).toBe('AccumBounds(0, a)');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
   });
   it("test_AccumBounds:228", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(AccumBounds(rational(0), rational(1)))).toBe('AccumBounds(0, 1)');
+      expect(pyStr(AccumBounds(Rational.of(0n, 1n, { gcd: 1n }), Rational.of(1n, 1n, { gcd: 1n })))).toBe('AccumBounds(0, 1)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -698,7 +703,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_Lambda:232", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(Lambda([new Dummy('d', {}, 1000000)], new Pow(new Dummy('d', {}, 1000000), rational(2))))).toBe('Lambda(_d, _d**2)');
+      expect(pyStr(Lambda([new Dummy('d', {}, 1000000)], new Pow(new Dummy('d', {}, 1000000), Rational.of(2n, 1n, { gcd: 1n }))))).toBe('Lambda(_d, _d**2)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -706,7 +711,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_Lambda:234", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(Lambda([], rational(1)))).toBe('Lambda((), 1)');
+      expect(pyStr(Lambda([], Rational.of(1n, 1n, { gcd: 1n })))).toBe('Lambda((), 1)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -737,7 +742,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const [x, y] = symbols('x y');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(new Limit([new Mul([new Pow(x, rational(-1)), fn('sin', [x])]), x, y], '+'))).toBe('Limit(sin(x)/x, x, y, dir=\'+\')');
+      expect(pyStr(new Limit([new Mul([new Pow(x, Rational.of(-1n, 1n, { gcd: 1n })), fn('sin', [x], { evaluate: false })]), x, y], '+'))).toBe('Limit(sin(x)/x, x, y, dir=\'+\')');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -746,7 +751,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(new Limit([new Pow(x, rational(-1)), x, rational(0)], '+'))).toBe('Limit(1/x, x, 0, dir=\'+\')');
+      expect(pyStr(new Limit([new Pow(x, Rational.of(-1n, 1n, { gcd: 1n })), x, Rational.of(0n, 1n, { gcd: 1n })], '+'))).toBe('Limit(1/x, x, 0, dir=\'+\')');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -755,7 +760,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const [x, y] = symbols('x y');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(new Limit([new Mul([new Pow(x, rational(-1)), fn('sin', [x])]), x, y], '-'))).toBe('Limit(sin(x)/x, x, y, dir=\'-\')');
+      expect(pyStr(new Limit([new Mul([new Pow(x, Rational.of(-1n, 1n, { gcd: 1n })), fn('sin', [x], { evaluate: false })]), x, y], '-'))).toBe('Limit(sin(x)/x, x, y, dir=\'-\')');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -764,7 +769,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(sstr([x]))).toBe('[x]');
+      expect(text(sstr([x], {}))).toBe('[x]');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -773,7 +778,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const [x, y] = symbols('x y');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(sstr([new Pow(x, rational(2)), new Add([rational(1), new Mul([x, y])])]))).toBe('[x**2, x*y + 1]');
+      expect(text(sstr([new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), new Add([Rational.of(1n, 1n, { gcd: 1n }), new Mul([x, y])])], {}))).toBe('[x**2, x*y + 1]');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -782,7 +787,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const [x, y] = symbols('x y');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(sstr([new Pow(x, rational(2)), [new Add([x, y])]]))).toBe('[x**2, [x + y]]');
+      expect(text(sstr([new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), [new Add([x, y])]], {}))).toBe('[x**2, [x + y]]');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -791,7 +796,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const [x, y] = symbols('x y');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(Matrix.of([[x, rational(1)], [y, new Add([x, y])]]))).toBe('Matrix([[x, 1], [y, x + y]])');
+      expect(pyStr(Matrix.of([[x, Rational.of(1n, 1n, { gcd: 1n })], [y, new Add([x, y])]]))).toBe('Matrix([[x, 1], [y, x + y]])');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -805,7 +810,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_Matrix_str:258", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(Matrix.of([[rational(1)]]))).toBe('Matrix([[1]])');
+      expect(pyStr(Matrix.of([[Rational.of(1n, 1n, { gcd: 1n })]]))).toBe('Matrix([[1]])');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -817,7 +822,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_Matrix_str:260", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(Matrix.of([[rational(1), rational(2)]]))).toBe('Matrix([[1, 2]])');
+      expect(pyStr(Matrix.of([[Rational.of(1n, 1n, { gcd: 1n }), Rational.of(2n, 1n, { gcd: 1n })]]))).toBe('Matrix([[1, 2]])');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -868,7 +873,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const [x, y, z] = symbols('x y z');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(new Mul([x, new Pow(y, rational(-1))]).div(z))).toBe('x/(y*z)');
+      expect(pyStr(new Mul([x, new Pow(y, Rational.of(-1n, 1n, { gcd: 1n }))]).div(z))).toBe('x/(y*z)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -877,7 +882,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const [x, y] = symbols('x y');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(new Add([rational(1), x]).div(new Add([rational(2), y])))).toBe('(x + 1)/(y + 2)');
+      expect(pyStr(new Add([Rational.of(1n, 1n, { gcd: 1n }), x]).div(new Add([Rational.of(2n, 1n, { gcd: 1n }), y])))).toBe('(x + 1)/(y + 2)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -886,7 +891,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(new Mul([rational(2), x]).div(rational(3)))).toBe('2*x/3');
+      expect(pyStr(new Mul([Rational.of(2n, 1n, { gcd: 1n }), x]).div(Rational.of(3n, 1n, { gcd: 1n })))).toBe('2*x/3');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -895,7 +900,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(new Mul([rational(-2), x]).div(rational(3)))).toBe('-2*x/3');
+      expect(pyStr(new Mul([Rational.of(-2n, 1n, { gcd: 1n }), x]).div(Rational.of(3n, 1n, { gcd: 1n })))).toBe('-2*x/3');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -921,7 +926,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_Mul:276", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(new Mul([rational(0), rational(1)]))).toBe('0*1');
+      expect(pyStr(new Mul([Rational.of(0n, 1n, { gcd: 1n }), Rational.of(1n, 1n, { gcd: 1n })]))).toBe('0*1');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -929,7 +934,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_Mul:277", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(new Mul([rational(1), rational(0)]))).toBe('1*0');
+      expect(pyStr(new Mul([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })]))).toBe('1*0');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -937,7 +942,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_Mul:278", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(new Mul([rational(1), rational(1)]))).toBe('1*1');
+      expect(pyStr(new Mul([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(1n, 1n, { gcd: 1n })]))).toBe('1*1');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -945,7 +950,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_Mul:279", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(new Mul([rational(1), rational(1), rational(1)]))).toBe('1*1*1');
+      expect(pyStr(new Mul([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(1n, 1n, { gcd: 1n }), Rational.of(1n, 1n, { gcd: 1n })]))).toBe('1*1*1');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -953,7 +958,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_Mul:280", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(new Mul([rational(1), rational(2)]))).toBe('1*2');
+      expect(pyStr(new Mul([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(2n, 1n, { gcd: 1n })]))).toBe('1*2');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -961,7 +966,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_Mul:281", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(new Mul([rational(1), rational(1, 2)]))).toBe('1*(1/2)');
+      expect(pyStr(new Mul([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })]))).toBe('1*(1/2)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -969,7 +974,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_Mul:282", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(new Mul([rational(1), rational(1), rational(1, 2)]))).toBe('1*1*(1/2)');
+      expect(pyStr(new Mul([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(1n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })]))).toBe('1*1*(1/2)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -978,7 +983,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(new Mul([rational(1), rational(1), rational(2), rational(3), x]))).toBe('1*1*2*3*x');
+      expect(pyStr(new Mul([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(1n, 1n, { gcd: 1n }), Rational.of(2n, 1n, { gcd: 1n }), Rational.of(3n, 1n, { gcd: 1n }), x]))).toBe('1*1*2*3*x');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -986,7 +991,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_Mul:284", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(new Mul([rational(1), rational(-1)]))).toBe('1*(-1)');
+      expect(pyStr(new Mul([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(-1n, 1n, { gcd: 1n })]))).toBe('1*(-1)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -994,7 +999,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_Mul:285", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(new Mul([rational(-1), rational(1)]))).toBe('-1*1');
+      expect(pyStr(new Mul([Rational.of(-1n, 1n, { gcd: 1n }), Rational.of(1n, 1n, { gcd: 1n })]))).toBe('-1*1');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1003,7 +1008,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const [y, x] = symbols('y x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(new Mul([rational(4), rational(3), rational(2), rational(1), rational(0), y, x]))).toBe('4*3*2*1*0*y*x');
+      expect(pyStr(new Mul([Rational.of(4n, 1n, { gcd: 1n }), Rational.of(3n, 1n, { gcd: 1n }), Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), y, x]))).toBe('4*3*2*1*0*y*x');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1012,7 +1017,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const [z, y, x] = symbols('z y x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(new Mul([rational(4), rational(3), rational(2), new Add([rational(1), z]), rational(0), y, x]))).toBe('4*3*2*(z + 1)*0*y*x');
+      expect(pyStr(new Mul([Rational.of(4n, 1n, { gcd: 1n }), Rational.of(3n, 1n, { gcd: 1n }), Rational.of(2n, 1n, { gcd: 1n }), new Add([Rational.of(1n, 1n, { gcd: 1n }), z]), Rational.of(0n, 1n, { gcd: 1n }), y, x]))).toBe('4*3*2*(z + 1)*0*y*x');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1020,33 +1025,33 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_Mul:288", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(new Mul([rational(2, 3), rational(5, 7)]))).toBe('(2/3)*(5/7)');
+      expect(pyStr(new Mul([Rational.of(2n, 3n, { gcd: 1n }), Rational.of(5n, 7n, { gcd: 1n })]))).toBe('(2/3)*(5/7)');
     } finally {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_Mul:290", () => {
+  it("test_Mul:290", () => {
     const [x, y] = symbols('x y');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(new Mul([rational(-2), x, new Pow(new Mul([y, y]), rational(-1))]))).toBe('-2*x/(y*y)');
+      expect(pyStr(new Mul([Rational.of(-2n, 1n, { gcd: 1n }), x, new Pow(new Mul([y, y]), Rational.of(-1n, 1n, { gcd: 1n }))]))).toBe('-2*x/(y*y)');
     } finally {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_Mul:293", () => {
+  it("test_Mul:293", () => {
     const [x, y] = symbols('x y');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(new Mul([x, new Pow(new Pow(y, rational(-1)), rational(-1))]))).toBe('x/(1/y)');
+      expect(pyStr(new Mul([x, new Pow(new Pow(y, Rational.of(-1n, 1n, { gcd: 1n })), Rational.of(-1n, 1n, { gcd: 1n }))]))).toBe('x/(1/y)');
     } finally {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_Mul:298", () => {
+  it("test_Mul:298", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(mul(new Pow(rational(2), rational(-1)), new Add([rational(-1), new Mul([rational(-1), rational(1)])])))).toBe('(-1 - 1*1)/2');
+      expect(pyStr(new Mul([new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(-1n, 1n, { gcd: 1n })), new Add([Rational.of(-1n, 1n, { gcd: 1n }), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), Rational.of(1n, 1n, { gcd: 1n })])])]))).toBe('(-1 - 1*1)/2');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1072,7 +1077,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(O(new Pow(x, rational(2))))).toBe('O(x**2)');
+      expect(pyStr(O(new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))))).toBe('O(x**2)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1099,7 +1104,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(O(x, x, rational(0)))).toBe('O(x)');
+      expect(pyStr(O(x, x, Rational.of(0n, 1n, { gcd: 1n })))).toBe('O(x)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1292,19 +1297,15 @@ describe("sympy/printing/tests/test_str.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_Permutation_Cycle:396", () => {
-    const unicode = pprintUseUnicode(false);
-    try {
-      expect(text(sstr(new Perm([1, 0, 2]), {}))).toBe('Permutation([1, 0, 2])');
-    } finally {
-      pprintUseUnicode(unicode);
-    }
-  });
+  // the generated test does not reproduce the replay
+  //   assert sstr(Permutation([1, 0, 2])) == 'Permutation([1, 0, 2])'
+  //   => Permutation([1, 0, 2])
+  it.todo("test_Permutation_Cycle:396");
   it("test_Poly:404", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(Poly.from(rational(0), [x], {}))).toBe('Poly(0, x, domain=\'ZZ\')');
+      expect(pyStr(Poly.fromExpr(Rational.of(0n, 1n, { gcd: 1n }), [x], {}))).toBe('Poly(0, x, domain=\'ZZ\')');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1313,7 +1314,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(Poly.from(rational(1), [x], {}))).toBe('Poly(1, x, domain=\'ZZ\')');
+      expect(pyStr(Poly.fromExpr(Rational.of(1n, 1n, { gcd: 1n }), [x], {}))).toBe('Poly(1, x, domain=\'ZZ\')');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1322,7 +1323,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(Poly.from(x, [x], {}))).toBe('Poly(x, x, domain=\'ZZ\')');
+      expect(pyStr(Poly.fromExpr(x, [x], {}))).toBe('Poly(x, x, domain=\'ZZ\')');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1331,7 +1332,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(Poly.from(new Add([rational(1), new Mul([rational(2), x])]), [x], {}))).toBe('Poly(2*x + 1, x, domain=\'ZZ\')');
+      expect(pyStr(Poly.fromExpr(new Add([Rational.of(1n, 1n, { gcd: 1n }), new Mul([Rational.of(2n, 1n, { gcd: 1n }), x])]), [x], {}))).toBe('Poly(2*x + 1, x, domain=\'ZZ\')');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1340,7 +1341,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(Poly.from(new Add([rational(-1), new Mul([rational(2), x])]), [x], {}))).toBe('Poly(2*x - 1, x, domain=\'ZZ\')');
+      expect(pyStr(Poly.fromExpr(new Add([Rational.of(-1n, 1n, { gcd: 1n }), new Mul([Rational.of(2n, 1n, { gcd: 1n }), x])]), [x], {}))).toBe('Poly(2*x - 1, x, domain=\'ZZ\')');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1349,7 +1350,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(Poly.from(rational(-1), [x], {}))).toBe('Poly(-1, x, domain=\'ZZ\')');
+      expect(pyStr(Poly.fromExpr(Rational.of(-1n, 1n, { gcd: 1n }), [x], {}))).toBe('Poly(-1, x, domain=\'ZZ\')');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1358,7 +1359,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(Poly.from(new Mul([rational(-1), x]), [x], {}))).toBe('Poly(-x, x, domain=\'ZZ\')');
+      expect(pyStr(Poly.fromExpr(new Mul([Rational.of(-1n, 1n, { gcd: 1n }), x]), [x], {}))).toBe('Poly(-x, x, domain=\'ZZ\')');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1367,7 +1368,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(Poly.from(new Add([rational(1), new Mul([rational(-2), x])]), [x], {}))).toBe('Poly(-2*x + 1, x, domain=\'ZZ\')');
+      expect(pyStr(Poly.fromExpr(new Add([Rational.of(1n, 1n, { gcd: 1n }), new Mul([Rational.of(-2n, 1n, { gcd: 1n }), x])]), [x], {}))).toBe('Poly(-2*x + 1, x, domain=\'ZZ\')');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1376,7 +1377,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(Poly.from(new Add([rational(-1), new Mul([rational(-2), x])]), [x], {}))).toBe('Poly(-2*x - 1, x, domain=\'ZZ\')');
+      expect(pyStr(Poly.fromExpr(new Add([Rational.of(-1n, 1n, { gcd: 1n }), new Mul([Rational.of(-2n, 1n, { gcd: 1n }), x])]), [x], {}))).toBe('Poly(-2*x - 1, x, domain=\'ZZ\')');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1385,7 +1386,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(Poly.from(new Add([rational(-1), x]), [x], {}))).toBe('Poly(x - 1, x, domain=\'ZZ\')');
+      expect(pyStr(Poly.fromExpr(new Add([Rational.of(-1n, 1n, { gcd: 1n }), x]), [x], {}))).toBe('Poly(x - 1, x, domain=\'ZZ\')');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1394,16 +1395,16 @@ describe("sympy/printing/tests/test_str.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(Poly.from(new Add([new Pow(x, rational(5)), new Mul([rational(2), x])]), [x], {}))).toBe('Poly(x**5 + 2*x, x, domain=\'ZZ\')');
+      expect(pyStr(Poly.fromExpr(new Add([new Pow(x, Rational.of(5n, 1n, { gcd: 1n })), new Mul([Rational.of(2n, 1n, { gcd: 1n }), x])]), [x], {}))).toBe('Poly(x**5 + 2*x, x, domain=\'ZZ\')');
     } finally {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_Poly:420", () => {
+  it("test_Poly:420", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(Poly.from(new Pow(rational(3), new Mul([rational(2), x])), [new Pow(rational(3), x)], {}))).toBe('Poly((3**x)**2, 3**x, domain=\'ZZ\')');
+      expect(pyStr(Poly.fromExpr(new Pow(Rational.of(3n, 1n, { gcd: 1n }), new Mul([Rational.of(2n, 1n, { gcd: 1n }), x])), [new Pow(Rational.of(3n, 1n, { gcd: 1n }), x)], {}))).toBe('Poly((3**x)**2, 3**x, domain=\'ZZ\')');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1412,7 +1413,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(Poly.from(new Pow(new Pow(x, rational(2)), x), [], {}))).toBe('Poly(((x**2)**x), (x**2)**x, domain=\'ZZ\')');
+      expect(pyStr(Poly.fromExpr(new Pow(new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), x), [], {}))).toBe('Poly(((x**2)**x), (x**2)**x, domain=\'ZZ\')');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1431,7 +1432,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const [y, x] = symbols('y x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(Poly.from(new Add([rational(1), y, new Pow(x, rational(2))]), [x], {}))).toBe('Poly(x**2 + y + 1, x, domain=\'ZZ[y]\')');
+      expect(pyStr(Poly.fromExpr(new Add([Rational.of(1n, 1n, { gcd: 1n }), y, new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))]), [x], {}))).toBe('Poly(x**2 + y + 1, x, domain=\'ZZ[y]\')');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1440,7 +1441,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const [y, x] = symbols('y x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(Poly.from(new Add([rational(-1), y, new Pow(x, rational(2))]), [x], {}))).toBe('Poly(x**2 + y - 1, x, domain=\'ZZ[y]\')');
+      expect(pyStr(Poly.fromExpr(new Add([Rational.of(-1n, 1n, { gcd: 1n }), y, new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))]), [x], {}))).toBe('Poly(x**2 + y - 1, x, domain=\'ZZ[y]\')');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1449,7 +1450,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(Poly.from(new Add([new Pow(x, rational(2)), new Mul([I, x])]), [x], {}))).toBe('Poly(x**2 + I*x, x, domain=\'ZZ_I\')');
+      expect(pyStr(Poly.fromExpr(new Add([new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), new Mul([I, x])]), [x], {}))).toBe('Poly(x**2 + I*x, x, domain=\'ZZ_I\')');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1458,7 +1459,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(Poly.from(new Add([new Pow(x, rational(2)), new Mul([rational(-1), I, x])]), [x], {}))).toBe('Poly(x**2 - I*x, x, domain=\'ZZ_I\')');
+      expect(pyStr(Poly.fromExpr(new Add([new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), I, x])]), [x], {}))).toBe('Poly(x**2 - I*x, x, domain=\'ZZ_I\')');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1467,7 +1468,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const [x, y, z] = symbols('x y z');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(Poly.from(new Add([rational(-1), new Mul([x, y]), new Mul([rational(-1), x, y, z])]), [x, y, z], {}))).toBe('Poly(-x*y*z + x*y - 1, x, y, z, domain=\'ZZ\')');
+      expect(pyStr(Poly.fromExpr(new Add([Rational.of(-1n, 1n, { gcd: 1n }), new Mul([x, y]), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), x, y, z])]), [x, y, z], {}))).toBe('Poly(-x*y*z + x*y - 1, x, y, z, domain=\'ZZ\')');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1476,7 +1477,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const [z, w, x, y] = symbols('z w x y');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(Poly.from(new Add([rational(1), new Mul([new Pow(z, rational(3)), new Add([rational(1), w])]), new Mul([rational(-2), x, z]), new Mul([rational(-1), w, z, new Pow(x, rational(21)), new Pow(y, rational(7))])]), [x, y, z], {}))).toBe('Poly(-w*x**21*y**7*z - 2*x*z + (w + 1)*z**3 + 1, x, y, z, domain=\'ZZ[w]\')');
+      expect(pyStr(Poly.fromExpr(new Add([Rational.of(1n, 1n, { gcd: 1n }), new Mul([new Pow(z, Rational.of(3n, 1n, { gcd: 1n })), new Add([Rational.of(1n, 1n, { gcd: 1n }), w])]), new Mul([Rational.of(-2n, 1n, { gcd: 1n }), x, z]), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), w, z, new Pow(x, Rational.of(21n, 1n, { gcd: 1n })), new Pow(y, Rational.of(7n, 1n, { gcd: 1n }))])]), [x, y, z], {}))).toBe('Poly(-w*x**21*y**7*z - 2*x*z + (w + 1)*z**3 + 1, x, y, z, domain=\'ZZ[w]\')');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1485,7 +1486,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(Poly.from(new Add([rational(1), new Pow(x, rational(2))]), [x], { modulus: 2n }))).toBe('Poly(x**2 + 1, x, modulus=2)');
+      expect(pyStr(Poly.fromExpr(new Add([Rational.of(1n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))]), [x], { modulus: 2n }))).toBe('Poly(x**2 + 1, x, modulus=2)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1494,7 +1495,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(Poly.from(new Add([rational(4), new Mul([rational(2), new Pow(x, rational(2))]), new Mul([rational(3), x])]), [x], { modulus: 17n }))).toBe('Poly(2*x**2 + 3*x + 4, x, modulus=17)');
+      expect(pyStr(Poly.fromExpr(new Add([Rational.of(4n, 1n, { gcd: 1n }), new Mul([Rational.of(2n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))]), new Mul([Rational.of(3n, 1n, { gcd: 1n }), x])]), [x], { modulus: 17n }))).toBe('Poly(2*x**2 + 3*x + 4, x, modulus=17)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1557,7 +1558,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const [x, y, z, u, v] = symbols('x y z u v');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(new PolyRing([x, y, z], ZZ.polyRing(u, v), 'lex').fromExpr(x).sub(new PolyRing([x, y, z], ZZ.polyRing(u, v), 'lex').fromExpr(x)))).toBe('0');
+      expect(pyStr(new PolyRing([x, y, z], ZZ.polyRing(u, v), 'lex').fromExpr(xreplace(x, [])).sub(new PolyRing([x, y, z], ZZ.polyRing(u, v), 'lex').fromExpr(xreplace(x, []))))).toBe('0');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1566,7 +1567,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const [x, y, z, u, v] = symbols('x y z u v');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(new PolyRing([x, y, z], ZZ.polyRing(u, v), 'lex').fromExpr(x).sub(rational(1)))).toBe('x - 1');
+      expect(pyStr(new PolyRing([x, y, z], ZZ.polyRing(u, v), 'lex').fromExpr(xreplace(x, [])).sub(Rational.of(1n, 1n, { gcd: 1n })))).toBe('x - 1');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1575,7 +1576,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const [x, y, z, u, v] = symbols('x y z u v');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(new PolyRing([x, y, z], ZZ.polyRing(u, v), 'lex').fromExpr(x).add(rational(1)))).toBe('x + 1');
+      expect(pyStr(new PolyRing([x, y, z], ZZ.polyRing(u, v), 'lex').fromExpr(xreplace(x, [])).add(Rational.of(1n, 1n, { gcd: 1n })))).toBe('x + 1');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1584,7 +1585,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const [x, y, z, u, v] = symbols('x y z u v');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(new PolyRing([x, y, z], ZZ.polyRing(u, v), 'lex').fromExpr(x).pow(2))).toBe('x**2');
+      expect(pyStr(new PolyRing([x, y, z], ZZ.polyRing(u, v), 'lex').fromExpr(xreplace(x, [])).pow(2))).toBe('x**2');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1593,7 +1594,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const [x, y, z, u, v] = symbols('x y z u v');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(new PolyRing([x, y, z], ZZ.polyRing(u, v), 'lex').fromExpr(new Add([u, new Mul([y, new Pow(x, rational(2)), new Add([rational(1), new Pow(u, rational(2)), new Mul([rational(3), u, v])])])])).add(rational(1)))).toBe('(u**2 + 3*u*v + 1)*x**2*y + u + 1');
+      expect(pyStr(new PolyRing([x, y, z], ZZ.polyRing(u, v), 'lex').fromExpr(xreplace(new Add([u, new Mul([y, new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), new Add([Rational.of(1n, 1n, { gcd: 1n }), new Pow(u, Rational.of(2n, 1n, { gcd: 1n })), new Mul([Rational.of(3n, 1n, { gcd: 1n }), u, v])])])]), [])).add(Rational.of(1n, 1n, { gcd: 1n })))).toBe('(u**2 + 3*u*v + 1)*x**2*y + u + 1');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1602,7 +1603,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const [x, y, z, u, v] = symbols('x y z u v');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(new PolyRing([x, y, z], ZZ.polyRing(u, v), 'lex').fromExpr(new Mul([y, new Pow(x, rational(2)), new Add([rational(1), new Pow(u, rational(2)), new Mul([rational(3), u, v])])])).add(new PolyRing([x, y, z], ZZ.polyRing(u, v), 'lex').fromExpr(new Mul([x, new Add([rational(1), u])]))))).toBe('(u**2 + 3*u*v + 1)*x**2*y + (u + 1)*x');
+      expect(pyStr(new PolyRing([x, y, z], ZZ.polyRing(u, v), 'lex').fromExpr(xreplace(new Mul([y, new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), new Add([Rational.of(1n, 1n, { gcd: 1n }), new Pow(u, Rational.of(2n, 1n, { gcd: 1n })), new Mul([Rational.of(3n, 1n, { gcd: 1n }), u, v])])]), [])).add(new PolyRing([x, y, z], ZZ.polyRing(u, v), 'lex').fromExpr(xreplace(new Mul([x, new Add([Rational.of(1n, 1n, { gcd: 1n }), u])]), []))))).toBe('(u**2 + 3*u*v + 1)*x**2*y + (u + 1)*x');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1611,7 +1612,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const [x, y, z, u, v] = symbols('x y z u v');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(new PolyRing([x, y, z], ZZ.polyRing(u, v), 'lex').fromExpr(new Add([new Mul([x, new Add([rational(1), u])]), new Mul([y, new Pow(x, rational(2)), new Add([rational(1), new Pow(u, rational(2)), new Mul([rational(3), u, v])])])])).add(rational(1)))).toBe('(u**2 + 3*u*v + 1)*x**2*y + (u + 1)*x + 1');
+      expect(pyStr(new PolyRing([x, y, z], ZZ.polyRing(u, v), 'lex').fromExpr(xreplace(new Add([new Mul([x, new Add([Rational.of(1n, 1n, { gcd: 1n }), u])]), new Mul([y, new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), new Add([Rational.of(1n, 1n, { gcd: 1n }), new Pow(u, Rational.of(2n, 1n, { gcd: 1n })), new Mul([Rational.of(3n, 1n, { gcd: 1n }), u, v])])])]), [])).add(Rational.of(1n, 1n, { gcd: 1n })))).toBe('(u**2 + 3*u*v + 1)*x**2*y + (u + 1)*x + 1');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1620,7 +1621,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const [x, y, z, u, v] = symbols('x y z u v');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(new PolyRing([x, y, z], ZZ.polyRing(u, v), 'lex').fromExpr(new Add([new Mul([x, new Add([rational(-1), new Mul([rational(-1), u])])]), new Mul([y, new Pow(x, rational(2)), new Add([rational(-1), new Mul([rational(-1), new Pow(u, rational(2))]), new Mul([rational(3), u, v])])])])).sub(rational(1)))).toBe('-(u**2 - 3*u*v + 1)*x**2*y - (u + 1)*x - 1');
+      expect(pyStr(new PolyRing([x, y, z], ZZ.polyRing(u, v), 'lex').fromExpr(xreplace(new Add([new Mul([x, new Add([Rational.of(-1n, 1n, { gcd: 1n }), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), u])])]), new Mul([y, new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), new Add([Rational.of(-1n, 1n, { gcd: 1n }), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), new Pow(u, Rational.of(2n, 1n, { gcd: 1n }))]), new Mul([Rational.of(3n, 1n, { gcd: 1n }), u, v])])])]), [])).sub(Rational.of(1n, 1n, { gcd: 1n })))).toBe('-(u**2 - 3*u*v + 1)*x**2*y - (u + 1)*x - 1');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1629,7 +1630,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const [x, y, z, u, v] = symbols('x y z u v');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(new PolyRing([x, y, z], ZZ.polyRing(u, v), 'lex').fromExpr(new Add([new Mul([x, new Add([rational(-1), new Mul([rational(-1), v]), new Mul([rational(-1), new Pow(v, rational(2))])])]), new Mul([rational(3), u, v])])).add(rational(1)))).toBe('-(v**2 + v + 1)*x + 3*u*v + 1');
+      expect(pyStr(new PolyRing([x, y, z], ZZ.polyRing(u, v), 'lex').fromExpr(xreplace(new Add([new Mul([x, new Add([Rational.of(-1n, 1n, { gcd: 1n }), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), v]), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), new Pow(v, Rational.of(2n, 1n, { gcd: 1n }))])])]), new Mul([Rational.of(3n, 1n, { gcd: 1n }), u, v])]), [])).add(Rational.of(1n, 1n, { gcd: 1n })))).toBe('-(v**2 + v + 1)*x + 3*u*v + 1');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1638,29 +1639,24 @@ describe("sympy/printing/tests/test_str.py", () => {
     const [x, y, z, u, v] = symbols('x y z u v');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(new PolyRing([x, y, z], ZZ.polyRing(u, v), 'lex').fromExpr(new Add([new Mul([x, new Add([rational(-1), new Mul([rational(-1), v]), new Mul([rational(-1), new Pow(v, rational(2))])])]), new Mul([rational(-3), u, v])])).add(rational(1)))).toBe('-(v**2 + v + 1)*x - 3*u*v + 1');
+      expect(pyStr(new PolyRing([x, y, z], ZZ.polyRing(u, v), 'lex').fromExpr(xreplace(new Add([new Mul([x, new Add([Rational.of(-1n, 1n, { gcd: 1n }), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), v]), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), new Pow(v, Rational.of(2n, 1n, { gcd: 1n }))])])]), new Mul([Rational.of(-3n, 1n, { gcd: 1n }), u, v])]), [])).add(Rational.of(1n, 1n, { gcd: 1n })))).toBe('-(v**2 + v + 1)*x - 3*u*v + 1');
     } finally {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_PolyElement:475", () => {
-    const x = new Sym('x');
-    const unicode = pprintUseUnicode(false);
-    try {
-      expect(pyStr(new PolyRing([x], ZZ_I, 'lex').fromExpr(new Mul([x, new Add([rational(1), I])])).add(rational(2)))).toBe('(1 + 1*I)*x + (2 + 0*I)');
-    } finally {
-      pprintUseUnicode(unicode);
-    }
-  });
+  // the printed result differs ((1 + I)*x + 2)
+  //   assert str((1+I)*xz + 2) == "(1 + 1*I)*x + (2 + 0*I)"
+  //   => (1 + 1*I)*x + (2 + 0*I)
+  it.todo("test_PolyElement:475");
   it("test_FracElement:484", () => {
     const [x, y, z, t, u, v] = symbols('x y z t u v');
     const unicode = pprintUseUnicode(false);
     try {
       const v1 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
-      const v2 = v1['new'](v1.ring.fromExpr(x), v1.ring.fromExpr(rational(1)));
+      const v2 = v1['new'](v1.ring.fromExpr(x), v1.ring.fromExpr(Rational.of(1n, 1n, { gcd: 1n })));
       const v3 = v2.field.fieldNew(v2);
       const v4 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
-      expect(pyStr(v3.sub(v3.field.fieldNew(v4['new'](v4.ring.fromExpr(x), v4.ring.fromExpr(rational(1))))))).toBe('0');
+      expect(pyStr(v3.sub(v3.field.fieldNew(v4['new'](v4.ring.fromExpr(x), v4.ring.fromExpr(Rational.of(1n, 1n, { gcd: 1n }))))))).toBe('0');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1670,9 +1666,9 @@ describe("sympy/printing/tests/test_str.py", () => {
     const unicode = pprintUseUnicode(false);
     try {
       const v1 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
-      const v2 = v1['new'](v1.ring.fromExpr(x), v1.ring.fromExpr(rational(1)));
+      const v2 = v1['new'](v1.ring.fromExpr(x), v1.ring.fromExpr(Rational.of(1n, 1n, { gcd: 1n })));
       const v3 = v2.field.fieldNew(v2);
-      expect(pyStr(v3.sub(v3.field.fieldNew(rational(1))))).toBe('x - 1');
+      expect(pyStr(v3.sub(v3.field.fieldNew(Rational.of(1n, 1n, { gcd: 1n }))))).toBe('x - 1');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1682,9 +1678,9 @@ describe("sympy/printing/tests/test_str.py", () => {
     const unicode = pprintUseUnicode(false);
     try {
       const v1 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
-      const v2 = v1['new'](v1.ring.fromExpr(x), v1.ring.fromExpr(rational(1)));
+      const v2 = v1['new'](v1.ring.fromExpr(x), v1.ring.fromExpr(Rational.of(1n, 1n, { gcd: 1n })));
       const v3 = v2.field.fieldNew(v2);
-      expect(pyStr(v3.add(v3.field.fieldNew(rational(1))))).toBe('x + 1');
+      expect(pyStr(v3.add(v3.field.fieldNew(Rational.of(1n, 1n, { gcd: 1n }))))).toBe('x + 1');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1694,9 +1690,9 @@ describe("sympy/printing/tests/test_str.py", () => {
     const unicode = pprintUseUnicode(false);
     try {
       const v1 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
-      const v2 = v1['new'](v1.ring.fromExpr(x), v1.ring.fromExpr(rational(1)));
+      const v2 = v1['new'](v1.ring.fromExpr(x), v1.ring.fromExpr(Rational.of(1n, 1n, { gcd: 1n })));
       const v3 = v2.field.fieldNew(v2);
-      expect(pyStr(v3.div(v3.field.fieldNew(rational(3))))).toBe('x/3');
+      expect(pyStr(v3.div(v3.field.fieldNew(Rational.of(3n, 1n, { gcd: 1n }))))).toBe('x/3');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1706,10 +1702,10 @@ describe("sympy/printing/tests/test_str.py", () => {
     const unicode = pprintUseUnicode(false);
     try {
       const v1 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
-      const v2 = v1['new'](v1.ring.fromExpr(x), v1.ring.fromExpr(rational(1)));
+      const v2 = v1['new'](v1.ring.fromExpr(x), v1.ring.fromExpr(Rational.of(1n, 1n, { gcd: 1n })));
       const v3 = v2.field.fieldNew(v2);
       const v4 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
-      expect(pyStr(v3.div(v3.field.fieldNew(v4['new'](v4.ring.fromExpr(z), v4.ring.fromExpr(rational(1))))))).toBe('x/z');
+      expect(pyStr(v3.div(v3.field.fieldNew(v4['new'](v4.ring.fromExpr(z), v4.ring.fromExpr(Rational.of(1n, 1n, { gcd: 1n }))))))).toBe('x/z');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1719,10 +1715,10 @@ describe("sympy/printing/tests/test_str.py", () => {
     const unicode = pprintUseUnicode(false);
     try {
       const v1 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
-      const v2 = v1['new'](v1.ring.fromExpr(new Mul([x, y])), v1.ring.fromExpr(rational(1)));
+      const v2 = v1['new'](v1.ring.fromExpr(new Mul([x, y])), v1.ring.fromExpr(Rational.of(1n, 1n, { gcd: 1n })));
       const v3 = v2.field.fieldNew(v2);
       const v4 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
-      expect(pyStr(v3.div(v3.field.fieldNew(v4['new'](v4.ring.fromExpr(z), v4.ring.fromExpr(rational(1))))))).toBe('x*y/z');
+      expect(pyStr(v3.div(v3.field.fieldNew(v4['new'](v4.ring.fromExpr(z), v4.ring.fromExpr(Rational.of(1n, 1n, { gcd: 1n }))))))).toBe('x*y/z');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1732,10 +1728,10 @@ describe("sympy/printing/tests/test_str.py", () => {
     const unicode = pprintUseUnicode(false);
     try {
       const v1 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
-      const v2 = v1['new'](v1.ring.fromExpr(x), v1.ring.fromExpr(rational(1)));
+      const v2 = v1['new'](v1.ring.fromExpr(x), v1.ring.fromExpr(Rational.of(1n, 1n, { gcd: 1n })));
       const v3 = v2.field.fieldNew(v2);
       const v4 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
-      expect(pyStr(v3.div(v3.field.fieldNew(v4['new'](v4.ring.fromExpr(new Mul([t, z])), v4.ring.fromExpr(rational(1))))))).toBe('x/(z*t)');
+      expect(pyStr(v3.div(v3.field.fieldNew(v4['new'](v4.ring.fromExpr(new Mul([t, z])), v4.ring.fromExpr(Rational.of(1n, 1n, { gcd: 1n }))))))).toBe('x/(z*t)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1745,10 +1741,10 @@ describe("sympy/printing/tests/test_str.py", () => {
     const unicode = pprintUseUnicode(false);
     try {
       const v1 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
-      const v2 = v1['new'](v1.ring.fromExpr(new Mul([x, y])), v1.ring.fromExpr(rational(1)));
+      const v2 = v1['new'](v1.ring.fromExpr(new Mul([x, y])), v1.ring.fromExpr(Rational.of(1n, 1n, { gcd: 1n })));
       const v3 = v2.field.fieldNew(v2);
       const v4 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
-      expect(pyStr(v3.div(v3.field.fieldNew(v4['new'](v4.ring.fromExpr(new Mul([t, z])), v4.ring.fromExpr(rational(1))))))).toBe('x*y/(z*t)');
+      expect(pyStr(v3.div(v3.field.fieldNew(v4['new'](v4.ring.fromExpr(new Mul([t, z])), v4.ring.fromExpr(Rational.of(1n, 1n, { gcd: 1n }))))))).toBe('x*y/(z*t)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1758,10 +1754,10 @@ describe("sympy/printing/tests/test_str.py", () => {
     const unicode = pprintUseUnicode(false);
     try {
       const v1 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
-      const v2 = v1['new'](v1.ring.fromExpr(new Add([rational(-1), x])), v1.ring.fromExpr(rational(1)));
+      const v2 = v1['new'](v1.ring.fromExpr(new Add([Rational.of(-1n, 1n, { gcd: 1n }), x])), v1.ring.fromExpr(Rational.of(1n, 1n, { gcd: 1n })));
       const v3 = v2.field.fieldNew(v2);
       const v4 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
-      expect(pyStr(v3.div(v3.field.fieldNew(v4['new'](v4.ring.fromExpr(y), v4.ring.fromExpr(rational(1))))))).toBe('(x - 1)/y');
+      expect(pyStr(v3.div(v3.field.fieldNew(v4['new'](v4.ring.fromExpr(y), v4.ring.fromExpr(Rational.of(1n, 1n, { gcd: 1n }))))))).toBe('(x - 1)/y');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1771,10 +1767,10 @@ describe("sympy/printing/tests/test_str.py", () => {
     const unicode = pprintUseUnicode(false);
     try {
       const v1 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
-      const v2 = v1['new'](v1.ring.fromExpr(new Add([rational(1), x])), v1.ring.fromExpr(rational(1)));
+      const v2 = v1['new'](v1.ring.fromExpr(new Add([Rational.of(1n, 1n, { gcd: 1n }), x])), v1.ring.fromExpr(Rational.of(1n, 1n, { gcd: 1n })));
       const v3 = v2.field.fieldNew(v2);
       const v4 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
-      expect(pyStr(v3.div(v3.field.fieldNew(v4['new'](v4.ring.fromExpr(y), v4.ring.fromExpr(rational(1))))))).toBe('(x + 1)/y');
+      expect(pyStr(v3.div(v3.field.fieldNew(v4['new'](v4.ring.fromExpr(y), v4.ring.fromExpr(Rational.of(1n, 1n, { gcd: 1n }))))))).toBe('(x + 1)/y');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1784,10 +1780,10 @@ describe("sympy/printing/tests/test_str.py", () => {
     const unicode = pprintUseUnicode(false);
     try {
       const v1 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
-      const v2 = v1['new'](v1.ring.fromExpr(new Add([rational(-1), new Mul([rational(-1), x])])), v1.ring.fromExpr(rational(1)));
+      const v2 = v1['new'](v1.ring.fromExpr(new Add([Rational.of(-1n, 1n, { gcd: 1n }), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), x])])), v1.ring.fromExpr(Rational.of(1n, 1n, { gcd: 1n })));
       const v3 = v2.field.fieldNew(v2);
       const v4 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
-      expect(pyStr(v3.div(v3.field.fieldNew(v4['new'](v4.ring.fromExpr(y), v4.ring.fromExpr(rational(1))))))).toBe('(-x - 1)/y');
+      expect(pyStr(v3.div(v3.field.fieldNew(v4['new'](v4.ring.fromExpr(y), v4.ring.fromExpr(Rational.of(1n, 1n, { gcd: 1n }))))))).toBe('(-x - 1)/y');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1797,10 +1793,10 @@ describe("sympy/printing/tests/test_str.py", () => {
     const unicode = pprintUseUnicode(false);
     try {
       const v1 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
-      const v2 = v1['new'](v1.ring.fromExpr(new Add([rational(1), x])), v1.ring.fromExpr(rational(1)));
+      const v2 = v1['new'](v1.ring.fromExpr(new Add([Rational.of(1n, 1n, { gcd: 1n }), x])), v1.ring.fromExpr(Rational.of(1n, 1n, { gcd: 1n })));
       const v3 = v2.field.fieldNew(v2);
       const v4 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
-      expect(pyStr(v3.div(v3.field.fieldNew(v4['new'](v4.ring.fromExpr(new Mul([y, z])), v4.ring.fromExpr(rational(1))))))).toBe('(x + 1)/(y*z)');
+      expect(pyStr(v3.div(v3.field.fieldNew(v4['new'](v4.ring.fromExpr(new Mul([y, z])), v4.ring.fromExpr(Rational.of(1n, 1n, { gcd: 1n }))))))).toBe('(x + 1)/(y*z)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1810,10 +1806,10 @@ describe("sympy/printing/tests/test_str.py", () => {
     const unicode = pprintUseUnicode(false);
     try {
       const v1 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
-      const v2 = v1['new'](v1.ring.fromExpr(new Mul([rational(-1), y])), v1.ring.fromExpr(rational(1)));
+      const v2 = v1['new'](v1.ring.fromExpr(new Mul([Rational.of(-1n, 1n, { gcd: 1n }), y])), v1.ring.fromExpr(Rational.of(1n, 1n, { gcd: 1n })));
       const v3 = v2.field.fieldNew(v2);
       const v4 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
-      expect(pyStr(v3.div(v3.field.fieldNew(v4['new'](v4.ring.fromExpr(new Add([rational(1), x])), v4.ring.fromExpr(rational(1))))))).toBe('-y/(x + 1)');
+      expect(pyStr(v3.div(v3.field.fieldNew(v4['new'](v4.ring.fromExpr(new Add([Rational.of(1n, 1n, { gcd: 1n }), x])), v4.ring.fromExpr(Rational.of(1n, 1n, { gcd: 1n }))))))).toBe('-y/(x + 1)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1823,10 +1819,10 @@ describe("sympy/printing/tests/test_str.py", () => {
     const unicode = pprintUseUnicode(false);
     try {
       const v1 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
-      const v2 = v1['new'](v1.ring.fromExpr(new Mul([y, z])), v1.ring.fromExpr(rational(1)));
+      const v2 = v1['new'](v1.ring.fromExpr(new Mul([y, z])), v1.ring.fromExpr(Rational.of(1n, 1n, { gcd: 1n })));
       const v3 = v2.field.fieldNew(v2);
       const v4 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
-      expect(pyStr(v3.div(v3.field.fieldNew(v4['new'](v4.ring.fromExpr(new Add([rational(1), x])), v4.ring.fromExpr(rational(1))))))).toBe('y*z/(x + 1)');
+      expect(pyStr(v3.div(v3.field.fieldNew(v4['new'](v4.ring.fromExpr(new Add([Rational.of(1n, 1n, { gcd: 1n }), x])), v4.ring.fromExpr(Rational.of(1n, 1n, { gcd: 1n }))))))).toBe('y*z/(x + 1)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1836,10 +1832,10 @@ describe("sympy/printing/tests/test_str.py", () => {
     const unicode = pprintUseUnicode(false);
     try {
       const v1 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
-      const v2 = v1['new'](v1.ring.fromExpr(new Add([rational(1), new Mul([x, y, new Add([rational(1), u])])])), v1.ring.fromExpr(rational(1)));
+      const v2 = v1['new'](v1.ring.fromExpr(new Add([Rational.of(1n, 1n, { gcd: 1n }), new Mul([x, y, new Add([Rational.of(1n, 1n, { gcd: 1n }), u])])])), v1.ring.fromExpr(Rational.of(1n, 1n, { gcd: 1n })));
       const v3 = v2.field.fieldNew(v2);
       const v4 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
-      expect(pyStr(v3.div(v3.field.fieldNew(v4['new'](v4.ring.fromExpr(new Add([rational(-1), new Mul([z, new Add([rational(-1), v])])])), v4.ring.fromExpr(rational(1))))))).toBe('((u + 1)*x*y + 1)/((v - 1)*z - 1)');
+      expect(pyStr(v3.div(v3.field.fieldNew(v4['new'](v4.ring.fromExpr(new Add([Rational.of(-1n, 1n, { gcd: 1n }), new Mul([z, new Add([Rational.of(-1n, 1n, { gcd: 1n }), v])])])), v4.ring.fromExpr(Rational.of(1n, 1n, { gcd: 1n }))))))).toBe('((u + 1)*x*y + 1)/((v - 1)*z - 1)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1849,35 +1845,26 @@ describe("sympy/printing/tests/test_str.py", () => {
     const unicode = pprintUseUnicode(false);
     try {
       const v1 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
-      const v2 = v1['new'](v1.ring.fromExpr(new Add([rational(1), new Mul([x, y, new Add([rational(1), u])])])), v1.ring.fromExpr(rational(1)));
+      const v2 = v1['new'](v1.ring.fromExpr(new Add([Rational.of(1n, 1n, { gcd: 1n }), new Mul([x, y, new Add([Rational.of(1n, 1n, { gcd: 1n }), u])])])), v1.ring.fromExpr(Rational.of(1n, 1n, { gcd: 1n })));
       const v3 = v2.field.fieldNew(v2);
       const v4 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
-      expect(pyStr(v3.div(v3.field.fieldNew(v4['new'](v4.ring.fromExpr(new Add([rational(-1), new Mul([z, new Add([rational(-1), v])]), new Mul([rational(-1), t, u, v])])), v4.ring.fromExpr(rational(1))))))).toBe('((u + 1)*x*y + 1)/((v - 1)*z - u*v*t - 1)');
+      expect(pyStr(v3.div(v3.field.fieldNew(v4['new'](v4.ring.fromExpr(new Add([Rational.of(-1n, 1n, { gcd: 1n }), new Mul([z, new Add([Rational.of(-1n, 1n, { gcd: 1n }), v])]), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), t, u, v])])), v4.ring.fromExpr(Rational.of(1n, 1n, { gcd: 1n }))))))).toBe('((u + 1)*x*y + 1)/((v - 1)*z - u*v*t - 1)');
     } finally {
       pprintUseUnicode(unicode);
     }
   });
-  // an error outside the library
+  // the printed result differs (1 + I/x)
   //   assert str((1+i)/xz) == "(1 + 1*I)/x"
   //   => (1 + 1*I)/x
   it.todo("test_FracElement:504");
-  it.fails("test_FracElement:505", () => {
-    const x = new Sym('x');
-    const unicode = pprintUseUnicode(false);
-    try {
-      const v1 = new FracField([x], QQ_I, 'lex');
-      const v2 = v1['new'](v1.ring.fromExpr(new Add([new Mul([rational(-1), I]), new Mul([x, new Add([rational(1), I])])])), v1.ring.fromExpr(rational(1)));
-      const v3 = v2.field.fieldNew(v2);
-      const v4 = new FracField([x], QQ_I, 'lex');
-      expect(pyStr(v3.div(v3.field.fieldNew(v4['new'](v4.ring.fromExpr(x), v4.ring.fromExpr(rational(1))))))).toBe('((1 + 1*I)*x + (0 + -1*I))/x');
-    } finally {
-      pprintUseUnicode(unicode);
-    }
-  });
+  // the printed result differs (((1 + I)*x - I)/x)
+  //   assert str(((1+i)*xz - i)/xz) == "((1 + 1*I)*x + (0 + -1*I))/x"
+  //   => ((1 + 1*I)*x + (0 + -1*I))/x
+  it.todo("test_FracElement:505");
   it("test_GaussianInteger:509", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(ZZ_I['new'](rational(1), rational(0)))).toBe('1');
+      expect(pyStr(ZZ_I['new'](Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })))).toBe('1');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1885,7 +1872,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_GaussianInteger:510", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(ZZ_I['new'](rational(-1), rational(0)))).toBe('-1');
+      expect(pyStr(ZZ_I['new'](Rational.of(-1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })))).toBe('-1');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1893,7 +1880,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_GaussianInteger:511", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(ZZ_I['new'](rational(0), rational(1)))).toBe('I');
+      expect(pyStr(ZZ_I['new'](Rational.of(0n, 1n, { gcd: 1n }), Rational.of(1n, 1n, { gcd: 1n })))).toBe('I');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1901,7 +1888,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_GaussianInteger:512", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(ZZ_I['new'](rational(0), rational(-1)))).toBe('-I');
+      expect(pyStr(ZZ_I['new'](Rational.of(0n, 1n, { gcd: 1n }), Rational.of(-1n, 1n, { gcd: 1n })))).toBe('-I');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1909,7 +1896,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_GaussianInteger:513", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(ZZ_I['new'](rational(0), rational(2)))).toBe('2*I');
+      expect(pyStr(ZZ_I['new'](Rational.of(0n, 1n, { gcd: 1n }), Rational.of(2n, 1n, { gcd: 1n })))).toBe('2*I');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1917,7 +1904,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_GaussianInteger:514", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(ZZ_I['new'](rational(0), rational(-2)))).toBe('-2*I');
+      expect(pyStr(ZZ_I['new'](Rational.of(0n, 1n, { gcd: 1n }), Rational.of(-2n, 1n, { gcd: 1n })))).toBe('-2*I');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1925,7 +1912,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_GaussianInteger:515", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(ZZ_I['new'](rational(1), rational(1)))).toBe('1 + I');
+      expect(pyStr(ZZ_I['new'](Rational.of(1n, 1n, { gcd: 1n }), Rational.of(1n, 1n, { gcd: 1n })))).toBe('1 + I');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1933,7 +1920,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_GaussianInteger:516", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(ZZ_I['new'](rational(-1), rational(-1)))).toBe('-1 - I');
+      expect(pyStr(ZZ_I['new'](Rational.of(-1n, 1n, { gcd: 1n }), Rational.of(-1n, 1n, { gcd: 1n })))).toBe('-1 - I');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1941,7 +1928,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_GaussianInteger:517", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(ZZ_I['new'](rational(-1), rational(-2)))).toBe('-1 - 2*I');
+      expect(pyStr(ZZ_I['new'](Rational.of(-1n, 1n, { gcd: 1n }), Rational.of(-2n, 1n, { gcd: 1n })))).toBe('-1 - 2*I');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1949,7 +1936,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_GaussianRational:521", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(QQ_I['new'](rational(1), rational(0)))).toBe('1');
+      expect(pyStr(QQ_I['new'](Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })))).toBe('1');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1957,7 +1944,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_GaussianRational:522", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(QQ_I['new'](new PythonMPQ(2n, 3n), rational(0)))).toBe('2/3');
+      expect(pyStr(QQ_I['new'](new PythonMPQ(2n, 3n), Rational.of(0n, 1n, { gcd: 1n })))).toBe('2/3');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1965,7 +1952,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_GaussianRational:523", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(QQ_I['new'](rational(0), new PythonMPQ(2n, 3n)))).toBe('2*I/3');
+      expect(pyStr(QQ_I['new'](Rational.of(0n, 1n, { gcd: 1n }), new PythonMPQ(2n, 3n)))).toBe('2*I/3');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2036,7 +2023,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const [x, y] = symbols('x y');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(new Add([x, y]).pow(new Add([rational(1), x])))).toBe('(x + y)**(x + 1)');
+      expect(pyStr(new Add([x, y]).pow(new Add([Rational.of(1n, 1n, { gcd: 1n }), x])))).toBe('(x + y)**(x + 1)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2045,7 +2032,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(x.pow(rational(1, 3)))).toBe('x**(1/3)');
+      expect(pyStr(x.pow(Rational.of(1n, 3n, { gcd: 1n })))).toBe('x**(1/3)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2054,7 +2041,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(rational(1).div(new Pow(x, rational(1, 3))))).toBe('x**(-1/3)');
+      expect(pyStr(Rational.of(1n, 1n, { gcd: 1n }).div(new Pow(x, Rational.of(1n, 3n, { gcd: 1n }))))).toBe('x**(-1/3)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2063,7 +2050,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(sqrt(new Pow(x, rational(1, 2))))).toBe('x**(1/4)');
+      expect(pyStr(sqrt(new Pow(x, Rational.of(1n, 2n, { gcd: 1n }))))).toBe('x**(1/4)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2094,7 +2081,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(sqrt(new Pow(x, rational(2))))).toBe('sqrt(x**2)');
+      expect(pyStr(sqrt(new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))))).toBe('sqrt(x**2)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2103,7 +2090,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(rational(1).div(new Pow(x, rational(1, 2))))).toBe('1/sqrt(x)');
+      expect(pyStr(Rational.of(1n, 1n, { gcd: 1n }).div(new Pow(x, Rational.of(1n, 2n, { gcd: 1n }))))).toBe('1/sqrt(x)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2112,7 +2099,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(rational(1).div(new Pow(new Pow(x, rational(2)), rational(1, 2))))).toBe('1/sqrt(x**2)');
+      expect(pyStr(Rational.of(1n, 1n, { gcd: 1n }).div(new Pow(new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), Rational.of(1n, 2n, { gcd: 1n }))))).toBe('1/sqrt(x**2)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2121,7 +2108,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const [y, x] = symbols('y x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(y.div(new Pow(x, rational(1, 2))))).toBe('y/sqrt(x)');
+      expect(pyStr(y.div(new Pow(x, Rational.of(1n, 2n, { gcd: 1n }))))).toBe('y/sqrt(x)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2139,7 +2126,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(rational(1).div(new Pow(x, new Float({ man: 1n, exp: -1n }, 53))))).toBe('x**(-0.5)');
+      expect(pyStr(Rational.of(1n, 1n, { gcd: 1n }).div(new Pow(x, new Float({ man: 1n, exp: -1n }, 53))))).toBe('x**(-0.5)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2147,7 +2134,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_Rational:562", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(rational(1, 4).mul(rational(1, 3)))).toBe('1/12');
+      expect(pyStr(Rational.of(1n, 4n, { gcd: 1n }).mul(Rational.of(1n, 3n, { gcd: 1n })))).toBe('1/12');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2155,7 +2142,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_Rational:563", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(rational(1, 4).mul(rational(1, 3)))).toBe('1/12');
+      expect(pyStr(Rational.of(1n, 4n, { gcd: 1n }).mul(Rational.of(1n, 3n, { gcd: 1n })))).toBe('1/12');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2163,7 +2150,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_Rational:564", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(mul(2, pow(4, -1)))).toBe('1/2');
+      expect(pyStr(Rational.of(2n, 4n, {}))).toBe('1/2');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2171,7 +2158,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_Rational:565", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(rational(1, 4).mul(rational(1, 2)))).toBe('1/8');
+      expect(pyStr(Rational.of(1n, 4n, { gcd: 1n }).mul(Rational.of(1n, 2n, { gcd: 1n })))).toBe('1/8');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2179,7 +2166,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_Rational:566", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(rational(1, 4).add(rational(1, 2)))).toBe('3/4');
+      expect(pyStr(Rational.of(1n, 4n, { gcd: 1n }).add(Rational.of(1n, 2n, { gcd: 1n })))).toBe('3/4');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2187,7 +2174,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_Rational:567", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(rational(1, 4).add(rational(1, 3)))).toBe('7/12');
+      expect(pyStr(Rational.of(1n, 4n, { gcd: 1n }).add(Rational.of(1n, 3n, { gcd: 1n })))).toBe('7/12');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2195,7 +2182,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_Rational:568", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(rational(1, 4).add(rational(-1, 2)))).toBe('-1/4');
+      expect(pyStr(Rational.of(1n, 4n, { gcd: 1n }).add(Rational.of(-1n, 2n, { gcd: 1n })))).toBe('-1/4');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2203,7 +2190,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_Rational:569", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(rational(-1, 2).mul(rational(-1, 2)))).toBe('1/4');
+      expect(pyStr(Rational.of(-1n, 2n, { gcd: 1n }).mul(Rational.of(-1n, 2n, { gcd: 1n })))).toBe('1/4');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2211,7 +2198,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_Rational:570", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(rational(-1, 2).add(rational(1, 3)))).toBe('-1/6');
+      expect(pyStr(Rational.of(-1n, 2n, { gcd: 1n }).add(Rational.of(1n, 3n, { gcd: 1n })))).toBe('-1/6');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2219,7 +2206,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_Rational:571", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(rational(-1, 2).add(rational(0)))).toBe('-1/2');
+      expect(pyStr(Rational.of(-1n, 2n, { gcd: 1n }).add(Rational.of(0n, 1n, { gcd: 1n })))).toBe('-1/2');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2227,7 +2214,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_Rational:572", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(rational(-1, 2).mul(rational(0)))).toBe('0');
+      expect(pyStr(Rational.of(-1n, 2n, { gcd: 1n }).mul(Rational.of(0n, 1n, { gcd: 1n })))).toBe('0');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2235,7 +2222,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_Rational:573", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(rational(1, 2).add(rational(-1, 2)))).toBe('0');
+      expect(pyStr(Rational.of(1n, 2n, { gcd: 1n }).add(Rational.of(-1n, 2n, { gcd: 1n })))).toBe('0');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2243,7 +2230,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_Rational:574", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(rational(1, 4).pow(3))).toBe('1/64');
+      expect(pyStr(Rational.of(1n, 4n, { gcd: 1n }).pow(3))).toBe('1/64');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2251,7 +2238,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_Rational:575", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(rational(1, 3).pow(3))).toBe('1/27');
+      expect(pyStr(Rational.of(1n, 3n, { gcd: 1n }).pow(3))).toBe('1/27');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2259,7 +2246,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_Rational:576", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(rational(1, 3).pow(-3))).toBe('27');
+      expect(pyStr(Rational.of(1n, 3n, { gcd: 1n }).pow(-3))).toBe('27');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2267,7 +2254,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_Rational:577", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(rational(3).pow(-3))).toBe('1/27');
+      expect(pyStr(Rational.of(3n, 1n, { gcd: 1n }).pow(-3))).toBe('1/27');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2299,7 +2286,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_Rational:589", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(sqrt(rational(1, 4)))).toBe('1/2');
+      expect(pyStr(sqrt(Rational.of(1n, 4n, { gcd: 1n })))).toBe('1/2');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2307,7 +2294,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_Rational:590", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(sqrt(rational(1, 36)))).toBe('1/6');
+      expect(pyStr(sqrt(Rational.of(1n, 36n, { gcd: 1n })))).toBe('1/6');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2315,7 +2302,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_Rational:592", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(rational(17685925284953355608333258649989090388842388168292443n).pow(rational(1, 25)))).toBe('123');
+      expect(pyStr(Rational.of(17685925284953355608333258649989090388842388168292443n, 1n, { gcd: 1n }).pow(Rational.of(1n, 25n, { gcd: 1n })))).toBe('123');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2323,7 +2310,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_Rational:593", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(rational(17685925284953355608333258649989090388842388168292444n).pow(rational(1, 25)))).not.toBe('123');
+      expect(pyStr(Rational.of(17685925284953355608333258649989090388842388168292444n, 1n, { gcd: 1n }).pow(Rational.of(1n, 25n, { gcd: 1n })))).not.toBe('123');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2331,7 +2318,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_Rational:594", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(rational(17685925284953355608333258649989090388842388168292442n).pow(rational(1, 25)))).not.toBe('123');
+      expect(pyStr(Rational.of(17685925284953355608333258649989090388842388168292442n, 1n, { gcd: 1n }).pow(Rational.of(1n, 25n, { gcd: 1n })))).not.toBe('123');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2339,7 +2326,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_Rational:595", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(rational(17685925284953355608333258649989090388842388168292442n).pow(rational(1, 25)))).not.toBe('122');
+      expect(pyStr(Rational.of(17685925284953355608333258649989090388842388168292442n, 1n, { gcd: 1n }).pow(Rational.of(1n, 25n, { gcd: 1n })))).not.toBe('122');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2347,7 +2334,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_Rational:597", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(rational(3, 2).pow(3))).toBe('27/8');
+      expect(pyStr(Rational.of(3n, 2n, { gcd: 1n }).pow(3))).toBe('27/8');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2355,7 +2342,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_Rational:598", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(rational(1).div(rational(27, 8)))).toBe('8/27');
+      expect(pyStr(Rational.of(1n, 1n, { gcd: 1n }).div(Rational.of(27n, 8n, { gcd: 1n })))).toBe('8/27');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2363,15 +2350,19 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_Rational:600", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(sqrt(-4))).toBe('2*I');
+      expect(pyStr(sqrt(Rational.of(-4n, 1n, { gcd: 1n })))).toBe('2*I');
     } finally {
       pprintUseUnicode(unicode);
     }
   });
-  // the case takes more than 4 seconds
-  //   assert str(2**Rational(1, 10**10)) == "2**(1/10000000000)"
-  //   => 2**(1/10000000000)
-  it.todo("test_Rational:601");
+  it("test_Rational:601", () => {
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(pyStr(Rational.of(2n, 1n, { gcd: 1n }).pow(Rational.of(1n, 10000000000n, { gcd: 1n })))).toBe('2**(1/10000000000)');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
   // the arguments do not type-check against the public API
   //   assert sstr(Rational(2, 3), sympy_integers=True) == "S(2)/3"
   //   => S(2)/3
@@ -2445,14 +2436,10 @@ describe("sympy/printing/tests/test_str.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_Float:622", () => {
-    const unicode = pprintUseUnicode(false);
-    try {
-      expect(pyStr(new Add([new Float({ man: -463584654553002400209758682930606754398148616142504092784075231847842646712863278510466992168086712215856293750995285709858230698038210282072760874936899611183192355274093480504927634764503409312969043n, exp: -6n }, 668), new Pow(pi, rational(400))]).evalf(2, {}))).toBe('-0.e+88');
-    } finally {
-      pprintUseUnicode(unicode);
-    }
-  });
+  // an equivalent form that the declared symbols do not confirm
+  //   assert str((pi**400 - (pi**400).round(1)).n(2)) == '-0.e+88'
+  //   => -0.e+88
+  it.todo("test_Float:622");
   // the arguments do not type-check against the public API
   //   assert sstr(Float("100"), full_prec=False, min=-2, max=2) == '1.0e+2'
   //   => 1.0e+2
@@ -2500,7 +2487,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(Or(Relational(x, rational(1), '==', { evaluate: false }), Relational(x, rational(2), '==', { evaluate: false })))).toBe('Eq(x, 1) | Eq(x, 2)');
+      expect(pyStr(Or(Relational(x, Rational.of(1n, 1n, { gcd: 1n }), '==', { evaluate: false }), Relational(x, Rational.of(2n, 1n, { gcd: 1n }), '==', { evaluate: false })))).toBe('Eq(x, 1) | Eq(x, 2)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2509,7 +2496,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(And(Relational(x, rational(1), '!=', { evaluate: false }), Relational(x, rational(2), '!=', { evaluate: false })))).toBe('Ne(x, 1) & Ne(x, 2)');
+      expect(pyStr(And(Relational(x, Rational.of(1n, 1n, { gcd: 1n }), '!=', { evaluate: false }), Relational(x, Rational.of(2n, 1n, { gcd: 1n }), '!=', { evaluate: false })))).toBe('Ne(x, 1) & Ne(x, 2)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2536,17 +2523,17 @@ describe("sympy/printing/tests/test_str.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(rootof(new Add([rational(-1), new Pow(x, rational(5)), new Mul([rational(2), x])]), rational(0)))).toBe('CRootOf(x**5 + 2*x - 1, 0)');
+      expect(pyStr(rootof(new Add([Rational.of(-1n, 1n, { gcd: 1n }), new Pow(x, Rational.of(5n, 1n, { gcd: 1n })), new Mul([Rational.of(2n, 1n, { gcd: 1n }), x])]), Rational.of(0n, 1n, { gcd: 1n }), { radicals: true }))).toBe('CRootOf(x**5 + 2*x - 1, 0)');
     } finally {
       pprintUseUnicode(unicode);
     }
   });
-  // function IdentityFunction
+  // the arguments do not type-check against the public API
   //   assert str(
   //           RootSum(f, Lambda(z, z), auto=False)) == "RootSum(x**5 + 2*x - 1)"
   //   => RootSum(x**5 + 2*x - 1)
   it.todo("test_RootSum:649");
-  // a callback parameter outside its callback
+  // the arguments do not type-check against the public API
   //   assert str(RootSum(f, Lambda(
   //           z, z**2), auto=False)) == "RootSum(x**5 + 2*x - 1, Lambda(z, z**2))"
   //   => RootSum(x**5 + 2*x - 1, Lambda(z, z**2))
@@ -2555,7 +2542,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const [x, y] = symbols('x y');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(groebner([], [x, y], 'lex'))).toBe('GroebnerBasis([], x, y, domain=\'ZZ\', order=\'lex\')');
+      expect(pyStr(groebner([], [x, y], 'lex', { polys: false }))).toBe('GroebnerBasis([], x, y, domain=\'ZZ\', order=\'lex\')');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2564,10 +2551,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const [x, y] = symbols('x y');
     const unicode = pprintUseUnicode(false);
     try {
-      const v1 = x;
-      const v2 = y;
-      const v3 = sortGens([v2, v1]);
-      expect(pyStr(groebner([new Add([rational(1), new Pow(v1, rational(2)), new Mul([rational(-1), x]), new Mul([rational(-3), y])]), new Add([rational(-1), y, new Pow(v2, rational(2)), new Mul([rational(-2), x])])], [at(v3, 0), at(v3, 1)], 'grlex'))).toBe('GroebnerBasis([x**2 - x - 3*y + 1, y**2 - 2*x + y - 1], x, y, domain=\'ZZ\', order=\'grlex\')');
+      expect(pyStr(groebner([new Add([Rational.of(1n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), x]), new Mul([Rational.of(-3n, 1n, { gcd: 1n }), y])]), new Add([Rational.of(-1n, 1n, { gcd: 1n }), y, new Pow(y, Rational.of(2n, 1n, { gcd: 1n })), new Mul([Rational.of(-2n, 1n, { gcd: 1n }), x])])], [], 'grlex', { polys: false }))).toBe('GroebnerBasis([x**2 - x - 3*y + 1, y**2 - 2*x + y - 1], x, y, domain=\'ZZ\', order=\'grlex\')');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2576,10 +2560,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const [x, y] = symbols('x y');
     const unicode = pprintUseUnicode(false);
     try {
-      const v1 = x;
-      const v2 = y;
-      const v3 = sortGens([v2, v1]);
-      expect(pyStr(groebner([new Add([rational(1), new Pow(v1, rational(2)), new Mul([rational(-1), x]), new Mul([rational(-3), y])]), new Add([rational(-1), y, new Pow(v2, rational(2)), new Mul([rational(-2), x])])], [at(v3, 0), at(v3, 1)], 'lex'))).toBe('GroebnerBasis([2*x - y**2 - y + 1, y**4 + 2*y**3 - 3*y**2 - 16*y + 7], x, y, domain=\'ZZ\', order=\'lex\')');
+      expect(pyStr(groebner([new Add([Rational.of(1n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), x]), new Mul([Rational.of(-3n, 1n, { gcd: 1n }), y])]), new Add([Rational.of(-1n, 1n, { gcd: 1n }), y, new Pow(y, Rational.of(2n, 1n, { gcd: 1n })), new Mul([Rational.of(-2n, 1n, { gcd: 1n }), x])])], [], 'lex', { polys: false }))).toBe('GroebnerBasis([2*x - y**2 - y + 1, y**4 + 2*y**3 - 3*y**2 - 16*y + 7], x, y, domain=\'ZZ\', order=\'lex\')');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2587,15 +2568,15 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_set:667", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(sstr(new Set()))).toBe('set()');
+      expect(text(sstr(new Set(), {}))).toBe('set()');
     } finally {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_set:668", () => {
+  it("test_set:668", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(sstr(new Set()))).toBe('frozenset()');
+      expect(text(sstr({ frozenItems: new Set() }, {}))).toBe('frozenset()');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2603,15 +2584,15 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_set:670", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(sstr(new Set([1])))).toBe('{1}');
+      expect(text(sstr(new Set([Rational.of(1n, 1n, { gcd: 1n })]), {}))).toBe('{1}');
     } finally {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_set:671", () => {
+  it("test_set:671", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(sstr(new Set([1])))).toBe('frozenset({1})');
+      expect(text(sstr({ frozenItems: new Set([Rational.of(1n, 1n, { gcd: 1n })]) }, {}))).toBe('frozenset({1})');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2619,33 +2600,33 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_set:672", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(sstr(new Set([1, 2, 3])))).toBe('{1, 2, 3}');
+      expect(text(sstr(new Set([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(2n, 1n, { gcd: 1n }), Rational.of(3n, 1n, { gcd: 1n })]), {}))).toBe('{1, 2, 3}');
     } finally {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_set:673", () => {
+  it("test_set:673", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(sstr(new Set([1, 2, 3])))).toBe('frozenset({1, 2, 3})');
+      expect(text(sstr({ frozenItems: new Set([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(2n, 1n, { gcd: 1n }), Rational.of(3n, 1n, { gcd: 1n })]) }, {}))).toBe('frozenset({1, 2, 3})');
     } finally {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_set:675", () => {
+  it("test_set:675", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(sstr(new Set([1, new Pow(x, rational(3)), new Pow(x, rational(2)), new Pow(x, rational(4)), x])))).toBe('{1, x, x**2, x**3, x**4}');
+      expect(text(sstr(new Set([Rational.of(1n, 1n, { gcd: 1n }), new Pow(x, Rational.of(3n, 1n, { gcd: 1n })), new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), new Pow(x, Rational.of(4n, 1n, { gcd: 1n })), x]), {}))).toBe('{1, x, x**2, x**3, x**4}');
     } finally {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_set:677", () => {
+  it("test_set:677", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(sstr(new Set([1, new Pow(x, rational(3)), new Pow(x, rational(2)), new Pow(x, rational(4)), x])))).toBe('frozenset({1, x, x**2, x**3, x**4})');
+      expect(text(sstr({ frozenItems: new Set([Rational.of(1n, 1n, { gcd: 1n }), new Pow(x, Rational.of(3n, 1n, { gcd: 1n })), new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), new Pow(x, Rational.of(4n, 1n, { gcd: 1n })), x]) }, {}))).toBe('frozenset({1, x, x**2, x**3, x**4})');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2673,7 +2654,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const [x, y] = symbols('x y');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(Sum(new Mul([x, new Pow(y, rational(2))]), [x, rational(-2), rational(2)], [y, rational(-5), rational(5)]))).toBe('Sum(x*y**2, (x, -2, 2), (y, -5, 5))');
+      expect(pyStr(Sum(new Mul([x, new Pow(y, Rational.of(2n, 1n, { gcd: 1n }))]), [x, Rational.of(-2n, 1n, { gcd: 1n }), Rational.of(2n, 1n, { gcd: 1n })], [y, Rational.of(-5n, 1n, { gcd: 1n }), Rational.of(5n, 1n, { gcd: 1n })]))).toBe('Sum(x*y**2, (x, -2, 2), (y, -5, 5))');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2691,16 +2672,16 @@ describe("sympy/printing/tests/test_str.py", () => {
     const [x, y] = symbols('x y');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(sstr(Tuple(new Add([x, y]), new Add([rational(1), x])), {}))).toBe('(x + y, x + 1)');
+      expect(text(sstr(Tuple(new Add([x, y]), new Add([Rational.of(1n, 1n, { gcd: 1n }), x])), {}))).toBe('(x + y, x + 1)');
     } finally {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_tuple:703", () => {
+  it("test_tuple:703", () => {
     const [x, y] = symbols('x y');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(sstr([new Add([x, y]), [new Add([rational(1), x]), new Pow(x, rational(2))]]))).toBe('(x + y, (x + 1, x**2))');
+      expect(text(sstr(Tuple(new Add([x, y]), Tuple(new Add([Rational.of(1n, 1n, { gcd: 1n }), x]), new Pow(x, Rational.of(2n, 1n, { gcd: 1n })))), {}))).toBe('(x + y, (x + 1, x**2))');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2747,7 +2728,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_wild_str:821", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(new Wild('x', { exclude: [] }).add(rational(1)))).toBe('x_ + 1');
+      expect(pyStr(new Wild('x', { exclude: [] }).add(Rational.of(1n, 1n, { gcd: 1n })))).toBe('x_ + 1');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2755,7 +2736,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_wild_str:822", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(exp(new Pow(rational(2), new Wild('x', { exclude: [] }))).add(rational(5)))).toBe('exp(2**x_) + 5');
+      expect(pyStr(new Pow(E, new Pow(Rational.of(2n, 1n, { gcd: 1n }), new Wild('x', { exclude: [] }))).add(Rational.of(5n, 1n, { gcd: 1n })))).toBe('exp(2**x_) + 5');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2763,7 +2744,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_wild_str:823", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(new Mul([rational(3), new Wild('x', { exclude: [] })]).add(rational(1)))).toBe('3*x_ + 1');
+      expect(pyStr(new Mul([Rational.of(3n, 1n, { gcd: 1n }), new Wild('x', { exclude: [] })]).add(Rational.of(1n, 1n, { gcd: 1n })))).toBe('3*x_ + 1');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2771,7 +2752,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_wild_str:824", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(new Pow(new Wild('x', { exclude: [] }), rational(-1)).add(rational(1)))).toBe('1 + 1/x_');
+      expect(pyStr(new Pow(new Wild('x', { exclude: [] }), Rational.of(-1n, 1n, { gcd: 1n })).add(Rational.of(1n, 1n, { gcd: 1n })))).toBe('1 + 1/x_');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2779,7 +2760,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_wild_str:825", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(new Pow(new Wild('x', { exclude: [] }), rational(2)).add(rational(1)))).toBe('x_**2 + 1');
+      expect(pyStr(new Pow(new Wild('x', { exclude: [] }), Rational.of(2n, 1n, { gcd: 1n })).add(Rational.of(1n, 1n, { gcd: 1n })))).toBe('x_**2 + 1');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2787,7 +2768,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_wild_str:826", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(rational(1).div(new Add([rational(1), new Mul([rational(-1), new Wild('x', { exclude: [] })])])))).toBe('1/(1 - x_)');
+      expect(pyStr(Rational.of(1n, 1n, { gcd: 1n }).div(new Add([Rational.of(1n, 1n, { gcd: 1n }), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), new Wild('x', { exclude: [] })])])))).toBe('1/(1 - x_)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2795,7 +2776,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_zeta:850", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(fn('zeta', [rational(3)]))).toBe('zeta(3)');
+      expect(pyStr(fn('zeta', [Rational.of(3n, 1n, { gcd: 1n })], { evaluate: true }))).toBe('zeta(3)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2804,7 +2785,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const [x, y] = symbols('x y');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(new Mul([rational(-2), new Pow(x, rational(1, 2))]).sub(new Mul([rational(1, 2), y, new Pow(x, rational(-1, 2))])))).toBe('-2*sqrt(x) - y/(2*sqrt(x))');
+      expect(pyStr(new Mul([Rational.of(-2n, 1n, { gcd: 1n }), new Pow(x, Rational.of(1n, 2n, { gcd: 1n }))]).sub(new Mul([Rational.of(1n, 2n, { gcd: 1n }), y, new Pow(x, Rational.of(-1n, 2n, { gcd: 1n }))])))).toBe('-2*sqrt(x) - y/(2*sqrt(x))');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2813,7 +2794,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(new Integral([x, x]).add(rational(1)))).toBe('Integral(x, x) + 1');
+      expect(pyStr(integral(x, [x]).add(Rational.of(1n, 1n, { gcd: 1n })))).toBe('Integral(x, x) + 1');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2821,7 +2802,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_sstrrepr:873", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(sstr('abc'))).toBe('abc');
+      expect(text(sstr('abc', {}))).toBe('abc');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2838,7 +2819,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(sstr(['a', 'b', 'c', x]))).toBe('[a, b, c, x]');
+      expect(text(sstr(['a', 'b', 'c', x], {}))).toBe('[a, b, c, x]');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2890,7 +2871,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const C = new Sym('C', { commutative: false });
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(sstr(new Mul([A, B, new Pow(C, rational(-1))]), {}))).toBe('A*B*C**(-1)');
+      expect(text(sstr(new Mul([A, B, new Pow(C, Rational.of(-1n, 1n, { gcd: 1n }))]), {}))).toBe('A*B*C**(-1)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2901,7 +2882,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const B = new Sym('B', { commutative: false });
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(sstr(new Mul([new Pow(C, rational(-1)), A, B]), {}))).toBe('C**(-1)*A*B');
+      expect(text(sstr(new Mul([new Pow(C, Rational.of(-1n, 1n, { gcd: 1n })), A, B]), {}))).toBe('C**(-1)*A*B');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2912,7 +2893,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const B = new Sym('B', { commutative: false });
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(sstr(new Mul([A, new Pow(C, rational(-1)), B]), {}))).toBe('A*C**(-1)*B');
+      expect(text(sstr(new Mul([A, new Pow(C, Rational.of(-1n, 1n, { gcd: 1n })), B]), {}))).toBe('A*C**(-1)*B');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2921,7 +2902,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const A = new Sym('A', { commutative: false });
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(sstr(new Pow(A, rational(1, 2)), {}))).toBe('sqrt(A)');
+      expect(text(sstr(new Pow(A, Rational.of(1n, 2n, { gcd: 1n })), {}))).toBe('sqrt(A)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2930,39 +2911,53 @@ describe("sympy/printing/tests/test_str.py", () => {
     const A = new Sym('A', { commutative: false });
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(sstr(new Pow(A, rational(-1, 2)), {}))).toBe('A**(-1/2)');
+      expect(text(sstr(new Pow(A, Rational.of(-1n, 2n, { gcd: 1n })), {}))).toBe('A**(-1/2)');
     } finally {
       pprintUseUnicode(unicode);
     }
   });
-  // no adapter for .emptyPrinter
-  //   assert str_printer.emptyPrinter("foo") == "foo"
-  //   => foo
-  it.todo("test_empty_printer:915");
-  // no adapter for .emptyPrinter
-  //   assert str_printer.emptyPrinter(x*y) == "x*y"
-  //   => x*y
-  it.todo("test_empty_printer:916");
-  // no adapter for .emptyPrinter
-  //   assert str_printer.emptyPrinter(32) == "32"
-  //   => 32
-  it.todo("test_empty_printer:917");
-  it.fails("test_decimal_printer:922", () => {
+  it("test_empty_printer:915", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(new StrPrinter({ order: null, full_prec: 'auto', sympy_integers: false, abbrev: false, perm_cyclic: true, min: null, max: null, dps: rational(3) }).doprint((SymFunction('f'))(new Float({ man: 1496651990766459n, exp: -50n }, 53))))).toBe('f(1.33)');
+      expect(text(new StrPrinter({ fullPrec: 'auto', sympyIntegers: false, abbrev: false, permCyclic: true }).emptyPrinter('foo'))).toBe('foo');
     } finally {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_settings:926", () => {
-    expect(() => str(rational(4))).toThrow(TypeError);
+  it("test_empty_printer:916", () => {
+    const [x, y] = symbols('x y');
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(text(new StrPrinter({ fullPrec: 'auto', sympyIntegers: false, abbrev: false, permCyclic: true }).emptyPrinter(new Mul([x, y])))).toBe('x*y');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
   });
+  it("test_empty_printer:917", () => {
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(text(new StrPrinter({ fullPrec: 'auto', sympyIntegers: false, abbrev: false, permCyclic: true }).emptyPrinter(Rational.of(32n, 1n, { gcd: 1n })))).toBe('32');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
+  it("test_decimal_printer:922", () => {
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(text(new StrPrinter({ fullPrec: 'auto', sympyIntegers: false, abbrev: false, permCyclic: true, dps: 3 }).doprint(new AppliedUndef('f', [new Float({ man: 1496651990766459n, exp: -50n }, 53)])))).toBe('f(1.33)');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
+  // the arguments do not type-check against the public API
+  //   raises(TypeError, lambda: sstr(S(4), method="garbage"))
+  //   => None
+  it.todo("test_settings:926");
   it("test_RandomDomain:932", () => {
     const x1 = new Sym('x1');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(where(Relational(new RandomSymbol(x1, new SingleContinuousPSpace([x1, new NormalDistribution([rational(0), rational(1)])])), rational(0), '>', { evaluate: false })))).toBe('Domain: (0 < x1) & (x1 < oo)');
+      expect(pyStr(where(Relational(new RandomSymbol(x1, new SingleContinuousPSpace([x1, new NormalDistribution([Rational.of(0n, 1n, { gcd: 1n }), Rational.of(1n, 1n, { gcd: 1n })])])), Rational.of(0n, 1n, { gcd: 1n }), '>', { evaluate: false })))).toBe('Domain: (0 < x1) & (x1 < oo)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2971,7 +2966,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const d1 = new Sym('d1');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(where(Relational(new RandomSymbol(d1, new SingleFinitePSpace([d1, new DieDistribution([rational(6)])])), rational(4), '>', { evaluate: false })))).toBe('Domain: Eq(d1, 5) | Eq(d1, 6)');
+      expect(pyStr(where(Relational(new RandomSymbol(d1, new SingleFinitePSpace([d1, new DieDistribution([Rational.of(6n, 1n, { gcd: 1n })])])), Rational.of(4n, 1n, { gcd: 1n }), '>', { evaluate: false })))).toBe('Domain: Eq(d1, 5) | Eq(d1, 6)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2980,7 +2975,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const [a, b] = symbols('a b');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(new IndependentProductPSpace([new SingleContinuousPSpace([a, new ExponentialDistribution([rational(1)])]), new SingleContinuousPSpace([b, new ExponentialDistribution([rational(1)])])]).domain)).toBe('Domain: (0 <= a) & (0 <= b) & (a < oo) & (b < oo)');
+      expect(pyStr(new IndependentProductPSpace([new SingleContinuousPSpace([a, new ExponentialDistribution([Rational.of(1n, 1n, { gcd: 1n })])]), new SingleContinuousPSpace([b, new ExponentialDistribution([Rational.of(1n, 1n, { gcd: 1n })])])]).domain)).toBe('Domain: (0 <= a) & (0 <= b) & (a < oo) & (b < oo)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2988,7 +2983,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_FiniteSet:943", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(finiteSet(rational(1), rational(2), rational(3), rational(4), rational(5), rational(6), rational(7), rational(8), rational(9), rational(10), rational(11), rational(12), rational(13), rational(14), rational(15), rational(16), rational(17), rational(18), rational(19), rational(20), rational(21), rational(22), rational(23), rational(24), rational(25), rational(26), rational(27), rational(28), rational(29), rational(30), rational(31), rational(32), rational(33), rational(34), rational(35), rational(36), rational(37), rational(38), rational(39), rational(40), rational(41), rational(42), rational(43), rational(44), rational(45), rational(46), rational(47), rational(48), rational(49), rational(50)))).toBe('{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50}');
+      expect(pyStr(finiteSet(Rational.of(1n, 1n, { gcd: 1n }), Rational.of(2n, 1n, { gcd: 1n }), Rational.of(3n, 1n, { gcd: 1n }), Rational.of(4n, 1n, { gcd: 1n }), Rational.of(5n, 1n, { gcd: 1n }), Rational.of(6n, 1n, { gcd: 1n }), Rational.of(7n, 1n, { gcd: 1n }), Rational.of(8n, 1n, { gcd: 1n }), Rational.of(9n, 1n, { gcd: 1n }), Rational.of(10n, 1n, { gcd: 1n }), Rational.of(11n, 1n, { gcd: 1n }), Rational.of(12n, 1n, { gcd: 1n }), Rational.of(13n, 1n, { gcd: 1n }), Rational.of(14n, 1n, { gcd: 1n }), Rational.of(15n, 1n, { gcd: 1n }), Rational.of(16n, 1n, { gcd: 1n }), Rational.of(17n, 1n, { gcd: 1n }), Rational.of(18n, 1n, { gcd: 1n }), Rational.of(19n, 1n, { gcd: 1n }), Rational.of(20n, 1n, { gcd: 1n }), Rational.of(21n, 1n, { gcd: 1n }), Rational.of(22n, 1n, { gcd: 1n }), Rational.of(23n, 1n, { gcd: 1n }), Rational.of(24n, 1n, { gcd: 1n }), Rational.of(25n, 1n, { gcd: 1n }), Rational.of(26n, 1n, { gcd: 1n }), Rational.of(27n, 1n, { gcd: 1n }), Rational.of(28n, 1n, { gcd: 1n }), Rational.of(29n, 1n, { gcd: 1n }), Rational.of(30n, 1n, { gcd: 1n }), Rational.of(31n, 1n, { gcd: 1n }), Rational.of(32n, 1n, { gcd: 1n }), Rational.of(33n, 1n, { gcd: 1n }), Rational.of(34n, 1n, { gcd: 1n }), Rational.of(35n, 1n, { gcd: 1n }), Rational.of(36n, 1n, { gcd: 1n }), Rational.of(37n, 1n, { gcd: 1n }), Rational.of(38n, 1n, { gcd: 1n }), Rational.of(39n, 1n, { gcd: 1n }), Rational.of(40n, 1n, { gcd: 1n }), Rational.of(41n, 1n, { gcd: 1n }), Rational.of(42n, 1n, { gcd: 1n }), Rational.of(43n, 1n, { gcd: 1n }), Rational.of(44n, 1n, { gcd: 1n }), Rational.of(45n, 1n, { gcd: 1n }), Rational.of(46n, 1n, { gcd: 1n }), Rational.of(47n, 1n, { gcd: 1n }), Rational.of(48n, 1n, { gcd: 1n }), Rational.of(49n, 1n, { gcd: 1n }), Rational.of(50n, 1n, { gcd: 1n })))).toBe('{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2996,7 +2991,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_FiniteSet:948", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(finiteSet(rational(1), rational(2), rational(3), rational(4), rational(5)))).toBe('{1, 2, 3, 4, 5}');
+      expect(pyStr(finiteSet(Rational.of(1n, 1n, { gcd: 1n }), Rational.of(2n, 1n, { gcd: 1n }), Rational.of(3n, 1n, { gcd: 1n }), Rational.of(4n, 1n, { gcd: 1n }), Rational.of(5n, 1n, { gcd: 1n })))).toBe('{1, 2, 3, 4, 5}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -3005,7 +3000,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const [x, y] = symbols('x y');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(finiteSet(new Mul([x, y]), new Pow(x, rational(2))))).toBe('{x**2, x*y}');
+      expect(pyStr(finiteSet(new Mul([x, y]), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))))).toBe('{x**2, x*y}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -3014,7 +3009,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const [x, y] = symbols('x y');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(finiteSet(finiteSet(rational(5), finiteSet(x, y)), finiteSet(x, y), rational(5)))).toBe('FiniteSet(5, FiniteSet(5, {x, y}), {x, y})');
+      expect(pyStr(finiteSet(finiteSet(Rational.of(5n, 1n, { gcd: 1n }), finiteSet(x, y)), finiteSet(x, y), Rational.of(5n, 1n, { gcd: 1n })))).toBe('FiniteSet(5, FiniteSet(5, {x, y}), {x, y})');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -3068,15 +3063,15 @@ describe("sympy/printing/tests/test_str.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  // no adapter for Tr
+  // the arguments do not type-check against the public API
   //   assert str(t) == 'Tr(A*B)'
   //   => Tr(A*B)
   it.todo("test_Tr:990");
-  it.fails("test_issue_6387:994", () => {
+  it("test_issue_6387:994", () => {
     const z = new Sym('z');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(factor(new Add([rational(3), new Mul([new Float({ man: -3n, exp: 0n }, 53), z])]), { deep: false, gaussian: false }))).toBe('-3.0*(1.0*z - 1.0)');
+      expect(pyStr(factor(new Add([Rational.of(3n, 1n, { gcd: 1n }), new Mul([new Float({ man: -3n, exp: 0n }, 53), z])]), { deep: false, gaussian: false, fraction: true, expand: true, gens: [] }))).toBe('-3.0*(1.0*z - 1.0)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -3084,7 +3079,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_MatMul_MatAdd:999", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(rational(2).mul(MatAdd(new MatrixSymbol('X', rational(2), rational(2)), new MatrixSymbol('Y', rational(2), rational(2)))))).toBe('2*X + 2*Y');
+      expect(pyStr(Rational.of(2n, 1n, { gcd: 1n }).mul(MatAdd(new MatrixSymbol('X', Rational.of(2n, 1n, { gcd: 1n }), Rational.of(2n, 1n, { gcd: 1n })), new MatrixSymbol('Y', Rational.of(2n, 1n, { gcd: 1n }), Rational.of(2n, 1n, { gcd: 1n })))))).toBe('2*X + 2*Y');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -3092,7 +3087,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_MatMul_MatAdd:1001", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(I.mul(new MatrixSymbol('X', rational(2), rational(2))))).toBe('I*X');
+      expect(pyStr(I.mul(new MatrixSymbol('X', Rational.of(2n, 1n, { gcd: 1n }), Rational.of(2n, 1n, { gcd: 1n }))))).toBe('I*X');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -3100,7 +3095,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_MatMul_MatAdd:1002", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(new Mul([rational(-1), I]).mul(new MatrixSymbol('X', rational(2), rational(2))))).toBe('-I*X');
+      expect(pyStr(new Mul([Rational.of(-1n, 1n, { gcd: 1n }), I]).mul(new MatrixSymbol('X', Rational.of(2n, 1n, { gcd: 1n }), Rational.of(2n, 1n, { gcd: 1n }))))).toBe('-I*X');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -3108,7 +3103,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_MatMul_MatAdd:1003", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(new Add([rational(1), I]).mul(new MatrixSymbol('X', rational(2), rational(2))))).toBe('(1 + I)*X');
+      expect(pyStr(new Add([Rational.of(1n, 1n, { gcd: 1n }), I]).mul(new MatrixSymbol('X', Rational.of(2n, 1n, { gcd: 1n }), Rational.of(2n, 1n, { gcd: 1n }))))).toBe('(1 + I)*X');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -3116,7 +3111,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_MatMul_MatAdd:1004", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(new Add([rational(-1), new Mul([rational(-1), I])]).mul(new MatrixSymbol('X', rational(2), rational(2))))).toBe('(-1 - I)*X');
+      expect(pyStr(new Add([Rational.of(-1n, 1n, { gcd: 1n }), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), I])]).mul(new MatrixSymbol('X', Rational.of(2n, 1n, { gcd: 1n }), Rational.of(2n, 1n, { gcd: 1n }))))).toBe('(-1 - I)*X');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -3124,7 +3119,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_MatMul_MatAdd:1005", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(MatAdd(MatAdd(new MatrixSymbol('X', rational(2), rational(2)), new MatrixSymbol('Y', rational(2), rational(2))), MatAdd(new MatrixSymbol('X', rational(2), rational(2)), new MatrixSymbol('Y', rational(2), rational(2)))))).toBe('(X + Y) + (X + Y)');
+      expect(pyStr(MatAdd(MatAdd(new MatrixSymbol('X', Rational.of(2n, 1n, { gcd: 1n }), Rational.of(2n, 1n, { gcd: 1n })), new MatrixSymbol('Y', Rational.of(2n, 1n, { gcd: 1n }), Rational.of(2n, 1n, { gcd: 1n }))), MatAdd(new MatrixSymbol('X', Rational.of(2n, 1n, { gcd: 1n }), Rational.of(2n, 1n, { gcd: 1n })), new MatrixSymbol('Y', Rational.of(2n, 1n, { gcd: 1n }), Rational.of(2n, 1n, { gcd: 1n })))))).toBe('(X + Y) + (X + Y)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -3143,7 +3138,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const n = new Sym('n', { integer: true });
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(MatrixSlice(new MatrixSymbol('X', n, n), [x, new Add([rational(1), x]), null], [y, new Add([rational(1), y]), null]))).toBe('X[x:x + 1, y:y + 1]');
+      expect(pyStr(MatrixSlice(new MatrixSymbol('X', n, n), [x, new Add([Rational.of(1n, 1n, { gcd: 1n }), x]), null], [y, new Add([Rational.of(1n, 1n, { gcd: 1n }), y]), null]))).toBe('X[x:x + 1, y:y + 1]');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -3153,7 +3148,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const n = new Sym('n', { integer: true });
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(MatrixSlice(new MatrixSymbol('X', n, n), [x, new Add([rational(1), x]), rational(2)], [y, new Add([rational(1), y]), rational(2)]))).toBe('X[x:x + 1:2, y:y + 1:2]');
+      expect(pyStr(MatrixSlice(new MatrixSymbol('X', n, n), [x, new Add([Rational.of(1n, 1n, { gcd: 1n }), x]), Rational.of(2n, 1n, { gcd: 1n })], [y, new Add([Rational.of(1n, 1n, { gcd: 1n }), y]), Rational.of(2n, 1n, { gcd: 1n })]))).toBe('X[x:x + 1:2, y:y + 1:2]');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -3304,7 +3299,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_MatrixSlice:1032", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(MatrixSlice(new MatrixSymbol('Y', rational(10), rational(10)), [null, 5], [1, 9, 2]))).toBe('Y[:5, 1:9:2]');
+      expect(pyStr(MatrixSlice(new MatrixSymbol('Y', Rational.of(10n, 1n, { gcd: 1n }), Rational.of(10n, 1n, { gcd: 1n })), [null, 5], [1, 9, 2]))).toBe('Y[:5, 1:9:2]');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -3312,7 +3307,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_MatrixSlice:1033", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(MatrixSlice(new MatrixSymbol('Y', rational(10), rational(10)), [null, 5], [1, 10, 2]))).toBe('Y[:5, 1::2]');
+      expect(pyStr(MatrixSlice(new MatrixSymbol('Y', Rational.of(10n, 1n, { gcd: 1n }), Rational.of(10n, 1n, { gcd: 1n })), [null, 5], [1, 10, 2]))).toBe('Y[:5, 1::2]');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -3320,7 +3315,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_MatrixSlice:1034", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(MatrixSlice(new MatrixSymbol('Y', rational(10), rational(10)), sympify(5), [null, 5, 2]))).toBe('Y[5:6, :5:2]');
+      expect(pyStr(MatrixSlice(new MatrixSymbol('Y', Rational.of(10n, 1n, { gcd: 1n }), Rational.of(10n, 1n, { gcd: 1n })), sympify(5), [null, 5, 2]))).toBe('Y[5:6, :5:2]');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -3346,7 +3341,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_MatrixSlice:1037", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(MatrixSlice(MatAdd(new MatrixSymbol('Y', rational(10), rational(10)), new MatrixSymbol('Z', rational(10), rational(10))), [2, null], [2, null]))).toBe('(Y + Z)[2:, 2:]');
+      expect(pyStr(MatrixSlice(MatAdd(new MatrixSymbol('Y', Rational.of(10n, 1n, { gcd: 1n }), Rational.of(10n, 1n, { gcd: 1n })), new MatrixSymbol('Z', Rational.of(10n, 1n, { gcd: 1n }), Rational.of(10n, 1n, { gcd: 1n }))), [2, null], [2, null]))).toBe('(Y + Z)[2:, 2:]');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -3354,7 +3349,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_true_false:1040", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(sstr(S['true'], {}))).toBe('True');
+      expect(text(sstr(true, {}))).toBe('True');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -3362,7 +3357,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_true_false:1041", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(sstr(S['false'], {}))).toBe('False');
+      expect(text(sstr(false, {}))).toBe('False');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -3391,16 +3386,16 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_SymmetricDifference:1053", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(SymmetricDifference(interval(rational(2), rational(3), false, false), interval(rational(3), rational(4), false, false), { evaluate: false }))).toBe('SymmetricDifference(Interval(2, 3), Interval(3, 4))');
+      expect(pyStr(SymmetricDifference(interval(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(3n, 1n, { gcd: 1n }), false, false), interval(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(4n, 1n, { gcd: 1n }), false, false), { evaluate: false }))).toBe('SymmetricDifference(Interval(2, 3), Interval(3, 4))');
     } finally {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_UnevaluatedExpr:1060", () => {
+  it("test_UnevaluatedExpr:1060", () => {
     const [a, b] = symbols('a b');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(rational(2).mul(new UnevaluatedExpr(new Add([a, b]))))).toBe('2*(a + b)');
+      expect(pyStr(Rational.of(2n, 1n, { gcd: 1n }).mul(new UnevaluatedExpr(new Add([a, b]))))).toBe('2*(a + b)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -3408,7 +3403,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_MatrixElement_printing:1069", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(new MatrixSymbol('A', rational(1), rational(3)).at(0, 0))).toBe('A[0, 0]');
+      expect(pyStr(new MatrixSymbol('A', Rational.of(1n, 1n, { gcd: 1n }), Rational.of(3n, 1n, { gcd: 1n })).at(0, 0))).toBe('A[0, 0]');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -3416,7 +3411,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_MatrixElement_printing:1070", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(rational(3).mul(MatrixElement(new MatrixSymbol('A', rational(1), rational(3)), rational(0), rational(0))))).toBe('3*A[0, 0]');
+      expect(pyStr(Rational.of(3n, 1n, { gcd: 1n }).mul(MatrixElement(new MatrixSymbol('A', Rational.of(1n, 1n, { gcd: 1n }), Rational.of(3n, 1n, { gcd: 1n })), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }))))).toBe('3*A[0, 0]');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -3424,7 +3419,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_MatrixElement_printing:1073", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(MatrixElement(new MatrixSymbol('C', rational(1), rational(3)), rational(0), rational(0)).subs(new MatrixSymbol('C', rational(1), rational(3)), MatAdd(MatMul(rational(-1), new MatrixSymbol('B', rational(1), rational(3))), new MatrixSymbol('A', rational(1), rational(3)))))).toBe('(A - B)[0, 0]');
+      expect(pyStr(MatrixElement(new MatrixSymbol('C', Rational.of(1n, 1n, { gcd: 1n }), Rational.of(3n, 1n, { gcd: 1n })), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })).subs(new MatrixSymbol('C', Rational.of(1n, 1n, { gcd: 1n }), Rational.of(3n, 1n, { gcd: 1n })), MatAdd(MatMul(Rational.of(-1n, 1n, { gcd: 1n }), new MatrixSymbol('B', Rational.of(1n, 1n, { gcd: 1n }), Rational.of(3n, 1n, { gcd: 1n }))), new MatrixSymbol('A', Rational.of(1n, 1n, { gcd: 1n }), Rational.of(3n, 1n, { gcd: 1n })))))).toBe('(A - B)[0, 0]');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -3432,7 +3427,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_MatrixSymbol_printing:1080", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(MatAdd(MatMul(rational(-1), new MatrixSymbol('A', rational(3), rational(3)), new MatrixSymbol('B', rational(3), rational(3))), new MatrixSymbol('A', rational(3), rational(3))).sub(new MatrixSymbol('B', rational(3), rational(3))))).toBe('A - A*B - B');
+      expect(pyStr(MatAdd(MatMul(Rational.of(-1n, 1n, { gcd: 1n }), new MatrixSymbol('A', Rational.of(3n, 1n, { gcd: 1n }), Rational.of(3n, 1n, { gcd: 1n })), new MatrixSymbol('B', Rational.of(3n, 1n, { gcd: 1n }), Rational.of(3n, 1n, { gcd: 1n }))), new MatrixSymbol('A', Rational.of(3n, 1n, { gcd: 1n }), Rational.of(3n, 1n, { gcd: 1n }))).sub(new MatrixSymbol('B', Rational.of(3n, 1n, { gcd: 1n }), Rational.of(3n, 1n, { gcd: 1n }))))).toBe('A - A*B - B');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -3440,7 +3435,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_MatrixSymbol_printing:1081", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(MatMul(new MatrixSymbol('A', rational(3), rational(3)), new MatrixSymbol('B', rational(3), rational(3))).sub(MatAdd(new MatrixSymbol('A', rational(3), rational(3)), new MatrixSymbol('B', rational(3), rational(3)))))).toBe('-A + A*B - B');
+      expect(pyStr(MatMul(new MatrixSymbol('A', Rational.of(3n, 1n, { gcd: 1n }), Rational.of(3n, 1n, { gcd: 1n })), new MatrixSymbol('B', Rational.of(3n, 1n, { gcd: 1n }), Rational.of(3n, 1n, { gcd: 1n }))).sub(MatAdd(new MatrixSymbol('A', Rational.of(3n, 1n, { gcd: 1n }), Rational.of(3n, 1n, { gcd: 1n })), new MatrixSymbol('B', Rational.of(3n, 1n, { gcd: 1n }), Rational.of(3n, 1n, { gcd: 1n })))))).toBe('-A + A*B - B');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -3448,7 +3443,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_MatrixSymbol_printing:1082", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(new MatrixSymbol('A', rational(3), rational(3)).pow(-1))).toBe('A**(-1)');
+      expect(pyStr(new MatrixSymbol('A', Rational.of(3n, 1n, { gcd: 1n }), Rational.of(3n, 1n, { gcd: 1n })).pow(-1))).toBe('A**(-1)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -3456,7 +3451,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_MatrixSymbol_printing:1083", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(new MatrixSymbol('A', rational(3), rational(3)).pow(3))).toBe('A**3');
+      expect(pyStr(new MatrixSymbol('A', Rational.of(3n, 1n, { gcd: 1n }), Rational.of(3n, 1n, { gcd: 1n })).pow(3))).toBe('A**3');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -3474,7 +3469,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   //   assert str(expr) == 'Lambda(_d, sin(_d)).(X.T*X)'
   //   => Lambda(_d, sin(_d)).(X.T*X)
   it.todo("test_MatrixExpressions:1095");
-  // a callback parameter outside its callback
+  // the arguments do not type-check against the public API
   //   assert str(expr) == 'Lambda(x, 1/x).(n*X)'
   //   => Lambda(x, 1/x).(n*X)
   it.todo("test_MatrixExpressions:1099");
@@ -3482,7 +3477,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(Subs(x, [x], [rational(1)]))).toBe('Subs(x, x, 1)');
+      expect(pyStr(Subs(x, [x], [Rational.of(1n, 1n, { gcd: 1n })]))).toBe('Subs(x, x, 1)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -3491,7 +3486,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const [x, y] = symbols('x y');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(Subs(new Add([x, y]), [x, y], [rational(1), rational(2)]))).toBe('Subs(x + y, (x, y), (1, 2))');
+      expect(pyStr(Subs(new Add([x, y]), [x, y], [Rational.of(1n, 1n, { gcd: 1n }), Rational.of(2n, 1n, { gcd: 1n })]))).toBe('Subs(x + y, (x, y), (1, 2))');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -3503,7 +3498,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_str_special_matrices:1114", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(Identity(rational(4)))).toBe('I');
+      expect(pyStr(Identity(Rational.of(4n, 1n, { gcd: 1n })))).toBe('I');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -3511,7 +3506,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_str_special_matrices:1115", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(ZeroMatrix(rational(2), rational(2)))).toBe('0');
+      expect(pyStr(ZeroMatrix(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(2n, 1n, { gcd: 1n })))).toBe('0');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -3519,7 +3514,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_str_special_matrices:1116", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(OneMatrix(rational(2), rational(2)))).toBe('1');
+      expect(pyStr(OneMatrix(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(2n, 1n, { gcd: 1n })))).toBe('1');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -3540,11 +3535,11 @@ describe("sympy/printing/tests/test_str.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_issue_22689:1129", () => {
+  it("test_issue_22689:1129", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(new Mul([new Pow(x, rational(-2)), new Pow(rational(3), rational(-1))]))).toBe('1/(x**2*3)');
+      expect(pyStr(new Mul([new Pow(x, Rational.of(-2n, 1n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(-1n, 1n, { gcd: 1n }))]))).toBe('1/(x**2*3)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -3557,10 +3552,10 @@ describe("sympy/printing/tests/test_str.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_Str:1149", () => {
+  it("test_Str:1149", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(sstrrepr('x'))).toBe('Str(\'x\')');
+      expect(text(sstrrepr(new Str('x')))).toBe('Str(\'x\')');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -3671,7 +3666,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   it("test_printing_str_array_expressions:1181", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(sstr(new ArraySymbol('A', [rational(2), rational(3), rational(4)]), {}))).toBe('A');
+      expect(text(sstr(new ArraySymbol('A', [Rational.of(2n, 1n, { gcd: 1n }), Rational.of(3n, 1n, { gcd: 1n }), Rational.of(4n, 1n, { gcd: 1n })]), {}))).toBe('A');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -3680,16 +3675,16 @@ describe("sympy/printing/tests/test_str.py", () => {
     const [A, x] = symbols('A x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(sstr(new ArrayElement(A, [rational(2), new Pow(new Add([rational(1), new Mul([rational(-1), x])]), rational(-1)), rational(0)]), {}))).toBe('A[2, 1/(1 - x), 0]');
+      expect(text(sstr(new ArrayElement(A, [Rational.of(2n, 1n, { gcd: 1n }), new Pow(new Add([Rational.of(1n, 1n, { gcd: 1n }), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), x])]), Rational.of(-1n, 1n, { gcd: 1n })), Rational.of(0n, 1n, { gcd: 1n })]), {}))).toBe('A[2, 1/(1 - x), 0]');
     } finally {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_printing_str_array_expressions:1185", () => {
+  it("test_printing_str_array_expressions:1185", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(sstr(new ArrayElement(MatMul(new MatrixSymbol('M', rational(3), rational(3)), new MatrixSymbol('N', rational(3), rational(3))), [x, rational(0)]), {}))).toBe('(M*N)[x, 0]');
+      expect(text(sstr(new ArrayElement(MatMul(new MatrixSymbol('M', Rational.of(3n, 1n, { gcd: 1n }), Rational.of(3n, 1n, { gcd: 1n })), new MatrixSymbol('N', Rational.of(3n, 1n, { gcd: 1n }), Rational.of(3n, 1n, { gcd: 1n }))), [x, Rational.of(0n, 1n, { gcd: 1n })]), {}))).toBe('(M*N)[x, 0]');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -3698,7 +3693,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(new ProbabilityNode([Relational(new RandomSymbol(x, new PSpace([])), rational(0), '>', { evaluate: false })]).mul(Identity(rational(2))))).toBe('Probability(x > 0)*I');
+      expect(pyStr(new ProbabilityNode([Relational(new RandomSymbol(x, new PSpace([])), Rational.of(0n, 1n, { gcd: 1n }), '>', { evaluate: false })]).mul(Identity(Rational.of(2n, 1n, { gcd: 1n }))))).toBe('Probability(x > 0)*I');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -3707,7 +3702,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(new ExpectationNode([new RandomSymbol(x, new PSpace([]))]).mul(Identity(rational(2))))).toBe('Expectation(x)*I');
+      expect(pyStr(new ExpectationNode([new RandomSymbol(x, new PSpace([]))]).mul(Identity(Rational.of(2n, 1n, { gcd: 1n }))))).toBe('Expectation(x)*I');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -3716,7 +3711,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(new VarianceNode([new RandomSymbol(x, new PSpace([]))]).mul(Identity(rational(2))))).toBe('Variance(x)*I');
+      expect(pyStr(new VarianceNode([new RandomSymbol(x, new PSpace([]))]).mul(Identity(Rational.of(2n, 1n, { gcd: 1n }))))).toBe('Variance(x)*I');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -3725,7 +3720,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const [x, y] = symbols('x y');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(new CovarianceNode([new RandomSymbol(x, new PSpace([])), new RandomSymbol(y, new PSpace([]))]).mul(Identity(rational(2))))).toBe('Covariance(x, y)*I');
+      expect(pyStr(new CovarianceNode([new RandomSymbol(x, new PSpace([])), new RandomSymbol(y, new PSpace([]))]).mul(Identity(Rational.of(2n, 1n, { gcd: 1n }))))).toBe('Covariance(x, y)*I');
     } finally {
       pprintUseUnicode(unicode);
     }

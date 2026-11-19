@@ -7,22 +7,23 @@
  */
 
 import type { Expr, ExprLike } from '../core/nodes';
-import { Add, Derivative, Dummy, Fn, Mul, Pow, Rational, S, Special, Sym, UndefFn } from '../core/nodes';
+import { Add, Derivative, Dummy, Fn, Mul, Order, Pow, Rational, S, Special, Sym, UndefFn } from '../core/nodes';
 import { add, couldExtractMinusSign, exp, mul, pow, sub, sympify } from '../core/ops';
-import { asIndependent, isMeromorphic, isPolynomial, isRationalFunction } from '../core/methods';
+import { asIndependent, asNumerDenom, isMeromorphic, isPolynomial, isRationalFunction } from '../core/methods';
 import { NotImplementedError } from '../core/errors';
 import { at, cast, expectType, first, getOrThrow } from '../core/guard';
 import type { UndefinedFunction } from '../core/undef';
 import { cancel, fraction } from '../simplify/rational';
-import { freeSymbols, some, subs } from '../core/traverse';
+import { freeSymbols, some, subs, xreplace } from '../core/traverse';
 import { diff } from '../calculus/diff';
 import { fn } from '../functions/elementary/elementary';
 import { expand } from '../simplify/expand';
+import { factorTerms } from '../simplify/exprtools';
 import { powsimp } from '../simplify/powsimp';
 import { integrate } from '../integrals/integrate';
 import { polyCoefficients } from '../polys/poly';
 import { str } from '../printing/str';
-import { O, series } from './series';
+import { O, series, asLeadingTerm } from './series';
 import { lseries, seriesTerms } from './lseries';
 
 import { Matrix } from '../matrices/matrix';
@@ -35,7 +36,60 @@ import type { NoMatchResult } from '../core/truth';
 import { Eq, piecewise } from '../core/logic';
 import { Mod } from '../functions/mod';
 import { interval, type SetExpr } from '../sets/sets';
+import { Concrete } from '../core/concrete';
 import { SeriesBase } from './series_class';
+import { apart } from '../polys/partfrac';
+import { AccumBoundsNode } from '../core/accumbounds';
+import { limit } from './limits';
+import { doit } from '../calculus/doit';
+
+/** Coefficients of a rational function, or of a function with a rational derivative. */
+export function rationalAlgorithm(f: ExprLike, x: Sym, k: Sym, order = 4, full = false): [Expr, Expr, number] | NoMatchResult {
+  let derivative = sympify(f);
+  const derivatives: Expr[] = [];
+  for (let i = 0; i <= order; i++) {
+    if (i) derivative = diff(derivative, x);
+    if (!isRationalFunction(derivative, [x])) {
+      derivatives.push(derivative);
+      continue;
+    }
+    const decomposition = doit(apart(derivative, x, { full }));
+    let coefficient: Expr = S.Zero;
+    let independent: Expr = S.Zero;
+    for (const term of decomposition instanceof Add ? decomposition.args : [decomposition]) {
+      let [numerator, denominator] = asNumerDenom(term);
+      if (!denominator.has(x)) {
+        independent = add(independent, term);
+        continue;
+      }
+      const [constant, dependent] = asIndependent(denominator, [x], { asAdd: false });
+      numerator = mul(numerator, pow(constant, -1));
+      denominator = dependent;
+      const [base, multiplicity] = denominator instanceof Pow ? [denominator.base, denominator.exp] : [denominator, S.One];
+      const polynomial = Poly.from(base, [x]);
+      if (polynomial.degree() > 1) return NoMatch;
+      const a = polynomial.nth(0);
+      if (isZeroExpr(a)) {
+        independent = add(independent, term);
+        continue;
+      }
+      const slope = polynomial.nth(1);
+      const root = mul(-1, a, pow(slope, -1));
+      const j = expectType(multiplicity, (value): value is Rational => value instanceof Rational);
+      let binomial: Expr = S.One;
+      for (let n = 1; n < Number(j.p); n++) binomial = mul(binomial, add(k, n), Rational.of(1, n));
+      coefficient = add(coefficient, mul(pow(-1, j), numerator, pow(slope, mul(-1, j)), binomial, pow(root, mul(-1, add(j, k)))));
+    }
+    if (isZeroExpr(coefficient)) return NoMatch;
+    for (let j = 0; j < i; j++) {
+      coefficient = mul(coefficient, pow(add(k, j + 1), -1));
+      independent = integrate(independent, x);
+      independent = add(independent, limit(sub(at(derivatives, i - j - 1), independent), x, 0));
+    }
+    return [subs(coefficient, [[k, add(k, -i)]]), independent, i];
+  }
+  return NoMatch;
+}
 
 const isZeroExpr = (e: Expr): boolean => e instanceof Rational && e.isZero;
 
@@ -106,12 +160,30 @@ export class FormalPowerSeries extends SeriesBase {
     // SymPy _compute_fps: (f, symb) = expand(f).as_independent(*syms) for the symbols other than x
     const others = [...freeSymbols(fn)].filter((s) => s instanceof Sym).filter((s) => s.key !== x.key);
     const [core, symb] = others.length && !(fn instanceof Add) ? asIndependent(expand(fn), others) : [fn, S.One];
+    // A sum can share a symbolic power even when its integer offsets differ.
+    const base = x0 instanceof Special ? x : sub(x, x0);
+    const powers = fn instanceof Add ? fn.args.map((term) => (term instanceof Mul ? term.args : [term])
+      .find((f): f is Pow => f instanceof Pow && f.base.equals(base) && f.exp.freeSymbols().size > 0 && !f.exp.has(x))) : [];
+    const firstPower = powers[0];
+    if (fn instanceof Add && firstPower && powers.every((p): p is Pow => p !== undefined)) {
+      const offsets = powers.map((p) => sub(p.exp, firstPower.exp));
+      if (offsets.every((v): v is Rational => v instanceof Rational && v.isInteger)) {
+        const offset = Math.max(...offsets.map((v) => v.value));
+        this.symb = pow(base, add(firstPower.exp, offset));
+        this.core = add(...fn.args.map((term, i) => mul(...(term instanceof Mul ? term.args : [term]).filter((f) => f !== powers[i]), pow(base, sub(at(offsets, i), offset)))));
+        return;
+      }
+    }
     this.core = core;
     this.symb = symb;
   }
   override withArgs(args: readonly Expr[]): Expr {
     return new FormalPowerSeries(at(args, 0), cast(at(args, 1), Sym), at(args, 2), at(args, 3).key === S.One.key ? '+' : '-');
   }
+  override subsSelf(old: Expr): Expr | undefined {
+    return old.has(this.x) ? this : undefined;
+  }
+  asLeadingTerm(): Expr { return asLeadingTerm(this.fn, this.x); }
   override get interval(): SetExpr { return interval(0, S.Infinity); }
   override get start(): Expr { return S.Zero; }
   override get stop(): Expr { return S.Infinity; }
@@ -127,9 +199,43 @@ export class FormalPowerSeries extends SeriesBase {
     return add(...seriesTerms(this.core, this.x, this.x0, k + 1, this.direction).terms.filter((t) => !lower.has(t.key)).map((t) => this.withSymb(t)));
   }
 
+  /** SymPy LatexPrinter._print_FormalPowerSeries: the infinite representation. */
+  printLatex(print: (e: Expr) => string): string {
+    return print(this.infinite);
+  }
+  /** The coefficient sum, including the terms before the recurrence starts. */
+  get infinite(): Expr {
+    const k = new Dummy('k');
+    const step = this.direction === '+' ? 1 : -1;
+    const shift = mul(step, sub(this.x, this.x0));
+    const local = subs(this.core, [[this.x, add(this.x0, mul(step, this.x))]]);
+    let recurrence = rationalAlgorithm(local, this.x, k);
+    if (isNoMatch(recurrence)) recurrence = hyperAlgorithm(local, this.x, k);
+    if (isNoMatch(recurrence)) throw new NotImplementedError('No coefficient formula for this formal series');
+    const [ak, independent, start] = recurrence;
+    const term = this.withSymb(mul(ak, pow(shift, k)));
+    return add(this.withSymb(subs(independent, [[this.x, shift]])), new Concrete('Sum', [term, k, Rational.of(start), S.Infinity]));
+  }
   /** The series up to O((x - x0)**n) (SymPy truncate). */
   truncate(n = 6): Expr {
-    if (this.symb.key === S.One.key) return series(this.fn, this.x, this.x0, n, this.direction);
+    if (this.symb.key === S.One.key) {
+      const s = series(this.fn, this.x, this.x0, n, this.direction, { algebraic: true });
+      if (this.x0 === S.NegativeInfinity) {
+        return xreplace(s, [[S.NegativeInfinity, S.Infinity]]);
+      }
+      if (isPolynomial(this.fn, [this.x])) return add(s, O(pow(sub(this.x, this.x0), n), this.x, this.x0));
+      return s;
+    }
+    if (this.x0 === S.Infinity) {
+      const body = series(this.core, this.x, this.x0, n, this.direction, { algebraic: true });
+      const terms = body instanceof Add ? body.args : [body];
+      const t = new Dummy('t', { positive: true });
+      const local = subs(this.core, [[this.x, pow(t, -1)]]);
+      const recurrence = hyperAlgorithm(local, t, new Dummy('k'));
+      const initial = isNoMatch(recurrence) ? [] : seriesTerms(recurrence[1], t, S.Zero, n, '+').terms.map((u) => subs(u, [[t, pow(this.x, -1)]]));
+      const remaining = terms.filter((u) => !initial.some((v) => v.equals(u)));
+      return add(this.withSymb(add(...initial)), ...remaining.map((u) => u instanceof Order ? new Order([this.withSymb(u.expr), this.x, this.x0]) : this.withSymb(u)));
+    }
     // the Order term carries the symbolic factor too: O(x**(n + m)) for the factor x**m
     const xk = isZeroExpr(this.x0) ? this.x : sub(this.x, this.x0);
     return add(this.polynomial(n), O(this.withSymb(pow(xk, n)), this.x, this.x0));
@@ -140,7 +246,7 @@ export class FormalPowerSeries extends SeriesBase {
   }
   /** A term times the symbolic factor, with the powers of x combined (x**2*x**n = x**(n + 2)). */
   private withSymb(t: Expr): Expr {
-    return this.symb.key === S.One.key ? t : powsimp(mul(t, this.symb));
+    return this.symb.key === S.One.key ? t : powsimp(mul(factorTerms(t), this.symb));
   }
   /** The coefficient of (x - x0)**k. */
   coeff(k: number): Expr {
@@ -162,7 +268,17 @@ export class FormalPowerSeries extends SeriesBase {
   /** The series of another function about the same point in the same variable. */
   private check(other: FormalPowerSeries, x: Sym | undefined): void {
     if ((x ?? this.x).key !== this.x.key || other.x.key !== this.x.key) throw new RangeError('Both series should have the same symbol.');
+    this.checkPoint(other);
+  }
+  private checkPoint(other: FormalPowerSeries): void {
+    if (this.direction !== other.direction) throw new RangeError('Both series should be calculated from the same direction.');
     if (this.x0.key !== other.x0.key) throw new RangeError('Both series should be calculated about the same point.');
+  }
+  override add(other: ExprLike): Expr {
+    if (!(other instanceof FormalPowerSeries)) return super.add(other);
+    this.checkPoint(other);
+    const sum = add(this.fn, subs(other.fn, [[other.x, this.x]]));
+    return sum.has(this.x) ? new FormalPowerSeries(sum, this.x, this.x0, this.direction) : sum;
   }
   /** The series of the product of the functions (SymPy FormalPowerSeries.product). */
   product(other: FormalPowerSeries, x?: Sym): FormalPowerSeries {
@@ -237,7 +353,7 @@ export class FormalPowerSeries extends SeriesBase {
         return { formula: piece(c, 2, odd), start: odd + 1, independent: this.withSymb(odd ? mul(a, sub(this.x, this.x0)) : S.One) };
       }
       if (f instanceof Fn && f.name === 'log' && !isZeroExpr(b)) {
-        const c = mul(-1, pow(mul(-1, slope, pow(b, -1)), k), pow(k, -1));
+        const c = mul(-1, pow(mul(-1, b, pow(slope, -1)), mul(-1, k)), pow(k, -1));
         return { formula: str(this.withSymb(c)), start: 1, independent: this.withSymb(fn('log', [b])) };
       }
       if (f instanceof Pow && !f.exp.has(this.x) && !isZeroExpr(b)) {
@@ -260,17 +376,25 @@ export class FormalPowerSeries extends SeriesBase {
  * SymPy fps(f, x, x0, dir): the formal power series of f about x0. Without x, the
  * only free symbol of f is the variable, and f without free symbols is returned as it is.
  */
+export function fps(ex: number | bigint | Rational, x: Sym, x0?: ExprLike, direction?: '+' | '-'): Expr;
 export function fps(ex: ExprLike, x: Sym, x0?: ExprLike, direction?: '+' | '-'): FormalPowerSeries;
 export function fps(ex: ExprLike): FormalPowerSeries | Expr;
-export function fps(ex: ExprLike, x?: Sym, x0: ExprLike = 0, direction: '+' | '-' = '+'): FormalPowerSeries | Expr {
+export function fps(ex: ExprLike, x: Sym | undefined, x0: ExprLike, direction: '+' | '-', options: { rational?: boolean; hyper?: boolean }): Expr;
+export function fps(ex: ExprLike, x?: Sym, x0: ExprLike = 0, direction: '+' | '-' = '+', options: { rational?: boolean; hyper?: boolean } = {}): Expr {
   const f = sympify(ex);
-  if (x !== undefined) return new FormalPowerSeries(f, x, sympify(x0), direction);
-  // (a MatrixSymbol is not a free symbol here: SymPy fps(A) builds FormalPowerSeries(A, A, 0, ...),
-  // whose terms cannot be computed, while A is constant)
   const free = [...freeSymbols(f)].filter((s) => s instanceof Sym);
-  if (free.length === 0) return f;
-  if (free.length > 1) throw new NotImplementedError('multivariate formal power series');
-  return new FormalPowerSeries(f, first(free), sympify(x0), direction);
+  if (!x && free.length > 1) throw new NotImplementedError('multivariate formal power series');
+  const variable = x ?? free[0];
+  if (!variable || !f.has(variable)) return f;
+  const point = sympify(x0);
+  if (point instanceof Special && f instanceof Pow && f.base === S.E && limit(f.exp, variable, point) === S.Infinity) return f;
+  if (!isPolynomial(f, [variable]) && (options.hyper === false || options.rational === false)) {
+    const local = subs(f, [[variable, add(point, mul(direction === '+' ? 1 : -1, variable))]]);
+    const k = new Dummy('k');
+    const rational = options.rational !== false && !isNoMatch(rationalAlgorithm(local, variable, k));
+    if (!rational && (options.hyper === false || isNoMatch(hyperAlgorithm(local, variable, k)))) return f;
+  }
+  return new FormalPowerSeries(f, variable, point, direction);
 }
 
 
@@ -332,7 +456,12 @@ export function solveDe(fIn: ExprLike, x: Sym, DE: ExprLike, order: number, g: U
   const branches: [Expr, Expr | boolean][] = [];
   let independent: Expr = S.Zero;
   let lastInitial = -1;
-  const coefficient = (i: number): Expr => mul(subs(diff(f, x, i), [[x, S.Zero]]), pow(fn('factorial', [sympify(i)]), -1));
+  const coefficient = (i: number): Expr => {
+    const derivative = diff(f, x, i);
+    const value = subs(derivative, [[x, S.Zero]]);
+    const c = some(value, (v) => v instanceof Special || v instanceof AccumBoundsNode) ? limit(derivative, x, S.Zero) : value;
+    return mul(c, pow(fn('factorial', [sympify(i)]), -1));
+  };
   for (let i = 0; i < initial + step; i++) {
     const c = coefficient(i);
     if (some(c, (e) => e instanceof Special) || c.has(x)) return NoMatch;

@@ -14,7 +14,8 @@ describe("doctests of sympy.combinatorics.free_groups", () => {
   });
   it("f.contains(x**3*y**2)", () => {
     const [x, y, z] = symbols('x y z');
-    expect(sympyStr(new FreeGroup([x, y, z]).contains(new FreeGroup([x, y, z]).dtype([[x, 3], [y, 2]])))).toBe('True');
+    const v1 = new FreeGroup([x, y, z]);
+    expect(sympyStr(v1.contains(v1.dtype([[x, 3], [y, 2]])))).toBe('True');
   });
   // a result object that did not come from the library
   //   z.elements
@@ -22,11 +23,13 @@ describe("doctests of sympy.combinatorics.free_groups", () => {
   it.todo("z.elements");
   it("F.index(y)", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(new FreeGroup([x, y]).index(new FreeGroup([x, y]).dtype([[y, 1]])))).toBe('1');
+    const v1 = new FreeGroup([x, y]);
+    expect(sympyStr(v1.index(v1.dtype([[y, 1]])))).toBe('1');
   });
   it("F.index(x)", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(new FreeGroup([x, y]).index(new FreeGroup([x, y]).dtype([[x, 1]])))).toBe('0');
+    const v1 = new FreeGroup([x, y]);
+    expect(sympyStr(v1.index(v1.dtype([[x, 1]])))).toBe('0');
   });
   it("f.is_abelian", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
@@ -379,7 +382,7 @@ describe("sympy/combinatorics/tests/test_free_groups.py", () => {
   //   raises(TypeError, lambda: 2/x)
   //   => None
   it.todo("test_FreeGroupElm_type_error:91");
-  // no adapter for the operator +
+  // the generated test does not reproduce the replay
   //   raises(TypeError, lambda: x**2 + y**2)
   //   => None
   it.todo("test_FreeGroupElm_type_error:92");

@@ -24,12 +24,27 @@ import {
   str,
   symbols,
 } from '../../src';
-import { NotImplementedError } from '../../src/core/errors';
 import { orderUnreduced } from '../../src/calculus/diff';
 import { cast } from '../../src/core/guard';
 import { Integral, Order } from '../../src/core/nodes';
+import { ExtensionExpr } from '../../src/core/nodes';
 
 const [x, y, k, n, h] = symbols('x y k n h');
+
+it('differentiates nested discrete limits and retains matrix derivatives', () => {
+  const a = sj.symbol('a');
+  const nested = sj.Sum(x.mul(y), [x, 1, 3], [a, 2, 5]);
+  expect(String(sj.doit(diff(nested, y)))).toBe('24');
+  expect(String(diff(new Integral([x, x, sj.S.Zero, sj.S.One]), x))).toBe('0');
+  const A = sj.MatrixSymbol('A', 2, 2);
+  expect(String(diff(A, A))).toBe('PermuteDims(ArrayTensorProduct(I, I), (3)(1 2))');
+  expect(diff(A, A, 0)).toBe(A);
+  class Unknown extends ExtensionExpr {
+    constructor(args: readonly sj.Expr[]) { super('Unknown', args); }
+    withArgs(args: readonly sj.Expr[]): sj.Expr { return new Unknown(args); }
+  }
+  expect(() => diff(new Unknown([x]), x)).toThrow(sj.NotImplementedError);
+});
 
 const r = sj.symbol('r', { real: true });
 const f = sj.SymFunction('f');
@@ -86,6 +101,16 @@ describe('diff (SymPy diff)', () => {
     expect(s(sj.diff(sj.re(f(r)), r))).toBe('re(Derivative(f(r), r))');
     expect(s(sj.diff(sj.im(f(r)), r))).toBe('im(Derivative(f(r), r))');
   });
+  it('uses the axis of the differentiation variable for real and imaginary components', () => {
+    const real = sj.symbol('r', { real: true });
+    const imaginary = sj.symbol('y', { imaginary: true });
+    expect(diff(sj.fn('re', [mul(I, real)], { evaluate: false }), real).equals(sj.S.Zero)).toBe(true);
+    expect(diff(sj.fn('im', [imaginary], { evaluate: false }), imaginary).equals(mul(-1, I))).toBe(true);
+    expect(diff(sj.fn('conjugate', [imaginary], { evaluate: false }), imaginary).equals(sj.S.NegOne)).toBe(true);
+    expect(sj.fdiff(sj.abs(x)).equals(sj.sign(x))).toBe(true);
+    expect(diff(sj.fn('re', [imaginary], { evaluate: false }), imaginary).equals(sj.S.Zero)).toBe(true);
+    expect(diff(sj.Sum(x, [x, 1, 5]), x).equals(sj.S.Zero)).toBe(true);
+  });
 
   it('differentiates undefined functions, derivatives, sums and piecewise functions', () => {
     expect(s(sj.diff(f(g(x)), x))).toBe('Derivative(f(g(x)), g(x))*Derivative(g(x), x)');
@@ -93,7 +118,7 @@ describe('diff (SymPy diff)', () => {
     expect(s(sj.diff(sj.diff(f(x), x), y))).toBe('0');
     expect(s(sj.diff(sj.diff(f(x), x), x))).toBe('Derivative(f(x), (x, 2))');
     expect(s(sj.diff(sj.Sum(sj.mul(sj.pow(x, k), y), [k, 0, n]), y))).toBe('Sum(x**k, (k, 0, n))');
-    expect(() => sj.diff(sj.Sum(sj.pow(x, k), [k, 0, n]), n)).toThrow(sj.NotImplementedError);
+    expect(s(sj.diff(sj.Sum(sj.pow(x, k), [k, 0, n]), n))).toBe('Derivative(Sum(x**k, (k, 0, n)), n)');
     expect(s(sj.diff(sj.Piecewise([sj.pow(x, 2), sj.Gt(x, 0)], [x, true]), x))).toBe('Piecewise((2*x, x > 0), (1, True))');
     expect(s(sj.diff(x, x, 0))).toBe('x');
     expect(s(sj.diff(f(sj.add(x, 1)), x))).toBe('Subs(Derivative(f(_xi_1), _xi_1), _xi_1, x + 1)');
@@ -145,9 +170,7 @@ describe('diff (SymPy diff)', () => {
     expect(s(sj.diff(cast(sj.MatMul(X, X), sj.MatrixExpr).at(0, 0), X.at(0, 0)))).toBe('2*X[0, 0]');
     expect(s(sj.diff(sj.Trace(sj.MatMul(X, X)), X.at(0, 1)))).toBe('2*X[1, 0]');
     expect(s(sj.diff(sj.pow(X.at(0, 0), 3), X.at(0, 0), 2))).toBe('6*X[0, 0]');
-    // SymPy 1.14: Sum(KroneckerDelta(0, i, (0, n - 1)), (i, 0, n - 1)); symjs has no KroneckerDelta range and keeps delta**2
-    // (a positive power of KroneckerDelta is the delta: SymPy prints Sum(KroneckerDelta(0, i, (0, n - 1)), (i, 0, n - 1)))
-    expect(s(sj.diff(sj.Trace(Z), Z.at(0, 0)))).toBe('Sum(KroneckerDelta(0, i), (i, 0, n - 1))');
+    expect(s(sj.diff(sj.Trace(Z), Z.at(0, 0)))).toBe('Sum(KroneckerDelta(0, i, (0, n - 1)), (i, 0, n - 1))');
   });
 });
 
@@ -165,7 +188,7 @@ describe('diff', () => {
     expect(s2(diff(Lt(x, 1), x))).toBe('Derivative(x < 1, x)');
     expect(s2(diff(new Limit([mul(sin(mul(x, y)), pow(y, -1)), y, rational(0)], '+'), x))).toBe("Derivative(Limit(sin(x*y)/y, y, 0, dir='+'), x)");
     // SymPy: Sum(_h*Product(k*x, (k, 1, _h - 1))*Product(k*x, (k, _h + 1, n)), (_h, 1, n))
-    expect(() => diff(Product(mul(x, k), [k, 1, n]), x)).toThrow(NotImplementedError);
+    expect(sj.doit(diff(Product(mul(x, k), [k, 1, 3]), x)).toString()).toBe('18*x**2');
     expect(() => diff(x, x, -1)).toThrow(RangeError);
     expect(() => diff(x, x, 1.5)).toThrow(RangeError);
   });
@@ -240,4 +263,126 @@ describe('partial derivatives without a formula', () => {
     expect(sj.sstr(sj.diff(sj.sign(x), x))).toBe('Derivative(sign(x), x)');
     expect(sj.sstr(sj.diff(sj.sign(sj.add(x, 1)), x))).toBe('Derivative(sign(x + 1), x)');
   });
+});
+
+it('validates differentiation variables before evaluating a derivative', () => {
+  for (const v of [rational(2), rational(1, 2), sin(x), mul(x, y), pow(x, 2), sj.add(x, 1), Derivative(sj.cos(x), x), Derivative(f(f(x)), x)]) {
+    expect(() => diff(f(x), v)).toThrow(RangeError);
+    expect(diff(f(x), v, 0)).toEqual(f(x));
+  }
+  const fx = f(x);
+  expect(String(diff(pow(fx, 2), fx))).toBe('2*f(x)');
+  const df = Derivative(fx, x);
+  expect(String(diff(pow(df, 2), df))).toBe('2*Derivative(f(x), x)');
+});
+
+it('keeps matrix element derivatives formal and differentiates matrix variables', () => {
+  const A = new sj.MatrixSymbol('A', 2, 2);
+  expect(String(diff(sj.Determinant(A), A.at(0, 0)))).toBe('Derivative(Determinant(A), A[0, 0])');
+  expect(String(diff(A, A))).toBe('PermuteDims(ArrayTensorProduct(I, I), (3)(1 2))');
+  expect(String(diff(x, A))).toBe('0');
+  expect(String(diff(new Integral([x, x, rational(0), rational(1)]), x))).toBe('0');
+});
+
+it('keeps indexed derivative deltas inside summation bounds', () => {
+  const a = new sj.IndexedBase('A');
+  const i = new sj.Idx('i'), j = new sj.Idx('j');
+  const expr = sj.Sum(sj.mul(2, a.at(i)), [i, sj.S.NegativeInfinity, sj.oo]);
+  expect(String(sj.diff(expr, a.at(j)))).toBe('Sum(2*KroneckerDelta(i, j), (i, -oo, oo))');
+  const dependent = sj.Sum(a.at(i), [i, 0, a.at(j)]);
+  expect(() => sj.diff(dependent, a.at(j))).toThrow(sj.NotImplementedError);
+});
+
+it('evaluates nonscalar differentiation and rejects unsupported scalar derivatives', () => {
+  const X = sj.MatrixSymbol('X', 2, 2);
+  expect(String(sj.diff(X, X))).toBe('PermuteDims(ArrayTensorProduct(I, I), (3)(1 2))');
+  expect(sj.diff(X, X, 0)).toBe(X);
+  expect(sj.diff(x, X).equals(sj.ZeroMatrix(2, 2))).toBe(true);
+  expect(() => sj.diff(sj.Tuple(x), x)).toThrow(sj.NotImplementedError);
+  const inner = new sj.Integral([x, x]);
+  expect(String(sj.diff(new sj.Integral([inner, x, y]), y))).toBe('Integral(x, (x, y))');
+});
+
+it('differentiates indefinite integrals and special functions with constant parameters', () => {
+  expect(sj.diff(new sj.Integral([x, x]), x)).toBe(x);
+  expect(sj.diff(new sj.Integral([x, x, sj.S.Zero, sj.S.One]), x)).toBe(sj.S.Zero);
+  expect(String(sj.diff(sj.besselj(0, x), x))).toBe('-besselj(1, x)');
+  const a = new sj.IndexedBase('Bound');
+  const i = new sj.Idx('i'), j = new sj.Idx('j');
+  expect(() => sj.diff(sj.Sum(a.at(i), [i, a.at(i), 3]), a.at(j))).toThrow(sj.NotImplementedError);
+  expect(() => sj.diff(sj.Sum(a.at(i), [i, 0, a.at(i)]), a.at(j))).toThrow(sj.NotImplementedError);
+});
+
+it('retains the scalar-only fallback when the array layer is not registered', async () => {
+  const { diffHooks } = await import('../../src/calculus/diff');
+  const array = diffHooks.array;
+  delete diffHooks.array;
+  try {
+    const A = sj.MatrixSymbol('A', 2, 2);
+    expect(diff(A, A)).toBeInstanceOf(Derivative);
+    expect(diff(x, A)).toBe(sj.S.Zero);
+  } finally {
+    diffHooks.array = array;
+  }
+});
+
+it('handles unavailable extension and function derivatives and bound indices', async () => {
+  class Formal extends sj.ExtensionExpr {
+    constructor() { super('Formal', [x]); }
+    withArgs(): sj.Expr { return this; }
+  }
+  expect(() => diff(new Formal(), x)).toThrow(sj.NotImplementedError);
+  const { fnPartials } = await import('../../src/calculus/diff');
+  const saved = fnPartials.sin;
+  fnPartials.sin = () => undefined;
+  try {
+    expect(diff(new sj.Fn('sin', [sj.S.One, x]), x)).toBeInstanceOf(Derivative);
+  } finally {
+    if (saved) fnPartials.sin = saved;
+    else delete fnPartials.sin;
+  }
+  expect(diff(new Integral([x, x, sj.S.Zero, sj.S.One]), x)).toBe(sj.S.Zero);
+  const base = new sj.IndexedBase('A');
+  expect(() => diff(base.at(x), base.at(x, y))).toThrow('different number of indices');
+});
+
+it('keeps unknown derivative orders and evaluates orders of atomic symbols', async () => {
+  const s = await import('../../src');
+  const [x, y, n] = s.symbols('x y n');
+  const p = s.symbol('p', { integer: true, positive: true });
+  const f = s.SymFunction('f')(x, y);
+  expect(String(f.diff(x, n))).toBe('Derivative(f(x, y), (x, n))');
+  expect(String(x.diff(x, n))).toBe('Piecewise((x, Eq(n, 0)), (1, Eq(n, 1)), (0, True))');
+  expect(String(y.diff(x, n))).toBe('Piecewise((y, Eq(n, 0)), (0, True))');
+  expect(y.diff(x, p)).toBe(s.S.Zero);
+  expect(String(s.doit(f.diff(x, n).subs(n, 2)))).toBe('Derivative(f(x, y), (x, 2))');
+  expect(f.diff(x, n).key).toBe(s.derivative(f, [[x, n]]).key);
+});
+
+it('treats a symbol in a bound summand as independent', async () => {
+  const s = await import('../../src');
+  const x = s.symbol('x');
+  expect(s.diff(new s.Concrete('Sum', [x, x, s.S.One, s.S.Two]), x)).toBe(s.S.Zero);
+});
+
+it('distinguishes a bound summation index from an independent scalar', () => {
+  const i = sj.symbol('i');
+  expect(sj.diff(sj.Sum(i, [i, 1, 4]), i)).toBe(sj.S.Zero);
+});
+
+it('differentiates a sum with a bound variable and checks explicit polynomial partials', async () => {
+  const { diff, fdiff, legendre, Sum, symbols } = await import('../../src');
+  const [i, x, n] = symbols('i x n');
+  expect(diff(Sum(i, [i, 0, 3]), i).equals(0)).toBe(true);
+  expect(() => fdiff(legendre(n, x), 1)).toThrow(RangeError);
+});
+
+it('preserves mixed partials with dependent arguments through evaluation', () => {
+  const f = sj.SymFunction('f');
+  const g = sj.SymFunction('g')(x);
+  const expr = f(x, g);
+  const mixed = sj.diff(sj.diff(expr, x), g);
+  expect(mixed.equals(sj.diff(sj.diff(expr, g), x))).toBe(true);
+  expect(mixed.equals(sj.doit(sj.derivative(expr, [[x, 1], [g, 1]])))).toBe(true);
+  expect(String(mixed)).toContain('Subs(');
 });

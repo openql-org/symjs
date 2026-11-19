@@ -8,7 +8,8 @@
  */
 
 import type { ExprLike, RelOp } from './nodes';
-import { Add, Constant, Dummy, Derivative, Expr, ExtensionExpr, Float, Fn, Integral, isAddLike, isMulLike, Mul, Pow, Rational, Rel, S, Special, Sym, UndefFn, Wild, WildFunction, impl } from './nodes';
+import { Add, Constant, Dummy, Derivative, Expr, ExtensionExpr, Float, Fn, Integral, isAddLike, isMulLike, Mul, Order, Pow, Rational, Rel, S, Special, Sym, UndefFn, Wild, WildFunction, impl } from './nodes';
+import { ExprMap } from './exprmap';
 import { Concrete } from './concrete';
 import { add, mul, pow, splitCoeff, sympify } from './ops';
 import { rebuild, xreplace } from './traverse';
@@ -77,7 +78,14 @@ function basicMatches(p: Expr, e: Expr, d: Dict, old: boolean): Dict | undefined
     const a = at(p.args, i);
     const b = at(e.args, i);
     if (a.key === b.key) continue;
-    out = matchesImpl(applyD(a, out), b, out, old);
+    let pattern: Expr;
+    try {
+      pattern = applyD(a, out);
+    } catch (error) {
+      if (error instanceof TypeError && a instanceof Rel) return undefined;
+      throw error;
+    }
+    out = matchesImpl(pattern, b, out, old);
     if (!out) return undefined;
   }
   return out;
@@ -114,6 +122,14 @@ function asPowersDict(e: Expr): Map<string, [Expr, Expr]> {
 }
 
 function mulCombineInverse(lhsIn: Expr, rhsIn: Expr): Expr {
+  if (lhsIn instanceof Mul && rhsIn instanceof Mul) {
+    const left = lhsIn.args.find((factor) => factor === S.Infinity || factor === S.NegativeInfinity);
+    const right = rhsIn.args.find((factor) => factor === S.Infinity || factor === S.NegativeInfinity);
+    if (left !== undefined && right !== undefined) {
+      const numerator = mul(left === right ? 1 : -1, ...lhsIn.args.filter((factor) => factor !== left));
+      return mulCombineInverse(numerator, mul(...rhsIn.args.filter((factor) => factor !== right)));
+    }
+  }
   let lhs = lhsIn;
   let rhs = rhsIn;
   if (lhs.key === rhs.key) return S.One;
@@ -192,7 +208,7 @@ function commutativeMatches(p: Add | Mul, e: Expr, d: Dict, old: boolean): Dict 
       for (const s of exact.freeSymbols()) if (![...free].some((f) => f.key === s.key)) return undefined;
     }
     const newexpr = isAdd ? addCombineInverse(e, exact) : mulCombineInverse(e, exact);
-    if (!old && (e instanceof Add || e instanceof Mul)) {
+    if (!old && (e instanceof Add || e instanceof Mul) && (isAdd || !exact.equals(S.NegOne))) {
       if (countOps(newexpr) > countOps(e)) return undefined;
     }
     return matchesImpl(newRaw(isAdd, wild), newexpr, d, old);
@@ -254,8 +270,40 @@ function commutativeMatches(p: Add | Mul, e: Expr, d: Dict, old: boolean): Dict 
   return undefined;
 }
 
+/** Match ordered noncommutative factors; a wildcard consumes a nonempty interval. */
+function noncommutativeMatches(p: Mul, e: Expr, d: Dict, old: boolean): Dict | undefined {
+  const split = (a: Expr): [Expr, Expr[]] => {
+    const factors = a instanceof Mul ? a.args : [a];
+    return [mul(...factors.filter((f) => f.isCommutative)), factors.filter((f) => !f.isCommutative).flatMap((f) =>
+      f instanceof Pow && f.exp instanceof Rational && f.exp.isInteger && f.exp.isPositive ? Array.from({ length: Number(f.exp.p) }, () => f.base) : [f])];
+  };
+  const [pc, nodes] = split(p);
+  const [ec, targets] = split(e);
+  const initial = matchesImpl(pc, ec, d, old);
+  if (!initial) return undefined;
+  const visit = (i: number, j: number, bindings: Dict): Dict | undefined => {
+    if (i === nodes.length) return j === targets.length ? bindings : undefined;
+    const node = at(nodes, i);
+    const end = node instanceof Wild ? targets.length - (nodes.length - i - 1) : j + 1;
+    for (let k = j + 1; k <= end && k <= targets.length; k++) {
+      const next = matchesImpl(applyD(node, bindings), mul(...targets.slice(j, k)), bindings, old);
+      if (next) {
+        const result = visit(i + 1, k, next);
+        if (result) return result;
+      }
+    }
+    return undefined;
+  };
+  return visit(0, 0, initial);
+}
+
 function matchesImpl(p: Expr, e: Expr, d: Dict, old: boolean): Dict | undefined {
   if (p instanceof Wild) return wildMatches(p, e, d);
+  if (e instanceof ExtensionExpr && e.name === 'Tuple' && (p instanceof Add || p instanceof Mul || p instanceof Pow)) return undefined;
+  if (p instanceof Mul) {
+    if (p.isCommutative !== e.isCommutative) return undefined;
+    if (!p.isCommutative) return noncommutativeMatches(p, e, d, old);
+  }
   if (p instanceof Add || p instanceof Mul) return commutativeMatches(p, e, d, old);
   if (p instanceof Pow && !isExpPow(p)) return powMatches(p, e, d, old);
   if (p.args.length === 0) return p.key === e.key ? copy(d) : undefined;
@@ -287,11 +335,18 @@ export function match(exprIn: ExprLike, patternIn: ExprLike, opts: { old?: boole
 // replace / find
 // ---------------------------------------------------------------------------
 
+function containsWildFunction(e: Expr): boolean {
+  return e instanceof WildFunction || e.args.some(containsWildFunction);
+}
+
 /** The match of a pattern query: the node's own matching (matchesSelf) or the matching of Wilds. */
 function patternMatch(e: Expr, pattern: Expr): ReadonlyMap<Expr, Expr> | undefined {
   const own = pattern instanceof ExtensionExpr ? pattern.matchesSelf(e) : undefined;
-  if (own === false) return undefined;
-  return own ?? match(e, pattern);
+  if (own !== undefined) return own === false ? undefined : own;
+  if (wilds(pattern).size === 0 && !containsWildFunction(pattern)) {
+    return pattern.key === e.key ? new Map() : undefined;
+  }
+  return match(e, pattern);
 }
 
 /** A query for replace/find/atoms: a function name, a node class name, a pattern or a predicate. */
@@ -365,13 +420,14 @@ function fnArgs(e: Expr): Expr[] {
   return e instanceof Pow && isExpPow(e) ? [e.exp] : [...e.args];
 }
 
-function walk(e: Expr, f: (e: Expr) => Expr): Expr {
-  let rv = e;
-  if (rv.args.length) {
-    const newargs = rv.args.map((a) => walk(a, f));
-    if (newargs.some((a, i) => a !== rv.args[i] && a.key !== at(rv.args, i).key)) rv = rebuild(rv, newargs);
-  }
-  return f(rv);
+function walk(e: Expr, f: (e: Expr) => Expr, simultaneous: boolean): Expr {
+  if (!e.args.length) return f(e);
+  const args = e.args.map((a) => walk(a, f, simultaneous));
+  const changed = args.map((a, i) => a.key !== at(e.args, i).key);
+  if (!changed.some(Boolean)) return f(e);
+  const node = e instanceof Order && impl.rebuildOrder ? impl.rebuildOrder(args) : rebuild(e, args);
+  if (simultaneous && e.args.some((a, i) => changed[i] === true && node.key === a.key)) return node;
+  return f(node);
 }
 
 /**
@@ -382,7 +438,7 @@ export function replace(
   exprIn: ExprLike,
   query: Query,
   value: Replacement,
-  opts: { exact?: boolean; map?: boolean; apply?: (name: string, args: Expr[]) => Expr; applyType?: (type: string, args: Expr[]) => Expr } = {},
+  opts: { exact?: boolean; map?: boolean; simultaneous?: boolean; apply?: (name: string, args: Expr[]) => Expr; applyType?: (type: string, args: Expr[]) => Expr } = {},
 ): Expr | [Expr, Map<Expr, Expr>] {
   const expr = sympify(exprIn);
   const callFn = (name: string, args: Expr[]): Expr => {
@@ -433,7 +489,7 @@ export function replace(
     }
     rule = (e) => (test(e) ? v(e) : undefined);
   }
-  const mapping = new Map<Expr, Expr>();
+  const mapping = new ExprMap<Expr>();
   const rv = walk(expr, (e) => {
     const nv = rule(e);
     if (nv !== undefined && nv.key !== e.key) {
@@ -441,7 +497,7 @@ export function replace(
       return nv;
     }
     return e;
-  });
+  }, opts.simultaneous !== false);
   return opts.map ? [rv, mapping] : rv;
 }
 
@@ -487,7 +543,7 @@ export function find(exprIn: ExprLike | string, query: Query): Expr[] | Sym {
   const out = new Map<string, Expr>();
   const go = (e: Expr) => {
     if (q(e)) out.set(e.key, e);
-    e.args.forEach(go);
+    (e instanceof ExtensionExpr ? e.searchArgs() : e.args).forEach(go);
   };
   go(expr);
   return [...out.values()];

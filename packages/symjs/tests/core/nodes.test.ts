@@ -43,6 +43,34 @@ class Box extends ExtensionExpr {
   }
 }
 
+it('uses the default printing, expansion, matching and kind hooks of an extension', () => {
+  const box = new Box([x, S.One]);
+  expect(x.toLatex()).toBe('x');
+  expect(box.printLatex(String)).toBe('\\operatorname{Box}\\left(x, 1\\right)');
+  expect(box.kindSelf()).toBeUndefined();
+  expect(box.matchesSelf(x)).toBeUndefined();
+  expect(box.expandSelf('basic', {})).toBeUndefined();
+  expect(box.diffSelf(x, sj.diff)).toBeUndefined();
+});
+
+it('encodes fermionic assumptions in symbol identities', () => {
+  const above = sj.symbol('a', { aboveFermi: true });
+  const below = sj.symbol('a', { belowFermi: true });
+  expect(above.key).not.toBe(below.key);
+  expect(above.assumptions0.get('above_fermi')).toBe(true);
+  expect(below.assumptions0.get('below_fermi')).toBe(true);
+});
+
+it('reports a missing rewrite implementation at the core entry point', () => {
+  const rewrite = nodes.impl.rewrite;
+  delete nodes.impl.rewrite;
+  try {
+    expect(() => x.rewrite('exp')).toThrow(/rewrite/);
+  } finally {
+    if (rewrite) nodes.impl.rewrite = rewrite;
+  }
+});
+
 describe('numeric', () => {
   it('rational objects', () => {
     expect(Rational.of(6, -4).toString()).toBe('-3/2');
@@ -55,6 +83,11 @@ describe('node classes', () => {
     expect(s(pi.n())).toBe('3.14159265358979');
     expect(() => I.toNumber()).toThrow(RangeError);
     expect(inspect(x)).toBe('Expr(x)');
+    expect(pi.isComparable).toBe(true);
+    expect(s(x.sub(1))).toBe('x - 1');
+    expect(s(x.neg())).toBe('-x');
+    expect(s(x.add(1).pow(2).expand())).toBe('x**2 + 2*x + 1');
+    expect(I.conjugate().equals(mul(-1, I))).toBe(true);
     const subs1 = x.subs.bind(x) as unknown as (from: Expr) => Expr;
     expect(() => subs1(x)).toThrow(TypeError);
   });
@@ -62,8 +95,7 @@ describe('node classes', () => {
     expect(() => asRational(x)).toThrow(InvariantError);
     expect(() => Rational.of(1, 0)).toThrow(RangeError);
     expect(() => new Float(Infinity)).toThrow(RangeError);
-    // SymPy accepts Symbol(''); symjs requires a non-empty name
-    expect(() => new sj.Sym('')).toThrow(SyntaxError);
+    expect(new sj.Sym('').name).toBe('');
     expect(() => Reflect.construct(sj.Sym, [5])).toThrow(SyntaxError);
   });
   it('keys Wild properties and WildFunction arities', () => {
@@ -107,6 +139,10 @@ describe('node classes', () => {
     expect(s(sj.transpose(b))).toBe('Box(x)');
     // not a function application with a Taylor series
     expect(b.isTaylorExpandable).toBe(false);
+    expect(x.prettyForm).toBeUndefined();
+    expect(b.kindSelf()).toBeUndefined();
+    expect(b.matchesSelf(x)).toBeUndefined();
+    expect(b.expandSelf('custom', {})).toBeUndefined();
     expect(b).toBeInstanceOf(Expr);
     expect(new BoolAtom(true).key).toBe('!true');
     expect(add(x, y)).toBeInstanceOf(Add);
@@ -126,6 +162,16 @@ describe('symbol assumptions zero and integer', () => {
     // Zero cannot also be strictly positive.
     expect(() => new sj.Sym('p', { zero: true, positive: true })).toThrow(RangeError);
   });
+});
+
+it('reports defined function names but leaves anonymous constructors unnamed', () => {
+  expect(nodes.headName(sj.SymFunction('oscillation'))).toBe('oscillation');
+  expect(nodes.headName(() => S.One)).toBeUndefined();
+});
+
+it('distinguishes indefinite integration from explicit bounds', () => {
+  expect(new sj.Integral([x, x]).limits).toBeUndefined();
+  expect(new sj.Integral([x, x, S.Zero, S.One]).limits).toEqual([S.Zero, S.One]);
 });
 
 describe('ExtensionExpr.expandTop', () => {
@@ -233,6 +279,8 @@ it('retains constructor facts, explicit false values and their consequences in s
   expect(extended.assumptions0.get('above_fermi')).toBe(false);
   expect(extended.assumptions0.get('below_fermi')).toBe(false);
   expect(extended.equals(new sj.Sym('x', { extendedPositive: true }))).toBe(false);
+  expect(new sj.Sym('p', { aboveFermi: true }).key).toContain('[A');
+  expect(new sj.Sym('p', { belowFermi: true }).key).toContain('[B');
   expect(() => new sj.Sym('n', { odd: true, even: true })).toThrow(RangeError);
 });
 
@@ -308,4 +356,81 @@ describe('func (SymPy Basic.func)', () => {
     expect(sj.str(sj.func(g)(B))).toBe('adjoint(B)');
     expect(sj.func(sj.adjoint(B))).toBe(sj.func(g));
   });
+});
+
+it('matches contiguous noncommuting factors and preserves their order', () => {
+  const a = sj.symbol('a', { commutative: false });
+  const b = sj.symbol('b', { commutative: false });
+  const c = sj.symbol('c', { commutative: false });
+  const product = sj.mul(2, a, b, c);
+  expect(product.has(sj.mul(a, b))).toBe(true);
+  expect(product.has(sj.mul(b, a))).toBe(false);
+  expect(product.has(sj.mul(a, c))).toBe(false);
+  expect(product.has(sj.mul(3, a))).toBe(false);
+  expect(() => Reflect.construct(sj.Sym, ['x', { commutative: null }])).toThrow(RangeError);
+  expect(Rational.of(-2).bitNot().p).toBe(1n);
+  expect(() => Rational.of(1, 2).bitNot()).toThrow(TypeError);
+});
+
+it('exposes symbol forms, integral bounds and optional extension hooks', () => {
+  const x = sj.symbol('x');
+  expect(x.prettyForm).toBeUndefined();
+  expect(x.conjugate().key).toBe(sj.conjugate(x).key);
+  expect(new sj.Sym('i', { aboveFermi: true }).key).toContain('A');
+  expect(new sj.Sym('j', { belowFermi: true }).key).toContain('B');
+  expect(new sj.Integral([x, x, S.Zero, S.One]).limits).toEqual([S.Zero, S.One]);
+  expect(new sj.Integral([x, x]).limits).toBeUndefined();
+  const box = new Box([x]);
+  expect(box.trigsimpSelf((e) => e)).toBeUndefined();
+  expect(box.kindSelf()).toBeUndefined();
+  expect(box.matchesSelf(x)).toBeUndefined();
+  expect(box.expandSelf('custom', {})).toBeUndefined();
+});
+
+it('computes rational cofactors and promotes mixed inputs to the wider float precision', () => {
+  expect(R(1, 2).cofactors(R(3, 4)).map(String)).toEqual(['1/4', '2', '3']);
+  expect(R(0).cofactors(R(-2)).map(String)).toEqual(['2', '0', '-1']);
+  expect(() => R(0).cofactors(R(0))).toThrow(RangeError);
+  const low = new Float(3, 30);
+  const high = new Float(2, 100);
+  expect(low.cofactors(high).map((f) => [f.value, f.prec])).toEqual([[1, 100], [3, 100], [2, 100]]);
+  expect(R(4).cofactors(high).map((n) => n.key)).toEqual([new Float(1, 100), new Float(4, 100), high].map((f) => f.key));
+});
+
+it('preserves explicit rational content and detects nonconcrete derivative counts', () => {
+  const x = sj.symbol('x');
+  const n = sj.symbol('n');
+  expect(Rational.of(2, 4, { gcd: 1n }).q).toBe(4n);
+  expect(() => Rational.of(2, 4, { gcd: 0n })).toThrow(RangeError);
+  expect(() => Rational.of(3, 4, { gcd: 2n })).toThrow(RangeError);
+  expect(() => Rational.of(2, 3, { gcd: 2n })).toThrow(RangeError);
+  expect(() => new sj.Derivative([x, x, n]).variableCount).toThrow(RangeError);
+  expect(() => new sj.Derivative([x, x, Rational.of(1, 2)]).variableCount).toThrow(RangeError);
+  expect(() => new sj.Derivative([x, x, Rational.of(2n ** 55n)]).variableCount).toThrow(RangeError);
+  expect(new sj.Derivative([x, x, n]).derivativeOrder.key).toBe(n.key);
+});
+
+it('delegates fluent queries and preserves the integral limits', () => {
+  expect(x.isComparable).toBe(false);
+  expect(pi.isComparable).toBe(true);
+  expect(x.expand()).toBe(x);
+  expect(x.conjugate().equals(sj.conjugate(x))).toBe(true);
+  expect(x.toLatex()).toBe('x');
+  expect(new sj.Integral([x, x, S.Zero, S.One]).limits).toEqual([S.Zero, S.One]);
+  expect(new sj.Integral([x, x]).limits).toBeUndefined();
+});
+
+it('exposes the default extension hooks', () => {
+  const box = new Box([x]);
+  const identity = (e: Expr) => e;
+  expect(box.key).toBe(new Box([x]).key);
+  expect(box.printLatex(String)).toBe('\\operatorname{Box}\\left(x\\right)');
+  expect(box.trigsimpSelf(identity)).toBeUndefined();
+  expect(box.asRealImagSelf()).toBeUndefined();
+  expect(box.kindSelf()).toBeUndefined();
+  expect(box.expandSelf('complex', {})).toBeUndefined();
+  expect(box.doitSelf()).toBeUndefined();
+  expect(box.matchesSelf(x)).toBeUndefined();
+  expect(box.integrateSelf(x, undefined, identity)).toBeUndefined();
+  expect(box.simplifySelf(identity)).toBeUndefined();
 });

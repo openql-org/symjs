@@ -68,3 +68,23 @@ it('retains the relation generators in a subquotient presentation', () => {
   expect(String(h.domain)).toBe('<[1, 0] + <[1, 0]>, [0, x] + <[1, 0]>, [1, 0] + <[1, 0]>>');
   expect(h.apply([0,x]).equals(F.convert([x.pow(3),0]))).toBe(true);
 });
+it('adds, subtracts, scales, divides and compares linear maps', () => {
+  const id = homomorphism(F, F, [[1, 0], [0, 1]]);
+  const h = homomorphism(F, F, [[0, 1], [x, 0]]);
+  expect(String(id.add(h).apply([1, 2]))).toBe('[2*x + 1, 3]');
+  expect(id.add(h).sub(h).equals(id)).toBe(true);
+  expect(id.neg().add(id).isZero()).toBe(true);
+  expect(id.mul(h).equals(h)).toBe(true);
+  expect(id.mul(2).div(2).equals(id)).toBe(true);
+  expect(id.equals(h)).toBe(false);
+  expect(id.equals(0)).toBe(false);
+  const small = R.freeModule(1);
+  const column = homomorphism(small, F, [[1, 0]]);
+  const row = homomorphism(F, small, [[1], [0]]);
+  expect(() => id.add(0)).toThrow(TypeError);
+  expect(() => id.add(column)).toThrow(TypeError);
+  expect(() => id.add(row)).toThrow(TypeError);
+  expect(() => id.sub(0)).toThrow(TypeError);
+  expect(id.equals(column)).toBe(false);
+  expect(id.equals(row)).toBe(false);
+});

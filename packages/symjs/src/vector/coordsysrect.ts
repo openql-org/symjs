@@ -273,6 +273,14 @@ export class CoordSys3DNode extends CoordSysBase {
     return new CoordSys3DNode(this.#name, { ...names, transformation: f.name });
   }
 
+  /** SymPy srepr: the name, the transformation and the parent system. */
+  printRepr(repr: (e: Expr) => string): string {
+    const f = this.#form;
+    const rows = (m: Matrix): string => [0, 1, 2].map((r) => `[${[0, 1, 2].map((c) => repr(at(m.data, 3 * r + c))).join(', ')}]`).join(', ');
+    const transformation = f.kind === 'rect' ? `Tuple(ImmutableDenseMatrix([${rows(f.rotation)}]), ${repr(f.location)})` : f.kind === 'name' ? `Str('${f.name}')` : repr(f.lambda);
+    return `CoordSys3D(Str('${this.#name}'), ${transformation}${this.#parent === undefined ? '' : `, ${repr(this.#parent)}`})`;
+  }
+
   override get sysName(): string {
     return this.#name;
   }

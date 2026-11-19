@@ -131,3 +131,17 @@ describe('heuGcd retries (small first evaluation points)', () => {
     expect(at3(f.replaceAll('x', 'y'), `x*(${g.replaceAll('x', 'y')})`, [x, y])).toBeUndefined();
   });
 });
+
+it('computes Euclidean and primitive remainder sequences from the SymPy reference', async () => {
+  const { PolyRing, QQ, ZZ, dupEuclideanPrs, dupPrimitivePrs } = await import('../../src/polys');
+  const f = 'x**8+x**6-3*x**4-3*x**3+8*x**2+2*x-5', g = '3*x**6+5*x**4-4*x**2-9*x+21';
+  const Q = new PolyRing('x', QQ), Z = new PolyRing('x', ZZ);
+  const euclidean = dupEuclideanPrs(Q.fromExpr(parse(f)), Q.fromExpr(parse(g)));
+  expect(euclidean.map(String)).toEqual([String(Q.fromExpr(parse(f))), String(Q.fromExpr(parse(g))), '-5/9*x**4 + 1/9*x**2 - 1/3', '-117/25*x**2 - 9*x + 441/25', '233150/19773*x - 102500/6591', '-1288744821/543589225']);
+  const primitive = dupPrimitivePrs(Z.fromExpr(parse(f)), Z.fromExpr(parse(g)));
+  expect(primitive.map(String)).toEqual([String(Z.fromExpr(parse(f))), String(Z.fromExpr(parse(g))), '-5*x**4 + x**2 - 3', '13*x**2 + 25*x - 49', '4663*x - 6150', '1']);
+  expect(dupEuclideanPrs(Q.one, Q.one)).toEqual([Q.one, Q.one]);
+  expect(dupPrimitivePrs(Z.one, Z.one)).toEqual([Z.one, Z.one]);
+  expect(() => dupEuclideanPrs(Q.one, Q.zero)).toThrow();
+  expect(() => dupPrimitivePrs(Z.one, Z.zero)).toThrow();
+});

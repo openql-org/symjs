@@ -107,7 +107,7 @@ describe('quotient modules and quotient coefficients', () => {
     expect(String(Q)).toBe(refs['quotient']);
     expect(String(Q.convert([1, 0]))).toBe(refs['coset']);
     expect(Q.convert([1, 0]).equals(Q.convert([add(x, 1), x]))).toBe(true);
-    expect(Q.convert([1, 0]).equals(F.convert([1, 0]))).toBe(false);
+    expect(Q.convert([1, 0]).equals(F.convert([1, 0]))).toBe(true);
     expect(F.convert([1, 0]).equals(Q.convert([1, 0]))).toBe(false);
     expect(Q.isSubmodule(Q.submodule([1, 0]))).toBe(true);
     expect(Q.submodule([1, 0]).isSubmodule(Q)).toBe(false);
@@ -170,4 +170,53 @@ it('propagates computation failures from membership checks', () => {
   const conversion = vi.spyOn(ambient, 'convert').mockImplementation(() => { throw failure; });
   expect(() => ambient.contains([0])).toThrow(failure);
   conversion.mockRestore();
+});
+
+it('divides module elements by scalars with exact cancellation', () => {
+  const value = F.convert([p('x**2+x'), p('x+1')]);
+  expect(String(value.div(p('x+1')))).toBe('[x, 1]');
+  expect(() => value.div(x)).toThrow(CoercionFailed);
+  expect(F.isSubmodule(0)).toBe(false);
+  expect(F.submodule([x, 0]).isSubmodule(0)).toBe(false);
+  expect(String(F.convert([2, 4]).div(2))).toBe('[1, 2]');
+});
+
+
+it('converts quotient cosets only along containment of their relations', () => {
+  const A = F.quotientModule([[x, 0]]), B = F.quotientModule([[1, 0]]);
+  const a = A.convert([x, 1]);
+  expect(B.convert(a).equals([0, 1])).toBe(true);
+  expect(A.convert(a).equals(a)).toBe(true);
+  expect(() => A.convert(B.convert([0, 1]))).toThrow(CoercionFailed);
+  expect(() => F.convert(a)).toThrow(CoercionFailed);
+  expect([...F.convert([x, y])]).toEqual([x, y]);
+  expect(F.convert([x, y]).equals([1])).toBe(false);
+  expect(F.convert([0, 0]).equals(0)).toBe(true);
+  expect(a.equals([p('1/x'), 0])).toBe(false);
+});
+
+it('forms cosets by addition and multiplies modules by scalars and ideals', () => {
+  const N = F.submodule([x, 0]);
+  expect(N.add([x, 1]).equals([0, 1])).toBe(true);
+  expect(F.convert([x, 1]).add(N).equals([0, 1])).toBe(true);
+  expect(F.mul(x).equals(F.multiplyIdeal(R.ideal(x)))).toBe(true);
+  expect(F.mul(R.ideal(y)).equals(F.multiplyIdeal(R.ideal(y)))).toBe(true);
+  expect(F.mul(2).isFullModule()).toBe(true);
+  const e = F.convert([1, 0]);
+  const spy = vi.spyOn(F, 'convert').mockImplementation(() => { throw new RangeError('conversion failed'); });
+  expect(() => e.equals([1, 0])).toThrow('conversion failed');
+  spy.mockRestore();
+});
+
+it('orders module positions before or after polynomial monomials', async () => {
+  const { ModuleOrder, lex, grlex, ilex } = await import('../../../src/polys');
+  const positionFirst = new ModuleOrder(lex, grlex, false);
+  expect(positionFirst.key([1, 2, 3])).toEqual([1, [5, [2, 3]]]);
+  expect(new ModuleOrder(ilex, lex, false).key([1, 2, 3])).toEqual([-1, [2, 3]]);
+  expect(new ModuleOrder(lex, grlex, true).key([1, 2, 3])).toEqual([[5, [2, 3]], 1]);
+  expect(String(positionFirst)).toBe('ModuleOrder(lex, grlex)');
+  expect(positionFirst.equals(new ModuleOrder(lex, grlex, false))).toBe(true);
+  expect(positionFirst.equals(new ModuleOrder(ilex, grlex, false))).toBe(false);
+  expect(positionFirst.equals(0)).toBe(false);
+  expect(new ModuleOrder(lex, lex, false).equals(new ModuleOrder(lex, lex, true))).toBe(false);
 });

@@ -6,7 +6,7 @@
 // Expected values are the str() forms printed by SymPy 1.14 unless a comment says otherwise.
 
 import { describe, expect, it } from 'vitest';
-import { DiracDelta, Heaviside, Rational, besseli, besselj, besselsimp, expPolar, fn, mul, parse, polarLift, symbol, symbols } from '../../src';
+import { Float, DiracDelta, Heaviside, Rational, besseli, besselj, besselsimp, expPolar, fn, mul, parse, polarLift, symbol, symbols } from '../../src';
 import type { Expr } from '../../src';
 
 const [z, nu] = symbols('z nu x');
@@ -73,4 +73,16 @@ describe("besselsimp (cov2): SymPy 1.14 cases", () => {
   it.each(cases)('%s', (_name, run, want) => {
     expect(showMap(run())).toBe(want);
   });
+});
+
+it('retains an order when adding one rounds back to that order', () => {
+  const e = besselj(new Float(2 ** 60), z);
+  expect(besselsimp(e).equals(e)).toBe(true);
+});
+
+it('reduces consecutive symbolic orders and a held negative half-integer order', () => {
+  expect(String(besselsimp(P('besselj(a,z) + besselj(a+1,z) + besselj(a+2,z)'))))
+    .toBe('(2*a + z + 2)*besselj(a + 1, z)/z');
+  const held = fn('besselk', [Rational.of(-3, 2), z], { evaluate: false });
+  expect(String(besselsimp(held))).toBe('sqrt(2)*sqrt(pi)*(z + 1)*exp(-z)/(2*z**(3/2))');
 });

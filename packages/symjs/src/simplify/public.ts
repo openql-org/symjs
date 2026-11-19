@@ -42,9 +42,10 @@ export function hypersimp(f: ExprLike, k: Expr): Expr | NoMatchResult {
 /**
  * SymPy separatevars: the expression with its variables separated; with
  * `dict`, {symbol: factor, coeff: rest}, or NoMatch when it does not separate.
+ * `symbols: null` groups the entire expression under the coeff key.
  */
-export function separatevars(e: ExprLike, opts: { symbols?: readonly Sym[]; dict: true; force?: boolean }): Map<Sym | 'coeff', Expr> | NoMatchResult;
-export function separatevars(e: ExprLike, opts?: { symbols?: readonly Sym[]; dict?: false; force?: boolean }): Expr;
-export function separatevars(e: ExprLike, opts: { symbols?: readonly Sym[]; dict?: boolean; force?: boolean } = {}): Expr | Map<Sym | 'coeff', Expr> | NoMatchResult {
+export function separatevars(e: ExprLike, opts: { symbols?: readonly Sym[] | null; dict: true; force?: boolean }): Map<Sym | 'coeff', Expr> | NoMatchResult;
+export function separatevars(e: ExprLike, opts?: { symbols?: readonly Sym[] | null; dict?: false; force?: boolean }): Expr;
+export function separatevars(e: ExprLike, opts: { symbols?: readonly Sym[] | null; dict?: boolean; force?: boolean } = {}): Expr | Map<Sym | 'coeff', Expr> | NoMatchResult {
   return orNoMatch(separatevarsImpl(e, opts));
 }

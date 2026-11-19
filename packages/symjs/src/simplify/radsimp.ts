@@ -6,8 +6,9 @@
  */
 
 import type { Expr, ExprLike } from '../core/nodes';
-import { Add, Constant, Derivative, Fn, impl, Mul, Pow, Rational, S, UndefFn, Wild } from '../core/nodes';
+import { Add, Constant, Derivative, Float, Fn, impl, Mul, Order, Pow, Rational, S, UndefFn, Wild } from '../core/nodes';
 import { add, asBaseExp, mul, pow, sympify } from '../core/ops';
+import { ExprMap } from '../core/exprmap';
 import { isNegative, isReal } from '../core/assumptions';
 import { mapBottomUp, rebuild } from '../core/traverse';
 import { at, defined, first } from '../core/guard';
@@ -101,6 +102,7 @@ function extractPattern(term: Expr, p: Expr, exact: boolean): [Expr, Expr] | und
   if (hasWild(p) && impl.match) {
     // a pattern with Wild symbols: the factor matching it is the key (SymPy collect(..., w**y))
     for (const [i, f] of factors.entries()) {
+      if (p instanceof Pow && !(f instanceof Pow)) continue;
       if (impl.match(f, p) !== undefined) return [f, mul(...factors.filter((_, j) => j !== i))];
     }
     return undefined;
@@ -128,6 +130,10 @@ function extractPattern(term: Expr, p: Expr, exact: boolean): [Expr, Expr] | und
   }
   for (const [i, f] of factors.entries()) {
     // as in SymPy, the key is the matched factor itself (x for the pattern x**2, not sqrt(x**2))
+    if (!exact && f instanceof Pow && p instanceof Pow && f.base.key === p.base.key) {
+      const multiple = mul(f.exp, pow(p.exp, -1));
+      if (multiple instanceof Float && Number.isInteger(multiple.value)) return [pow(p, multiple), mul(...factors.filter((_, j) => j !== i))];
+    }
     if (powerOf(f, p, exact) !== undefined) return [f, mul(...factors.filter((_, j) => j !== i))];
     const b = f instanceof Pow ? f.base : f;
     if (!exact && derivativeOf(b, p)) return [f, mul(...factors.filter((_, j) => j !== i))];
@@ -143,53 +149,50 @@ const isExprList = (v: readonly Expr[] | Expr): v is readonly Expr[] => Array.is
  * collect(a*x**2 + b*x**2 + a*x - b*x + c, x) = c + x**2*(a + b) + x*(a - b).
  * With several patterns, terms free of the first pattern are collected by the next.
  */
-export function collect(ex: ExprLike, syms: readonly Expr[] | Expr, opts: { exact?: boolean | null; func?: (c: Expr) => Expr } = {}): Expr {
-  const e = sympify(ex);
-  const list = isExprList(syms) ? syms : [syms];
-  if (list.length === 0) return e;
-  if (opts.exact === null || opts.func) {
-    // exact=None (and a coefficient function): group the terms by their whole part depending on the symbols
-    if (opts.exact !== null) {
-      const c = collect(e, list, { exact: opts.exact });
-      return groupByDependent(c, list, opts.func);
-    }
-    return groupByDependent(e, list, opts.func);
-  }
-  const p = first(list);
-  const rest = list.slice(1);
-  const terms = e instanceof Add ? e.args : [e];
-  const groups = new Map<string, { k: Expr; coeffs: Expr[] }>();
-  const free: Expr[] = [];
-  for (const t of terms) {
-    const m = extractPattern(t, p, opts.exact === true);
-    if (!m) {
-      free.push(t);
-      continue;
-    }
-    const [k, c] = m;
-    const g = groups.get(k.key);
-    if (g) g.coeffs.push(c);
-    else groups.set(k.key, { k, coeffs: [c] });
-  }
-  const parts: Expr[] = [];
-  for (const { k, coeffs } of groups.values()) parts.push(mul(add(...coeffs), k));
-  const freePart = rest.length ? collect(add(...free), rest, opts) : add(...free);
-  return add(freePart, ...parts);
+interface CollectOptions {
+  exact?: boolean | null;
+  func?: (c: Expr) => Expr;
+  distributeOrderTerm?: boolean;
 }
 
-
-/** Terms grouped by the product of their factors containing the symbols; func applied to each coefficient. */
-function groupByDependent(e: Expr, syms: readonly Expr[], func?: (c: Expr) => Expr): Expr {
-  const groups = new Map<string, [Expr, Expr[]]>();
-  for (const t of e instanceof Add ? e.args : [e]) {
-    const fs = t instanceof Mul ? t.args : [t];
-    const dep = mul(...fs.filter((f) => syms.some((s) => f.has(s))));
-    const c = mul(...fs.filter((f) => !syms.some((s) => f.has(s))));
-    const g = groups.get(dep.key);
-    if (g) g[1].push(c);
-    else groups.set(dep.key, [dep, [c]]);
+export function collect(ex: ExprLike, syms: readonly Expr[] | Expr, opts: CollectOptions & { evaluate: false }): Map<Expr, Expr>;
+export function collect(ex: ExprLike, syms: readonly Expr[] | Expr, opts?: CollectOptions & { evaluate?: true }): Expr;
+export function collect(ex: ExprLike, syms: readonly Expr[] | Expr, opts: CollectOptions & { evaluate?: boolean } = {}): Expr | Map<Expr, Expr> {
+  const e = sympify(ex);
+  const list = isExprList(syms) ? syms : [syms];
+  const terms = e instanceof Add ? e.args : [e];
+  const order = opts.distributeOrderTerm !== false && e instanceof Add
+    ? terms.find((t) => t instanceof Order && !list.some((p) => t.has(p))) : undefined;
+  const groups = new ExprMap<Expr[]>();
+  for (const term of terms) {
+    if (term === order) continue;
+    let key: Expr = S.One;
+    let coefficient = term;
+    if (opts.exact === null) {
+      const factors = term instanceof Mul ? term.args : [term];
+      const dependent = factors.filter((f) => list.some((p) => f.has(p)));
+      key = mul(...dependent);
+      coefficient = mul(...factors.filter((f) => !dependent.includes(f)));
+    } else {
+      for (const pattern of list) {
+        const match = extractPattern(term, pattern, opts.exact === true);
+        if (match) {
+          if (!pattern.isCommutative) throw new TypeError('Cannot collect a noncommutative symbol');
+          [key, coefficient] = match;
+          break;
+        }
+      }
+    }
+    const group = groups.get(key);
+    if (group) group.push(coefficient);
+    else groups.set(key, [coefficient]);
   }
-  return add(...[...groups.values()].map(([dep, cs]) => mul(func ? func(add(...cs)) : add(...cs), dep)));
+  const result = new ExprMap<Expr>();
+  for (const [key, values] of groups) {
+    const c = add(...values, order ?? S.Zero);
+    result.set(key, opts.func ? opts.func(c) : c);
+  }
+  return opts.evaluate === false ? result : add(...[...result].map(([k, c]) => mul(k, c)));
 }
 
 impl.collect = (e, syms) => collect(e, syms);

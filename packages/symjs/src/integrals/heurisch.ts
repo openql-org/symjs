@@ -15,13 +15,16 @@
 
 import type { Expr, Sym } from '../core/nodes';
 import { Add, Constant, Derivative, Dummy, Fn, Mul, Pow, Rational, S, UndefFn, impl } from '../core/nodes';
-import { add, couldExtractMinusSign, mul, pow } from '../core/ops';
+import { add, couldExtractMinusSign, mul, pow, sqrt } from '../core/ops';
 import { mapBottomUp, some, subs, xreplace } from '../core/traverse';
 import { and, or } from '../core/boolalg';
 import { Eq, Ne, piecewise } from '../core/logic';
 import { ordered } from '../core/match';
 import { asIndependent, asNumerDenom, isPolynomial, isRationalFunction } from '../core/methods';
-import { atan, log, tan, tanh } from '../functions/elementary/elementary';
+import { asin, atan, fn, log, tan, tanh } from '../functions/elementary/elementary';
+import { isPositive, isNegative } from '../core/assumptions';
+import { asinh } from '../functions/elementary/trigext';
+import { erf, erfi } from '../functions/special/special';
 import { at, defined } from '../core/guard';
 import { polyCoefficients, roots } from '../polys/poly';
 import { Poly, factorListExpr } from '../polys/sympoly';
@@ -82,7 +85,7 @@ export function heurischTrig(f: Expr, x: Sym, integrate: (g: Expr, t: Sym) => Ex
 
 // ---- the heuristic Risch algorithm ------------------------------------------------------------
 
-const isExpPow = (e: Expr): boolean => e instanceof Pow && e.base instanceof Constant && e.base.name === 'E';
+const isExpPow = (e: Expr): e is Pow => e instanceof Pow && e.base instanceof Constant && e.base.name === 'E';
 
 /** The functional components of f (SymPy components) by key, added to `out`. */
 function addComponents(f: Expr, x: Sym, out: Map<string, Expr>): void {
@@ -135,6 +138,8 @@ export interface HeurischOptions {
   rewrite?: boolean;
   retries?: number;
   degreeOffset?: number;
+  /** Extra antiderivative components; an empty list enables automatic hints. */
+  hints?: readonly Expr[];
 }
 
 type Pair = [Expr, Dummy];
@@ -217,18 +222,47 @@ function splitI(e0: Expr): [Expr, Expr] {
  * Risch algorithm (Bronstein's "Poor Man's Integrator"), or undefined when it
  * is not found (which does not prove that none is elementary).
  *
- * Differences from SymPy: no `hints` (the antiderivative terms are not
- * guessed beyond the components of f), and the derivatives of Bessel
- * functions are not written in terms of the orders n and n - 1.
+ * Bessel derivatives use adjacent orders as an algebraically independent pair.
  *
  * @example
  * heurisch(parse('y*tan(x)'), x)  // y*log(tan(x)**2 + 1)/2
  */
 export function heurisch(f: Expr, x: Sym, opts: HeurischOptions = {}): Expr | undefined {
-  return heurisch0(f, x, opts.rewrite ?? false, opts.retries ?? 3, opts.degreeOffset ?? 0);
+  // A quadratic radical x/sqrt(a*x**2+b) has a primitive in the same
+  // algebraic extension. Keeping the original radical preserves its branch.
+  if (f instanceof Pow && f.exp.equals(S.Half)) {
+    const q = polyCoefficients(cancel(mul(pow(x, 2), pow(f.base, -1))), x);
+    const a = q?.get(2), b = q?.get(0);
+    if (q?.size === 2 && a !== undefined && b !== undefined) {
+      const radical = sqrt(cancel(f.base));
+      return add(mul(x, radical), mul(b, pow(mul(a, x), -1), radical));
+    }
+  }
+  // Peel off a trig derivative and a logarithmic derivative before solving
+  // the full coefficient system for a tower containing Lambert W.
+  const components = componentsOf(f, x);
+  if (components.some((v) => v instanceof Fn && v.name === 'LambertW')) {
+    const u = new Dummy('u');
+    for (const v of components) {
+      if (!(v instanceof Fn && (v.name === 'cos' || v.name === 'sin'))) continue;
+      const argument = at(v.args, 0);
+      const primitive = v.name === 'cos' ? fn('sin', [argument]) : mul(-1, fn('cos', [argument]));
+      const coefficient = cancel(mul(diff(xreplace(f, [[v, u]]), u), pow(diff(argument, x), -1)));
+      if (coefficient.has(u) || coefficient.has(x)) continue;
+      const remainder = cancel(add(f, mul(-1, coefficient, diff(primitive, x))));
+      if (isZeroExpr(remainder)) return mul(coefficient, primitive);
+      for (const d of denoms(f)) {
+        const derivative = diff(d, x);
+        if (isZeroExpr(derivative)) continue;
+        const scale = cancel(mul(remainder, d, pow(derivative, -1)));
+        if (!scale.has(x)) return add(mul(coefficient, primitive), mul(scale, log(d)));
+      }
+    }
+  }
+  return heurisch0(f, x, opts.rewrite ?? false, opts.retries ?? 3, opts.degreeOffset ?? 0, undefined, [], opts.hints);
 }
 
-function heurisch0(f0: Expr, x: Sym, rewrite0: boolean, retries: number, degreeOffset: number, mappings0?: Iterator<Pair[]>, unnecessary0: Pair[] = []): Expr | undefined {
+function heurisch0(f0: Expr, x: Sym, rewrite0: boolean, retries: number, degreeOffset: number, mappings0?: Iterator<Pair[]>, unnecessary0: Pair[] = [], hints?: readonly Expr[]): Expr | undefined {
   if (some(f0, excluded)) return undefined;
   if (!f0.has(x)) return mul(f0, x);
   let [indep, f] = f0 instanceof Add ? [S.One, f0] : asIndependent(f0, [x]);
@@ -238,12 +272,46 @@ function heurisch0(f0: Expr, x: Sym, rewrite0: boolean, retries: number, degreeO
   else if (!hasTrig) rewrite = true;
   const dcache = new Map<string, Expr>();
   const getDiff = (g: Expr): Expr => {
-    const c = dcache.get(g.key) ?? cancel(diff(g, x));
-    dcache.set(g.key, c);
-    return c;
+    const cached = dcache.get(g.key);
+    if (cached !== undefined) return cached;
+    if (g instanceof Fn && ['besselj', 'bessely', 'hankel1', 'hankel2', 'besseli', 'besselk', 'jn', 'yn'].includes(g.name)) {
+      const n = at(g.args, 0), z = at(g.args, 1);
+      const previous = fn(g.name, [add(n, -1), z]);
+      const dz = getDiff(z);
+      const order = ['jn', 'yn'].includes(g.name) ? add(n, 1) : n;
+      const d0 = add(mul(g.name === 'besselk' ? -1 : 1, previous), mul(-1, order, g, pow(z, -1)));
+      const d1 = add(mul(add(n, -1), previous, pow(z, -1)), mul(g.name === 'besseli' ? 1 : -1, g));
+      dcache.set(g.key, mul(d0, dz));
+      dcache.set(previous.key, mul(d1, dz));
+    } else dcache.set(g.key, cancel(diff(g, x)));
+    return defined(dcache.get(g.key), 'cached derivative');
   };
   const termMap = new Map<string, Expr>();
   addComponents(f, x, termMap);
+  if (hints !== undefined) {
+    if (hints.length) for (const g of hints) termMap.set(g.key, g);
+    else for (const g of [...termMap.values()]) {
+      const base = isExpPow(g) ? g.exp : g instanceof Pow && g.exp instanceof Rational && g.exp.q === 2n ? g.base : undefined;
+      if (base === undefined) continue;
+      const pc = polyCoefficients(base, x);
+      if (pc === undefined || [...pc.keys()].some((k) => k > 2)) continue;
+      const a = pc.get(2) ?? S.Zero;
+      const b = pc.get(1) ?? S.Zero;
+      const c = pc.get(0) ?? S.Zero;
+      let hint: Expr | undefined;
+      if (isExpPow(g)) {
+        if (isPositive(a) === true) hint = erfi(add(mul(sqrt(a), x), mul(b, pow(mul(2, sqrt(a)), -1))));
+        else if (isNegative(a) === true) hint = erf(add(mul(sqrt(mul(-1, a)), x), mul(-1, b, pow(mul(2, sqrt(mul(-1, a))), -1))));
+      } else if (isZeroExpr(b) && isPositive(c) === true) {
+        if (isPositive(a) === true) hint = asinh(mul(sqrt(mul(a, pow(c, -1))), x));
+        else if (isNegative(a) === true) hint = asin(mul(sqrt(mul(-1, a, pow(c, -1))), x));
+      } else if (isZeroExpr(b) && isNegative(c) === true && isPositive(a) === true) {
+        hint = mul(log(add(mul(sqrt(a), sqrt(base)), mul(a, x))), pow(sqrt(a), -1));
+        dcache.set(hint.key, pow(sqrt(base), -1));
+      }
+      if (hint !== undefined) termMap.set(hint.key, hint);
+    }
+  }
   for (const g of [...termMap.values()]) addComponents(getDiff(g), x, termMap);
   const terms = [...termMap.values()];
   const V = symbols('x', terms.length);
@@ -288,7 +356,7 @@ function heurisch0(f0: Expr, x: Sym, rewrite0: boolean, retries: number, degreeO
   // a result times the factor independent of x
   const scaled = (r: Expr | undefined): Expr | undefined => (r === undefined ? undefined : mul(indep, r));
   // no mapping gives rational functions: try again with tan and tanh
-  if (found === undefined) return rewrite ? undefined : scaled(heurisch0(f, x, true, 3, 0));
+  if (found === undefined) return rewrite ? undefined : scaled(heurisch0(f, x, true, 3, 0, undefined, [], hints));
   const { sub, diffs, denom } = found;
   const numers = diffs.map((g) => cancel(mul(denom, g)));
   const derivation = (h: Expr): Expr => add(...numers.map((d, i) => mul(d, diff(h, at(V, i)))));
@@ -413,7 +481,7 @@ function heurisch0(f0: Expr, x: Sym, rewrite0: boolean, retries: number, degreeO
     return mul(indep, antideriv);
   }
   // the next mappings
-  return retries >= 0 ? scaled(heurisch0(f, x, rewrite, retries - 1, degreeOffset, mappings, unnecessary)) : undefined;
+  return retries >= 0 ? scaled(heurisch0(f, x, rewrite, retries - 1, degreeOffset, mappings, unnecessary, hints)) : undefined;
 }
 
 /** The denominators of the subexpressions of e, each factor once (SymPy denoms). */

@@ -9,6 +9,8 @@
 import './core';
 // the methods that simplify (inv, eigenvals, simplify, rref of symbolic entries, ...) call it late-bound
 import './simplify/simplify';
+// Matrix differentiation uses tensor contractions, including for named subpath imports.
+import './tensor/array/arrayderivatives';
 // the matrix handlers of ask (Q.invertible, Q.symmetric, ... of matrix expressions) register on load
 import './assumptions/handlers/matrices';
 import { Matrix as MatrixClass } from './matrices/matrix';
@@ -18,7 +20,7 @@ import { registerTableFormMatrix } from './printing/tableform';
 registerTableFormMatrix((rows) => MatrixClass.of(rows));
 
 export {
-  Matrix,
+  Matrix, classof,
 } from './matrices/matrix';
 export { MutableDenseMatrix, MutableMatrix } from './matrices/mutable';
 export { ImmutableSparseMatrix, MutableSparseMatrix, SparseMatrix } from './matrices/sparse';
@@ -37,6 +39,7 @@ export * as linalg from './matrices/linalg';
 export {
   rref,
   echelonForm,
+  isEchelon,
   rank,
   nullspace,
   columnspace,
@@ -65,6 +68,7 @@ export {
   pinv,
   jacobian,
   blockDiag,
+  blockDiagSized,
   rotAxis1,
   rotAxis2,
   rotAxis3,

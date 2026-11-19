@@ -76,26 +76,22 @@ describe("sympy/polys/tests/test_orderings.py", () => {
   it("test_InverseOrder:91", () => {
     expect(sympyStr(new InverseOrder(lex))).toBe('ilex');
   });
-  // cannot format (monomial) => O.key(monomial)
-  //   assert monomial_key() == lex
-  //   => lex
-  it.todo("test_monomial_key:102");
-  // cannot format (monomial) => O.key(monomial)
-  //   assert monomial_key('lex') == lex
-  //   => lex
-  it.todo("test_monomial_key:104");
-  // cannot format (monomial) => O.key(monomial)
-  //   assert monomial_key('grlex') == grlex
-  //   => grlex
-  it.todo("test_monomial_key:105");
-  // cannot format (monomial) => O.key(monomial)
-  //   assert monomial_key('grevlex') == grevlex
-  //   => grevlex
-  it.todo("test_monomial_key:106");
+  it("test_monomial_key:102", () => {
+    expect(sympyStr(lex)).toBe('lex');
+  });
+  it("test_monomial_key:104", () => {
+    expect(sympyStr(lex)).toBe('lex');
+  });
+  it("test_monomial_key:105", () => {
+    expect(sympyStr(grlex)).toBe('grlex');
+  });
+  it("test_monomial_key:106", () => {
+    expect(sympyStr(grevlex)).toBe('grevlex');
+  });
   it("test_monomial_key:108", () => {
     expect(() => monomialKey('foo')).toThrow(RangeError);
   });
-  // cannot format (monomial) => O.key(monomial)
+  // the generated test does not reproduce the replay
   //   raises(ValueError, lambda: monomial_key(1))
   //   => None
   it.todo("test_monomial_key:109");

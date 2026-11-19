@@ -134,12 +134,16 @@ describe('symbols() name ranges', () => {
     expect(names('a b  c')).toEqual(['a', 'b', 'c']);
     expect(names('x(:2)y')).toEqual(['x0y', 'x1y']);
     expect(() => names('x:')).toThrow('missing end range');
-    // SymPy raises ValueError('no symbols given'); symjs returns no names
-    expect(names(' ')).toEqual([]);
+    for (const spec of [' ', ',', 'x,,y', ',x']) expect(() => names(spec)).toThrow(RangeError);
   });
 });
 
 describe('number utilities', () => {
+  it('removes spaces in rational strings as SymPy Rational does', () => {
+    expect(String(rationalFromString('1 234'))).toBe('1234');
+    expect(String(rationalFromString('123 456.123 456'))).toBe('1929001929/15625');
+    expect(String(rationalFromString(' 1 2 / 3 0 '))).toBe('2/5');
+  });
   it('rejects strings without digits', () => {
     for (const t of ['', '.', '+', 'e5', '-.e3']) expect(() => rationalFromString(t)).toThrow(SyntaxError);
   });
@@ -169,4 +173,67 @@ describe('igcdex / isqrt', () => {
     expect(sj.isqrt(10n ** 30n + 5n)).toBe(10n ** 15n);
     expect(() => sj.isqrt(-1n)).toThrow(RangeError);
   });
+});
+
+describe('literal values, rational square roots and enclosing intervals', () => {
+  it('tests literal integrality without rounding to a double', () => {
+    for (const value of [2n, 2, R(2), new sj.Float(0), new sj.Float(4)]) expect(sj.intValued(value)).toBe(true);
+    for (const value of [NaN, Infinity, 1.5, R(1, 2), new sj.Float(1.5), sj.pi, sj.Symbol('n', { integer: true })]) expect(sj.intValued(value)).toBe(false);
+    expect(() => Reflect.apply(sj.igcd, undefined, [R(1)])).toThrow(RangeError);
+  });
+  it('takes the integer square root of the entire fraction', () => {
+    expect(sj.isqrt(R(9007199523176447n, 2n))).toBe(67108864n);
+    expect(sj.isqrt(R(1n, 10n ** 1000n))).toBe(0n);
+    expect(sj.isqrt(R(10n ** 1100n - 1n, 10n ** 1000n))).toBe(10n ** 50n - 1n);
+    expect(sj.isqrt(new sj.Float(9))).toBe(3n);
+    expect(sj.isqrt(new sj.Float(8.9))).toBe(2n);
+    expect(() => sj.isqrt(R(-1, 100))).toThrow(RangeError);
+    expect(() => sj.isqrt(new sj.Float(-0.1))).toThrow(RangeError);
+    expect(sj.integerNthroot(3n, 10n ** 1000n)).toEqual([1n, false]);
+    expect(sj.integerNthroot(27n, 3n)).toEqual([3n, true]);
+    expect(sj.integerNthroot(0n, 100)).toEqual([0n, true]);
+    for (const degree of [0, -1, 1.5, NaN, Infinity]) expect(() => sj.integerNthroot(3n, degree)).toThrow(RangeError);
+  });
+  it('encloses each real number symbol with proven rational bounds', () => {
+    for (const [name, interval] of [['pi', '3,4'], ['E', '2,3'], ['GoldenRatio', '1,2'], ['TribonacciConstant', '1,2'], ['EulerGamma', '0,1'], ['Catalan', '0,1']] as const) {
+      expect(String(sj.approximationInterval(new sj.NumberSymbol(name)))).toBe(interval);
+    }
+    for (const [name, interval] of [['pi', '223/71,22/7'], ['EulerGamma', '1/2,3/5'], ['Catalan', '9/10,1']] as const) {
+      expect(String(sj.approximationInterval(new sj.NumberSymbol(name), 'Rational'))).toBe(interval);
+    }
+    expect(sj.approximationInterval(sj.E, 'Rational')).toBe(sj.NoMatch);
+    expect(sj.approximationInterval(new sj.NumberSymbol('I'))).toBe(sj.NoMatch);
+  });
+  it('uses Lehmer batches for large inputs and Euclid for the remainder', () => {
+    const fib = (n: number) => {
+      let a = 0n, b = 1n;
+      for (let i = 0; i < n; i++) [a, b] = [b, a + b];
+      return a;
+    };
+    for (const [a, b] of [[0n, 0n], [0n, -8n], [-12n, 18n], [2n ** 100n, 1n], [((2n ** 58n + 1n) * 2n) << 40n, (2n ** 58n) << 40n], [fib(500), fib(499)], [fib(500), fib(400)], [2n ** 100n, 2n ** 80n], [10n ** 100n, 10n ** 50n + 1n]]) {
+      if (a !== undefined && b !== undefined) expect(sj.igcdLehmer(a, b)).toBe(sj.igcd(a, b));
+    }
+  });
+});
+
+it('inverts a numeric expression only for a modulus greater than one', () => {
+  expect(sj.modInverse(sj.S.Pi, R(2)).key).toBe(sj.pow(sj.S.Pi, -1).key);
+  expect(sj.modInverse(R(2), sj.S.Pi).key).toBe(R(1, 2).key);
+  expect(sj.modInverse(R(3), new sj.Float(1.5)).key).toBe(R(1, 3).key);
+  expect(() => sj.modInverse(sj.S.Pi, R(1))).toThrow(RangeError);
+  expect(() => sj.modInverse(sj.symbol('x'), R(2))).toThrow(TypeError);
+  expect(() => sj.modInverse(R(2), sj.symbol('m'))).toThrow(TypeError);
+});
+
+it('converts a high-precision dyadic float without a binary64 round trip', () => {
+  const exact = new sj.Float({ man: 2n ** 70n + 1n, exp: -70n }, 80);
+  expect(rationalFromString('1').key).not.toBe(sj.rationalFromFloat(exact).key);
+  expect(sj.rationalFromFloat(exact).key).toBe(sj.Rational.of(2n ** 70n + 1n, 2n ** 70n).key);
+});
+
+it('normalizes mpf tuples and keeps the special zero-mantissa encodings', () => {
+  expect(sj.mpfNorm([1, 0n, 1n, 0], 10)).toEqual([0, 0n, 0n, 0]);
+  expect(sj.mpfNorm([0, 0n, -456n, -2], 10)).toEqual([0, 0n, -456n, -2]);
+  expect(sj.mpfNorm([0, 15n, 0n, 4], 3)).toEqual([0, 1n, 4n, 1]);
+  expect(sj.mpfNorm([1, 9n, 0n, 4], 3)).toEqual([1, 1n, 3n, 1]);
 });

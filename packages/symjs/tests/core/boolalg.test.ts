@@ -87,3 +87,25 @@ describe('LaTeX of negated implications (SymPy 1.14 test_latex_basic, test_issue
     expect(sj.latex(not(and(x, y)))).toBe('\\neg \\left(x \\wedge y\\right)');
   });
 });
+
+it('matches subgroups of the same associative Boolean operation', () => {
+  const [a, b, c, d] = sj.symbols('a b c d');
+  expect(sj.And(a, b, c).has(sj.And(c, a))).toBe(true);
+  expect(sj.Or(a, b, c).has(sj.Or(c, a))).toBe(true);
+  expect(sj.Or(a, b, c).has(sj.Or(c, d))).toBe(false);
+  expect(sj.And(a, b, c).has(sj.Or(c, a))).toBe(false);
+});
+
+it('prints nested disjunctions and exclusive disjunctions in LaTeX', () => {
+  const [x, y, z] = sj.symbols('x y z');
+  expect(new BoolOp('Xor', [x, new BoolOp('Or', [y, z])]).printLatex(String)).toContain('\\veebar');
+  expect(new BoolOp('Or', [x, y]).printLatex(String)).toContain('\\vee');
+  expect(not(new BoolOp('Not', [x]))).toBe(x);
+});
+
+it('propagates substitution errors that other operands cannot absorb', () => {
+  const gate = new BoolOp('Xor', [x, y]);
+  expect(() => gate.subsSelf(x, z, () => { throw new TypeError('invalid operand'); })).toThrow(TypeError);
+  const conjunction = new BoolOp('And', [x, y]);
+  expect(() => conjunction.subsSelf(x, z, () => { throw new RangeError('invalid operand'); })).toThrow(RangeError);
+});

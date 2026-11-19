@@ -11,7 +11,7 @@ import * as sj from '../../src';
 import { analyticFunc, I, log, Matrix, matrixLog, mul, oo, parse, parseExpr, Rational, S, simplify, sstr, symbols } from '../../src';
 import * as L from '../../src/matrices/linalg';
 import { isDiagonalizable, jordanForm } from '../../src/matrices/linalg';
-import { MatrixError, NonInvertibleMatrixError, NonPositiveDefiniteMatrixError, NonSquareMatrixError, NotLoadedError } from '../../src/core/errors';
+import { MatrixError, NonInvertibleMatrixError, NonPositiveDefiniteMatrixError, NonSquareMatrixError, NotLoadedError, ShapeError } from '../../src/core/errors';
 
 const q = (n: number) => Rational.of(n, 4);
 const [x] = symbols('x');
@@ -34,6 +34,11 @@ describe('matrix functions (SymPy Matrix.log / analytic_func)', () => {
 });
 
 describe('matrix solving and constructions', () => {
+  it('forms bordered Hessians from constraint gradients', () => {
+    expect(String(L.hessian(parse('z + x*y**2'), [y, x], [parse('x**2 + 2*y**3')]))).toBe('Matrix([[0, 6*y**2, 2*x], [6*y**2, 2*x, 2*y], [2*x, 2*y, 0]])');
+    expect(String(L.hessian(parse('x**2'), [x], [x, parse('x**2')]))).toBe('Matrix([[0, 0, 1], [0, 0, 2*x], [1, 2*x, 2]])');
+    expect(() => L.hessian(x, [])).toThrow(ShapeError);
+  });
   it('match SymPy', async () => {
     const { Matrix, matrixSolve, gaussJordanSolve, solveLeastSquares, GramSchmidt, hessian, wronskian, casoratian, normalized } = await import('../../src');
     const [x, y, n] = symbols('x y n');
@@ -702,4 +707,77 @@ it('matrix norm aliases, zero normalization, vector Jacobians and dependent orth
 
 it('rejects normalization of a matrix that is not a vector', () => {
   expect(() => L.normalized(Matrix.eye(2))).toThrow(sj.ShapeError);
+});
+
+it('recognizes echelon form including empty shapes and symbolic pivots', () => {
+  for (const m of [Matrix.zeros(0, 3), Matrix.zeros(3, 0), Matrix.zeros(2, 3), M([[0, x, 1], [0, 0, 2], [0, 0, 0]])]) {
+    expect(L.isEchelon(m)).toBe(true);
+  }
+  for (const m of [M([[0, 1], [1, 0]]), M([[1, 0], [x, 1]]), M([[0, 0], [0, 1]])]) {
+    expect(L.isEchelon(m)).toBe(false);
+  }
+});
+
+it('validates LDL symmetry and positive definite Hermitian pivots', () => {
+  expect(() => L.ldl(M([[1, 2]]))).toThrow(NonSquareMatrixError);
+  expect(() => L.ldl(M([[1, 2], [0, 1]]))).toThrow('Hermitian');
+  expect(() => L.ldl(M([[1, 2], [0, 1]]), false)).toThrow('symmetric');
+  expect(() => L.ldl(M([[1, 0], [0, -1]]))).toThrow(NonPositiveDefiniteMatrixError);
+  const tiny = Rational.of(1n, 10n ** 400n);
+  expect(L.ldl(M([[tiny]]))[1].get(0, 0).equals(tiny)).toBe(true);
+  const A = M([[1, sj.I], [sj.I, -1]]);
+  const [lower, diagonal] = L.ldl(A, false);
+  expect(lower.mul(diagonal).mul(lower.T).equals(A)).toBe(true);
+});
+
+it('computes Moore-Penrose inverses of deficient and zero matrices', () => {
+  for (const A of [M([[1, 2], [2, 4]]), M([[1, sj.I], [2, sj.mul(2, sj.I)]]), Matrix.zeros(2, 3), Matrix.zeros(0, 2)]) {
+    const P = L.pinv(A);
+    expect([P.rows, P.cols]).toEqual([A.cols, A.rows]);
+    expect(A.mul(P).mul(A).equalsSimplified(A)).toBe(true);
+    expect(P.mul(A).mul(P).equalsSimplified(P)).toBe(true);
+    expect(A.mul(P).adjoint().equalsSimplified(A.mul(P))).toBe(true);
+    expect(P.mul(A).adjoint().equalsSimplified(P.mul(A))).toBe(true);
+  }
+});
+
+it('evaluates permanents without enumerating every permutation', () => {
+  expect(s(L.permanent(Matrix.ones(12, 12)))).toBe('479001600');
+  expect(s(L.permanent(Matrix.ones(12, 12).sub(Matrix.eye(12))))).toBe('176214841');
+  expect(s(L.permanent(M([[0, 0], [0, 0]])))).toBe('0');
+  expect(s(L.permanent(M([[1, 2, 3], [4, 5, 6]])))).toBe('58');
+});
+
+it('sizes block diagonals and applies custom rank zero tests', () => {
+  expect(String(L.blockDiagSized([1], { rows: 3, cols: 2 }))).toBe('Matrix([[1, 0], [0, 0], [0, 0]])');
+  expect(String(L.blockDiagSized([Matrix.col(1, 2), Matrix.row(3, 4)]))).toBe('Matrix([[1, 0, 0], [2, 0, 0], [0, 3, 4]])');
+  expect(() => L.blockDiagSized([Matrix.eye(2)], { rows: 1 })).toThrow('constructed matrix is 2 x 2');
+  const approximate = M([[1, 1], [1, 1.0000000000001]]);
+  expect(L.rank(approximate)).toBe(2);
+  expect(L.rank(approximate, { iszerofunc: (e) => Math.abs(e.toComplex().re) < 1e-9 })).toBe(1);
+});
+
+it('tests the determinant for a custom two-dimensional rank tolerance', () => {
+  const zero = (e: sj.Expr): boolean => Math.abs(e.toNumber()) < 1e-8;
+  expect(L.rank(Matrix.zeros(2), { iszerofunc: zero })).toBe(0);
+  expect(L.rank(Matrix.eye(2), { iszerofunc: zero })).toBe(2);
+  expect(L.rank(Matrix.col(1, 0), { iszerofunc: zero })).toBe(1);
+  expect(L.rank(Matrix.row(0, 0), { iszerofunc: zero })).toBe(0);
+});
+
+it('checks analyticity at each eigenvalue with its multiplicity', () => {
+  expect(() => analyticFunc(Matrix.eye(2), y, x)).toThrow(RangeError);
+  expect(() => analyticFunc(Matrix.col(x), sj.exp(x), x)).toThrow(RangeError);
+  expect(() => analyticFunc(Matrix.zeros(2), log(x), x)).toThrow(RangeError);
+  expect(() => analyticFunc(Matrix.zeros(2), sj.sqrt(x), x)).toThrow(RangeError);
+  expect(() => matrixLog(Matrix.zeros(1))).toThrow(MatrixError);
+  expect(() => matrixLog(Matrix.row(1, 2))).toThrow(NonSquareMatrixError);
+  expect(L.gaussJordanSolve(Matrix.zeros(1, 2), Matrix.col(0))[1].data.map(String)).toEqual(['tau0', 'tau1']);
+  expect(L.gaussJordanSolve(Matrix.row(1, 0), Matrix.col(sj.symbol('tau9')))[1].data.map(String)).toEqual(['_tau0']);
+});
+
+it('accepts a monic coefficient sequence and eliminates a trigonometric zero', () => {
+  expect(String(L.companion([S.One, S.Zero, S.One]))).toBe('Matrix([[0, -1], [1, 0]])');
+  const zero = parse('sin(x)**2 + cos(x)**2 - 1');
+  expect(L.rref(Matrix.col(zero))[1]).toEqual([]);
 });

@@ -16,9 +16,10 @@
  */
 
 import type { Assumptions, ExprLike } from './nodes';
-import { Add, BoolAtom, Constant, Expr, ExtensionExpr, Fn, Float, Mul, Piecewise, Pow, Rational, Rel, S, Special, Sym } from './nodes';
+import { Add, BoolAtom, Constant, Derivative, Dummy, Expr, ExtensionExpr, Fn, Float, Integral, Limit, Mul, Order, Piecewise, Pow, Rational, Rel, S, Special, Sym, UndefFn, Wild, WildFunction, functionFactHandlers, impl } from './nodes';
 import { add, couldExtractMinusSign, mul, pow, sympify } from './ops';
-import { mapBottomUp, xreplace } from './traverse';
+import { mapBottomUp, some, xreplace } from './traverse';
+import { asRealImag } from './methods';
 import { isIntegerQ, isMinMax, isNegative, isNonNegative, isNonZero, isPositive, isReal, isZero, torf } from './assumptions';
 import { BoolOp, and, not, or, xor } from './boolalg';
 import type { Truth } from './truth';
@@ -89,16 +90,17 @@ export class AppliedPredicate extends ExtensionExpr {
   /** The arguments of this applied predicate (SymPy AppliedPredicate.arguments). */
   get arguments(): readonly Expr[] { return this.args; }
   /** The predicate applied by this expression (SymPy AppliedPredicate.function). */
-  get function(): Predicate { return Q[this.predicate] ?? Predicate(this.predicate); }
+  get function(): Predicate { return this.appliedFunction ?? Q[this.predicate] ?? Predicate(this.predicate); }
   constructor(
     /** The predicate name (positive for Q.positive). */
     readonly predicate: string,
     args: readonly Expr[],
+    private readonly appliedFunction?: Predicate,
   ) {
     super(`Q.${predicate}`, args);
   }
   withArgs(args: readonly Expr[]): Expr {
-    return new AppliedPredicate(this.predicate, args);
+    return new AppliedPredicate(this.predicate, args, this.appliedFunction);
   }
   /** The (first) argument. */
   get arg(): Expr {
@@ -132,9 +134,108 @@ export interface Predicate {
   (...args: (ExprLike | boolean)[]): AppliedPredicate;
   /** The name (positive for Q.positive). */
   readonly predicateName: string;
+  /** Dispatch on one expression class per argument. The handler receives the arguments followed by the assumptions. */
+  register<T extends PredicateClass[]>(signature: readonly [...T], handler: (...args: [...PredicateArgs<T>, Expr]) => Truth): void;
 }
 
-const handlers = new Map<string, PredicateHandler[]>();
+/** Integer is represented by a Rational with denominator one. Other types use their expression class. */
+type PredicateClass = { readonly prototype: Expr } | 'Integer';
+type InstanceOfClass<T> = T extends { readonly prototype: infer E extends Expr } ? E : Rational;
+type PredicateArgs<T extends PredicateClass[]> = { [K in keyof T]: InstanceOfClass<T[K]> };
+// The signature trie invokes each method only after matching its registered argument types.
+type DispatchHandler = (...args: never) => Truth;
+
+/** Base for legacy handlers with static methods named for expression classes (SymPy AskHandler). */
+export class AskHandler {}
+
+type LegacyHandler = typeof AskHandler | PredicateHandler;
+const handlers = new WeakMap<Predicate, LegacyHandler[]>();
+
+function* argumentTypes(expr: Expr): Generator<object | 'Integer'> {
+  if (expr instanceof Rational && expr.isInteger) yield 'Integer';
+  let prototype: object = Object.getPrototypeOf(expr);
+  while (prototype !== Object.prototype) {
+    yield prototype;
+    prototype = Object.getPrototypeOf(prototype);
+  }
+}
+
+/** A signature trie. Walking each argument's classes from derived to base prefers the more specific method. */
+class PredicateMethods {
+  private readonly next = new Map<object | 'Integer', PredicateMethods>();
+  private method?: DispatchHandler;
+
+  register(signature: readonly PredicateClass[], handler: DispatchHandler): void {
+    if (!signature.length) throw new RangeError('Predicate handlers require at least one argument');
+    let node: PredicateMethods = this;
+    for (const cls of signature) {
+      const key = cls === 'Integer' ? cls : cls.prototype;
+      const child: PredicateMethods = node.next.get(key) ?? new PredicateMethods();
+      node.next.set(key, child);
+      node = child;
+    }
+    node.method = handler;
+  }
+
+  lookup(args: readonly Expr[], index = 0): DispatchHandler | undefined {
+    const arg = args[index];
+    if (arg === undefined) return this.method;
+    for (const cls of argumentTypes(arg)) {
+      const found = this.next.get(cls)?.lookup(args, index + 1);
+      if (found) return found;
+    }
+    return undefined;
+  }
+}
+
+const methods = new WeakMap<Predicate, PredicateMethods>();
+
+function isAskHandler(handler: LegacyHandler): handler is typeof AskHandler {
+  return handler === AskHandler || handler.prototype instanceof AskHandler;
+}
+
+// Core constructors can be renamed in a consumer bundle. Legacy static methods use their public class names.
+const legacyClassNames = new Map<object, string>(Object.entries({
+  Add, BoolAtom, BoolOp, Constant, Derivative, Dummy, Expr, ExtensionExpr, Float, Fn, Integral, Limit, Mul,
+  Order, Piecewise, Pow, Rational, Rel, Special, Symbol: Sym, UndefFn, Wild, WildFunction,
+}).map(([name, cls]) => [cls.prototype, name]));
+
+function evaluateAskHandler(handler: typeof AskHandler, expr: Expr, assumptions: Expr): Truth {
+  for (const cls of argumentTypes(expr)) {
+    const name = cls === 'Integer' ? cls : legacyClassNames.get(cls) ?? cls.constructor.name;
+    const method: unknown = Reflect.get(handler, name);
+    if (typeof method === 'function') {
+      const value: unknown = method.call(handler, expr, assumptions);
+      if (typeof value === 'boolean') return value;
+    }
+  }
+  return 'unknown';
+}
+
+function dispatch(predicate: Predicate | undefined, name: string, args: readonly Expr[], assumptions: Expr): Tri {
+  const method = predicate && methods.get(predicate)?.lookup(args);
+  if (method) {
+    const value: unknown = Reflect.apply(method, undefined, [...args, assumptions]);
+    if (typeof value === 'boolean') return value;
+  }
+  const key = Q[name];
+  const registered = (predicate && handlers.get(predicate)) ?? (key && handlers.get(key));
+  let result: Tri;
+  for (const handler of registered ?? []) {
+    const expr = at(args, 0);
+    if (isAskHandler(handler)) {
+      if (args.length !== 1) throw new RangeError('AskHandler takes one argument');
+      const value = evaluateAskHandler(handler, expr, assumptions);
+      if (value === 'unknown') continue;
+      if (result !== undefined && result !== value) throw new RangeError('Incompatible predicate handlers');
+      result = value;
+    } else {
+      const value = handler(expr, assumptions, args);
+      if (value !== 'unknown') return value;
+    }
+  }
+  return result;
+}
 
 /** Register an optional decision procedure for propositions. */
 export function registerPropositionHandler(handler: (proposition: Expr, assumptions: Expr) => Truth): void {
@@ -148,26 +249,34 @@ export function registerRefineHandler(handler: (expr: Expr, assumptions: Assumpt
 }
 const refineHandlers: ((expr: Expr, assumptions: Assumption) => Expr)[] = [];
 
-/**
- * A predicate with the given name (SymPy Predicate); handlers added with
- * registerHandler decide it in ask.
- */
 const REL_PREDICATES = { Gt: 'gt', Lt: 'lt', Ge: 'ge', Le: 'le', Eq: 'eq', Ne: 'ne' } as const;
 
+/**
+ * Create a callable predicate. Assign it to a custom key on Q and register methods by argument type,
+ * for example `p.register([Sym], (symbol, assumptions) => ask(Q.real(symbol), assumptions))`.
+ * Use `'Integer'` to select the integer members of Rational.
+ */
 export function Predicate(name: string, handler?: PredicateHandler): Predicate {
-  const f = (...argsIn: (ExprLike | boolean)[]): AppliedPredicate => {
+  const apply = (...argsIn: (ExprLike | boolean)[]): AppliedPredicate => {
     const args = argsIn.map((a) => (typeof a === 'boolean' ? (a ? S.true : S.false) : sympify(a)));
     // SymPy IsTruePredicate: Q.is_true of a predicate is the predicate, of a relation its predicate (Q.eq, Q.gt, ...)
     const a0 = args[0];
     if (name === 'is_true' && a0 instanceof AppliedPredicate) return a0;
     if (name === 'is_true' && a0 instanceof Rel) return new AppliedPredicate(REL_PREDICATES[a0.op], [a0.lhs, a0.rhs]);
-    return new AppliedPredicate(name, args);
+    return new AppliedPredicate(name, args, f);
   };
-  Object.defineProperty(f, 'predicateName', { value: name });
+  const f: Predicate = Object.assign(apply, {
+    predicateName: name,
+    register(signature: readonly PredicateClass[], method: DispatchHandler) {
+      const table = methods.get(f) ?? new PredicateMethods();
+      table.register(signature, method);
+      methods.set(f, table);
+    },
+  });
+  Object.defineProperty(f, 'predicateName', { writable: false, enumerable: false, configurable: false });
   Object.defineProperty(f, 'toString', { value: () => `Q.${name}` });
-  if (handler) registerHandler(name, handler);
-  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- predicateName was added above with Object.defineProperty (non-enumerable, read-only)
-  return f as Predicate;
+  if (handler) registerHandler(f, handler);
+  return f;
 }
 
 const BUILTIN = [
@@ -181,26 +290,28 @@ const BUILTIN = [
   'complex_elements',
 ] as const satisfies readonly PredicateName[];
 
-const predicates: Record<string, Predicate> = Object.fromEntries(BUILTIN.map((n) => [n, Predicate(n)]));
+const predicates: Record<string, Predicate> = Object.create(null);
+for (const name of BUILTIN) predicates[name] = Predicate(name);
 
 /** SymPy Q: the assumption predicates (Q.positive(x), Q.even(n), Q.gt(x, y), ...). */
 // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- predicates holds an entry for every name in BUILTIN, which covers PredicateName (checked by satisfies above)
-export const Q = predicates as { readonly [K in PredicateName]: Predicate } & { readonly [name: string]: Predicate | undefined };
+export const Q = predicates as { readonly [K in PredicateName]: Predicate } & { [name: string]: Predicate | undefined };
 
 /**
  * Adds a handler for a predicate (SymPy register_handler); a predicate not
  * in Q is added to it. The handler is tried before the built-in rules.
  */
-export function registerHandler(key: string | Predicate, handler: PredicateHandler): void {
+export function registerHandler(key: string | Predicate, handler: LegacyHandler): void {
   const name = typeof key === 'string' ? key : key.predicateName;
-  handlers.set(name, [...(handlers.get(name) ?? []), handler]);
-  if (!(name in predicates)) predicates[name] = Predicate(name);
+  const predicate = predicates[name] ??= typeof key === 'string' ? Predicate(name) : key;
+  handlers.set(predicate, [...(handlers.get(predicate) ?? []), handler]);
 }
 
 /** Removes a handler added by registerHandler (SymPy remove_handler). */
-export function removeHandler(key: string | Predicate, handler: PredicateHandler): void {
+export function removeHandler(key: string | Predicate, handler: LegacyHandler): void {
   const name = typeof key === 'string' ? key : key.predicateName;
-  handlers.set(name, (handlers.get(name) ?? []).filter((h) => h !== handler));
+  const predicate = Q[name];
+  if (predicate) handlers.set(predicate, (handlers.get(predicate) ?? []).filter((h) => h !== handler));
 }
 
 /** Assumptions: a boolean expression of predicates, a list of them (a conjunction), or true. */
@@ -558,23 +669,24 @@ class Decider {
   ) {}
 
   /** The predicate on e: true, false or undefined (unknown). */
-  q(name: string, e: Expr): Tri {
+  q(name: string, e: Expr, predicate = Q[name]): Tri {
     const known = this.branch.facts.get(e.key)?.facts.get(name);
     if (known !== undefined) return known;
     const symbolFact = e instanceof Sym ? e.assumptions0.get(name) : undefined;
     if (symbolFact !== undefined) return symbolFact;
     // nan has no handler in SymPy: every predicate but commutative is undecided on it
     if (e === S.NaN && name !== 'commutative') return undefined;
-    for (const h of handlers.get(name) ?? []) {
-      const r = h(e, this.assumptions, [e]);
-      if (r !== 'unknown') return r;
-    }
+    const result = dispatch(predicate, name, [e], this.assumptions);
+    if (result !== undefined) return result;
     // predicates refer to each other (integer <-> rational, real <-> imaginary): a query in progress is unknown
     const k = `${name}|${e.key}`;
     if (this.memo.has(k)) return this.memo.get(k) ?? undefined;
     this.memo.set(k, null);
     const r = (isMinMax(e) && MIN_MAX_PREDICATES.has(name) ? torf(e.args, (a) => this.q(name, a)) : undefined)
       ?? (e instanceof Piecewise && PIECEWISE_PREDICATES.has(name) ? torf(e.pairs.map(([x]) => x), (a) => this.q(name, a)) : undefined)
+      ?? this.exponentialDomain(name, e)
+      ?? (e instanceof Fn ? functionFactHandlers[e.name]?.(name, e.args, (fact, arg) => this.q(fact, arg)) : undefined)
+      ?? this.numericDomain(name, e)
       ?? this.builtin(name, e);
     this.memo.set(k, r);
     return r;
@@ -586,28 +698,67 @@ class Decider {
     return reevaluate(e, this.branch.forward);
   }
 
+  /** SymPy's numeric real and imaginary handlers inspect the corresponding coordinate. */
+  private numericDomain(name: string, e: Expr): Tri {
+    if ((name !== 'real' && name !== 'imaginary') || !(e instanceof Add || e instanceof Mul || e instanceof Pow) || !e.isNumber) return undefined;
+    const [re, im] = asRealImag(e.evalf());
+    const imaginaryZero = isZero(im);
+    if (name === 'real') return imaginaryZero;
+    const realZero = isZero(re);
+    return realZero === false || imaginaryZero === true ? false : realZero === true && imaginaryZero === false ? true : undefined;
+  }
+
+  private exponentialDomain(name: string, e: Expr): Tri {
+    if (e instanceof Pow && isConst(e.base, 'E') && ['real', 'imaginary', 'positive', 'negative'].includes(name)) {
+      if (this.q('real', e.exp) === true) return name === 'real' || name === 'positive';
+      const phase = mul(-1, S.I, e.exp, pow(S.Pi, -1));
+      const integral = this.q('integer', phase);
+      if (name === 'real' && integral === true) return true;
+      if (name === 'positive' && integral === true) return this.q('even', phase);
+      if (name === 'negative' && integral === true) return this.q('odd', phase);
+      if (name === 'imaginary') {
+        const halfIntegral = this.q('integer', mul(2, phase));
+        if (integral === true || halfIntegral === false) return false;
+        if (integral === false && halfIntegral === true) return true;
+      }
+    }
+    return undefined;
+  }
+
   private builtin(name: string, e: Expr): Tri {
     switch (name) {
       case 'real':
+        if (e instanceof Fn && e.name === 'log') return this.q('positive', at(e.args, 0));
         if (e instanceof Special) return false;
         // isReal counts oo and -oo as real (extended reals); Q.real does not
         if (this.q('finite', e) === false) return false;
         if (isConst(e, 'I')) return false;
-        if (this.q('imaginary', e) === true) return false;
         if (e instanceof Add) {
           const rs = e.args.map((a) => this.q('real', a));
           if (rs.every((r) => r === true)) return true;
           if (rs.filter((r) => r === false).length === 1 && !rs.includes(undefined)) return false;
         }
         if (e instanceof Mul) {
+          const real = e.args.map((a) => this.q('real', a));
+          if (real.filter((r) => r === false).length === 1 && !real.includes(undefined)
+            && e.args.every((a, i) => real[i] === false || this.q('nonzero', a) === true)) return false;
           const im = e.args.filter((a) => this.q('imaginary', a) === true);
           if (im.length && e.args.every((a) => im.includes(a) || this.q('real', a) === true)) {
             if (im.length % 2 === 0) return true;
             if (e.args.every((a) => im.includes(a) || this.q('zero', a) === false)) return false;
           }
         }
+        if (this.q('imaginary', e) === true) return false;
         if (e instanceof Pow) {
           const { base, exp } = e;
+          if (base instanceof Pow && isConst(base.base, 'E') && this.q('integer', exp) === true) {
+            const inner = base.exp;
+            return this.q('real', new Pow(S.E, mul(inner, exp)));
+          }
+          if (base instanceof Pow && isConst(base.base, 'E') && this.q('imaginary', exp) === true) {
+            const inner = base.exp;
+            if (this.q('imaginary', inner) === true) return true;
+          }
           if (this.q('imaginary', base) === true && this.q('integer', exp) === true) {
             const odd = this.q('odd', exp);
             if (odd !== undefined) return !odd;
@@ -625,6 +776,8 @@ class Decider {
         return isReal(this.re(e)) ?? (this.q('rational', e) === true ? true : undefined);
       case 'extended_real': {
         if (e instanceof Special) return e.name === 'oo' || e.name === '-oo';
+        if (e instanceof Fn && (e.name === 'asin' || e.name === 'acos')) return this.q('real', e);
+        if (e instanceof Add && e.args.length === 2 && e.args.some((a) => a instanceof Special && (a.name === 'oo' || a.name === '-oo')) && e.args.some((a) => this.q('real', a) === true)) return true;
         // SymPy _eval_is_extended_real of functions real on the extended real line
         if (e instanceof Fn && e.args.length === 1 && EXTENDED_REAL_FNS.has(e.name) && this.q('extended_real', at(e.args, 0)) === true) return true;
         const r = this.q('real', e);
@@ -633,12 +786,26 @@ class Decider {
         return r === false && this.q('finite', e) === true ? false : undefined;
       }
       case 'positive':
+        if (e instanceof Pow && this.q('positive', e.base) === true && this.q('real', e.exp) === true) return true;
+        if (e instanceof Fn && e.name === 'acot' && this.q('imaginary', at(e.args, 0)) === true) return false;
+        if (e instanceof Fn && e.name === 'asin') {
+          const arg = at(e.args, 0);
+          if (this.q('positive', arg) === true && this.q('nonpositive', add(arg, -1)) === true) return true;
+          if (this.q('negative', arg) === true && this.q('nonnegative', add(arg, 1)) === true) return false;
+        }
+        if (e instanceof Fn && e.name === 'factorial' && this.q('integer', at(e.args, 0)) === true && this.q('positive', at(e.args, 0)) === true) return true;
         if (e instanceof Special) return false;
+        if (e instanceof Add && e.args.every((a) => this.q('nonnegative', a) === true) && e.args.some((a) => this.q('positive', a) === true)) return true;
+        if (e instanceof Pow && this.q('negative', e.base) === true && this.q('integer', e.exp) === true) return this.q('even', e.exp);
         return this.ext(isPositive(this.re(e)), e) ?? (this.q('negative', e) === true ? false : this.trichotomy(e, 'negative'));
       case 'negative':
         if (e instanceof Special) return false;
+        if (e instanceof Fn && e.name === 'abs') return false;
+        if (e instanceof Add && e.args.every((a) => this.q('nonpositive', a) === true) && e.args.some((a) => this.q('negative', a) === true)) return true;
+        if (e instanceof Pow && this.q('negative', e.base) === true && this.q('integer', e.exp) === true) return this.q('odd', e.exp);
         return this.ext(isNegative(this.re(e)), e) ?? (this.q('positive', e) === true ? false : this.trichotomy(e, 'positive'));
       case 'nonnegative':
+        if (e instanceof Pow && this.q('real', e.base) === true && this.q('even', e.exp) === true && this.q('positive', e.exp) === true) return true;
         if (e instanceof Special) return false;
         return this.ext(isNonNegative(this.re(e)), e);
       case 'nonpositive': {
@@ -661,6 +828,10 @@ class Decider {
       }
       case 'extended_positive':
         if (e instanceof Special) return e.name === 'oo';
+        if (e instanceof Fn && e.name === 'log') {
+          const argument = at(e.args, 0);
+          if (this.q('infinite', argument) === true && this.q('extended_positive', argument) === true) return true;
+        }
         if (this.q('positive', e) === true) return true;
         if (this.q('extended_real', e) === false) return false;
         return this.q('extended_real', e) === true && this.q('extended_nonpositive', e) === true ? false : undefined;
@@ -750,8 +921,18 @@ class Decider {
     return this.q('real', e) === false ? false : undefined;
   }
 
+  private hasRationalElementaryValue(e: Fn): boolean {
+    if (e.args.length !== 1) return false;
+    const argument = at(e.args, 0);
+    if (['sin', 'cos', 'tan', 'asin', 'atan'].includes(e.name)) return this.q('zero', argument) === true;
+    if (e.name === 'log' || e.name === 'acos') return this.q('zero', add(argument, -1)) === true;
+    return false;
+  }
+
   private rational(e: Expr): Tri {
     if (e instanceof Rational) return true;
+    if (e instanceof Fn && e.name === 'exp_polar' && this.q('zero', at(e.args, 0)) === true) return true;
+    if (e instanceof Fn && this.hasRationalElementaryValue(e)) return true;
     if (e instanceof Fn && this.q('zero', e) === true) return true;
     // SymPy Abs._eval_is_rational and _eval_is_integer: |a| of a rational (integer) real a
     if (e instanceof Fn && e.name === 'abs' && this.q('real', at(e.args, 0)) === true) return this.q('rational', at(e.args, 0));
@@ -777,8 +958,11 @@ class Decider {
     }
     if (e instanceof Pow) {
       const [b, x] = e.args;
+      if (isConst(b, 'E') && x instanceof Fn && x.name === 'log' && x.args.length === 1) {
+        return this.q('rational', at(x.args, 0));
+      }
       if (this.q('algebraic', e) === false) return false;
-      if (isConst(b, 'E')) return undefined;
+      if (isConst(b, 'E')) return this.q('zero', x) === true ? true : undefined;
       if (isInt(x) && x.p === -1n && this.q('rational', b) === false && this.q('finite', b) === true) return false;
       if (this.q('integer', x) === true && this.q('rational', b) === true) return this.q('nonzero', b) === true || this.q('nonnegative', x) === true ? true : undefined;
       // an unevaluated rational power of a rational number is irrational or not real
@@ -788,6 +972,7 @@ class Decider {
     if (e instanceof Fn) {
       // the functions named below take one argument
       const a = (): Expr => at(e.args, 0);
+      if (['cot', 'acot'].includes(e.name) && this.q('rational', a()) === true) return false;
       const transcendentalAtNonzeroRational = ['exp', 'sin', 'cos', 'tan', 'cot', 'asin', 'atan', 'acot', 'sinh', 'cosh', 'tanh', 'asinh', 'atanh'];
       if (transcendentalAtNonzeroRational.includes(e.name) && this.q('rational', a()) === true && this.q('nonzero', a()) === true) return false;
       // log(1) = acos(1) = 0
@@ -831,11 +1016,13 @@ class Decider {
       return undefined;
     }
     if (e instanceof Fn) {
+      if (this.hasRationalElementaryValue(e)) return true;
       // the functions named below take one argument
       const a = (): Expr => at(e.args, 0);
+      if (['cot', 'acot'].includes(e.name) && this.q('algebraic', a()) === true) return false;
       // trigonometric functions at rational multiples of pi are algebraic (SymPy sin._eval_is_algebraic)
       if (['sin', 'cos', 'tan', 'cot', 'sec', 'csc'].includes(e.name) && this.q('rational', mul(a(), pow(S.Pi, -1))) === true) return e.name === 'sin' || e.name === 'cos' ? true : undefined;
-      if (['exp', 'sin', 'cos', 'tan', 'cot', 'asin', 'atan', 'acot'].includes(e.name) && this.q('algebraic', a()) === true && this.q('nonzero', a()) === true) return false;
+      if (['exp', 'sin', 'cos', 'tan', 'cot', 'sec', 'csc', 'asin', 'atan', 'acot'].includes(e.name) && this.q('algebraic', a()) === true && this.q('nonzero', a()) === true) return false;
       // re, im and conjugate of an algebraic number; W(a) for a nonzero algebraic a is transcendental
       if (['re', 'im', 'conjugate'].includes(e.name) && this.q('algebraic', a()) === true) return true;
       if (e.name === 'LambertW' && e.args.length === 1 && this.q('algebraic', a()) === true && this.q('nonzero', a()) === true) return false;
@@ -855,6 +1042,9 @@ class Decider {
     const par = (a: Expr): bigint | undefined => (this.q('even', a) === true ? 0n : this.q('odd', a) === true ? 1n : undefined);
     if (e instanceof Mul) {
       if (!e.args.every((a) => this.q('integer', a) === true)) return undefined;
+      for (const a of e.args) {
+        if (e.args.some((b) => b !== a && this.q('odd', add(b, mul(-1, a))) === true)) return r === 0n;
+      }
       const ps = e.args.map(par);
       if (ps.includes(0n)) return r === 0n;
       if (ps.every((p) => p === 1n)) return r === 1n;
@@ -872,12 +1062,15 @@ class Decider {
     }
     if (e instanceof Pow) {
       const [b, x] = e.args;
+      if (isInt(b) && b.p === -1n && this.q('integer', x) === true) return r === 1n;
+      if (this.q('odd', b) === true && this.q('integer', x) === true && this.q('negative', x) === false) return r === 1n;
       if (this.q('integer', b) === true && this.q('positive', x) === true && this.q('integer', x) === true) {
         const p = par(b);
         return p === undefined ? undefined : p === r;
       }
       return undefined;
     }
+    if (e instanceof Fn && (e.name === 're' || e.name === 'im') && this.q('real', at(e.args, 0)) === true) return e.name === 'im' ? r === 0n : this.q(r === 0n ? 'even' : 'odd', at(e.args, 0));
     if (e instanceof Fn && e.name === 'abs') {
       // SymPy Abs._eval_is_even and _eval_is_odd: those of a real argument
       const a = at(e.args, 0);
@@ -890,10 +1083,29 @@ class Decider {
     return undefined;
   }
 
+  /**
+   * SymPy _PrimePredicate_number: an exact number that is numerically an integer is tested as that integer
+   * (12345678901234567890 + cos(1)**2 + sin(1)**2); 'symbolic' for anything else.
+   */
+  private primeNumber(e: Expr): Tri | 'symbolic' {
+    if (!(e instanceof Add) || e.freeSymbols().size > 0) return 'symbolic';
+    const float = some(e, (t) => t instanceof Float);
+    const value = impl.evalf(e, 60);
+    if (!(value instanceof Float)) return 'symbolic';
+    const { man, exp } = value.mpf;
+    // the nearest integer of man * 2**exp
+    const nearest = exp >= 0n ? man << exp : (man + (1n << (-exp - 1n))) >> -exp;
+    const difference = impl.evalf(add(e, Rational.of(-nearest)), 30);
+    if (difference instanceof Float && Math.abs(difference.value) > 1e-25) return false;
+    return float ? undefined : isPrimeBig(nearest);
+  }
+
   private prime(e: Expr): Tri {
     if (e instanceof Rational) return e.q === 1n && isPrimeBig(e.p);
     if (this.q('integer', e) === false) return false;
     if (this.q('positive', e) === false) return false;
+    const number = this.primeNumber(e);
+    if (number !== 'symbolic') return number;
     if (e instanceof Mul) {
       // SymPy PrimePredicate for Mul: a composite number factor of an integer product
       if (!e.args.every((a) => this.q('integer', a) === true)) return undefined;
@@ -919,11 +1131,15 @@ class Decider {
     if (e instanceof Add || e instanceof Mul) return allTri(e.args, (a) => this.q('complex', a)) === true ? true : this.q('infinite', e) === true ? false : undefined;
     if (e instanceof Pow) {
       const [b, x] = e.args;
+      // SymPy ComplexPredicate: exp is complex for every argument
+      if (!expressionFacts && isConst(b, 'E')) return true;
       if (this.q('complex', b) === true && this.q('complex', x) === true && (this.q('nonzero', b) === true || this.q('nonnegative', x) === true || isConst(b, 'E'))) return true;
       return undefined;
     }
     if (e instanceof Fn) {
-      if (['exp', 'sin', 'cos', 'sinh', 'cosh', 're', 'im', 'abs', 'arg', 'conjugate', 'atan'].includes(e.name)) return allTri(e.args, (a) => this.q('complex', a)) === true ? true : undefined;
+      // SymPy ComplexPredicate: sin and cos are complex for every argument
+      if (!expressionFacts && (e.name === 'sin' || e.name === 'cos')) return true;
+      if (['sin', 'cos', 'exp', 'sinh', 'cosh', 're', 'im', 'abs', 'arg', 'conjugate', 'atan'].includes(e.name)) return allTri(e.args, (a) => this.q('complex', a)) === true ? true : undefined;
       return undefined;
     }
     return undefined;
@@ -961,10 +1177,22 @@ class Decider {
     }
     if (e instanceof Pow) {
       const [b, x] = e.args;
+      if (b instanceof Pow && isConst(b.base, 'E') && this.q('integer', x) === true) {
+        const inner = b.exp;
+        return this.q('imaginary', new Pow(S.E, mul(inner, x)));
+      }
+      if (b instanceof Pow && isConst(b.base, 'E') && this.q('imaginary', x) === true) {
+        const inner = b.exp;
+        if (this.q('imaginary', inner) === true) return false;
+      }
       if (this.q('imaginary', b) === true && this.q('integer', x) === true) return this.q('odd', x);
       if (this.q('real', b) === true && this.q('integer', x) === true) return false;
-      if (isConst(b, 'E') && this.q('rational', mul(x, pow(mul(S.I, S.Pi), -1))) === true) return undefined;
-      if (this.q('negative', b) === true && x instanceof Rational && x.equals(Rational.of(1n, 2n))) return true;
+      if (this.q('real', b) === true && this.q('real', x) === true) {
+        if (this.q('rational', x) === false) return false;
+        const halfIntegral = this.q('integer', mul(2, x));
+        if (halfIntegral === false) return false;
+        if (halfIntegral === true && this.q('integer', x) === false && this.q('negative', b) === true) return true;
+      }
       return undefined;
     }
     return undefined;
@@ -973,6 +1201,10 @@ class Decider {
   /** Adjoint parity for sums and products with at most one noncommutative factor. */
   private adjoint(e: Expr, anti: boolean): Tri {
     const name = anti ? 'antihermitian' : 'hermitian';
+    if (e.isNumber && e.isCommutative) {
+      if (!anti) return this.q('real', e);
+      if (this.q('real', e) === false && this.q('imaginary', e) === false) return false;
+    }
     if (e instanceof Add) {
       const values = e.args.map((a) => this.q(name, a));
       if (values.every((v) => v === true)) return true;
@@ -1000,6 +1232,21 @@ class Decider {
     if (e instanceof Special) return false;
     // a real symbol is complex
     if (e instanceof Sym) return this.q('complex', e) === true ? true : undefined;
+    if (e instanceof Add && !expressionFacts) {
+      // SymPy FinitePredicate handler of Add: the terms that are not known finite must agree in
+      // extended_positive (true, or false for all of them), and an infinite one makes the sum infinite
+      let sign: Tri | 'none' = 'none';
+      let result: Tri = true;
+      for (const a of e.args) {
+        const bounded = this.q('finite', a);
+        if (bounded === true) continue;
+        const positive = this.q('extended_positive', a);
+        if ((sign !== 'none' && positive !== sign) || (positive === undefined && (bounded === undefined || sign === undefined))) return undefined;
+        sign = positive;
+        if (result !== false) result = bounded;
+      }
+      return result;
+    }
     if (e instanceof Add) {
       const unbounded = e.args.filter((a) => this.q('finite', a) !== true);
       if (!unbounded.length) return true;
@@ -1033,12 +1280,16 @@ class Decider {
         if (magnitude <= b.q && this.q('extended_positive', x) === true) return true;
         if (magnitude >= b.q && this.q('extended_negative', x) === true) return true;
         if (magnitude > b.q && xf === false && this.q('extended_positive', x) === true) return false;
+        // SymPy: a base of modulus at least 1 to an infinite power is not finite
+        if (!expressionFacts && magnitude >= b.q && xf === false) return false;
       }
       return undefined;
     }
     if (e instanceof Fn) {
       // the functions named below take one argument
       const a = (): Expr => at(e.args, 0);
+      // SymPy FinitePredicate: sin and cos are bounded
+      if (!expressionFacts && (e.name === 'sin' || e.name === 'cos')) return true;
       if (['sin', 'cos', 'atan', 'tanh'].includes(e.name) && this.q('real', a()) === true) return true;
       // SymPy frac._eval_is_finite and RoundFunction._eval_is_finite; sign is -1, 0, 1 or on the unit circle
       if (e.name === 'frac' || e.name === 'sign') return true;
@@ -1048,7 +1299,11 @@ class Decider {
       if ((e.name === 'asech' || e.name === 'acsch') && this.q('nonzero', a()) === true) return true;
       if (e.name === 'floor' || e.name === 'ceiling') return this.q('finite', a());
       if (['exp', 'sinh', 'cosh', 'abs', 're', 'im', 'conjugate'].includes(e.name) && this.q('finite', a()) === true) return true;
-      if (e.name === 'log' && this.q('finite', a()) === true && this.q('nonzero', a()) === true) return true;
+      if (e.name === 'log') {
+        // SymPy FinitePredicate handler of log: infinite at an infinite argument and at 0 only
+        if (this.q('zero', a()) === true || this.q('finite', a()) === false || this.q('infinite', a()) === true) return false;
+        if (this.q('zero', a()) === false && (!expressionFacts || this.q('finite', a()) === true)) return true;
+      }
       return undefined;
     }
     return undefined;
@@ -1078,13 +1333,9 @@ function decide(prop: Expr, d: Decider): Tri {
       return rel[2] ? v : notTri(v);
     }
     if (prop.args.length !== 1) {
-      for (const h of handlers.get(prop.predicate) ?? []) {
-        const r = h(prop.arg, d.assumptions, prop.args);
-        if (r !== 'unknown') return r;
-      }
-      return undefined;
+      return dispatch(prop.function, prop.predicate, prop.args, d.assumptions);
     }
-    return d.q(prop.predicate, prop.arg);
+    return d.q(prop.predicate, prop.arg, prop.function);
   }
   throw new TypeError(`ask: ${prop.toString()} is not a proposition`);
 }
@@ -1095,6 +1346,23 @@ function decide(prop: Expr, d: Decider): Tri {
  * relation, or a boolean combination of them; inconsistent assumptions
  * throw a RangeError.
  */
+/**
+ * The facts of an expression (SymPy expr.is_<fact>, the old assumptions) are asked without the rules that only
+ * the handlers of SymPy's ask have: sin(x).is_finite is None, while ask(Q.finite(sin(x))) is True.
+ */
+let expressionFacts = false;
+
+/** ask for a fact of an expression itself (SymPy expr.is_<fact>). */
+export function askExpressionFact(proposition: Expr): Truth {
+  const outer = expressionFacts;
+  expressionFacts = true;
+  try {
+    return ask(proposition);
+  } finally {
+    expressionFacts = outer;
+  }
+}
+
 export function ask(proposition: ExprLike | boolean, assumptions: Assumption = true): Truth {
   const prop = typeof proposition === 'boolean' ? (proposition ? S.true : S.false) : sympify(proposition);
   const assumed = and(...asList(assumptions), ...globalAssumptions);
@@ -1107,6 +1375,14 @@ export function ask(proposition: ExprLike | boolean, assumptions: Assumption = t
   for (const handler of propositionHandlers) {
     const value = handler(prop, assumed);
     if (value !== 'unknown') return value;
+  }
+  if (prop instanceof BoolOp && consistentBranches(assumed).length) {
+    if (!consistentBranches(and(assumed, not(prop))).length) return true;
+    if (!consistentBranches(and(assumed, prop)).length) return false;
+    // SymPy sathandlers: a product is zero exactly when one of its factors is
+    const factored = mapBottomUp(assumed, (node) => (node instanceof AppliedPredicate && node.predicate === 'zero' && node.arg instanceof Mul
+      ? or(...node.arg.args.map((factor) => new AppliedPredicate('zero', [factor]))) : node));
+    if (factored.key !== assumed.key && !consistentBranches(and(factored, not(prop))).length) return true;
   }
   const relationAssumed = prop instanceof Rel ? mapBottomUp(assumed, (node) => node instanceof Rel ? new AppliedPredicate(REL_PREDICATES[node.op], [node.lhs, node.rhs]) : node) : assumed;
   const vs = branches(relationAssumed).map((b) => decide(prop, new Decider(b, relationAssumed)));

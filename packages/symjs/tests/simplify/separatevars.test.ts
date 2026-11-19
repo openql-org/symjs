@@ -6,7 +6,7 @@
 // Expected values are the str() forms printed by SymPy 1.14.
 
 import { describe, expect, it } from 'vitest';
-import { DiracDelta, Heaviside, Sym, parse, separatevars, symbol } from '../../src';
+import { DiracDelta, Heaviside, Sym, parse, separatevars, symbol, isNoMatch, abs, SymFunction } from '../../src';
 import type { Expr } from '../../src';
 
 const P = (s: string) => parse(s, { locals: { Heaviside, DiracDelta } });
@@ -58,4 +58,39 @@ describe("simplify (cov2): SymPy 1.14 cases", () => {
   it.each(cases)('%s', (_name, run, want) => {
     expect(showMap(run())).toBe(want);
   });
+});
+
+
+describe('separatevars dictionary and absolute values', () => {
+  it('distinguishes omitted symbols, an empty list, and None', () => {
+    const e = P('(2*x + 2)*y');
+    expect(showMap(separatevars(e, { dict: true, symbols: null }))).toBe('{coeff: y*(2*x + 2)}');
+    expect(showMap(separatevars(P('2*x + y'), { dict: true, symbols: null }))).toBe('{coeff: 2*x + y}');
+    expect(isNoMatch(separatevars(3, { dict: true }))).toBe(true);
+    expect(showMap(separatevars(e, { dict: true, symbols: [new Sym('x')] }))).toBe('{coeff: y, x: 2*x + 2}');
+    expect(showMap(separatevars(new Sym('x'), { dict: true }))).toBe('{coeff: 1, x: x}');
+  });
+
+  it('separates absolute values of independent factors', () => {
+    expect(String(separatevars(P('Abs(x*y)')))).toBe('Abs(x)*Abs(y)');
+    expect(String(separatevars(P('Abs(x*(y + 1))')))).toBe('Abs(x)*Abs(y + 1)');
+    const x = new Sym('x'), y = new Sym('y');
+    expect(separatevars(abs(x.add(y).mul(x.add(1))))).toEqual(abs(x.add(y).mul(x.add(1))));
+    expect(String(separatevars(P('Abs(x)')))).toBe('Abs(x)');
+    expect(String(separatevars(P('Abs(2)')))).toBe('2');
+  });
+});
+
+it('factors only shared trailing noncommuting factors', () => {
+  const A = symbol('A', { commutative: false }), B = symbol('B', { commutative: false });
+  const x = symbol('x');
+  expect(String(separatevars(A.mul(B).add(x.mul(B))))).toBe('(x + A)*B');
+  expect(String(separatevars(A.mul(B).add(B.mul(A))))).toBe('A*B + B*A');
+});
+
+it('extracts a common right factor from noncommuting functions of commuting variables', () => {
+  const [x, y] = [new Sym('x'), new Sym('y')];
+  const nc = { assumptions: { commutative: false } };
+  const q = SymFunction('q', nc)(x), w = SymFunction('w', nc)(y);
+  expect(String(separatevars(q.add(w.mul(q))))).toBe('(1 + w(y))*q(x)');
 });

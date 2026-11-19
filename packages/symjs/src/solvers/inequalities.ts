@@ -11,23 +11,31 @@
 import { NotImplementedError } from '../core/errors';
 import type { Expr, ExprLike, FnName, RelOp } from '../core/nodes';
 import { Sym } from '../core/nodes';
-import { Add, BoolAtom, Constant, Dummy, Fn, Mul, Piecewise, Pow, Rational, Rel, S, Special, impl } from '../core/nodes';
+import { Add, BoolAtom, Constant, Dummy, ExtensionExpr, Fn, Mul, Piecewise, Pow, Rational, Rel, S, Special, impl } from '../core/nodes';
 import { at, cast, defined, expectType, first } from '../core/guard';
-import { isNegative, isNonNegative, isReal } from '../core/assumptions';
+import { isNegative, isNonNegative, isNonZero, isPositive, isReal, isZero } from '../core/assumptions';
 import { add, couldExtractMinusSign, mul, pow, sympify } from '../core/ops';
-import { expandMul } from '../simplify/expand';
-import { factorTerms } from '../simplify/exprtools';
+import { isReal as realFact } from '../core/public';
+import { asNumerDenom, asRealImag, coeff } from '../core/methods';
+import { expand_log, expandMul } from '../simplify/expand';
+import { factorTerms, signsimp } from '../simplify/exprtools';
 import { BoolOp, and, not as notB, or as orB } from '../core/boolalg';
-import { Eq, Ge, Gt, Le, Lt, Ne } from '../core/logic';
-import { mapBottomUp, some, xreplace } from '../core/traverse';
+import { Eq, Ge, Gt, Le, Lt, Ne, piecewise } from '../core/logic';
+import { mapBottomUp, piecewiseFold, some, subs, xreplace } from '../core/traverse';
 import { fn, log } from '../functions/elementary/elementary';
 import { Max, Min } from '../functions/special/special';
+import { hessian, isPositiveSemidefinite } from '../matrices/linalg';
+import type { Truth } from '../core/truth';
 import { diff } from '../calculus/diff';
 import { limit } from '../series/limits';
-import { Poly } from '../polys/sympoly';
+import { factor, Poly } from '../polys/sympoly';
+import { CRootOf } from '../polys/rootof';
+import { trigsimp } from '../simplify/trigsimp';
+import { polyCoefficients } from '../polys/poly';
 import { cancel, fraction } from '../simplify/rational';
 import { simplify } from '../simplify/simplify';
-import { polynomialInGenerator, solve } from './solve';
+import { igcdex, integerLog, limitDenominator, rationalFromFloat } from '../core/numberutils';
+import { checksol, denoms, polynomialInGenerator, solve } from './solve';
 import { compareKeys, sortKey } from '../printing/sortkey';
 import {
   SetExpr,
@@ -40,9 +48,11 @@ import {
   FiniteSet,
   Interval,
   Reals,
+  Range,
   asRelational,
   cmpReal,
   complement,
+  Contains,
   containsQ,
   finiteSet,
   interval,
@@ -55,7 +65,9 @@ import {
 
 const isRealSym = (e: Expr) => !e.has(S.I);
 /** Order of real numbers whose values are known (the zeros returned by realZeros). */
-const byValue = (a: Expr, b: Expr): number => defined(cmpReal(a, b), 'order of real numbers');
+const approximateRoots = (e: Expr): Expr => mapBottomUp(e, (term) => term instanceof CRootOf ? term.evalApprox(20) : term);
+const compareEndpoints = (a: Expr, b: Expr): number | undefined => cmpReal(a, b) ?? cmpReal(approximateRoots(a), approximateRoots(b));
+const byValue = (a: Expr, b: Expr): number => defined(compareEndpoints(a, b), 'order of real numbers');
 const isDefined = <T>(v: T | undefined): v is T => v !== undefined;
 const isExprList = (v: readonly ExprLike[] | ExprLike): v is readonly ExprLike[] => Array.isArray(v);
 const relFn: Record<RelOp, (a: ExprLike, b: ExprLike) => Expr> = { Eq, Ne, Lt, Le, Gt, Ge };
@@ -77,7 +89,8 @@ function holds(op: Exclude<RelOp, 'Eq'>, v: number): boolean {
 
 /** The real value of f at x = v, undefined where it is not a finite real number (an unevaluable f throws). */
 function numAt(f: Expr, x: Sym, v: Expr): number | undefined {
-  const c = impl.toComplex(xreplace(f, [[x, v]]));
+  const value = xreplace(f, [[x, approximateRoots(v)]]);
+  const c = impl.toComplex(value);
   if (!Number.isFinite(c.re) || Math.abs(c.im) > 1e-9 * Math.max(1, Math.abs(c.re))) return undefined;
   return c.re;
 }
@@ -120,9 +133,10 @@ function lcim(ps: Expr[]): Expr | undefined {
 
 /** Period of f in x, 0 when f does not depend on x, undefined when not periodic. */
 export function periodicity(fIn: ExprLike, x: Sym): Expr | undefined {
+  if (!(x instanceof Sym)) throw new NotImplementedError('periodicity requires a scalar symbol');
   let f = sympify(fIn);
   if (f instanceof Rel) f = add(f.lhs, mul(-1, f.rhs));
-  f = simplify(f);
+  if (!(f instanceof ExtensionExpr && f.name === 'Mod')) f = simplify(mapBottomUp(f, (node) => node instanceof Fn && node.name === 're' && first(node.args).equals(x) ? x : node));
   if (!f.has(x)) return S.Zero;
   const linCoeff = (a: Expr): Expr | undefined => {
     const p = (() => {
@@ -135,6 +149,12 @@ export function periodicity(fIn: ExprLike, x: Sym): Expr | undefined {
     // the leading coefficient of a polynomial in x does not contain x
     return p?.degree() === 1 ? p.LC() : undefined;
   };
+  if (f instanceof ExtensionExpr && f.name === 'Mod') {
+      const [argument, modulus] = [at(f.args, 0), at(f.args, 1)];
+      if (modulus.has(x)) return undefined;
+      const coefficient = linCoeff(argument);
+      return coefficient === undefined ? periodicity(argument, x) : impl.abs(mul(modulus, pow(coefficient, -1)));
+  }
   if (f instanceof Fn) {
     const P = trigPeriod(f.name);
     if (P) {
@@ -235,11 +255,16 @@ function realZeros(e: Expr, x: Sym, lo: Expr, hi: Expr): Expr[] {
   } else out.push(...base);
   const uniq = new Map<string, Expr>();
   for (const r of out) {
-    const [c1, c2] = [cmpReal(lo, r), cmpReal(r, hi)];
+    const [c1, c2] = [compareEndpoints(lo, r), compareEndpoints(r, hi)];
     if (c1 === undefined || c2 === undefined) throw new NotImplementedError('inequalities: zeros with parameters');
     if (c1 <= 0 && c2 <= 0) uniq.set(r.key, r);
   }
   return [...uniq.values()].sort(byValue);
+}
+
+/** The whole real line: SymPy's Reals or the equal Interval(-oo, oo). */
+function isRealLine(domain: SetExpr): boolean {
+  return domain === Reals || domain instanceof Interval && domain.isLeftUnbounded && domain.isRightUnbounded;
 }
 
 function bounds(domain: SetExpr): [Expr, Expr, boolean, boolean] {
@@ -282,14 +307,53 @@ function denominatorZeros(e: Expr, x: Sym, domain: SetExpr): SetExpr {
   return union(...dens.map((d) => solveSign(d, 'Eq', x, domain)));
 }
 
-function solveSign(f0: Expr, op: RelOp, x: Sym, domain: SetExpr): SetExpr {
+function solveSign(input: Expr, op: RelOp, x: Sym, domain: SetExpr): SetExpr {
+  const f0 = mapBottomUp(input, (term) => term instanceof Pow && term.exp.equals(S.Half)
+    && term.base instanceof Pow && term.base.exp.equals(S.Two)
+    && isReal(xreplace(term.base.base, [[x, new Dummy('x', { real: true })]])) === true
+    ? fn('abs', [term.base.base]) : term);
+  if (domain === EmptySet) return EmptySet;
+  if (domain instanceof SetOp && domain.op === 'Union') return union(...domain.args.map((part) => solveSign(f0, op, x, part)));
+  if (domain instanceof FiniteSet) return finiteSet(...domain.args.filter((p) => {
+    const v = numAt(f0, x, p);
+    return v !== undefined && (op === 'Eq' ? v === 0 : holds(op, v));
+  }));
+  if (domain === Integers || domain instanceof Range) return intersection(solveSign(f0, op, x, Reals), domain);
   // SymPy: solving an inequality with parameters is not implemented
   if ([...f0.freeSymbols()].filter((s) => s instanceof Sym).some((t) => t.key !== x.key)) throw new NotImplementedError('inequalities: the expression has parameters');
+  // SymPy restricts an ordered comparison to the zeros of its imaginary part.
+  if (op !== 'Eq' && op !== 'Ne' && f0.has(S.I)) {
+    const real = new Dummy('real', { real: true });
+    const imaginary = xreplace(asRealImag(expandMul(xreplace(f0, [[x, real]])))[1], [[real, x]]);
+    if (!imaginary.equals(S.Zero)) {
+      if (!imaginary.has(x)) throw new TypeError('Nonreal ordering');
+      const [lo, hi] = bounds(domain);
+      const candidates = realZeros(imaginary, x, lo, hi);
+      return intersection(finiteSet(...candidates.filter((point) => {
+        const value = numAt(f0, x, point);
+        return value !== undefined && holds(op, value);
+      })), domain);
+    }
+  }
   // a finite real expression plus oo or -oo has the sign of the infinity (SymPy: x < oo is True for a real x)
   if (f0 instanceof Add) {
     const inf = f0.args.find((a) => a instanceof Special);
     if (inf instanceof Special && (inf.name === 'oo' || inf.name === '-oo') && !f0.args.some((a) => a !== inf && some(a, (t) => t instanceof Special))) {
       return op !== 'Eq' && holds(op, inf.name === 'oo' ? Infinity : -Infinity) ? domain : EmptySet;
+    }
+  }
+  const trigParts = f0 instanceof Add ? f0.args : [f0];
+  const trigTerms = trigParts.filter((part) => part.has(x));
+  if (trigTerms.length === 1) {
+    const dependent = first(trigTerms);
+    const factors = dependent instanceof Mul ? dependent.args : [dependent];
+    const trig = factors.find((a) => a instanceof Fn && (a.name === 'sin' || a.name === 'cos') && a.has(x));
+    if (trig && factors.filter((a) => a.has(x)).length === 1) {
+      const amplitude = realValue(mul(...factors.filter((a) => a !== trig)));
+      const offset = realValue(add(...trigParts.filter((a) => a !== dependent)));
+      if (amplitude !== undefined && offset !== undefined && Math.abs(offset) > Math.abs(amplitude)) {
+        return op !== 'Eq' && holds(op, offset) ? domain : EmptySet;
+      }
     }
   }
   // Abs(a): split into the cases a >= 0 and a < 0 (SymPy reduce_abs_inequality)
@@ -301,24 +365,52 @@ function solveSign(f0: Expr, op: RelOp, x: Sym, domain: SetExpr): SetExpr {
     // the replacement may cancel a denominator (x/Abs(x) is 1 for x >= 0): its zeros stay excluded
     return minus(union(pos, neg), denominatorZeros(f0, x, domain));
   }
-  const f = cancel(f0);
+  const rational = mapBottomUp(f0, (term) => {
+    if (!(term instanceof Fn)) return term;
+    const u = first(term.args);
+    if (term.name === 'tan') return mul(fn('sin', [u]), pow(fn('cos', [u]), -1));
+    if (term.name === 'cot') return mul(fn('cos', [u]), pow(fn('sin', [u]), -1));
+    if (term.name === 'sec') return pow(fn('cos', [u]), -1);
+    if (term.name === 'csc') return pow(fn('sin', [u]), -1);
+    return term;
+  });
+  const f = cancel(rational);
+  const excluded = denominatorZeros(f0, x, domain);
   // a constant (a case of an Abs split, say): the whole domain or nothing
   if (!f.has(x)) {
     const v = realValue(f);
-    return v !== undefined && (op === 'Eq' ? v === 0 : holds(op, v)) ? domain : EmptySet;
+    return v !== undefined && (op === 'Eq' ? v === 0 : holds(op, v)) ? minus(domain, excluded) : EmptySet;
   }
   const [num, den] = fraction(f);
   let dom = domain;
   if (domain === Reals) {
-    const P = periodicity(f, x);
+    const P = periodicity(f0, x);
     if (P && !(P instanceof Rational && P.isZero)) dom = interval(0, P, false, true);
   }
   const [lo, hi, lOpen, rOpen] = bounds(dom);
   const zeros = realZeros(num, x, lo, hi);
   const poles = realZeros(den, x, lo, hi);
-  if (op === 'Eq') return intersection(finiteSet(...zeros.filter((z) => !poles.some((p) => p.key === z.key))), dom);
-  const pts = [...zeros, ...poles].sort(byValue).filter((p, i, a) => i === 0 || p.key !== at(a, i - 1).key);
-  const edges = [lo, ...pts.filter((p) => cmpReal(p, lo) !== 0 && cmpReal(p, hi) !== 0), hi];
+  const radicands = new Map<string, Expr>();
+  const logArguments = new Map<string, Expr>();
+  some(f, (term) => {
+    if (term instanceof Fn && term.name === 'log' && term.has(x)) {
+      const argument = first(term.args);
+      logArguments.set(argument.key, argument);
+    }
+    if (term instanceof Fn && ['asin', 'acos'].includes(term.name) && term.has(x)) {
+      const u = first(term.args);
+      for (const endpoint of [add(u, -1), add(u, 1)]) radicands.set(endpoint.key, endpoint);
+    }
+    if (term instanceof Pow && term.exp instanceof Rational && term.exp.q % 2n === 0n && term.base.has(x)) {
+      radicands.set(term.base.key, term.base);
+    }
+    return false;
+  });
+  for (const argument of logArguments.values()) poles.push(...realZeros(argument, x, lo, hi));
+  const boundaries = [...radicands.values()].flatMap((argument) => realZeros(argument, x, lo, hi));
+  if (op === 'Eq') return minus(intersection(finiteSet(...zeros.filter((z) => !poles.some((p) => p.key === z.key))), dom), excluded);
+  const pts = [...zeros, ...poles, ...boundaries].sort(byValue).filter((p, i, a) => i === 0 || p.key !== at(a, i - 1).key);
+  const edges = [lo, ...pts.filter((p) => compareEndpoints(p, lo) !== 0 && compareEndpoints(p, hi) !== 0), hi];
   const parts: SetExpr[] = [];
   for (let i = 0; i + 1 < edges.length; i++) {
     const [l, r] = [at(edges, i), at(edges, i + 1)];
@@ -329,11 +421,24 @@ function solveSign(f0: Expr, op: RelOp, x: Sym, domain: SetExpr): SetExpr {
   for (const z of edges) {
     if (z instanceof Special) continue;
     if (poles.some((p) => p.key === z.key)) continue;
-    const v = numAt(f, x, z);
+    const v = zeros.some((root) => root.equals(z)) ? 0 : numAt(f, x, z);
     if (v !== undefined && holds(op, Math.abs(v) < 1e-12 ? 0 : v)) parts.push(finiteSet(z));
   }
-  const res = union(...parts);
-  return intersection(res, interval(lo, hi, lOpen, rOpen));
+  const region = union(...parts);
+  const res = minus(dom === Reals ? region : intersection(region, interval(lo, hi, lOpen, rOpen)), excluded);
+  return dom !== domain && res.equals(dom) ? domain : res;
+}
+
+/** Express a single puncture as an excluded point. */
+function inequalityAsRelational(set: SetExpr, x: Sym): Expr {
+  if (!(set instanceof SetOp) || set.op !== 'Union') return asRelational(set, x);
+  if (set.args.length !== 2) return orB(...set.args.map((part) => asRelational(part, x)));
+  const [a, b] = [first(set.args), at(set.args, 1)];
+  if (!(a instanceof Interval) || !(b instanceof Interval)) return asRelational(set, x);
+  if (!a.rightOpen || !b.leftOpen || !a.end.equals(b.start)) return asRelational(set, x);
+  const lower = a.leftOpen ? Gt(x, a.start) : Ge(x, a.start);
+  const upper = b.rightOpen ? Lt(x, b.end) : Le(x, b.end);
+  return and(lower, upper, Ne(x, a.end));
 }
 
 /** SymPy solve_univariate_inequality. */
@@ -343,14 +448,47 @@ export function solveUnivariateInequality(
   opts: { relational?: boolean; domain?: SetExpr } = {},
 ): Expr {
   const rel = sympify(relIn);
+  if (rel instanceof BoolAtom) return opts.relational === false ? rel.value ? opts.domain ?? Reals : EmptySet : rel;
   if (!(rel instanceof Rel)) throw new TypeError('solve_univariate_inequality: relational expected');
   const domain = opts.domain ?? Reals;
-  const s = solveSign(add(rel.lhs, mul(-1, rel.rhs)), rel.op, x, domain);
-  return opts.relational === false ? s : asRelational(s, x);
+  // A sign chart cannot decide the order of an endpoint by a rounded cancellation.
+  for (const bound of [rel.lhs, rel.rhs]) {
+    if (!(bound instanceof Add) || bound.freeSymbols().size || isZero(bound) !== undefined) continue;
+    const magnitude = bound.args.reduce((sum, term) => sum + Math.abs(Number(realValue(term))), 0);
+    if (Number.isFinite(magnitude) && Math.abs(Number(realValue(bound))) <= bound.args.length * Number.EPSILON * magnitude) {
+      throw new NotImplementedError('inequalities: cannot certify the sign of the constant endpoint');
+    }
+  }
+  const [numerator, denominator] = fraction(rel.lhs);
+  if (opts.relational !== false && domain === Reals && denominator.equals(x) && isPositive(x) === true && !numerator.has(x) && rel.rhs instanceof Rational && !rel.rhs.isZero) {
+    const endpoint = mul(numerator, pow(rel.rhs, -1));
+    const reversed: Record<RelOp, RelOp> = { Gt: 'Lt', Ge: 'Le', Lt: 'Gt', Le: 'Ge', Eq: 'Eq', Ne: 'Ne' };
+    return relFn[rel.rhs.isNegative ? reversed[rel.op] : rel.op](endpoint, x);
+  }
+  const logarithm = rel.lhs;
+  if (logarithm instanceof Fn && logarithm.name === 'log' && first(logarithm.args).equals(x) && !rel.rhs.has(x) && isReal(rel.rhs) === true) {
+    const endpoint = pow(S.E, rel.rhs);
+    const positive = interval(0, S.Infinity, true, true);
+    const candidates = rel.op === 'Lt' || rel.op === 'Le' ? interval(0, endpoint, true, rel.op === 'Lt')
+      : rel.op === 'Gt' || rel.op === 'Ge' ? interval(endpoint, S.Infinity, rel.op === 'Gt', true)
+      : rel.op === 'Eq' ? finiteSet(endpoint) : complement(positive, finiteSet(endpoint));
+    const solution = domain === Reals ? candidates : intersection(candidates, domain);
+    return opts.relational === false ? solution : asRelational(solution, x);
+  }
+  const s = minus(solveSign(add(rel.lhs, mul(-1, rel.rhs)), rel.op, x, domain), union(denominatorZeros(rel.lhs, x, Reals), denominatorZeros(rel.rhs, x, Reals)));
+  return opts.relational === false ? s : inequalityAsRelational(s, x);
 }
 
 /** SymPy solve_poly_inequality: a list of intervals. */
 export function solvePolyInequality(poly: Poly, rel: string): SetExpr[] {
+  if (poly.isGround) {
+    const v = realValue(poly.asExpr());
+    if (v === undefined) throw new NotImplementedError('solvePolyInequality: a real coefficient is required');
+    const ops: Readonly<Record<string, RelOp | undefined>> = { '==': 'Eq', '!=': 'Ne', '>': 'Gt', '>=': 'Ge', '<': 'Lt', '<=': 'Le' };
+    const op = ops[rel];
+    if (op === undefined) throw new TypeError(`solve_poly_inequality: '${rel}' is not a valid relation`);
+    return [(op === 'Eq' ? v === 0 : holds(op, v)) ? Reals : EmptySet];
+  }
   const roots = poly.realRoots();
   const reals: [Expr, number][] = [];
   for (const r of roots) {
@@ -464,28 +602,38 @@ export function reduceInequalities(ineqsIn: readonly ExprLike[] | ExprLike, symb
   }
   for (const [k, rs] of byGen) {
     const g = defined(gens.find((s) => s.key === k), 'generator');
-    const others = [...new Map(rs.flatMap((r) => [...r.freeSymbols()].filter((s) => s instanceof Sym)).map((s) => [s.key, s])).values()].filter((s) => s.key !== g.key);
-    if (others.length) {
-      for (const r of rs) parts.push(linearInequality(r, g));
-      continue;
-    }
     let set: SetExpr = Reals;
-    for (const r of rs) set = intersection(set, solveSign(add(r.lhs, mul(-1, r.rhs)), r.op, g, Reals_()));
-    // (for a real symbol, -oo < x and x < oo are True already, so SymPy's form needs no clean-up)
-    parts.push(asRelational(set, g));
+    const univariate: Rel[] = [];
+    for (const r of rs) {
+      if ([...r.freeSymbols()].some((symbol) => symbol instanceof Sym && symbol.key !== g.key)
+        || some(r, (term) => term.kind === 'Integral' || term.kind === 'Concrete')) {
+        parts.push(linearInequality(r, g));
+        continue;
+      }
+      univariate.push(r);
+      const solution = cast(solveUnivariateInequality(r, g, { relational: false }), SetExpr);
+      set = set === Reals ? solution : intersection(set, solution);
+    }
+    if (univariate.length) {
+      parts.push(set === Reals && univariate.every((r) => {
+        const period = periodicity(add(r.lhs, mul(-1, r.rhs)), g);
+        return period !== undefined && !period.equals(S.Zero);
+      }) ? S.true : inequalityAsRelational(set, g));
+    }
   }
   return and(...parts);
 }
 
-const Reals_ = (): SetExpr => Reals;
-
 /** a*x + b op 0 with symbolic b: x op' -b/a, plus the infinite bound. */
 function linearInequality(r: Rel, x: Sym): Expr {
   const f = add(r.lhs, mul(-1, r.rhs));
-  const p = Poly.from(f, [x]);
+  const terms = f instanceof Add ? f.args : [f];
+  const hasVariable = (term: Expr): boolean => [...term.freeSymbols()].some((symbol) => symbol.equals(x));
+  const dependent = terms.filter(hasVariable);
+  const p = Poly.from(add(...dependent), [x]);
   if (p.degree() !== 1) throw new NotImplementedError('reduce_inequalities: nonlinear inequality with parameters');
   const a = p.LC();
-  const b = p.TC();
+  const b = add(p.TC(), ...terms.filter((term) => !hasVariable(term)));
   const sol = mul(-1, b, pow(a, -1));
   const av = realValue(a);
   // SymPy leaves the inequality as it is when the sign of the coefficient is unknown
@@ -493,39 +641,206 @@ function linearInequality(r: Rel, x: Sym): Expr {
   const flip: Record<RelOp, RelOp> = { Lt: 'Gt', Le: 'Ge', Gt: 'Lt', Ge: 'Le', Eq: 'Eq', Ne: 'Ne' };
   const op = av < 0 ? flip[r.op] : r.op;
   const main = relFn[op](x, sol);
-  // like SymPy, only a non-strict inequality gets the infinite bound
-  if (op === 'Ge') return and(main, Lt(x, S.Infinity));
-  if (op === 'Le') return and(main, Lt(S.NegativeInfinity, x));
+  if (!some(b, (term) => term instanceof ExtensionExpr || term.kind === 'Integral' || term.kind === 'Concrete')) {
+    if (op === 'Ge') return and(main, Lt(x, S.Infinity));
+    if (op === 'Le') return and(main, Lt(S.NegativeInfinity, x));
+  }
   return main;
 }
 
 /** SymPy solveset for equations and inequalities in one variable. */
-export function solveset(fIn: ExprLike, x: Sym, domain: SetExpr = Complexes): SetExpr {
+export function solveset(fIn: ExprLike, symbol?: ExprLike, domain: SetExpr = Complexes): SetExpr {
   const f = sympify(fIn);
+  if (!(domain instanceof SetExpr)) throw new TypeError('solveset: a set domain is required');
+  if (symbol instanceof SetExpr) throw new TypeError('solveset: expected a scalar unknown');
+  const free = [...f.freeSymbols()];
+  if (symbol === undefined && free.length > 1) throw new RangeError('solveset: specify an unknown for multivariate expressions');
+  const target = symbol === undefined ? free[0] : sympify(symbol);
+  if (!(target instanceof Sym)) {
+    if (target === undefined) return f === S.true || f.equals(S.Zero) ? domain : EmptySet;
+    const variable = new Dummy('x');
+    // Number._eval_subs also replaces the additive inverse of a numeric target.
+    const recast = target instanceof Rational && !target.isZero ? xreplace(f, [[target, variable], [target.neg(), variable.neg()]]) : subs(f, [[target, variable]]);
+    const result = solveset(recast, variable, domain);
+    return cast(xreplace(result, [[variable, target]]), SetExpr);
+  }
+  const x = target;
+  // Interval(-oo, oo) equals Reals in SymPy: solve over the real line
+  if (domain !== Reals && isRealLine(domain)) return solveset(f, x, Reals);
+  // SymPy solves over a real domain with a real dummy for the unknown: the equation is evaluated for a real
+  // unknown (sqrt(x**2) is Abs(x))
+  if ((domain === Reals || domain instanceof Interval) && isReal(x) !== true && !(f instanceof BoolAtom)) {
+    const real = new Dummy('R', { real: true });
+    // Keep a symbolic base intact when a real exponent would distribute over its factors.
+    if (f instanceof Add && f.args.some((term) => term instanceof Pow && term.base instanceof Mul && term.exp.equals(x) && isPositive(term.base) === true)) {
+      const isolated = invertExponential(f, x, domain);
+      if (isolated !== undefined) return isolated;
+    }
+    const evaluated = xreplace(xreplace(f, [[x, real]]), [[real, x]]);
+    if (!evaluated.equals(f)) return solveset(evaluated, x, domain);
+  }
   // a decided condition holds everywhere or nowhere (SymPy solveset(True, x) is the domain)
   if (f instanceof BoolAtom) return f.value ? domain : EmptySet;
   if (f instanceof Rel && f.op !== 'Eq') {
     // SymPy keeps an inequality or x != a over the complex numbers as a ConditionSet
     // and so does an inequality with parameters
-    if (domain === Complexes || [...f.freeSymbols()].filter((s) => s instanceof Sym).some((t) => t.key !== x.key)) return new ConditionSet(x, f, domain);
-    return solveSign(add(f.lhs, mul(-1, f.rhs)), f.op, x, domain);
+    if ((!(domain instanceof Range) && isSubset(domain, Reals) !== true) || [...f.freeSymbols()].filter((s) => s instanceof Sym).some((t) => t.key !== x.key)) return new ConditionSet(x, f, domain);
+    const realDomain = domain === Integers || domain instanceof Range ? Reals : domain;
+    const residual = piecewiseFold(add(f.lhs, mul(-1, f.rhs)));
+    const solution = residual instanceof Piecewise
+      ? solvePiecewise(residual, x, realDomain, (expression, where) => solveSign(expression, f.op, x, where))
+      : solveSign(residual, f.op, x, realDomain);
+    const excluded = union(denominatorZeros(f.lhs, x, realDomain), denominatorZeros(f.rhs, x, realDomain));
+    return intersection(minus(solution, excluded), domain);
   }
-  const g = f instanceof Rel ? add(f.lhs, mul(-1, f.rhs)) : f;
+  if (domain instanceof SetOp && domain.op === 'Union') return union(...domain.args.map((part) => solveset(f, x, part)));
+  if (domain instanceof FiniteSet) {
+    const residual = f instanceof Rel ? add(f.lhs, mul(-1, f.rhs)) : f;
+    const condition = Eq(residual, 0);
+    return union(...domain.args.map((point) => {
+      const atPoint = xreplace(condition, [[x, point]]);
+      return atPoint === S.true ? finiteSet(point) : atPoint === S.false ? EmptySet : new ConditionSet(x, condition, finiteSet(point));
+    }));
+  }
+  const residual = f instanceof Rel ? add(f.lhs, mul(-1, f.rhs)) : f;
+  const g = piecewiseFold(domain === Complexes ? residual : mapBottomUp(residual, (term) => {
+    if (!(term instanceof Fn) || (term.name !== 'Min' && term.name !== 'Max') || !term.has(x)) return term;
+    const min = term.name === 'Min';
+    return piecewise(...term.args.map((argument) => [
+      argument,
+      and(...term.args.filter((other) => other !== argument).map((other) => min ? Le(argument, other) : Ge(argument, other))),
+    ] as const));
+  }));
   if (!g.has(x)) return g instanceof Rational && g.isZero ? domain : EmptySet;
+  if (domain === Complexes && some(g, (e) => e instanceof Fn && ['abs', 'Min', 'Max'].includes(e.name) && e.has(x))) throw new RangeError('solveset: a real domain is required');
+  let algebraic: SetExpr | undefined;
   try {
     // a Piecewise: each piece on the part of the domain where its condition holds first (SymPy _solveset)
-    if (g instanceof Piecewise && domain !== Complexes) return solvePiecewise(g, x, domain);
+    if (g instanceof Piecewise) {
+      if (domain === Complexes && g.pairs.some(([, condition]) => some(condition, (a) => a instanceof Rel && a.op !== 'Eq' && a.op !== 'Ne'))) {
+        return new ConditionSet(x, Eq(g, 0), domain);
+      }
+      return solvePiecewise(g, x, domain, (expression, where) => solveset(expression, x, where));
+    }
+    if (g instanceof Fn && g.name === 'sign') return solveset(first(g.args), x, domain);
+    if (g instanceof Mul && !some(g, (factor) => factor instanceof Pow && isNegative(factor.exp) === true)) {
+      const dependent = g.args.filter((factor) => factor.has(x));
+      if (dependent.length > 1) return union(...dependent.map((factor) => solveset(factor, x, domain)));
+    }
     // periodic equations: the solutions in one period plus multiples of the period (SymPy ImageSet)
+    if (g instanceof Fn && g.name === 'sin') {
+      const argument = first(g.args);
+      if (argument instanceof Fn && argument.name === 'abs') return solveset(fn('sin', argument.args), x, domain);
+      if (domain === Complexes && argument instanceof Pow && argument.base.equals(S.E) && argument.exp.has(x)) return new ConditionSet(x, Eq(g, 0), domain);
+    }
+    if (some(g, (e) => e instanceof Fn && (e.name === 'sin' || e.name === 'cos') && e.has(x))) {
+      const simplified = trigsimp(g);
+      if (!simplified.equals(g)) return solveset(simplified, x, domain);
+    }
+    if (domain === Reals || domain instanceof Interval) {
+      const absolute = invertAbsolute(g, x, domain);
+      if (absolute !== undefined) return absolute;
+    }
+    const modular = solveModular(g, x, domain);
+    if (modular !== undefined) return modular;
+    if (domain instanceof Interval) {
+      const preimage = boundedCosinePreimage(g, x, domain);
+      if (preimage !== undefined) return preimage;
+    }
     const periodic = periodicSolutions(g, x, domain);
     if (periodic) return periodic;
     if (domain === Complexes) {
       const ex = complexExpSolutions(g, x) ?? complexExpPolynomial(g, x);
       if (ex) return ex;
     }
-    return solvesetAlgebraic(g, x, domain);
+    algebraic = solvesetAlgebraic(g, x, domain);
+    if (algebraic !== EmptySet) return algebraic;
   } catch {
-    // SymPy: an equation that cannot be solved gives a ConditionSet
-    return new ConditionSet(x, Eq(g, 0), domain);
+    algebraic = undefined;
+  }
+  if (domain === Complexes && g instanceof Add && some(g, (term) => term instanceof Fn && term.has(x))) {
+    const product = factor(g);
+    if (product instanceof Mul && product.args.filter((a) => a.has(x)).length > 1 && !some(product, (a) => a instanceof Pow && isNegative(a.exp) === true)) {
+      return union(...product.args.filter((a) => a.has(x)).map((a) => solveset(a, x, domain)));
+    }
+  }
+  const hyperbolicHeads = ['sinh', 'cosh', 'tanh', 'coth', 'sech', 'csch'];
+  if (some(g, (term) => term instanceof Fn && hyperbolicHeads.includes(term.name))) {
+    const hyperbolic = g.rewrite('exp', { pattern: hyperbolicHeads });
+    const solution = solveset(hyperbolic, x, domain);
+    if (!(solution instanceof ConditionSet)) return solution;
+  }
+  if (domain === Reals || domain instanceof Interval) {
+    const radicals = solveRadicals(g, x, domain);
+    if (radicals !== undefined) return radicals;
+  }
+  return algebraic ?? new ConditionSet(x, Eq(g, 0), domain);
+}
+
+/** Solve an affine integer congruence with a constant modulus and residue. */
+function solveModular(g: Expr, x: Sym, domain: SetExpr): SetExpr | undefined {
+  if (domain !== Integers && !(domain instanceof Range)) return undefined;
+  const terms = g instanceof Add ? g.args : [g];
+  const dependent = terms.filter((t) => t.has(x));
+  if (dependent.length !== 1) return undefined;
+  const term = first(dependent);
+  const factors = term instanceof Mul ? term.args : [term];
+  const modulusTerm = factors.find((a) => a instanceof ExtensionExpr && a.name === 'Mod' && a.has(x));
+  if (!modulusTerm || factors.filter((a) => a.has(x)).length !== 1) return undefined;
+  const [argument, modulus] = [first(modulusTerm.args), at(modulusTerm.args, 1)];
+  if (!(modulus instanceof Rational) || !modulus.isInteger || modulus.isZero) return undefined;
+  const residue = mul(-1, add(...terms.filter((t) => t !== term)), pow(mul(...factors.filter((a) => a !== modulusTerm)), -1));
+  const p = Poly.from(argument, [x]);
+  const [a, b] = [p.LC(), p.TC()];
+  if (p.degree() !== 1 || !(a instanceof Rational) || !a.isInteger || !(b instanceof Rational) || !b.isInteger) return undefined;
+  if (!(residue instanceof Rational)) return residue.freeSymbols().size === 0 && isReal(residue) === false ? EmptySet : undefined;
+  if (!residue.isInteger || (modulus.p > 0n ? residue.p < 0n || residue.p >= modulus.p : residue.p > 0n || residue.p <= modulus.p)) return EmptySet;
+  const [inverse, , gcd] = igcdex(a.p, modulus.p);
+  const target = residue.p - b.p;
+  if (target % gcd !== 0n) return EmptySet;
+  const step = (modulus.p < 0n ? -modulus.p : modulus.p) / gcd;
+  const solution = inverse * (target / gcd) % step;
+  const n = new Dummy('n', { integer: true });
+  return intersection(imageSet(n, add((solution + step) % step, mul(step, n)), Integers), domain);
+}
+
+/** Clear real radicals and check the resulting candidates in the input equation. */
+function solveRadicals(g: Expr, x: Sym, domain: SetExpr): SetExpr | undefined {
+  if ([...g.freeSymbols()].some((symbol) => !symbol.equals(x))) return undefined;
+  const radicals = new Map<string, Pow>();
+  some(g, (term) => {
+    if (term instanceof Pow && term.exp.equals(S.Half) && term.base.has(x)) radicals.set(term.key, term);
+    return false;
+  });
+  const roots = [...radicals.values()];
+  if (roots.length < 2 || roots.length > 3 || roots.some((r) => roots.some((s) => r.base.has(s)))) return undefined;
+  try {
+    const variables = roots.map(() => new Dummy('r'));
+    let cleared = xreplace(g, roots.map((r, i): [Expr, Expr] => [r, at(variables, i)]));
+    for (const [i, root] of roots.entries()) {
+      const variable = at(variables, i);
+      const p = Poly.from(cleared, [variable]);
+      let even: Expr = S.Zero, odd: Expr = S.Zero;
+      for (const [powers, coefficient] of p.terms()) {
+        const degree = at(powers, 0);
+        const term = mul(coefficient, pow(root.base, Math.floor(degree / 2)));
+        if (degree % 2 === 0) even = add(even, term);
+        else odd = add(odd, term);
+      }
+      cleared = expandMul(add(pow(even, 2), mul(-1, root.base, pow(odd, 2))));
+    }
+    if (cleared.equals(S.Zero)) return new ConditionSet(x, Eq(g, 0), domain);
+    const candidates = solve(cleared, x);
+    const valid: Expr[] = [];
+    for (const point of candidates) {
+      if (containsQ(domain, point) !== true) continue;
+      const value = xreplace(g, [[x, point]]);
+      const numeric = value.equals(S.Zero) ? 0 : realValue(value);
+      if (numeric !== undefined && Math.abs(numeric) < 1e-12) valid.push(point);
+    }
+    return finiteSet(...valid);
+  } catch {
+    return undefined;
   }
 }
 
@@ -535,45 +850,75 @@ function conditionSet(c: Expr, x: Sym, domain: SetExpr): SetExpr {
     const parts = c.args.map((a) => conditionSet(a, x, domain));
     return c.op === 'And' ? intersection(...parts) : union(...parts);
   }
+  if (c instanceof Rel && c.op === 'Ne') return complement(domain, solveset(Eq(c.lhs, c.rhs), x, domain));
   return solveset(c, x, domain);
 }
 
 /** The zeros of a Piecewise: those of each piece where its condition holds and no earlier one does. */
-function solvePiecewise(g: Piecewise, x: Sym, domain: SetExpr): SetExpr {
+function solvePiecewise(
+  g: Piecewise, x: Sym, domain: SetExpr, solveBranch: (expression: Expr, where: SetExpr) => SetExpr,
+): SetExpr {
   let remaining = domain;
   const parts: SetExpr[] = [];
   for (const [e, c] of g.pairs) {
     const where = c === S.true ? remaining : intersection(remaining, conditionSet(c, x, domain));
-    if (where !== EmptySet) parts.push(solveset(e, x, where));
+    if (where !== EmptySet) parts.push(solveBranch(e, where));
     remaining = complement(remaining, where);
   }
   return union(...parts);
 }
 
 /** SymPy _invert_real for a function with an inverse (erf -> erfinv): a*f(u) + b = 0 becomes u = f^-1(-b/a), or undefined. */
-const INVERSES: Readonly<Record<string, FnName>> = { erf: 'erfinv', erfc: 'erfcinv', erfinv: 'erf', erfcinv: 'erfc' };
-function invertReal(g: Expr, x: Sym): Expr | undefined {
+const INVERSES: Readonly<Record<string, FnName>> = { erf: 'erfinv', erfc: 'erfcinv', erfinv: 'erf', erfcinv: 'erfc', sinh: 'asinh', cosh: 'acosh', tanh: 'atanh', coth: 'acoth', sech: 'asech', csch: 'acsch' };
+function invertReal(g: Expr, x: Sym, domain: SetExpr): Expr | undefined {
   const terms = g instanceof Add ? g.args : [g];
   const dep = terms.filter((t) => t.has(x));
   if (dep.length !== 1) return undefined;
   const t = first(dep);
   const fs = t instanceof Mul ? t.args : [t];
-  const f = fs.find((h): h is Fn => h instanceof Fn && h.name in INVERSES && h.has(x));
+  const f = fs.find((h): h is Fn => h instanceof Fn && (h.name === 'atan2' || h.name in INVERSES) && h.has(x));
   if (!f || fs.filter((h) => h.has(x)).length !== 1) return undefined;
   const a = mul(...fs.filter((h) => h !== f));
   const c = mul(-1, add(...terms.filter((u) => !u.has(x))), pow(a, -1));
+  if (f.name === 'atan2') {
+    const adjacent = at(f.args, 1);
+    if (adjacent.has(x) || isPositive(adjacent) !== true) return undefined;
+    const limit = mul(S.Half, S.Pi);
+    const valid = containsQ(interval(mul(-1, limit), limit, true, true), c);
+    if (valid === undefined) return new ConditionSet(x, Eq(g, 0), domain);
+    return valid ? add(first(f.args), mul(-1, adjacent, fn('tan', [c]))) : S.One;
+  }
+  if (f.name.endsWith('h')) {
+    const range = f.name === 'cosh' ? interval(1, S.Infinity) : f.name === 'tanh' ? interval(-1, 1, true, true) : f.name === 'coth' ? union(interval(S.NegativeInfinity, -1, true, true), interval(1, S.Infinity, true, true)) : f.name === 'sech' ? interval(0, 1, true, false) : f.name === 'csch' ? complement(Reals, finiteSet(0)) : Reals;
+    const valid = containsQ(range, c);
+    if (valid === undefined) return undefined;
+    if (!valid) return S.One;
+    const inverse = fn(defined(INVERSES[f.name]), [c]);
+    const u = first(f.args);
+    return f.name === 'cosh' || f.name === 'sech' ? mul(add(u, inverse), add(u, mul(-1, inverse))) : add(u, mul(-1, inverse));
+  }
   return add(first(f.args), mul(-1, fn(defined(INVERSES[f.name]), [c])));
 }
 
 /** The real roots of a polynomial with parameters: SymPy keeps those known to be real and intersects the others with the Reals. */
-function parametricRealRoots(num: Expr, den: Expr, x: Sym): SetExpr {
+function parametricRealRoots(num: Expr, den: Expr, x: Sym, original: Expr): SetExpr {
   const realPart = (xs: readonly Expr[]): SetExpr => {
-    const reals = xs.filter(isRealSym);
-    const unknown = reals.filter((r) => isReal(r) !== true);
-    return union(finiteSet(...reals.filter((r) => isReal(r) === true)), unknown.length ? new SetOp('Intersection', [finiteSet(...unknown), Reals]) : EmptySet);
+    const reals = xs.filter((r) => isRealSym(r) && isReal(r) !== false && (isReal(r) === true || r.freeSymbols().size !== 0 || Number.isFinite(realValue(approximateRoots(r)))));
+    const unknown = reals.filter((r) => isReal(r) !== true && realFact(r) !== true);
+    return union(finiteSet(...reals.filter((r) => !unknown.includes(r))), unknown.length ? new SetOp('Intersection', [finiteSet(...unknown), Reals]) : EmptySet);
   };
-  const roots = realPart(solve(num, x));
-  return den.has(x) ? complement(roots, realPart(solve(den, x))) : roots;
+  const roots = solve(num, x);
+  // A principal Lambert W root does not enumerate all branches of a transcendental equation.
+  if (roots.some((r) => some(r, (t) => t instanceof Fn && t.name === 'LambertW'))) return new ConditionSet(x, Eq(original, 0), Reals);
+  const poles = den.has(x) ? realPart(solve(den, x)) : EmptySet;
+  if (some(original, (term) => term instanceof Pow && term.base.has(x) && term.exp.equals(S.Half.neg()))) {
+    return union(...roots.map((root) => {
+      const base = realPart([root]);
+      const solution = checksol(original, x, root) === true ? base : new ConditionSet(x, Eq(original, 0), base);
+      return complement(solution, poles);
+    }));
+  }
+  return complement(realPart(roots), poles);
 }
 
 /**
@@ -605,6 +950,12 @@ function invertRealPower(g: Expr, x: Sym): SetExpr | undefined {
     const sets = invertTo(B, pow(t, pow(e, -1)), x).map((r) => imageSet(x, xreplace(r, [[t, x]]), base));
     return sets.length === 1 ? first(sets) : new SetOp('Union', sets.sort((u, v) => compareKeys(sortKey(u), sortKey(v))));
   }
+  if (B.equals(x) && e.equals(S.Two)) {
+    if (isNegative(c) === true) return EmptySet;
+    const root = pow(c, S.Half);
+    const candidates = finiteSet(root.neg(), root);
+    return realFact(root) === true ? candidates : new SetOp('Intersection', [candidates, Reals]);
+  }
   if (!e.isInteger || e.p % 2n === 0n) return undefined;
   const sols = invertTo(B, realRoot(c, e.p), x);
   // real_root of a real c is real
@@ -627,7 +978,7 @@ function invertTo(B: Expr, r: Expr, x: Sym): Expr[] {
     const rest = B.args.filter((a) => !a.has(x));
     if (dep.length === 1 && rest.length) {
       const inner = first(dep);
-      return invertTo(inner, B instanceof Add ? add(r, mul(-1, ...rest)) : mul(r, pow(mul(...rest), -1)), x);
+      return invertTo(inner, B instanceof Add ? add(r, add(...rest).neg()) : mul(r, pow(mul(...rest), -1)), x);
     }
   }
   if (B instanceof Pow && B.exp instanceof Rational && B.exp.isInteger && B.exp.p > 1n) {
@@ -643,22 +994,131 @@ function invertTo(B: Expr, r: Expr, x: Sym): Expr[] {
 /** SymPy real_root(c, n) for an odd n: Abs(c)**(1/n)*sign(c). */
 const realRoot = (c: Expr, n: bigint): Expr => mul(pow(fn('abs', [c]), Rational.of(1n, n)), fn('sign', [c]));
 
+/** Enforce the principal branch when exponentiating an equation between logarithms. */
+function logarithmicPreimage(equation: Add, x: Sym): SetExpr | undefined {
+  const positive = equation.args.find((t): t is Fn => t instanceof Fn && t.name === 'log' && t.has(x));
+  if (!positive) return undefined;
+  const argument = first(positive.args);
+  if (argument instanceof Pow && argument.base.equals(x) && !argument.exp.has(x)) {
+    const exponent = mul(argument.exp, log(x));
+    if (add(...equation.args.filter((t) => t !== positive), exponent).equals(S.Zero)) {
+      const imaginary = fn('im', [exponent]);
+      return new ConditionSet(x, and(Lt(S.Pi.neg(), imaginary), Le(imaginary, S.Pi)), complement(Reals, finiteSet(0)));
+    }
+  }
+  const negative = equation.args.find((t) => t instanceof Mul && t.args.length === 2 && t.args.some((a) => a.equals(-1)) && t.args.some((a) => a instanceof Fn && a.name === 'log' && a.has(x)));
+  if (!(negative instanceof Mul)) return undefined;
+  const offset = add(...equation.args.filter((t) => t !== positive && t !== negative));
+  if (!offset.freeSymbols().size || offset.has(x)) return undefined;
+  const other = first(cast(defined(negative.args.find((a) => a instanceof Fn)), Fn).args);
+  const ratio = cancel(mul(argument, pow(other, -1)));
+  const [numerator] = fraction(cancel(add(mul(ratio, pow(S.E, offset)), -1)));
+  const candidates = solveset(numerator, x, Reals);
+  const excluded = union(...[...denoms(equation, x), other].map((d) => solveset(d, x, Reals)));
+  const imaginary = fn('im', [add(log(other), offset.neg())]);
+  return new ConditionSet(x, and(Lt(S.Pi.neg(), imaginary), Le(imaginary, S.Pi)), complement(candidates, excluded));
+}
+
+/** Intersect the periodic cosine preimages with the monotone image of the interval. */
+function boundedCosinePreimage(g: Expr, x: Sym, domain: Interval): SetExpr | undefined {
+  const terms = g instanceof Add ? g.args : [g];
+  const dependent = terms.filter((t) => t.has(x));
+  const outer = dependent[0];
+  if (dependent.length !== 1 || !(outer instanceof Fn) || outer.name !== 'cos') return undefined;
+  const inner = first(outer.args);
+  if (!(inner instanceof Fn) || inner.name !== 'sinh' || !first(inner.args).equals(x)) return undefined;
+  const target = add(...terms.filter((t) => t !== outer)).neg();
+  if (containsQ(interval(-1, 1), target) === false) return EmptySet;
+  const angle = fn('acos', [target]);
+  const numeric = realValue(angle);
+  if (numeric === undefined) return new ConditionSet(x, Eq(g, 0), domain);
+  const multiple = limitDenominator(rationalFromFloat(numeric / Math.PI), 360n);
+  const rational = mul(S.Pi, multiple);
+  const offset = Math.abs(multiple.toNumber() * Math.PI - numeric) <= Number.EPSILON * Math.PI && expandMul(fn('cos', [rational])).equals(expandMul(target)) ? rational : angle;
+  const n = new Dummy('n', { integer: true });
+  const window = interval(fn('sinh', [domain.start]), fn('sinh', [domain.end]), domain.leftOpen, domain.rightOpen);
+  const values = union(...[offset, offset.neg()].map((a) => intersection(imageSet(n, add(mul(2, n, S.Pi), a), Integers), window)));
+  return imageSet(x, fn('asinh', [x]), values);
+}
+
 function solvesetAlgebraic(gIn: Expr, x: Sym, domain: SetExpr): SetExpr {
+  const terms = gIn instanceof Add ? gIn.args : [gIn];
+  const dependent = terms.filter((t) => t.has(x));
+  if (dependent.length === 1) {
+    const term = first(dependent);
+    const rhs = add(...terms.filter((t) => t !== term)).neg();
+    if (domain === Reals && term.equals(x) && fraction(rhs)[1].freeSymbols().size && isNonZero(fraction(rhs)[1]) !== true) {
+      return new SetOp('Intersection', [finiteSet(rhs), Reals]);
+    }
+    const [numerator, denominator] = fraction(term);
+    if (domain === Complexes && !numerator.has(x) && denominator instanceof Add && rhs.freeSymbols().size && denominator.has(x)) {
+      const values = invertTo(denominator, mul(numerator, pow(rhs, -1)), x);
+      return complement(finiteSet(...values), solveset(denominator, x, domain));
+    }
+  }
   if (domain === Reals || domain instanceof Interval) {
-    const inv = invertReal(gIn, x);
+    if (domain === Reals && gIn instanceof Add) {
+      const logarithmic = logarithmicPreimage(gIn, x);
+      if (logarithmic) return logarithmic;
+    }
+    let generator: Fn | undefined;
+    if (domain === Reals) some(gIn, (f) => {
+      if (!(f instanceof Fn) || f.name !== 'coth' || !first(f.args).equals(x)) return false;
+      generator = f;
+      return true;
+    });
+    if (generator instanceof Fn && !generator.equals(gIn)) {
+      const variable = new Sym('x');
+      const polynomial = xreplace(gIn, [[generator, variable]]);
+      if (gIn.freeSymbols().size === 1 && !xreplace(gIn, [[generator, S.Zero]]).has(x) && polyCoefficients(polynomial, variable)) {
+        const p = Poly.from(polynomial, [variable]);
+        const squareFree = p.sqfPart();
+        const negative = squareFree.countRoots(S.NegativeInfinity, -1);
+        const middle = squareFree.countRoots(S.NegativeInfinity, 1);
+        return finiteSet(...squareFree.realRoots().filter((r, i) => i < negative && !r.equals(-1) || i >= middle).map((r) => fn('acoth', [r])));
+      }
+    }
+    if (gIn instanceof Fn && gIn.name === 'arg') {
+      const real = new Dummy('x', { real: true });
+      const [re, im] = asRealImag(xreplace(first(gIn.args), [[x, real]]));
+      return intersection(solveset(xreplace(im, [[real, x]]), x, domain), solveset(Gt(xreplace(re, [[real, x]]), 0), x, domain));
+    }
+    if (findAbs(gIn, x)) return solveSign(gIn, 'Eq', x, domain);
+    const affineExponential = invertExponential(gIn, x, domain);
+    if (affineExponential !== undefined) return affineExponential;
+    const exponential = realExponential(gIn, x, domain);
+    if (exponential !== undefined) return exponential;
+    const inv = invertReal(gIn, x, domain);
+    if (inv instanceof ConditionSet) return inv;
     if (inv !== undefined) return solveset(inv, x, domain);
     const pw = domain === Reals ? invertRealPower(gIn, x) : undefined;
     if (pw) return pw;
+    if (some(gIn, (term) => term instanceof Pow && term.base.has(x) && !term.exp.has(x) && term.exp.freeSymbols().size > 0)) {
+      return new ConditionSet(x, Eq(gIn, 0), domain);
+    }
     const g = gIn;
     const [lo, hi] = bounds(domain);
     const [num, den] = fraction(cancel(g));
+    if (num.equals(S.Zero)) return minus(domain, denominatorZeros(g, x, domain));
     try {
-      const zs = realZeros(num, x, lo, hi).filter((z) => !realZeros(den, x, lo, hi).some((p) => p.key === z.key));
+      const zeros = realZeros(num, x, lo, hi);
+      if (domain === Reals && zeros.length === 1 && first(zeros) instanceof CRootOf && Poly.from(num, [x]).degree() === 3) {
+        return parametricRealRoots(num, den, x, g);
+      }
+      const zs = zeros.filter((z) => {
+        const denominator = xreplace(den, [[x, z]]);
+        return !denominator.equals(S.Zero) && !(denominator instanceof Special);
+      });
       return intersection(finiteSet(...zs), domain);
     } catch (e) {
-      // zeros with parameters (2*x - y = 0): over the whole real line they need not be placed
-      if (!(e instanceof NotImplementedError) || domain !== Reals) throw e;
-      return parametricRealRoots(num, den, x);
+      // zeros with parameters (2*x - y = 0): the real ones, kept where the domain contains them
+      if (!(e instanceof NotImplementedError)) throw e;
+      if (domain === Reals) return parametricRealRoots(num, den, x, g);
+      // on an interval: the roots of a polynomial equation, kept where the interval contains them
+      if (!polyCoefficients(num, x)) throw e;
+      const onDomain = (s: SetExpr): SetExpr => s instanceof SetOp && s.op === 'Union' ? union(...s.args.map(onDomain))
+        : intersection(s instanceof SetOp && s.op === 'Intersection' && s.args.includes(Reals) ? intersection(...s.args.filter((a) => a !== Reals)) : s, domain);
+      return onDomain(parametricRealRoots(num, den, x, g));
     }
   }
   const g = gIn;
@@ -671,7 +1131,116 @@ function solvesetAlgebraic(gIn: Expr, x: Sym, domain: SetExpr): SetExpr {
   }
   const poles = den.has(x) ? solve(den, x) : [];
   const keep = sols.filter((s) => !poles.some((p) => p.key === s.key));
-  return complement(intersection(finiteSet(...keep), domain === Complexes ? finiteSet(...keep) : domain), EmptySet);
+  return complement(domain === Complexes ? finiteSet(...keep) : intersection(finiteSet(...keep), domain), finiteSet(...poles));
+}
+
+/** Invert an isolated absolute value with a known nonnegative right-hand side. */
+function invertAbsolute(g: Expr, x: Sym, domain: SetExpr): SetExpr | undefined {
+  const terms = g instanceof Add ? g.args : [g];
+  const dependent = terms.filter((t) => t.has(x));
+  if (dependent.length !== 1) return undefined;
+  const term = first(dependent);
+  const factors = term instanceof Mul ? term.args : [term];
+  const absolute = factors.find((a) => a instanceof Fn && a.name === 'abs' && a.has(x));
+  if (absolute === undefined || factors.filter((a) => a.has(x)).length !== 1) return undefined;
+  const rhs = mul(-1, add(...terms.filter((t) => t !== term)), pow(mul(...factors.filter((a) => a !== absolute)), -1));
+  if (isNegative(rhs) === true) return EmptySet;
+  const argument = first(absolute.args);
+  if (isNonNegative(rhs) !== true) {
+    // SymPy _invert_abs: a value of unknown sign stays as a condition on the two solutions
+    if (domain !== Reals || argument.key !== x.key || rhs.has(x) || rhs.isNumber) return undefined;
+    return new ConditionSet(x, new Contains(rhs, interval(S.Zero, S.Infinity)), finiteSet(mul(-1, rhs), rhs));
+  }
+  const real = new Dummy('x', { real: true });
+  if (isReal(xreplace(argument, [[x, real]])) !== true) {
+    const [re, im] = asRealImag(xreplace(argument, [[x, real]]));
+    return solveset(xreplace(add(pow(re, 2), pow(im, 2), mul(-1, pow(rhs, 2))), [[real, x]]), x, domain);
+  }
+  return union(solveset(add(argument, rhs), x, domain), solveset(add(argument, mul(-1, rhs)), x, domain));
+}
+
+/** Isolate a single exponential before polynomial conversion. */
+function invertExponential(g: Expr, x: Sym, domain: SetExpr): SetExpr | undefined {
+  const terms = g instanceof Add ? g.args : [g];
+  const dependent = terms.filter((term) => term.has(x));
+  if (dependent.length !== 1) return undefined;
+  const term = first(dependent);
+  const factors = term instanceof Mul ? term.args : [term];
+  const variableFactors = factors.filter((factor) => factor.has(x));
+  if (variableFactors.length > 1 && variableFactors.every((v) => v instanceof Pow && v.base.equals(S.E))) {
+    const exponent = add(...variableFactors.map((v) => cast(v, Pow).exp));
+    const [num, den] = asNumerDenom(exponent);
+    const rhs = mul(add(...terms.filter((t) => t !== term)).neg(), pow(mul(...factors.filter((v) => !v.has(x))), -1));
+    if (den.has(x) && isPositive(rhs) === true && isReal(xreplace(exponent, [[x, new Dummy('r', { real: true })]])) === true) {
+      return complement(solveset(add(num, mul(-1, den, log(rhs))), x, domain), solveset(den, x, domain));
+    }
+  }
+  if (variableFactors.length !== 1) return undefined;
+  const exponential = first(variableFactors);
+  if (!(exponential instanceof Pow) || exponential.base.has(x) || !exponential.exp.has(x)) return undefined;
+  const value = mul(-1, add(...terms.filter((part) => part !== term)), pow(mul(...factors.filter((factor) => factor !== exponential)), -1));
+  if (exponential.base.equals(S.Zero)) return value.equals(S.One) ? solveset(exponential.exp, x, domain) : value.freeSymbols().size ? undefined : EmptySet;
+  if (isPositive(exponential.base) === false || exponential.exp.has(S.I)) return undefined;
+  if (value.equals(S.Zero) || isNegative(value) === true) return EmptySet;
+  if (exponential.base.equals(S.E)) {
+    const [numerator, denominator] = asNumerDenom(exponential.exp);
+    if (denominator.has(x)) {
+      if (isReal(xreplace(exponential.exp, [[x, new Dummy('r', { real: true })]])) !== true) return undefined;
+      return complement(solveset(add(numerator, mul(-1, denominator, log(value))), x, domain), solveset(denominator, x, domain));
+    }
+    if (numerator instanceof Pow && numerator.base.has(x)) return undefined;
+    return solveset(add(exponential.exp, mul(-1, log(value))), x, domain);
+  }
+  const rhs = mul(log(value), pow(log(exponential.base), -1));
+  if (domain === Reals && exponential.exp.equals(x) && !rhs.equals(S.Zero) && exponential.base.freeSymbols().size && isNonZero(log(exponential.base)) !== true) {
+    return new SetOp('Intersection', [finiteSet(rhs), Reals]);
+  }
+  return solveset(add(exponential.exp, rhs.neg()), x, domain);
+}
+
+/** Take logarithms of positive exponential factors, or solve in a common exponential generator. */
+function realExponential(g: Expr, x: Sym, domain: SetExpr): SetExpr | undefined {
+  if (!some(g, (v) => v instanceof Pow && !v.base.has(x) && !v.base.equals(S.E) && v.exp.has(x))) return undefined;
+  const terms = g instanceof Add ? g.args : [g];
+  const parts: [Expr, Expr][] = [];
+  for (const term of terms) {
+    const factors = term instanceof Mul ? term.args : [term];
+    const coefficient: Expr[] = [], exponents: Expr[] = [];
+    for (const factor of factors) {
+      if (!factor.has(x)) coefficient.push(factor);
+      else if (factor instanceof Pow && !factor.base.has(x) && isPositive(factor.base) === true) {
+        if (isReal(xreplace(factor.exp, [[x, new Dummy('x', { real: true })]])) !== true) throw new NotImplementedError('solveset: exponent is not real');
+        exponents.push(mul(factor.exp, expand_log(log(factor.base))));
+      } else if (factor instanceof Pow && factor.base instanceof Rational && factor.base.isInteger && factor.base.p < -1n && terms.length <= 2) {
+        if (terms.length === 1 && factors.every((a) => a === factor || !a.has(x))) return EmptySet;
+        const other = terms.find((t) => t !== term);
+        if (other === undefined || other.has(x)) return undefined;
+        const rhs = mul(-1, other, pow(mul(...factors.filter((a) => a !== factor)), -1));
+        if (!(rhs instanceof Rational) || !rhs.isInteger || rhs.isZero) return undefined;
+        const [power, exact] = integerLog(rhs.p, factor.base.p);
+        return exact ? solveset(add(factor.exp, -power), x, domain) : EmptySet;
+      } else return undefined;
+    }
+    parts.push([mul(...coefficient), add(...exponents)]);
+  }
+  if (parts.length === 2) {
+    const [a, u] = first(parts), [b, v] = at(parts, 1);
+    const ratio = mul(-1, b, pow(a, -1));
+    if (isNegative(ratio) === true) return EmptySet;
+    const residual = add(u, v.neg(), log(ratio).neg());
+    if (domain === Reals && a.freeSymbols().size === 0 && b.freeSymbols().size === 0 && u.has(x) && v.has(x)) {
+      const slope = coeff(add(u, v.neg()), x);
+      if (slope.freeSymbols().size && isNonZero(slope) !== true && expandMul(mul(slope, x)).equals(expandMul(add(u, v.neg())))) {
+        return new SetOp('Intersection', [finiteSet(signsimp(mul(log(ratio), pow(slope, -1)))), Reals]);
+      }
+    }
+    return solveset(residual, x, domain);
+  }
+  const rewritten = add(...parts.map(([a, u]) => mul(a, pow(S.E, expandMul(u)))));
+  const polynomial = polynomialInGenerator(rewritten, x);
+  if (!polynomial) return undefined;
+  const exponent = cast(polynomial[0], Pow, 'exponential generator').exp;
+  return union(...polynomial[1].filter((r) => isNonNegative(r) !== false && !r.equals(S.Zero)).map((r) => solveset(add(exponent, mul(-1, log(r))), x, domain)));
 }
 
 /** Union of ImageSet(Lambda(n, P*n + s), Integers) over the solutions s in [0, P), or undefined if g is not periodic. */
@@ -708,7 +1277,7 @@ function periodicSolutions(g: Expr, x: Sym, domain: SetExpr): SetExpr | undefine
   }
   const sols = [...base.values()].sort((a, b) => a[1] - b[1]);
   if (!sols.length) return EmptySet;
-  const n = new Dummy('n');
+  const n = new Dummy('n', { integer: true });
   // Union orders its arguments by sort_key (not by value)
   const sets = sols.map(([s]) => imageSet(n, add(mul(P, n), s), Integers)).sort((a, b) => compareKeys(sortKey(a), sortKey(b)));
   return sets.length === 1 ? first(sets) : new SetOp('Union', sets);
@@ -765,6 +1334,7 @@ function complexExpSolutions(g: Expr, x: Sym, n: Dummy = new Dummy('n')): SetExp
 /** Points where the expression is singular (SymPy singularities). */
 export function singularities(eIn: ExprLike, x: Sym, domain?: SetExpr): SetExpr {
   const e = sympify(eIn);
+  if (some(e, (node) => node instanceof Pow && (node.exp === S.NegativeInfinity || node.exp === S.Infinity))) throw new NotImplementedError('Singularities of infinite powers are not supported');
   const dom = domain ?? (x.assumptions.real ? Reals : Complexes);
   let sings: SetExpr = EmptySet;
   const visit = (t: Expr) => {
@@ -773,6 +1343,7 @@ export function singularities(eIn: ExprLike, x: Sym, domain?: SetExpr): SetExpr 
     if (t instanceof Fn && ['log', 'asech', 'acsch'].includes(t.name)) sings = union(sings, solveset(first(t.args), x, dom));
     if (t instanceof Fn && ['atanh', 'acoth'].includes(t.name)) sings = union(sings, solveset(add(first(t.args), -1), x, dom), solveset(add(first(t.args), 1), x, dom));
     if (t instanceof Fn && ['tan', 'sec'].includes(t.name)) sings = union(sings, solveset(impl.sympify(cosOf(first(t.args))), x, dom));
+    if (t instanceof Fn && ['coth', 'csch'].includes(t.name)) sings = union(sings, solveset(fn('sinh', t.args), x, dom));
     if (t instanceof Fn && ['cot', 'csc'].includes(t.name)) sings = union(sings, solveset(sinOf(first(t.args)), x, dom));
   };
   visit(e);
@@ -793,7 +1364,13 @@ function monotonic(f: Expr, op: RelOp, iv: SetExpr, x?: Sym): boolean | undefine
   if (x === undefined && free.length > 1) throw new NotImplementedError('The function has not yet been implemented for all multivariate expressions.');
   const v = x ?? free[0] ?? new Dummy('x');
   // sign(u) = u/Abs(u) away from u = 0 (the derivative of Abs): its zeros and poles are those of a quotient
-  const d = mapBottomUp(diff(f, v), (t) => (t instanceof Fn && t.name === 'sign' ? mul(first(t.args), pow(fn('abs', [first(t.args)]), -1)) : t));
+  let d = mapBottomUp(diff(f, v), (t) => (t instanceof Fn && t.name === 'sign' ? mul(first(t.args), pow(fn('abs', [first(t.args)]), -1)) : t));
+  // A nonzero constant factor affects monotonicity only through its sign.
+  if (d instanceof Mul) {
+    const constant = mul(...d.args.filter((a) => !a.has(v)));
+    const sign = fn('sign', [constant]);
+    if (sign instanceof Rational) d = mul(sign, ...d.args.filter((a) => a.has(v)));
+  }
   // the sign of f' is decided on the interval, or on one period of a periodic f' over the reals
   const dom = iv instanceof Interval ? iv : Reals;
   let ref = iv;
@@ -835,7 +1412,11 @@ export function isMonotonic(f: ExprLike, iv: SetExpr = Reals, x?: Sym): boolean 
 }
 
 /** Convexity on a domain (second derivative nonnegative, no singularities). */
-export function isConvex(fIn: ExprLike, x: Sym, domain: SetExpr = Reals): boolean {
+export function isConvex(fIn: ExprLike, x: Sym, domain?: SetExpr): boolean;
+export function isConvex(fIn: ExprLike, x: Sym, ...others: Sym[]): Truth;
+export function isConvex(fIn: ExprLike, x: Sym, domainOrVariable: SetExpr | Sym = Reals, ...others: Sym[]): Truth {
+  if (domainOrVariable instanceof Sym) return isPositiveSemidefinite(hessian(fIn, [x, domainOrVariable, ...others]));
+  const domain = domainOrVariable;
   const f = sympify(fIn);
   const sings = singularities(f, x);
   if (sings instanceof FiniteSet && sings.args.some((p) => containsQ(domain, p) === true)) return false;
@@ -845,12 +1426,35 @@ export function isConvex(fIn: ExprLike, x: Sym, domain: SetExpr = Reals): boolea
 
 /** Range of f over a real domain: [min, max] candidates at critical points and ends. */
 function extremeValues(f: Expr, x: Sym, domain: SetExpr): Expr[] {
+  if (!(x instanceof Sym)) throw new RangeError('The variable must be a symbol');
+  if (domain === EmptySet) throw new RangeError('Cannot find extrema on an empty domain');
+  if (f instanceof Fn && f.name === 'abs') {
+    const values = extremeValues(first(f.args), x, domain);
+    const signs = values.map((value) => {
+      const sign = cmpReal(value, S.Zero);
+      if (sign === undefined) throw new NotImplementedError('Cannot determine whether the absolute value crosses zero');
+      return sign;
+    });
+    const crossesZero = signs.some((sign) => sign <= 0) && signs.some((sign) => sign >= 0);
+    return [...values.map((value) => impl.abs(value)), ...(crossesZero ? [S.Zero] : [])];
+  }
   let dom = domain;
   if (domain === Reals) {
     const P = periodicity(f, x);
     if (P && !(P instanceof Rational && P.isZero)) dom = interval(0, P);
   }
   const [lo, hi] = bounds(dom);
+  // Each side of zero has its own smooth branch of Abs(x).
+  const absolute = fn('abs', [x]);
+  if (absolute instanceof Fn && f.has(absolute)) {
+    const positiveBranch = xreplace(f, [[absolute, x]]);
+    const negativeBranch = xreplace(f, [[absolute, x.neg()]]);
+    if (isNonNegative(lo) === true) return extremeValues(positiveBranch, x, dom);
+    if (isNonNegative(hi.neg()) === true) return extremeValues(negativeBranch, x, dom);
+    if (cmpReal(lo, S.Zero) === -1 && cmpReal(hi, S.Zero) === 1) {
+      return [...extremeValues(negativeBranch, x, interval(lo, 0)), ...extremeValues(positiveBranch, x, interval(0, hi))];
+    }
+  }
   const num = fraction(cancel(diff(f, x)))[0];
   let crit: Expr[];
   try {
@@ -952,8 +1556,14 @@ function setToCondition(st: SetExpr, x: Sym): Expr {
 }
 
 /** SymPy piecewise_exclusive: make the conditions of a Piecewise mutually exclusive. */
-export function piecewiseExclusive(p: Expr, opts: { skipNan?: boolean } = {}): Expr {
-  const pairs = cast(p, Piecewise, 'Piecewise').pairs;
+export function piecewiseExclusive(p: Expr, opts: { skipNan?: boolean; deep?: boolean } = {}): Expr {
+  // SymPy: every Piecewise of the expression (deep, the default), or the expression itself when it is one
+  if (opts.deep !== false) return mapBottomUp(p, (t) => (t instanceof Piecewise ? exclusivePieces(t, opts) : t));
+  return p instanceof Piecewise ? exclusivePieces(p, opts) : p;
+}
+
+function exclusivePieces(p: Piecewise, opts: { skipNan?: boolean }): Expr {
+  const pairs = p.pairs;
   const syms = new Map<string, Sym>();
   for (const [, c] of pairs) for (const t of [...c.freeSymbols()].filter((s) => s instanceof Sym)) syms.set(t.key, t);
   if (syms.size !== 1) return piecewiseExclusiveLogic(pairs, opts.skipNan ?? false);
@@ -1012,19 +1622,26 @@ function piecewiseExclusiveLogic(pairs: readonly (readonly [Expr, Expr])[], skip
  * SymPy not_empty_in: the values of x for which the intersection of a
  * FiniteSet of expressions with an Interval is not empty (over the reals).
  */
-export function notEmptyIn(setIn: SetExpr, x: Sym): SetExpr {
-  const parts: readonly Expr[] = setIn.className === 'Intersection' ? setIn.args : [];
+export function notEmptyIn(setIn: SetExpr, x: Sym, ...otherSymbols: Sym[]): SetExpr {
+  if (otherSymbols.length) throw new NotImplementedError('not_empty_in supports one variable');
+  if (!(x instanceof Sym)) throw new RangeError('A symbol must be given');
+  if (setIn === EmptySet) return EmptySet;
+  if (setIn instanceof SetOp && setIn.op === 'Union') return union(...setIn.args.map((part) => notEmptyIn(part, x)));
+  const parts: readonly SetExpr[] = setIn instanceof SetOp && setIn.op === 'Intersection' ? setIn.args : [setIn];
   const fset = parts.find((p): p is FiniteSet => p instanceof FiniteSet);
-  const ivals = parts.filter((p): p is Interval => p instanceof Interval);
-  if (!fset || ivals.length !== 1) throw new NotImplementedError('not_empty_in: FiniteSet intersected with an Interval expected');
-  const iv = first(ivals);
-  const solveRel = (r: Expr): SetExpr => cast(solveUnivariateInequality(r, x, { relational: false }), SetExpr, 'solution set');
+  if (!fset) throw new NotImplementedError('not_empty_in: FiniteSet intersected with an Interval expected');
+  const target = intersection(...parts.filter((part) => part !== fset));
+  const targets = target instanceof SetOp && target.op === 'Union' ? target.args : [target];
+  const solveRel = (r: Expr): SetExpr => r instanceof BoolAtom ? r.value ? Reals : EmptySet : cast(solveUnivariateInequality(r, x, { relational: false }), SetExpr, 'solution set');
   let out: SetExpr = EmptySet;
-  for (const f of fset.args) {
-    let s: SetExpr = Reals;
-    if (!(iv.start instanceof Special)) s = intersection(s, solveRel(iv.leftOpen ? Gt(f, iv.start) : Ge(f, iv.start)));
-    if (!(iv.end instanceof Special)) s = intersection(s, solveRel(iv.rightOpen ? Lt(f, iv.end) : Le(f, iv.end)));
-    out = union(out, s);
+  for (const f of fset.args) for (const targetPart of targets) {
+    if (targetPart !== Reals && targetPart !== UniversalSet && !(targetPart instanceof Interval)) throw new NotImplementedError('not_empty_in: an interval is required');
+    let domain: SetExpr = Reals;
+    if (targetPart instanceof Interval) {
+      if (!(targetPart.start instanceof Special)) domain = intersection(domain, solveRel(targetPart.leftOpen ? Gt(f, targetPart.start) : Ge(f, targetPart.start)));
+      if (!(targetPart.end instanceof Special)) domain = intersection(domain, solveRel(targetPart.rightOpen ? Lt(f, targetPart.end) : Le(f, targetPart.end)));
+    }
+    out = union(out, complement(domain, denominatorZeros(f, x, Reals)));
   }
   return out;
 }

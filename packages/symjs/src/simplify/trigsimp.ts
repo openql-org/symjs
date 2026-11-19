@@ -257,6 +257,11 @@ function futrigNode(e0: Expr): Expr {
   if (!hasTrigFunction(e0)) return e0;
   let coeff: Expr | undefined;
   let e = e0;
+  if (e0 instanceof Add && !e0.isCommutative) {
+    const parts = e0.args.map((t) => argsCncSplit(t, false));
+    const word = mul(...first(parts)[1]);
+    if (parts.every(([, nc]) => mul(...nc).key === word.key)) return mul(futrigRule(add(...parts.map(([c]) => mul(...c)))), word);
+  }
   if (e0 instanceof Mul) [coeff, e] = independentOfTrig(e0);
   const r = futrigRule(e);
   return coeff === undefined ? r : mul(coeff, r);
@@ -776,8 +781,8 @@ function trigsimpMatchImpl(expr0: Expr, deep: boolean): Expr {
         was = expr;
         const ma = getWOr(m, at_, S.Zero);
         const mc = getWOr(m, c, S.Zero);
-        const md = getW(m, d);
-        if (isZero(ma) || mc.args.some((x) => eq(x, neg(ma))) || isZero(add(ma, mc)) || (md !== undefined && isZero(add(mul(ma, md), mc)))) break;
+        const md = getWOr(m, d, S.One);
+        if (isZero(ma) || mc.args.some((x) => eq(x, neg(ma))) || isZero(add(ma, mc)) || isZero(add(mul(ma, md), mc))) break;
         const full = new Map(m);
         full.set(c, mc);
         expr = subs(result, full);

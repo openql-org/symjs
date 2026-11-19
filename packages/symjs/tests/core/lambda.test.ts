@@ -55,3 +55,36 @@ it('renames bound variables without capturing free names', async () => {
   expect(String(a.Lambda(x,a.mul(2,x)).canonicalVariables.get(x))).toBe('_0');
   expect(String(a.Lambda(x,a.add(x,collision)).canonicalVariables.get(x))).toBe('_1');
 });
+
+it('validates nested signatures and substitutes arguments simultaneously', () => {
+  expect(() => sj.Lambda(sj.rational(1), x)).toThrow(TypeError);
+  expect(() => sj.Lambda([x, x], x)).toThrow(TypeError);
+  expect(() => sj.Lambda([sj.Tuple(x, y), x], x)).toThrow(TypeError);
+  expect(() => sj.Lambda([sj.Tuple(x, sj.rational(1))], x)).toThrow(TypeError);
+  expect(String(sj.Lambda([x, y], sj.sub(x, y)).call(y, x))).toBe('-x + y');
+  const nested = sj.Lambda([sj.Tuple(x, sj.Tuple(y))], sj.add(x, y));
+  expect(nested.variables).toEqual([x, y]);
+  expect([...nested.freeSymbols()]).toEqual([]);
+  expect(String(nested)).toBe('Lambda(((x, (y,)),), x + y)');
+  expect(String(nested.call(sj.Tuple(2, sj.Tuple(3))))).toBe('5');
+  expect(() => nested.call(1)).toThrow(TypeError);
+  expect(() => nested.call(sj.Tuple(1))).toThrow(TypeError);
+  expect(String(sj.Lambda([], 42).call())).toBe('42');
+  const a = new sj.IndexedBase('A').at(0);
+  expect(String(sj.Lambda(a, sj.add(a, 1)).call(2))).toBe('3');
+});
+
+
+it('accepts indexed bases and matrix symbols as Lambda variables', () => {
+  const base = new sj.IndexedBase('A');
+  const matrix = sj.MatrixSymbol('M', 2, 2);
+  expect(String(sj.Lambda(base, base).call(x))).toBe('x');
+  expect(String(sj.Lambda(matrix, matrix).call(matrix))).toBe('M');
+});
+
+
+it('protects a Lambda binding during substitution', () => {
+  const f = sj.Lambda(x, sj.add(x, y));
+  expect(String(f.subs(x, 1))).toBe('Lambda(x, x + y)');
+  expect(String(f.subs(y, 2))).toBe('Lambda(x, x + 2)');
+});

@@ -10,15 +10,16 @@
  * come from solving for it.
  */
 
-import { Add, Dummy, Expr, Integral, Order, Rel, S, Special, Sym } from '../core/nodes';
+import { Add, Dummy, Expr, Integral, Order, Pow, Rational, Rel, S, Special, Sym } from '../core/nodes';
 import type { ExprLike } from '../core/nodes';
 import { abs } from '../functions/elementary/elementary';
-import { add, exp, mul, sympify } from '../core/ops';
+import { add, exp, mul, pow, sympify } from '../core/ops';
 import { Eq, Ge, Le, piecewise, rel } from '../core/logic';
 import { BoolOp, and } from '../core/boolalg';
 import { xreplace } from '../core/traverse';
 import { Lambda, LambdaNode } from '../core/lambda';
 import { NotImplementedError } from '../core/errors';
+import { asIndependent, isRationalFunction } from '../core/methods';
 import { at, cast, defined, first } from '../core/guard';
 import { EmptySet, FiniteSet, Interval, Reals, SetExpr, SetOp, asRelational, inf, interval, intersection, union } from '../sets/sets';
 import { solveUnivariateInequality, solveset } from '../solvers/inequalities';
@@ -92,7 +93,11 @@ function integrateFromLeft(f: Expr, x: Sym, left: Expr, z: Expr): Expr {
 
 /** The set where the condition on var holds (SymPy reduce_rational_inequalities_wrap). */
 export function reduceRationalInequalitiesWrap(condition: Expr, v: Sym): SetExpr {
-  const one = (c: Expr): SetExpr => cast(solveUnivariateInequality(c, v, { relational: false }), SetExpr);
+  // SymPy reduces rational inequalities only: any other condition is a ValueError
+  const one = (c: Expr): SetExpr => {
+    if (c instanceof Rel && !isRationalFunction(add(c.lhs, mul(-1, c.rhs)), [v])) throw new RangeError(`Reduction of condition failed ${c.toString()}`);
+    return cast(solveUnivariateInequality(c, v, { relational: false }), SetExpr);
+  };
   if (condition instanceof Rel) return one(condition);
   if (condition instanceof BoolOp && condition.op === 'Or') return union(...condition.args.map(one));
   if (condition instanceof BoolOp && condition.op === 'And') return intersection(...condition.args.map(one));
@@ -111,8 +116,8 @@ export class SingleContinuousDomain extends SingleDomain {
   override get isContinuous(): boolean {
     return true;
   }
-  override computeExpectation(expr: Expr, variables?: readonly Sym[]): Expr {
-    const vs = variables ?? this.symbols;
+  override computeExpectation(expr: Expr, variables?: Iterable<Sym>): Expr {
+    const vs = variables === undefined ? this.symbols : [...variables];
     if (!vs.length) return expr;
     if (vs.length !== 1 || first(vs).key !== this.symbol.key) throw new RangeError('Values should be equal');
     return makeIntegral(expr, [limitOver(this.symbol, this.set)]);
@@ -350,7 +355,12 @@ export class ContinuousPSpace extends PSpace {
     const d = densityCall(this.computeDensity(expr));
     const x = new Dummy('x', { real: true });
     const t = new Dummy('t', { real: true });
-    return Lambda(t, integrate(mul(exp(mul(S.I, t, x)), d(x)), x, [S.NegativeInfinity, S.Infinity]));
+    const transform = integrate(mul(exp(mul(S.I, t, x)), d(x)), x, [S.NegativeInfinity, S.Infinity]);
+    if (transform instanceof Integral) {
+      const [scale, kernel] = asIndependent(transform.integrand, [x], { asAdd: false });
+      return Lambda(t, mul(scale, new Integral([kernel, ...transform.args.slice(1)])));
+    }
+    return Lambda(t, transform);
   }
   override computeMomentGeneratingFunction(expr: Expr): Expr {
     if (!isInterval(this.domain.set)) throw new NotImplementedError('Moment generating function of multivariate expressions not implemented');
@@ -470,6 +480,14 @@ export class SingleContinuousPSpace extends ContinuousPSpace {
     return this.distribution.expectation(expr, this.value.symbol, { evaluate: opts.evaluate ?? false });
   }
   override computeCdf(expr: Expr): DensityResult {
+    if (expr instanceof Pow && expr.base.key === this.value.key && expr.exp instanceof Rational && expr.exp.isInteger && expr.exp.isPositive && expr.exp.p % 2n === 0n) {
+      // X**(2*n) <= z exactly when -z**(1/(2*n)) <= X <= z**(1/(2*n)).
+      const z = new Dummy('z', { real: true });
+      const positive = new Dummy('z', { positive: true });
+      const root = pow(positive, Rational.of(1n, expr.exp.p));
+      const mass = add(this.distribution.cdf(root), mul(-1, this.distribution.cdf(mul(-1, root))));
+      return Lambda(z, piecewise([mass.subs(positive, z), Ge(z, 0)], [0, true]));
+    }
     if (expr.key !== this.value.key) return super.computeCdf(expr);
     const z = new Dummy('z', { real: true });
     return Lambda(z, this.distribution.cdf(z));

@@ -34,3 +34,29 @@ it('converts Hadamard and nonlinear elementwise operations', () => {
     expect(String(cast(back, MatrixExpr).asExplicit())).toBe(String(cast(expr, MatrixExpr).asExplicit()));
   }
 });
+
+it('converts scalar trace products, Hadamard powers and Kronecker products', async () => {
+  const { Pow, Sym, KroneckerProduct, Rational } = await import('../../../../src');
+  const { explicitArray } = await import('../../../../src/tensor/array/expressions/arrayexpressions');
+  expect(str(convertMatrixToArray(mul(3, Trace(M))))).toBe('ArrayContraction(ArrayTensorProduct(3, M), (0, 1))');
+  expect(str(convertMatrixToArray(new Pow(Trace(M), Rational.of(2))))).toBe('ArrayContraction(ArrayTensorProduct(M, M), (0, 1), (2, 3))');
+  const x = new Sym('x');
+  for (const exponent of [-1, x, Rational.of(1, 2)]) {
+    expect(str(convertMatrixToArray(HadamardPower(M, exponent)))).toContain('ArrayElementwiseApplyFunc');
+  }
+  expect(str(convertMatrixToArray(HadamardPower(M, 2)))).toBe('ArrayDiagonal(ArrayTensorProduct(M, M), (0, 2), (1, 3))');
+  for (const expr of [KroneckerProduct(M, N), KroneckerProduct(M, N, M, N)]) {
+    const converted = convertMatrixToArray(expr);
+    expect(str(converted)).toContain('Reshape(PermuteDims(ArrayTensorProduct(');
+    expect(str(explicitArray(converted))).toBe(str(explicitArray(expr)));
+  }
+  expect(str(convertMatrixToArray(new Pow(x, x)))).toBe('x**x');
+  expect(str(convertMatrixToArray(new Pow(x, Rational.of(-1))))).toBe('1/x');
+});
+
+it('flattens products inside lifted trace and Hadamard contractions', () => {
+  const traced = convertMatrixToArray(mul(3, Trace(M), Trace(M)));
+  expect(str(traced)).toBe('ArrayContraction(ArrayTensorProduct(3, M, M), (0, 1), (2, 3))');
+  const hadamard = convertMatrixToArray(HadamardProduct(MatMul(M, N), MatMul(N, M)));
+  expect(str(hadamard)).toBe('ArrayDiagonal(ArrayContraction(ArrayTensorProduct(M, N, N, M), (1, 2), (5, 6)), (0, 2), (1, 3))');
+});

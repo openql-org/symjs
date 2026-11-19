@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 
+// Parts ported from SymPy (sympy/functions/combinatorial/numbers.py),
+// Copyright (c) SymPy Development Team, BSD-3-Clause.
+
 /**
  * @file Combinatorial numbers and polynomials and number-theoretic
  * functions (SymPy functions.combinatorial.numbers and ntheory):
@@ -10,17 +13,24 @@
  */
 
 import { at, defined, first, last } from '../../core/guard';
-import { isIntegerQ, isNegative, isPositive, isReal as isRealQ } from '../../core/assumptions';
+import { isIntegerQ, isNegative, isPositive, isReal as isRealQ, isZero } from '../../core/assumptions';
 import type { ExprLike, FnName } from '../../core/nodes';
-import { Dummy, Expr, Float, Fn, Pow, Rational, S, Special, Sym, impl, registerFunctionHeads } from '../../core/nodes';
+import { Dummy, Expr, Float, Fn, Pow, Rational, S, Special, Sym, functionFactHandlers, impl, registerFunctionHeads, registerRewrite } from '../../core/nodes';
 import { AccumBounds } from '../../core/accumbounds';
 import { Product } from '../../core/concrete';
-import { add, mul, pow, sympify } from '../../core/ops';
+import { add, mul, pow, sqrt, sympify } from '../../core/ops';
 import { factorInt } from '../../core/numbers';
 import { expandMul } from '../../simplify/expand';
-import { evaluators, fn, forEachEntry } from '../elementary/elementary';
+import { cos, evaluators, fn, forEachEntry, log } from '../elementary/elementary';
 import { bernoulliNumber, ceiling as ceilingFn, floor as floorFn, gamma } from '../special/special';
-import { rel } from '../../core/logic';
+import { Eq, piecewise, rel } from '../../core/logic';
+import { fnPartials } from '../../calculus/diff';
+import { Mod } from '../mod';
+import { mpExprFns, mpFns } from '../../numeric/mpeval';
+import * as F from '../../numeric/mpf';
+import * as M from '../../numeric/mpfun';
+import type { Mpc } from '../../numeric/mpfun';
+import { cloggamma, cpolygamma, czeta } from '../../numeric/mpspecial';
 import type { RelOp } from '../../core/nodes';
 import { isprime as ntheoryIsprime } from '../../ntheory/primetest';
 import type { IntLike } from '../../ntheory/intutil';
@@ -169,7 +179,13 @@ export function isprime(nIn: ExprLike | bigint): boolean {
 }
 
 /** Jacobi symbol (m/n) for odd positive n. */
-export function jacobiSymbol(mIn: bigint, nIn: bigint): number {
+export function jacobiSymbol(m: bigint, n: bigint): number;
+export function jacobiSymbol(m: ExprLike, n: ExprLike): Expr;
+export function jacobiSymbol(m: ExprLike, n: ExprLike): number | Expr {
+  return typeof m === 'bigint' && typeof n === 'bigint' ? jacobiInt(m, n) : fn('jacobi_symbol', [m, n]);
+}
+
+function jacobiInt(mIn: bigint, nIn: bigint): number {
   let n = nIn;
   if (n <= 0n || n % 2n === 0n) throw new RangeError('jacobi_symbol: n must be an odd positive integer');
   let m = ((mIn % n) + n) % n;
@@ -188,7 +204,13 @@ export function jacobiSymbol(mIn: bigint, nIn: bigint): number {
 }
 
 /** Kronecker symbol (a/n). */
-export function kroneckerSymbol(a: bigint, nIn: bigint): number {
+export function kroneckerSymbol(a: bigint, n: bigint): number;
+export function kroneckerSymbol(a: ExprLike, n: ExprLike): Expr;
+export function kroneckerSymbol(a: ExprLike, n: ExprLike): number | Expr {
+  return typeof a === 'bigint' && typeof n === 'bigint' ? kroneckerInt(a, n) : fn('kronecker_symbol', [a, n]);
+}
+
+function kroneckerInt(a: bigint, nIn: bigint): number {
   let n = nIn;
   if (n === 0n) return a === 1n || a === -1n ? 1 : 0;
   let t = 1;
@@ -207,7 +229,7 @@ export function kroneckerSymbol(a: bigint, nIn: bigint): number {
     if (v % 2 === 1 && (r === 3n || r === 5n)) t = -t;
   }
   if (n === 1n) return t;
-  return t * jacobiSymbol(a, n);
+  return t * jacobiInt(a, n);
 }
 
 function totient(n: bigint): bigint {
@@ -236,6 +258,27 @@ function positiveInteger(n: Expr): void {
 const oddArgument = (n: Expr): boolean => (n instanceof Sym && n.assumptions.odd === true) || isIntegerQ(mul(add(n, -1), R(1, 2))) === true;
 
 const primeArgument = (n: Expr): boolean => n instanceof Sym && n.assumptions.prime === true;
+
+type ResidueSymbol = 'legendre_symbol' | 'jacobi_symbol' | 'kronecker_symbol';
+function evalResidueSymbol(name: ResidueSymbol, a: Expr, n: Expr): Expr | undefined {
+  const noninteger = (e: Expr): boolean => e !== S.NaN && isIntegerQ(e) === false;
+  if (noninteger(a) || noninteger(n)) throw new TypeError('residue symbol arguments must be integers');
+  const m = asInt(a);
+  const k = asInt(n);
+  const symbolFacts = n instanceof Sym ? n.assumptions0 : undefined;
+  const notOdd = (): boolean => symbolFacts?.get('odd') === false || Mod(n, 2).equals(S.Zero);
+  if (name === 'legendre_symbol') {
+    const notPrime = k === undefined ? symbolFacts?.get('prime') === false : k < 3n || !isprime(k);
+    if (notPrime || notOdd()) throw new RangeError('legendreSymbol requires an odd prime denominator');
+    if (m !== undefined && k !== undefined) return R(jacobiInt(m, k));
+  } else if (name === 'jacobi_symbol') {
+    if ((symbolFacts?.get('positive') ?? isPositive(n)) === false || notOdd()) throw new RangeError('jacobiSymbol requires an odd positive denominator');
+    if (m !== undefined && k !== undefined) return R(jacobiInt(m, k));
+  } else if (m !== undefined && k !== undefined) return R(kroneckerInt(m, k));
+  if (m === 1n || (name !== 'legendre_symbol' && k === 1n)) return S.One;
+  if (name !== 'kronecker_symbol' && isIntegerQ(a) === true && Mod(a, n).equals(S.Zero)) return S.Zero;
+  return undefined;
+}
 
 // ---------------------------------------------------------------------------
 // evaluators
@@ -278,6 +321,21 @@ const EVAL: Partial<Record<FnName, (...a: Expr[]) => Expr | undefined>> = {
     }
     return mul(2, add(1, mul(-1, R(2n ** k))), bernoulliPlus(kk));
   },
+  andre: (n) => {
+    if (n === S.NaN || n === S.Infinity) return n;
+    if (isZero(n) === true) return S.One;
+    const k = asInt(n);
+    if (k === undefined) return undefined;
+    if (k >= 0n) return R(andreInteger(Number(k)));
+    if (k === -1n) return mul(-1, log(2));
+    if (k === -2n) return mul(-2, S.Catalan);
+    if (k % 2n === 0n) return undefined;
+    const j = -k - 1n;
+    return mul(R((j % 4n === 0n ? 1n : -1n) * (1n - 2n ** j), 4n ** j), fn('zeta', [R(-k)]));
+  },
+  legendre_symbol: (a, n) => evalResidueSymbol('legendre_symbol', a, n),
+  jacobi_symbol: (a, n) => evalResidueSymbol('jacobi_symbol', a, n),
+  kronecker_symbol: (a, n) => evalResidueSymbol('kronecker_symbol', a, n),
   bell: (n, a?: Expr, ...rest: Expr[]) => {
     if (n === S.Infinity) {
       if (a !== undefined) throw new RangeError('Bell polynomial requires a finite index');
@@ -357,9 +415,9 @@ const EVAL: Partial<Record<FnName, (...a: Expr[]) => Expr | undefined>> = {
       let zero = false;
       for (const f of fs) {
         const [b, e]: [Expr, Expr] = f instanceof Pow ? [f.base, f.exp] : [f, S.One];
-        if (isIntegerQ(b) !== true || isPositive(b) !== true || !(e instanceof Rational && e.isInteger && e.p > 0n)) return undefined;
+        if (isIntegerQ(b) !== true || isPositive(b) !== true || isIntegerQ(e) !== true || isPositive(e) !== true) return undefined;
         if (b instanceof Rational && [...factorInt(b.p).values()].some((m) => m > 1n)) zero = true;
-        if (e.p > 1n && isPositive(add(b, -1)) === true) zero = true;
+        if (isPositive(add(e, -1)) === true && isPositive(add(b, -1)) === true) zero = true;
       }
       return zero ? S.Zero : undefined;
     }
@@ -561,6 +619,193 @@ forEachEntry(EVAL, (name, f) => {
   evaluators[name] = (...a: Expr[]) => f(...a);
 });
 
+const minus = (x: Expr): Expr => mul(-1, x);
+const zeta = (...args: ExprLike[]): Expr => fn('zeta', args);
+const bernoulliRewrite = (n: Expr, x: Expr): Expr => mul(minus(n), zeta(add(1, minus(n)), x));
+
+registerRewrite('bernoulli', 'zeta', (args) => {
+  const n = first(args);
+  return piecewise([1, Eq(n, 0)], [bernoulliRewrite(n, args[1] ?? S.One), true]);
+});
+registerRewrite('genocchi', 'dirichlet_eta', (args) => {
+  const n = first(args);
+  return mul(-2, n, fn('dirichlet_eta', [add(1, minus(n)), args[1] ?? S.One]));
+});
+registerRewrite('andre', 'polylog', (args) => {
+  const s = first(args);
+  const k = add(s, 1);
+  return add(mul(pow(minus(S.I), k), fn('polylog', [minus(s), S.I])),
+    mul(pow(S.I, k), fn('polylog', [minus(s), minus(S.I)])));
+});
+registerRewrite('andre', 'zeta', (args) => {
+  const s = first(args);
+  const k = add(s, 1);
+  return mul(2, gamma(k), pow(mul(2, S.Pi), minus(k)),
+    add(zeta(k, R(1, 4)), mul(-1, cos(mul(S.Pi, s)), zeta(k, R(3, 4)))));
+});
+
+const binetTerms = (n: Expr): readonly [Expr, Expr] => {
+  const root = sqrt(5);
+  return [pow(add(1, root), n), pow(add(1, minus(root)), n)];
+};
+registerRewrite('fibonacci', 'sqrt', (args) => {
+  if (args.length !== 1) return undefined;
+  const n = first(args);
+  const [a, b] = binetTerms(n);
+  return mul(R(1, 5), sqrt(5), pow(2, minus(n)), add(a, minus(b)));
+});
+registerRewrite('lucas', 'sqrt', (args) => {
+  const n = first(args);
+  return mul(pow(2, minus(n)), add(...binetTerms(n)));
+});
+registerRewrite('tribonacci', 'sqrt', (args) => {
+  if (args.length !== 1) return undefined;
+  const n = first(args);
+  const w = add(S.NegHalf, mul(S.Half, S.I, sqrt(3)));
+  const root = mul(3, sqrt(33));
+  const a = pow(add(19, root), R(1, 3));
+  const b = pow(add(19, minus(root)), R(1, 3));
+  const roots = [add(a, b), add(mul(w, a), mul(pow(w, 2), b)), add(mul(pow(w, 2), a), mul(w, b))]
+    .map((t) => mul(R(1, 3), add(1, t)));
+  return add(...roots.map((r, i) => mul(pow(r, add(n, 1)),
+    ...roots.flatMap((other, j) => i === j ? [] : [pow(expandMul(add(r, minus(other))), -1)]))));
+});
+registerRewrite('tribonacci', 'TribonacciConstant', (args) => {
+  if (args.length !== 1) return undefined;
+  const n = first(args);
+  const b = pow(add(586, mul(102, sqrt(33))), R(1, 3));
+  return floorFn(add(mul(3, b, pow(S.TribonacciConstant, n), pow(add(pow(b, 2), mul(-2, b), 4), -1)), S.Half));
+});
+
+fnPartials['harmonic'] = (args, i) => {
+  if (i !== 0) return undefined;
+  const m = args[1] ?? S.One;
+  return mul(m, zeta(add(m, 1), add(first(args), 1)));
+};
+
+for (const name of [
+  'legendre_symbol', 'jacobi_symbol', 'kronecker_symbol', 'mobius',
+  'primepi', 'primenu', 'primeomega', 'partition', 'divisor_sigma', 'udivisor_sigma',
+  'totient', 'reduced_totient', 'andre', 'catalan', 'genocchi',
+] as const) {
+  functionFactHandlers[name] = (fact, args, query) => {
+    switch (name) {
+      case 'legendre_symbol':
+      case 'jacobi_symbol':
+      case 'kronecker_symbol':
+      case 'mobius':
+        return fact === 'integer' ? true : fact === 'prime' ? false : undefined;
+      case 'primepi':
+      case 'primenu':
+      case 'primeomega':
+      case 'partition':
+        if (fact === 'integer' || fact === 'nonnegative') return true;
+        return name === 'partition' && fact === 'positive' && query('nonnegative', first(args)) === true ? true : undefined;
+      case 'divisor_sigma':
+      case 'udivisor_sigma':
+      case 'totient':
+      case 'reduced_totient':
+        return fact === 'integer' || fact === 'positive' ? true : undefined;
+      case 'andre':
+      case 'catalan':
+      case 'genocchi':
+        break;
+    }
+    const n = first(args);
+    if (name === 'catalan' && fact === 'composite') {
+      return query('integer', n) === true && query('positive', add(n, -3)) === true ? true : undefined;
+    }
+    if (name !== 'genocchi' && fact === 'positive') return query('nonnegative', n) === true ? true : undefined;
+    if (args.length > 1 && !args[1]?.equals(S.One)) return undefined;
+    if (name === 'genocchi' && fact === 'prime') return query('zero', add(n, -8));
+    if (query('integer', n) !== true) return undefined;
+    const even = query('even', n);
+    // An even integer strictly above -2 is nonnegative.
+    if (query('nonnegative', n) !== true && !(even === true && query('positive', add(n, 2)) === true)) return undefined;
+    if (fact === 'integer') return true;
+    if (name !== 'genocchi') return undefined;
+    const zero = query('zero', n);
+    if (fact === 'positive') return zero === true || even === false ? false : query('even', mul(S.Half, n));
+    if (fact === 'negative' && even !== false) return query('odd', mul(S.Half, n));
+    const parity = even === true ? zero : query('positive', add(n, -1));
+    if (fact === 'even') return parity;
+    if (fact === 'odd' || fact === 'negative') return parity === undefined ? parity : !parity;
+    return undefined;
+  };
+}
+
+const mpInt = (n: bigint): Mpc => [F.fromInt(n), F.ZERO];
+const mpHalf: Mpc = [{ man: 1n, exp: -1n }, F.ZERO];
+const mpTwo = mpInt(2n);
+const mpFour = mpInt(4n);
+const mpQuarter: Mpc = [{ man: 1n, exp: -2n }, F.ZERO];
+const mpThreeQuarters: Mpc = [{ man: 3n, exp: -2n }, F.ZERO];
+const mpEqualInt = (n: Mpc, k: bigint): boolean => M.isReal(n) && F.cmp(n[0], F.fromInt(k)) === 0;
+
+// The functional equation gives B_n without constructing its exact rational numerator.
+mpExprFns['bernoulli'] = (e, _evaluate, prec) => {
+  const n = first(e.args);
+  if (e.args.length !== 1 || !(n instanceof Rational) || !n.isInteger || n.p <= 5000n) return undefined;
+  if (n.p % 2n === 1n) return M.C0;
+  const wp = prec + 20 + n.p.toString(2).length;
+  const a = F.fromInt(n.p);
+  const logFactorial = cloggamma(mpInt(n.p + 1n), wp)[0];
+  const logTwoPi = M.log(F.ldexp(M.mpPi(wp), 1), wp);
+  const magnitude = M.exp(F.sub(logFactorial, F.mul(a, logTwoPi, wp), wp), prec + 10);
+  let z = F.ONE;
+  for (let k = 2n; ; k++) {
+    const term = F.powInt(F.fromInt(k), -n.p, wp);
+    // The integral test bounds the entire omitted tail by (k + 1)*k**(-n).
+    if (F.mag(term) + k.toString(2).length + 1 <= -wp) break;
+    z = F.add(z, term, wp);
+  }
+  return [F.mulInt(F.mul(magnitude, z, prec), n.p % 4n === 0n ? -2n : 2n), F.ZERO];
+};
+
+function mpBernoulli(n: Mpc, x: Mpc, p: number): Mpc {
+  if (mpEqualInt(n, 0n)) return M.C1;
+  if (mpEqualInt(n, 1n)) return M.csub(x, mpHalf, p);
+  return M.cmul(M.cneg(n), czeta(M.csub(M.C1, n, p), p, x), p);
+}
+mpFns['bernoulli'] = (args, prec) => mpBernoulli(first(args), args[1] ?? M.C1, prec + 20);
+mpFns['genocchi'] = (args, prec) => {
+  const n = first(args);
+  const x = args[1] ?? M.C1;
+  const p = prec + 30;
+  const a = mpBernoulli(n, x, p);
+  const b = mpBernoulli(n, M.cmul(M.cadd(x, M.C1, p), mpHalf, p), p);
+  return M.cmul(mpTwo, M.csub(a, M.cmul(M.cpow(mpTwo, n, p), b, p), p), p);
+};
+mpFns['euler'] = (args, prec) => {
+  const n = first(args);
+  const x = args[1] ?? mpHalf;
+  const p = prec + 30;
+  const halfShift = M.cmul(mpHalf, M.cadd(x, M.C1, p), p);
+  if (mpEqualInt(n, -1n)) {
+    if (args.length === 1) return [F.ldexp(M.mpPi(p), -1), F.ZERO];
+    return M.csub(cpolygamma(0, halfShift, p), cpolygamma(0, M.cmul(x, mpHalf, p), p), p);
+  }
+  const s = M.cneg(n);
+  const b = M.cmul(M.cpow(mpTwo, M.cadd(n, M.C1, p), p), czeta(s, p, halfShift), p);
+  const result = M.cmul(mpTwo, M.csub(czeta(s, p, x), b, p), p);
+  return args.length === 1 ? M.cmul(result, M.cpow(mpTwo, n, p), p) : result;
+};
+mpExprFns['andre'] = (e, evaluate) => {
+  const exact = EVAL.andre?.(first(e.args));
+  return exact === undefined ? undefined : evaluate(exact);
+};
+mpFns['andre'] = (args, prec) => {
+  // Split the Dirichlet series into residue classes modulo 4.
+  const n = first(args);
+  const p = prec + 30;
+  const s = M.cneg(n);
+  const angle = M.cmul(n, [F.ldexp(M.mpPi(p), -1), F.ZERO], p);
+  const odd = M.csub(czeta(s, p, mpQuarter), czeta(s, p, mpThreeQuarters), p);
+  const even = M.csub(czeta(s, p, mpHalf), czeta(s, p), p);
+  return M.cmul(M.cmul(mpTwo, M.cpow(mpFour, n, p), p),
+    M.cadd(M.cmul(M.ccos(angle, p), odd, p), M.cmul(M.csin(angle, p), even, p), p), p);
+};
+
 export const bernoulli = (n: ExprLike, x?: ExprLike): Expr => fn('bernoulli', x === undefined ? [n] : [n, x]);
 export const euler = (n: ExprLike, x?: ExprLike): Expr => fn('euler', x === undefined ? [n] : [n, x]);
 export const genocchi = (n: ExprLike, x?: ExprLike): Expr => fn('genocchi', x === undefined ? [n] : [n, x]);
@@ -643,10 +888,13 @@ export function isMotzkin(n: bigint): boolean {
 }
 
 /** SymPy legendre_symbol(a, p) for an odd prime p: 0, 1 or -1. */
-export function legendreSymbol(a: bigint | number, p: bigint | number): number {
+export function legendreSymbol(a: bigint | number, p: bigint | number): number;
+export function legendreSymbol(a: ExprLike, p: ExprLike): Expr;
+export function legendreSymbol(a: ExprLike, p: ExprLike): number | Expr {
+  if ((typeof a !== 'bigint' && typeof a !== 'number') || (typeof p !== 'bigint' && typeof p !== 'number')) return fn('legendre_symbol', [a, p]);
   const P = BigInt(p);
   if (P < 3n || !isprime(P)) throw new RangeError('legendre_symbol: p should be an odd prime');
-  return jacobiSymbol(BigInt(a), P);
+  return jacobiInt(BigInt(a), P);
 }
 
 /** SymPy motzkin(n) (motzkin.find_first_n_motzkins(n)[n - 1]). */
@@ -655,9 +903,15 @@ export function motzkin(n: number): bigint {
   return at(firstMotzkins(n), n - 1);
 }
 
-/** SymPy andre(n): Euler zigzag (up/down) numbers 1, 1, 1, 2, 5, 16, 61, ... */
-export function andre(n: number): bigint {
-  if (!Number.isInteger(n) || n < 0) throw new RangeError('andre: n must be a nonnegative integer');
+/** Euler zigzag numbers and their analytic continuation for symbolic inputs. */
+export function andre(n: Expr | bigint): Expr;
+export function andre(n: number): bigint;
+export function andre(n: ExprLike): bigint | Expr {
+  return typeof n === 'number' ? andreInteger(n) : fn('andre', [n]);
+}
+
+function andreInteger(n: number): bigint {
+  if (!Number.isSafeInteger(n) || n < 0) throw new RangeError('andre requires a nonnegative safe integer index');
   // Seidel-Entringer triangle
   let row: bigint[] = [1n];
   for (let i = 1; i <= n; i++) {
@@ -754,6 +1008,7 @@ const digitSum = (n: bigint, p: bigint) => {
 /** binomial(n, k) modulo m for nonnegative integers (prime-power moduli of moderate size). */
 export function binomialMod(nIn: IntLike, kIn: IntLike, mIn: IntLike): bigint {
   const [n, k, m] = [intOf(nIn), intOf(kIn), intOf(mIn)];
+  if (m < 1n) throw new RangeError('the modulus is required to be positive');
   if (k < 0n || k > n) return 0n;
   if (m === 1n) return 0n;
   // prime-power parts of m, combined by the Chinese remainder theorem
@@ -881,6 +1136,7 @@ export function nD(i?: CountingInput, opts: { brute?: boolean; n?: IntLike; m?: 
   if (i !== undefined && (typeof i === 'number' || typeof i === 'bigint' || i instanceof Expr)) throw new TypeError('items must be a sequence or multiset');
   let counts: number[];
   if (opts.m !== undefined) {
+    if (!(Symbol.iterator in Object(opts.m))) throw new TypeError('multiplicities must be iterable');
     counts = opts.m instanceof Map
       ? [...opts.m].flatMap(([m, repeat]: [IntLike, IntLike]) => Array<number>(countSize(repeat)).fill(countSize(m)))
       : Array.from(opts.m, (v) => countSize(v));
@@ -948,6 +1204,10 @@ registerFunctionHeads([
   ['bernoulli', bernoulli],
   ['euler', euler],
   ['genocchi', genocchi],
+  ['andre', (n) => fn('andre', [n])],
+  ['legendre_symbol', (a, p) => fn('legendre_symbol', [a, p])],
+  ['jacobi_symbol', (a, n) => fn('jacobi_symbol', [a, n])],
+  ['kronecker_symbol', (a, n) => fn('kronecker_symbol', [a, n])],
   ['fibonacci', fibonacci],
   ['lucas', lucas],
   ['tribonacci', tribonacci],

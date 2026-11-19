@@ -6,6 +6,8 @@
 
 import { describe, expect, it } from 'vitest';
 import * as sj from '../../src';
+import { MatMulNode } from '../../src/matrices/expressions/matexpr';
+import { impl } from '../../src/core/nodes';
 import {
   Derivative,
   Dummy,
@@ -358,4 +360,125 @@ describe('relational classes in queries (SymPy Basic.has(Le))', () => {
     expect(sj.find(e, { type: 'Equality' })).toHaveLength(1);
     expect(sj.find(sj.add(a, 1), { type: 'GreaterThan' })).toHaveLength(0);
   });
+});
+
+it('matches noncommutative products in order with contiguous wildcard ranges', () => {
+  const [A, B, C] = sj.symbols('A B C', { commutative: false });
+  const [x, y] = sj.symbols('x y');
+  const u = new Wild('u'), w = new Wild('w', { commutative: false });
+  const z = new Wild('z', { commutative: false });
+  const render = (e: sj.Expr, p: sj.Expr) => {
+    const result = sj.match(e, p);
+    return result instanceof Map ? new Map([...result].map(([k, v]) => [k.toString(), v.toString()])) : undefined;
+  };
+  expect(render(sj.mul(x, y, A, B), sj.mul(u, w))).toEqual(new Map([['u_', 'x*y'], ['w_', 'A*B']]));
+  expect(render(sj.mul(A, B), sj.mul(w, z))).toEqual(new Map([['w_', 'A'], ['z_', 'B']]));
+  expect(render(sj.mul(A, C, B, A, C), sj.mul(w, B, w))).toEqual(new Map([['w_', 'A*C']]));
+  expect(render(sj.mul(A, B), new sj.Mul([w, w]))).toBeUndefined();
+  expect(render(A, sj.mul(w, z))).toBeUndefined();
+  expect(render(sj.mul(x, A), sj.mul(y, w))).toBeUndefined();
+  expect(render(sj.mul(x, A), sj.mul(u, x))).toBeUndefined();
+  expect(render(x, sj.mul(u, w))).toBeUndefined();
+  expect(render(A, u)).toEqual(new Map([['u_', 'A']]));
+  expect(render(sj.mul(A, B), sj.mul(w, A))).toBeUndefined();
+  expect(render(sj.mul(sj.pow(A, 2), B), sj.mul(A, w))).toEqual(new Map([['w_', 'A*B']]));
+  expect(render(sj.mul(sj.pow(A, -1), B), sj.mul(w, B))).toEqual(new Map([['w_', 'A**(-1)']]));
+});
+
+it('preserves structural discriminators and constrained associative matches', () => {
+  const [x, y] = sj.symbols('x y');
+  const w = new Wild('w'), n = new Wild('n');
+  const rawMatch = (e: sj.Expr, p: sj.Expr) => {
+    const result = sj.match(e, p);
+    return result instanceof Map ? new Map([...result].map(([k, v]) => [String(k), String(v)])) : undefined;
+  };
+  expect(rawMatch(sj.pow(x, 2), sj.exp(w))).toBeUndefined();
+  expect(rawMatch(sj.Ne(x, y), sj.Eq(w, y))).toBeUndefined();
+  expect(rawMatch(sj.Tuple(x), sj.Dict([[w, y]]))).toBeUndefined();
+  expect(rawMatch(sj.rational(1), sj.pow(w, n))).toEqual(new Map([['n_', '0']]));
+  expect(rawMatch(sj.rational(3), new sj.Add([sj.rational(1), w]))).toEqual(new Map([['w_', '2']]));
+  expect(rawMatch(sj.mul(2, x), new sj.Add([w, w]))).toEqual(new Map([['w_', 'x']]));
+  expect(rawMatch(sj.mul(-2, x), new sj.Add([w, w]))).toEqual(new Map([['w_', '-x']]));
+  expect(rawMatch(sj.pow(x, -2), new sj.Mul([w, w]))).toBeUndefined();
+  const cancelled = sj.match(sj.mul(x, sj.sin(y)), new sj.Mul([x, y, w]), { old: true });
+  expect(cancelled instanceof Map ? String(cancelled.get(w)) : '').toBe('sin(y)/y');
+  expect(countOps(sj.E)).toBe(1);
+});
+
+it('honors extension pattern hooks for find and replace', () => {
+  class Pattern extends sj.ExtensionExpr {
+    constructor(readonly accept: boolean) { super('Pattern', []); }
+    withArgs(): sj.Expr { return this; }
+    override matchesSelf(e: sj.Expr): ReadonlyMap<sj.Expr, sj.Expr> | false { return this.accept ? new Map([[x, e]]) : false; }
+  }
+  const [x] = sj.symbols('x');
+  expect(sj.find(x, new Pattern(false))).toEqual([]);
+  expect(sj.find(x, new Pattern(true))).toEqual([x]);
+});
+
+it('distinguishes names of extension calls sharing a node class', () => {
+  class Call extends sj.ExtensionExpr {
+    constructor(name: string, args: readonly sj.Expr[]) { super(name, args); }
+    withArgs(args: readonly sj.Expr[]): sj.Expr { return new Call(this.name, args); }
+  }
+  const x = sj.symbol('x'), w = new Wild('w');
+  expect(sj.match(new Call('g', [x]), new Call('f', [w]))).toBeInstanceOf(sj.NoMatchResult);
+  const result = sj.match(new Call('f', [x]), new Call('f', [w]));
+  expect(result instanceof Map ? String(result.get(w)) : '').toBe('x');
+});
+
+it('controls rematching of a child exposed by rebuilding', () => {
+  const [x, y] = sj.symbols('x y');
+  const original = sj.mul(y, sj.sin(x));
+  const reduce = (arg: sj.Expr) => sj.sin(arg).div(y);
+  const [value, mapping] = sj.replace(original, { fn: 'sin' }, reduce, { map: true }) as [sj.Expr, Map<sj.Expr, sj.Expr>];
+  expect(value.key).toBe(sj.sin(x).key);
+  expect(mapping.size).toBe(1);
+  expect((sj.replace(original, { fn: 'sin' }, reduce, { simultaneous: false }) as sj.Expr).key).toBe(reduce(x).key);
+  const order = sj.O(x.sub(1).pow(3), x, 1);
+  expect(sj.replace(order, { type: 'Pow' }, (base, exponent) => base.pow(exponent).div(exponent))).toBeInstanceOf(sj.Order);
+});
+
+it('counts operations in a matrix product and matches through the registered hook', () => {
+  const x = sj.symbol('x');
+  const a = sj.MatrixSymbol('A', 2, 2), b = sj.MatrixSymbol('B', 2, 2);
+  expect(impl.match?.(x, x)).toEqual(new Map());
+  expect(String(sj.countOps(new MatMulNode([sj.S.NegOne, a]), { visual: true }))).toBe('NEG');
+  expect(String(sj.countOps(new MatMulNode([sj.S.NegOne, a, b]), { visual: true }))).toBe('MATMUL + NEG');
+  expect(String(sj.countOps(new MatMulNode([a, b]), { visual: true }))).toBe('MATMUL');
+});
+
+it('cancels common infinite factors and a negative numeric coefficient while matching', async () => {
+  const sj = await import('../../src');
+  const x = new sj.Sym('x');
+  const wildcard = new sj.Wild('a');
+  const e = new sj.Mul([sj.S.NegativeInfinity, sj.I, x]);
+  const target = new sj.Mul([sj.S.Infinity, sj.I, wildcard]);
+  const match = sj.match(e, target);
+  expect(match).toBeInstanceOf(Map);
+  if (match instanceof Map) expect(match.get(wildcard)?.equals(sj.neg(x))).toBe(true);
+  expect(sj.match(new sj.Mul([sj.S.Infinity, sj.I, x]), target)).toBeInstanceOf(Map);
+  const f = sj.SymFunction('f')(x);
+  const n = new sj.Wild('n');
+  const coefficients = sj.match(sj.mul(5, sj.pow(f, 2)), sj.mul(-1, wildcard, sj.pow(f, n)));
+  expect(coefficients).toBeInstanceOf(Map);
+  if (coefficients instanceof Map) {
+    expect(coefficients.get(wildcard)?.equals(-5)).toBe(true);
+    expect(coefficients.get(n)?.equals(sj.S.Two)).toBe(true);
+  }
+  const xr = new sj.Sym('xr', { real: true }), yr = new sj.Sym('yr', { real: true });
+  const b = new sj.Wild('b');
+  expect(sj.match(sj.or(sj.Le(0, xr), sj.Le(yr, xr)), sj.or(sj.Le(sj.pow(wildcard, -1), b), sj.Le(wildcard, b)))).toBe(sj.NoMatch);
+});
+
+it('propagates an exceptional rewrite of a bound pattern argument', async () => {
+  const sj = await import('../../src');
+  class Unrebuildable extends sj.ExtensionExpr {
+    constructor(arg: sj.Expr) { super('Unrebuildable', [arg]); }
+    withArgs(): sj.Expr { throw new RangeError('cannot rebuild'); }
+  }
+  const x = new sj.Wild('x');
+  const pattern = new sj.BoolOp('Or', [new sj.Rel('Eq', x, sj.S.One), new Unrebuildable(x)]);
+  const input = new sj.BoolOp('Or', [new sj.Rel('Eq', sj.S.Two, sj.S.One), new Unrebuildable(sj.S.Two)]);
+  expect(() => sj.match(input, pattern)).toThrow(RangeError);
 });

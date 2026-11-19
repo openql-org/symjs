@@ -87,6 +87,15 @@ function parseValue(s0: string): V {
       return { t: 'matrix', rows: inner.items.map((r) => (r as { items: V[] }).items) };
     }
   }
+  // an unevaluated product of an explicit matrix and a scalar (MatMul): the matrix of the scaled entries
+  const scaled = /^(Matrix\(\[[\s\S]*\]\))\*(.+)$/.exec(s);
+  if (scaled) {
+    const matrix = parseValue(scaled[1] ?? '');
+    const scalar = parseValue(`1*${scaled[2] ?? ''}`);
+    if (matrix.t === 'matrix' && scalar.t === 'expr') {
+      return { t: 'matrix', rows: matrix.rows.map((row) => row.map((v): V => (v.t === 'expr' ? { t: 'expr', e: sj.mul(scalar.e, v.e) } : v))) };
+    }
+  }
   try {
     return { t: 'expr', e: sj.parse(s, { symbols: symbolTable, locals: { CRootOf: indexedRoot, ComplexRootOf: indexedRoot } }) };
   } catch {
@@ -146,7 +155,9 @@ function exprEquivalent(a: Expr, b: Expr): boolean {
   const symbols = new Map([...sj.freeSymbols(a), ...sj.freeSymbols(b)].filter((s) => s instanceof sj.Sym).map((s) => [s.key, s]));
   // Closed algebraic numbers have no independent substitution points. Repeating
   // the same high-precision root evaluation provides no additional evidence.
-  const hasOrdering = (e: Expr): boolean => (e instanceof sj.Rel && e.op !== 'Eq' && e.op !== 'Ne') || e.args.some(hasOrdering);
+  // (Max and Min compare their arguments: they take real points as inequalities do)
+  const hasOrdering = (e: Expr): boolean =>
+    (e instanceof sj.Rel && e.op !== 'Eq' && e.op !== 'Ne') || (e instanceof sj.Fn && (e.name === 'Max' || e.name === 'Min')) || e.args.some(hasOrdering);
   const trials = symbols.size === 0 ? 1 : hasOrdering(a) || hasOrdering(b) ? 8 : 4;
   let agree = 0;
   for (let k = 0; k < trials; k++) {
@@ -239,7 +250,18 @@ export function equivalent(got: string, expected: string, symbols: readonly sj.S
   if (got === expected) return true;
   if (/ConditionSet|Lambda\(/.test(expected) && renameBound(got) === renameBound(expected)) return true;
   if (opts.fn && FORM_FUNCTIONS.has(opts.fn)) {
-    if (opts.input !== undefined && got === opts.input) return false;
+    // the input came back unchanged: compatible only when SymPy's result is that same expression
+    // (printed otherwise: an unevaluated Pow(E, x) is E**x in SymPy and exp(x) here)
+    if (opts.input !== undefined && got === opts.input) {
+      try {
+        symbolTable = Object.fromEntries(symbols.filter((s) => !(s instanceof sj.Dummy)).map((s) => [s.name, s]));
+        const g = parseValue(got);
+        const e = parseValue(expected);
+        return g.t === 'expr' && e.t === 'expr' && g.e.key === e.e.key;
+      } catch {
+        return false;
+      }
+    }
     try {
       symbolTable = Object.fromEntries(symbols.filter((s) => !(s instanceof sj.Dummy)).map((s) => [s.name, s]));
       const g = parseValue(got);

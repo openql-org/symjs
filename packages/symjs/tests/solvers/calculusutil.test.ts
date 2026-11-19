@@ -66,3 +66,10 @@ describe('lcim', () => {
     expect(s(lcim([sj.pi, P('sqrt(2)')]))).toBe('None');
   });
 });
+
+it('removes integer level sets of the argument of frac', () => {
+  expect(s(continuousDomain(P('frac(x**2)'), x, Reals))).toBe('Complement(Reals, ConditionSet(x, Contains(x**2, Integers), Reals))');
+  const domain = sj.Interval.open(0, 1);
+  expect(continuousDomain(P('frac(x**2)'), x, domain).equals(domain)).toBe(true);
+  expect(continuousDomain(P('frac(x**2)'), x, sj.finiteSet(0, 1))).toBe(EmptySet);
+});

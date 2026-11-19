@@ -6,7 +6,7 @@
 // Expected values are the str() forms printed by SymPy 1.14 unless a comment says otherwise.
 
 import { describe, expect, it } from 'vitest';
-import { DiracDelta, Dummy, Float, Heaviside, Rational, Sym, add, cancel, denom, fraction, mul, numer, parse, pow, ratsimp, symbol, together } from '../../src';
+import { Add, DiracDelta, Dummy, Float, Heaviside, Lt, Mul, Rational, Sym, add, cancel, denom, fraction, mul, numer, parse, piecewise, pow, ratsimp, sqrt, symbol, together } from '../../src';
 import type { Expr } from '../../src';
 
 const P = (s: string) => parse(s, { locals: { Heaviside, DiracDelta } });
@@ -260,4 +260,52 @@ describe('numer and denom', () => {
     expect([numer(x.div(y)), denom(x.div(y)), numer(2), denom(Rational.of(3, 4)), numer(x), denom(add(x.pow(-1), y))].map(String)).toEqual(['x', 'y', '2', '4', 'x', '1']);
     expect(String(denom(P('x*y**(-n)'), { exact: true }))).toBe(String(fraction(P('x*y**(-n)'), { exact: true })[1]));
   });
+});
+
+it('cancels scalar factors while preserving the noncommuting word', async () => {
+  const s = await import('../../src');
+  const a = s.symbol('A', { commutative: false }), b = s.symbol('B', { commutative: false });
+  const x = s.symbol('x');
+  const product = s.mul(a, b);
+  expect(String(s.cancel(s.mul(product, x.pow(2).sub(1), x.add(1).pow(-1))))).toBe('(x - 1)*A*B');
+  expect(s.cancel(product).key).toBe(product.key);
+  expect(String(s.cancel(s.mul(x.add(1), x.add(1).pow(-1)), { domain: 'QQ' }))).toBe('1');
+});
+
+it('preserves cancellation ratios that contain Laurent generators after expansion', () => {
+  expect(String(cancel(P('2**(1/2 - a)/(x + 1)')))).toBe('sqrt(2)/(2**a*(x + 1))');
+  expect(String(cancel(P('(x + 1)/(x + 2**(1/2 - a))')))).toBe('(x + 1)/(x + sqrt(2)/2**a)');
+});
+
+it('uses the algebraic coefficient extension when greedy generators are disabled', () => {
+  const f = P('(x**2-2)/(x+sqrt(2))');
+  expect(String(cancel(f, { greedy: false }))).toBe('x - sqrt(2)');
+  expect(String(cancel(f, { greedy: false, extension: P('sqrt(2)') }))).toBe('x - sqrt(2)');
+});
+
+it('retains noncommuting quotients and cancels over a specified polynomial domain', () => {
+  const A = symbol('A', { commutative: false }), B = symbol('B', { commutative: false });
+  expect(cancel(A.mul(B.pow(-1))).equals(A.mul(B.pow(-1)))).toBe(true);
+  expect(cancel(A.mul(B)).equals(A.mul(B))).toBe(true);
+  expect(cancel(new Mul([new Add([A, A.neg()]), B])).equals(0)).toBe(true);
+  const numerator = add(sqrt(3), mul(sqrt(15), A));
+  const denominator = add(sqrt(2), mul(sqrt(10), A));
+  expect(cancel(numerator.mul(denominator.pow(-1))).equals(mul(Rational.of(1, 2), sqrt(6)))).toBe(true);
+  expect(String(cancel(parse('(x**2 - 1)/(x - 1)'), { domain: 'QQ' }))).toBe('x + 1');
+});
+
+it('cancels piecewise values while preserving their conditions', () => {
+  const x = symbol('x'), relation = Lt(x, 0);
+  const quotient = P('(x**2 - 1)/(x - 1)');
+  const input = piecewise([quotient, relation], [0, true]);
+  const expected = piecewise([x.add(1), relation], [0, true]);
+  expect(cancel(relation)).toBe(relation);
+  expect(cancel(input).equals(expected)).toBe(true);
+  expect(cancel(new Add([quotient, input])).equals(add(x, 1, expected))).toBe(true);
+  expect(cancel(new Mul([quotient, input])).equals(mul(x.add(1), expected))).toBe(true);
+});
+
+it('preserves small nonzero float coefficients when a convergent rounds to zero', () => {
+  const e = parse('(0.0000000000000000001*x + 2)/(0.0000000000000000002*x + 4)');
+  expect(String(cancel(e))).toBe('0.500000000000000');
 });

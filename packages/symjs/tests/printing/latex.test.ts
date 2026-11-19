@@ -4,6 +4,7 @@
 // Tests of src/printing/latex.ts.
 
 import { describe, expect, it } from 'vitest';
+import { passingModuleCases, runTestCase } from '../../../../tools/sympy-corpus/tests-harness';
 import * as sj from '../../src';
 import { adjoint, exp, I, mul, pow, rational, sin, sqrt, Sym, symbol, symbols, SymFunction } from '../../src';
 import { Add, Float, Fn, Integral, Limit, Mul, Order, Pow, Rational, Rel, S } from '../../src/core/nodes';
@@ -835,4 +836,73 @@ it('prints expression representations of polynomial and field elements', () => {
 it('prints a bold matrix symbol with an explicit LaTeX name and defaults unknown adjoint styles', () => {
   expect(latex(sj.MatrixSymbol('A{b}', 2, 2), { matSymbolStyle: 'bold' })).toBe('\\mathbf{A{b}}');
   expect(Reflect.apply(latex, undefined, [sj.adjoint(A), { adjointStyle: 'unknown' }])).toBe('A^{\\dagger}');
+});
+
+it('prints special builtin function classes with their conventional heads', () => {
+  for (const [name, expected] of [['KroneckerDelta', '\\delta'], ['gamma', '\\Gamma'], ['lowergamma', '\\gamma'], ['beta', '\\operatorname{B}'], ['DiracDelta', '\\delta'], ['Chi', '\\operatorname{Chi}']] as const) {
+    expect(latex(Object.assign(() => {}, { functionName: name }))).toBe(expected);
+  }
+});
+
+it('prints symbolic probabilities using their conventional operators', () => {
+  expect(latex(new sj.ExpectationNode([x]))).toBe('\\operatorname{E}\\left[x\\right]');
+  expect(latex(new sj.ProbabilityNode([x]))).toBe('\\operatorname{P}\\left(x\\right)');
+  expect(latex(new sj.VarianceNode([x]))).toBe('\\operatorname{Var}\\left(x\\right)');
+  expect(latex(new sj.CovarianceNode([x, y]))).toBe('\\operatorname{Cov}\\left(x, y\\right)');
+});
+
+it('separates compound Levi-Civita indices and groups powers', () => {
+  expect(latex(sj.LeviCivita(x, y, z))).toBe('\\varepsilon_{x y z}');
+  expect(latex(sj.LeviCivita(x, sj.add(y, 1), z))).toBe('\\varepsilon_{x, y + 1, z}');
+  expect(latex(pow(sj.LeviCivita(x, y, z), 2))).toBe('\\left(\\varepsilon_{x y z}\\right)^{2}');
+});
+
+it('prints symbolic derivative orders in LaTeX', () => {
+  const [x, n] = sj.symbols('x n');
+  const f = sj.SymFunction('f')(x);
+  expect(latex(f.diff(x, n))).toContain('^{n}');
+});
+
+// Replay the serialized algebraic objects that the expression-only test generator cannot reconstruct.
+const algebraicCases = new Set(['test_latex_basic', 'test_Modules', 'test_QuotientRing', 'test_PolynomialRingBase', 'test_latex_PolyElement', 'test_latex_FracElement', 'test_latex_Poly', 'test_latex_Poly_order', 'test_latex_numbers', 'test_latex_ordinals', 'test_categories']);
+for (const c of passingModuleCases('printing', 'sympy.printing.tests.test_latex').filter((c) => algebraicCases.has(c.test))) {
+  it(`${c.test}:${c.line}`, () => expect(runTestCase(c), c.src).toEqual({ status: 'pass' }));
+}
+
+it('prints ground domains, zero polynomials and finite ordinal terms', () => {
+  expect(latex(sj.ZZ)).toBe('\\mathbb{Z}');
+  expect(latex(sj.EX)).toBe('EX');
+  expect(latex(new sj.PolyRing([x], sj.ZZ).zero)).toBe('0');
+  expect(latex(sj.Poly.from(0, [x], { pure: true }))).toContain('\\operatorname{PurePoly}');
+  expect(latex(sj.ord0)).toBe('');
+  expect(latex(sj.OmegaPower(0, 4))).toBe('4 \\omega^{ord0}');
+  expect(latex(sj.GF(5))).toBe('\\mathbb{F}_{5}');
+  expect(latex(new sj.SingleDomain([x, sj.Reals]))).toBe('\\text{Domain: }\\left\\{x\\right\\} \\in \\mathbb{R}');
+});
+
+it('prints constant Fourier series and half-infinite symbolic ranges', () => {
+  expect(latex(new sj.FourierSeries(S.One, x, S.NegOne, S.One))).toBe('1');
+  const k = symbol('k', { integer: true });
+  expect(latex(sj.Range.of(S.Infinity, k, -2))).toBe('\\left\\{\\ldots, k + 4, k + 2\\right\\}');
+});
+
+it('snapshots global defaults for each printer and supports per-call overrides', () => {
+  const { imaginaryUnit } = sj.LatexPrinter.globalSettings;
+  const printer = new sj.LatexPrinter();
+  try {
+    sj.LatexPrinter.setGlobalSettings({ imaginaryUnit: 'j' });
+    expect(latex(I)).toBe('j');
+    expect(latex(I, { imaginaryUnit: 'ri' })).toBe('\\mathrm{i}');
+    expect(printer.doprint(I)).toBe('i');
+  } finally {
+    sj.LatexPrinter.setGlobalSettings({ imaginaryUnit });
+  }
+});
+
+it('prints an image set of several variables and a formal power series like SymPy', () => {
+  const [x, y] = sj.symbols('x y');
+  const image = new sj.ImageSet(sj.Tuple(x, y), sj.add(x, y), sj.finiteSet(1, 2, 3), sj.finiteSet(3, 4));
+  expect(sj.latex(image)).toBe('\\left\\{x + y\\; \\middle|\\; x \\in \\left\\{1, 2, 3\\right\\}, y \\in \\left\\{3, 4\\right\\}\\right\\}');
+  expect(sj.latex(new sj.ImageSet(x, sj.pow(x, 2), sj.Naturals))).toBe('\\left\\{x^{2}\\; \\middle|\\; x \\in \\mathbb{N}\\right\\}');
+  expect(sj.latex(sj.fps(sj.log(sj.add(1, x)), x))).toBe('\\sum_{k=1}^{\\infty} - \\frac{\\left(-1\\right)^{- k} x^{k}}{k}');
 });

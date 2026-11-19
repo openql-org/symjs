@@ -5,7 +5,7 @@
 import { describe, expect, it } from 'vitest';
 import { parseExpr as P } from '../../../src/index';
 import { DomainError } from '../../../src/core/errors';
-import { CoercionFailed, QQ } from '../../../src/polys/domains';
+import { CoercionFailed, QQ, RealField } from '../../../src/polys/domains';
 import { CC, ComplexField } from '../../../src/polys/domains/complexfield';
 import { QQ_I } from '../../../src/polys/domains/gaussiandomains';
 
@@ -44,4 +44,10 @@ describe('CC exactness, square roots and unification (SymPy test_domains)', () =
     expect(String(CC.unify(QQ))).toBe('CC');
     expect(String(QQ_I.unify(CC))).toBe('CC');
   });
+});
+
+it('converts Gaussian rationals and preserves precision when unifying fields', () => {
+  const z = QQ_I.convert(P('1/2 - 3*I/4'));
+  expect(CC.convert(z)).toEqual(CC.fromSympy(P('1/2 - 3*I/4')));
+  expect(CC.unify(new RealField(100)).equals(new ComplexField(100))).toBe(true);
 });

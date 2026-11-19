@@ -649,6 +649,7 @@ export class ModuleElement {
       const [a, b] = this.unify(other);
       return a.equals(b);
     }
+    if (!isRat(other)) return false;
     if (this instanceof PowerBasisElement) return this.equals(this.module.call(0).mul(other));
     return this.overPowerBasis().equiv(other);
   }

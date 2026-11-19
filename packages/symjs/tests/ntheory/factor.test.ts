@@ -967,3 +967,21 @@ it('unitary divisors, antidivisors and power-free cores', async () => {
   expect(() => core(0)).toThrow(RangeError);
   expect(() => core(4, 1)).toThrow(RangeError);
 });
+
+it('round trips smoothness descriptions, factorizations and computed rows', () => {
+  const description = 'p**i=2**2 has p-1 B=1, B-pow=1\np**i=31**1 has p-1 B=5, B-pow=5';
+  const factors = new Map([[2n, 2n], [31n, 1n]]);
+  const result = smoothnessP(124);
+  expect(smoothnessP(factors)).toBe(description);
+  expect(smoothnessP(factors, { visual: true })).toBe(description);
+  expect(smoothnessP(factors, { visual: false })).toEqual(result);
+  expect(smoothnessP(description)).toEqual(factors);
+  expect(smoothnessP(description, { visual: true })).toBe(description);
+  expect(smoothnessP(description, { visual: false })).toEqual(result);
+  expect(smoothnessP(result)).toBe(description);
+  expect(smoothnessP(result, { visual: false })).toBe(result);
+  expect(smoothnessP(result, { visual: true })).toBe(description);
+  expect(smoothnessP(new Map([[4, 2]]), { visual: false })).toEqual(smoothnessP(16));
+  expect(smoothnessP(new Mul([new Pow(R(4n), R(2n)), new Pow(R(2n), R(6n))]), { visual: false })).toEqual(smoothnessP(1024));
+  expect(() => smoothnessP('invalid')).toThrow(RangeError);
+});

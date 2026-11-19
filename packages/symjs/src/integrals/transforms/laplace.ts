@@ -23,8 +23,8 @@ import type { UndefinedFunction } from '../../core/undef';
 import { derivative } from '../../core/undef';
 import { Subs } from '../../core/subsnode';
 import { abs, arg, atan, cos, im, log, re, sin, sinh, cosh } from '../../functions/elementary/elementary';
-import { asinh, coth, sinc } from '../../functions/elementary/trigext';
-import { Ei, Max, digamma, erf, erfc, gamma, lowergamma, uppergamma } from '../../functions/special/special';
+import { acoth, asinh, coth, sinc } from '../../functions/elementary/trigext';
+import { Chi, Ei, Max, Shi, Si, digamma, erf, erfc, gamma, lowergamma, uppergamma } from '../../functions/special/special';
 import { besseli, besselj, besselk, bessely } from '../../functions/special/bessel';
 import { diff } from '../../calculus/diff';
 import { Matrix } from '../../matrices/matrix';
@@ -173,6 +173,10 @@ function buildRules(): RuleTable {
   const pi = S.Pi;
   const rules: LaplaceRule[] = [
     // 4.2.1 (a constant) is applied by laplaceApplySimpleRules before the table
+    // Integration by parts reduces Si and Shi to the transforms of sinc and sinh(t)/t.
+    r(Si(t), () => mul(sub(mul(pi, half), atan(s)), pow(s, -1)), () => T, () => Z),
+    r(Shi(t), () => mul(acoth(s), pow(s, -1)), () => T, () => S.One),
+    r(Chi(t), () => mul(half, log(pow(sub(pow(s, 2), 1), -1)), pow(s, -1)), () => T, () => S.One),
     r(t, () => pow(s, -2), () => T, () => Z), // 4.2.3
     r(pow(add(mul(a, t), b), -1), (m) => {
       const ba = mul(g(m, 'b'), pow(g(m, 'a'), -1));
@@ -282,6 +286,8 @@ function buildRules(): RuleTable {
       const A = g(m, 'a');
       return mul(exp(mul(pow(s, 2), pow(pow(mul(2, A), 2), -1))), erfc(mul(s, pow(mul(2, A), -1))), pow(s, -1));
     }, (m) => Lt(mul(4, abs(arg(g(m, 'a')))), pi), () => Z), // 4.12.2
+    r(erf(mul(a, pow(t, S.NegHalf))), (m) => sub(pow(s, -1), mul(exp(mul(-2, g(m, 'a'), sqrt(s))), pow(s, -1))),
+      (m) => Lt(mul(4, abs(arg(g(m, 'a')))), pi), () => Z), // 4.12.6
     r(besselj(n, mul(a, t)), (m) => {
       const N = g(m, 'n');
       const A = g(m, 'a');
@@ -346,7 +352,7 @@ function linearIn(e: Expr, t: Expr): [Expr, Expr] | undefined {
 
 /** The Heaviside and DiracDelta rules of the table (written out, as they need exact function heads). */
 function laplaceDistributionRules(f: Expr, t: Expr, s: Expr): LaplaceTriple | undefined {
-  const isH = isHeaviside(f) && f.args.length === 1;
+  const isH = isHeaviside(f);
   const isD = isDiracDelta(f) && f.args.length === 1;
   if (!isH && !isD) return undefined;
   const lin = linearIn(at(f.args, 0), t);
@@ -415,7 +421,7 @@ function laplaceRuleTimescale(f: Expr, t: Sym, s: Expr): LaplaceTriple | undefin
 /** SymPy _laplace_rule_heaviside: time-shifted Heaviside factors. */
 function laplaceRuleHeaviside(f: Expr, t: Sym, s: Expr): LaplaceTriple | undefined {
   const facs = mulArgs(f);
-  const i = facs.findIndex((x) => isHeaviside(x) && x.args.length === 1);
+  const i = facs.findIndex((x) => isHeaviside(x));
   if (i < 0) return undefined;
   const y = at(at(facs, i).args, 0);
   const g = mul(...facs.filter((_, j) => j !== i));
@@ -791,7 +797,7 @@ function laplaceTransformIntegration(f: Expr, t: Sym, s: Expr): LaplaceTriple | 
   if (some(f, isDiracDelta)) return undefined;
   // a factor Heaviside(a*t - b) with a < 0 and b >= 0 vanishes for t > 0 (the integral is 0)
   for (const fac of mulArgs(f)) {
-    if (!isHeaviside(fac) || fac.args.length !== 1) continue;
+    if (!isHeaviside(fac)) continue;
     const lin = linearIn(at(fac.args, 0), t);
     if (lin && holds(Lt(lin[0], 0)) && holds(Le(lin[1], 0))) return [S.Zero, S.NegativeInfinity, S.true];
   }

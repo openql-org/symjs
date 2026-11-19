@@ -6,6 +6,7 @@
  * solvers/polysys.py factor_system and factor_system_cond).
  */
 
+import { NoMatch, NoMatchResult } from '../core/truth';
 import { NotImplementedError } from '../core/errors';
 import type { ExprLike } from '../core/nodes';
 import { Sym } from '../core/nodes';
@@ -16,8 +17,12 @@ import { at, cast, defined, expectType, first, getOrThrow, last } from '../core/
 import { groebner } from '../polys/groebner';
 import { Tuple } from '../core/containers';
 import { roots } from '../polys/poly';
+import { UnsolvableFactorError } from '../polys/polyerrors';
 import { compareKeys, sortKey } from '../printing/sortkey';
+import type { PolyConstructionOptions } from '../polys/sympoly';
 import { Poly, factorListExpr, sortGens } from '../polys/sympoly';
+import { PolynomialRing } from '../polys/domains';
+import { preprocessDomain } from '../polys/polyoptions';
 import { expand } from '../simplify/expand';
 import { radsimp } from '../simplify/sqrtdenest';
 import { Eq } from '../core/logic';
@@ -31,16 +36,16 @@ type Factor = { expr: Expr; ground: boolean };
  * solutions of the original system, like SymPy factor_system_cond. Systems
  * may contain conditions that involve only the parameters.
  */
-export function factorSystemCond(eqs: readonly ExprLike[], gens: readonly Expr[] = []): Expr[][] {
-  return factorSystemRaw(eqs, gens).map((s) => s.map((f) => f.expr));
+export function factorSystemCond(eqs: readonly ExprLike[], gens: readonly Expr[] = [], opts: PolyConstructionOptions = {}): Expr[][] {
+  return factorSystemRaw(eqs, gens, opts).map((s) => s.map((f) => f.expr));
 }
 
 /**
  * SymPy factor_system: like factorSystemCond but generic systems only (those
  * that need a condition on the parameters alone are dropped).
  */
-export function factorSystem(eqs: readonly ExprLike[], gens: readonly Expr[] = []): Expr[][] {
-  return factorSystemRaw(eqs, gens)
+export function factorSystem(eqs: readonly ExprLike[], gens: readonly Expr[] = [], opts: PolyConstructionOptions = {}): Expr[][] {
+  return factorSystemRaw(eqs, gens, opts)
     .filter((s) => !s.some((f) => f.ground))
     .map((s) => s.map((f) => f.expr));
 }
@@ -55,7 +60,7 @@ export function factorSystemPoly(polys: readonly Poly[]): Poly[][] {
   if (!polys.length) return [[]];
   const p = first(polys);
   if (polys.some((q) => q.domain !== p.domain || q.gens.map((g) => g.key).join() !== p.gens.map((g) => g.key).join())) throw new TypeError('factorSystemPoly: polynomials must have the same generators and domain');
-  return factorSystemCond(polys.map((q) => q.asExpr()), p.gens).map((s) => s.map((e) => Poly.from(e, p.gens, { domain: p.domain })));
+  return factorSystemCond(polys.map((q) => q.asExpr()), p.gens, { domain: p.domain }).map((s) => s.map((e) => Poly.from(e, p.gens, { domain: p.domain })));
 }
 
 /** Solve polynomial objects in the specified generator order. */
@@ -71,8 +76,14 @@ export function solveBiquadratic(f: Poly, g: Poly, gens: readonly Sym[]): Expr[]
   return solveGeneric([f, g], gens);
 }
 
-function factorSystemRaw(eqsIn: readonly ExprLike[], gensIn: readonly Expr[]): Factor[][] {
+function factorSystemRaw(eqsIn: readonly ExprLike[], gensIn: readonly Expr[], opts: PolyConstructionOptions): Factor[][] {
   const eqs = eqsIn.map((e) => expand(sympify(e)));
+  const inferred = gensIn.length ? gensIn : sortGens([...new Map(eqs.flatMap((e) => Poly.from(e).gens).map((g) => [g.key, g])).values()]);
+  if (inferred.some((g) => !(g instanceof Sym))) {
+    const replacements = inferred.map((g, i): [Expr, Expr] => [g, new Dummy(`g${i}`)]);
+    const back = replacements.map(([g, d]): [Expr, Expr] => [d, g]);
+    return factorSystemRaw(eqs.map((e) => xreplace(e, replacements)), replacements.map(([, d]) => d), opts).map((system) => system.map((f) => ({ ...f, expr: xreplace(f.expr, back) })));
+  }
   const all = new Map<string, Sym>();
   for (const e of eqs) for (const s of [...freeSymbols(e)].filter((s) => s instanceof Sym)) all.set(s.key, s);
   // sortGens returns the same Sym instances, looked up again by key to keep their type
@@ -82,11 +93,15 @@ function factorSystemRaw(eqsIn: readonly ExprLike[], gensIn: readonly Expr[]): F
   if (!gens.length) return eqs.every((e) => e instanceof Rational && e.isZero) ? [[]] : [];
   const vars = [...gens, ...sortSyms([...all.values()].filter((s) => !genKeys.has(s.key)))];
   const hasGen = (e: Expr) => [...freeSymbols(e)].filter((s) => s instanceof Sym).some((s) => genKeys.has(s.key));
+  let domain = opts.domain === undefined ? undefined : preprocessDomain(opts.domain);
+  // Coefficient-ring generators already promoted to polynomial variables must be removed from the ground domain.
+  while (domain instanceof PolynomialRing && domain.symbols.some((s) => vars.some((v) => v.key === s.key))) domain = domain.dom;
+  const factorOptions = domain === undefined ? opts : { ...opts, domain };
 
   const factorSets: Factor[][] = [];
   for (const e of eqs) {
     if (e instanceof Rational && e.isZero) continue;
-    const [, fs] = factorListExpr(e, vars);
+    const fs: [Expr, unknown][] = Object.keys(factorOptions).length ? Poly.from(e, vars, factorOptions).factorList()[1].map(([p, k]) => [p.asExpr(), k]) : factorListExpr(e, vars)[1];
     const genFactors = fs.filter(([f]) => hasGen(f)).map(([f]) => ({ expr: f, ground: false }));
     const params = fs.filter(([f]) => !hasGen(f)).map(([f]) => f);
     if (!params.length) {
@@ -209,19 +224,31 @@ const cmpSysKey = (a: Key[], b: Key[], params: readonly Expr[]): number =>
  * the order of `gens`, sorted like SymPy (default_sort_key). Throws for
  * systems that are not zero-dimensional.
  */
-export function solvePolySystem(eqs: readonly ExprLike[], gens: readonly Sym[], opts: { rationalOnly?: boolean } = {}): Expr[][] {
+export function solvePolySystem(eqs: readonly ExprLike[], gens: readonly Sym[], opts: { distinguishInconsistent: true; rationalOnly?: boolean; strict?: boolean }): Expr[][] | NoMatchResult;
+export function solvePolySystem(eqs: readonly ExprLike[], gens: readonly Sym[], opts?: { rationalOnly?: boolean; strict?: boolean }): Expr[][];
+export function solvePolySystem(eqs: readonly ExprLike[], gens: readonly Sym[], opts: { distinguishInconsistent?: boolean; rationalOnly?: boolean; strict?: boolean } = {}): Expr[][] | NoMatchResult {
   const system = eqs.map((e) => expand(sympify(e))).filter((e) => !(e instanceof Rational && e.isZero));
-  const sols = solveReduced(system, gens, opts.rationalOnly ?? false);
+  const sols = solveReduced(system, gens, opts.rationalOnly ?? false, opts.strict ?? false, true);
+  if (sols instanceof NoMatchResult) return opts.distinguishInconsistent ? sols : [];
   return sols.sort((a, b) => cmpSeq(a, b, (u, v) => compareKeys(sortKey(u), sortKey(v))));
 }
 
-function solveReduced(system: Expr[], gens: readonly Sym[], rationalOnly: boolean): Expr[][] {
+/** Roots expressible in radicals, with optional completeness enforcement. */
+function radicalRoots(f: Expr, x: Sym, strict: boolean): Expr[] {
+  const result = roots(f, x, { skipQuintic: true });
+  if (strict && result.length < Poly.from(f, [x]).degree()) throw new UnsolvableFactorError('solvePolySystem: not all roots are expressible in radicals');
+  return result;
+}
+
+function solveReduced(system: Expr[], gens: readonly Sym[], rationalOnly: boolean, strict: boolean): Expr[][];
+function solveReduced(system: Expr[], gens: readonly Sym[], rationalOnly: boolean, strict: boolean, entry: true): Expr[][] | NoMatchResult;
+function solveReduced(system: Expr[], gens: readonly Sym[], rationalOnly: boolean, strict: boolean, entry = false): Expr[][] | NoMatchResult {
   // no equation left to determine the generators: they are free
   if (!system.length) throw new NotImplementedError('solve_poly_system: only zero-dimensional systems are supported');
   const gen = at(gens, -1);
   const distinctRoots = (f: Expr): Expr[] => {
     const seen = new Map<string, Expr>();
-    for (const r of roots(f, gen)) if (!rationalOnly || r instanceof Rational) seen.set(r.key, r);
+    for (const r of radicalRoots(f, gen, strict)) if (!rationalOnly || r instanceof Rational) seen.set(r.key, r);
     return [...seen.values()];
   };
   if (system.length === 1 && gens.length === 1) return distinctRoots(at(system, 0)).map((z) => [z]);
@@ -235,15 +262,15 @@ function solveReduced(system: Expr[], gens: readonly Sym[], rationalOnly: boolea
   // the Gröbner basis is computed over QQ: algebraic coefficients need a triangular system
   if (system.some(hasIrrational)) {
     try {
-      return backSubstitute(system, gens, rationalOnly);
+      return backSubstitute(system, gens, rationalOnly, strict);
     } catch {
-      const ext = algebraicExtension(system, gens, rationalOnly);
+      const ext = algebraicExtension(system, gens, rationalOnly, strict);
       if (ext) return ext;
       // pi, E, ... in the coefficients: the Gröbner basis over their polynomial ring (SymPy ZZ[pi])
     }
   }
   const basis = [...groebner(system, [...gens], 'lex').exprs];
-  if (basis.length === 1 && basis[0] instanceof Rational) return [];
+  if (basis.length === 1 && basis[0] instanceof Rational) return entry ? NoMatch : [];
   const others = new Set(gens.slice(0, -1).map((g) => g.key));
   const univariate = basis.filter((b) => ![...freeSymbols(b)].filter((s) => s instanceof Sym).some((s) => others.has(s.key)) && b.has(gen));
   if (univariate.length !== 1) throw new NotImplementedError('solve_poly_system: only zero-dimensional systems are supported');
@@ -259,7 +286,7 @@ function solveReduced(system: Expr[], gens: readonly Sym[], rationalOnly: boolea
     const sub = rest.map((b) => expand(xreplace(b, [[gen, z]]))).filter((b) => !(b instanceof Rational && b.isZero));
     // irrational coefficients: the lex basis is triangular, so back-substitute instead of a new basis over QQ
     const rationalCoeffs = sub.every((b) => !hasIrrational(b));
-    const partial = rationalCoeffs ? solveReduced(sub, gens.slice(0, -1), rationalOnly) : backSubstitute(sub, gens.slice(0, -1), rationalOnly);
+    const partial = rationalCoeffs ? solveReduced(sub, gens.slice(0, -1), rationalOnly, strict) : backSubstitute(sub, gens.slice(0, -1), rationalOnly, strict);
     for (const s of partial) out.push([...s, z]);
   }
   return out;
@@ -271,7 +298,7 @@ function solveReduced(system: Expr[], gens: readonly Sym[], rationalOnly: boolea
  * new last generator a with its minimal polynomial a**2 - n, and the solutions
  * are those with a at its value. undefined when other irrational numbers occur.
  */
-function algebraicExtension(system: Expr[], gens: readonly Sym[], rationalOnly: boolean): Expr[][] | undefined {
+function algebraicExtension(system: Expr[], gens: readonly Sym[], rationalOnly: boolean, strict: boolean): Expr[][] | undefined {
   // each algebraic number with its minimal polynomial in a
   const atoms = new Map<string, [Expr, (a: Expr) => Expr]>();
   let other = false as boolean; // set inside walk
@@ -289,7 +316,7 @@ function algebraicExtension(system: Expr[], gens: readonly Sym[], rationalOnly: 
   const reps = [...atoms.values()].map(([v], i): [Expr, Dummy] => [v, new Dummy(`a${i}`)]);
   const minimal = [...atoms.values()].map(([, m], i) => m(at(reps, i)[1]));
   const ext = [...system.map((e) => expand(xreplace(e, reps))), ...minimal];
-  const sols = solveReduced(ext, [...gens, ...reps.map(([, d]) => d)], rationalOnly);
+  const sols = solveReduced(ext, [...gens, ...reps.map(([, d]) => d)], rationalOnly, strict);
   return sols.filter((s) => reps.every(([v], i) => at(s, gens.length + i).key === v.key)).map((s) => s.slice(0, gens.length));
 }
 
@@ -304,7 +331,7 @@ const hasIrrational = (e: Expr): boolean => {
  * with an equation in it alone (the last such generator) is solved first and
  * substituted into the others.
  */
-function backSubstitute(system: Expr[], gens: readonly Sym[], rationalOnly: boolean): Expr[][] {
+function backSubstitute(system: Expr[], gens: readonly Sym[], rationalOnly: boolean, strict: boolean): Expr[][] {
   if (!gens.length) return system.every((b) => Math.abs(b.toComplex().re) + Math.abs(b.toComplex().im) < 1e-9) ? [[]] : [];
   const alone = (i: number) => {
     const others = new Set(gens.filter((_, j) => j !== i).map((g) => g.key));
@@ -321,7 +348,7 @@ function backSubstitute(system: Expr[], gens: readonly Sym[], rationalOnly: bool
     return Math.hypot(c.re, c.im) < 1e-9;
   };
   const seen = new Map<string, Expr>();
-  for (const r0 of roots(defined(lowest, 'equation'), gen)) {
+  for (const r0 of radicalRoots(defined(lowest, 'equation'), gen, strict)) {
     // roots of polynomials with algebraic coefficients come with radical denominators
     const r = expand(radsimp(r0));
     if (!rationalOnly || r instanceof Rational) seen.set(r.key, r);
@@ -331,7 +358,7 @@ function backSubstitute(system: Expr[], gens: readonly Sym[], rationalOnly: bool
   for (const z of seen.values()) {
     if (!rest.every((o) => vanishes(xreplace(o, [[gen, z]])))) continue;
     const sub = system.filter((b) => !uni.includes(b)).map((b) => expand(xreplace(b, [[gen, z]])));
-    for (const s of backSubstitute(sub, otherGens, rationalOnly)) out.push([...s.slice(0, idx), z, ...s.slice(idx)]);
+    for (const s of backSubstitute(sub, otherGens, rationalOnly, strict)) out.push([...s.slice(0, idx), z, ...s.slice(idx)]);
   }
   return out;
 }

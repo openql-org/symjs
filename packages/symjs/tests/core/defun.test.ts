@@ -6,6 +6,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { runInNewContext } from 'node:vm';
+import { at } from '../../src/core/guard';
 import * as sj from '../../src';
 import {
   type Expr,
@@ -33,6 +34,24 @@ const g = SymFunction('g');
 const s = (e: unknown): string => str(e as Expr);
 
 describe('defineFunction', () => {
+  it('validates names and arities and uses custom numeric and printing hooks', () => {
+    expect(() => defineFunction('bad-name')).toThrow(SyntaxError);
+    const f = defineFunction('custom', { nargs: [1, 2], latex: (args) => `F(${args.join(',')})`, evalf: (a) => a + 1 });
+    expect(() => f()).toThrow(TypeError);
+    expect(latex(f(x))).toBe('F(x)');
+    const value = f(2);
+    if (!(value instanceof sj.DefinedFunctionCall)) throw new TypeError('a defined function expected');
+    expect(String(value.numericValue(15))).toBe('3.00000000000000');
+  });
+  it('constructs Taylor series from evaluation and partial derivatives', () => {
+    const mysin = defineFunction('mysin', {
+      nargs: 1,
+      eval: (a) => a.equals(0) ? 0 : undefined,
+      fdiff: (args) => sj.cos(at(args, 0)),
+    });
+    expect(String(sj.series(mysin(x), x, 0, 10))).toBe('x - x**3/6 + x**5/120 - x**7/5040 + x**9/362880 + O(x**10)');
+    expect(String(sj.limit(sj.mul(mysin(x), sj.pow(x, -1)), x, 0))).toBe('1');
+  });
   const myf = defineFunction('myf', { expand: { twice: () => undefined } });
   it('differentiates without fdiff like SymPy Function.fdiff', () => {
     expect(s(diff(myf(x), x))).toBe('Derivative(myf(x), x)');
@@ -91,4 +110,50 @@ describe('func of a defined function', () => {
     expect(sj.func(f(x))).toBe(f);
     expect(sj.func(sj.Mod(x, 3))).toBe(sj.Mod);
   });
+});
+
+it('infers and enforces eval signatures including optional and variadic arguments', () => {
+  const zero = defineFunction('zero', { eval: () => undefined });
+  expect(arity(zero)).toBe(0);
+  expect(String(zero())).toBe('zero()');
+  expect(() => zero(1)).toThrow(TypeError);
+  const optional = defineFunction('optional', { eval: (_a, _b = sj.S.One) => undefined });
+  expect(arity(optional)).toEqual([1, 2]);
+  expect(String(optional(1))).toBe('optional(1)');
+  expect(String(optional(1, 2))).toBe('optional(1, 2)');
+  expect(() => optional()).toThrow(TypeError);
+  const rest = defineFunction('rest', { eval: (..._args) => undefined });
+  expect(arity(rest)).toBe(NoMatch);
+  expect(String(rest())).toBe('rest()');
+  expect(String(rest(1, 2))).toBe('rest(1, 2)');
+});
+
+it('keeps calls unchanged when rewrite and expansion hooks decline or are absent', () => {
+  const f = defineFunction('declining', { rewrite: { sin: () => undefined }, expand: { custom: () => undefined } });
+  const node = f(x);
+  if (!(node instanceof sj.DefinedFunctionCall)) throw new TypeError('a defined function expected');
+  expect(node.rewriteSelf('sin', [x])).toBeUndefined();
+  expect(node.rewriteSelf('cos', [x])).toBeUndefined();
+  expect(node.expandSelf('custom', {})).toBeUndefined();
+  expect(node.expandSelf('missing', {})).toBeUndefined();
+  const plain = defineFunction('plain')(x);
+  if (!(plain instanceof sj.DefinedFunctionCall)) throw new TypeError('a defined function expected');
+  expect(plain.rewriteSelf('sin', [x])).toBeUndefined();
+  expect(plain.expandSelf('custom', {})).toBeUndefined();
+});
+
+it('sympifies values returned by rewrite and expansion hooks', () => {
+  const f = defineFunction('hooked', {
+    rewrite: { cos: (arg) => sj.cos(arg) },
+    expand: { custom: (self) => sj.add(...self.args) },
+  });
+  expect(String(rewrite(f(x), 'cos'))).toBe('cos(x)');
+  expect(String(expand(f(x, y), { custom: true }))).toBe('x + y');
+});
+
+it('leaves declined partial derivatives unevaluated', () => {
+  const f = defineFunction('partial', { nargs: 1, fdiff: () => NoMatch });
+  expect(String(diff(f(x), x))).toBe('Derivative(partial(x), x)');
+  expect(String(diff(f(pow(x, 2)), x))).toBe('2*x*Subs(Derivative(partial(_xi_1), _xi_1), _xi_1, x**2)');
+  expect(() => f(x, x)).toThrow(TypeError);
 });

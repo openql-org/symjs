@@ -20,6 +20,7 @@
 import { at, defined, expectType, first, getOrThrow, last, pair } from '../core/guard';
 import type { Assumptions } from '../core/nodes';
 import { Expr, Rational, Sym, isNum } from '../core/nodes';
+import { traversalArgs } from '../core/containers';
 import { neg } from '../core/ops';
 import { basicNew, funcName } from '../strategies/util';
 import { MultisetPartitionTraverser, listVisitor, multisetPartitionsTaocp } from './enumerative';
@@ -1786,7 +1787,7 @@ export function* signedPermutations<S extends Signed>(t: readonly S[]): Generato
  */
 export function* postorderTraversal(node: unknown, keys?: boolean | KeyFunction<Expr> | readonly KeyFunction<Expr>[] | null): Generator<unknown, void, undefined> {
   if (node instanceof Expr) {
-    let args: readonly Expr[] = node.args;
+    let args = traversalArgs(node);
     if (keys !== undefined && keys !== null && keys !== false) {
       args = keys === true ? orderedValues(args) : orderedValues(args, keys, false);
     }

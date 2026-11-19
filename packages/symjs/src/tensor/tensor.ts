@@ -20,6 +20,9 @@ import { callableClass } from '../core/callable';
 import { at, cast, defined, expectType, first, last } from '../core/guard';
 import { DictNode, Tuple, TupleNode } from '../core/containers';
 import { add, couldExtractMinusSign, mul, pow, sympify } from '../core/ops';
+import { match } from '../core/match';
+import { IndexedBase } from '../core/indexed';
+import { Concrete } from '../core/concrete';
 import { ExprMap } from '../core/exprmap';
 import { NotImplementedError } from '../core/errors';
 import { expandSymbolNames } from '../core/numberutils';
@@ -362,6 +365,11 @@ export class TensorHeadNode extends ExtensionExpr {
   get rank(): number {
     return this.indexTypes.length;
   }
+  /** Power of the metric norm with explicit component data. */
+  override pow(exponent: ExprLike, replacements?: ArrayReplacements): Expr {
+    if (!replacements) return super.pow(exponent);
+    return this.at(...this.indexTypes.map((_, i) => `component_${i}`)).pow(exponent, replacements);
+  }
   /** SymPy commutes_with: 0 commuting, 1 anticommuting, 'none' neither. */
   commutesWith(other: TensorHeadNode): Commutation {
     return TensorManager.getComm(this.comm, other.comm);
@@ -601,6 +609,30 @@ export abstract class TensExpr extends ExtensionExpr {
   abstract contractMetric(g: TensorHeadNode): Expr;
   /** SymPy substitute_indices((old, new), ...). */
   abstract substituteIndices(...indexTuples: [TensorIndexNode, TensorIndexNode][]): Expr;
+  /** Evaluate at new free indices in canonical index order. */
+  call(...indices: TensorIndexNode[]): Expr {
+    const free = this.getFreeIndices().sort(compareIndices);
+    if (indices.length !== free.length || !free.every((idx, i) => idx.tensorIndexType.equals(at(indices, i).tensorIndexType))) throw new RangeError('incompatible index types');
+    return this.substituteIndices(...free.map((idx, i): [TensorIndexNode, TensorIndexNode] => [idx, at(indices, i)]));
+  }
+  /** Contract the components with a second copy with all free index variances reversed. */
+  override pow(exponent: ExprLike, replacements?: ArrayReplacements): Expr {
+    if (!replacements) return super.pow(exponent);
+    const free = this.getFreeIndices();
+    const dual = this.substituteIndices(...free.map((i): [TensorIndexNode, TensorIndexNode] => [i, i.neg()]));
+    const contracted = cast(tensMul(this, dual), TensExpr).replaceWithArrays(replacements);
+    return pow(contracted, mul(S.Half, exponent));
+  }
+  override rewriteSelf(target: string, args: readonly Expr[]): Expr | undefined {
+    if (target !== 'Indexed') return undefined;
+    if (this instanceof TensAdd) return add(...args);
+    if (!(this instanceof Tensor || this instanceof TensMul)) return undefined;
+    const entry = (t: Tensor) => new IndexedBase(t.head.tensorName).at(...t.getIndices().map((i) => first(i.args)));
+    const body = this instanceof Tensor ? entry(this) : mul(...this.args.map((f, i) => f instanceof Tensor ? entry(f) : at(args, i)));
+    const indices = this.getIndices();
+    const limits = this.dum.map(([up]) => at(indices, up)).sort(compareIndices).flatMap((i) => [first(i.args), S.Zero, i.tensorIndexType.dim.sub(1)]);
+    return limits.length ? new Concrete('Sum', [body, ...limits]) : body;
+  }
   /** SymPy fun_eval((old, new), ...): the deprecated name of substituteIndices. */
   funEval(...indexTuples: [TensorIndexNode, TensorIndexNode][]): Expr {
     return this.substituteIndices(...indexTuples);
@@ -720,6 +752,7 @@ export class Tensor extends TensExpr {
   get components(): TensorHeadNode[] {
     return [this.head];
   }
+  get indexTypes(): TensorIndexTypeNode[] { return this.head.indexTypes; }
   get indices(): TensorIndexNode[] {
     return at(this.args, 1).args.map((i) => cast(i, TensorIndexNode));
   }
@@ -869,7 +902,11 @@ export class Tensor extends TensExpr {
       if (!(m instanceof ExprMap)) return NoMatch;
       const prev = repl.get(sInd.neg());
       if (prev !== undefined && !cast(prev, TensorIndexNode).neg().equals(defined(m.get(sInd)))) return NoMatch;
-      for (const [a, b] of m) repl.set(a, b);
+      for (const [a, b] of m) {
+        const prior = repl.get(a);
+        if (prior && !prior.equals(b)) return NoMatch;
+        repl.set(a, b);
+      }
     }
     return repl;
   }
@@ -982,6 +1019,17 @@ function dedupeIndices(e: Expr, excludeIn: readonly TensorIndexNode[]): Expr {
 }
 
 export class TensMul extends TensExpr {
+  /** Build a product from slot positions for its free and dummy indices. */
+  static fromData(coeff: ExprLike, components: TensorHeadNode[], free: Free[], dum: Dum[]): Expr {
+    const indices = IndexStructure.fromComponentsFreeDum(components, free, dum).getIndices();
+    let offset = 0;
+    return tensMul(coeff, ...components.map((head) => {
+      const start = offset;
+      offset += head.rank;
+      return new Tensor(head, indices.slice(start, offset));
+    }));
+  }
+  get indexTypes(): TensorIndexTypeNode[] { return [...this.indexStructure.indexTypes]; }
   /** @internal */
   readonly indexStructure: IndexStructure;
   readonly isCanonBp: boolean;
@@ -990,11 +1038,13 @@ export class TensMul extends TensExpr {
     const args0 = argsIn.map(sympify);
     // the dummies of one factor that clash with free indices of the others are renamed
     const freeAll = args0.flatMap(getFreeIndicesOf);
-    const freeKeys = keySet(freeAll);
+    const occupied = keySet(freeAll);
     const deduped: Expr[] = [];
     for (const arg of args0) {
-      const clash = getDummyIndicesOf(arg).some((d) => freeKeys.has(d.key));
-      deduped.push(clash ? dedupeIndices(arg, [...getFreeIndicesOf(arg), ...freeAll, ...deduped.flatMap(getDummyIndicesOf)]) : arg);
+      const clash = getDummyIndicesOf(arg).some((d) => occupied.has(d.key));
+      const factor = clash ? dedupeIndices(arg, [...freeAll, ...deduped.flatMap(getDummyIndicesOf)]) : arg;
+      deduped.push(factor);
+      for (const d of getDummyIndicesOf(factor)) occupied.add(d.key);
     }
     const flat = deduped.flatMap((a) => (a instanceof TensMul || a instanceof Mul ? a.args : [a]));
     const { args, indices, free, dum } = contractIndices(flat, false);
@@ -1042,6 +1092,55 @@ export class TensMul extends TensExpr {
   }
   withArgs(args: readonly Expr[]): Expr {
     return new TensMul(args);
+  }
+  override subsSelf(old: Expr, nw: Expr): Expr | undefined {
+    if (!(old instanceof TensorIndexNode && nw instanceof TensorIndexNode) || !this.getFreeIndices().some((i) => i.equals(old))) return undefined;
+    const fresh = cast(dedupeIndices(this, [nw, nw.neg()]), TensMul);
+    return fresh.replaceIndices(new Map([[old.key, nw]]));
+  }
+  override matchInternal(expr: Expr, initial: ExprMap<Expr>): ExprMap<Expr> | NoMatchResult {
+    if (!wildsOf(this).length) return super.matchInternal(expr, initial);
+    const args = expr instanceof TensMul ? expr.args : [expr];
+    if (args.some((f) => f instanceof Tensor && f.head.comm !== 0)) throw new NotImplementedError('wild tensor products require commuting factors');
+    const concrete = this.args.filter(isTens).filter((factor) => !(factor instanceof WildTensor));
+    const wild = this.args.filter((a): a is WildTensor => a instanceof WildTensor);
+    const coeff = mul(...args.filter((a) => !isTens(a)));
+    const search = (n: number, remaining: TensExpr[], bindings: ExprMap<Expr>, sign: Expr): ExprMap<Expr> | NoMatchResult => {
+      if (n < concrete.length) {
+        const pattern = at(concrete, n);
+        if (!(pattern instanceof Tensor)) throw new NotImplementedError('wild product matching requires tensor factors');
+        for (const form of pattern.symmetrizedForms()) {
+          const signed = form instanceof TensMul;
+          const tensor = cast(signed ? last(form.args) : form, Tensor);
+          for (const [j, factor] of remaining.entries()) {
+            if (!(factor instanceof Tensor) || !factor.head.equals(tensor.head)) continue;
+            const m = tensor.matchesForm(factor, bindings);
+            if (isNoMatch(m)) continue;
+            const result = search(n + 1, remaining.filter((_, i) => i !== j), m, signed ? neg(sign) : sign);
+            if (!isNoMatch(result)) return result;
+          }
+        }
+        return NoMatch;
+      }
+      let rest = remaining, matched = bindings;
+      for (const w of wild) {
+        const selected = rest.filter((t) => !w.rank || t.getFreeIndices().every((i) => w.indices.some((j) => !isNoMatch(j.matches(i)))));
+        const m = w.matchInternal(tensMul(...selected), matched);
+        if (isNoMatch(m)) return NoMatch;
+        for (const [key, value] of m) {
+          const previous = matched.get(key);
+          if (previous && !previous.equals(value)) return NoMatch;
+        }
+        matched = m;
+        rest = rest.filter((f) => !selected.includes(f));
+      }
+      if (rest.length) return NoMatch;
+      const scalar = match(mul(sign, coeff), this.coeff);
+      if (!scalar) return NoMatch;
+      for (const [k, v] of scalar) matched.set(k, v);
+      return matched;
+    };
+    return search(0, args.filter(isTens), new ExprMap(initial), S.One);
   }
   replaceIndices(repl: IndexRepl): Expr {
     return new TensMul(this.args.map((a) => (isTens(a) ? a.replaceIndices(repl) : a)));
@@ -1116,8 +1215,7 @@ export class TensMul extends TensExpr {
     return new TensMul(args, isCanonBp).doitShallow();
   }
   contractMetric(g: TensorHeadNode): Expr {
-    const expr = expandTens(this);
-    if (!expr.equals(this)) return contractMetric(canonBp(expr), g);
+    if (this.args.some((arg) => arg instanceof TensAdd)) return contractMetric(expandTens(this), g);
     const posMap = this.indicesToArgsPos();
     const args: Expr[] = [...this.args];
     const antisym = metricAntisym(g);
@@ -1539,6 +1637,12 @@ export class TensorElementNode extends TensExpr {
   }
   get expr(): Tensor {
     return cast(first(this.args), Tensor);
+  }
+  get free(): Free[] {
+    return IndexStructure.fromIndices(this.freeIndices).free;
+  }
+  get dum(): Dum[] {
+    return IndexStructure.fromIndices(this.freeIndices).dum;
   }
   get indexMap(): DictNode {
     return cast(at(this.args, 1), DictNode);

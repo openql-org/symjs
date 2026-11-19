@@ -7,12 +7,50 @@
 // derivatives, expand_func and double-precision numerics. Expected values are str() results of SymPy
 // 1.14 (mpmath 1.3 values for the numerics) unless a comment says otherwise.
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import * as sj from '../../../src';
 
 
 import { acosh, asec, asech, atan, atan2, beta, binomial, catalan, ceiling, diff, digamma, E, E1, erf, erf2, erf2inv, erfc, erfcinv, erfi, erfinv, evalf, expandFunc, factorial, factorial2, ff, Float, float, fresnelc, fresnels, harmonic, LambertW, Li, li, lowergamma, Max, Min, NotImplementedError, parse, polygamma, pow, Rational, Rem, rf, S, subfactorial, Sym, symbols, toComplex, trigamma, uppergamma, zeta } from '../../../src';
 import { impl } from '../../../src/core/nodes';
+
+it('expands binomial coefficients with explicit integer complementary indices', () => {
+  const n = new Sym('n', { integer: true });
+  const x = new Sym('x');
+  const { add, mul } = sj;
+  const xSquared = pow(x, 2);
+  const cases = [
+    [n, add(n, -1), n],
+    [n, add(n, -2), mul(S.Half, n, add(n, -1))],
+    [n, add(n, -3), mul(Rational.of(1, 6), n, add(n, -2), add(n, -1))],
+    [add(x, 1), x, add(x, 1)],
+    [x, add(x, -1), x],
+    [add(x, 1), add(x, -1), mul(S.Half, x, add(x, 1))],
+    [add(xSquared, 1), xSquared, add(xSquared, 1)],
+  ] as const;
+  for (const [upper, lower, expected] of cases) {
+    const expression = binomial(upper, lower);
+    expect(expandFunc(expression).equals(expected), String(expression)).toBe(true);
+  }
+  const heldBinomial = (upper: sj.ExprLike, lower: sj.ExprLike) =>
+    sj.fn('binomial', [upper, lower], { evaluate: false });
+  expect(expandFunc(heldBinomial(x, add(x, 1)))).toBe(S.Zero);
+  expect(expandFunc(heldBinomial(x, -2))).toBe(S.Zero);
+  expect(expandFunc(heldBinomial(x, x))).toBe(S.One);
+  expect(expandFunc(heldBinomial(-1, -2))).toBe(S.Zero);
+  expect(expandFunc(heldBinomial(5, 2)).equals(10)).toBe(true);
+});
+
+it('evaluates symbolic binomial indices and checks Catalan arity', () => {
+  const n = new Sym('n', { integer: true });
+  const m = new Sym('m', { integer: true, nonnegative: true });
+  const neg = new Sym('neg', { integer: true, negative: true });
+  const zero = new Sym('zero', { zero: true });
+  expect(binomial(n, zero)).toBe(S.One);
+  expect(binomial(neg, neg)).toBe(S.Zero);
+  expect(binomial(m, sj.add(m, 2))).toBe(S.Zero);
+  expect(() => Reflect.apply(catalan, undefined, [n, m])).toThrow(TypeError);
+});
 
 const [x] = symbols('x');
 const y = new Sym('y');
@@ -661,11 +699,11 @@ describe('special functions: cases outside the tables', () => {
     expect(toComplex(erf2(P('1/3'), P('2/3'))).re).toBeCloseTo(0.2915733020827768, 12);
     expect(() => toComplex(harmonic(x, y), { x: 2, y: 2 })).toThrow(NotImplementedError);
   });
-  it('derivatives with respect to an order are not implemented', () => {
+  it('represents order derivatives symbolically', () => {
     // SymPy: Derivative(polygamma(x, y), x) and meijerg expressions for the incomplete gamma functions
-    expect(() => diff(P('polygamma(x, y)'), x)).toThrow(NotImplementedError);
-    expect(() => diff(P('lowergamma(x, y)'), x)).toThrow(NotImplementedError);
-    expect(() => diff(P('uppergamma(x, y)'), x)).toThrow(NotImplementedError);
+    expect(String(diff(P('polygamma(x, y)'), x))).toBe('Derivative(polygamma(x, y), x)');
+    expect(String(diff(P('lowergamma(x, y)'), x))).toBe('-meijerg(((), (1, 1)), ((0, 0, x), ()), y) - log(y)*uppergamma(x, y) + gamma(x)*polygamma(0, x)');
+    expect(String(diff(P('uppergamma(x, y)'), x))).toBe('meijerg(((), (1, 1)), ((0, 0, x), ()), y) + log(y)*uppergamma(x, y)');
   });
 });
 
@@ -916,4 +954,243 @@ describe('Max and Min need comparable arguments (SymPy test_miscellaneous)', () 
     expect(() => Max(sj.zoo, 1)).toThrow(RangeError);
     expect(() => sj.subs(Max(sj.cos(x), sj.sin(x)), [[x, sj.I]])).toThrow(RangeError);
   });
+});
+
+const expansionCases = [
+  [
+    "polygamma(0, x - 2)",
+    "polygamma(0, x) - 1/(x - 1) - 1/(x - 2)"
+  ],
+  [
+    "polygamma(0, x + 1)",
+    "polygamma(0, x) + 1/x"
+  ],
+  [
+    "polygamma(0, x + 3)",
+    "polygamma(0, x) + 1/(x + 2) + 1/(x + 1) + 1/x"
+  ],
+  [
+    "polygamma(0, 3*x)",
+    "polygamma(0, x)/3 + polygamma(0, x + 1/3)/3 + polygamma(0, x + 2/3)/3 + log(3)"
+  ],
+  [
+    "polygamma(0, 2*x*y)",
+    "polygamma(0, x*y)/2 + polygamma(0, x*y + 1/2)/2 + log(2)"
+  ],
+  [
+    "polygamma(0, 4*x + y + 3)",
+    "polygamma(0, 4*x + y) + 1/(4*x + y + 2) + 1/(4*x + y + 1) + 1/(4*x + y)"
+  ],
+  [
+    "polygamma(0, x)",
+    "polygamma(0, x)"
+  ],
+  [
+    "polygamma(0, 1/7)",
+    "-pi*cot(pi/7)/2 - log(7) - 2*log(2*sin(3*pi/7))*cos(pi/7) - EulerGamma - 2*log(2*sin(2*pi/7))*cos(3*pi/7) + 2*log(2*sin(pi/7))*cos(2*pi/7)"
+  ],
+  [
+    "polygamma(0, -2*x)",
+    "polygamma(0, -2*x)"
+  ],
+  [
+    "polygamma(0, 3*x/2)",
+    "polygamma(0, 3*x/2)"
+  ],
+  [
+    "polygamma(1, x - 2)",
+    "polygamma(1, x) + (x - 1)**(-2) + (x - 2)**(-2)"
+  ],
+  [
+    "polygamma(1, x + 1)",
+    "polygamma(1, x) - 1/x**2"
+  ],
+  [
+    "polygamma(1, x + 3)",
+    "polygamma(1, x) - 1/(x + 2)**2 - 1/(x + 1)**2 - 1/x**2"
+  ],
+  [
+    "polygamma(1, 3*x)",
+    "polygamma(1, x)/9 + polygamma(1, x + 1/3)/9 + polygamma(1, x + 2/3)/9"
+  ],
+  [
+    "polygamma(1, 2*x*y)",
+    "polygamma(1, x*y)/4 + polygamma(1, x*y + 1/2)/4"
+  ],
+  [
+    "polygamma(1, 4*x + y + 3)",
+    "polygamma(1, 4*x + y) - 1/(4*x + y + 2)**2 - 1/(4*x + y + 1)**2 - 1/(4*x + y)**2"
+  ],
+  [
+    "polygamma(1, x)",
+    "polygamma(1, x)"
+  ],
+  [
+    "polygamma(1, 1/7)",
+    "polygamma(1, 1/7)"
+  ],
+  [
+    "polygamma(1, -2*x)",
+    "polygamma(1, -2*x)"
+  ],
+  [
+    "polygamma(1, 3*x/2)",
+    "polygamma(1, 3*x/2)"
+  ],
+  [
+    "polygamma(3, x - 2)",
+    "polygamma(3, x) + 6/(x - 1)**4 + 6/(x - 2)**4"
+  ],
+  [
+    "polygamma(3, x + 1)",
+    "polygamma(3, x) - 6/x**4"
+  ],
+  [
+    "polygamma(3, x + 3)",
+    "polygamma(3, x) - 6/(x + 2)**4 - 6/(x + 1)**4 - 6/x**4"
+  ],
+  [
+    "polygamma(3, 3*x)",
+    "polygamma(3, x)/81 + polygamma(3, x + 1/3)/81 + polygamma(3, x + 2/3)/81"
+  ],
+  [
+    "polygamma(3, 2*x*y)",
+    "polygamma(3, x*y)/16 + polygamma(3, x*y + 1/2)/16"
+  ],
+  [
+    "polygamma(3, 4*x + y + 3)",
+    "polygamma(3, 4*x + y) - 6/(4*x + y + 2)**4 - 6/(4*x + y + 1)**4 - 6/(4*x + y)**4"
+  ],
+  [
+    "polygamma(3, x)",
+    "polygamma(3, x)"
+  ],
+  [
+    "polygamma(3, 1/7)",
+    "polygamma(3, 1/7)"
+  ],
+  [
+    "polygamma(3, -2*x)",
+    "polygamma(3, -2*x)"
+  ],
+  [
+    "polygamma(3, 3*x/2)",
+    "polygamma(3, 3*x/2)"
+  ],
+  [
+    "erfi(I*x)",
+    "I*erf(x)"
+  ],
+  [
+    "erfi(x)",
+    "-I*erf(I*x)"
+  ],
+  [
+    "erf2(x, y)",
+    "-erf(x) + erf(y)"
+  ]
+] as const;
+it.each(expansionCases)('expands %s', (source, expected) => {
+  expect(String(expandFunc(P(source)))).toBe(expected);
+});
+it('preserves polygamma expansions with noninteger and negative orders', () => {
+  for (const n of [sj.S.NegOne, sj.S.Half, y]) {
+    const e = polygamma(n, x);
+    expect(expandFunc(e)).toBe(e);
+  }
+});
+it('evaluates compositions of error functions and their inverses', () => {
+  expect(String(erf(erfcinv(x)))).toBe('1 - x');
+  expect(String(erfc(erfinv(x)))).toBe('1 - x');
+  expect(erf(new sj.Fn('erf2inv', [S.Zero, x]))).toBe(x);
+  expect(String(erfi(sj.mul(S.I, erfinv(x))))).toBe('I*x');
+  expect(String(erfi(sj.mul(S.I, erfcinv(x))))).toBe('I*(1 - x)');
+  expect(String(erfi(sj.mul(S.I, new sj.Fn('erf2inv', [S.Zero, x]))))).toBe('I*x');
+  expect(String(erfi(sj.mul(S.I, new sj.Fn('erf2inv', [y, x]))))).toBe('erfi(I*erf2inv(y, x))');
+  expect(String(erfi(sj.mul(S.I, sj.gamma(x))))).toBe('erfi(I*gamma(x))');
+  expect(erf2(x, new sj.Fn('erf2inv', [x, y]))).toBe(y);
+  expect(String(erf2(y, new sj.Fn('erf2inv', [x, y])))).toBe('erf2(y, erf2inv(x, y))');
+  expect(String(erf2(x, sj.neg(y)))).toBe('-erf(x) - erf(y)');
+  expect(String(erf2(sj.neg(x), y))).toBe('erf(x) + erf(y)');
+});
+
+it('evaluates Hurwitz zeta special values and differentiates its second argument', () => {
+  expect(String(zeta(x, 1))).toBe('zeta(x)');
+  expect(zeta(S.Infinity, x)).toBe(S.One);
+  expect(zeta(1, x)).toBe(S.ComplexInfinity);
+  expect(zeta(x, S.Infinity)).toBe(S.Zero);
+  expect(String(zeta(0, x))).toBe('1/2 - x');
+  expect(String(zeta(2, 3))).toBe('-5/4 + pi**2/6');
+  expect(zeta(S.Half, -1)).toBe(S.NaN);
+  expect(zeta(2, 0)).toBe(S.NaN);
+  expect(String(zeta(y, 0))).toBe('zeta(y, 0)');
+  expect(String(diff(zeta(y, x), x))).toBe('-y*zeta(y + 1, x)');
+  expect(String(diff(zeta(x, y), x))).toBe('Derivative(zeta(x, y), x)');
+  expect(String(zeta(x, S.NaN))).toBe('nan');
+  expect(String(factorial(-1))).toBe('zoo');
+});
+it('exposes the integral functions through their public constructors', () => {
+  for (const f of [sj.loggamma, sj.li, sj.Li, sj.Si, sj.Ci, sj.Shi, sj.Chi, sj.E1, sj.erfinv]) {
+    expect(f(x).freeSymbols().has(x)).toBe(true);
+  }
+  expect(String(Min(S.Pi, sj.E, x))).toBe('Min(E, x)');
+  expect(String(Max(S.Pi, sj.E, x))).toBe('Max(pi, x)');
+  expect(String(expandFunc(new sj.Fn('polylog', [S.One, x])))).toBe('-log(1 - x)');
+  expect(String(Min(1, new Float(1), x))).toBe('Min(1, x)');
+  expect(String(sj.sign(x))).toBe('sign(x)');
+});
+
+it('propagates NaN through polygamma and expands beta through gamma', () => {
+  expect(polygamma(S.NaN, x)).toBe(S.NaN);
+  expect(digamma(S.NaN)).toBe(S.NaN);
+  expect(trigamma(S.NaN)).toBe(S.NaN);
+  expect(String(expandFunc(beta(x, y)))).toBe('gamma(x)*gamma(y)/gamma(x + y)');
+});
+
+it('retains the incomplete-gamma argument derivative registrations', async () => {
+  const { fnPartials } = await import('../../../src/calculus/diff');
+  const { defined } = await import('../../../src/core/guard');
+  expect(String(defined(fnPartials.lowergamma)([x, y], 1))).toBe('y**(x - 1)*exp(-y)');
+  expect(String(defined(fnPartials.uppergamma)([x, y], 1))).toBe('-y**(x - 1)*exp(-y)');
+  expect(String(beta(x))).toBe('beta(x, x)');
+});
+
+it('provides argument derivatives without loading the hypergeometric module', async () => {
+  vi.resetModules();
+  await import('../../../src/functions/special/special');
+  const { fnPartials } = await import('../../../src/calculus/diff');
+  const { Sym } = await import('../../../src/core/nodes');
+  const { defined } = await import('../../../src/core/guard');
+  const a = new Sym('a'), z = new Sym('z');
+  for (const name of ['lowergamma', 'uppergamma'] as const) {
+    const partial = defined(fnPartials[name]);
+    expect(() => partial([a, z], 0)).toThrow('w.r.t. s');
+    expect(String(partial([a, z], 1))).toContain('exp(-z)');
+  }
+});
+
+it('evaluates polygamma continued to nonintegral and complex orders', () => {
+  expect(String(evalf(P('polygamma(pi, 3)'), 10))).toBe('0.1169314564');
+  expect(String(evalf(P('polygamma(I, 1)'), 10))).toBe('-3.109856569 + 1.89089016*I');
+  expect(String(evalf(P('polygamma(I, I)'), 10))).toBe('6.332362889 + 45.92828268*I');
+});
+
+it('differentiates explicitly unevaluated digamma and trigamma calls', () => {
+  expect(diff(digamma(x, { evaluate: false }), x).equals(polygamma(1, x))).toBe(true);
+  expect(diff(trigamma(x, { evaluate: false }), x).equals(polygamma(2, x))).toBe(true);
+});
+
+it('deduplicates Min and Max arguments after absorbing a nested bound', () => {
+  expect(Min(x, Max(x, y)).equals(x)).toBe(true);
+  expect(Max(x, Min(x, y)).equals(x)).toBe(true);
+});
+
+it('keeps atan2 symbolic at negative infinity when Heaviside is unavailable', () => {
+  const heaviside = Object.getOwnPropertyDescriptor(impl, 'heaviside');
+  delete impl.heaviside;
+  try {
+    expect(String(atan2(x, S.NegativeInfinity))).toBe('atan2(x, -oo)');
+  } finally {
+    if (heaviside) Object.defineProperty(impl, 'heaviside', heaviside);
+  }
 });

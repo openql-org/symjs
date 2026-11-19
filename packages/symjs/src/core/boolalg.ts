@@ -11,6 +11,9 @@ import { BoolAtom, Expr, Rational, Rel, S, Special, impl, isNum } from './nodes'
 import { compareKeys, sortKey } from '../printing/sortkey';
 import { at } from './guard';
 
+/** Boolean differentiation supplied by the logic module. */
+export const booleanCalculus: { derivative?: (e: Expr, x: Expr) => Expr | undefined } = {};
+
 export type BoolOpName = 'And' | 'Or' | 'Not' | 'Xor' | 'ITE';
 
 /** And(...), Or(...) or Not(x). @internal ctor: use and/or/not. */
@@ -27,6 +30,38 @@ export class BoolOp extends Expr {
   }
   protected computeKey(): string {
     return `${this.op}(${this.args.map((a) => a.key).join(',')})`;
+  }
+  override has(sub: Expr): boolean {
+    if ((this.op === 'And' || this.op === 'Or') && sub instanceof BoolOp && sub.op === this.op) {
+      const keys = new Set(this.args.map((a) => a.key));
+      if (sub.args.every((a) => keys.has(a.key))) return true;
+    }
+    return super.has(sub);
+  }
+  /** Substitute inside associative gates, including subsets of their operands. */
+  subsSelf(old: Expr, replacement: Expr, recurse: (arg: Expr) => Expr): Expr | undefined {
+    if (this.op !== 'And' && this.op !== 'Or' && this.op !== 'Xor') return undefined;
+    const absorbing = this.op === 'And' ? S.false : this.op === 'Or' ? S.true : undefined;
+    let invalid: TypeError | undefined;
+    const terms: Expr[] = [];
+    for (const arg of this.args) {
+      try {
+        const term = recurse(arg);
+        if (term === absorbing) return term;
+        terms.push(term);
+      } catch (err) {
+        if (!(err instanceof TypeError) || !absorbing) throw err;
+        invalid = err;
+      }
+    }
+    if (invalid) throw invalid;
+    if (old instanceof BoolOp && old.op === this.op) {
+      const keys = new Set(old.args.map((a) => a.key));
+      if (old.args.every((a) => terms.some((t) => t.key === a.key))) {
+        return this.withArgs([...terms.filter((t) => !keys.has(t.key)), replacement]);
+      }
+    }
+    return terms.some((a, i) => a !== this.args[i]) ? this.withArgs(terms) : this;
   }
   /** A node of the same class with new arguments (re-evaluated). */
   withArgs(args: readonly Expr[]): Expr {
@@ -140,19 +175,38 @@ export function not(x0: ExprLike | boolean): Expr {
 
 /** SymPy Xor(*args): true when an odd number of the arguments is true. */
 export function xor(...xs: (ExprLike | boolean)[]): Expr {
-  let parity = false;
-  const counts = new Map<string, [Expr, number]>();
-  for (const x0 of xs) {
-    const x = boolArg(x0);
-    if (isTrue(x)) parity = !parity;
-    else if (!isFalse(x)) {
-      const c = counts.get(x.key);
-      counts.set(x.key, [x, (c?.[1] ?? 0) + 1]);
+  return xorArgs(xs.map(boolArg), true);
+}
+
+/** Reduce nested parity gates, matching relations in a common orientation. */
+export function xorArgs(args: readonly Expr[], removeTrue: boolean, canonical?: (r: Rel) => Rel): Expr {
+  const terms = new Map<string, Expr>();
+  let parity = 0;
+  const toggle = (x: Expr): void => {
+    if (x instanceof BoolOp && x.op === 'Xor') {
+      x.args.forEach(toggle);
+      return;
     }
-  }
-  // x ^ x = false
-  const rest = [...counts.values()].filter(([, n]) => n % 2 === 1).map(([x]) => x);
-  if (!rest.length) return parity ? S.true : S.false;
+    if (x instanceof BoolAtom) {
+      if (x.value) parity ^= 1;
+      return;
+    }
+    let key = x.key;
+    if (x instanceof Rel) {
+      const reversed = { Eq: 'Eq', Ne: 'Ne', Lt: 'Gt', Gt: 'Lt', Le: 'Ge', Ge: 'Le' } as const;
+      const r = canonical ? canonical(x) : x.lhs.key > x.rhs.key ? new Rel(reversed[x.op], x.rhs, x.lhs) : x;
+      key = r.key;
+      if (terms.delete(not(r).key)) {
+        parity ^= 1;
+        return;
+      }
+    }
+    if (!terms.delete(key)) terms.set(key, x);
+  };
+  args.forEach(toggle);
+  if (!terms.size) return parity ? S.true : S.false;
+  if (parity && !removeTrue) terms.set(S.true.key, S.true);
+  const rest = [...terms.values()];
   const core = rest.length === 1 ? at(rest, 0) : new BoolOp('Xor', sortArgs(rest));
-  return parity ? not(core) : core;
+  return parity && removeTrue ? not(core) : core;
 }

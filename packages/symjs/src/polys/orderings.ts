@@ -86,7 +86,7 @@ export class InverseOrder extends Ordering {
 }
 
 /** A monomial order object of symjs. */
-export type MonomialOrdering = LexOrder | GradedLexOrder | ReversedGradedLexOrder | InverseOrder;
+export type MonomialOrdering = LexOrder | GradedLexOrder | ReversedGradedLexOrder | InverseOrder | ProductOrder;
 
 /** Lexicographic order (SymPy lex). */
 export const lex: LexOrder = new LexOrder();
@@ -124,8 +124,8 @@ export class ProductOrder {
   }
   /** SymPy is_global: true when every ordering is global, false when none is, else 'unknown'. */
   get isGlobal(): boolean | 'unknown' {
-    if (this.args.every(([O]) => O.isGlobal)) return true;
-    if (this.args.every(([O]) => !O.isGlobal)) return false;
+    if (this.args.every(([O]) => O.isGlobal === true)) return true;
+    if (this.args.every(([O]) => O.isGlobal === false)) return false;
     return 'unknown';
   }
   toString(): string {

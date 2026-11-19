@@ -6,6 +6,7 @@
 
 import { describe, expect, it } from 'vitest';
 import * as sj from '../../src';
+import { ExtensionExpr, Sym } from '../../src/core/nodes';
 import {
   Derivative,
   type Expr,
@@ -29,7 +30,9 @@ import {
   symbols,
   xreplace,
 } from '../../src';
-import { piecewiseFold } from '../../src/core/traverse';
+import { boundSymbols, piecewiseFold, piecewiseFoldHooks } from '../../src/core/traverse';
+import { BoolOp } from '../../src/core/boolalg';
+import { at } from '../../src/core/guard';
 
 const [x, y, C1, C2, z, w, n] = symbols('x y C1 C2 z w n');
 
@@ -266,6 +269,44 @@ describe('use and preorderTraversal (SymPy sympy.core.traversal)', () => {
 describe('piecewiseFold (SymPy piecewise_fold)', () => {
   const P = sj.Piecewise([x, sj.Gt(x, 0)], [mul(-1, x), true]);
   const Q = sj.Piecewise([1, sj.Gt(y, 0)], [2, true]);
+  it('minimizes nested conditional guards and supports folding with core alone', () => {
+    const a = sj.Gt(x, 0), b = sj.Lt(y, 1);
+    const impossible = sj.ITE(sj.Or(a, b), sj.S.false, sj.ITE(a, a, b), { evaluate: false });
+    expect(piecewiseFold(sj.piecewise([1, impossible], [2, true]))).toEqual(sj.S.Two);
+    const normalize = piecewiseFoldHooks.normalizeIte;
+    delete piecewiseFoldHooks.normalizeIte;
+    try {
+      const cond = new BoolOp('ITE', [a, sj.S.true, b]);
+      expect(piecewiseFold(sj.piecewise([1, cond]))).toEqual(sj.piecewise([1, sj.Or(a, b)]));
+    } finally {
+      piecewiseFoldHooks.normalizeIte = normalize;
+    }
+  });
+  it('flattens nested values and translates conditional Boolean branches', () => {
+    const args = [sj.Gt(x, 0), sj.Lt(y, 1), sj.Gt(y, 1)] as const;
+    for (const condition of [new BoolOp('ITE', args), sj.ITE(...args, { evaluate: false })]) {
+      expect(str(piecewiseFold(sj.piecewise([x, condition]))))
+        .toBe('Piecewise((x, ((x <= 0) | (y < 1)) & ((x > 0) | (y > 1))))');
+    }
+    const p = sj.piecewise([sj.cos(x), sj.Lt(x, 0)], [0, true]);
+    expect(str(piecewiseFold(sj.piecewise([0, sj.Eq(p, 0)], [pow(p, -1), true]))))
+      .toBe('Piecewise((0, (x >= 0) | Eq(cos(x), 0)), (1/cos(x), x < 0), (zoo, True))');
+    const nested = sj.piecewise([sj.Tuple(add(P, 1), 2), sj.Lt(y, 0)], [0, true]);
+    expect(str(piecewiseFold(nested)))
+      .toBe('Piecewise(((Piecewise((x + 1, x > 0), (1 - x, True)), 2), y < 0), (0, True))');
+    const incomplete = sj.piecewise([sj.piecewise([1, sj.Gt(x, 0)]), sj.Gt(y, 0)], [2, true]);
+    const inside = [[x, -1], [y, 1]] as const;
+    expect(piecewiseFold(incomplete).subs(inside)).toBe(incomplete.subs(inside));
+    const complete = sj.piecewise([P, sj.Gt(y, 0)], [2, true]);
+    expect(piecewiseFold(complete).subs(inside).equals(complete.subs(inside))).toBe(true);
+  });
+  it('combines shared branch conditions before expanding independent choices', () => {
+    const c = sj.Gt(x, 0);
+    const terms = Array.from({ length: 40 }, (_, i) => sj.piecewise([i + 1, c], [0, true]));
+    expect(str(piecewiseFold(add(...terms)))).toBe('Piecewise((820, x > 0), (0, True))');
+    expect(str(piecewiseFold(mul(sj.piecewise([2, c], [3, true]), sj.piecewise([5, c], [7, true]))))).toBe('Piecewise((10, x > 0), (21, True))');
+  });
+
   it('folds the Piecewise arguments of an expression', () => {
     expect(str(piecewiseFold(add(P, 1)))).toBe('Piecewise((x + 1, x > 0), (1 - x, True))');
     expect(str(piecewiseFold(mul(P, Q)))).toBe('Piecewise((x, (x > 0) & (y > 0)), (2*x, x > 0), (-x, y > 0), (-2*x, True))');
@@ -308,9 +349,313 @@ it('rebuilds limits and substitutes into indefinite integration limits', () => {
   expect(String(sj.subs(mul(rational(1, 2), x), [[mul(2, x), y]]))).toBe('x/2');
 });
 
+it('honors extension substitution hooks and symbols with inner free symbols', () => {
+  class InnerSymbol extends Sym {
+    override innerFreeSymbols(): readonly Sym[] { return [y]; }
+  }
+  class Wrapper extends ExtensionExpr {
+    constructor(args: readonly sj.Expr[]) { super('Wrapper', args); }
+    withArgs(args: readonly sj.Expr[]): sj.Expr { return new Wrapper(args); }
+    override subsSelf(_old: sj.Expr, _nw: sj.Expr, sub: (e: sj.Expr) => sj.Expr): sj.Expr { return sub(this.args[0] ?? sj.S.Zero); }
+  }
+  expect([...sj.freeSymbols(new InnerSymbol('inner'))].map(String)).toEqual(['inner', 'y']);
+  const random = sj.Normal('X', y, 1);
+  expect(sj.pspace(sj.subs(random, [[y, 2]])).key).toBe(sj.pspace(sj.Normal('X', 2, 1)).key);
+  expect(String(sj.subs(new Wrapper([x]), [[x, 2]]))).toBe('2');
+  expect(String(sj.subs(sj.interval(x, y), [[x, 1]]))).toBe('Interval(1, y)');
+  const condition = new sj.ConditionSet(x, sj.Gt(x, y), sj.Reals);
+  expect(sj.subs(condition, [[x, 1]])).toBe(condition);
+  const derivative = new sj.Derivative([sj.SymFunction('f')(x), x, sj.S.One]);
+  expect(sj.subs(derivative, [[x, 2]])).toBeInstanceOf(sj.Subs);
+});
+
+it('checks for variable capture only when substitution changes the differentiated expression', () => {
+  const f = sj.SymFunction('f');
+  const single = sj.derivative(f(x), [[x, 1]]);
+  const multiple = sj.derivative(f(x, y), [[x, 1]]);
+  const point = y.add(x);
+  expect(sj.subs(single, [[y, point]])).toBe(single);
+  expect(sj.subs(multiple, [[y, point]])).toBeInstanceOf(sj.Subs);
+});
+
+it('substitutes only unbound arguments of an extension binder', () => {
+  class Binder extends ExtensionExpr {
+    constructor(args: readonly sj.Expr[]) { super('Binder', args); }
+    withArgs(args: readonly sj.Expr[]): sj.Expr { return new Binder(args); }
+    override bindings(): { variables: readonly number[]; scope: readonly number[] } { return { variables: [0], scope: [1] }; }
+  }
+  const binder = new Binder([x, x.mul(y), x]);
+  expect(boundSymbols(binder)).toEqual([x]);
+  expect([...sj.freeSymbols(binder)].map(String).sort()).toEqual(['x', 'y']);
+  expect(sj.subs(binder, [[x, 2]]).args.map(String)).toEqual(['x', 'x*y', '2']);
+  const independent = new Binder([x, x.mul(y), y]);
+  expect(sj.subs(independent, [[x, 2]])).toBe(independent);
+});
+
 it('stops substitution after a true Piecewise branch', () => {
   const expression = sj.piecewise([1, sj.Eq(pow(x, 2), -1)], [2, sj.Lt(x, 0)]);
   expect(String(sj.subs(expression, [[x, sj.I]]))).toBe('1');
   const excluded = sj.piecewise([sj.Lt(x, 0), sj.Eq(x, 0)], [1, true]);
   expect(String(sj.subs(excluded, [[x, sj.I]]))).toBe('1');
+});
+
+it('orders complex substitutions before their constituents and delegates extension substitution', () => {
+  expect(sj.subs(add(x, y), new Map<sj.Expr, sj.Expr>([[x, sj.S.One], [add(x, y), z]]))).toBe(z);
+  const q = sj.Quaternion(x, 1, 2, 3).subs(x, y);
+  expect(q.args[0]).toBe(y);
+});
+
+it('honors substitution and free-symbol hooks of extension expressions', () => {
+  class Container extends sj.ExtensionExpr {
+    constructor(readonly value: Expr) {
+      super('Container', [value]);
+    }
+    withArgs(args: readonly Expr[]): Expr {
+      return new Container(at(args, 0));
+    }
+    override subsSelf(_old: Expr, _nw: Expr, substitute: (e: Expr) => Expr): Expr {
+      return new Container(substitute(this.value));
+    }
+    override freeSymbolsSelf(): ReadonlySet<Expr> {
+      return new Set([y]);
+    }
+  }
+  const wrapped = new Container(x);
+  expect(sj.subs(wrapped, [[x, 3]])).toEqual(new Container(rational(3)));
+  expect([...sj.freeSymbols(wrapped)]).toEqual([y]);
+  expect(sj.subs(sj.finiteSet(x), [[x, 3]])).toEqual(sj.finiteSet(3));
+  const set = new sj.ConditionSet(x, sj.Gt(x, y), sj.Reals);
+  expect(String(sj.subs(set, [[y, z]]))).toBe('ConditionSet(x, x > z, Reals)');
+  expect(sj.subs(set, [[z, 1]])).toBe(set);
+  class InnerSymbol extends sj.Sym {
+    override innerFreeSymbols(): readonly sj.Sym[] {
+      return [y];
+    }
+    override substituteInner(substitute: (e: Expr) => Expr): Expr {
+      return substitute(y);
+    }
+  }
+  const inner = new InnerSymbol('inner');
+  expect(sj.subs(inner, [[y, 3]])).toEqual(rational(3));
+  expect([...sj.freeSymbols(inner)]).toEqual([inner, y]);
+});
+
+it('substitutes noncommutative words and integral power blocks in order', () => {
+  const A = new sj.Sym('A', { commutative: false });
+  const B = new sj.Sym('B', { commutative: false });
+  const C = new sj.Sym('C', { commutative: false });
+  const pair = mul(A, B);
+  expect(subs(mul(pair, pair), [[pair, C]]).key).toBe(pow(C, 2).key);
+  expect(subs(mul(pow(A, 2), pow(B, 2)), [[pair, C]]).key).toBe(mul(A, C, B).key);
+  expect(subs(mul(pow(A, 2), B, pow(A, 2), B, pow(A, 2)), [[mul(A, B, A), C]]).key).toBe(mul(A, pow(C, 2), A).key);
+  for (let p = 1; p <= 4; p++) for (let k = 0; k < 10; k++) {
+    expect(subs(mul(B, pow(A, k)), [[pow(A, p), C]]).key).toBe(mul(B, pow(C, Math.floor(k / p)), pow(A, k % p)).key);
+  }
+  expect(subs(pow(A, -5), [[pow(A, 3), C]]).key).toBe(mul(pow(C, -1), pow(A, -2)).key);
+  expect(subs(pow(A, sj.S.Half), [[pow(A, sj.S.NegHalf), C]]).key).toBe(pow(A, sj.S.Half).key);
+  const integer = new sj.Sym('integer', { integer: true });
+  expect(subs(pow(A, mul(3, integer)), [[pow(A, mul(2, integer)), C]]).key).toBe(mul(C, pow(A, integer)).key);
+  expect(subs(mul(x, y, A), [[mul(x, y), z]]).key).toBe(mul(z, A).key);
+  expect(subs(mul(pow(x, 2), pow(A, 3)), [[mul(x, A), C]]).key).toBe(mul(pow(C, 2), A).key);
+  expect(subs(mul(x, A, B), [[mul(x, A), y]]).key).toBe(mul(y, B).key);
+  expect(subs(mul(x, A), [[mul(y, A), C]]).key).toBe(mul(x, A).key);
+  expect(subs(mul(pow(x, sj.S.Half), A), [[mul(x, A), C]]).key).toBe(mul(pow(x, sj.S.Half), A).key);
+  expect(subs(mul(x, A, B, A), [[mul(A, B), C]]).key).toBe(mul(x, C, A).key);
+  expect(subs(mul(A, B), [[mul(A, B, C), x]]).key).toBe(mul(A, B).key);
+  expect(subs(mul(A, pow(B, 2), C), [[mul(A, B, C), x]]).key).toBe(mul(A, pow(B, 2), C).key);
+  expect(subs(pow(mul(x, y), -1), [[mul(x, y), z]]).key).toBe(pow(z, -1).key);
+  expect(subs(mul(x, y, add(1, mul(x, y))), [[mul(x, y), 2]]).key).toBe(sj.S.Two.mul(3).key);
+});
+
+it('keeps derivative substitutions independent and avoids capturing existing variables', () => {
+  const fx = f(x, y);
+  const derivative = sj.derivative(fx, [[y, 1]]);
+  expect(subs(derivative, [[y, x]]).key).toBe(sj.Subs(derivative, y, x).key);
+  expect(subs(derivative, [[x, y]]).key).toBe(sj.Subs(derivative, x, y).key);
+  const g = sj.SymFunction('g');
+  expect(subs(derivative, [[y, g(y)]]).key).toBe(sj.derivative(f(x, g(y)), [[g(y), 1]]).key);
+  expect(subs(derivative, [[x, z]]).key).toBe(sj.derivative(f(z, y), [[y, 1]]).key);
+  expect(subs(derivative, [[y, 0]]).key).toBe(sj.Subs(derivative, y, 0).key);
+  expect(subs(derivative, [[z, x]]).key).toBe(derivative.key);
+  const A = new sj.Sym('A', { commutative: false });
+  const B = new sj.Sym('B', { commutative: false });
+  expect(subs(mul(pow(x, -1), A), [[mul(x, A), B]]).key).toBe(mul(pow(x, -1), A).key);
+  const integer = new sj.Sym('integer', { integer: true });
+  expect(subs(pow(A, add(mul(4, integer), 1)), [[pow(A, mul(3, integer)), B]]).key).toBe(mul(B, pow(A, add(integer, 1))).key);
+});
+
+it('substitutes function heads with arity checks and valid derivative variables', () => {
+  const g = sj.SymFunction('g');
+  const replace = (e: Expr) => sj.subsFunction(e, 'f', (...args) => g(...args));
+  expect(replace(add(f(x), f(y))).key).toBe(add(g(x), g(y)).key);
+  expect(sj.subsFunction(f(x, y), 'f', sj.sin, [1]).key).toBe(f(x, y).key);
+  expect(sj.subsFunction(f(x), 'f', sj.sin, [1]).key).toBe(sj.sin(x).key);
+  expect(sj.subsFunction(sj.exp(x), 'exp', sj.sin).key).toBe(sj.sin(x).key);
+  expect(sj.subsFunction(sj.sin(x), 'sin', (...args) => g(...args)).key).toBe(g(x).key);
+  expect(replace(sj.derivative(f(x), [[x, 1]])).key).toBe(sj.derivative(g(x), [[x, 1]]).key);
+  const derivative = sj.derivative(f(x), [[f(x), 1]]);
+  const replaced = sj.subsFunction(derivative, 'f', sj.cos);
+  expect(replaced.key).toBe(sj.Subs(sj.derivative(y, [[y, 1]]), y, sj.cos(x)).key);
+  expect(replace(derivative).key).toBe(sj.derivative(g(x), [[g(x), 1]]).key);
+});
+
+it('rebuilds symbols carrying arguments and finds symbols under explicit binders', async () => {
+  const { registerHeadResolver } = await import('../../src/core/nodes');
+  class AppliedSymbol extends sj.Sym {
+    override readonly args: readonly Expr[];
+    constructor(value: Expr) { super('applied'); this.args = [value]; }
+  }
+  registerHeadResolver(AppliedSymbol, () => (value: Expr) => new AppliedSymbol(value));
+  const applied = new AppliedSymbol(x);
+  expect(sj.rebuild(applied, [y])).toBeInstanceOf(sj.Sym);
+  class Binder extends sj.ExtensionExpr {
+    constructor(args: readonly Expr[]) { super('Binder', args); }
+    withArgs(args: readonly Expr[]): Expr { return new Binder(args); }
+    override bindings() { return { variables: [0], scope: [1] }; }
+  }
+  expect([...sj.freeSymbols(new Binder([x, add(x, y), z]))].map(String).sort()).toEqual(['y', 'z']);
+  const A = new sj.Sym('A', { commutative: false });
+  expect(subs(mul(x, A), [[mul(x, y), z]]).key).toBe(mul(x, A).key);
+  const conditional = sj.piecewise([x, sj.Lt(x, 0)], [y, sj.Gt(x, 0)], [z, true]);
+  expect(String(subs(conditional, [[y, 2]]))).toBe('Piecewise((x, x < 0), (2, x > 0), (z, True))');
+});
+
+it('substitutes inverse powers and roots without choosing unknown branches', () => {
+  const positive = new sj.Sym('positive', { positive: true });
+  expect(subs(x, [[pow(x, -1), y]]).key).toBe(pow(y, -1).key);
+  expect(subs(positive, [[pow(positive, 2), y]]).key).toBe(sj.sqrt(y).key);
+  expect(subs(x, [[pow(x, 2), y]]).key).toBe(x.key);
+  expect(subs(add(x, -1), [[sj.S.One, y]]).key).toBe(add(x, mul(-1, y)).key);
+  expect(subs(add(x, 2), [[sj.S.One, y]]).key).toBe(add(x, 2).key);
+  expect(subs(add(x, sj.S.NegativeInfinity), [[sj.S.Infinity, y]]).key).toBe(add(x, mul(-1, y)).key);
+});
+
+it('exposes the registered rebuild operation and preserves identity substitutions', async () => {
+  const { impl } = await import('../../src/core/nodes');
+  expect(impl.rebuild?.(new sj.Add([x, x]), [x, x]).key).toBe(mul(2, x).key);
+  const A = new sj.Sym('A', { commutative: false });
+  const old = mul(x, y);
+  expect(subs(mul(old, A), [[old, old]]).key).toBe(mul(old, A).key);
+});
+
+it('does not extract noncommutative power blocks from nonintegral exponents', () => {
+  const A = new sj.Sym('A', { commutative: false });
+  const B = new sj.Sym('B', { commutative: false });
+  const alpha = new sj.Sym('alpha');
+  const integer = new sj.Sym('integer', { integer: true });
+  for (const [exponent, old] of [[add(mul(2, alpha), 2), sj.S.Two], [add(alpha, mul(2, integer)), integer], [sj.S.Two, alpha]] as const) {
+    const expression = pow(A, exponent);
+    expect(subs(expression, [[pow(A, old), B]]).key).toBe(expression.key);
+  }
+});
+
+it('counts large noncommutative power runs exactly', () => {
+  const A = new sj.Sym('A', { commutative: false });
+  const B = new sj.Sym('B', { commutative: false });
+  const count = 9007199254740993n;
+  expect(subs(mul(pow(x, count), pow(A, count)), [[mul(x, A), B]]).key).toBe(pow(B, count).key);
+  expect(subs(mul(pow(x, 3), A), [[mul(x, A), B]]).key).toBe(mul(pow(x, 2), B).key);
+});
+
+it('uses an integral float exponent only when the coefficient ratio is exactly integral', () => {
+  const x = sj.symbol('x');
+  const y = sj.symbol('y');
+  const z = sj.symbol('z');
+  const power = (coefficient: sj.Expr) => sj.pow(x, sj.mul(coefficient, y));
+  expect(power(new sj.Float(6)).subs(power(sj.Rational.of(3)), z).key).toBe(sj.pow(z, new sj.Float(2)).key);
+  expect(power(sj.Rational.of(6)).subs(power(new sj.Float(3)), z).key).toBe(sj.pow(z, new sj.Float(2)).key);
+  const nearSix = sj.Rational.of(6n * 10n ** 20n + 1n, 10n ** 20n);
+  expect(power(nearSix).subs(power(new sj.Float(3)), z).key).toBe(power(nearSix).key);
+});
+
+it('visits limits, piecewise branches and derivative specifications as tuples', () => {
+  const [x, n] = sj.symbols('x n');
+  const limit = new sj.Integral([x, x, sj.S.Zero, sj.S.One]);
+  expect([...sj.iterArgs(limit)].map(String)).toEqual(['Integral(x, (x, 0, 1))', 'x', '(x, 0, 1)', 'x', '0', '1']);
+  const d = sj.derivative(x, [[x,n]]);
+  expect([...sj.iterArgs(d)].map(String)).toContain('(x, n)');
+  expect([...sj.iterArgs(sj.Sum(x, [x, 1, n]))].map(String)).toContain('(x, 1, n)');
+  expect([...sj.iterArgs(sj.Piecewise([x, sj.Lt(x, 0)], [n, true]))].map(String)).toContain('(x, x < 0)');
+});
+
+it('does not replace a derivative with respect to a different independent variable', () => {
+  const [x, y, z] = sj.symbols('x y z');
+  const f = sj.SymFunction('f')(x, y);
+  const a = sj.derivative(f, [[x, 2]]);
+  expect(a.subs(sj.derivative(f, [[y, 1]]), z).key).toBe(a.key);
+});
+
+it('orders derivative replacements by their full orders and restores split symbolic powers', async () => {
+  const sj = await import('../../src');
+  const x = sj.symbol('x'), y = sj.symbol('y'), t = sj.symbol('t');
+  const a = sj.SymFunction('a')(t);
+  const first = a.diff(t);
+  const second = a.diff(t, 2);
+  expect(sj.subs(sj.add(a, first, second), new Map<sj.Expr, sj.Expr>([[a, x], [first, y], [second, sj.S.One]])).equals(sj.add(1, x, y))).toBe(true);
+  const product = sj.parse('x**2*y**(3*x/2)');
+  expect(String(sj.subs(product, [[sj.parse('x*y**(x/2)'), 2]]))).toBe('4*y**(x/2)');
+  const exponential = sj.exp(sj.mul(x, sj.log(2)));
+  expect(sj.subs(sj.pow(2, x), [[exponential, y]]).equals(y)).toBe(true);
+});
+
+it('matches exponential patterns only when the resulting power divides the source', async () => {
+  const sj = await import('../../src');
+  const { countOps } = await import('../../src/core/traverse');
+  const x = sj.symbol('x');
+  const y = sj.symbol('y');
+  const a = sj.symbol('a');
+  const raw = new sj.Mul([new sj.Pow(sj.S.One, x), y]);
+  expect(countOps(raw)).toBe(5);
+  expect(sj.subs(sj.pow(y, x), [[sj.exp(sj.mul(x, sj.log(2))), a]])).toEqual(sj.pow(y, x));
+  const p = new sj.Mul([new sj.Pow(sj.S.One, x), sj.pow(y, x), sj.pow(y, x)]);
+  const pattern = new sj.Mul([sj.pow(y, x), y]);
+  const unmatched = sj.subs(p, [[pattern, a]]);
+  const nested = new sj.Mul([new sj.Pow(new sj.Pow(y, x), sj.S.Half), new sj.Pow(y, sj.mul(2, x)), x]);
+  expect(String(sj.subs(nested, [[sj.mul(sj.pow(y, x), x), 2]]))).toBe('2*(y**x)**(3/2)');
+  expect(unmatched.has(a)).toBe(false);
+  const f = sj.SymFunction('f')(x);
+  const order = sj.symbol('m', { integer: true, nonnegative: true });
+  const derivative = sj.derivative(f, [[x, order]]);
+  expect(sj.subs(sj.add(derivative, f), new Map<sj.Expr, sj.Expr>([[f, x], [derivative, y]])).equals(sj.add(x, y))).toBe(true);
+});
+
+it('leaves unrelated exponential substitution patterns alone', () => {
+  const [x, y, z] = sj.symbols('x y z');
+  const power = sj.pow(x, y);
+  for (const exponent of [y, new sj.Fn('log', [x])]) {
+    expect(power.subs(new sj.Pow(sj.S.E, exponent), z).key).toBe(power.key);
+  }
+});
+
+it('binds the free symbols of a compound limit variable only in the body', () => {
+  const variable = sj.add(x, y);
+  const expression = new sj.Limit([sj.add(variable, z), variable, x], '-');
+  expect([...expression.freeSymbols()].map(String).sort()).toEqual(['x', 'z']);
+  const pattern = new sj.Pow(sj.E, new sj.Fn('log', [y]));
+  expect(x.pow(2).subs(pattern, z)).toEqual(x.pow(2));
+});
+
+it('keeps substitutions inside bound function arguments capture-free', () => {
+  const [x, y] = sj.symbols('x y');
+  const fy = sj.SymFunction('f')(y);
+  const sum = sj.Sum(x.mul(fy), [x, 0, 2], [y, 0, 2]);
+  expect(() => sum.subs(fy, x.add(y))).toThrow('dummy dependencies');
+  expect(sum.subs(fy, y).equals(sj.Sum(x.mul(y), [x, 0, 2], [y, 0, 2]))).toBe(true);
+  const ly = sj.log(y);
+  expect(sj.Sum(ly, [x, 0, ly], [y, 0, ly]).subs(ly, y).equals(sj.Sum(ly, [x, 0, ly], [y, 0, y]))).toBe(true);
+});
+
+it('keeps powers distinct from unrelated exponential substitution patterns', () => {
+  const [x, y] = sj.symbols('x y');
+  const power = sj.pow(x, y);
+  const logarithm = sj.fn('log', [x, 2], { evaluate: false });
+  for (const exponent of [sj.sin(x), logarithm, sj.log(x)]) {
+    expect(power.subs(new sj.Pow(sj.S.E, exponent), y).equals(power)).toBe(true);
+  }
+});
+
+it('restores an indefinite integral when its substituted endpoint is its variable', () => {
+  const endpoint = new Integral([x, x, y]);
+  expect(endpoint.subs(y, x)).toEqual(new Integral([x, x]));
+  expect(endpoint.subs(y, z)).toEqual(new Integral([x, x, z]));
 });

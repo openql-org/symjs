@@ -10,9 +10,18 @@ import { describe, expect, it } from 'vitest';
 import { Concrete, Product, Sum, Sym, doit, eulerMaclaurin, isAbsolutelyConvergent, isConvergent, oo, parse, product, reverseOrder, subs, summation } from '../../src';
 import * as sj from '../../src';
 import { Expr } from '../../src/core/nodes';
+import { summationHooks } from '../../src/concrete/summations';
 import { NoMatchResult } from '../../src/core/truth';
 
 const Pplain = parse;
+it('keeps empty, unsupported reversed and Hurwitz series distinct', () => {
+  const [x, y] = sj.symbols('x y');
+  const t = sj.symbol('t', { positive: true });
+  expect(() => sj.summation(1)).toThrow(RangeError);
+  expect(sj.summation(x.mul(y), [x, sj.S.NegativeInfinity, sj.oo], [y, 1, 0])).toBe(sj.S.Zero);
+  expect(String(sj.summation(sj.sin(x.pow(2)), [x, sj.oo, 0]))).toBe('Sum(sin(x**2), (x, oo, 0))');
+  expect(String(sj.summation(x.add(sj.I).pow(t.add(1).neg()), [x, 0, sj.oo]))).toBe('zeta(t + 1, I)');
+});
 it('exposes residue summation with an explicit no-match result', () => {
   const k = sj.symbol('k');
   expect(String(sj.evalSumResidue(parse('1/(k**2 + 1)'), [k, sj.oo.neg(), sj.oo]))).toBe('pi/tanh(pi)');
@@ -247,7 +256,7 @@ describe("summations: results equal SymPy 1.14", () => {
     ["summation(P('1/(k*(k**2+1))'), [k, 1, oo])", () => summation(Pplain('1/(k*(k**2+1))'), [k, 1, oo]), "Sum(1/(k*(k**2 + 1)), (k, 1, oo))"],
     ["summation(P('2**k'), [k, P('-oo'), 0])", () => summation(Pplain('2**k'), [k, Pplain('-oo'), 0]), "2"],
     ["summation(P('x**k'), [k, P('-oo'), oo])", () => summation(Pplain('x**k'), [k, Pplain('-oo'), oo]), "Sum(x**k, (k, -oo, oo))"],
-    ["summation(P('1/(k**2+1)**2'), [k, P('-oo'), oo])", () => summation(Pplain('1/(k**2+1)**2'), [k, Pplain('-oo'), oo]), "Sum((k**2 + 1)**(-2), (k, -oo, oo))"],
+    ["summation(P('1/(k**2+1)**2'), [k, P('-oo'), oo])", () => summation(Pplain('1/(k**2+1)**2'), [k, Pplain('-oo'), oo]), "-pi*(-1/(2*tanh(pi)) - pi*(1 - tanh(pi)**2)/(2*tanh(pi)**2))"],
     ["summation(P('1/(k**4-1)'), [k, P('-oo'), oo])", () => summation(Pplain('1/(k**4-1)'), [k, Pplain('-oo'), oo]), "Sum(1/(k**4 - 1), (k, -oo, oo))"],
     ["product(P('k*sin(k)'), [k, 1, 3])", () => product(Pplain('k*sin(k)'), [k, 1, 3]), "6*sin(1)*sin(2)*sin(3)"],
     ["product(P('x**k'), [k, 1, n])", () => product(Pplain('x**k'), [k, 1, n]), "x**(n**2/2 + n/2)"],
@@ -440,6 +449,7 @@ describe('results equal SymPy 1.14', () => {
     ["conv(sj.Sum(P('sin(k)'), [k, moo, sj.oo]))", () => conv(sj.Sum(P('sin(k)'), [k, moo, sj.oo])), "false"],
     ["sj.summation(P('1/(k*(k + 1))'), [k, 1, n])", () => sj.summation(P('1/(k*(k + 1))'), [k, 1, n]), "1 - 1/(n + 1)"],
     ["sj.summation(P('1/(k*(k + 2))'), [k, 1, n])", () => sj.summation(P('1/(k*(k + 2))'), [k, 1, n]), "3/4 - 1/(2*(n + 2)) - 1/(2*(n + 1))"],
+    ["sj.summation(P('k*2**k'), [k, 0, n])", () => sj.summation(P('k*2**k'), [k, 0, n]), "2*(2**n*n - 2**n + 1)"],
     ["sj.summation(P('log(k + 1) - log(k)'), [k, 1, n])", () => sj.summation(P('log(k + 1) - log(k)'), [k, 1, n]), "log(n + 1)"],
     ["sj.summation(P('cos(k + 1) - cos(k)'), [k, 1, n])", () => sj.summation(P('cos(k + 1) - cos(k)'), [k, 1, n]), "cos(n + 1) - cos(1)"],
     ["sj.summation(P('cos(k) - cos(k + 1)'), [k, 1, n])", () => sj.summation(P('cos(k) - cos(k + 1)'), [k, 1, n]), "-cos(n + 1) + cos(1)"],
@@ -453,8 +463,7 @@ describe('results equal SymPy 1.14', () => {
 describe('results that differ from SymPy 1.14', () => {
   // [call, symjs result, SymPy 1.14 result]
   const cases: [string, () => unknown, string, string][] = [
-    // double poles are not summed by residues (SymPy gives a long closed form)
-    ["sj.summation(P('1/(k**2+1)**2'), [k, 0, sj.oo])", () => sj.summation(P('1/(k**2+1)**2'), [k, 0, sj.oo]), "Sum((k**2 + 1)**(-2), (k, 0, oo))", "1/2 - pi*(-1/(2*tanh(pi)) - I*(-I*pi/tanh(pi) + I*pi*tanh(pi))/(4*tanh(pi)) + I*(-I*pi*tanh(pi) + I*pi/tanh(pi))/(4*tanh(pi)))/2"],
+    ["sj.summation(P('1/(k**2+1)**2'), [k, 0, sj.oo])", () => sj.summation(P('1/(k**2+1)**2'), [k, 0, sj.oo]), "1/2 - pi*(-1/(2*tanh(pi)) - pi*(1 - tanh(pi)**2)/(2*tanh(pi)**2))/2", "1/2 - pi*(-1/(2*tanh(pi)) - I*(-I*pi/tanh(pi) + I*pi*tanh(pi))/(4*tanh(pi)) + I*(-I*pi*tanh(pi) + I*pi/tanh(pi))/(4*tanh(pi)))/2"],
     // integer poles that are not consecutive (SymPy's value divides by 105 - 105*exp_polar(0) = 0)
     ["sj.summation(P('1/((k**2-1)*(k**2-9))'), [k, 5, sj.oo])", () => sj.summation(P('1/((k**2-1)*(k**2-9))'), [k, 5, sj.oo]), "Sum(1/((k**2 - 9)*(k**2 - 1)), (k, 5, oo))", "(90 - 118*exp_polar(0))/(288*(105 - 105*exp_polar(0))) + 7*(5*exp_polar(0) + 15)/(1440*(105 - 105*exp_polar(0)))"],
     // a pole inside the range (the term at k = 1 is zoo)
@@ -464,7 +473,6 @@ describe('results that differ from SymPy 1.14', () => {
     // no summation by residues from -oo (as SymPy)
     ["sj.summation(P('1/(k**2+1)'), [k, moo, 3])", () => sj.summation(P('1/(k**2+1)'), [k, moo, 3]), "Sum(1/(k**2 + 1), (k, -oo, 3))", "Sum(1/(k**2 + 1), (k, -oo, 3))"],
     // arithmetic-geometric sums are not implemented
-    ["sj.summation(P('k*2**k'), [k, 0, n])", () => sj.summation(P('k*2**k'), [k, 0, n]), "Sum(2**k*k, (k, 0, n))", "2*(2**n*n - 2**n + 1)"],
     // comparison with |sin(k)| <= 1 is not implemented
     ["conv(sj.Sum(P('sin(k)/k**3'), [k, moo, sj.oo]))", () => conv(sj.Sum(P('sin(k)/k**3'), [k, moo, sj.oo])), "unknown", "true"],
     // SymPy raises ValueError
@@ -608,4 +616,135 @@ describe('the root test (SymPy Sum.is_convergent)', () => {
     const n = new Sym('n', { integer: true });
     expect(isConvergent(concExpr(Sum(sj.pow(sj.S.Half, sj.floor(sj.mul(n, sj.S.Half))), [n, 1, oo])))).toBe(true);
   });
+});
+
+
+it('extracts central scalar factors from constant noncommutative products', () => {
+  const A = new sj.Sym('A', { commutative: false });
+  const B = new sj.Sym('B', { commutative: false });
+  const k = new sj.Sym('k', { integer: true });
+  const n = new sj.Sym('n', { positive: true, integer: true });
+  expect(String(sj.product(sj.mul(2, A, B), [k, 1, n]))).toBe('2**n*(A*B)**n');
+});
+
+it('uses the infinite lower limit convention while retaining finite Karr reversal', () => {
+  expect(String(summation(Pplain('2**(-k)'), [k, oo, -1]))).toBe('2');
+  expect(String(summation(Pplain('1/(k**2+1)'), [k, oo, 0]))).toBe('-1/2 + pi/(2*tanh(pi))');
+  expect(String(summation(Pplain('(-1)**k/k'), [k, oo, 0]))).toBe('-log(2)');
+  expect(String(summation(Pplain('1/k'), [k, oo, 0]))).toBe('oo');
+  expect(String(summation(Pplain('(-1)**k/(2*k+1)'), [k, oo, -1]))).toBe('pi/4');
+  expect(String(summation(Pplain('2**k'), [k, 0, -3]))).toBe('-3/4');
+});
+
+it('separates constant commutative factors in a noncommutative product', () => {
+  const a = new Sym('a', { commutative: false });
+  expect(String(product(sj.mul(x, a), [k, 1, 3]))).toBe('x**3*a**3');
+});
+
+it('drops the indicator only when the entire delta range is summed', async () => {
+  const { KroneckerDelta } = await import('../../src');
+  const k = new Sym('k'), m = new Sym('m');
+  const d = KroneckerDelta(k, m, [0, 5]);
+  expect(String(summation(d, [k, 0, 5]))).toBe('1');
+  expect(String(summation(d, [k, -1, 6]))).toBe('1');
+  expect(String(summation(d, [k, 1, 5]))).toContain('Piecewise');
+  expect(String(summation(d, [k, 0, 4]))).toContain('Piecewise');
+});
+
+it('evaluates the summand with the signs its limits give the summation variable (SymPy 1.14)', () => {
+  const n = new Sym('n', { integer: true }), m = new Sym('m'), f = sj.SymFunction('f');
+  const inner = Sum(sj.KroneckerDelta(m, n), [m, 0, oo]);
+  expect(String(doit(Sum(sj.mul(f(n), inner), [n, 1, oo])))).toBe('Sum(f(n), (n, 1, oo))');
+  expect(String(doit(Sum(sj.mul(f(n), sj.piecewise([2, sj.Ge(n, 0)], [5, true])), [n, 1, oo])))).toBe('Sum(2*f(n), (n, 1, oo))');
+  // a condition the limits do not decide stays (SymPy folds it: Sum(Piecewise((f(n), n >= 3), (0, True)), (n, 1, oo)))
+  expect(String(doit(Sum(sj.mul(f(n), sj.piecewise([1, sj.Ge(n, 3)], [0, true])), [n, 1, oo])))).toBe('Sum(Piecewise((1, n >= 3), (0, True))*f(n), (n, 1, oo))');
+  // a constant factor with a factored denominator is taken out of a geometric sum
+  const [i, k] = sj.symbols('i k');
+  expect(String(sj.simplify(sj.sub(doit(Sum(parse('2**(-i)/(a - b)'), [i, 0, k])), parse('(2 - 2**(-k))/(a - b)'))))).toBe('0');
+});
+
+it('uses finite antidifferences and one-sided binomial support', () => {
+  const [k, n] = sj.symbols('k n');
+  const central = sj.binomial(k.mul(2), k);
+  expect(summation(central.mul(sj.pow(4, k.neg())), [k, 0, n]).equals(
+    sj.binomial(n.mul(2), n).mul(n.mul(2).add(1)).mul(sj.pow(4, n.neg())))).toBe(true);
+  expect(summation(central.mul(sj.pow(5, k.neg())), [k, sj.S.NegativeInfinity, oo]).equals(sj.sqrt(5))).toBe(true);
+  expect(sj.telescopic(k.pow(-1), k.add(1).pow(-1).neg(), [k, 1, n]).toString()).toBe('1 - 1/(n + 1)');
+  expect(sj.telescopic(k.pow(-1), k.neg().mul(k.add(1).pow(-1)), [k, 1, n])).toBe(sj.NoMatch);
+  expect(Sum(k, [k, 0, 2]).rewrite('Sum').kind).toBe('Concrete');
+  expect(Product(k, [k, 0, 2]).rewrite('Product').kind).toBe('Concrete');
+  expect(Sum(k, [k, 0, 2]).rewrite('Product').kind).toBe('Concrete');
+  expect(() => isConvergent(new Concrete('Sum', [k.mul(n), k, sj.S.One, sj.S.Infinity]))).toThrow(sj.NotImplementedError);
+});
+
+it('stops Euler–Maclaurin at a small nonzero term or correction', () => {
+  const k = sj.symbol('k'), y = sj.symbol('y');
+  const sum = (f: sj.Expr, start: sj.ExprLike, end: sj.ExprLike) => new Concrete('Sum', [f, k, sj.sympify(start), sj.sympify(end)]);
+  expect(eulerMaclaurin(sum(k.add(1).pow(-2), 0, 4), 5, 1, 0.3).map(String)).toEqual(['1', '1/4']);
+  expect(eulerMaclaurin(sum(y.mul(k.add(1).pow(-2)), 0, 4), 5, 1, 0.3).map(String)).toEqual(['y', '0']);
+  expect(eulerMaclaurin(sum(k.pow(2), 0, 3), 0, 3, 1).map(String)).toEqual(['27/2', '1/2']);
+});
+
+it('retains unsupported matrix powers and binomial tails with possible poles', () => {
+  const [k, n] = sj.symbols('k n');
+  const A = sj.MatrixSymbol('A', 2, 2), B = sj.MatrixSymbol('B', 2, 2);
+  const matrix = A.mul(B.pow(k));
+  expect(summation(matrix, [k, 0, n]).equals(Sum(matrix, [k, 0, n]))).toBe(true);
+  const pole = sj.binomial(k.mul(2), k).mul(k.add(2).pow(-1));
+  expect(summation(pole, [k, sj.S.NegativeInfinity, oo]).equals(Sum(pole, [k, sj.S.NegativeInfinity, oo]))).toBe(true);
+  const base = k.mul(n.pow(2).add(1).pow(k));
+  expect(doit(summation(base, [k, 0, n]).subs(n, 2)).equals(55)).toBe(true);
+  expect(() => isConvergent(new Concrete('Sum', [n, k, sj.S.Zero, oo]))).toThrow(sj.NotImplementedError);
+});
+
+it('computes Euler–Maclaurin correction errors at poles and with symbolic coefficients', () => {
+  const k = sj.symbol('k'), y = sj.symbol('y');
+  const pole = k.pow(-1).add(k.add(-1).pow(-1));
+  expect(eulerMaclaurin(new Concrete('Sum', [pole, k, sj.S.Zero, sj.S.One]), 0, 1, 0.1)).toEqual([sj.S.NaN, sj.S.NaN]);
+  expect(eulerMaclaurin(new Concrete('Sum', [y.mul(k.pow(2)), k, sj.S.Zero, sj.S.Two]), 0, 2, 0.1).map(String)).toEqual(['5*y', '0']);
+});
+
+it('leaves a binomial sum unevaluated when the Gosper service is absent', () => {
+  const [k, n] = sj.symbols('k n');
+  const f = sj.binomial(k.mul(2), k);
+  const previous = summationHooks.gosperSum;
+  delete summationHooks.gosperSum;
+  try {
+    expect(summation(f, [k, 0, n]).equals(Sum(f, [k, 0, n]))).toBe(true);
+  } finally {
+    summationHooks.gosperSum = previous;
+  }
+});
+
+it('matches positive and negative telescoping shifts beyond adjacent indices', () => {
+  const [k, n] = sj.symbols('k n');
+  const f = sj.SymFunction('f');
+  const L = f(k), R = f(k.add(12)).neg();
+  for (const [left, right] of [[L, R], [R, L]] as const) {
+    expect(sj.telescopic(left, right, [k, 1, n])).toEqual(sj.telescopicDirect(L, R, 12, [k, 1, n]));
+  }
+  const rational = [parse('1/(k*(k+1))'), parse('-1/(k**2+7*k+12)')] as const;
+  expect(sj.telescopic(...rational, [k, 1, n])).toEqual(sj.telescopicDirect(...rational, 3, [k, 1, n]));
+  expect(sj.telescopic(k.add(1), k, [k, 1, n])).toBe(sj.NoMatch);
+  expect(sj.telescopic(k, k.add(1), [k, 1, n])).toBe(sj.NoMatch);
+});
+
+it('contracts deltas in separate addends at their own summation limits', () => {
+  const [i, j, m, n] = sj.symbols('i j m n');
+  const f = sj.SymFunction('f'), g = sj.SymFunction('g');
+  const delta = (v: Sym) => sj.KroneckerDelta(v, m, [0, n]);
+  const terms = sj.add(sj.mul(delta(i), f(i, j)), sj.mul(delta(j), g(i, j)));
+  expect(doit(Sum(terms, [i, 0, n], [j, 0, n])).equals(sj.add(Sum(f(m, j), [j, 0, n]), Sum(g(i, m), [i, 0, n])))).toBe(true);
+});
+
+it('distributes a product over deltas in the current index', () => {
+  const k = sj.symbol('k');
+  const deltas = sj.add(sj.KroneckerDelta(k, 2), sj.KroneckerDelta(k, 4));
+  expect(summation(sj.mul(k, deltas), [k, 1, 5]).equals(6)).toBe(true);
+});
+
+it('uses the smooth primitive for a finite Euler–Maclaurin interval', () => {
+  const k = sj.symbol('k');
+  const term = parse('(5*k**4-1)/(k**5-k-1)');
+  expect(eulerMaclaurin(new Concrete('Sum', [term, k, sj.S.Zero, sj.S.One]), 0, 0).map(String)).toEqual(['-3/2', '35/12']);
 });

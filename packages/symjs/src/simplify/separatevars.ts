@@ -7,16 +7,25 @@
  */
 
 import type { Expr, ExprLike } from '../core/nodes';
-import { Constant, Mul, Pow, Sym } from '../core/nodes';
-import { mul, pow, sympify } from '../core/ops';
+import { Add, Constant, Fn, Mul, Pow, Sym } from '../core/nodes';
+import { add, mul, pow, sympify } from '../core/ops';
+import { abs } from '../functions/elementary/elementary';
 import { xreplace } from '../core/traverse';
 import { factor } from '../polys/sympoly';
 import { expand } from './expand';
 import { posify } from './powsimp';
-import { first, getOrThrow } from '../core/guard';
+import { at, first, getOrThrow } from '../core/guard';
 
 function sep(e0: Expr, force: boolean): Expr {
   let e = e0;
+  if (e instanceof Fn && e.name === 'abs') {
+    const arg = first(e.args);
+    if (arg instanceof Mul && !arg.isNumber) {
+      const factors = separatevars(arg, { dict: true, force });
+      if (factors instanceof Map) return mul(...[...factors.values()].map(abs));
+      return e;
+    }
+  }
   if (e.freeSymbols().size < 2) return e;
   if (e instanceof Mul) {
     const args = e.args.map((a) => sep(a, force));
@@ -26,6 +35,17 @@ function sep(e0: Expr, force: boolean): Expr {
   e = expand(e, { mul: false, multinomial: false, force });
   const [pe, reps] = force ? posify(e) : [e, new Map<Expr, Expr>()];
   e = xreplace(factor(pe), [...reps]);
+  if (e instanceof Add && !e.isCommutative) {
+    const terms = e.args.map((t) => t instanceof Mul ? [...t.args] : [t]);
+    const suffix: Expr[] = [];
+    while (first(terms).length) {
+      const f = at(first(terms), -1);
+      if (f.isCommutative || !terms.every((fs) => fs.at(-1)?.key === f.key)) break;
+      suffix.unshift(f);
+      terms.forEach((fs) => fs.pop());
+    }
+    if (suffix.length) return mul(add(...terms.map((fs) => mul(...fs))), ...suffix);
+  }
   // SymPy then pulls out the factors common to the terms of a sum and factors the rest again; factor
   // has already extracted them (the content and the common powers of the generators, also for
   // non-commutative terms), so a sum that factor leaves has none and is returned as it is
@@ -38,11 +58,13 @@ function sep(e0: Expr, force: boolean): Expr {
  */
 export function separatevars(
   exIn: ExprLike,
-  opts: { symbols?: readonly Sym[]; dict?: boolean; force?: boolean } = {},
+  opts: { symbols?: readonly Sym[] | null; dict?: boolean; force?: boolean } = {},
 ): Expr | Map<Sym | 'coeff', Expr> | undefined {
   const e = sep(sympify(exIn), opts.force ?? false);
   if (!opts.dict) return e;
+  if (opts.symbols === null) return new Map([['coeff', e]]);
   const symbols = opts.symbols?.length ? [...opts.symbols] : [...e.freeSymbols()].filter((s) => s instanceof Sym);
+  if (!symbols.length) return undefined;
   const ret = new Map<Sym | 'coeff', Expr[]>([...symbols.map((s) => [s, []] as [Sym, Expr[]]), ['coeff', []]]);
   for (const f of e instanceof Mul ? e.args : [e]) {
     const inter = symbols.filter((s) => f.has(s));

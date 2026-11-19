@@ -31,7 +31,7 @@ export interface FglmRing<P> {
   readonly symbols: readonly unknown[];
   readonly zeroMonom: Monom;
   readonly one: P;
-  readonly order: { readonly isGlobal: boolean; compare(a: Monom, b: Monom): number };
+  readonly order: { readonly isGlobal: boolean | 'unknown'; compare(a: Monom, b: Monom): number };
   clone(options: { order: OrderLike }): FglmRing<P>;
   termNew(monomial: Monom, coefficient: Expr): P;
   fromDict(terms: Iterable<readonly [Monom, Expr]>): P;
@@ -47,7 +47,7 @@ export function matrixFglmBasis<P extends FglmPolynomial<P>>(F: readonly P[], ri
   const target = ring.clone({ order });
   const K = ring.domain;
   if (!K.isField) throw new TypeError('FGLM requires a coefficient field');
-  if (!ring.order.isGlobal || !target.order.isGlobal) throw new RangeError('FGLM requires global monomial orders');
+  if (ring.order.isGlobal !== true || target.order.isGlobal !== true) throw new RangeError('FGLM requires global monomial orders');
   const leading = F.filter((g) => !g.isZero).map((g) => g.LM);
   // The unit ideal has a zero-dimensional quotient vector space; its reduced Groebner basis is [1].
   if (leading.some((m) => m.every((e) => e === 0))) return [target.one];

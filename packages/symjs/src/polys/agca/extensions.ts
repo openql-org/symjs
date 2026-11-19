@@ -10,15 +10,13 @@
 
 import { ExactQuotientFailed, NotImplementedError, NotInvertible } from '../../core/errors';
 import { at, cast } from '../../core/guard';
-import type { Expr, ExprLike } from '../../core/nodes';
-import { Rational, Sym } from '../../core/nodes';
-import { sympify } from '../../core/ops';
+import type { ExprLike } from '../../core/nodes';
+import { Expr, Rational, Sym, compareExpr } from '../../core/nodes';
 import { str } from '../../printing/str';
 import type { GlobalPolynomialRing } from '../domains';
-import { CoercionFailed, Domain } from '../domains';
+import { CoercionFailed, Domain, groundToSympy } from '../domains';
 import { GeneratorsError } from '../polyerrors';
 import { freeSymbols } from '../../core/traverse';
-import { preprocessDomain } from '../polyoptions';
 import { Poly } from '../sympoly';
 
 /** SymPy domain.is_unit of a coefficient: nonzero in a field, +-1 in a ring. */
@@ -189,10 +187,10 @@ export class FiniteExtension {
   constructor(modIn: Poly) {
     if (!(modIn instanceof Poly) || modIn.gens.length !== 1) throw new TypeError('modulus must be a univariate Poly');
     // SymPy mod.monic(auto=False): monic over a field, the polynomial itself over a ring when its leading coefficient is not 1
-    const domain = preprocessDomain(modIn.domain);
+    const domain = modIn.getDomain();
     // SymPy mod.monic(auto=False): over a ring the leading coefficient must be a unit
     if (!isGroundUnit(domain, modIn.LC())) throw new ExactQuotientFailed(`${str(modIn.LC())} does not divide 1 in ${modIn.domain}`);
-    const mod = modIn.monic();
+    const mod = modIn.LC().equals(1) ? modIn : modIn.monic(false);
     this.rank = mod.degree();
     this.modulus = mod;
     this.mod = mod;
@@ -207,7 +205,7 @@ export class FiniteExtension {
   }
 
   #poly(e: Expr): Poly {
-    return Poly.from(e, [this.symbol], { domain: this.modulus.domain });
+    return Poly.from(e, [this.symbol], { domain: this.domain });
   }
 
   /** SymPy K(arg) / new(arg): the element of a polynomial or an expression. */
@@ -216,16 +214,22 @@ export class FiniteExtension {
   }
 
   /** SymPy convert(f): the element of f (an expression, a Poly or an element). */
-  convert(f: ExtensionElement | Poly | ExprLike): ExtensionElement {
+  convert(f: unknown, base?: Domain): ExtensionElement {
     if (f instanceof ExtensionElement) {
       if (!f.ext.equals(this)) throw new CoercionFailed(`${String(f)} is not an element of ${String(this)}`);
       return f;
     }
-    const e = f instanceof Poly ? f.asExpr() : sympify(f);
+    const e = base !== undefined ? base.toSympy(f) : f instanceof Poly ? f.asExpr() : groundToSympy(f);
+    if (!(e instanceof Expr)) throw new CoercionFailed(`cannot convert ${String(f)} to ${String(this)}`);
     if ([...freeSymbols(e)].some((a) => a.key !== this.symbol.key && !this.domain.symbols.some((s) => s.key === a.key))) {
       throw new CoercionFailed(`cannot convert ${str(e)} to ${String(this)}`);
     }
     return new ExtensionElement(this.#poly(e).rem(this.mod), this);
+  }
+
+  /** Convert an element with an explicit coefficient domain. */
+  convertFrom(f: unknown, base: Domain): ExtensionElement {
+    return this.convert(f, base);
   }
 
   equals(other: unknown): boolean {
@@ -264,7 +268,7 @@ export class FiniteExtension {
 
   /** SymPy set_domain(K): the extension by the modulus over another domain. */
   setDomain(K: Domain | string): FiniteExtension {
-    return new FiniteExtension(Poly.from(this.modulus.asExpr(), [this.symbol], { domain: String(K) }));
+    return new FiniteExtension(this.modulus.setDomain(K));
   }
 
   /** SymPy drop(*symbols): the extension over the domain without the symbols. */
@@ -277,16 +281,17 @@ export class FiniteExtension {
   }
 
   /**
-   * SymPy unify(K): the extension over the unified coefficient domain, with
-   * the generator dropped from K. Unifying two different extensions needs
-   * polynomials over an extension, which are not implemented.
+   * SymPy unify(K): order two extensions by their moduli for a deterministic
+   * tower, or unify the ground domain after dropping the extension generator.
    */
   unify(K: Domain | FiniteExtension): FiniteExtension {
-    if (K instanceof FiniteExtension) {
-      if (K.equals(this)) return this;
-      throw new NotImplementedError('unifying two different finite extensions requires polynomials over an extension');
+    const other = K instanceof ExtensionDomain ? K.extension : K;
+    if (other instanceof FiniteExtension) {
+      if (other.equals(this)) return this;
+      const [base, outer] = compareExpr(this.modulus.asExpr(), other.modulus.asExpr()) <= 0 ? [this, other] : [other, this];
+      return outer.setDomain(base.toDomain());
     }
-    return this.setDomain(this.domain.unify(K.drop(this.symbol)));
+    return this.setDomain(this.domain.unify(other.drop(this.symbol)));
   }
 
   /** SymPy quo(f, g) = exquo(f, g). */
@@ -316,10 +321,16 @@ export class FiniteExtension {
 class ExtensionDomain extends Domain {
   readonly ground = 'EX' as const;
   readonly isField: boolean;
+  override readonly symbols: readonly Sym[];
   constructor(readonly extension: FiniteExtension) {
     super();
     this.isField = extension.isField;
+    this.symbols = [...extension.domain.symbols, extension.symbol];
   }
+  override get isFiniteExtension(): boolean { return true; }
+  override get hasCharacteristicZero(): boolean { return this.extension.hasCharacteristicZero; }
+  override characteristic(): bigint { return this.extension.characteristic(); }
+  override unify(other: Domain): Domain { return this.extension.unify(other).toDomain(); }
   toString(): string { return this.extension.toString(); }
   canon(e: Expr): Expr { return this.extension.fromSympy(e); }
   fromSympy(e: ExprLike): Expr { return this.extension.fromSympy(e); }

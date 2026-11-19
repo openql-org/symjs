@@ -33,7 +33,7 @@ import time
 import types
 import warnings
 import weakref
-from collections import Counter
+from collections import Counter, defaultdict
 from collections.abc import Iterator
 
 import sympy
@@ -247,6 +247,11 @@ class Instrument(ast.NodeTransformer):
 
     def measured(self, node, site):
         if isinstance(node, ast.Call):
+            if (isinstance(node.func, ast.Name) and node.func.id == "capture" and len(node.args) == 1
+                    and isinstance(node.args[0], ast.Lambda)):
+                body = node.args[0].body
+                if isinstance(body, ast.Call) and isinstance(body.func, ast.Attribute) and body.func.attr == "print_nonzero":
+                    body.func = call_hook("capture_printer", site, body.func.value, ast.Constant(body.func.attr))
             if isinstance(node.func, ast.Attribute):
                 prepared = call_hook("method", site, node.func.value, ast.Constant(node.func.attr))
             else:
@@ -558,6 +563,15 @@ def default_truth(value):
     return not hasattr(type(value), "__bool__") and not hasattr(type(value), "__len__")
 
 
+
+def closure_vector(function):
+    """The vector of the closure returned by Vector.dot(Del), with the call taking it as its last argument."""
+    if getattr(function, "__qualname__", "") != "Vector.dot.<locals>.directional_derivative":
+        return None, function
+    vector = function.__closure__[function.__code__.co_freevars.index("self")].cell_contents
+    return vector, functools.wraps(function)(lambda *args, **kwargs: function(*args[:-1], **kwargs))
+
+
 class Capture:
     def __init__(self, module, category, sites):
         self.module, self.category, self.sites = module, category, sites
@@ -566,6 +580,7 @@ class Capture:
         self.pending = {}
         self.exceptions = {}
         self.bindings = {}
+        self.printers = {}
 
     def metadata(self, site):
         return {"module": self.module, "category": self.category, "test": self.test,
@@ -576,6 +591,8 @@ class Capture:
 
     def snapshot(self, site, name, receiver, args, kwargs, *, function=None, synthetic=False):
         try:
+            if isinstance(function, type) and (reason := extract.custom_class_reason(function)):
+                return {"reason": reason}
             # extract.ser materializes iterators. Before-call capture must never
             # consume the iterator the real test is about to pass to its API.
             if contains_iterator((receiver, args, kwargs)):
@@ -603,23 +620,95 @@ class Capture:
             extract.DUMMY_IDS.clear()
             record = {"fn": name, "args": [extract.ser(a) for a in args],
                       "kwargs": {k: extract.ser(v) for k, v in kwargs.items()}}
+            owner = getattr(function, "__self__", None)
+            if not name.startswith(".") and isinstance(owner, sympy.MatrixBase):
+                record["boundMatrix"] = extract.ser(owner)
+            # a call made under `with evaluate(False)` builds its result unevaluated
+            if not sympy.core.parameters.global_parameters.evaluate and name in ("Max", "Min"):
+                record["globalEvaluate"] = False
+            if name in ("classof", "srepr"):
+                for arg, tree in zip(args, record["args"]):
+                    if tree["t"] == "Matrix":
+                        tree["matrixClass"] = type(arg).__name__
+            if name == "srepr":
+                # srepr shows what the corpus trees leave out: the index of a Dummy and an explicit commutative=True
+                for arg, tree in zip(args, record["args"]):
+                    if isinstance(arg, sympy.Dummy):
+                        tree["dummyIndex"] = str(arg.dummy_index)
+                    if isinstance(arg, sympy.Symbol) and arg._assumptions_orig.get("commutative") is True:
+                        tree["assume"] = {**tree["assume"], "commutative": True}
             if name.startswith("."):
                 record["self"] = extract.ser(receiver)
+            if self.category == "core" and name == ".diff" and isinstance(receiver, sympy.core.function.AppliedUndef):
+                if callable(receiver.func._kwargs.get("fdiff")):
+                    variables = [sympy.Dummy(f"arg{index}") for index in range(len(receiver.args))]
+                    formal = receiver.func(*variables)
+                    record["functionPartials"] = [extract.ser(sympy.Lambda(variables, formal.fdiff(index + 1)))
+                                                  for index in range(len(variables))]
+            if self.category == "core" and name == ".make_args":
+                from sympy.core.operations import LatticeOp
+                if isinstance(receiver, type) and issubclass(receiver, LatticeOp):
+                    record["latticeOperation"] = [extract.ser(receiver.identity), extract.ser(receiver.zero)]
+            if self.category == "core" and name == ".random":
+                from sympy.core.random import rng
+                _, state, gaussian = rng.getstate()
+                record["randomState"] = {"words": state[:-1], "index": state[-1]}
+                if gaussian is not None:
+                    record["randomState"]["gaussian"] = gaussian
+            if self.category == "core" and name == ".__getitem__" and isinstance(receiver, defaultdict) and receiver.default_factory is int:
+                record["zeroDefault"] = True
+            if self.category == "core" and name == ".__truediv__":
+                from sympy.core.numbers import _errdict
+                if _errdict["divide"]:
+                    record["divideError"] = True
+            if self.category == "polys":
+                from sympy.polys.numberfields.modules import Submodule
+                from sympy.printing.lambdarepr import IntervalPrinter
+                if name in ("gf_irreducible_p", "gf_factor", "gf_factor_sqf", "groebner") and "method" not in kwargs:
+                    from sympy.polys.polyconfig import query
+                    setting = {"gf_irreducible_p": "GF_IRRED_METHOD", "groebner": "GROEBNER"}.get(name, "GF_FACTOR_METHOD")
+                    record["polyReplay"] = {"method": query(setting)}
+                elif name == ".args" and isinstance(receiver, sympy.AlgebraicNumber):
+                    record["polyReplay"] = {"originalCoeffs": [extract.ser(c) for c in receiver.args[1]]}
+                elif name == ".doprint" and isinstance(receiver, IntervalPrinter):
+                    record["polyReplay"] = {"intervalPrinter": True}
+                elif name == ".discard_before" and isinstance(receiver, Submodule):
+                    record["polyReplay"] = {"computedTable": receiver._mult_tab is not None}
+                elif name == ".mult_tab" and isinstance(receiver, Submodule):
+                    for call, _, value, _ in self.bindings.values():
+                        if value() is receiver and call.get("fn") == ".discard_before":
+                            record["polyReplay"] = {"submoduleDiscard": {"original": call["self"],
+                                "index": int(call["args"][0]["p"]), "computedTable": call["polyReplay"]["computedTable"]}}
+                            break
+            state = extract.tensor_state((receiver, args, kwargs))
+            if state:
+                record["tensorData"] = state
+            def custom_reason(value):
+                if isinstance(value, dict):
+                    if "unsupportedClass" in value:
+                        return value["unsupportedClass"]
+                    return next((reason for item in value.values() if (reason := custom_reason(item))), None)
+                if isinstance(value, list):
+                    return next((reason for item in value if (reason := custom_reason(item))), None)
+                return None
+            reason = custom_reason(record)
+            if reason:
+                record["exclusion"] = reason
             from sympy.assumptions import global_assumptions
             if global_assumptions:
                 record["assume"] = [extract.ser(a) for a in sorted(global_assumptions, key=str)]
             # Shared serializer constructors can include mutable Python lists.
-            return json_numbers(copy.deepcopy(record))
+            return {**json_numbers(copy.deepcopy(record)), '_dummyIds': extract.DUMMY_IDS.copy()}
         except (extract.Timeout, TestDeadline):
             raise
         except extract.PythonRuntime:
             return {"reason": "python-runtime-api"}
-        except extract.Unsupported:
-            return {"reason": "unserializable-input"}
+        except extract.Unsupported as error:
+            return {"reason": str(error) if str(error).startswith("Python test class ") else "unserializable-input"}
         except Exception:
             return {"reason": "serialization-error"}
 
-    def invoke(self, site, name, receiver, function, args, kwargs):
+    def invoke(self, site, name, receiver, function, args, kwargs, *, attribute_read=False):
         args, tables = tabulated(args)
         record = self.snapshot(site, name, receiver, [None if i in tables else a for i, a in enumerate(args)], kwargs, function=function)
         self.pending[site] = record
@@ -627,6 +716,8 @@ class Capture:
             result = function(*args, **kwargs)
             if tables and "reason" not in record:
                 self.pending[site] = fill_tables(record, tables)
+            if site in self.printers:
+                self.pending[site]["capturedPrinter"] = self.printers.pop(site)
             return result
         except (extract.Timeout, TestDeadline):
             raise
@@ -635,16 +726,28 @@ class Capture:
             if expected is not None and isinstance(error, expected):
                 if isinstance(expected, tuple):
                     expected = type(error)
+                if attribute_read and isinstance(error, AttributeError) and isinstance(receiver, sympy.MatrixBase):
+                    record["attributeRead"] = True
                 self.finish(site, record, "is", None, raises=expected.__name__)
             else:
                 self.omit(site, "reference-exception")
             self.pending.pop(site, None)
             raise
 
+    def capture_printer(self, site, receiver, name):
+        def printed(*args, **kw):
+            self.printers[site] = {"self": extract.ser(receiver), "fn": "." + name,
+                                   "args": [extract.ser(a) for a in args], "kwargs": {k: extract.ser(v) for k, v in kw.items()}}
+            return getattr(receiver, name)(*args, **kw)
+        return printed
+
     def function(self, site, function):
         name = getattr(function, "__name__", "")
         if not name and sympy_object(function):
             return lambda *args, **kw: self.invoke(site, ".__call__", function, function, args, kw)
+        vector, call = closure_vector(function)
+        if vector is not None:
+            return lambda *args, **kw: self.invoke(site, name, None, call, (*args, vector), kw)
         return lambda *args, **kw: self.invoke(site, name, None, function, args, kw)
 
     def method(self, site, receiver, name):
@@ -655,7 +758,7 @@ class Capture:
 
     def synthetic(self, site, name, receiver, *args):
         function = (lambda *a: OPS[name](receiver, *a)) if name in OPS else (lambda: getattr(receiver, name))
-        return self.invoke(site, "." + name, receiver, function, args, {})
+        return self.invoke(site, "." + name, receiver, function, args, {}, attribute_read=name not in OPS)
 
     def finish(self, site, record, op, expected, **extra):
         if "reason" in record:
@@ -674,9 +777,55 @@ class Capture:
         if re.search(r"<[^<>\n]*\bat 0x[0-9a-fA-F]+>", text):
             self.omit(site, "unstable-result-representation")
             return
-        case = {**self.metadata(site), **record, "expected": text, "op": op, **extra}
+        case = {**self.metadata(site), **{k: v for k, v in record.items() if k != "_dummyIds"}, "expected": text, "op": op, **extra}
+        if self.category == "matrices":
+            from sympy.matrices.common import _MinimalMatrix
+            if op == "!=" and record["fn"] == ".identity":
+                case["expectedOperand"] = extract.ser(expected)
+            elif op == "==" and isinstance(expected, _MinimalMatrix):
+                case["expectedOperand"] = extract.ser(sympy.Matrix(expected.rows, expected.cols, list(expected)))
+            elif op == "==" and ".tests." in type(expected).__module__ and hasattr(expected, "_sympy_"):
+                converted = sympy.sympify(expected)
+                if isinstance(converted, sympy.MatrixBase):
+                    case["expectedOperand"] = {"t": "SympifiableMatrix", "value": extract.ser(converted)}
+        if op == "!=" and self.category == "tensor" and isinstance(expected, (sympy.Idx, sympy.Indexed, sympy.IndexedBase, sympy.tensor.tensor.TensorHead)):
+            case["comparisonTree"] = extract.ser(expected)
+        if op == "!=" and self.category == "polys":
+            try:
+                comparison = extract.ser(expected)
+                if comparison["t"] == "AGCASubModule":
+                    comparison["componentOrder"] = str(expected.order.args[1][0])
+                case["comparisonTree"] = comparison
+            except (extract.Unsupported, extract.PythonRuntime):
+                pass
+        # two random symbols of the same name print alike: the right-hand side is kept as a tree
+        if op == "!=" and self.category == "stats" and isinstance(expected, sympy.stats.rv.RandomSymbol):
+            case["comparisonTree"] = extract.ser(expected)
+        if op == "!=" and self.category == "concrete" and isinstance(expected, (sympy.Sum, sympy.Product, sympy.Integral)):
+            case["comparisonTree"] = extract.ser(expected)
+        # symbols that differ only in their assumptions print alike in a geometric entity as well
+        if op == "!=" and self.category == "geometry" and isinstance(expected, sympy.geometry.entity.GeometryEntity):
+            case["comparisonTree"] = extract.ser(expected)
+        if ported_function_case(case):
+            case.pop("exclusion", None)
         if isinstance(expected, str):
             case["text"] = True
+        if self.category == "core" and op == "!=" and case.get("post") is None and not contains_iterator(expected):
+            # Preserve the compared value when two objects print alike.
+            prior = extract.DUMMY_IDS.copy()
+            extract.DUMMY_IDS.clear()
+            extract.DUMMY_IDS.update(record.get("_dummyIds", {}))
+            try:
+                operand = extract.ser(expected)
+            except extract.Unsupported:
+                operand = None
+            finally:
+                extract.DUMMY_IDS.clear()
+                extract.DUMMY_IDS.update(prior)
+            if operand is not None and operand.get("t") == "UFnClass":
+                operand["assume"] = {key: value for key, value in expected._kwargs.items() if isinstance(value, bool)}
+            if operand is not None and operand.get("t") in ("Float", "Rational", "Symbol", "Dummy", "Subs", "Mul", "Add", "Pow", "Fn", "Lambda", "Str", "UFnClass"):
+                case["expectedOperand"] = json_numbers(operand)
         self.events.append((site, case))
 
     def check(self, site, op, lhs, rhs):
@@ -730,6 +879,9 @@ class Capture:
         name = getattr(function, "__name__", "")
         if not name and sympy_object(function):
             return lambda *args, **kw: self.bound_call(names, ".__call__", function, function, args, kw)
+        vector, call = closure_vector(function)
+        if vector is not None:
+            return lambda *args, **kw: self.bound_call(names, name, None, call, (*args, vector), kw)
         return lambda *args, **kw: self.bound_call(names, name, None, function, args, kw)
 
     def bind_method(self, names, receiver, name):
@@ -1125,6 +1277,84 @@ def extract_category(category, paths, timeout, baseline):
     return corpus
 
 
+def ported_function_case(case):
+    """Function fixtures translated through the public JavaScript function API."""
+    return (case.get("module"), case.get("test")) in {
+        ("sympy.core.tests.test_function", "test_Function"),
+        ("sympy.core.tests.test_function", "test_nargs_inheritance"),
+        ("sympy.core.tests.test_function", "test_fdiff_argument_index_error"),
+        ("sympy.functions.elementary.tests.test_interface", "test_function_series1"),
+        ("sympy.functions.elementary.tests.test_interface", "test_function_series2"),
+    }
+
+
+def without_replay_state(value):
+    """The original assertion identity, independent of replay-only state."""
+    if isinstance(value, dict):
+        return {k: without_replay_state(v) for k, v in value.items()
+                if k not in ("tensorData", "exclusion", "unsupportedClass", "indexedAssumptions", "comparisonTree",
+                             "matrixClass", "boundMatrix", "capturedPrinter", "attributeRead", "polyReplay", "expectedOperand", "zeroDefault", "divideError",
+                             "functionPartials", "randomState", "latticeOperation", "dummyIndex", "globalEvaluate")}
+    if isinstance(value, list):
+        return [without_replay_state(v) for v in value]
+    return value
+
+
+def refresh_replay_state(destination, timeout=TEST_SECONDS):
+    """Re-execute stateful clusters while preserving every existing assertion and shard boundary."""
+    if os.environ.get("PYTHONHASHSEED") != "0":
+        raise RuntimeError("Run with PYTHONHASHSEED=0 for deterministic reference output")
+    destination = Path(destination)
+    root = Path(sympy.__file__).parent
+    modules = {
+        "tensor": ["sympy.tensor.tests.test_tensor", "sympy.tensor.tests.test_indexed"],
+        "core": ["sympy.core.tests.test_priority", "sympy.core.tests.test_function"],
+        "functions": ["sympy.functions.elementary.tests.test_interface"],
+    }
+    exclusions = {}
+    index_path = destination / "index.json"
+    index = json.loads(index_path.read_text())
+    for category, names in modules.items():
+        observed, omitted = {}, {}
+        for module in names:
+            path = root.joinpath(*module.split(".")[1:]).with_suffix(".py")
+            events, _, _ = execute_source(path.read_text(), module, category, str(path), timeout)
+            for event in events:
+                key = f"{module}:{event['test']}:{event['line']}: {event['src']}"
+                if event.get("reason", "").startswith("Python test class "):
+                    exclusions[key] = event["reason"]
+                    omitted[key] = event["reason"]
+                elif "reason" not in event:
+                    observed[json_line(without_replay_state(event))] = event
+                    if "exclusion" in event:
+                        exclusions[key] = event["exclusion"]
+            print(f"{module}: captured {len(events)} observations", file=sys.stderr, flush=True)
+        changed = 0
+        for shard in index["categories"][category]["shards"]:
+            path = destination / shard["file"]
+            original = path.read_text()
+            cases = json.loads(original)
+            for i, case in enumerate(cases):
+                if case["module"] not in names:
+                    continue
+                if category == "tensor" and case["op"] != "!=" and case["module"].endswith("test_tensor") and not any(part in case["test"] for part in ("valued", "TensMul_data", "TensAdd_data", "noncommuting_components")):
+                    continue
+                replacement = observed.get(json_line(without_replay_state(case)))
+                key = f"{case['module']}:{case['test']}:{case['line']}: {case['src']}"
+                if replacement is None and key in omitted:
+                    replacement = {**case, "exclusion": omitted[key]}
+                if replacement is not None and replacement != case:
+                    cases[i] = replacement
+                    changed += 1
+            encoded = "[\n" + ",\n".join(json_line(c) for c in cases) + "\n]\n"
+            if encoded != original:
+                path.write_text(encoded)
+                shard["bytes"] = path.stat().st_size
+        print(f"{category}: refreshed {changed} existing assertions", file=sys.stderr, flush=True)
+    index_path.write_text(json.dumps(index, indent=2, ensure_ascii=True, allow_nan=False) + "\n")
+    Path(__file__).with_name("unit-exclusions.json").write_text(json.dumps(dict(sorted(exclusions.items())), indent=2) + "\n")
+
+
 def main(destination, only=(), timeout=TEST_SECONDS, jobs=1, baseline=None):
     if sympy.__version__ != "1.14.0":
         raise RuntimeError("The compatibility reference is pinned to SymPy 1.14.0")
@@ -1169,8 +1399,11 @@ if __name__ == "__main__":
     parser.add_argument("--jobs", type=int, default=4, help="Independent extraction processes")
     parser.add_argument("--baseline", help="Preserve all records/audits from already measured modules in a legacy corpus")
     parser.add_argument("--compact-audits", action="store_true", help="Losslessly combine repeated omission records without re-extraction")
+    parser.add_argument("--refresh-state", action="store_true", help="Refresh tensor state and explicit custom-class exclusions in existing shards")
     args = parser.parse_args()
-    if args.compact_audits:
+    if args.refresh_state:
+        refresh_replay_state(args.destination, args.timeout)
+    elif args.compact_audits:
         compact_audits(args.destination, args.only)
     else:
         main(args.destination, args.only, args.timeout, args.jobs, args.baseline)

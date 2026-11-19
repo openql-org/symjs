@@ -5,9 +5,10 @@
 
 import { afterEach, describe, expect, it } from 'vitest';
 import * as sj from '../../src';
-import { add, exp, I, mul, sqrt, symbol, symbols } from '../../src';
+import { add, complexAccuracy, exp, getIntegerPart, I, mul, NoMatch, Rational, S, sqrt, symbol, symbols } from '../../src';
 import type { Expr } from '../../src';
 import { impl } from '../../src/core/nodes';
+import { numericExtensions } from '../../src/numeric/evalf';
 import * as C from '../../src/numeric/mpconst';
 import { sha256, SYMPY_1000 } from './mpconst.ref';
 
@@ -17,6 +18,44 @@ const { parse, sstr, evalf } = sj;
 const p = (s: string) => parse(s);
 const f = sj.SymFunction('f');
 const P = (s: string): sj.Expr => sj.parse(s, { symbols: { x, y }, functions: { f } } as never);
+
+it('evaluates closed definite integrals before converting to Float', () => {
+  const exact = new sj.Integral([sj.pow(x, 2), x, S.Zero, S.One]);
+  const residue = sj.piecewise([1, sj.Eq(sj.Mod(x, 2), 1)], [2, sj.Lt(x, 10)], [0, true]);
+  const periodic = new sj.Integral([residue, x, S.Zero, Rational.of(5)]);
+  expect(String(evalf(exact))).toBe('0.333333333333333');
+  expect(String(evalf(periodic))).toBe('10.0000000000000');
+  for (const integral of [new sj.Integral([x, x]), new sj.Integral([x, x, S.Zero, y]), new sj.Integral([f(x), x, S.Zero, S.One])]) {
+    expect(evalf(integral)).toBeInstanceOf(sj.Integral);
+  }
+  const saved = { ...impl };
+  try {
+    delete impl.doit;
+    expect(evalf(exact)).toBeInstanceOf(sj.Integral);
+  } finally {
+    Object.assign(impl, saved);
+  }
+});
+
+it('compiles registered numerical extensions and evaluates their substituted parts', () => {
+  class Double extends sj.ExtensionExpr {
+    constructor(readonly value: Expr) { super('Double', [value]); }
+    withArgs(args: readonly Expr[]): Expr { return new Double(args[0] ?? S.Zero); }
+    override evalfSelf(evalArg: (expr: Expr) => Expr): Expr { return evalArg(mul(2, this.value)); }
+  }
+  numericExtensions['Double'] = ([value]) => ({
+    re: 2 * (value?.re ?? 0),
+    im: 2 * (value?.im ?? 0),
+  });
+  try {
+    const expression = new Double(x);
+    expect(sj.lambdify(expression, [x])(3)).toEqual({ re: 6, im: 0 });
+    expect(sstr(evalf(expression))).toBe('2.0*x');
+    expect(sstr(evalf(expression, 15, { subs: { x: 3 } }))).toBe('6.00000000000000');
+  } finally {
+    delete numericExtensions['Double'];
+  }
+});
 
 afterEach(() => C.clearConstantCache());
 
@@ -280,4 +319,89 @@ it('encodes and decodes scaled zeros with their sign and magnitude', () => {
   expect(sj.scaledZero(-20, -1)).toEqual([[[1], 1, -20, 1], -1]);
   expect(() => sj.scaledZero(1.5)).toThrow(RangeError);
   expect(() => sj.scaledZero(1, 0)).toThrow(RangeError);
+});
+
+const zero = { man: 0n, exp: 0n };
+const two = { man: 1n, exp: 1n };
+const ten = { man: 5n, exp: 1n };
+
+describe('evalf helpers', () => {
+  it('combines absolute errors in the maximum norm', () => {
+    expect(complexAccuracy(S.ComplexInfinity)).toBe(Infinity);
+    expect(() => complexAccuracy(S.One)).toThrow(TypeError);
+    expect(complexAccuracy([zero, zero, 0, 0])).toBe(Infinity);
+    expect(complexAccuracy([two, zero, 35, 0])).toBe(35);
+    expect(complexAccuracy([zero, two, 0, 35])).toBe(35);
+    expect(complexAccuracy([two, ten, 35, 100])).toBe(37);
+    expect(complexAccuracy([two, { man: -125n, exp: 3n }, 35, 100])).toBe(43);
+    expect(complexAccuracy([two, ten, 100, 35])).toBe(35);
+  });
+  it('computes exact componentwise integer parts', () => {
+    expect(() => getIntegerPart(S.ComplexInfinity, 1)).toThrow(RangeError);
+    expect(() => getIntegerPart(S.One, 1, new Map([['subs', 1]]))).toThrow(RangeError);
+    expect(() => getIntegerPart(parse('x'), 1)).toThrow(RangeError);
+    expect(getIntegerPart(Rational.of(1, 2), -1, new Map(), true)).toEqual([0n, 0n]);
+    expect(getIntegerPart(Rational.of(1, 2), 1, new Map(), true)).toEqual([1n, 0n]);
+    expect(getIntegerPart(Rational.of(-1, 2), -1, new Map(), true)).toEqual([-1n, 0n]);
+    expect(getIntegerPart(Rational.of(-1, 2), 1, new Map(), true)).toEqual([0n, 0n]);
+    expect(getIntegerPart(parse('3/2 + 5*I/2'), -1)).toEqual([{ man: 1n, exp: 0n }, { man: 1n, exp: 1n }, Infinity, Infinity]);
+    expect(getIntegerPart(S.Zero, 1)).toEqual([NoMatch, NoMatch, NoMatch, NoMatch]);
+  });
+});
+
+it('distinguishes same-name dummies when substituting numeric values', () => {
+  const a = new sj.Dummy('x');
+  const b = new sj.Dummy('x');
+  const expr = sj.add(a, sj.mul(2, b));
+  expect(expr.evalf(20, { subs: new Map([[a, 3], [b, 5]]) }).toNumber()).toBe(13);
+  expect(a.evalf(20, { subs: new Map([[a, S.ComplexInfinity]]) })).toBe(S.ComplexInfinity);
+  expect(sj.Subs(a, a, b).evalf(15, { subs: { x: 2 } }).toNumber()).toBe(2);
+});
+
+it('raises for ambiguous cancellation at the precision limit in strict mode', () => {
+  const uncertain = new sj.Fn('sin', [sj.mul(160, S.Pi)]);
+  expect(() => uncertain.evalf(15, { maxn: 100, strict: true })).toThrow(sj.PrecisionExhausted);
+  expect(uncertain.evalf(15, { chop: true, strict: true })).toBe(S.Zero);
+  expect(sj.sqrt(2).evalf(15, { maxn: 90, strict: true }).toNumber()).toBeCloseTo(Math.SQRT2);
+});
+
+it('evaluates an unevaluated zero integral exactly', () => {
+  const x = sj.symbol('x');
+  expect(new sj.Integral([S.Zero, x, x, x]).evalf()).toBe(S.Zero);
+});
+
+it('reports lost accuracy when inexact terms cancel to a zero mantissa', () => {
+  const e = new sj.Add([sj.S.Pi, sj.neg(sj.S.Pi)]);
+  expect(() => e.evalf(15, { strict: true })).toThrow(sj.PrecisionExhausted);
+});
+
+it('returns raw binary components and retains guarded addition accuracy', async () => {
+  const sj = await import('../../src');
+  expect(sj.evalfRaw(sj.S.Zero, 15)).toEqual([NoMatch, NoMatch, 15, NoMatch]);
+  expect(sj.evalfRaw(parse('Sum(0,(x,1,2))'), 15)).toEqual([NoMatch, NoMatch, 15, NoMatch]);
+  expect(sj.evalfRaw(parse('-8+3*sqrt(3)'), 1)).toEqual([{ man: -1n, exp: 1n }, NoMatch, 9, NoMatch]);
+  expect(sj.evalfRaw(sj.I, 12)).toEqual([NoMatch, { man: 1n, exp: 0n }, NoMatch, 12]);
+  expect(sj.evalfRaw(parse('sqrt(2)+I*sqrt(3)'), 15)).toMatchObject([{ man: expect.any(BigInt) }, { man: expect.any(BigInt) }, 15, 15]);
+  expect(sj.evalfRaw(parse('x'), 12)).toBe(NoMatch);
+  expect(() => sj.evalfRaw(sj.S.One, 0)).toThrow(RangeError);
+});
+
+it('evaluates constant definite integrals and coincident symbolic endpoints', () => {
+  expect(String(evalf(sj.integral(f(x), [x, y, y])))).toBe('0');
+  expect(evalf(sj.integral(2, [x, 1, 3])).toNumber()).toBe(4);
+  expect(evalf(sj.integral(f(x), [x, 1, 3]))).toBeInstanceOf(sj.Integral);
+});
+
+it('evaluates piecewise values and substitutes only free symbols of sums', () => {
+  const [x, n] = sj.symbols('x n');
+  const sum = sj.Sum(x, [x, 1, n]);
+  expect(sum.evalf(2, { subs: new Map([[x, 99], [n, 2]]) }).toNumber()).toBe(3);
+  const pw = sj.piecewise([sj.sqrt(2), sj.Lt(x, 1)], [x, true]);
+  expect(pw.evalf().subs(x, 0).toNumber()).toBeCloseTo(Math.SQRT2);
+});
+
+it('retains symbolic indexed expressions during numeric evaluation', () => {
+  const x = sj.symbol('x');
+  const entry = new sj.IndexedBase('A').at(x);
+  expect(entry.evalf().equals(entry)).toBe(true);
 });

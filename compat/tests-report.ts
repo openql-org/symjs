@@ -20,6 +20,7 @@ export interface CategoryResult {
   category: string; seconds: number; total: Counts; modules: Record<string, Counts>;
   failureGroups: Record<string, number>; apiGroups: Record<string, number>;
   failures: { id: string; fn: string; expected: string; outcome: TestOutcome }[];
+  exclusions?: { id: string; reason: string }[];
   exceptionMismatches: { id: string; expected: string; actual: string }[];
 }
 export const emptyCounts = (): Counts => ({ cases: 0, exact: 0, equivalent: 0, fail: 0, unsupported: 0, error: 0 });
@@ -66,6 +67,7 @@ export function writeTestsReport(directory: string, suiteSeconds: number): void 
   for (const result of results) for (const k of Object.keys(total) as (keyof Counts)[]) total[k] += result.total[k];
   const failing = results.flatMap((r) => r.failures.map((f) => f.id)).sort();
   const timeouts = results.flatMap((r) => r.failures.filter((f) => f.outcome.status === 'error' && f.outcome.reason.startsWith('Replay deadline')).map((f) => f.id)).sort();
+  const exclusions = results.flatMap((r) => r.exclusions ?? []);
   const mismatch = results.flatMap((r) => r.exceptionMismatches);
   const seconds = results.reduce((n, r) => n + r.seconds, 0);
   const lines = [
@@ -76,6 +78,7 @@ export function writeTestsReport(directory: string, suiteSeconds: number): void 
     `Extraction wall time: **${index.lastRunSeconds.toFixed(2)} s**, ${index.jobs} processes, ${index.timeoutSeconds} s per upstream test. Retained modules reuse established observations; their time covers loading and auditing, not re-execution.`, '',
     `Synchronous replay has a ${replayDeadlineMs('core') / 1000} s deadline per core/polys case and ${replayDeadlineMs('tensor') / 1000} s elsewhere. Deadlines remain visible as failing/inconclusive observations and are never accepted as expected exceptions. Their IDs are stored separately in the ratchet: an unfinished assertion cannot establish or resolve a correctness regression.`, '',
     'Exact includes successful inequality, identity, boolean and exception assertions. Equality uses the shared doctest deserializer, adapters and equivalence rules. Exception class mismatches are accepted and counted separately; missing adapters and deserialization errors never prove an expected exception.', '',
+    `${exclusions.length} assertions excluded from replay with explicit Python class execution reasons in tools/sympy-reference/unit-exclusions.json. Their corpus records are retained.`, '',
     '## Agreement by category', '', '| Category | Measured | Exact | Equivalent | Failing | Agreement | Replay s |', '|---|---:|---:|---:|---:|---:|---:|',
   ];
   for (const r of results) lines.push(`| ${r.category} | ${r.total.cases} | ${r.total.exact} | ${r.total.equivalent} | ${r.failures.length} | ${ratio(r.total.exact + r.total.equivalent, r.total.cases)} | ${r.seconds.toFixed(2)} |`);

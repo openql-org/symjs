@@ -23,7 +23,12 @@ const showMap = (v: unknown): string => {
 
 describe('gammasimp and combsimp', () => {
   const n = symbols('n', { integer: true })[0];
+  it('cancels adjacent gamma factors with fractional offsets in either order', () => {
+    expect(sstr(gammasimp(P('gamma(x+7/2)/gamma(x+5/2)')))).toBe('(2*x + 5)/2');
+    expect(sstr(gammasimp(P('gamma(x+5/2)/gamma(x+7/2)')))).toBe('2/(2*x + 5)');
+  });
   it('combine integer shifts', () => {
+    expect(sstr(gammasimp(P('gamma(7/3)')))).toBe('4*gamma(1/3)/9');
     expect(sstr(gammasimp(parse('gamma(x + 3)/gamma(x + 1)')))).toBe('(x + 1)*(x + 2)');
     expect(sstr(gammasimp(parse('gamma(x + 1)/gamma(x)/x')))).toBe('1');
     expect(sstr(combsimp(parse('factorial(n + 2)/factorial(n)', { symbols: { n } } as never)))).toBe('(n + 1)*(n + 2)');
@@ -229,4 +234,15 @@ describe('combsimp and gammasimp: further SymPy 1.14 cases', () => {
     expect(String(hypersimp(PA('factorial(n)', I), n))).toBe('n + 1');
     expect(isHypergeometric(PA('factorial(n)', I), n)).toBe(true);
   });
+});
+
+it('reduces rational Gamma arguments and tests nonlinear factorial shifts', () => {
+  const k = symbol('k');
+  expect(String(gammasimp(P('gamma(7/3)')))).toBe('4*gamma(1/3)/9');
+  expect(String(hypersimp(P('factorial(k**2)'), k))).toBe('NoMatch');
+});
+
+it('obtains rational shift quotients from the Gamma rewrite of binomials', () => {
+  const n = symbol('n');
+  expect(String(hypersimp(P('4**n*n**4/binomial(2*n,n)'), n))).toBe('2*(n + 1)**5/(n**4*(2*n + 1))');
 });

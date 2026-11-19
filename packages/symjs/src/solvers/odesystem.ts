@@ -11,8 +11,8 @@
 
 import { NotImplementedError } from '../core/errors';
 import type { Expr, ExprLike } from '../core/nodes';
-import { Derivative, Dummy, I, Integral, Mul, Pow, Rational, Rel, S, Sym, UndefFn } from '../core/nodes';
-import { asNumerDenom } from '../core/methods';
+import { Derivative, Dummy, I, Integral, Order, Mul, Pow, Rational, Rel, S, Sym, UndefFn } from '../core/nodes';
+import { asNumerDenom, getO, removeO } from '../core/methods';
 import { at, cast, defined, first, getOrThrow } from '../core/guard';
 import { isIntegerQ, isReal } from '../core/assumptions';
 import { SymFunction } from '../core/undef';
@@ -26,11 +26,14 @@ import { cos, im, log, re, sin, sinh, fn } from '../functions/elementary/element
 import { factor } from '../polys/sympoly';
 import { cancel } from '../simplify/rational';
 import { separatevars } from '../simplify/separatevars';
-import { expand } from '../simplify/expand';
+import { powsimp } from '../simplify/powsimp';
+import { expand, expandMul, expandMulOnly } from '../simplify/expand';
+import { collect } from '../simplify/radsimp';
+import { sqrtdenest } from '../simplify/sqrtdenest';
 import { simplify } from '../simplify/simplify';
 import { integrate } from '../integrals/integrate';
 import { Matrix } from '../matrices/matrix';
-import { jordanForm } from '../matrices/linalg';
+import { analyticFunc, jordanForm, stronglyConnectedComponents } from '../matrices/linalg';
 import { asEquation, linearEqToMatrix, nonlinsolve, solve } from './solve';
 import { solveIcs } from './odesimp';
 
@@ -51,8 +54,8 @@ const isOne = (e: Expr) => e instanceof Rational && e.p === 1n && e.q === 1n;
  * [Eq(f(t), ...), Eq(g(t), ...)], or, like SymPy, a list of such lists when the
  * system has several solution families (a nonlinear triangular system).
  */
-export function dsolveSystem(eqsIn: readonly ExprLike[], funcsIn?: readonly UndefFn[], t?: Sym, ics?: ReadonlyMap<Expr, ExprLike>): Expr[][] {
-  const sols = dsolveSystemAll(eqsIn, funcsIn);
+export function dsolveSystem(eqsIn: readonly ExprLike[], funcsIn?: readonly UndefFn[], t?: Sym, ics?: ReadonlyMap<Expr, ExprLike>, options: { simplify?: boolean; doit?: boolean } = {}): Expr[][] {
+  const sols = dsolveSystemAll(eqsIn, funcsIn, options);
   const funcs = funcsIn ?? findFunctions(eqsIn.map(sympify));
   if (t !== undefined && funcs.some((f) => !first(f.args).equals(t))) throw new RangeError('dsolveSystem: inconsistent independent variable');
   if (ics === undefined) return sols;
@@ -83,6 +86,13 @@ export function canonicalOdes(eqs: readonly ExprLike[], funcs: readonly UndefFn[
     .map((row) => derivatives.map((d, i) => Eq(d, at(row, i))));
 }
 
+/** exp(A*t) for a constant square coefficient matrix. */
+export function matrixExp(A: Matrix, t: Sym): Matrix {
+  if (A.rows !== A.cols || A.data.some((e) => e.has(t))) throw new RangeError('expected a square matrix independent of t');
+  const z = new Dummy('lambda');
+  return analyticFunc(A, exp(mul(t, z)), z);
+}
+
 /** Classify a first-order linear system by forcing and commutativity with its antiderivative. */
 export function linodesolveType(A: Matrix, t: Sym, b?: Matrix): Map<string, string | Matrix | NoMatchResult> {
   if (A.rows !== A.cols || (b !== undefined && (b.rows !== A.rows || b.cols !== 1))) throw new RangeError('linodesolveType: incompatible system dimensions');
@@ -93,8 +103,10 @@ export function linodesolveType(A: Matrix, t: Sym, b?: Matrix): Map<string, stri
   return new Map<string, string | Matrix | NoMatchResult>([['type_of_equation', `type${1 + (variable ? 2 : 0) + (forced ? 1 : 0)}`], ['antiderivative', antiderivative]]);
 }
 
+const derivativeOf = (f: UndefFn, t: Sym, k: number) => new Derivative([f, t, Rational.of(k)]);
+
 /** Every solution list of the system. */
-function dsolveSystemAll(eqsIn: readonly ExprLike[], funcsIn?: readonly UndefFn[]): Expr[][] {
+function dsolveSystemAll(eqsIn: readonly ExprLike[], funcsIn: readonly UndefFn[] | undefined, options: { simplify?: boolean; doit?: boolean }): Expr[][] {
   const eqs = eqsIn.map((e) => {
     const x = sympify(e);
     return x instanceof Rel && x.op === 'Eq' ? add(x.lhs, mul(-1, x.rhs)) : x;
@@ -103,6 +115,61 @@ function dsolveSystemAll(eqsIn: readonly ExprLike[], funcsIn?: readonly UndefFn[
   const n = funcs.length;
   if (n === 0 || eqs.length !== n) throw new TypeError('dsolve: as many equations as functions are needed');
   const t = cast(first(first(funcs).args), Sym);
+  if (funcs.some((f) => f.args.length !== 1 || !first(f.args).equals(t))) throw new RangeError('system functions must depend on one common variable');
+  const primitive = (e: Expr): Expr => options.doit === false && !isZero(e) ? new Integral([e,t]) : integrate(e,t);
+  const finish = (e: Expr): Expr => options.simplify === false ? e : expand(e);
+  // Introduce a state for each lower derivative in a coupled linear system.
+  const derivatives = eqs.flatMap((eq) => subexprs(eq, (e) => e instanceof Derivative)).map((d) => cast(d, Derivative));
+  if (derivatives.some((d) => funcs.some((f) => d.expr.equals(f)) && d.variableCount.some(([v]) => !v.equals(t)))) throw new RangeError('inconsistent differentiation variable');
+  const orders = funcs.map((f) => Math.max(0, ...derivatives.filter((d) => d.expr.equals(f)).map((d) => d.variableCount.reduce((a, [, k]) => a + k, 0))));
+  // If X = q(t)*Y eliminates Y, solve the smaller subsystem for Y'
+  // before introducing the constants of the final antiderivatives.
+  if (orders.every((k) => k === 2)) {
+    const system = systemMatrices(eqs, funcs, t, 2);
+    if (system && !system[1].data.some((e) => !isZero(e))) {
+      const [matrices] = system, lead = first(matrices), firstOrder = at(matrices, 1), zeroOrder = at(matrices, 2);
+      if (firstOrder.data.every(isZero) && !isZero(lead.det())) {
+        const acceleration = lead.inv().mul(zeroOrder);
+        const modes = secondOrderModes(acceleration, funcs, t);
+        if (modes) return [funcs.map((f, i) => Eq(f, finish(modes.get(i, 0))))];
+      }
+      for (const q of [S.One, t]) {
+        const dq = diff(q, t);
+        if (!zeroOrder.scale(q).add(firstOrder.scale(dq)).data.every((e) => isZero(simplify(e)))) continue;
+        const velocity = Matrix.col(...funcs);
+        const equations = lead.mul(velocity.map((f) => diff(f, t))).sub(firstOrder.sub(lead.scale(mul(2, dq, pow(q, -1)))).mul(velocity));
+        const solutions = dsolveSystemAll(equations.data, funcs, options);
+        const used = new Set([...eqs, ...solutions.flat()].flatMap((e) => [...e.freeSymbols()].map((v) => v.key)));
+        let index = 1;
+        const cs = funcs.map(() => { while (used.has(C(index).key)) index++; return C(index++); });
+        return solutions.map((family) => family.map((sol, i) => Eq(at(funcs, i), mul(q, add(at(cs, i), primitive(cast(sol, Rel).rhs))))));
+      }
+    }
+  }
+
+  if (orders.some((k) => k > 1) && eqs.every((eq) => funcs.filter((f) => eq.has(f)).length > 1)) {
+    const states = [...funcs];
+    const links: Expr[] = [];
+    const jets: [Expr, Expr][] = [];
+    for (const [i, f] of funcs.entries()) {
+      let state = f;
+      for (let k = 1; k <= at(orders, i); k++) {
+        const jet = derivativeOf(f, t, k);
+        const ds = derivativeOf(state, t, 1);
+        if (k === at(orders, i)) jets.push([jet, ds]);
+        else {
+          let name = `${f.name}_${k}`;
+          while (eqs.some((eq) => eq.has(new UndefFn(name, [t]))) || states.some((v) => v.name === name)) name += '_';
+          state = new UndefFn(name, [t]);
+          states.push(state);
+          links.push(add(ds, mul(-1, state)));
+          jets.push([jet, state]);
+        }
+      }
+    }
+    const reduced = [...eqs.map((e) => xreplace(e, jets)), ...links];
+    return dsolveSystemAll(reduced, states, options).map((family) => family.slice(0, n));
+  }
   // replace derivatives and functions by symbols, then read the coefficients
   const ds = funcs.map((_, i) => new Dummy(`d${i}`));
   const us = funcs.map((_, i) => new Dummy(`u${i}`));
@@ -128,7 +195,7 @@ function dsolveSystemAll(eqsIn: readonly ExprLike[], funcsIn?: readonly UndefFn[
       });
       nl = nl.map((family) => family.map((e) => xreplace(xreplace(e, rename), protect.map(([s, d]) => [d, s]))));
     }
-    return nl ?? triangularSystem(eqs, funcs);
+    return nl ?? triangularSystem(eqs, funcs, options);
   }
   const [M, rhs] = lin;
   const Md = Matrix.fromFunction(n, n, (i, j) => M.get(i, j));
@@ -139,31 +206,56 @@ function dsolveSystemAll(eqsIn: readonly ExprLike[], funcsIn?: readonly UndefFn[
   const A = MdInv.mul(Mu).scale(-1).map((e) => simplify(e));
   const b = MdInv.mul(rhs).map((e) => simplify(e));
   if (A.data.some((e) => e.has(t))) {
-    const scaled = constantTimesFunction(A, t);
-    if (scaled && b.data.every((e) => isZero(e))) {
-      // A = phi(t)*M with M constant: the solution of x' = M*x at tau = Integral(phi)
+    // A(t) = alpha(t)*I + phi(t)*M. The two summands commute.
+    const direct = constantTimesFunction(A, t);
+    const alpha = direct ? S.Zero : A.get(0, 0);
+    const shifted = A.sub(Matrix.eye(n).scale(alpha));
+    const scaled = direct ?? constantTimesFunction(shifted, t);
+    if (scaled) {
       const [phi, M] = scaled;
       const tau = integrate(phi, t);
       const s = new Dummy('s');
-      const Phi = fundamentalSolutions(M, s).reduce((acc, c) => acc.hstack(c));
-      const Cs = Array.from({ length: n }, (_, i) => new Sym(`C${i + 1}`));
-      const sol = Phi.mul(Matrix.col(...Cs));
-      return [funcs.map((f, i) => Eq(f, expand(xreplace(sol.get(i, 0), [[s, tau]]))))];
+      const basis = fundamentalSolutions(M, s, options.simplify !== false).reduce((acc, c) => acc.hstack(c));
+      if (options.simplify === false) {
+        // exp(B) and exp(-B) for B = integral(alpha)*I + tau*M.
+        const unscaled = basis.mul(basis.map((e) => xreplace(e, [[s, S.Zero]])).inv());
+        const shift = integrate(alpha, t);
+        const atTime = (sign: number) => unscaled.map((e) => expandMul(mul(exp(mul(sign, shift)), xreplace(e, [[s, mul(sign,tau)]])))).map((e) => powsimp(e));
+        const phi = atTime(1);
+        const constants = Matrix.col(...funcs.map((_, i) => C(i + 1)));
+        const forcing = atTime(-1).mul(b).map((e) => primitive(expandMul(e)));
+        const sol = phi.mul(constants.add(forcing)).map(expandMul);
+        return [funcs.map((f,i) => {
+          const e = sol.get(i,0);
+          const gens = subexprs(e, (v) => v instanceof Pow && v.base.equals(S.E));
+          return Eq(f, collect(e, gens, { exact: true }));
+        })];
+      }
+      const Phi = basis.map((e) => mul(exp(integrate(alpha, t)), xreplace(e, [[s, tau]])));
+      let constants = Matrix.col(...Array.from({ length: n }, (_, i) => C(i + 1)));
+      if (b.data.some((e) => !isZero(e))) constants = constants.add(Phi.inv().mul(b).map((e) => primitive(simplify(e))));
+      const sol = Phi.mul(constants);
+      return [funcs.map((f, i) => Eq(f, finish(sol.get(i, 0))))];
     }
     if (n === 2 && b.data.every((e) => isZero(e))) return [linear2VariableCoefficients(A, funcs, t)];
-    return triangularSystem(eqs, funcs);
+    return triangularSystem(eqs, funcs, options);
   }
   const fundamental = fundamentalSolutions(A, t);
   const Phi = fundamental.reduce((acc, c) => acc.hstack(c));
   const Cs = Array.from({ length: n }, (_, i) => new Sym(`C${i + 1}`));
   let sol = Phi.mul(Matrix.col(...Cs));
   if (b.data.some((e) => !isZero(e))) {
+    // A constant forcing admits the equilibrium particular solution -A^-1*b.
+    if (b.data.every((e) => !e.has(t)) && !isZero(A.det())) {
+      const stationary = A.inv().mul(b);
+      return [funcs.map((f, i) => Eq(f, add(sol.get(i, 0), mul(-1, stationary.get(i, 0)))))];
+    }
     // variation of parameters: Phi * Integral(Phi**-1 * b)
     const g = Phi.inv().mul(b).map((e) => simplify(e));
-    const part = Phi.mul(g.map((e) => integrate(e, t))).map((e) => simplify(expand(e)));
+    const part = Phi.mul(g.map(primitive)).map((e) => options.simplify === false ? e : simplify(expand(e)));
     sol = sol.add(part);
   }
-  return [funcs.map((f, i) => Eq(f, expand(sol.get(i, 0))))];
+  return [funcs.map((f, i) => Eq(f, finish(sol.get(i, 0))))];
 }
 
 /**
@@ -171,18 +263,67 @@ function dsolveSystemAll(eqsIn: readonly ExprLike[], funcsIn?: readonly UndefFn[
  * that has t, or undefined.
  */
 function constantTimesFunction(A: Matrix, t: Sym): [Expr, Matrix] | undefined {
-  const ref = defined(A.data.find((e) => e.has(t)), 'entry with t');
+  const ref = A.data.find((e) => e.has(t));
+  if (ref === undefined) return [S.One, A];
   const M = A.map((e) => simplify(mul(e, pow(ref, -1))));
   return M.data.some((e) => e.has(t)) ? undefined : [ref, M];
 }
 
+const diagonal = (m: Matrix) => m.data.every((v, i) => i % (m.rows + 1) === 0 || isZero(v));
+
+/** Decouple X'' = phi(t)*M*X into Airy equations or constant-coefficient equations in 1/t. */
+function secondOrderModes(acceleration: Matrix, funcs: readonly UndefFn[], t: Sym): Matrix | undefined {
+  if (!acceleration.data.some((e) => e.has(t))) return undefined;
+  const scaled = constantTimesFunction(acceleration, t);
+  if (!scaled) return undefined;
+  const [phi, matrix] = scaled;
+  const reciprocal = simplify(mul(pow(t, 4), phi));
+  const inverted = !reciprocal.has(t);
+  if (!inverted && diff(phi, t).has(t)) return undefined;
+  const [basis, jordan] = diagonal(matrix) ? [Matrix.eye(matrix.rows), matrix] : jordanForm(matrix);
+  if (!diagonal(jordan)) return undefined;
+  const modes = funcs.map((f, i) => {
+    const rate = mul(inverted ? reciprocal : phi, jordan.get(i, i));
+    const solution = cast(dsolveOne(add(diff(f, t, 2), mul(-1, rate, f)), f), Rel);
+    const mode = xreplace(solution.rhs, [[C(1), C(2*i + 1)], [C(2), C(2*i + 2)]]);
+    // X=t*V(1/t) changes X''=M*X/t^4 into V''=M*V.
+    return inverted ? mul(t, xreplace(mode, [[t, pow(t, -1)]])) : mode;
+  });
+  return basis.mul(Matrix.col(...modes));
+}
+
 /** n real fundamental solutions (columns) of x' = A*x. */
-function fundamentalSolutions(A: Matrix, t: Sym): Matrix[] {
+function fundamentalSolutions(A: Matrix, t: Sym, realForm = true): Matrix[] {
   const n = A.rows;
+  const symbolic = A.data.find((e) => e.freeSymbols().size > 0);
+  if (symbolic && n > 2) {
+    const normalized = A.map((e) => cancel(mul(e, pow(symbolic, -1))));
+    if (normalized.data.every((e) => e.freeSymbols().size === 0)) {
+      const tau = new Dummy('tau');
+      return fundamentalSolutions(normalized, tau, realForm).map((v) => v.map((e) => xreplace(e, [[tau, mul(symbolic, t)]])));
+    }
+  }
+  if (symbolic && diagonal(A)) return Array.from({ length: n }, (_, i) => Matrix.eye(n).col(i).scale(exp(mul(A.get(i, i), t))));
+  if (n === 2 && symbolic) {
+    // Solve the quadratic characteristic equation symbolically. The columns
+    // (b, lambda-a) are eigenvectors whenever b is nonzero.
+    const a = A.get(0, 0), b = A.get(0, 1), c = A.get(1, 0), d = A.get(1, 1);
+    const mean = mul(S.Half, add(a, d));
+    const delta = pow(simplify(add(pow(mul(S.Half, add(a, mul(-1, d))), 2), mul(b, c))), S.Half);
+    if (isZero(delta)) {
+      const phi = Matrix.eye(2).add(A.sub(Matrix.eye(2).scale(mean)).scale(t)).scale(exp(mul(mean, t)));
+      return [phi.col(0), phi.col(1)];
+    }
+    return [-1, 1].map((sign) => {
+      const root = add(mean, mul(sign, delta));
+      const v = isZero(b) ? Matrix.col(add(root, mul(-1, d)), c) : Matrix.col(b, add(root, mul(-1, a)));
+      return v.scale(exp(mul(root, t)));
+    });
+  }
   const [P, J] = jordanForm(A);
   // a real A has its complex eigenvalues in conjugate pairs with the same Jordan
   // structure, each pair giving two real solutions; a complex A keeps exp(lam*t)
-  const realA = A.data.every((e) => isReal(e) === true);
+  const realA = realForm && A.data.every((e) => isReal(e) === true);
   const out: Matrix[] = [];
   let i = 0;
   while (i < n) {
@@ -190,8 +331,8 @@ function fundamentalSolutions(A: Matrix, t: Sym): Matrix[] {
     // block size
     let k = 1;
     while (i + k < n && J.get(i + k - 1, i + k).key === S.One.key && J.get(i + k, i + k).key === lam.key) k++;
-    const c = lam.toComplex();
-    const complexPair = realA && Math.abs(c.im) > 1e-14;
+    const imaginary = realA && lam.freeSymbols().size === 0 ? lam.toComplex().im : 0;
+    const complexPair = Math.abs(imaginary) > 1e-14;
     for (let j = 0; j < k; j++) {
       // the j-th chain solution: e^(lam*t) * sum_{m<=j} t**(j-m)/(j-m)! * P_col(i+m)
       let v = Matrix.zeros(n, 1);
@@ -201,7 +342,7 @@ function fundamentalSolutions(A: Matrix, t: Sym): Matrix[] {
         v = v.add(P.col(i + m).scale(mul(pow(t, j - m), Rational.of(1n, fact))));
       }
       if (!complexPair) out.push(v.scale(exp(mul(lam, t))).map((e) => simplify(e)));
-      else if (c.im < 0) {
+      else if (imaginary < 0) {
         // the pair is represented by the eigenvalue with negative imaginary part:
         // e^(lam*t) = e^(a*t)*(cos(b*t) + I*sin(b*t)), real solutions Re and Im (t real)
         const a = simplify(re(lam));
@@ -464,7 +605,7 @@ function nonlinear3(eqs: readonly Expr[], funcs: readonly UndefFn[], t: Sym): Ex
  * on; the constants are numbered in that order. An equation with several
  * solutions gives a solution list for each (SymPy's list of solution lists).
  */
-function triangularSystem(eqs: readonly Expr[], funcs: readonly UndefFn[]): Expr[][] {
+function triangularSystem(eqs: readonly Expr[], funcs: readonly UndefFn[], options: { simplify?: boolean; doit?: boolean }): Expr[][] {
   const out: Expr[][] = [];
   const step = (remaining: readonly Expr[], solved: ReadonlyMap<string, Expr>, nextC: number): void => {
     if (!remaining.length) {
@@ -472,22 +613,61 @@ function triangularSystem(eqs: readonly Expr[], funcs: readonly UndefFn[]): Expr
       return;
     }
     const idx = remaining.findIndex((e) => funcs.filter((f) => !solved.has(f.key) && e.has(f)).length === 1);
-    if (idx < 0) throw new NotImplementedError('dsolve: only linear or triangular systems are supported');
-    const e = at(remaining, idx);
-    const rest = remaining.filter((_, i) => i !== idx);
-    const f = defined(funcs.find((g) => !solved.has(g.key) && e.has(g)), 'unknown function');
-    // constants of the solutions already substituted are protected while solving
+    const pending = funcs.filter((f) => !solved.has(f.key));
+    let block: UndefFn[];
+    let rows: readonly Expr[];
+    if (idx >= 0 && (options.simplify !== false || idx === 0)) {
+      rows = [at(remaining, idx)];
+      block = [defined(pending.find((f) => first(rows).has(f)), 'unknown function')];
+    } else {
+      // Edges point from each differentiated function to its dependencies.
+      // Tarjan returns a closed component first.
+      const owners = findFunctions(remaining);
+      if (owners.length !== remaining.length) throw new NotImplementedError('dsolve: cannot isolate a differential component');
+      const edges = remaining.flatMap((eq, i) => pending.filter((f) => eq.has(f)).map((f) => [at(owners,i), f] as const));
+      block = first(stronglyConnectedComponents([pending, edges]));
+      if (block.length >= funcs.length) throw new NotImplementedError('dsolve: only linear or triangular systems are supported');
+      rows = block.map((f) => at(remaining, owners.findIndex((g) => g.equals(f))));
+    }
+    const rest = remaining.filter((e) => !rows.includes(e));
     const known = [...solved.values()].flatMap((v) => [...v.freeSymbols()].filter((s) => s instanceof Sym).filter((c) => /^C\d+$/.test(c.name)));
     const protect = [...new Map(known.map((c) => [c.key, c])).values()].map((c) => [c, new Dummy(c.name)] as [Expr, Expr]);
-    const sub = xreplace(xreplace(e, [...solved.entries()].map(([k, v]) => [defined(funcs.find((g) => g.key === k), 'solved function'), v] as [Expr, Expr])), protect);
-    const r = dsolveOne(sub, f);
-    for (const sol of Array.isArray(r) ? r : [r]) {
-      let rhs = cast(sol, Rel, 'solution').rhs;
-      // the new constants continue the numbering
-      const cs = [...rhs.freeSymbols()].filter((s) => s instanceof Sym).filter((c) => /^C\d+$/.test(c.name) && !(c instanceof Dummy)).sort((a, b) => Number(a.name.slice(1)) - Number(b.name.slice(1)));
-      rhs = xreplace(rhs, cs.map((c, i) => [c, new Sym(`C${nextC + i}`)] as [Expr, Expr]));
-      rhs = xreplace(rhs, protect.map(([c, d]) => [d, c] as [Expr, Expr]));
-      step(rest, new Map([...solved, [f.key, rhs]]), nextC + cs.length);
+    const substituteKnown = (eq: Expr): Expr => {
+      let e = eq;
+      for (const f of funcs) if (solved.has(f.key)) e = subFuncDoit(e, f, getOrThrow(solved, f.key));
+      return xreplace(e, protect);
+    };
+    let families: Expr[][];
+    if (block.length === 1) {
+      const f = first(block), row = first(rows), t = cast(first(f.args), Sym);
+      const df = derivativeOf(f, t, 1);
+      const higher = subexprs(row, (e) => e instanceof Derivative && e.expr.equals(f) && !e.equals(df));
+      const linear = !higher.length ? systemMatrices(rows, block, t, 1) : undefined;
+      if (linear && !isZero(first(linear[0]).get(0, 0))) {
+        // Extract the forcing before substituting solved functions. This keeps
+        // powers of earlier quadratures intact in the integrating-factor formula.
+        const lead = pow(substituteKnown(first(linear[0]).get(0, 0)), -1);
+        const basis = exp(integrate(mul(lead, substituteKnown(at(linear[0], 1).get(0, 0))), t));
+        const forcing = substituteKnown(linear[1].get(0, 0));
+        const kernel = expandMulOnly(mul(lead, forcing, pow(basis, -1)));
+        const particular = isZero(kernel) ? S.Zero : mul(basis, options.doit === false ? new Integral([kernel, t]) : integrate(kernel, t));
+        families = [[Eq(f, add(mul(C(1), basis), particular))]];
+      } else {
+        families = [dsolveOne(substituteKnown(row), f)].flat().map((sol) => [sol]);
+      }
+    } else {
+      families = dsolveSystemAll(rows.map(substituteKnown), block, options);
+    }
+    for (const family of families) {
+      const constants = family.flatMap((sol) => [...sol.freeSymbols()].filter((c): c is Sym => c instanceof Sym && !(c instanceof Dummy) && /^C\d+$/.test(c.name)));
+      const cs = [...new Map(constants.map((c) => [c.key,c])).values()].sort((a,b) => Number(a.name.slice(1)) - Number(b.name.slice(1)));
+      const rename = cs.map((c,i): [Expr,Expr] => [c,C(nextC+i)]);
+      const next = new Map(solved);
+      for (const sol of family) {
+        const rel = cast(sol, Rel, 'solution');
+        next.set(rel.lhs.key, xreplace(xreplace(rel.rhs, rename), protect.map(([c,d]) => [d,c])));
+      }
+      step(rest, next, nextC + cs.length);
     }
   };
   step(eqs, new Map(), 1);
@@ -555,8 +735,9 @@ function solvedFor(solIn: Expr, func?: Expr): [Expr, Expr] {
  * ported.
  */
 export function checkodesol(ode: readonly ExprLike[], sol: ExprLike | readonly ExprLike[]): [boolean, Expr[]];
+export function checkodesol(ode: ExprLike, sol: readonly ExprLike[], func?: Expr): [boolean, Expr][];
 export function checkodesol(ode: ExprLike, sol: ExprLike, func?: Expr): [boolean, Expr];
-export function checkodesol(ode: ExprLike | readonly ExprLike[], sol: ExprLike | readonly ExprLike[], func?: Expr): [boolean, Expr] | [boolean, Expr[]] {
+export function checkodesol(ode: ExprLike | readonly ExprLike[], sol: ExprLike | readonly ExprLike[], func?: Expr): [boolean, Expr] | [boolean, Expr[]] | [boolean, Expr][] {
   const residual = (e: Expr): Expr => (e instanceof Rel && e.op === 'Eq' ? add(e.lhs, mul(-1, e.rhs)) : e);
   if (isList(ode)) {
     const eqs = ode.map((e) => residual(sympify(e)));
@@ -568,17 +749,49 @@ export function checkodesol(ode: ExprLike | readonly ExprLike[], sol: ExprLike |
     const checks = eqs.map((e) => {
       let r = e;
       for (const f of funcs.values()) r = subFuncDoit(r, f, getOrThrow(dict, f.key));
+      // Collect the coefficient of each independent trigonometric term
+      // before denesting. This avoids expanding its phase at every step.
+      const terms = subexprs(r, (e) => e.kind === 'Fn' && ('name' in e && (e.name === 'sin' || e.name === 'cos')));
+      if (terms.length) r = collect(expand(r), terms, { func: (c) => simplify(sqrtdenest(c)) });
       return reduceResidual(r);
     });
     return [checks.every(isZero), checks];
   }
-  if (isList(sol)) throw new TypeError('checkodesol: one solution is expected for one equation');
+  if (isList(sol)) return sol.map((s) => checkodesol(ode, s, func));
   const eq = residual(sympify(ode));
   const s0 = sympify(sol);
   // the function: the one differentiated in the equation, else the one in the solution
   const inEq = new Map<string, Expr>();
   for (const d of subexprs(eq, (e) => e instanceof Derivative)) for (const g of subexprs(d, (e) => e instanceof UndefFn)) inEq.set(g.key, g);
-  const [f, rhs] = solvedFor(s0, func ?? (inEq.size === 1 ? first([...inEq.values()]) : undefined));
+  const dependent = func ?? (inEq.size === 1 ? first([...inEq.values()]) : undefined);
+  if (dependent instanceof UndefFn && s0 instanceof Rel && s0.lhs instanceof Integral && s0.lhs.args.length === 3 && at(s0.lhs.args, 2).equals(dependent) && !s0.rhs.has(dependent)) {
+    const x = cast(first(dependent.args), Sym);
+    const kernel = s0.lhs.integrand;
+    if (!kernel.has(x)) {
+      const velocity = mul(diff(s0.rhs, x), pow(xreplace(kernel, [[s0.lhs.variable, dependent]]), -1));
+      const jets: [Expr, Expr][] = [];
+      let v = velocity;
+      const order = Math.max(0, ...subexprs(eq, (e) => e instanceof Derivative && e.expr.equals(dependent)).map((e) => cast(e, Derivative).variableCount.reduce((a, [, k]) => a + k, 0)));
+      for (let k = 1; k <= order; k++) {
+        jets.push([derivativeOf(dependent, x, k), v]);
+        v = xreplace(diff(v, x), [[derivativeOf(dependent, x, 1), velocity]]);
+      }
+      const r = reduceResidual(xreplace(eq, jets));
+      return [isZero(r), r];
+    }
+  }
+  const [f, rhs] = solvedFor(s0, dependent);
+  const order = getO(rhs);
+  if (order instanceof Order && f instanceof UndefFn && f.args.length === 1) {
+    const x = first(f.args);
+    if (order.expr instanceof Pow && order.expr.base.equals(x) && (order.args.length === 1 || at(order.args, -1).equals(S.Zero))) {
+      const degree = Math.max(0, ...subexprs(eq, (e) => e instanceof Derivative && e.expr.equals(f)).map((e) => cast(e, Derivative).variableCount.reduce((a, [, k]) => a + k, 0)));
+      const truncated = expand(subFuncDoit(eq, f, removeO(rhs)));
+      const remainder = new Order([pow(x, add(order.expr.exp, -degree)), x, S.Zero]);
+      const r = reduceResidual(removeO(add(truncated, remainder)));
+      return [isZero(r), r];
+    }
+  }
   const r = reduceResidual(subFuncDoit(eq, f, rhs));
   return [isZero(r), r];
 }
@@ -590,4 +803,37 @@ export function checkodesol(ode: ExprLike | readonly ExprLike[], sol: ExprLike |
  */
 export function checksysodesol(eqs: readonly ExprLike[], sols: readonly ExprLike[]): [boolean, Expr[]] {
   return checkodesol(eqs, sols);
+}
+
+/** A derivative exceeds the requested order of the matrix equation. */
+export class ODEOrderError extends RangeError {}
+/** An ODE system is nonlinear in the dependent functions or their derivatives. */
+export class ODENonlinearError extends RangeError {}
+
+/** Express A_n X^(n) = A_(n-1) X^(n-1) + ... + A_0 X + b. */
+export function linearOdeToMatrix(equations: readonly Expr[], funcs: readonly UndefFn[], t: Sym, order: number): [Matrix[], Matrix] {
+  if (!Number.isInteger(order) || order < 0) throw new RangeError('order must be a nonnegative integer');
+  const check = (e: Expr): void => {
+    if (e instanceof Derivative && funcs.some((f) => f.equals(e.expr)) && e.variableCount.reduce((n, [, k]) => n + k, 0) > order) {
+      throw new ODEOrderError(`Cannot represent system in ${order}-order form`);
+    }
+    e.args.forEach(check);
+  };
+  equations.forEach(check);
+  const system = systemMatrices(equations, funcs, t, order);
+  if (!system) throw new ODENonlinearError('The system of ODEs is nonlinear.');
+  return system;
+}
+
+function systemMatrices(equations: readonly Expr[], funcs: readonly UndefFn[], t: Sym, order: number): [Matrix[], Matrix] | undefined {
+  const jets: Expr[] = [];
+  for (let k = order; k >= 0; k--) for (const f of funcs) jets.push(k === 0 ? f : new Derivative([f, t, mul(S.One, k)]));
+  const variables = jets.map((_, i) => new Dummy(`jet${i}`));
+  const substitutions = jets.map((jet, i): [Expr, Expr] => [jet, at(variables, i)]);
+  const eqs = equations.map((e) => expand(xreplace(asEquation(e), substitutions)));
+  const result = linearEqToMatrix(eqs, variables);
+  if (result === undefined) return undefined;
+  const [matrix, rhs] = result;
+  const matrices = Array.from({ length: order + 1 }, (_, i) => Matrix.of(Array.from({ length: equations.length }, (_, row) => funcs.map((_, col) => mul(i === 0 ? 1 : -1, matrix.get(row, i * funcs.length + col))))));
+  return [matrices, rhs.map((e) => add(e))];
 }

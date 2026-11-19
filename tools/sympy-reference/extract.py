@@ -757,7 +757,80 @@ def callback_expr(callback, variable):
     raise Unsupported("Transform callback")
 
 
+def custom_class_reason(o):
+    """Identify test-defined behavior which a class name cannot reproduce."""
+    cls = o if isinstance(o, type) else type(o)
+    for base in getattr(cls, "__mro__", ()):
+        if ".tests." in (getattr(base, "__module__", "") or ""):
+            return f"Python test class {base.__module__}.{base.__qualname__} requires Python method execution"
+    return None
+
+
 def ser(o):
+    """Keep an explicit marker when legacy serialization erases custom behavior."""
+    reason = custom_class_reason(o)
+    try:
+        tree = _ser(o)
+    except Unsupported as error:
+        if reason:
+            raise Unsupported(reason) from error
+        raise
+    if reason:
+        tree["unsupportedClass"] = reason
+    return tree
+
+
+def tensor_state(values):
+    """Snapshot head components, metrics and special metric-head signatures from inputs."""
+    from sympy.tensor.tensor import TensorHead, TensorIndexType, TensorIndex, Tensor
+    from sympy.tensor.tensor import _tensor_data_substitution_dict as state
+    heads, types, seen = set(), set(), set()
+    signatures = {}
+    def visit(value):
+        if id(value) in seen:
+            return
+        seen.add(id(value))
+        if isinstance(value, TensorHead):
+            heads.add(value)
+            for index_type in value.index_types:
+                visit(index_type)
+        elif isinstance(value, TensorIndexType):
+            types.add(value)
+        elif isinstance(value, dict):
+            for key, item in value.items():
+                visit(key)
+                visit(item)
+        elif isinstance(value, (tuple, list)):
+            for item in value:
+                visit(item)
+        elif isinstance(value, sympy.Basic):
+            if isinstance(value, Tensor):
+                signatures.setdefault(value.component, tuple(i.is_up for i in value.get_indices()))
+            for item in value.args:
+                visit(item)
+    visit(values)
+    entries = []
+    for index_type in sorted(types, key=str):
+        metric = state._substitutions_dict.get(index_type)
+        if metric is not None:
+            # Ordinary heads lower indices with the stored metric. Special metric
+            # heads keep their independently stored signature instead.
+            entries.append([ser(index_type), ser(metric)])
+            heads.add(index_type.metric)
+    for head in sorted(heads, key=str):
+        signature = signatures.get(head, (True,) * len(head.index_types))
+        data = state._substitutions_dict_tensmul.get((head,) + signature)
+        if data is None:
+            signature = (True,) * len(head.index_types)
+            data = state._substitutions_dict.get(head)
+        if data is None:
+            continue
+        indices = [TensorIndex(f"component_{i}", t, signature[i]) for i, t in enumerate(head.index_types)]
+        entries.append([ser(Tensor(head, indices)), ser(data)])
+    return entries
+
+
+def _ser(o):
     """Serialize a SymPy object (or Python value) into a JSON tree."""
     from sympy import Float, Integer, Rational, Symbol, Tuple
     from sympy.core.relational import Relational
@@ -1015,7 +1088,11 @@ def ser(o):
                                  "relators": [ser(r) for r in getattr(o, "_reidemeister_relators", [])],
                                  "hasRelators": hasattr(o, "_reidemeister_relators"),
                                  "P": [[None if v is None else ser(v) for v in row] for row in o.P]}}
-                   if hasattr(o, "_schreier_free_group") else {})}
+                   if hasattr(o, "_schreier_free_group") else
+                   # the modified coset table (modified_define, modified_scan, ...): words in the subgroup generators
+                   {"modified": {"P": [[None if v is None else ser(v) for v in row] for row in o.P],
+                                 "pP": [[int(k), ser(v)] for k, v in sorted(o.p_p.items())]}}
+                   if any(v is not None for row in o.P for v in row) or o.p_p else {})}
     if isinstance(o, _Collector):
         return {"t": "Collector", "pcgs": [ser(g) for g in o.pcgs], "series": [ser(g) for g in o.pc_series],
                 "relativeOrder": [int(r) for r in o.relative_order]}
@@ -1174,7 +1251,9 @@ def ser(o):
     if isinstance(o, sympy.Indexed):
         return {"t": "Indexed", "base": ser(o.base), "indices": [ser(i) for i in o.indices]}
     if isinstance(o, sympy.IndexedBase):
+        extra = {k: v for k, v in o._assumptions.generator.items() if o.label.assumptions0.get(k) != v}
         return {"t": "IndexedBase", "label": ser(o.label),
+                **({"indexedAssumptions": extra} if extra else {}),
                 **({"shape": [ser(d) for d in o.shape]} if o.shape is not None else {})}
     from sympy.polys.rootoftools import _pure_key_dict
     if isinstance(o, _pure_key_dict):
@@ -1453,7 +1532,9 @@ def ser(o):
     if isinstance(o, UndefinedFunction):
         return {"t": "UFnClass", "name": o.__name__, **({"nargs": sorted(int(n) for n in o.nargs)} if o.nargs != sympy.S.Naturals0 else {})}
     if isinstance(o, AppliedUndef):
-        return {"t": "UFn", "name": type(o).__name__, "args": [ser(a) for a in o.args]}
+        # the facts the function class was declared with (Function('f', positive=True)), when there are any
+        facts = {k: v for k, v in getattr(type(o), "_kwargs", {}).items() if isinstance(v, bool) and not (k == "commutative" and v)}
+        return {"t": "UFn", "name": type(o).__name__, "args": [ser(a) for a in o.args], **({"assume": facts} if facts else {})}
     if isinstance(o, sympy.Subs):
         return {"t": "Subs", "expr": ser(o.expr), "vars": [ser(v) for v in o.variables], "point": [ser(p) for p in o.point]}
     if isinstance(o, sympy.Derivative):

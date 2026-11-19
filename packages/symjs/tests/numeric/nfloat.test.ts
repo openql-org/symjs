@@ -213,3 +213,30 @@ describe('nsimplify', () => {
     expect(sstr(evalf(nsimplify(px, { rationalConversion: 'exact' }), 100))).toBe(sstr(px));
   });
 });
+
+it('comp compares complex norms, decimal strings, and rejects symbolic numbers', () => {
+  expect(comp(evalf(p('sqrt(2)'), 2), '1.4')).toBe(true);
+  expect(comp(evalf(p('sqrt(2)'), 2), '1.5')).toBe(false);
+  expect(() => comp(p('x'), '1')).toThrow(RangeError);
+  expect(() => comp(p('x'), 1)).toThrow(RangeError);
+  expect(() => comp(1, p('y'))).toThrow(RangeError);
+  expect(comp(p('sqrt(2) + I*sqrt(3)'), p('1.4 + 1.7*I'), 0.1)).toBe(true);
+  expect(comp(p('sqrt(2) + I*sqrt(3)'), p('1.62 + 1.836*I'), 0.1)).toBe(false);
+  expect(comp(p('2+I'), p('2.0+sqrt(2)'))).toBe(false);
+  expect(comp(p('2.0+sqrt(2)'), p('2+I'))).toBe(false);
+  expect(comp(p('I*1.0'), p('I*1.0'))).toBe(true);
+});
+
+it('evaluates algebraic coefficients and numbers inside elementary functions', async () => {
+  const { CRootOf, cos } = await import('../../src');
+  const root = new CRootOf(p('x**5+3*x**3+1'), 0);
+  expect(st(nfloat(mul(root, cos(p('3*x**4+y'))), 1))).toBe('-0.7*cos(3.0*x**4 + y)');
+  expect(comp(evalf(p('sqrt(2)'), 2), 1.4, '')).toBe(true);
+});
+
+it('keeps whole matrix expressions during rational approximation', async () => {
+  const sj = await import('../../src');
+  const a = sj.MatrixSymbol('A', 2, 2);
+  expect(String(nsimplify(sj.ImmutableMatrix([[float(0.5)]])))).toBe('Matrix([[1/2]])');
+  expect(nsimplify(sj.mul(new sj.Float(0.5), a)).toString()).toContain('A');
+});

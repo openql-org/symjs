@@ -23,7 +23,7 @@ it('checks summation ranges and unsupported indexed operations', () => {
   const shiftedSum = Sum(shifted, [i, 0, 0]);
   expect(convertIndexedToArray(shiftedSum)).toBe(shiftedSum);
   expect(() => convertIndexedToArray(new ArrayElement(new Sym('Q'), [i, j]))).toThrow(NotImplementedError);
-  expect(() => convertIndexedToArray(add(A.at(i, j), B.at(i, k)))).toThrow(RangeError);
+  expect(str(convertIndexedToArray(add(A.at(i, j), B.at(i, k))))).toBe('ArrayAdd(ArrayTensorProduct(A, OneArray(2)), PermuteDims(ArrayTensorProduct(B, OneArray(2)), (1 2)))');
   expect(() => convertIndexedToArray(Sum(A.at(i, j), [i, 1, 1]))).toThrow(NotImplementedError);
   expect(() => convertIndexedToArray(Sum(A.at(i, j), [i, 0, 2]))).toThrow(NotImplementedError);
   expect(str(convertIndexedToArray(Sum(mul(i, A.at(i, j)), [i, 0, 1])))).toContain('ArrayContraction');
@@ -43,4 +43,20 @@ it('keeps index-dependent weights inside their summation', async () => {
   expect(str(explicitArray(weighted))).toBe('[A[1, 0], A[1, 1]]');
   const shiftedWeight = convertIndexedToArray(Sum(mul(add(i, 1), A.at(i, j)), [i, 0, 1]));
   expect(str(explicitArray(shiftedWeight))).toBe('[A[0, 0] + 2*A[1, 0], A[0, 1] + 2*A[1, 1]]');
+});
+
+it('does not diagonalize repeated fixed coordinates', () => {
+  const a = MatrixSymbol('a', 2, 1), b = MatrixSymbol('b', 2, 1);
+  expect(str(convertIndexedToArray(Sum(mul(a.at(i, 0), b.at(i, 0)), [i, 0, 1])))).toBe('ArrayContraction(ArrayTensorProduct(a, b), (0, 2))[0, 0]');
+});
+
+it('uses declared dimensions or the complete summation range for indexed bases', async () => {
+  const { IndexedBase } = await import('../../../../src');
+  const base = new IndexedBase('X', { shape: [3] });
+  expect(convertIndexedToArray(base.at(i))).toBe(base);
+  const unshaped = new IndexedBase('X').at(i);
+  expect(convertIndexedToArray(unshaped)).toBe(unshaped.base);
+  expect(() => convertIndexedToArray(Sum(mul(unshaped, new IndexedBase('Y').at(j)), [i, 0, 2]))).toThrow(NotImplementedError);
+  expect(str(convertIndexedToArray(Sum(base.at(i), [i, 0, 2])))).toBe('ArrayContraction(X, (0,))');
+  expect(() => convertIndexedToArray(Sum(unshaped, [i, 1, 3]))).toThrow(NotImplementedError);
 });

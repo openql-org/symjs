@@ -8,6 +8,7 @@
 import { describe, expect, it } from 'vitest';
 import { Lambda, Matrix, S, Tuple, acos, add, atan2, cos, cosh, expand, latex, mul, pi, pow, simplify, sin, sinh, sqrt, str, symbol } from '../../src';
 import type { Expr, Sym } from '../../src';
+import * as sj from '../../src';
 import { AxisOrienter, BaseScalar, BodyOrienter, CoordSys3D, QuaternionOrienter, SpaceOrienter, Vector, VectorPoint, express } from '../../src/vector';
 import { checkOrthogonality, rotationTransEquations } from '../../src/vector/coordsysrect';
 
@@ -301,4 +302,21 @@ describe('CoordSys3D (SymPy test_coordsysrect)', () => {
     const V = CoordSys3D('V', { vectorNames: ['x', 'y', 'z'] });
     expect(() => V.x).toThrow('x of V is a base vector');
   });
+});
+
+it('prints systems and base vectors with srepr like SymPy', () => {
+  const identity = 'ImmutableDenseMatrix([[Integer(1), Integer(0), Integer(0)], [Integer(0), Integer(1), Integer(0)], [Integer(0), Integer(0), Integer(1)]])';
+  const A = CoordSys3D('A');
+  const reprA = `CoordSys3D(Str('A'), Tuple(${identity}, VectorZero()))`;
+  expect(sj.srepr(A)).toBe(reprA);
+  expect(sj.srepr(A.i)).toBe(`${reprA}.i`);
+  expect(sj.srepr(sj.BaseDyadic(A.i, A.j))).toBe(`BaseDyadic(${reprA}.i, ${reprA}.j)`);
+  // a located system: its origin and its parent
+  expect(sj.srepr(A.locateNew('D', A.i).k)).toBe(`CoordSys3D(Str('D'), Tuple(${identity}, ${reprA}.i), ${reprA}).k`);
+  // predefined and Lambda transformations
+  expect(sj.srepr(CoordSys3D('S', { transformation: 'spherical' }).i)).toBe("CoordSys3D(Str('S'), Str('spherical')).i");
+  const [x, y, z] = [symbol('x'), symbol('y'), symbol('z')];
+  // (SymPy prints the Lambda with its own dummies x1, x2, x3)
+  expect(sj.srepr(CoordSys3D('T', { transformation: Lambda([x, y, z], Tuple(mul(2, x), y, z)) })))
+    .toBe("CoordSys3D(Str('T'), Lambda(Tuple(Symbol('x'), Symbol('y'), Symbol('z')), Tuple(Mul(Integer(2), Symbol('x')), Symbol('y'), Symbol('z'))))");
 });

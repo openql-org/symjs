@@ -10,7 +10,7 @@
 
 import type { Expr, ExprLike, Sym } from '../core/nodes';
 import { Fn, Pow, Rational, S, Special } from '../core/nodes';
-import { mul, splitCoeff, sympify } from '../core/ops';
+import { add, mul, splitCoeff, sympify } from '../core/ops';
 import { at, expectType } from '../core/guard';
 import { gcd as igcd, lcm as ilcm } from '../core/numbers';
 import type { NoMatchResult } from '../core/truth';
@@ -20,7 +20,7 @@ import { fraction } from '../simplify/rational';
 import { expand } from '../simplify/expand';
 import { diff } from '../calculus/diff';
 import { subs } from '../core/traverse';
-import { SetExpr, EmptySet, FiniteSet, Interval, Reals, SetOp, complement, finiteSet, inf, intersection, interval, isSubset, sup, union } from '../sets/sets';
+import { SetExpr, Range, ConditionSet, contains, Integers, EmptySet, FiniteSet, Interval, Reals, SetOp, complement, finiteSet, inf, intersection, interval, isSubset, sup, union } from '../sets/sets';
 import { limit } from '../series/limits';
 import { factor, lcmList } from '../polys/sympoly';
 import { Q, ask } from '../core/refine';
@@ -40,7 +40,7 @@ function powAtoms(e: Expr, out: Map<string, Pow> = new Map()): Pow[] {
   return [...out.values()];
 }
 
-const IMPLEMENTED = new Set(['exp', 'log', 'Abs', 'frac', 'sin', 'cos', 'tan', 'cot', 'sec', 'csc', 'asin', 'acos', 'atan', 'acot', 'asec', 'acsc', 'sinh', 'cosh', 'tanh', 'coth', 'sech', 'csch', 'asinh', 'acosh', 'atanh', 'acoth', 'asech', 'acsch']);
+const IMPLEMENTED = new Set(['exp', 'log', 'abs', 'Abs', 'frac', 'sin', 'cos', 'tan', 'cot', 'sec', 'csc', 'asin', 'acos', 'atan', 'acot', 'asec', 'acsc', 'sinh', 'cosh', 'tanh', 'coth', 'sech', 'csch', 'asinh', 'acosh', 'atanh', 'acoth', 'asech', 'acsch']);
 type Cond = (u: Expr) => Expr;
 const CONSTRAINTS: Readonly<Record<string, readonly Cond[]>> = {
   log: [(u) => Gt(u, 0)],
@@ -82,7 +82,15 @@ export function continuousDomain(fIn: ExprLike, symbol: Sym, domain: SetExpr): S
     const cu = CONSTRAINTS_UNION[g.name];
     if (cs) for (const c of cs) dom = intersection(solveIneq(c(u), symbol), dom);
     else if (cu) dom = intersection(union(...cu.map((c) => solveIneq(c(u), symbol))), dom);
-    else if (g.name === 'acot') dom = complement(dom, solveset(u, symbol, Reals));
+    else if (g.name === 'frac' && u.equals(symbol)) dom = complement(dom, Integers);
+    else if (g.name === 'frac' && u.has(symbol)) {
+      const levels = intersection(functionRange(u, symbol, domain), Integers);
+      const jumps = levels === EmptySet ? EmptySet
+        : (levels instanceof Range || levels instanceof FiniteSet) && levels.isFiniteSet === true
+          ? union(...Array.from(levels, (n) => solveset(add(u, n.neg()), symbol, domain)))
+          : new ConditionSet(symbol, contains(Integers, u), dom);
+      dom = complement(dom, jumps);
+    } else if (g.name === 'acot') dom = complement(dom, solveset(u, symbol, Reals));
   }
   return complement(dom, singularities(f, symbol, domain));
 }
@@ -111,7 +119,7 @@ export function functionRange(fIn: ExprLike, symbol: Sym, domainIn: SetExpr): Se
     if (parts.some((d) => d instanceof Interval && (inf(d) instanceof Special || sup(d) instanceof Special))) domain = interval(0, period);
   }
   let range: SetExpr = EmptySet;
-  for (const piece of pieces(continuousDomain(f, symbol, domain))) {
+  for (const piece of pieces(domain).flatMap((part) => pieces(continuousDomain(f, symbol, part)))) {
     if (piece instanceof FiniteSet) {
       for (const p of piece.args) range = union(range, finiteSet(subs(f, [[symbol, p]])));
       continue;

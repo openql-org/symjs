@@ -54,3 +54,15 @@ describe('viete', () => {
     expect(() => sj.viete(E('x**2 + 1'), [r1], x)).toThrow('required 2 roots, got 1');
   });
 });
+
+it('uses a caller-supplied sequence of formal symmetric symbols', () => {
+  const u = sj.symbols('u0 u1 u2 u3');
+  const gens = sj.symbols('x y z');
+  const [symmetric, remainder, mapping] = sj.symmetrize(sj.add(x, 1), gens, u);
+  expect(String(symmetric)).toBe('u0 + 1');
+  expect(String(remainder)).toBe('-y - z');
+  expect(mapping.map(([symbol, e]) => [String(symbol), String(e)])).toEqual([
+    ['u0', 'x + y + z'], ['u1', 'x*y + x*z + y*z'], ['u2', 'x*y*z'],
+  ]);
+  expect(() => sj.symmetrize(sj.add(x, y), [x, y], [])).toThrow('not enough symbols');
+});

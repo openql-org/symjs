@@ -7,7 +7,7 @@
 
 import { describe, expect, it } from 'vitest';
 import * as sj from '../../src';
-import { Expr, Pow, Rational, S } from '../../src/core/nodes';
+import { Expr, Pow, Rational, S, impl } from '../../src/core/nodes';
 import { add, mul, pow } from '../../src/core/ops';
 
 const [x] = sj.symbols('x');
@@ -78,8 +78,7 @@ describe('AccumBounds (SymPy test_accumulationbounds)', () => {
   it('multiplies intervals with an unbounded end (0*oo = 0 for the bounds)', () => {
     // SymPy: AccumBounds(0, oo)*AccumBounds(-1, 1) = AccumBounds(-oo, oo)
     expect(s2(mul(A(0, oo), A(-1, 1)))).toBe('AccumBounds(-oo, oo)');
-    // SymPy gives AccumBounds(-oo, 1)*0 = AccumBounds(-oo, 0); every point of the interval times 0 is 0
-    expect(mul(A(negOo, 1), 0)).toBe(S.Zero);
+    expect(String(mul(A(negOo, 1), 0))).toBe('AccumBounds(-oo, 0)');
   });
   it('keeps a non-real number beside the interval', () => {
     // SymPy: AccumBounds(1, 2) + I, I*AccumBounds(1, 2), (1 + I)*AccumBounds(1, 2)
@@ -164,4 +163,84 @@ it('raises positive intervals to interval powers and preserves unresolved negati
   expect((A(sj.S.NegativeInfinity,0) as sj.AccumBoundsNode).contains(oo)).toBe(true);
   expect((A(1,2) as sj.AccumBoundsNode).contains(oo)).toBe(false);
   expect((A(1,2) as sj.AccumBoundsNode).contains(1.5)).toBe(true);
+});
+
+it('validates real symbolic bounds and membership', () => {
+  const r = sj.symbol('r', { real: true });
+  expect(String(A(r, add(r, 1)))).toBe('AccumBounds(r, r + 1)');
+  expect(() => A(I, 1)).toThrow(TypeError);
+  expect(() => A(1, I)).toThrow(TypeError);
+  const bounds = new sj.AccumBoundsNode(S.Zero, S.One);
+  expect(() => bounds.contains(I)).toThrow(TypeError);
+  expect(() => bounds.contains(r)).toThrow();
+  expect(String(pow(A(0, 2), A(-1, 1)))).toBe('AccumBounds(0, 2)**AccumBounds(-1, 1)');
+});
+
+it('reports unloaded set operations', () => {
+  const saved = { ...impl };
+  try {
+    impl.emptySet = undefined;
+    const bounds = new sj.AccumBoundsNode(S.Zero, S.One);
+    expect(() => bounds.intersection(A(2, 3))).toThrow(sj.NotLoadedError);
+    impl.setIntersection = undefined;
+    expect(() => bounds.intersection(sj.finiteSet(1))).toThrow(sj.NotLoadedError);
+    Object.assign(impl, saved);
+    impl.interval = undefined;
+    expect(() => bounds.intersection(sj.finiteSet(1))).toThrow(sj.NotLoadedError);
+  } finally {
+    Object.assign(impl, saved);
+  }
+});
+
+it('takes square roots of nonnegative symbolic bounds', () => {
+  const n = sj.symbol('n', { nonnegative: true, integer: true });
+  expect(String(pow(A(n, add(n, 1)), S.Half))).toBe('AccumBounds(sqrt(n), sqrt(n + 1))');
+});
+
+it('absorbs indeterminate products into the whole extended real line', async () => {
+  const sj = await import('../../src');
+  const bounds = sj.AccumBounds(sj.S.NegativeInfinity, sj.S.Infinity);
+  expect(sj.mul(bounds, sj.S.NaN)).toBe(bounds);
+  expect(sj.mul(bounds, 0)).toBe(bounds);
+  expect(sj.mul(bounds, sj.AccumBounds(-1, 1))).toBe(bounds);
+});
+
+it('retains the unbounded directions of a product at zero and a quotient at infinity', () => {
+  const r = sj.symbol('r', { real: true });
+  expect(String(mul(0, A(r, oo)))).toBe('AccumBounds(0, oo)');
+  const indeterminate = add(-1, pow(sj.sin(1), 2), pow(sj.cos(1), 2));
+  expect(mul(indeterminate, A(1, 2))).toBeInstanceOf(sj.Mul);
+  const right = A(1, oo);
+  const left = A(negOo, -1);
+  expect(String(S.Zero.div(A(0, 2)))).toBe('0');
+  expect(String(mul(0, right))).toBe('AccumBounds(0, oo)');
+  expect(String(right.div(negOo))).toBe('AccumBounds(-oo, 0)');
+  expect(String(left.div(negOo))).toBe('AccumBounds(0, oo)');
+  expect(String(mul(0, right, A(-1, 1)))).toBe('AccumBounds(-oo, oo)');
+  expect(String(mul(A(-1, 1), 0, right))).toBe('AccumBounds(-oo, oo)');
+});
+
+it('keeps unresolved interval powers symbolic', () => {
+  const n = sj.symbol('n', { integer: true });
+  const r = sj.symbol('r', { nonnegative: true });
+  expect(String(pow(A(-1, 2), n))).toBe('AccumBounds(-1, 2)**n');
+  expect(String(pow(A(1, 2), A(r, add(r, 1))))).toBe('AccumBounds(1, 2)**AccumBounds(r, r + 1)');
+  expect(String(pow(0, A(-2, 1)))).toBe('0**AccumBounds(-2, 1)');
+});
+
+it('requires real operands for ordered comparisons and decidable membership', () => {
+  const bounds = new sj.AccumBoundsNode(S.NegOne, S.Zero);
+  expect(() => sj.Ge(x, bounds)).toThrow(TypeError);
+  expect(() => sj.Lt(bounds, x)).toThrow(TypeError);
+  const boundary = add(-1, pow(sj.sin(1), 2), pow(sj.cos(1), 2));
+  expect(() => bounds.contains(boundary)).toThrow(TypeError);
+});
+
+it('accepts an explicitly extended real operand in comparisons', () => {
+  const r = sj.symbol('r', { extendedReal: true });
+  expect(sj.Lt(A(0, 1), r)).toBeInstanceOf(sj.Rel);
+  expect(String(A(0, r))).toBe('AccumBounds(0, r)');
+  expect(String(add(A(1, 2), r))).toBe('AccumBounds(r + 1, r + 2)');
+  expect(String(A(0, mul(2, r)))).toBe('AccumBounds(0, 2*r)');
+  expect(String(mul(new sj.Float(0), A(1, oo)))).toBe('AccumBounds(0, oo)');
 });

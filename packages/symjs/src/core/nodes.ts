@@ -17,9 +17,9 @@ import { InvariantError, NotImplementedError, NotLoadedError } from './errors';
 import type { Kind } from './kind';
 import { at } from './guard';
 import { classOf } from './callable';
-import { gcd } from './numbers';
+import { gcd, lcm } from './numbers';
 import { deduceAllFacts } from './facts';
-import { type Mpf, fromNumber as mpfFromNumber, normalize as mpfNormalize, toNumber as mpfToNumber } from '../numeric/mpf';
+import { type Mpf, fromNumber as mpfFromNumber, fromRational as mpfFromRational, normalize as mpfNormalize, toNumber as mpfToNumber } from '../numeric/mpf';
 
 export type ExprKind =
   | 'Rational'
@@ -64,6 +64,10 @@ export interface EvalfOptions {
   subs?: NumericValues;
   /** Replace parts smaller than this (or than the precision when true) by zero. */
   chop?: boolean | number;
+  /** Raise PrecisionExhausted if the requested accuracy cannot be achieved. */
+  strict?: boolean;
+  /** Maximum working precision in decimal digits. */
+  maxn?: number;
 }
 
 /** Substitution specification. */
@@ -119,6 +123,8 @@ export interface Assumptions {
 
 /** Function names known to the library. */
 export type FnName =
+  | '_eis'
+  | '_erfs'
   | 'adjoint'
   | 'transpose'
   | 'sin'
@@ -212,6 +218,7 @@ export type SpecialFnName =
   | 'bernoulli'
   | 'euler'
   | 'genocchi'
+  | 'andre'
   | 'bell'
   | 'fibonacci'
   | 'lucas'
@@ -222,6 +229,9 @@ export type SpecialFnName =
   | 'mobius'
   | 'divisor_sigma'
   | 'udivisor_sigma'
+  | 'legendre_symbol'
+  | 'jacobi_symbol'
+  | 'kronecker_symbol'
   | 'primenu'
   | 'primeomega'
   | 'primepi'
@@ -280,13 +290,13 @@ export interface Impl {
   latex(e: Expr): string;
   subs(e: Expr, s: Substitution): Expr;
   xreplace(e: Expr, s: Substitution): Expr;
-  diff(e: Expr, x: Expr, n: number): Expr;
+  diff(e: Expr, x: Expr, n: ExprLike): Expr;
   expand(e: Expr): Expr;
   simplify(e: Expr): Expr;
   evalf(e: Expr, n?: number | NumericValues, opts?: EvalfOptions): Expr;
   isComparable(e: Expr): boolean;
   toComplex(e: Expr, values?: NumericValues): ComplexValue;
-  rewrite?(e: Expr, target: string, opts?: { pattern?: readonly string[]; deep?: boolean }): Expr;
+  rewrite?(this: void, e: Expr, target: string, opts?: { pattern?: readonly string[]; deep?: boolean; hints?: Readonly<Record<string, Expr>> }): Expr;
   ordered?(xs: readonly Expr[]): Expr[];
   expandFunc?(e: Expr): Expr;
   expandComplex?(e: Expr): Expr;
@@ -306,6 +316,8 @@ export interface Impl {
   leadterm?(e: Expr, x: Sym): [Expr, Expr];
   /** Asymptotic containment, registered by series/series. */
   orderContains?: (order: Order, expr: Expr) => boolean | 'unknown';
+  subsFunction?(expr: Expr, name: string, replacement: (...args: Expr[]) => Expr, arities?: readonly number[]): Expr;
+  rebuildOrder?: (args: readonly Expr[]) => Expr;
   /** The value of a sum or product with finite integer limits, for evalf (registered by calculus/doit); undefined when it is not a number. */
   evalConcrete?(c: Expr): Expr | undefined;
   /** Lambert W function (registered by functions/special). */
@@ -323,7 +335,7 @@ export interface Impl {
   /** A node of the same type with new arguments, re-canonicalized (registered by core/traverse). */
   rebuild: (e: Expr, args: readonly Expr[]) => Expr;
   /** A named function applied with automatic evaluation (registered by functions/elementary). */
-  fn?(name: FnName, args: readonly Expr[]): Expr;
+  fn?(this: void, name: FnName, args: readonly Expr[]): Expr;
   /** expand with only the mul hint (registered by simplify/expand). */
   expandMul?(e: Expr): Expr;
   /** as_real_imag of exp and functions (registered by simplify/expand). */
@@ -353,14 +365,17 @@ export interface Impl {
   emptySet?(): Expr;
   interval?(a: Expr, b: Expr): Expr;
   setIntersection?(a: Expr, b: Expr): Expr;
+  /** Heaviside(x), installed by the delta functions module. */
+  heaviside?(x: Expr): Expr;
   /** A set node rebuilt from new arguments, evaluated (registered by sets/sets). */
   rebuildSet?: (e: Expr, args: readonly Expr[]) => Expr;
   /** SymPy Set._eval_subs: a set that binds a variable (ImageSet, ConditionSet) substituted, or undefined for the generic rule. */
   subsSet?: (e: Expr, old: Expr, nw: Expr, subs: (x: Expr) => Expr) => Expr | undefined;
+  piecewiseFold?: (e: Expr) => Expr;
   /** SymPy factor (set by the polys module). */
   factor?(e: Expr): Expr;
   /** SymPy fraction (registered by simplify/rational). */
-  fraction?(e: Expr): [Expr, Expr];
+  fraction?(e: Expr, options?: { exact?: boolean }): [Expr, Expr];
   conjugate(e: Expr): Expr;
   abs(e: Expr): Expr;
   freeSymbols(e: Expr): Set<Expr>;
@@ -373,7 +388,7 @@ export interface Impl {
   /** SymPy is_hypergeometric (registered by the simplify entry point). */
   isHypergeometric?(e: Expr, k: Expr): boolean;
   limit(e: Expr, z: Sym, z0: ExprLike, dir?: '+' | '-' | '+-'): Expr;
-  series(e: Expr, x: Sym, x0?: ExprLike, n?: number): Expr;
+  series(e: Expr, x: Sym, x0?: ExprLike, n?: number, dir?: '+' | '-', opts?: { logx?: Expr; local?: boolean }): Expr;
 }
 
 /** An implementation provided by a feature area that has not been imported. */
@@ -455,6 +470,24 @@ export function registerHeadResolver<T extends Expr>(cls: abstract new (...args:
 export function registerFunctionHeads(heads: readonly (readonly [string, Head])[]): void {
   for (const [name, f] of heads) functionHeads.set(name, f);
 }
+
+/** A rule on the rewritten arguments and the original expression. */
+export type RewriteRule = (args: Expr[], self: Expr, hints?: Readonly<Record<string, Expr>>) => Expr | undefined;
+
+/** The function rewrites, indexed by the function and target names. */
+export const rewriteRules: Record<string, Record<string, RewriteRule>> = {};
+
+/** @experimental May change in a minor release. */
+export function registerRewrite(fnName: string, target: string, rule: RewriteRule): void {
+  (rewriteRules[fnName] ??= {})[target] = rule;
+}
+
+/** Function facts queried by the predicate engine through its current assumptions. */
+export const functionFactHandlers: Partial<Record<FnName, (
+  fact: string,
+  args: readonly Expr[],
+  query: (fact: string, arg: Expr) => boolean | undefined,
+) => boolean | undefined>> = {};
 
 /** The SymPy name of a function head (`sin`, a function of defineFunction or SymFunction), if it has one. */
 export function headName(head: (...args: never[]) => unknown): string | undefined {
@@ -602,7 +635,7 @@ export abstract class Expr {
     }
     return impl.subs(this, a);
   }
-  diff(x: Expr, n = 1): Expr {
+  diff(x: Expr, n: ExprLike = 1): Expr {
     return impl.diff(this, x, n);
   }
   /** Limit as z -> z0 (dir '+' by default, like SymPy). */
@@ -635,7 +668,7 @@ export abstract class Expr {
     return impl.evalf(this, n, opts);
   }
   /** Rewrite in terms of another function (SymPy `rewrite`), e.g. `sin(x).rewrite('exp')`. */
-  rewrite(target: string, opts?: { pattern?: readonly string[]; deep?: boolean }): Expr {
+  rewrite(target: string, opts?: { pattern?: readonly string[]; deep?: boolean; hints?: Readonly<Record<string, Expr>> }): Expr {
     if (!impl.rewrite) notLoaded('rewrite', 'simplify');
     return impl.rewrite(this, target, opts);
   }
@@ -660,6 +693,14 @@ export abstract class Expr {
   }
   has(sub: Expr): boolean {
     if (this.key === sub.key) return true;
+    if (this.constructor === sub.constructor && (this instanceof Add || this instanceof Mul)) {
+      const commutative = new Set(this.args.filter((a) => a.isCommutative).map((a) => a.key));
+      if (sub.args.every((a) => !a.isCommutative || commutative.has(a.key))) {
+        const order = this.args.filter((a) => !a.isCommutative);
+        const pattern = sub.args.filter((a) => !a.isCommutative);
+        if (!pattern.length || order.some((_, i) => pattern.every((a, j) => a.key === order[i + j]?.key))) return true;
+      }
+    }
     return this.args.some((a) => a.has(sub));
   }
 
@@ -697,7 +738,7 @@ export class Rational extends Expr {
     this.q = q;
   }
 
-  static of(p: bigint | number, q: bigint | number = 1n): Rational {
+  static of(p: bigint | number, q: bigint | number = 1n, options: { gcd?: bigint } = {}): Rational {
     let P = BigInt(p);
     let Q = BigInt(q);
     if (Q === 0n) throw new RangeError('Rational: division by zero');
@@ -705,7 +746,8 @@ export class Rational extends Expr {
       P = -P;
       Q = -Q;
     }
-    const g = gcd(P, Q);
+    const g = options.gcd ?? gcd(P, Q);
+    if (options.gcd !== undefined && (g < 1n || P % g !== 0n || Q % g !== 0n)) throw new RangeError('Rational: invalid common divisor');
     if (g > 1n) {
       P /= g;
       Q /= g;
@@ -743,6 +785,21 @@ export class Rational extends Expr {
     const b = other instanceof Rational ? (other.q === 1n ? other.p : undefined) : typeof other === 'bigint' || Number.isInteger(other) ? BigInt(other) : undefined;
     if (this.q !== 1n || b === undefined) throw new TypeError('bitwise operations need integers');
     return Rational.of(op(this.p, b));
+  }
+  /** The numeric gcd and both quotients (SymPy Number.cofactors). */
+  cofactors(other: Num): [Num, Num, Num] {
+    if (other instanceof Float) {
+      const [g, b, a] = other.cofactors(this);
+      return [g, a, b];
+    }
+    const g = Rational.of(gcd(this.p, other.p), lcm(this.q, other.q));
+    if (g.isZero) throw new RangeError('cofactors of two exact zeros');
+    return [g, Rational.of(this.p * g.q, this.q * g.p), Rational.of(other.p * g.q, other.q * g.p)];
+  }
+  /** Bitwise complement of an integer in two's complement. */
+  bitNot(): Rational {
+    if (!this.isInteger) throw new TypeError('bitwise operations need integers');
+    return Rational.of(~this.p);
   }
   /** SymPy Integer.__lshift__: the integer shifted left by n bits (a RangeError for a negative n). */
   lshift(n: Rational | number | bigint): Rational {
@@ -792,6 +849,12 @@ export class Float extends Expr {
     this.mpf = mpfNormalize(value.man, value.exp, prec);
     this.prec = prec;
   }
+  /** In the real field the gcd is one, at the precision of the two operands. */
+  cofactors(other: Num): [Float, Float, Float] {
+    const prec = other instanceof Float ? Math.max(this.prec, other.prec) : this.prec;
+    const value = other instanceof Float ? other.mpf : mpfFromRational(other.p, other.q, prec);
+    return [new Float(1, prec), new Float(this.mpf, prec), new Float(value, prec)];
+  }
   /** Nearest JS double. */
   get value(): number {
     return mpfToNumber(this.mpf);
@@ -833,14 +896,18 @@ export class Sym extends Expr {
     return deduceAllFacts({ commutative: true, ...Object.fromEntries(Object.entries(this.assumptions).map(([k, v]) => [k.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`), v])) });
   }
 
+  /** Whether commutative=True was given explicitly: it is the default, and SymPy's srepr shows it only then. */
+  readonly givenCommutative: boolean;
   constructor(readonly name: string, assumptions: Assumptions = {}) {
     super();
-    // like SymPy, any non-empty string is a valid name (e.g. symbols(':3') gives 0, 1, 2)
-    if (typeof name !== 'string' || name.length === 0) {
+    if (typeof name !== 'string') {
       throw new SyntaxError(`Invalid symbol name: ${JSON.stringify(name)}`);
     }
+    const commutative: unknown = Reflect.get(assumptions, 'commutative');
+    if (commutative !== undefined && typeof commutative !== 'boolean') throw new RangeError('commutativity must be true or false');
     const facts = deduceAllFacts(Object.fromEntries(Object.entries(assumptions).map(([k, v]) => [k.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`), v])));
     const a: { -readonly [K in keyof Assumptions]: Assumptions[K] } = { ...assumptions };
+    this.givenCommutative = a.commutative === true;
     if (a.commutative === true) delete a.commutative;
     // Keep the core sign/number flags available to the arithmetic hot paths.
     for (const k of ['real', 'positive', 'nonnegative', 'negative', 'nonpositive', 'integer', 'zero'] as const) {
@@ -1141,17 +1208,21 @@ export class Integral extends Expr {
 /** Application of an undefined function, e.g. f(x). Create with `Function('f')`. */
 export class UndefFn extends Expr {
   readonly kind = 'Undef' as const;
-  constructor(readonly name: string, readonly args: readonly Expr[]) {
+  constructor(readonly name: string, readonly args: readonly Expr[], readonly givenFacts: ReadonlyMap<string, boolean> = new Map()) {
     super();
   }
+  protected override computeCommutative(): boolean {
+    return this.givenFacts.get('commutative') ?? super.computeCommutative();
+  }
   protected computeKey(): string {
-    return `@${this.name}(${this.args.map((a) => a.key).join(',')})`;
+    const assumptions = this.givenFacts.size === 0 ? '' : JSON.stringify([...this.givenFacts].sort(([a], [b]) => a.localeCompare(b)));
+    return `@${this.name}${assumptions}(${this.args.map((a) => a.key).join(',')})`;
   }
 }
 
 /**
  * Unevaluated derivative. args: [expr, v1, n1, v2, n2, ...] where ni are
- * positive integer counts (SymPy `variable_count`). @internal ctor
+ * nonnegative integer counts which may be symbolic (SymPy `variable_count`). @internal ctor
  */
 export class Derivative extends Expr {
   readonly kind = 'Derivative' as const;
@@ -1161,19 +1232,31 @@ export class Derivative extends Expr {
   get expr(): Expr {
     return at(this.args, 0);
   }
-  get variableCount(): [Expr, number][] {
-    const out: [Expr, number][] = [];
-    for (let i = 1; i < this.args.length; i += 2) {
-      out.push([at(this.args, i), Number(asRational(at(this.args, i + 1), 'derivative count').p)]);
-    }
+  /** The differentiation variables paired with their exact orders. */
+  get variableOrders(): [Expr, Expr][] {
+    const out: [Expr, Expr][] = [];
+    for (let i = 1; i < this.args.length; i += 2) out.push([at(this.args, i), this.args[i + 1] ?? S.One]);
     return out;
+  }
+  /** Integer counts for algorithms that require a concrete derivative order. */
+  get variableCount(): [Expr, number][] {
+    return this.variableOrders.map(([v, order]) => {
+      if (!(order instanceof Rational && order.isInteger) || order.p > BigInt(Number.MAX_SAFE_INTEGER)) {
+        throw new RangeError('a concrete derivative order is required');
+      }
+      return [v, Number(order.p)];
+    });
+  }
+  /** The sum of the orders across differentiation variables. */
+  get derivativeOrder(): Expr {
+    return impl.add(...this.variableOrders.map(([, n]) => n));
   }
   /** Reconstruct a derivative while preserving subclass behavior. */
   withArgs(args: readonly Expr[]): Derivative { return new Derivative(args); }
   /** Evaluate the derivative in variable order. */
   doit(): Expr {
     let result = this.expr;
-    for (const [variable, count] of this.variableCount) result = impl.diff(result, variable, count);
+    for (const [variable, count] of this.variableOrders) result = impl.diff(result, variable, count);
     return result;
   }
   protected computeKey(): string {
@@ -1313,6 +1396,9 @@ export abstract class ExtensionExpr extends Expr {
   get args(): readonly Expr[] {
     return this.#args;
   }
+  /** Symbolic arguments exposed to pattern searches, including tuple-valued arguments. */
+  searchArgs(): readonly Expr[] { return this.args; }
+
   /** A node of the same class with new arguments (required for traversals). */
   abstract withArgs(args: readonly Expr[]): Expr;
   /**

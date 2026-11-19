@@ -572,12 +572,12 @@ export class RandomMatrixSymbol extends MatrixSymbolNode {
   readonly pspace: PSpace;
   constructor(symbol: string | Sym, n: ExprLike, m: ExprLike, pspace: PSpace = new PSpace()) {
     const s = symbolConverter(symbol);
-    super(s.name, n, m);
+    super(s.name, n, m, [pspace]);
     this.symbol = s;
     this.pspace = pspace;
   }
   override withArgs(args: readonly Expr[]): Expr {
-    return new RandomMatrixSymbol(this.symbol, at(args, 1), at(args, 2), this.pspace);
+    return new RandomMatrixSymbol(this.symbol, at(args, 1), at(args, 2), cast(args[3] ?? this.pspace, PSpace));
   }
   override has(sub: Expr): boolean {
     return super.has(sub) || this.pspace.has(sub);
@@ -1001,8 +1001,10 @@ export function independent(a: ExprLike, b: ExprLike): boolean {
 export function pspaceIndependent(a: Expr, b: Expr): Truth {
   const aSymbols = new Set(pspace(b).symbols.map((s) => s.key));
   const bSymbols = pspace(a).symbols.map((s) => s.key);
-  const rb = new Set(randomSymbols(b).map((r) => r.key));
-  if (randomSymbols(a).some((r) => rb.has(r.key))) return false;
+  // SymPy's atoms(RandomSymbol) also reaches the random parameters inside a variable's probability space
+  const nested = (e: Expr): string[] => randomSymbols(e).flatMap((r) => [r.key, ...nested(r.pspace)]);
+  const rb = new Set(nested(b));
+  if (nested(a).some((k) => rb.has(k))) return false;
   if (!bSymbols.some((k) => aSymbols.has(k))) return true;
   return 'unknown';
 }

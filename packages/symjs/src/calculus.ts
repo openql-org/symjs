@@ -27,8 +27,9 @@ export {
 export type { ParametricCurve } from './integrals/transform';
 // integral transforms (SymPy sympy.integrals.transforms and laplace)
 export * from './integrals/transforms/index';
-export { NonElementaryIntegral, integerPowers, rischIntegrate } from './integrals/risch';
-export { manualintegrate } from './integrals/manualintegrate';
+export { asPoly1t, fracIn, gcdexDiophantine } from './integrals/risch';
+export { DifferentialExtension, NonElementaryIntegral, integerPowers, rischIntegrate } from './integrals/risch';
+export { manualintegrate, manualSubs, findSubstitutions } from './integrals/manualintegrate';
 export { singularityintegrate } from './integrals/singularityfunctions';
 // the helpers of SymPy's integrators (rationaltools, trigonometry, deltafunctions, meijerint, heurisch)
 export { ratintRatpart, logToAtan } from './integrals/rationaltools';
@@ -48,7 +49,7 @@ export {
 } from './integrals/public';
 export type { HeurischOptions } from './integrals/heurisch';
 export {
-  limit,
+  limit, heuristics,
 } from './series/limits';
 export {
   Sum,
@@ -57,12 +58,13 @@ export {
   product,
   reverseOrder,
   eulerMaclaurin,
+  telescopic,
   telescopicDirect,
   evalSumResidue,
 } from './concrete/summations';
 export {
   series,
-  O,
+  O, asExprVariables,
 } from './series/series';
 
 export {
@@ -84,6 +86,9 @@ export { residue } from './series/residues';
 export { differenceDelta, limitSeq } from './series/limitseq';
 export { finiteDiff, finiteDiffKauers } from './series/kauers';
 export { deltasummation, deltaproduct } from './concrete/delta';
+import { summationHooks } from './concrete/summations';
+import { gosperSum } from './concrete/gosper';
+summationHooks.gosperSum = gosperSum;
 export { gosperNormal, gosperTerm, gosperSum } from './concrete/gosper';
 export type { DeltaLimit } from './concrete/delta';
 export {
@@ -152,7 +157,7 @@ export function getn(e: _ExprLike_): _Expr_ | NoMatchResult {
 /** @deprecated Internal; removed from the public API in 1.0. */
 export const extractLeadingOrder = _extractLeadingOrder_;
 export { lseries, dir } from './series/lseries';
-export { fps, FormalPowerSeries, expRe, hyperRe, rationalIndependent, simpleDE, solveDe, hyperAlgorithm } from './series/formal';
+export { fps, FormalPowerSeries, expRe, hyperRe, rationalIndependent, rationalAlgorithm, simpleDE, solveDe, hyperAlgorithm } from './series/formal';
 export { fourierSeries, FourierSeries } from './series/fourier';
 // integration of polynomials over polytopes (SymPy sympy.integrals.intpoly); the helpers, whose names collide with
 // other SymPy functions (decompose, intersection, norm), are members of the namespace intpoly
@@ -164,6 +169,15 @@ export { findSimpleRecurrenceVector, findSimpleRecurrence, rationalize, guessGen
 export type { GuessGeneratingFunctionOptions, GuessOptions } from './concrete/guess';
 export { approximants } from './series/approximants';
 export type { ApproximantsOptions } from './series/approximants';
+import { integral as makeIntegral } from './integrals/integrate';
+import { asSet as conditionSet } from './solvers/inequalities';
+import { processContinuousLimit } from './concrete/exprwithlimits';
+
+/** Construct an unevaluated integral from variables, endpoints, intervals or inequalities. */
+export function integral(ex: _ExprLike_, ...limits: readonly (_ExprLike_ | readonly _ExprLike_[])[]): _Expr_ {
+  return makeIntegral(ex, ...limits.map(input => processContinuousLimit(input, conditionSet)));
+}
+
 export { variables, hasFiniteLimits, hasReversedLimits } from './concrete/exprwithlimits';
 export { gaussLegendre, gaussLaguerre, gaussHermite, gaussGenLaguerre, gaussJacobi, gaussChebyshevT, gaussChebyshevU, gaussLobatto } from './integrals/quadrature';
 export type { QuadratureRule } from './integrals/quadrature';
@@ -172,6 +186,6 @@ export type { HyperSeriesResult } from './series/formal';
 export { SeriesBase } from './series/series_class';
 
 export { orderAt, orderAtOo } from './integrals/orders';
-export { gruntz } from './series/gruntz';
+export { Gruntz, gruntz } from './series/gruntz';
 
 export { richardson, shanks } from './series/acceleration';

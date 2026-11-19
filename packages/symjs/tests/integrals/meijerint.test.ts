@@ -7,7 +7,7 @@
 // quoted and the value is checked against the integral computed numerically (mpmath).
 
 import { describe, expect, it } from 'vitest';
-import { DiracDelta, Eq, Gt, Heaviside, I, Lt, Piecewise, Rational, Sym, abs, add, and, arg, exp, expPolar, hyper, meijerg, mul, parse, pi, pow, sqrt, sstr, tan, type Expr } from '../../src';
+import { DiracDelta, Eq, Gt, Heaviside, I, Lt, Piecewise, Rational, Rel, S, Sym, abs, add, and, arg, ask, exp, expPolar, hyper, meijerg, mul, parse, pi, pow, sqrt, sstr, tan, type Expr } from '../../src';
 import { CoeffExpError, condsimp, findSplittingPoints, getCoeffExp, liftPolar, laplaceBesselProduct, meijerintDefinite, meijerintIndefinite, meijerintInversion, rewriteSingle, splitMul, unpolarifyExponents } from '../../src/integrals/meijerint';
 
 const R = (p: number, q: number): Expr => Rational.of(BigInt(p), BigInt(q));
@@ -150,9 +150,9 @@ describe('meijerint_definite: more cases of the lookup table and the intervals',
   it.each(cases)('%s over (%s, %s)', (f, lo, hi, want) => expect(run(f, lo, hi) ?? 'None').toEqual(want));
   const others: [string, string, string, string[] | 'None'][] = [
     // SymPy: meijerg(((0, 1/2, 1/2), (1,)), ((), ()), 16) (the same G-function (the order of the parameters an))
-    ["sin(1/x)*exp(-x)", "0", "oo", ["meijerg(((1/2, 0, 1/2), (1,)), ((), ()), 16)", "True"]],
+    ["sin(1/x)*exp(-x)", "0", "oo", ["meijerg(((0, 1/2, 1/2), (1,)), ((), ()), 16)", "True"]],
     // SymPy: meijerg(((1/2, 1/2, 1), (1/2,)), ((), ()), 16)/sqrt(pi) (the same value, 0.0643107738265933 (mpmath))
-    ["exp(-1/x)*besselj(0,x)", "0", "oo", ["meijerg(((), ()), ((0, -1/2, 0), (0,)), 1/16)/(4*sqrt(pi))", "True"]],
+    ["exp(-1/x)*besselj(0,x)", "0", "oo", ["meijerg(((), ()), ((-1/2, 0, 0), (0,)), 1/16)/(4*sqrt(pi))", "True"]],
     // SymPy: ERR TypeError (SymPy raises TypeError)
     ["exp(x)", "oo", "0", "None"],
     // SymPy: E*(-log(2) + log(-2*exp_polar(I*pi)) - Ei(2*exp_polar(I*pi)) + I*pi) (the same value:
@@ -194,8 +194,8 @@ describe('helpers', () => {
     // besselj(1, 5) < 0 is not decided by is_negative (SymPy does not know it finite): its value is
     expect(sstr(condsimp(Lt(parse('besselj(1, 5)'), 0)))).toBe('True');
     expect(sstr(condsimp(Gt(parse('besselj(1, 5)'), 0)))).toBe('False');
-    // complex and unevaluable numbers stay
-    expect(sstr(condsimp(Lt(add(1, I), 2)))).toBe('I < 1');
+    // an inequality of a non-real number is no relation (SymPy raises a TypeError); unevaluable numbers stay
+    expect(() => Lt(add(1, I), 2)).toThrow('Invalid comparison of non-real 1 + I');
     expect(sstr(condsimp(Gt(hyper([1, 2, 3], [4], 2), 0)))).toBe('hyper((1, 2, 3), (4,), 2) > 0');
     expect(sstr(condsimp(Eq(arg(y), 0)))).toBe('y > 0');
     expect(sstr(condsimp(Lt(abs(y), 0)))).toBe('False');
@@ -236,8 +236,7 @@ describe('meijerint_inversion', () => {
     // SymPy: None
     expect(inv(P2('(s + 1)**(-1/2)'))).toBeUndefined();
     expect(inv(P2('exp(-1/s)/sqrt(s)'))).toBeUndefined();
-    // an upper parameter exceeding a lower one by an integer: not a G-function SymPy allows
-    expect(inv(meijerg([2], [], [1], [], s))).toBeUndefined();
+    expect(() => meijerg([2], [], [1], [], s)).toThrow(RangeError);
   });
   it('a delay', () => {
     const r = meijerintInversion(mul(exp(mul(-2, s)), pow(s, R(-3, 2))), s, t);
@@ -272,4 +271,40 @@ describe('meijerint_indefinite', () => {
     // SymPy: x*exp(-1/x) + Ei(exp_polar(I*pi)/x), here with a constant added as above
     expect(ind('exp(-1/x)')).toContain('x*exp(-1/x)');
   });
+});
+
+it('integrates hyperbolic functions with exponential weights, including coincident rates', () => {
+  for (const [f, derivative] of [
+    ['exp(-t*x)*cosh(x)', '((1-t)*exp(-x)+(-1-t)*exp(x))*exp(-t*x)/(2*(t**2-1))'],
+    ['exp(x)*sinh(x)', 'exp(2*x)/4-x/2'],
+    ['exp(-x)*cosh(x)', 'x/2-exp(-2*x)/4'],
+  ] as const) {
+    expect(meijerintIndefinite(P(f), x)?.expand().equals(P(derivative).expand())).toBe(true);
+  }
+  for (const f of ['exp(x**2)*cosh(x)', 'sin(x)*cosh(x)', 'exp(x)*sinh(x**2)', 'exp(sin(x))*sinh(x)', 'exp(x)*cosh(sin(x))']) {
+    expect(meijerintIndefinite(P(f), x)).toBeUndefined();
+  }
+});
+
+it('rewrites modified Bessel functions and evaluates the integral of zero on a half-line', () => {
+  expect(rewriteSingle(P('besseli(a,x)'), x)?.[0]).toHaveLength(1);
+  expect(run('0', '0', 'oo')).toEqual(['0', 'True']);
+  expect(String(condsimp(new Rel('Eq', I, S.Zero)))).toBe('Eq(I, 0)');
+});
+
+it('handles a zero integrand, a complex comparison and an exponential with a constant shift', () => {
+  expect(run('0', '0', 'oo')).toEqual(['0', 'True']);
+  const condition = new Rel('Eq', I, Rational.of(0));
+  expect(ask(condsimp(condition))).toBe(false);
+  expect(meijerintInversion(P('exp(1 - 2*x)/x**2'), x, y)?.map(String))
+    .toEqual(['E*(y - 2)*Heaviside(y - 2)', 'True']);
+  expect(meijerintInversion(meijerg([], [], [0], [], pow(x, 4)), x, y)).toBeUndefined();
+});
+
+it('rewrites the modified Bessel function of the first kind as a Meijer G', () => {
+  const result = rewriteSingle(P('besseli(a,x)'), x);
+  expect(result?.[0].map((term) => term.map(String))).toEqual([
+    ['pi', '0', 'meijerg(((), (a/2 + 1/2,)), ((a/2,), (-a/2, a/2 + 1/2)), x**2/4)'],
+  ]);
+  expect(String(result?.[1])).toBe('True');
 });

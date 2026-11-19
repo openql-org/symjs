@@ -1046,3 +1046,35 @@ describe('function classes and permutations (SymPy 1.14 test_pretty)', () => {
     expect(pretty(p, { permCyclic: true })).toBe('(1 2)(3 4)');
   });
 });
+
+it('prints symbolic derivative orders in pretty output', () => {
+  const [x, n] = sj.symbols('x n');
+  expect(pretty(sj.SymFunction('f')(x).diff(x, n))).toContain('n');
+});
+
+it('prints symbolic ranges, partitions and registered fallback forms', () => {
+  const n = sj.symbol('n', { integer: true, positive: true });
+  expect(pretty(sj.Range.of(n))).toContain('Range');
+  expect(pretty(new sj.Partition([1, 2], [3]))).toContain('{');
+  const printer = (e: sj.Expr) => e instanceof sj.ExtensionExpr && e.name === 'SpecialForm' ? new PrettyForm('custom') : undefined;
+  prettyHooks.extensionFallbacks.push(printer);
+  class SpecialForm extends sj.ExtensionExpr {
+    constructor() { super('SpecialForm', []); }
+    withArgs(): sj.Expr { return this; }
+  }
+  try { expect(pretty(new SpecialForm())).toBe('custom'); }
+  finally { prettyHooks.extensionFallbacks.pop(); }
+});
+
+it('prints built-in and undefined function classes in both character sets', () => {
+  const gamma = Object.assign((a: Expr) => sj.gamma(a), { functionName: 'gamma' });
+  expect(pretty(gamma, { useUnicode: false })).toBe('Gamma');
+  expect(pretty(gamma, { useUnicode: true })).toBe('Γ');
+  expect(pretty(sj.SymFunction('f'))).toBe('f');
+});
+
+it('prints partitions, categories and symbolic ranges', () => {
+  expect(pretty(new sj.Partition([1, 2]))).toBe('{{1, 2}}');
+  expect(pretty(sj.Category('C'))).toBe('C');
+  expect(pretty(sj.Range.of(0, sj.symbol('m')), { useUnicode: false })).toBe('Range(m)');
+});

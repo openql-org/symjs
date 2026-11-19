@@ -56,3 +56,35 @@ describe('evalConcreteValue', () => {
     expect(evalConcreteValue(c(sj.Sum(k.mul(x), [k, 1, 3])))).toBeUndefined();
   });
 });
+
+it('evaluates convergent numerical sums and rejects a divergent series', async () => {
+  const { evalConcreteValue } = await import('../../src/calculus/doit');
+  const k = sj.symbol('k', { integer: true });
+  const sum = (term: sj.Expr) => sj.Sum(term, [k, 1, sj.S.Infinity]) as sj.Concrete;
+  expect(evalConcreteValue(sum(sj.pow(2, sj.neg(k))))?.key).toBe(sj.S.One.key);
+  expect(() => evalConcreteValue(sum(sj.pow(k, -1)))).toThrow(RangeError);
+  expect(evalConcreteValue(sum(sj.mul(x, k)))).toBeUndefined();
+});
+
+it('evaluates the derivatives left in the result of a derivative (SymPy Derivative.doit)', () => {
+  const x = new sj.Sym('x');
+  const f = sj.SymFunction('f', { assumptions: { real: true } })(x);
+  expect(String(sj.doit(sj.derivative(sj.Abs(f), [[f, 1]])))).toBe('sign(f(x))');
+  // diff leaves the inner derivative
+  expect(String(sj.diff(sj.Abs(f), f))).toBe('sign(f(x))*Derivative(f(x), f(x))');
+  // a derivative that does not evaluate stays
+  const g = sj.SymFunction('g')(x);
+  expect(String(sj.doit(sj.derivative(g, [[x, 1]])))).toBe('Derivative(g(x), x)');
+});
+
+it('rewrites the sign of a nonzero argument by its absolute value (SymPy sign.doit)', () => {
+  const y = new sj.Sym('y', { imaginary: true });
+  const n = new sj.Sym('n', { nonzero: true });
+  const x = new sj.Sym('x');
+  expect(String(sj.doit(sj.sign(sj.add(1, y))))).toBe('(y + 1)/sqrt(1 - y**2)');
+  expect(String(sj.doit(sj.mul(2, sj.sign(n))))).toBe('2*n/Abs(n)');
+  expect(String(sj.doit(sj.sign(x)))).toBe('sign(x)');
+  // SymPy test_derivatives_issue_4757
+  const f = sj.SymFunction('f')(y);
+  expect(String(sj.doit(sj.subs(sj.diff(sj.Abs(f), y), [[f, sj.add(1, y)]])))).toBe('-y/sqrt(1 - y**2)');
+});

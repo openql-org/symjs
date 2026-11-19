@@ -10,9 +10,49 @@
 import { describe, expect, it } from 'vitest';
 import * as sj from '../../../src';
 import { abs, AccumBounds, add, adjoint, arg, conjugate, cos, cosh, exp, Float, fn, hyper, I, mul, parse, pi, pow, rational, re, S, sin, Sym, symbol, transpose } from '../../../src';
-import { forEachEntry } from '../../../src/functions/elementary/elementary';
+import { evaluators, forEachEntry } from '../../../src/functions/elementary/elementary';
 
 const x = new Sym('x');
+
+it('evaluates a principal logarithm on the unit circle', () => {
+  const a = sj.asin(5);
+  const modulus = sj.abs(a);
+  expect(sj.log(a.div(modulus)).equals(mul(I, arg(a)))).toBe(true);
+  expect(sj.floor(mul(I, sj.log(a.div(modulus)))).equals(S.Zero)).toBe(true);
+  const b = sj.asin(7);
+  expect(sj.ceiling(mul(-1, I, sj.log(b.div(abs(b))))).equals(S.NegOne)).toBe(true);
+  expect(String(sj.log(sj.asin(7).div(modulus)))).toBe('log(asin(7)/Abs(asin(5)))');
+  expect(String(sj.log(sj.asin(7).div(sj.cos(1))))).toBe('log(asin(7)/cos(1))');
+});
+
+it('uses the components of matrix expressions and rejects a set as an absolute-value argument', () => {
+  const a = sj.MatrixSymbol('A', 2, 2);
+  const explicit = sj.ImmutableMatrix([[1, sj.I], [0, 2]]);
+  expect(sj.sstr(sj.re(a))).toBe('(1/2)*Adjoint(A.T) + (1/2)*A');
+  expect(sj.sstr(sj.im(a))).toBe('-(I/2)*(-Adjoint(A.T) + A)');
+  expect(sj.sstr(sj.re(explicit))).toBe('Matrix([[1, 0], [0, 2]])');
+  const imaginary = sj.im(explicit);
+  expect(imaginary instanceof sj.MatrixExpr && imaginary.asExplicit().equals(sj.Matrix.of([[0, 1], [0, 0]]))).toBe(true);
+  expect(() => abs(sj.interval(2, 3))).toThrow(TypeError);
+  expect(sj.transpose(a).equals(a.T)).toBe(true);
+  const positive = sj.symbol('p', { positive: true });
+  expect(String(conjugate(sj.besselj(x, positive)))).toBe('besselj(conjugate(x), p)');
+});
+
+it('maps sine over a set expression', () => {
+  const domain = sj.interval(0, 1);
+  const value = sin(sj.SetExpression(domain));
+  expect(value instanceof sj.SetExpression).toBe(true);
+  expect(sj.sstr(value)).toBe('SetExpr(ImageSet(Lambda(_x, sin(_x)), Interval(0, 1)))');
+});
+it('evaluates undefined trigonometric values and nested principal arguments', () => {
+  expect(evaluators.sin?.(S.ComplexInfinity)).toBe(S.NaN);
+  expect(arg(new sj.Fn('arg', [new sj.Fn('arg', [new sj.Fn('arg', [x])])]))).toBe(S.NaN);
+  expect(arg(new sj.Fn('arg', [new sj.Fn('arg', [rational(2)])]))).toBe(S.NaN);
+  expect(arg(new sj.Fn('arg', [x])).toString()).toBe('arg(arg(x))');
+  expect(arg(sj.sqrt(2).sub(1))).toBe(S.Zero);
+  expect(arg(parse('besselj(0, 1)'))).toBe(S.Zero);
+});
 it('rebuilds an unevaluated conjugate with its public function head', () => {
   const e = conjugate(x);
   expect(e.func).toBe(conjugate);
@@ -186,6 +226,9 @@ const ELEM_CASES: Case[] = [
   ["s", "log(zoo)", "zoo"],
   ["s", "log(I)", "I*pi/2"],
   ["s", "log(-I)", "-I*pi/2"],
+  ["s", "log(sqrt(3)*I)", "log(sqrt(3)) + I*pi/2"],
+  ["s", "log(-sqrt(3)*I)", "log(sqrt(3)) - I*pi/2"],
+  ["s", "log(x*I)", "log(I*x)"],
   ["s", "log(1 + I)", "log(sqrt(2)) + I*pi/4"],
   ["s", "log(2 - 3*I)", "log(2 - 3*I)"],
   ["s", "log(1/8)", "-log(8)"],
@@ -692,9 +735,8 @@ describe('functions at a number with an infinite part', () => {
   it.each(cases)('%s = %s', (src, want) => {
     expect(String(parse(src))).toBe(want);
   });
-  it('atan(zoo) stays unevaluated', () => {
-    // SymPy atan(zoo) = AccumBounds(-pi/2, pi/2)
-    expect(String(parse('atan(zoo)'))).toBe('atan(zoo)');
+  it('gives an accumulation range for atan at complex infinity', () => {
+    expect(String(parse('atan(zoo)'))).toBe('AccumBounds(-pi/2, pi/2)');
   });
 });
 
@@ -757,4 +799,131 @@ it('reduces tan of an integer multiple of pi by its period (SymPy _pi_coeff)', (
   expect(t(sj.Rational.of(5n, 2n), n)).toBe('tan(pi*n/2)');
   // 0.3 has no exact binary form; a non-integer symbol is left alone
   expect([t(0.3, n), t(sj.Rational.of(5n, 2n), x)]).toEqual(['tan(0.3*pi*n)', 'tan(5*pi*x/2)']);
+});
+
+it('transposes noncommutative symbols with Hermitian assumptions', () => {
+  const h = new Sym('H', { commutative: false, hermitian: true });
+  const a = new Sym('A', { commutative: false, antihermitian: true });
+  expect(transpose(h).equals(conjugate(h))).toBe(true);
+  expect(transpose(a).equals(sj.neg(conjugate(a)))).toBe(true);
+  expect(transpose(mul(-1, I, h)).equals(mul(-1, I, conjugate(h)))).toBe(true);
+  expect(transpose(mul(-1, I, a)).equals(mul(I, conjugate(a)))).toBe(true);
+});
+
+it('arg counts a factor of known sign by its sign (SymPy arg.eval)', () => {
+  const x = new sj.Sym('x');
+  const p = new sj.Sym('p', { positive: true });
+  const q = new sj.Sym('q', { negative: true });
+  const f = sj.SymFunction('f', { assumptions: { extendedPositive: true } })(x);
+  const g = sj.SymFunction('g', { assumptions: { extendedNegative: true } })(x);
+  expect(String(sj.arg(sj.mul(sj.add(3, sj.I), p)))).toBe('atan(1/3)');
+  expect(String(sj.arg(sj.mul(sj.add(3, sj.I), q)))).toBe('-pi + atan(1/3)');
+  expect(String(sj.arg(sj.mul(2, sj.add(3, sj.I), p, x)))).toBe('arg(x*(3 + I))');
+  // a function declared extended_positive or extended_negative has that sign
+  expect(String(sj.arg(f))).toBe('0');
+  expect(String(sj.arg(g))).toBe('pi');
+  expect(String(sj.arg(sj.mul(sj.add(3, sj.I), f)))).toBe('atan(1/3)');
+  expect(String(sj.arg(sj.mul(sj.I, g)))).toBe('-pi/2');
+});
+
+it('evaluates atan2 like SymPy atan2.eval', () => {
+  const y = new sj.Sym('y');
+  const x = new sj.Sym('x');
+  const i = new sj.Sym('i', { imaginary: true });
+  const r = new sj.Sym('r', { real: true });
+  const nz = new sj.Sym('nz', { nonzero: true });
+  const show = (e: unknown) => String(e);
+  expect(show(sj.atan2(y, sj.oo))).toBe('0');
+  expect(show(sj.atan2(y, sj.S.NegativeInfinity))).toBe('2*pi*Heaviside(re(y)) - pi');
+  expect(show(sj.atan2(0, sj.S.NegativeInfinity))).toBe('pi');
+  expect(show(sj.atan2(0, 0))).toBe('nan');
+  // numbers that are not both real: the logarithmic form
+  expect(show(sj.atan2(2, sj.I))).toBe('-I*(log(sqrt(3)) + I*pi/2)');
+  expect(show(sj.atan2(sj.add(1, sj.I), 2))).toBe('-I*log((2 + I*(1 + I))/sqrt(4 + (1 + I)**2))');
+  // two imaginary numbers: the angle of their imaginary parts
+  expect(show(sj.atan2(sj.mul(2, sj.I), sj.mul(3, sj.I)))).toBe('atan(2/3)');
+  // y = 0
+  expect(show(sj.atan2(0, nz))).toBe('pi*(1 - Heaviside(nz))');
+  expect(show(sj.atan2(0, sj.add(1, sj.I)))).toBe('0');
+  expect(show(sj.atan2(0, i))).toBe('atan2(0, i)');
+  expect(show(sj.atan2(y, x))).toBe('atan2(y, x)');
+  // rewrites
+  expect(show(sj.rewrite(sj.atan2(i, r), 'arg'))).toBe('-I*log(Abs(I*i + r)/sqrt(Abs(i**2 + r**2))) + arg((I*i + r)/sqrt(i**2 + r**2))');
+  const [p, q] = [new sj.Sym('p', { real: true }), new sj.Sym('q', { real: true })];
+  expect(show(sj.rewrite(sj.atan2(p, q), 'arg'))).toBe('arg(I*p + q)');
+  expect(show(sj.rewrite(sj.atan2(0, sj.add(r, i)), 'atan'))).toBe('Piecewise((pi, r < 0), (0, True))');
+});
+
+it('exp is imaginary at the odd multiples of I*pi/2 (SymPy Pow._eval_is_imaginary)', () => {
+  const at = (k: string) => sj.isImaginary(new sj.Pow(sj.E, sj.mul(sj.I, sj.pi, sj.parse(k))));
+  expect(['1', '2', '1/2', '3/2', '-1/2', '1/3'].map(at)).toEqual([false, false, true, true, true, 'unknown']);
+});
+
+it('keeps an unknown function phase and decides a negative Bessel value numerically', () => {
+  const f = sj.SymFunction('f')(symbol('x'));
+  expect(String(arg(f))).toBe('arg(f(x))');
+  expect(arg(sj.besselj(0, 3))).toBe(pi);
+});
+
+it('conjugates and transposes each piece under the original condition', () => {
+  const x = symbol('x'), c = sj.Gt(x, 0);
+  const p = sj.piecewise([x, c], [I, true]);
+  for (const op of [conjugate, adjoint, transpose]) {
+    expect(op(p)).toEqual(sj.piecewise([op(x), c], [op(I), true]));
+  }
+  const step = sj.Heaviside(x);
+  expect(conjugate(step)).toBe(step);
+});
+
+it('preserves inverse hyperbolic calls on a held real sum at infinity', () => {
+  const sum = new sj.Add([S.One, sj.oo]);
+  expect(String(sj.asinh(sum))).toBe('asinh(1 + oo)');
+  expect(String(sj.acosh(sum))).toBe('acosh(1 + oo)');
+});
+
+it('rebuilds transformed orders with their expansion variables and points', () => {
+  const r = symbol('r', { real: true }), y = symbol('y', { imaginary: true });
+  for (const expr of [sj.O(y), sj.O(pow(y, 2)), sj.O(sj.sub(r, 2), r, 2)]) {
+    for (const transform of [conjugate, adjoint, transpose]) expect(transform(expr).equals(expr)).toBe(true);
+  }
+  expect(String(conjugate(sj.O(x)))).toBe('conjugate(O(x))');
+});
+
+it('transforms an order with a noncommuting coefficient and without the series hook', async () => {
+  const h = symbol('H', { commutative: false, hermitian: true });
+  expect(adjoint(new sj.Order([h])).equals(sj.O(h))).toBe(true);
+  const { impl } = await import('../../../src/core/nodes');
+  const rebuild = impl.rebuildOrder;
+  try {
+    impl.rebuildOrder = undefined;
+    const r = symbol('r', { real: true });
+    expect(conjugate(new sj.Order([r])).equals(new sj.Order([r]))).toBe(true);
+  } finally {
+    impl.rebuildOrder = rebuild;
+  }
+});
+
+it('transforms each branch and respects the argument of a negative real value', () => {
+  const condition = sj.Gt(x, 0);
+  const pw = sj.Piecewise([I, condition], [1, true]);
+  expect(conjugate(pw).equals(sj.Piecewise([sj.neg(I), condition], [1, true]))).toBe(true);
+  expect(adjoint(pw).equals(conjugate(pw))).toBe(true);
+  expect(transpose(pw).equals(pw)).toBe(true);
+  expect(conjugate(sj.AccumBounds(1, 2)).equals(sj.AccumBounds(1, 2))).toBe(true);
+  expect(String(arg(sj.SymFunction('f')(x)))).toBe('arg(f(x))');
+  expect(arg(sj.besselj(0, 4))).toBe(pi);
+  expect(fn('asinh', [sj.oo])).toBe(sj.oo);
+  expect(fn('acosh', [sj.oo])).toBe(sj.oo);
+});
+
+it('evaluates sine and cosine at integer multiples of pi', () => {
+  const n = symbol('n', { integer: true });
+  expect(sin(mul(n, pi))).toBe(S.Zero);
+  expect(cos(mul(n, pi)).equals(pow(-1, n))).toBe(true);
+});
+
+it('preserves an unknown argument and evaluates a negative Bessel value', () => {
+  const f = sj.SymFunction('f')(x);
+  expect(String(arg(f))).toBe('arg(f(x))');
+  expect(arg(parse('besselj(0, 3)'))).toBe(pi);
 });

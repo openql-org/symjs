@@ -11,10 +11,18 @@ import { describe, expect, it } from 'vitest';
 import * as sj from '../../../src';
 import { add, diff, expint, expPolar, extractBranchFactor, mul, periodicArgument, polarify, polarLift, pow, principalBranch, S, sin, sqrt, Sym, unbranchedArgument } from '../../../src';
 import { isPolar } from '../../../src/core/assumptions';
+import { numericFns } from '../../../src/numeric/evalf';
 
 // ---- table harness: each case is [kind, SymPy source, str() of the SymPy 1.14 result or [re, im]] ----
 type Case = [kind: string, src: string, expected: string | [number, number]];
 const x = new sj.Sym('x');
+it('evaluates special values and the numerical exponential on the polar surface', () => {
+  expect(String(sj.Ei(0))).toBe('-oo');
+  expect(String(sj.Si(0))).toBe('0');
+  const evaluate = numericFns.exp_polar;
+  if (evaluate === undefined) throw new TypeError('exp_polar evaluator expected');
+  expect(evaluate([{ re: 0, im: 4 }]).im).toBe(0);
+});
 const locals = {
   p: new sj.Sym('p', { positive: true }),
   q: new sj.Sym('q', { positive: true }),
@@ -336,10 +344,16 @@ describe('polar: cases outside the table', () => {
     expect(String(unbranchedArgument(expPolar(sj.mul(3, sj.I))))).toBe('3');
   });
   it('polarify with lift and with the substitution of polar dummies', () => {
+    const f = sj.SymFunction('f');
+    expect(String(polarify(add(x, f(S.I)), { subs: false }))).toBe('x + f(exp_polar(I*pi/2))');
+    expect(String(polarify(add(1, f(x)), { lift: true }))).toBe('polar_lift(f(polar_lift(x)) + 1)');
+    expect(String(polarify(new sj.Integral([pow(x, 2), x]), { lift: true }))).toBe('Integral(polar_lift(x)**(2*exp_polar(0)), x)');
     expect(String(polarify(P('x + 1'), { lift: true }))).toBe('polar_lift(x + 1)');
     expect(String(polarify(P('x*exp(y)'), { lift: true }))).toBe('exp(polar_lift(y))*polar_lift(x)');
     expect(String(polarify(P('2*x'), { lift: true }))).toBe('2*exp_polar(0)*polar_lift(x)');
     expect(String(polarify(P('sin(x) + exp(2)'), { subs: false }))).toBe('sin(x) + exp(2*exp_polar(0))');
+    const p = sj.Piecewise([sj.exp(mul(S.I, x)), sj.Gt(x, 0)], [x, true]);
+    expect(String(polarify(p, { lift: true }))).toBe('Piecewise((exp(exp_polar(I*pi/2)*polar_lift(x)), x > 0), (polar_lift(x), True))');
     const r = polarify(P('x*y + 2'));
     if (!Array.isArray(r)) throw new TypeError('expected [expr, reps]');
     const [e, reps] = r;

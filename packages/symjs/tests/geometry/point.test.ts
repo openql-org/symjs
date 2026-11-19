@@ -5,7 +5,7 @@
 // sympy/geometry/tests/test_point.py). Expected values are those of SymPy 1.14.
 
 import { describe, expect, it } from 'vitest';
-import { I, Matrix, Mod, Rational, S, Sym, latex, parse, pi, sqrt } from '../../src';
+import { Basic, I, Matrix, Mod, Rational, S, Sym, latex, parse, pi, sqrt } from '../../src';
 import { GeometryError, Line, Line3D, Plane, Point, Point2D, Point3D, Undecidable } from '../../src/geometry';
 import { matrixRank, newPoint, normalizeDimension, pointOptions, exprEquals, toInput } from '../../src/geometry/point';
 import { rotate, scale, translate } from '../../src/geometry/entity';
@@ -279,4 +279,13 @@ describe('point helpers', () => {
     expect(exprEquals(parse('cos(pi/7) + cos(3*pi/7) + cos(5*pi/7) - 1/2'), 0)).toBe(undefined);
     expect(matrixRank([[parse('(x + 1)**2 - x**2 - 2*x'), S.Zero, S.Zero], [S.Zero, S.Zero, S.Zero], [S.Zero, S.Zero, S.Zero]], und)).toBe(1);
   });
+});
+
+it('rejects coordinates that are not expressions and takes the dimension of the class in areCoplanar (SymPy)', () => {
+  expect(() => Point(Basic(), Basic())).toThrow('Coordinates must be valid SymPy expressions.');
+  // Point2D.are_coplanar reduces the points to two dimensions
+  expect(() => Point2D.areCoplanar([1, 2], [1, 2, 3])).toThrow('Nonzero coordinates cannot be removed.');
+  expect(Point2D.areCoplanar([1, 2], [1, 2, 0])).toBe(true);
+  expect(Point3D.areCoplanar([1, 2], [1, 2, 3])).toBe(true);
+  expect(Point.areCoplanar([1, 2], [1, 2, 3], [0, 0, 1], [5, 7, 11])).toBe(false);
 });

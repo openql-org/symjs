@@ -151,7 +151,7 @@ export function JointRV(symbolIn: string | Sym, pdfIn: ExprLike): RandomSymbol {
   const pdf = sympify(pdfIn);
   const found = new Map<string, Indexed>();
   const go = (e: Expr): void => {
-    if (e instanceof Indexed && e.base.key === symbol.key) found.set(e.key, e);
+    if (e instanceof Indexed && (e.base instanceof IndexedBase ? e.base.label : e.base).key === symbol.key) found.set(e.key, e);
     else e.args.forEach(go);
   };
   go(pdf);

@@ -12,6 +12,14 @@
  */
 
 import * as sj from '../src';
+export { cast as asInstance } from '../src/core/guard';
+
+/** Python math.isclose with its default tolerances for real numeric leaves. */
+export function pyIsClose(x: sj.Expr, y: sj.Expr): boolean {
+  const a = x.toComplex().re;
+  const b = y.toComplex().re;
+  return a === b || (Number.isFinite(a) && Number.isFinite(b) && Math.abs(a - b) <= 1e-9 * Math.max(Math.abs(a), Math.abs(b)));
+}
 
 /** Items of containers print by their repr where it differs from their str. */
 function item(v: unknown, kinds: Kinds): string {

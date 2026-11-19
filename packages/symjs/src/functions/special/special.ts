@@ -33,7 +33,7 @@ import { numAdd, numMul } from '../../core/num';
 import { derivative } from '../../core/undef';
 import { SubsNode } from '../../core/subsnode';
 import { Concrete } from '../../core/concrete';
-import { evalMp, MpSpecialValue, mpFns } from '../../numeric/mpeval';
+import { evalMp, MpSpecialValue, mpFn2, mpFns } from '../../numeric/mpeval';
 import * as F from '../../numeric/mpf';
 import * as M from '../../numeric/mpfun';
 import type { Mpc } from '../../numeric/mpfun';
@@ -41,6 +41,7 @@ import * as SP from '../../numeric/mpspecial';
 import { chyp2f1 } from '../../numeric/mporthopoly';
 import { add, couldExtractMinusSign, exp, mul, neg, pow, splitCoeff, sqrt, sympify } from '../../core/ops';
 import { fnPartials } from '../../calculus/diff';
+import { piecewise, rel } from '../../core/logic';
 import { rebuild } from '../../core/traverse';
 import { impl } from '../../core/nodes';
 import { c as cx, cadd, cdiv, cexp, clog, cLambertW, cmul, cpow, csin } from '../../numeric/complex';
@@ -140,11 +141,11 @@ function evalBinomial(n: Expr, k: Expr): Expr | undefined {
   // SymPy binomial.eval: binomial(n, n) = 1 and binomial(n, n - 1) = n unless n may be a negative integer
   const d = add(n, neg(k));
   const generic = isNonNegative(n) === true || isIntegerQ(n) === false;
+  if (isZero(k) === true) return S.One;
   if (generic && d instanceof Rational && d.isZero) return S.One;
   if (generic && d instanceof Rational && d.isOne) return n;
   if (isInt(k)) {
     if (k.isNegative) return S.Zero;
-    if (k.isZero) return S.One;
     if (isInt(n) && !n.isNegative && k.p > n.p) return S.Zero;
     if (n instanceof Rational) {
       // very large k: keep binomial(n, k) unevaluated instead of looping k times, unless
@@ -166,6 +167,10 @@ function evalBinomial(n: Expr, k: Expr): Expr | undefined {
       return numMul(num, R(1n, factorialBig(k.p)));
     }
     if (k.isOne) return n;
+    return undefined;
+  }
+  if (isIntegerQ(k) === true) {
+    if (isNegative(k) === true || (isNonNegative(n) === true && isIntegerQ(n) === true && isNegative(d) === true)) return S.Zero;
     return undefined;
   }
   if (isNonNegative(n) === false && isIntegerQ(n) === true) return S.ComplexInfinity;
@@ -191,6 +196,7 @@ function evalRF(x: Expr, k: Expr): Expr | undefined {
     if (k.isPositive) return mul(...Array.from({ length: Number(k.p) }, (_, i) => add(x, i)));
     return mul(...Array.from({ length: Number(-k.p) }, (_, i) => pow(add(x, -(i + 1)), -1)));
   }
+  if (isIntegerQ(k) === false && isIntegerQ(x) === true && isNegative(x) === true) return S.Zero;
   return undefined;
 }
 
@@ -330,6 +336,7 @@ function evalLoggamma(x: Expr): Expr | undefined {
 
 /** SymPy polygamma.eval. */
 function evalPolygamma(n: Expr, x: Expr): Expr | undefined {
+  if (isSpecial(n, 'nan') || isSpecial(x, 'nan')) return S.NaN;
   const n0 = n instanceof Rational && n.isZero;
   // polygamma(n, oo) is 0 for n != 0 (SymPy also returns 0 for an n that may be 0; keep that unevaluated)
   if (isOo(x) && (n0 || isPositive(n) === true || isNegative(n) === true)) return n0 ? S.Infinity : S.Zero;
@@ -531,7 +538,9 @@ function evalErf(z: Expr): Expr | undefined {
   if (isNegOo(z)) return S.NegOne;
   if (isIOo(z)) return iOo();
   if (isNegIOo(z)) return neg(iOo());
-  if (z instanceof Fn && z.name === 'erfinv') return z.args[0];
+  if (z instanceof Fn && z.name === 'erfinv') return first(z.args);
+  if (z instanceof Fn && z.name === 'erfcinv') return add(1, neg(first(z.args)));
+  if (z instanceof Fn && z.name === 'erf2inv' && isZero(first(z.args)) === true) return at(z.args, 1);
   return odd('erf', z);
 }
 
@@ -541,7 +550,8 @@ function evalErfc(z: Expr): Expr | undefined {
   if (isNegOo(z)) return S.Two;
   if (isIOo(z)) return neg(iOo());
   if (isNegIOo(z)) return iOo();
-  if (z instanceof Fn && z.name === 'erfcinv') return z.args[0];
+  if (z instanceof Fn && z.name === 'erfcinv') return first(z.args);
+  if (z instanceof Fn && z.name === 'erfinv') return add(1, neg(first(z.args)));
   if (couldExtractMinusSign(z)) return add(2, neg(fnN('erfc', neg(z))));
   return undefined;
 }
@@ -552,6 +562,11 @@ function evalErfi(z: Expr): Expr | undefined {
   if (isNegOo(z)) return S.NegativeInfinity;
   if (isIOo(z)) return S.I;
   if (isNegIOo(z)) return neg(S.I);
+  const w = imagFactor(z);
+  if (w instanceof Fn && ['erfinv', 'erfcinv', 'erf2inv'].includes(w.name)) {
+    const value = evalErf(w);
+    if (value !== undefined) return mul(S.I, value);
+  }
   return odd('erfi', z);
 }
 
@@ -579,6 +594,7 @@ function evalErfcinv(z: Expr): Expr | undefined {
 
 function evalErf2(x: Expr, y: Expr): Expr | undefined {
   if (x.key === y.key) return S.Zero;
+  if (y instanceof Fn && y.name === 'erf2inv' && first(y.args).key === x.key) return at(y.args, 1);
   if (x instanceof Rational && x.isZero) return fnN('erf', y);
   if (y instanceof Rational && y.isZero) return neg(fnN('erf', x));
   if (isOo(x)) return add(fnN('erf', y), -1);
@@ -586,6 +602,7 @@ function evalErf2(x: Expr, y: Expr): Expr | undefined {
   if (isOo(y)) return add(1, neg(fnN('erf', x)));
   if (isNegOo(y)) return add(neg(fnN('erf', x)), -1);
   if (couldExtractMinusSign(x) && couldExtractMinusSign(y)) return neg(fnN('erf2', neg(x), neg(y)));
+  if (couldExtractMinusSign(x) || couldExtractMinusSign(y)) return add(fnN('erf', y), neg(fnN('erf', x)));
   return undefined;
 }
 
@@ -799,7 +816,31 @@ function partOf(p: F.Mpf, q: F.Mpf, wp: number, name: 'floor' | 'ceiling'): bigi
   return name === 'floor' ? (F.sign(r) < 0 ? n - 1n : n) : F.sign(r) > 0 ? n + 1n : n;
 }
 
-function evalAtan2(y: Expr, x: Expr): Expr | undefined {
+function evalAtan2(y0: Expr, x0: Expr): Expr | undefined {
+  // SymPy atan2.eval at an infinite x
+  if (x0 instanceof Special && x0.name === '-oo') {
+    if (isZero(y0) === true) return S.Pi;
+    return impl.heaviside ? add(mul(2, S.Pi, impl.heaviside(re(y0))), neg(S.Pi)) : undefined;
+  }
+  if (x0 instanceof Special && x0.name === 'oo') return S.Zero;
+  // two imaginary numbers: the angle of their imaginary parts
+  const imaginaryNumber = (e: Expr): boolean => e.isNumber && isZero(e) === false && isZero(re(e)) === true;
+  const [y, x] = imaginaryNumber(y0) && imaginaryNumber(x0) ? [fnN('im', y0), fnN('im', x0)] : [y0, x0];
+  const special = atan2OfReals(y, x);
+  if (special !== undefined) return special;
+  if (isReal(x) === true && isReal(y) === true && isZero(x) === true && isZero(y) === true) return S.NaN;
+  if (isZero(y) === true) {
+    if (isReal(x) === true && isZero(x) === false && impl.heaviside) return mul(S.Pi, add(1, neg(impl.heaviside(x))));
+    if (x.isNumber) return piecewise([S.Pi, rel('Lt', re(x), S.Zero)], [S.Zero, rel('Ne', x, S.Zero)], [S.NaN, S.true]);
+  }
+  // SymPy: the logarithmic form for numbers that are not both real
+  if (x.isNumber && y.isNumber && !(isReal(x) === true && isReal(y) === true)) {
+    return mul(-1, S.I, log(mul(add(x, mul(S.I, y)), pow(sqrt(add(pow(x, 2), pow(y, 2))), -1))));
+  }
+  return undefined;
+}
+
+function atan2OfReals(y: Expr, x: Expr): Expr | undefined {
   const yv = numericReal(y);
   const xv = numericReal(x);
   // a zero Float counts as zero (SymPy atan2(1, 0.0) = pi/2)
@@ -889,7 +930,7 @@ function collapseMinMax(name: 'Min' | 'Max', argsIn: Expr[]): Expr[] {
     const ai = at(args, i);
     for (let j = i + 1; j < args.length; j++) args[j] = doIt(at(args, j), ai);
   }
-  return args;
+  return uniq(args);
 }
 
 // ---------------------------------------------------------------------------
@@ -1216,6 +1257,24 @@ function mpBetainc(args: Mpc[], prec: number, regularized: boolean): Mpc {
 mpFns['betainc'] = (args, prec) => mpBetainc(args, prec, false);
 mpFns['betainc_regularized'] = (args, prec) => mpBetainc(args, prec, true);
 
+/** Analytic continuation in the order, expressed through the Hurwitz zeta derivative. */
+function generalizedPolygamma(s: Mpc, z: Mpc, p: number): Mpc {
+  const [integer, denominator] = F.toRational(s[0]);
+  if (M.isReal(s) && denominator === 1n && integer >= 0n) return SP.cpolygamma(Number(integer), z, p);
+  const step = F.ldexp(F.ONE, -Math.ceil(p / 2) - 16);
+  const wp = p + Math.ceil(p / 2) + 40;
+  const u = M.cadd(s, M.C1, wp);
+  const h: Mpc = [step, F.ZERO];
+  const plus = SP.czeta(M.cadd(u, h, wp), wp, z);
+  const minus = SP.czeta(M.csub(u, h, wp), wp, z);
+  const dz = M.cdiv(M.csub(plus, minus, wp), [F.ldexp(step, 1), F.ZERO], wp);
+  const ns = M.cneg(s);
+  const shift = M.cadd([M.mpEuler(wp), F.ZERO], SP.cpolygamma(0, ns, wp), wp);
+  return M.cdiv(M.cadd(dz, M.cmul(shift, SP.czeta(u, wp, z), wp), wp), SP.cgamma(ns, wp), p);
+}
+
+mpFns.polygamma = mpFn2(generalizedPolygamma);
+
 type Spec = {
   eval?: (...args: Expr[]) => Expr | undefined;
   partials?: (args: readonly Expr[], i: number) => Expr;
@@ -1305,9 +1364,9 @@ const SPECS: Partial<Record<FnName, Spec>> = {
     eval: evalPolygamma,
     partials: binary((n, x, i) => {
       if (i === 1) return fnN('polygamma', add(n, 1), x);
-      throw new NotImplementedError('diff: polygamma w.r.t. its order');
+      return noPartial('polygamma', [n, x], 0);
     }),
-    numeric: binary((n, z) => cpolygamma(n.re, z)),
+    numeric: binary((n, z) => n.im === 0 && Number.isInteger(n.re) && n.re >= 0 ? cpolygamma(n.re, z) : mpNumeric('polygamma', [n, z])),
     conjugate: true,
   },
   lowergamma: {
@@ -1470,7 +1529,10 @@ export const factorial2 = (n: ExprLike): Expr => fn('factorial2', [n]);
 export const binomial = (n: ExprLike, k: ExprLike): Expr => fn('binomial', [n, k]);
 export const subfactorial = (n: ExprLike): Expr => fn('subfactorial', [n]);
 export const harmonic = (n: ExprLike, m?: ExprLike): Expr => (m === undefined ? fn('harmonic', [n]) : fn('harmonic', [n, m]));
-export const catalan = (n: ExprLike): Expr => fn('catalan', [n]);
+export function catalan(n: ExprLike): Expr {
+  if (arguments.length !== 1) throw new TypeError('catalan requires one argument');
+  return fn('catalan', [n]);
+}
 export const gamma = (x: ExprLike): Expr => fn('gamma', [x]);
 export const loggamma = (x: ExprLike): Expr => fn('loggamma', [x]);
 export const polygamma = (n: ExprLike, x: ExprLike): Expr => fn('polygamma', [n, x]);
@@ -1480,9 +1542,11 @@ export const digamma = (x: ExprLike, opts: { evaluate?: boolean } = {}): Expr =>
 /** SymPy trigamma(x) = polygamma(1, x); with `{ evaluate: false }` the unevaluated trigamma(x). */
 export const trigamma = (x: ExprLike, opts: { evaluate?: boolean } = {}): Expr =>
   opts.evaluate === false ? new Fn('trigamma', [sympify(x)]) : fn('polygamma', [1, x]);
+fnPartials.digamma = (args) => fn('polygamma', [1, first(args)]);
+fnPartials.trigamma = (args) => fn('polygamma', [2, first(args)]);
 export const lowergamma = (s: ExprLike, x: ExprLike): Expr => fn('lowergamma', [s, x]);
 export const uppergamma = (s: ExprLike, x: ExprLike): Expr => fn('uppergamma', [s, x]);
-export const beta = (a: ExprLike, b: ExprLike): Expr => fn('beta', [a, b]);
+export const beta = (a: ExprLike, b: ExprLike = a): Expr => fn('beta', [a, b]);
 /** SymPy betainc(a, b, x1, x2): the generalized incomplete beta function, the integral of t**(a - 1)*(1 - t)**(b - 1) from x1 to x2. */
 export const betainc = (a: ExprLike, b: ExprLike, x1: ExprLike, x2: ExprLike): Expr => fn('betainc', [a, b, x1, x2]);
 /** SymPy betainc_regularized(a, b, x1, x2): betainc(a, b, x1, x2)/beta(a, b). */
@@ -1531,6 +1595,47 @@ export const Max = (...xs: ExprLike[]): Expr => fn('Max', xs);
  */
 export const funcExpanders: Partial<Record<FnName, (args: readonly Expr[]) => Expr | undefined>> = {};
 
+/** SymPy beta._eval_expand_func: the quotient of gamma functions. */
+funcExpanders.beta = (args) => {
+  const [a, b] = pair(args);
+  return mul(gamma(a), gamma(b), pow(gamma(add(a, b)), -1));
+};
+
+/** SymPy polygamma._eval_expand_func: recurrence and multiplication theorem. */
+funcExpanders.polygamma = (args) => {
+  const [n, z] = pair(args);
+  if (!(isInt(n) && !n.isNegative)) return undefined;
+  const [shift, rest] = splitAddInt(z);
+  if (shift !== 0n) {
+    const terms: Expr[] = [];
+    if (shift > 0n) {
+      for (let k = 0n; k < shift; k++) terms.push(pow(add(rest, R(k)), R(-n.p - 1n)));
+    } else {
+      for (let k = 0n; k < -shift; k++) terms.push(neg(pow(add(z, R(k)), R(-n.p - 1n))));
+    }
+    return add(fnN('polygamma', n, rest), mul(pow(-1, n), R(factorialBig(n.p)), add(...terms)));
+  }
+  if (z instanceof Mul) {
+    const [coeff, tail] = splitCoeff(z);
+    if (isInt(coeff) && coeff.isPositive) {
+      const terms: Expr[] = [];
+      for (let k = 0n; k < coeff.p; k++) terms.push(fnN('polygamma', n, add(tail, R(k, coeff.p))));
+      const result = mul(pow(coeff, R(-n.p - 1n)), add(...terms));
+      return n.isZero ? add(result, log(coeff)) : result;
+    }
+  }
+  if (n.isZero && z instanceof Rational) return digammaRational(z);
+  return undefined;
+};
+funcExpanders.erfi = (args) => {
+  const w = imagFactor(first(args));
+  return w === undefined ? mul(-1, S.I, fnN('erf', mul(S.I, first(args)))) : mul(S.I, fnN('erf', w));
+};
+funcExpanders.erf2 = (args) => {
+  const [x, y] = pair(args);
+  return add(fnN('erf', y), neg(fnN('erf', x)));
+};
+
 /**
  * SymPy _eval_expand_func of the functions defined in other modules, by
  * function (or extension node) name: the expanded form, or undefined when
@@ -1577,10 +1682,17 @@ export function expandFunc(e: Expr): Expr {
     }
     if (y instanceof Fn) {
       if (y.name === 'binomial') {
-        const [n, k] = y.args;
-        if (n !== undefined && k !== undefined && isInt(k) && k.isPositive) {
-          return mul(...Array.from({ length: Number(k.p) }, (_, i) => add(n, -i)), R(1n, factorialBig(k.p)));
+        const [n, k] = pair(y.args);
+        if (isNum(n)) return fnN('binomial', n, k);
+        const difference = add(n, neg(k));
+        // Symbolic expansion uses the complementary index when it is an explicit integer.
+        const order = isInt(difference) ? difference : k;
+        if (isInt(order)) {
+          if (order.isZero) return S.One;
+          if (order.isNegative) return S.Zero;
+          return mul(...Array.from({ length: Number(order.p) }, (_, i) => add(n, -i)), R(1n, factorialBig(order.p)));
         }
+        return fnN('binomial', n, k);
       }
       if (y.name === 'harmonic' && y.args.length === 1) {
         const n = first(y.args);

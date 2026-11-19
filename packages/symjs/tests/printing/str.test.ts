@@ -150,3 +150,40 @@ describe('precedence of the logic operators (SymPy PRECEDENCE)', () => {
     expect(withPermCyclic(undefined, () => permCyclic())).toBe(true);
   });
 });
+
+it('prints a condition set over the universal base without showing the base', () => {
+  const x = sj.symbol('x');
+  const condition = new sj.Contains(x, sj.Reals);
+  expect(str(new sj.ConditionSet(x, condition, sj.UniversalSet))).toBe('ConditionSet(x, Contains(x, Reals))');
+});
+
+it('combines the sign of a negative infinity factor with a product coefficient', () => {
+  expect(str(new Mul([S.NegativeInfinity, I]))).toBe('-oo*I');
+  expect(str(new Mul([S.NegOne, S.NegativeInfinity, I]))).toBe('oo*I');
+});
+
+it('prints unevaluated denominators, bound variables and singleton tuple signatures', () => {
+  expect(str(new Mul([S.One, pow(x, -1), pow(y, -1)]))).toBe('1/(x*y)');
+  expect(str(new Mul([S.One, pow(x, -1)]))).toBe('1/x');
+  expect(str(new sj.Order([x, x, S.Zero]))).toBe('O(x)');
+  expect(str(new sj.Order([x, x]))).toBe('O(x)');
+  expect(str(new sj.Integral([x, x, y]))).toBe('Integral(x, (x, y))');
+  expect(str(sj.Lambda(sj.Tuple(x, y), y))).toBe('Lambda(((x, y),), y)');
+  const indexed = new sj.IndexedBase('a').at(x);
+  expect(str(sj.Lambda(indexed, y))).toBe('Lambda(a[x], y)');
+});
+
+it('restores precision after formatting a nested expression', async () => {
+  const { withFullPrec } = await import('../../src/printing/str');
+  expect(withFullPrec(false, () => str(new Float(1.5)))).toBe('1.5');
+  expect(sj.sstr(new Float(1, 3), { min: 0 })).toBe('0.e+0');
+});
+
+it('groups low-precedence infix functions even with a negative coefficient', () => {
+  class Infix extends sj.DefinedFunctionCall {
+    strPrecedence(): number { return sj.PRECEDENCE.Mul - 5; }
+    override printStr(print: (e: Expr) => string): string { return this.args.map(print).join(' F '); }
+  }
+  expect(str(mul(-2, new Infix('F', [x, y], {})))).toBe('-2*(x F y)');
+  expect(str(mul(-2, sj.defineFunction('f', {})(x)))).toBe('-2*f(x)');
+});

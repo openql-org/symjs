@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
+import { passingModuleCases, runTestCase } from '../../../../../../tools/sympy-corpus/tests-harness';
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { ArraySymbol, ArrayElement, ArrayTensorProduct as TP, ArrayContraction as C, ArrayDiagonal as D, ArrayAdd, PermuteDims as P, Reshape, ZeroArray, getShape, getRank, SymArray, MatrixSymbol, Sym, S, str, latex, tensorproduct, tensorcontraction, tensordiagonal, permutedims, parse, diff, expand, sub } from '../../../../src/index';
@@ -188,4 +189,79 @@ it('normalizes diagonals beneath outer permutations', () => {
   const stable = new P(new D(Q, [0, 1]), [1, 0]);
   expect(stable.doit()).toBe(stable);
   expect(str(new P(inner, [0, 1]).doit())).toBe('ArrayDiagonal(Q, (0, 1))');
+});
+
+it('normalizes array sums and evaluates explicit reshapes and constant entries', async () => {
+  const { OneArray } = await import('../../../../src');
+  expect(new ArrayAdd(A).doit()).toBe(A);
+  expect(str(new ArrayAdd(A, new ArrayAdd(B, A)).doit())).toBe('ArrayAdd(A, B, A)');
+  expect(str(new ArrayAdd(A, new ZeroArray(2, 2), B).doit())).toBe('ArrayAdd(A, B)');
+  expect(str(new ArrayAdd(new ZeroArray(2, 2)).doit())).toBe('ZeroArray(2, 2)');
+  expect(str(new Reshape(SymArray([1, 2, 3, 4]), [2, 2]).doit())).toBe('[[1, 2], [3, 4]]');
+  const symbolic = new Reshape(A, [4]);
+  expect(symbolic.doit()).toBe(symbolic);
+  expect(new ZeroArray().doit()).toBe(S.Zero);
+  expect(new OneArray().doit()).toBe(S.One);
+  const zero = new ZeroArray(2, 3), one = new OneArray(2, 3);
+  expect(zero.doit()).toBe(zero);
+  expect(one.doit()).toBe(one);
+  expect(zero.at(1, 2)).toBe(S.Zero);
+  expect(one.at(1, 2)).toBe(S.One);
+  expect(() => zero.at(2, 0)).toThrow(RangeError);
+  expect(() => one.at(0)).toThrow(RangeError);
+});
+
+it('lifts local permutations and diagonals into outer tensor products', () => {
+  const expressions = [
+    new TP(new P(A, [1, 0]), B), new TP(A, new P(B, [1, 0])),
+    new TP(new D(A, [0, 1]), B), new TP(A, new D(B, [0, 1])),
+    new TP(new D(A, [0, 1]), new D(B, [0, 1])),
+  ];
+  for (const expression of expressions) {
+    expect(str(explicitArray(expression.doit()))).toBe(str(expression.asExplicit()));
+  }
+  expect(str(at(expressions, 0).doit())).toBe('PermuteDims(ArrayTensorProduct(A, B), (3)(0 1))');
+  expect(str(at(expressions, 2).doit())).toBe('PermuteDims(ArrayDiagonal(ArrayTensorProduct(A, B), (0, 1)), (0 2 1))');
+});
+
+it('nests permutations through array sums and normalizes block permutations', () => {
+  const sum = new P(new ArrayAdd(A, B), [1, 0]).nestPermutation();
+  expect(str(sum)).toBe('ArrayAdd(PermuteDims(A, (0 1)), PermuteDims(B, (0 1)))');
+  expect(str(new P(new TP(A, B), [2, 3, 0, 1]).nestPermutation())).toBe('ArrayTensorProduct(B, A)');
+  expect(str(explicitArray(sum))).toBe(str(new P(new ArrayAdd(A, B), [1, 0]).asExplicit()));
+});
+
+it('preserves symbolic reshape constraints until dimensions are known', () => {
+  expect(new Reshape(A, [n, 2]).shape.map(str)).toEqual(['n', '2']);
+});
+
+it('distributes contractions and products over sums and lifts factor permutations', () => {
+  const expressions = [
+    new TP(new ArrayAdd(A, B), M),
+    new C(new ArrayAdd(A, B), [0, 1]),
+    new TP(new P(A, [1, 0]), B),
+    new C(new TP(new P(A, [1, 0]), B), [1, 2]),
+  ];
+  for (const expression of expressions) {
+    const result = explicitArray(expression.doit()), original = expression.asExplicit();
+    if (!(result instanceof SymArray)) {
+      expect(str(expand(sub(result, original)))).toBe('0');
+      continue;
+    }
+    const actual = result;
+    const expected = cast(original, SymArray);
+    expect(actual.shape).toEqual(expected.shape);
+    actual.flatElements().forEach((value, i) => expect(str(expand(sub(value, at(expected.flatElements(), i))))).toBe('0'));
+  }
+});
+
+it('replays the upstream test_array_expressions assertions', () => {
+  for (const c of passingModuleCases('tensor', 'sympy.tensor.array.expressions.tests.test_array_expressions')) {
+    expect(['pass', 'equivalent'], c.src).toContain(runTestCase(c).status);
+  }
+});
+
+it('retains contractions of a single array when splitting index links', () => {
+  const expr = new C(M, [0, 1]);
+  expect(expr.splitMultipleContractions()).toBe(expr);
 });

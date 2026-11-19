@@ -7,15 +7,45 @@
 import { describe, expect, it } from 'vitest';
 import * as sj from '../../src';
 import { Sym, parse, integrate, symbols, diff, doit, latex, sstr } from '../../src';
-import { Expr } from '../../src/core/nodes';
+import { Expr, impl } from '../../src/core/nodes';
 import { NoMatchResult } from '../../src/core/truth';
-import { heavisideAtInfinity } from '../../src/integrals/integrate';
+import { heavisideAtInfinity, realIntegrand } from '../../src/integrals/integrate';
+import * as sjReal from '../../src';
+import { rischHooks } from '../../src/integrals/risch';
 
 // Integrals (integrals/integrate.ts). Expected values are the str() forms printed by SymPy 1.14
 // (p is a positive, q a negative and r a real symbol).
 
 const syms = [new Sym('p', { positive: true }), new Sym('q', { negative: true }), new Sym('r', { real: true })];
 const P = (s: string) => parse(s, { symbols: syms });
+
+it('integrates affine Piecewise conditions that exclude a point or simplify to a truth value', () => {
+  const x = sj.symbol('x');
+  const a = sj.symbol('a');
+  expect(integrate(sj.Piecewise([1, sj.Ne(x, a)], [0, true]), x).equals(x)).toBe(true);
+  const condition = (lhs: Expr, rhs: Expr) => new sj.Rel('Gt', lhs, rhs);
+  const raw = (test: Expr) => new sj.Piecewise([sj.S.One, test, sj.S.Two, sj.S.true]);
+  expect(integrate(raw(sj.S.false), x).equals(sj.mul(2, x))).toBe(true);
+  expect(integrate(raw(condition(sj.add(x, 1), x)), x).equals(x)).toBe(true);
+  expect(integrate(raw(condition(x, x)), x).equals(sj.mul(2, x))).toBe(true);
+});
+
+it('evaluates symbolic interval holes and retains a singular branch constant', () => {
+  const x = sj.symbol('x');
+  const bound = sj.symbol('b', { positive: true });
+  expect(sstr(integrate(P('Piecewise((x,x<2))'), x, [0, bound])))
+    .toBe('Piecewise((Min(2, b)**2/2, b <= Min(2, b)), (nan, True))');
+  expect(sstr(integrate(P('Piecewise((1,x>0),(1/x,True))'), x)))
+    .toBe('Piecewise((log(x), x <= 0), (x, True))');
+});
+
+it('keeps the integral when a branch primitive or an affine clipping bound cannot be computed', () => {
+  const x = sj.symbol('x');
+  const a = sj.symbol('a');
+  const f = sj.SymFunction('f')(x);
+  expect(integrate(sj.Piecewise([f, sj.Gt(x, 0)], [0, true]), x)).toBeInstanceOf(sj.Integral);
+  expect(integrate(sj.Piecewise([1, sj.And(sj.Gt(x, a), sj.Gt(f, 0))], [0, true]), x)).toBeInstanceOf(sj.Integral);
+});
 const V = (s: string): Sym => {
   const v = P(s);
   if (!(v instanceof Sym)) throw new TypeError(s);
@@ -23,6 +53,30 @@ const V = (s: string): Sym => {
 };
 const [x, y, z, n, k, a, b, c, m, t] = [V('x'), V('y'), V('z'), V('n'), V('k'), V('a'), V('b'), V('c'), V('m'), V('t')];
 const [pp, qq, rr] = [V('p'), V('q'), V('r')];
+it('validates integration variables and integrates equalities on both sides', () => {
+  expect(() => Reflect.apply(integrate, undefined, [x, sj.add(x, 1)])).toThrow(RangeError);
+  expect(sstr(integrate(sj.Eq(x, y), x))).toBe('Eq(x**2/2, x*y)');
+  expect(sstr(integrate(sj.Eq(x, y), x, [0, 1]))).toBe('Eq(1/2, y)');
+});
+it('integrates sums containing fully integrable piecewise terms', () => {
+  const f = sj.add(x, sj.piecewise([x, sj.Lt(x, 0)], [sj.pow(x, 2), true]));
+  expect(sstr(integrate(f, x))).toBe('x**2/2 + Piecewise((x**2/2, x < 0), (x**3/3, True))');
+});
+it('retains an unresolved inexact Gaussian instead of switching coefficient domains', () => {
+  const f = P('exp(1.2*n*s*z*(-t + z)/t)');
+  expect(integrate(f, z, [0, x])).toBeInstanceOf(sj.Integral);
+});
+it('differentiates primitives from the hyperbolic, trigonometric and special-function tables', () => {
+  for (const source of ['sinh(x)', 'cosh(x)', 'cos(x)**4', 'x*cos(x)', 'x**2*cos(x)', 'x**2*sin(x)', 'acos(x)', 'erf(x)']) {
+    const integrand = P(source);
+    const primitive = integrate(integrand, x);
+    expect(primitive).not.toBeInstanceOf(sj.Integral);
+    for (const point of [sj.rational(1, 4), sj.rational(1, 2)]) {
+      const actual = diff(primitive, x).subs(x, point).toNumber();
+      expect(actual).toBeCloseTo(integrand.subs(x, point).toNumber(), 12);
+    }
+  }
+});
 const show = (v: unknown): string =>
   Array.isArray(v) ? `[${v.map(show).join(', ')}]` : v === undefined ? 'None' : v instanceof Expr || v instanceof NoMatchResult ? v.toString() : typeof v === 'string' ? v : JSON.stringify(v);
 const pw = (e: unknown): sj.Piecewise => {
@@ -47,6 +101,38 @@ const moo = P('-oo');
 void [x, y, z, n, k, a, b, c, m, t, pp, qq, rr, conv, aconv, moo, pw];
 
 describe('results equal SymPy 1.14', () => {
+  it('keeps an integral unresolved when the rational integrator cannot provide a primitive', () => {
+    const original = rischHooks.integrate;
+    if (original === undefined) throw new TypeError('integrator expected');
+    expect(String(original(P('gamma(x)'), x))).toBe('Integral(gamma(x), x)');
+    try {
+      rischHooks.integrate = (f, v) => new sj.Integral([f, v]);
+      expect(String(integrate(P('log(x)+1/(x**5-x+1)'), x))).toBe('Integral(log(x) + 1/(x**5 - x + 1), x)');
+    } finally {
+      rischHooks.integrate = original;
+    }
+  });
+  it('integrates overlapping and disconnected Piecewise intervals in branch order', () => {
+    expect(String(integrate(P('Piecewise((x, x < 1), (x**2, True))'), x, [0, 0]))).toBe('0');
+    expect(String(integrate(P('Piecewise((x, x < 1), (x**2, x >= -1))'), x, [-2, 4]))).toBe('39/2');
+    const f = P('Piecewise((1, x < 2), (2, x > 3), (3, True))');
+    expect(String(integrate(f, x, [-2, 4]))).toBe('9');
+    expect(String(integrate(f, x, [4, -2]))).toBe('-9');
+    expect(String(integrate(P('Piecewise((1, x > 0), (-1, x < 0))'), x, [-2, 4]))).toBe('2');
+    expect(String(integrate(P('Piecewise((1, (x > 1) & (x < 2)))'), x, [-2, 4]))).toBe('nan');
+    expect(String(integrate(P('Piecewise((1, (x < 1) | (x > 2)), (2, True))'), x, [0, 3]))).toBe('4');
+    expect(String(integrate(P('Piecewise((1, 2*x < x + 1), (2, True))'), x, [0, 3]))).toBe('5');
+    expect(String(integrate(P('Piecewise((1, x > 0), (0, True))'), x, [sj.oo.neg(), 1]))).toBe('1');
+    expect(String(integrate(P('Piecewise((1, x < 0), (0, True))'), x, [-1, sj.oo]))).toBe('1');
+    expect(String(integrate(P('Piecewise((1, Eq(x, 0)), (0, True))'), x, [sj.oo.neg(), sj.oo]))).toBe('0');
+    expect(String(integrate(P('Piecewise((0, x < oo), (1, True))'), x, [sj.oo.neg(), sj.oo]))).toBe('0');
+    expect(String(integrate(P('Piecewise((gamma(x), x < 1), (0, True))'), x, [2, 0]))).toContain('Integral(');
+    expect(String(integrate(P('Piecewise((gamma(x), x < 1), (0, True))'), x, [0, 2]))).toContain('Integral(');
+    const condition = sj.ITE(sj.Lt(x, 1), sj.S.true, sj.S.false, { evaluate: false });
+    expect(String(integrate(new sj.Piecewise([sj.S.One, condition, sj.S.Zero, sj.S.true]), x, [0, 2]))).toContain('Integral(');
+    expect(String(integrate(P('Piecewise((1, x < 4), (2, x**2 < 1), (0, True))'), x, [0, 2]))).toBe('2');
+    expect(String(integrate(P('Piecewise((1, x > 4), (2, x**2 < 1), (0, True))'), x, [0, 2]))).toContain('Integral(');
+  });
   const cases: [string, () => unknown, string][] = [
     ["sj.integrate(P('sin(a*x)'), x)", () => sj.integrate(P('sin(a*x)'), x), "Piecewise((-cos(a*x)/a, Ne(a, 0)), (0, True))"],
     ["sj.integrate(P('exp(-a*x**2)'), x)", () => sj.integrate(P('exp(-a*x**2)'), x), "Piecewise((sqrt(pi)*erf(sqrt(a)*x)/(2*sqrt(a)), Ne(a, 0)), (x, True))"],
@@ -116,6 +202,9 @@ describe('results equal SymPy 1.14', () => {
     ["sj.integrate(P('x*(x**2 + 1)**(-3)'), x)", () => sj.integrate(P('x*(x**2 + 1)**(-3)'), x), "-1/(4*x**4 + 8*x**2 + 4)"],
     ["sj.integrate(P('sin(x)**2*cos(x)**2'), x)", () => sj.integrate(P('sin(x)**2*cos(x)**2'), x), "x/8 - sin(2*x)*cos(2*x)/16"],
     ["sj.integrate(sj.Piecewise([P('x'), P('y < 1')], [P('1'), true]), x)", () => sj.integrate(sj.Piecewise([P('x'), P('y < 1')], [P('1'), true]), x), "Piecewise((x**2/2, (y > -oo) & (y < 1)), (x, True))"],
+    ["sj.integrate(P('tanh(x)'), x)", () => sj.integrate(P('tanh(x)'), x), "x - log(tanh(x) + 1)"],
+    ["sj.integrate(P('exp(x)*log(x)'), x)", () => sj.integrate(P('exp(x)*log(x)'), x), "exp(x)*log(x) - Ei(x)"],
+    ["sj.integrate(P('sin(log(x))'), x)", () => sj.integrate(P('sin(log(x))'), x), "x*sin(log(x))/2 - x*cos(log(x))/2"],
   ];
   it.each(cases)('%s', (_label, f, expected) => {
     expect(run(f)).toBe(expected);
@@ -127,37 +216,30 @@ describe('results that differ from SymPy 1.14', () => {
   const cases: [string, () => unknown, string, string][] = [
     // the formula assumes a != 0 (SymPy adds the case a = 0)
     ["sj.integrate(P('exp(a*x)*sin(a*x)'), x)", () => sj.integrate(P('exp(a*x)*sin(a*x)'), x), "exp(a*x)*sin(a*x)/(2*a) - exp(a*x)*cos(a*x)/(2*a)", "Piecewise((exp(a*x)*sin(a*x)/(2*a) - exp(a*x)*cos(a*x)/(2*a), Ne(a, 0)), (0, True))"],
-    // not implemented in symjs (SymPy's result shown)
-    ["sj.integrate(P('exp(-a*x**2 + x)'), x)", () => sj.integrate(P('exp(-a*x**2 + x)'), x), "Integral(exp(-a*x**2 + x), x)", "sqrt(pi)*exp(1/(4*a))*erfi((-2*a*x + 1)/(2*sqrt(-a)))/(2*sqrt(-a))"],
+    ["sj.integrate(P('exp(-a*x**2 + x)'), x)", () => sj.integrate(P('exp(-a*x**2 + x)'), x), "sqrt(pi)*exp(1/(4*a))*erfi((-2*a*x + 1)/(2*sqrt(-a)))/(2*sqrt(-a))", "sqrt(pi)*exp(1/(4*a))*erfi((-2*a*x + 1)/(2*sqrt(-a)))/(2*sqrt(-a))"],
     // the same cases, with the condition written as Ne(y*z, 0)
     ["sj.integrate(P('exp(-x**2*y*z)'), x)", () => sj.integrate(P('exp(-x**2*y*z)'), x), "Piecewise((sqrt(pi)*erf(x*sqrt(y*z))/(2*sqrt(y*z)), Ne(y*z, 0)), (x, True))", "Piecewise((x, Eq(y, 0) | Eq(z, 0)), (sqrt(pi)*erf(x*sqrt(y*z))/(2*sqrt(y*z)), True))"],
     // not implemented in symjs (SymPy's result shown)
     ["sj.integrate(P('exp(x**3)'), x)", () => sj.integrate(P('exp(x**3)'), x), "Integral(exp(x**3), x)", "exp(-I*pi/3)*gamma(1/3)*lowergamma(1/3, x**3*exp_polar(I*pi))/(9*gamma(4/3))"],
     // not implemented in symjs (SymPy's result shown)
     ["sj.integrate(P('sin(x**3)'), x)", () => sj.integrate(P('sin(x**3)'), x), "Integral(sin(x**3), x)", "x**4*gamma(2/3)*hyper((2/3,), (3/2, 5/3), -x**6/4)/(6*gamma(5/3))"],
-    // not implemented in symjs (SymPy's result shown)
-    ["sj.integrate(P('cos(x**2 + 1)'), x)", () => sj.integrate(P('cos(x**2 + 1)'), x), "Integral(cos(x**2 + 1), x)", "sqrt(2)*sqrt(pi)*(cos(1)*fresnelc(sqrt(2)*x/sqrt(pi)) - sin(1)*fresnels(sqrt(2)*x/sqrt(pi)))/2"],
+    ["sj.integrate(P('cos(x**2 + 1)'), x)", () => sj.integrate(P('cos(x**2 + 1)'), x), "sqrt(2)*sqrt(pi)*(cos(1)*fresnelc(sqrt(2)*x/sqrt(pi)) - sin(1)*fresnels(sqrt(2)*x/sqrt(pi)))/2", "sqrt(2)*sqrt(pi)*(cos(1)*fresnelc(sqrt(2)*x/sqrt(pi)) - sin(1)*fresnels(sqrt(2)*x/sqrt(pi)))/2"],
     // the same value for q < 0, written with sqrt(-q)
     ["sj.integrate(P('sin(q*x**2)'), x)", () => sj.integrate(P('sin(q*x**2)'), x), "-3*sqrt(2)*sqrt(pi)*fresnels(sqrt(2)*x*sqrt(-q)/sqrt(pi))*gamma(3/4)/(8*sqrt(-q)*gamma(7/4))", "3*sqrt(2)*sqrt(pi)*fresnels(sqrt(2)*sqrt(q)*x/sqrt(pi))*gamma(3/4)/(8*sqrt(q)*gamma(7/4))"],
     // not implemented in symjs (SymPy's result shown)
-    ["sj.integrate(P('1/sqrt(4 + x**2)'), x)", () => sj.integrate(P('1/sqrt(4 + x**2)'), x), "Integral(1/sqrt(x**2 + 4), x)", "asinh(x/2)"],
+    ["sj.integrate(P('1/sqrt(4 + x**2)'), x)", () => sj.integrate(P('1/sqrt(4 + x**2)'), x), "asinh(x/2)", "asinh(x/2)"],
     // not implemented in symjs (SymPy's result shown)
     ["sj.integrate(P('1/sqrt(a - x**2)'), x)", () => sj.integrate(P('1/sqrt(a - x**2)'), x), "Integral(1/sqrt(a - x**2), x)", "Piecewise((-I*acosh(x/sqrt(a)), Abs(x**2/a) > 1), (asin(x/sqrt(a)), True))"],
     // completing the square is not implemented
-    ["sj.integrate(P('1/sqrt(4 - x**2 + x)'), x)", () => sj.integrate(P('1/sqrt(4 - x**2 + x)'), x), "Integral(1/sqrt(-x**2 + x + 4), x)", "asin(2*sqrt(17)*(x - 1/2)/17)"],
-    // log(cosh(x)) differs from SymPy's x - log(tanh(x) + 1) by a constant
-    ["sj.integrate(P('tanh(x)'), x)", () => sj.integrate(P('tanh(x)'), x), "log(cosh(x))", "x - log(tanh(x) + 1)"],
+    ["sj.integrate(P('1/sqrt(4 - x**2 + x)'), x)", () => sj.integrate(P('1/sqrt(4 - x**2 + x)'), x), "asin(2*sqrt(17)*(x - 1/2)/17)", "asin(2*sqrt(17)*(x - 1/2)/17)"],
     // not implemented in symjs (SymPy's result shown)
     ["sj.integrate(P('asec(x)'), x)", () => sj.integrate(P('asec(x)'), x), "Integral(asec(x), x)", "x*asec(x) - Piecewise((acosh(x), Abs(x**2) > 1), (-I*asin(x), True))"],
     // not implemented in symjs (SymPy's result shown)
     ["sj.integrate(P('sin(x)*cos(2*x)'), x)", () => sj.integrate(P('sin(x)*cos(2*x)'), x), "Integral(sin(x)*cos(2*x), x)", "2*sin(x)*sin(2*x)/3 + cos(x)*cos(2*x)/3"],
     // not implemented in symjs (SymPy's result shown)
     // not implemented in symjs (SymPy's result shown)
-    ["sj.integrate(P('sin(x**2)**2'), x)", () => sj.integrate(P('sin(x**2)**2'), x), "Integral(sin(x**2)**2, x)", "-5*x*gamma(-5/4)/(8*gamma(-1/4)) + 5*sqrt(pi)*fresnelc(2*x/sqrt(pi))*gamma(-5/4)/(16*gamma(-1/4))"],
-    // not implemented in symjs (SymPy's result shown)
-    ["sj.integrate(P('sin(x)*exp(x)*x'), x)", () => sj.integrate(P('sin(x)*exp(x)*x'), x), "Integral(x*exp(x)*sin(x), x)", "x*exp(x)*sin(x)/2 - x*exp(x)*cos(x)/2 + exp(x)*cos(x)/2"],
-    // not implemented in symjs (SymPy's result shown)
-    ["sj.integrate(P('exp(x)*log(x)'), x)", () => sj.integrate(P('exp(x)*log(x)'), x), "Integral(exp(x)*log(x), x)", "exp(x)*log(x) - Ei(x)"],
+    ["sj.integrate(P('sin(x**2)**2'), x)", () => sj.integrate(P('sin(x**2)**2'), x), "x/2 - sqrt(pi)*fresnelc(2*x/sqrt(pi))*gamma(1/4)/(16*gamma(5/4))", "-5*x*gamma(-5/4)/(8*gamma(-1/4)) + 5*sqrt(pi)*fresnelc(2*x/sqrt(pi))*gamma(-5/4)/(16*gamma(-1/4))"],
+    ["sj.integrate(P('sin(x)*exp(x)*x'), x)", () => sj.integrate(P('sin(x)*exp(x)*x'), x), "x*(exp(x)*sin(x)/2 - exp(x)*cos(x)/2) + exp(x)*cos(x)/2", "x*exp(x)*sin(x)/2 - x*exp(x)*cos(x)/2 + exp(x)*cos(x)/2"],
     // not implemented in symjs (SymPy's result shown)
     ["sj.integrate(P('log(x)**(1/2)*x'), x)", () => sj.integrate(P('log(x)**(1/2)*x'), x), "Integral(x*sqrt(log(x)), x)", "sqrt(2)*(sqrt(2)*x**2*sqrt(-log(x)) + sqrt(pi)*erfc(sqrt(2)*sqrt(-log(x)))/2)*sqrt(log(x))/(4*sqrt(-log(x)))"],
     // not implemented in symjs (SymPy's result shown)
@@ -174,42 +256,37 @@ describe('results that differ from SymPy 1.14', () => {
     // not implemented in symjs (SymPy's result shown)
     ["sj.integrate(sj.Piecewise([P('x'), P('x < 1')], [P('gamma(x)'), true]), x)", () => sj.integrate(sj.Piecewise([P('x'), P('x < 1')], [P('gamma(x)'), true]), x), "Integral(Piecewise((x, x < 1), (gamma(x), True)), x)", "Piecewise((x**2/2, x < 1), (Integral(gamma(x), (x, 1, x)) + 1/2, True))"],
     // not implemented in symjs (SymPy's result shown)
-    ["sj.integrate(sj.Piecewise([P('x'), P('x > 1')], [P('1'), true]), x)", () => sj.integrate(sj.Piecewise([P('x'), P('x > 1')], [P('1'), true]), x), "Integral(Piecewise((x, x > 1), (1, True)), x)", "Piecewise((x, x <= 1), (x**2/2 + 1/2, True))"],
     // not implemented in symjs (SymPy's result shown)
     // not implemented in symjs (SymPy's result shown)
     ["sj.integrate(sj.mul(P('2'), sj.Piecewise([P('x'), P('x < 1')], [P('gamma(x)'), true])), x)", () => sj.integrate(sj.mul(P('2'), sj.Piecewise([P('x'), P('x < 1')], [P('gamma(x)'), true])), x), "Integral(Piecewise((2*x, x < 1), (2*gamma(x), True)), x)", "Piecewise((x**2, x < 1), (2*Integral(gamma(x), x) - 2*Integral(gamma(x), (x, 1)) + 1, True))"],
     // not implemented in symjs (SymPy's result shown)
     ["sj.integrate(sj.add(sj.Piecewise([P('x'), P('x < 1')], [P('gamma(x)'), true]), P('x')), x)", () => sj.integrate(sj.add(sj.Piecewise([P('x'), P('x < 1')], [P('gamma(x)'), true]), P('x')), x), "Integral(x + Piecewise((x, x < 1), (gamma(x), True)), x)", "Piecewise((x**2, x < 1), (Integral(x + gamma(x), (x, 1, x)) + 1, True))"],
     // the condition is rewritten for x < 0, the piecewise integral is not done
-    ["sj.integrate(sj.Piecewise([P('1'), P('y/x < 0')], [P('2'), true]), x, [-2, -1])", () => sj.integrate(sj.Piecewise([P('1'), P('y/x < 0')], [P('2'), true]), x, [-2, -1]), "Integral(Piecewise((1, y > 0), (2, True)), (x, -2, -1))", "Integral(Piecewise((1, y/x < 0), (2, True)), (x, -2, -1))"],
+    ["sj.integrate(sj.Piecewise([P('1'), P('y/x < 0')], [P('2'), true]), x, [-2, -1])", () => sj.integrate(sj.Piecewise([P('1'), P('y/x < 0')], [P('2'), true]), x, [-2, -1]), "Integral(Piecewise((1, y/x < 0), (2, True)), (x, -2, -1))", "Integral(Piecewise((1, y/x < 0), (2, True)), (x, -2, -1))"],
     // the condition is rewritten for x < 0, the piecewise integral is not done
-    ["sj.integrate(sj.Piecewise([P('1'), P('y*x**2 < 0')], [P('2'), true]), x, [-2, -1])", () => sj.integrate(sj.Piecewise([P('1'), P('y*x**2 < 0')], [P('2'), true]), x, [-2, -1]), "Integral(Piecewise((1, y < 0), (2, True)), (x, -2, -1))", "Integral(Piecewise((1, x**2*y < 0), (2, True)), (x, -2, -1))"],
+    ["sj.integrate(sj.Piecewise([P('1'), P('y*x**2 < 0')], [P('2'), true]), x, [-2, -1])", () => sj.integrate(sj.Piecewise([P('1'), P('y*x**2 < 0')], [P('2'), true]), x, [-2, -1]), "Integral(Piecewise((1, x**2*y < 0), (2, True)), (x, -2, -1))", "Integral(Piecewise((1, x**2*y < 0), (2, True)), (x, -2, -1))"],
     // SymPy raises TypeError
     ["sj.integrate(sj.Piecewise([P('1'), P('y*sin(x) < 0')], [P('2'), true]), x, [-2, -1])", () => sj.integrate(sj.Piecewise([P('1'), P('y*sin(x) < 0')], [P('2'), true]), x, [-2, -1]), "Integral(Piecewise((1, y*sin(x) < 0), (2, True)), (x, -2, -1))", "ERR TypeError"],
     // the condition is rewritten for x < 0, the piecewise integral is not done
-    ["sj.integrate(sj.Piecewise([P('1'), P('y*x <= 0')], [P('2'), true]), x, [-2, -1])", () => sj.integrate(sj.Piecewise([P('1'), P('y*x <= 0')], [P('2'), true]), x, [-2, -1]), "Integral(Piecewise((1, y >= 0), (2, True)), (x, -2, -1))", "Integral(Piecewise((1, x*y <= 0), (2, True)), (x, -2, -1))"],
+    ["sj.integrate(sj.Piecewise([P('1'), P('y*x <= 0')], [P('2'), true]), x, [-2, -1])", () => sj.integrate(sj.Piecewise([P('1'), P('y*x <= 0')], [P('2'), true]), x, [-2, -1]), "Integral(Piecewise((1, x*y <= 0), (2, True)), (x, -2, -1))", "Integral(Piecewise((1, x*y <= 0), (2, True)), (x, -2, -1))"],
     // not implemented in symjs (SymPy's result shown)
     ["sj.integrate(sj.Piecewise([P('1'), P('y*x < 0')], [P('2'), true]), x, [a, 1])", () => sj.integrate(sj.Piecewise([P('1'), P('y*x < 0')], [P('2'), true]), x, [a, 1]), "Integral(Piecewise((1, x*y < 0), (2, True)), (x, a, 1))", "Piecewise((Integral(Piecewise((1, x*y < 0), (2, True)), (x, a, 1)), a < 1), (-Integral(Piecewise((1, x*y < 0), (2, True)), (x, 1, a)), True))"],
     // the limit at oo is left for a symbolic y (SymPy uses the Mellin transform)
-    ["sj.integrate(P('x*exp(-y*x)'), x, [0, sj.oo])", () => sj.integrate(P('x*exp(-y*x)'), x, [0, sj.oo]), "Limit(Piecewise(((-x/y - 1/y**2)*exp(-x*y), Ne(y, 0)), (x**2/2, True)), x, oo, dir='-') - Piecewise((-1/y**2, Ne(y, 0)), (0, True))", "Piecewise((y**(-2), Abs(arg(y)) < pi/2), (Integral(x*exp(-x*y), (x, 0, oo)), True))"],
+    ["sj.integrate(P('x*exp(-y*x)'), x, [0, sj.oo])", () => sj.integrate(P('x*exp(-y*x)'), x, [0, sj.oo]), "Piecewise((y**(-2), Abs(arg(y)) < pi/2), (Integral(x*exp(-x*y), (x, 0, oo)), True))", "Piecewise((y**(-2), Abs(arg(y)) < pi/2), (Integral(x*exp(-x*y), (x, 0, oo)), True))"],
     // the integral diverges: the antiderivative -x**2*cos(x) + 2*x*sin(x) + 2*cos(x) oscillates with unbounded
     // amplitude, so its values at oo fill AccumBounds(-oo, oo) (SymPy's oo*sign(AccumBounds(-1, 1)) - 2 is the
     // same set written unevaluated)
     ["sj.integrate(P('x**2*sin(x)'), x, [0, sj.oo])", () => sj.integrate(P('x**2*sin(x)'), x, [0, sj.oo]), "AccumBounds(-oo, oo)", "oo*sign(AccumBounds(-1, 1)) - 2"],
     // the same value with the fraction expanded
     ["sj.integrate(P('sin(y*x)**2'), x)", () => sj.integrate(P('sin(y*x)**2'), x), "Piecewise((x/2 - sin(x*y)*cos(x*y)/(2*y), Ne(y, 0)), (0, True))", "Piecewise(((x*y/2 - sin(x*y)*cos(x*y)/2)/y, Ne(y, 0)), (0, True))"],
-    // not implemented in symjs (SymPy's result shown)
-    ["sj.integrate(P('x**(y)*log(x)'), x)", () => sj.integrate(P('x**(y)*log(x)'), x), "Integral(x**y*log(x), x)", "Piecewise((x*x**y*y*log(x)/(y**2 + 2*y + 1) + x*x**y*log(x)/(y**2 + 2*y + 1) - x*x**y/(y**2 + 2*y + 1), Ne(y, -1)), (log(x)**2/2, True))"],
+    ["sj.integrate(P('x**(y)*log(x)'), x)", () => sj.integrate(P('x**(y)*log(x)'), x), "Piecewise((x*x**y*((y + 1)*log(x) - 1)/(y + 1)**2, Ne(y, -1)), (log(x)**2/2, True))", "Piecewise((x*x**y*y*log(x)/(y**2 + 2*y + 1) + x*x**y*log(x)/(y**2 + 2*y + 1) - x*x**y/(y**2 + 2*y + 1), Ne(y, -1)), (log(x)**2/2, True))"],
     // the case y = 0 is kept (SymPy's form divides by y)
     ["sj.integrate(P('1/(y*x + 1)'), x)", () => sj.integrate(P('1/(y*x + 1)'), x), "Piecewise((log(x*y + 1)/y, Ne(y, 0)), (x, True))", "log(x*y + 1)/y"],
     // the same cases, with the condition written as Ne(y, 0)
     ["sj.integrate(P('2**(y*x)'), x)", () => sj.integrate(P('2**(y*x)'), x), "Piecewise((2**(x*y)/(y*log(2)), Ne(y, 0)), (x, True))", "Piecewise((2**(x*y)/(y*log(2)), Ne(y*log(2), 0)), (x, True))"],
-    // not implemented in symjs (SymPy's result shown)
-    ["sj.integrate(P('sin(x)/x'), x)", () => sj.integrate(P('sin(x)/x'), x), "Integral(sin(x)/x, x)", "Si(x)"],
+    ["sj.integrate(P('sin(x)/x'), x)", () => sj.integrate(P('sin(x)/x'), x), "Si(x)", "Si(x)"],
     // the same value, with the condition written as Ne(y, 0)
     ["sj.integrate(P('x*exp(y*x)'), x)", () => sj.integrate(P('x*exp(y*x)'), x), "Piecewise(((x/y - 1/y**2)*exp(x*y), Ne(y, 0)), (x**2/2, True))", "Piecewise(((x*y - 1)*exp(x*y)/y**2, Ne(y**2, 0)), (x**2/2, True))"],
-    // not implemented in symjs (SymPy's result shown)
-    ["sj.integrate(P('sin(log(x))'), x)", () => sj.integrate(P('sin(log(x))'), x), "Integral(sin(log(x)), x)", "x*sin(log(x))/2 - x*cos(log(x))/2"],
     // differs from SymPy's log(cos(x)) + 1/(2*cos(x)**2) by a constant
     ["sj.integrate(P('tan(x)**3'), x)", () => sj.integrate(P('tan(x)**3'), x), "-log(tan(x)**2 + 1)/2 + tan(x)**2/2", "log(cos(x)) + 1/(2*cos(x)**2)"],
     // the same value for q < 0, written with sqrt(-q)
@@ -297,13 +374,12 @@ describe('unresolved singularities stay unevaluated', () => {
   // analysis is available, do not cross a possible pole with an endpoint subtraction.
   it.each([
     ['tan(x)', '0', 'pi'], // nan (the interior pole cannot be crossed)
-    ['cos(x)/sin(x)', '1', '2'], // log(sin(2)) - log(sin(1))
-    ['1/(x-y)**2', '0', '1'], // depends on whether y lies in the interval
     ['(5*x**4-1)/(x**5-x-1)', '0', '1'], // SymPy: 0; quintic root isolation is not used here
-    ['1/x**2', '1', 'a'], // depends on a (a > 0 gives 1 - 1/a)
-    ['1/x**2', 'a', '1'],
   ])('%s on [%s, %s]', (f, lo, hi) => {
     expect(integrate(P(f), x, [P(lo), P(hi)])).toBeInstanceOf(sj.Integral);
+  });
+  it('integrates a logarithmic derivative between consecutive sine zeros', () => {
+    expect(String(integrate(P('cos(x)/sin(x)'), x, [1, 2]))).toBe('log(sin(2)) - log(sin(1))');
   });
   it('uses quartic roots to exclude interior singularities', () => {
     expect(String(integrate(P('(4*x**3+1)/(x**4+x+1)'), x, [0, 1]))).toBe('log(3)');
@@ -327,7 +403,10 @@ describe('unresolved singularities stay unevaluated', () => {
     const zero = derivative.subs([[x, 0]]).toComplex();
     expect(Math.hypot(zero.re, zero.im)).toBeLessThan(1e-12);
   });
-  it('keeps symbolic endpoints when the primitive extends continuously', () => {
+  it('evaluates the generic endpoint difference for symbolic bounds and poles', () => {
+    expect(integrate(P('1/x**2'), x, [1, a]).equals(P('1 - 1/a'))).toBe(true);
+    expect(integrate(P('1/x**2'), x, [a, 1]).equals(P('1/a - 1'))).toBe(true);
+    expect(integrate(P('1/(x-y)**2'), x, [0, 1]).equals(P('-1/(1-y) - 1/y'))).toBe(true);
     // SymPy: integrate(log(x), (x, 1, a))
     expect(String(integrate(P('log(x)'), x, [1, a]))).toBe('a*log(a) - a + 1');
   });
@@ -403,10 +482,9 @@ describe('square roots of quadratics (SymPy manualintegrate)', () => {
     expect(I('sqrt(x**2)*exp(x)')).toBe('Integral(sqrt(x**2)*exp(x), x)');
     expect(I('sqrt(x**2 + 1)*x**2')).toBe(I('x**2*sqrt(x**2 + 1)'));
     // SymPy: x**3*sqrt(a + x**2)/4 + a*x*sqrt(a + x**2)/8 - a**2*asinh(x/sqrt(a))/8 (with symbolic a)
-    expect(I('x**2*sqrt(x**2 + a)')).toBe('Integral(x**2*sqrt(a + x**2), x)');
-    // symbolic coefficients are not handled by this rule
+    expect(I('x**2*sqrt(x**2 + a)')).toBe('-a**2*Piecewise((log(2*x + 2*sqrt(a + x**2)), Ne(a, 0)), (x*log(x)/sqrt(x**2), True))/8 + sqrt(a + x**2)*(a*x/8 + x**3/4)');
     // (SymPy: sqrt(a)*x*sqrt(1 + x**2/a)/2 + a*asinh(x/sqrt(a))/2)
-    expect(I('sqrt(x**2 + a)')).toBe('Integral(sqrt(a + x**2), x)');
+    expect(I('sqrt(x**2 + a)')).toBe('a*Piecewise((log(2*x + 2*sqrt(a + x**2)), Ne(a, 0)), (x*log(x)/sqrt(x**2), True))/2 + x*sqrt(a + x**2)/2');
     expect(I('sqrt(x**3 + 1)')).toBe('Integral(sqrt(x**3 + 1), x)');
   });
 });
@@ -416,6 +494,11 @@ describe('definite integrals of Piecewise conditions and delta functions (sympy.
   const oo = sj.S.Infinity;
   const noo = sj.S.NegativeInfinity;
   const PW = (...p: [Expr, Expr | boolean][]): Expr => sj.piecewise(...p);
+  it('joins the antiderivatives continuously across a lower branch bound', () => {
+    const value = integrate(PW([x, sj.Gt(x, 1)], [sj.S.One, true]), x);
+    expect(sstr(value)).toBe('Piecewise((x, x <= 1), (x**2/2 + 1/2, True))');
+    expect(value.subs(x, 1).equals(sj.S.One)).toBe(true);
+  });
   it('conditions decided on the interval', () => {
     expect(sstr(integrate(PW([sj.S.One, sj.Gt(x, 0)], [sj.S.Zero, true]), x, [2, 1]))).toBe('-1');
     expect(sstr(integrate(PW([x, sj.Gt(x, -1)], [sj.S.Zero, true]), x, [0, 1]))).toBe('1/2');
@@ -425,8 +508,7 @@ describe('definite integrals of Piecewise conditions and delta functions (sympy.
     expect(sstr(integrate(PW([x, sj.Eq(x, sj.S.Half)], [sj.S.One, true]), x, [0, 1]))).toBe('1');
     const real = new Sym('x', { real: true });
     expect(sstr(integrate(PW([sj.mul(real, sj.exp(sj.mul(-1, sj.pow(real, 2)))), sj.and(sj.Gt(real, noo), sj.Lt(real, oo))], [sj.S.Zero, true]), real, [noo, oo]))).toBe('0');
-    // SymPy: 1 - Min(1, Max(0, a))
-    expect(sstr(integrate(PW([sj.S.One, sj.Lt(a, x)], [sj.S.Zero, true]), x, [0, 1]))).toBe('Integral(Piecewise((1, a < x), (0, True)), (x, 0, 1))');
+    expect(sstr(integrate(PW([sj.S.One, sj.Lt(a, x)], [sj.S.Zero, true]), x, [0, 1]))).toBe('1 - Min(1, Max(0, a))');
   });
   it('a product with a Piecewise factor', () => {
     expect(sstr(integrate(sj.mul(x, PW([sj.S.One, sj.Lt(x, sj.S.Half)], [sj.Rational.of(2), true])), x, [0, 1]))).toBe('7/8');
@@ -537,4 +619,398 @@ describe('rational, trigonometric and Piecewise integrands as SymPy integrates t
     // SymPy: 2*sqrt(3)*pi/3. The denominator is bounded below by 1.
     expect(sstr(integrate(Q('1/(2+cos(x))'), x, [0, Q('2*pi')]))).toBe('2*sqrt(3)*pi/3');
   });
+});
+
+it('integrates special functions, odd cosine powers and extension components', () => {
+  const I = (s: string) => String(integrate(parse(s), x));
+  expect(I('li(x)')).toBe('x*li(x) - Ei(2*log(x))');
+  expect(I('Si(x)')).toBe('x*Si(x) + cos(x)');
+  expect(I('tanh(2*x)')).toBe('x - log(tanh(2*x) + 1)/2');
+  expect(I('sin(x)**2*cos(x)**3')).toBe('-sin(x)**5/5 + sin(x)**3/3');
+  expect(I('sin(x)**3*cos(x)**2')).toBe('cos(x)**5/5 - cos(x)**3/3');
+  expect(I('exp(pi*x**3)')).toBe('Integral(exp(pi*x**3), x)');
+  expect(String(integrate(new sj.Quaternion(x, 0, 0, 0), x, [0, 1]))).toBe('1/2 + 0*i + 0*j + 0*k');
+});
+
+it('retains symbolic slopes multiplied by nonzero numeric constants', () => {
+  expect(String(integrate(parse('exp(pi*y*x)'), x))).toBe('Piecewise((exp(pi*x*y)/(pi*y), Ne(y, 0)), (x, True))');
+});
+
+it('compares reversed Piecewise conditions and infinite breakpoints on a real interval', () => {
+  for (const condition of [
+    new sj.Rel('Lt', sj.S.NegativeInfinity, x),
+    new sj.Rel('Lt', sj.S.Zero, x),
+    new sj.Rel('Lt', sj.add(x, -1), x),
+  ]) {
+    const f = new sj.Mul([x, new sj.Piecewise([sj.S.One, condition, sj.S.Zero, sj.S.true])]);
+    expect(String(integrate(f, x, [0, 1]))).toBe('1/2');
+  }
+  const c = new sj.Rel('Gt', x, sj.S.Zero);
+  const f = new sj.Mul([x, new sj.Piecewise([sj.S.One, c, sj.S.Zero, sj.S.true])]);
+  const a = new sj.Sym('a', { positive: true });
+  expect(integrate(f, x, [a, sj.add(a, 1)]).subs(a, 2).equals(sj.Rational.of(5, 2))).toBe(true);
+});
+
+it('integrates absolute trigonometric waves across half-periods', () => {
+  expect(String(integrate(parse('Abs(sin(x))'), x, [0, parse('2*pi')]))).toBe('4');
+  expect(String(integrate(parse('Abs(cos(2*x))'), x, [parse('pi/4'), 0]))).toBe('-1/2');
+  expect(String(integrate(parse('Abs(sin(x-pi/4))'), x, [0, parse('pi/2')]))).toBe('2 - sqrt(2)');
+  for (const f of ['Abs(sin(x**2))', 'Abs(sin(exp(x)))', 'Abs(sin(a*x))', 'Abs(sin(x+I/2))']) {
+    expect(integrate(parse(f), x, [1, 2])).toBeInstanceOf(sj.Integral);
+  }
+  expect(integrate(parse('Abs(sin(x))'), x, [0, sj.S.Infinity])).toBeInstanceOf(sj.Integral);
+  for (const f of ['Abs(y)', 'Abs(log(y))']) {
+    expect(integrate(parse(f), x, [1, 2]).equals(parse(f))).toBe(true);
+  }
+  const imaginarySlope = sj.fn('abs', [sj.fn('sin', [sj.mul(sj.S.I, x)], { evaluate: false })], { evaluate: false });
+  expect(integrate(imaginarySlope, x, [0, 1])).toBeInstanceOf(sj.Integral);
+});
+
+it('matches the branch limits of a Piecewise Dirac delta antiderivative', () => {
+  const f = sj.piecewise([sj.DiracDelta(sj.add(x, -1)), sj.Lt(x, 2)], [0, true]);
+  expect(String(integrate(f, x))).toBe('Piecewise((Heaviside(x - 1), x < 2), (1, True))');
+});
+
+it('ignores isolated residue classes when measuring Piecewise intervals', () => {
+  const residue = sj.Mod(x, 2);
+  expect(String(integrate(sj.piecewise([1, sj.Eq(residue, 1)], [2, true]), x, [0, 5]))).toBe('10');
+  expect(String(integrate(sj.piecewise([1, sj.Ne(residue, 1)], [2, true]), x, [0, 5]))).toBe('5');
+  const y = new sj.Sym('y');
+  const unsupported = [
+    sj.Eq(sj.Mod(sj.pow(x, 2), 2), 1),
+    sj.Eq(sj.Mod(x, y), 1),
+    new sj.Rel('Eq', residue, x),
+  ];
+  for (const condition of unsupported) {
+    expect(integrate(new sj.Piecewise([sj.S.One, condition, sj.S.Two, sj.S.true]), x, [0, 5]))
+      .toBeInstanceOf(sj.Integral);
+  }
+});
+
+it('combines infinite limits with proven finite symbolic endpoints', () => {
+  const y = new sj.Sym('y');
+  const f = sj.piecewise([1, sj.Lt(sj.sub(x, y), 0)], [0, true]);
+  expect(integrate(f, y, [0, sj.S.Infinity])).toBe(sj.S.Infinity);
+  expect(integrate(1, y, [sj.S.NegativeInfinity, sj.Max(0, x)])).toBe(sj.S.Infinity);
+  expect(String(integrate(1, y, [sj.S.NegativeInfinity, x]))).toBe('x + oo');
+  expect(String(integrate(1, y, [x, sj.S.Infinity]))).toBe('-x + oo');
+});
+
+describe('absolute values and signs of real polynomials', () => {
+  const x = new sjReal.Sym('x', { real: true });
+  const p = (s: string) => sjReal.parse(s, { symbols: [x] });
+  it.each([
+    ['Abs(x)', [-2, 1], '5/2'],
+    ['Abs(x**2 - 1)', [-2, 2], '4'],
+    ['Abs(x**2 - 3*x)', [-15, 15], '2259'],
+    ['sign(x)', [-1, 2], '1'],
+    ['sin(x)*sign(x)', ['-pi', 'pi'], '4'],
+    ['x**2*sign(x - 2)', [0, 3], '11/3'],
+    ['Min(2, x)', [0, 3], '4'],
+    ['Max(x**2, x**3)', [0, 2], '49/12'],
+  ])('integrates %s over real root intervals', (f, limits, expected) => {
+    expect(String(sjReal.integrate(p(f), x, [p(String(limits[0])), p(String(limits[1]))]))).toBe(expected);
+  });
+  it.each([
+    ['Abs(x)', 'Piecewise((-x**2/2, x <= 0), (x**2/2, True))'],
+    ['Abs(2*x - 6)', 'Piecewise((-x**2 + 6*x, x <= 3), (x**2 - 6*x + 18, True))'],
+    ['exp(-Abs(x))', 'Piecewise((exp(x), x <= 0), (2 - exp(-x), True))'],
+    ['sign(2*x - 6)', 'Piecewise((-x, x < 3), (x - 6, True))'],
+    ['2*x*sign(x**2 - 1)', 'Piecewise((x**2, x < -1), (2 - x**2, x < 1), (x**2, True))'],
+  ])('finds a continuous primitive of %s', (f, expected) => {
+    expect(String(sjReal.integrate(p(f), x))).toBe(expected);
+  });
+  it('leaves nonpolynomial and unresolved signs for other methods', () => {
+    for (const f of ['sin(x)', 'Abs(sin(x))', 'Abs(x**4 + x + 1)', 'Min(x, x**2, x**3)', 'Abs(x - a) + Abs(x - b)', 'Abs(a*x)', 'Abs(x**2 + a)']) {
+      const r = realIntegrand(p(f), x);
+      expect(r).toBeUndefined();
+    }
+  });
+
+  it('handles a polynomial with no real roots', () => {
+    expect(String(realIntegrand(new sjReal.Fn('abs', [p('x**2 + 2*x + 2')]), x))).toBe('x**2 + 2*x + 2');
+  });
+
+  it('does not order unrelated real parameters or guess a parameter sign', () => {
+    const a = new sjReal.Sym('a', { real: true }), b = new sjReal.Sym('b', { real: true });
+    for (const f of ['Abs(x - a) + Abs(x - b)', 'Abs(a*x)']) {
+      expect(realIntegrand(sjReal.parse(f, { symbols: [x, a, b] }), x)).toBeUndefined();
+    }
+  });
+});
+
+it('constructs unevaluated integrals with inferred, repeated, or explicit limits', () => {
+  expect(String(sj.integral(x))).toBe('Integral(x, x)');
+  expect(String(sj.integral(x, [x, 1], [y, 0, 2]))).toBe('Integral(x, (x, 1), (y, 0, 2))');
+  expect(String(sj.integral(sj.Eq(x, y), x))).toBe('Eq(Integral(x, x), Integral(y, x))');
+  const f = sj.SymFunction('f')(x), dx = diff(f, x);
+  for (const variable of [f, dx, new sj.IndexedBase('v').at(x)]) expect(sj.integral(x, variable)).toBeInstanceOf(sj.Integral);
+  for (const build of [() => sj.integral(x, sj.add(1, x)), () => sj.integral(1), () => sj.integral(sj.add(x, y)), () => sj.integral(x, []), () => sj.integral(x, 2), () => sj.integral(x, [x, 1, 2, 3])]) expect(build).toThrow(RangeError);
+});
+
+it('respects finite summation limits when interchanging sum and integral', () => {
+  expect(String(integrate(sj.Sum(sj.mul(x, n), [n, 1, 3]), x))).toBe('3*x**2');
+  expect(() => integrate(sj.Sum(n, [n, 1, x]), x)).toThrow(RangeError);
+  expect(integrate(sj.Sum(sj.pow(x, n), [n, 1, sj.oo]), x)).toBeInstanceOf(sj.Integral);
+  expect(integrate(sj.Sum(sj.pow(x, n), [n, 1, sj.oo]), x, [1, 2])).toBeInstanceOf(sj.Integral);
+});
+
+it('computes Fourier coefficients of the Poisson kernel', () => {
+  for (const [order, denominator] of [[2, 6], [3, 12], [4, 24]]) {
+    const f = P('cos(' + order + '*x)/(5 - 4*cos(x))');
+    expect(integrate(f, x, [0, sj.mul(2, sj.pi)]).equals(sj.mul(sj.pi, sj.rational(1, denominator)))).toBe(true);
+  }
+});
+
+it('uses the positive rate for improper logistic and hyperbolic integrals', () => {
+  expect(String(integrate(P('1/(1+2**x)'), x, [0, sj.oo]))).toBe('1');
+  expect(String(integrate(P('1/cosh(2*x)'), x, [0, sj.oo]))).toBe('pi/4');
+});
+
+it('leaves out exceptional parameter branches only when requested', () => {
+  for (const source of ['x**n', '(2*x+1)**n', 'x**n*log(x)']) {
+    expect(integrate(P(source), x)).toBeInstanceOf(sj.Piecewise);
+    expect(integrate(P(source), x, undefined, { conds: 'none' })).not.toBeInstanceOf(sj.Piecewise);
+  }
+});
+
+it('evaluates oscillatory improper integrals with the sign of the frequency', () => {
+  const value = integrate(P('exp(-2*I*x**2)'), x, [sj.S.NegativeInfinity, sj.oo]);
+  expect(value.equals(P('-I*sqrt(pi/2)*exp(I*pi/4)'))).toBe(true);
+  expect(String(integrate(P('(cos(3*x)-cos(x))/x'), x, [0, sj.oo]))).toBe('-log(3)');
+});
+
+it('uses adjacent Bessel orders for polynomial and reciprocal moments', () => {
+  for (const [input, output] of [
+    ['besselj(1,x)**2/x', '-(besselj(0,x)**2+besselj(1,x)**2)/2'],
+    ['x**2*besselj(0,x)*besselj(1,x)', 'x**2*besselj(1,x)**2/2'],
+  ] as const) expect(sj.expand(integrate(P(input), x).sub(P(output))).equals(sj.S.Zero)).toBe(true);
+});
+
+it('differentiates logarithmic and hyperbolic primitives at ordinary real points', () => {
+  for (const input of ['cos(log(x))', 'x*cosh(2*x)', '1/sinh(x)**2', '(x**2+x)**(-3/2)']) {
+    const f = P(input), primitive = integrate(f, x);
+    expect(primitive).not.toBeInstanceOf(sj.Integral);
+    expect(diff(primitive, x).subs(x, 2).toNumber()).toBeCloseTo(f.subs(x, 2).toNumber(), 12);
+  }
+});
+
+it('classifies constant integrals with indefinite and symbolic widths', () => {
+  expect(sj.isZero(sj.integral(1, pp))).toBe(false);
+  expect(sj.isZero(sj.integral(1, [x, y]))).toBe('unknown');
+});
+
+it('propagates unexpected failures from endpoint evaluation', () => {
+  const original = { ...impl };
+  try {
+    impl.limit = () => { throw new TypeError('invalid endpoint'); };
+    expect(() => integrate(P('1/x**2'), x, [0, 1])).toThrow(TypeError);
+  } finally {
+    Object.assign(impl, original);
+  }
+});
+
+it('distinguishes constant Lambert W branches and variable substitution rates', () => {
+  const w = P('LambertW(x,-1)');
+  expect(integrate(w, x).equals(sj.add(sj.mul(x,w), sj.mul(-1,x), sj.mul(x,sj.pow(w,-1))))).toBe(true);
+  for (const input of ['1/sqrt(1+tan(x**2)**2)', 'exp(x**2)*log(x)', '1/sinh(x**2)**2']) {
+    expect(integrate(P(input), x)).toBeInstanceOf(sj.Integral);
+  }
+  const f = P('cos(log(x+1))');
+  expect(diff(integrate(f, x), x).subs(x, 2).toNumber()).toBeCloseTo(f.subs(x, 2).toNumber(), 12);
+});
+
+it('keeps unsupported algebraic and Bessel primitives unevaluated', () => {
+  for (const source of ['LambertW(x,x)', '(x**3+1)**(-3/2)', '(x**2+2*x+1)**(-3/2)', 'besselj(0,x)**3', '1/besselj(0,x)']) {
+    const f = P(source);
+    expect(integrate(f, x).equals(sj.integral(f, x))).toBe(true);
+  }
+});
+
+it('checks signs, poles and convergence before using a definite integration rule', () => {
+  const radical = 'sqrt(144*sin(x)**4*cos(x)**2+144*cos(x)**4*sin(x)**2)';
+  expect(String(integrate(P(radical), x, [P('-pi/4'), 0]))).toBe('3');
+  expect(String(integrate(P('(cos(x)+cos(2*x))/x'), x, [0, sj.oo]))).toBe('oo');
+  // The radical changes sign inside the square, the Poisson kernel has a
+  // pole, or the integrand falls outside the linear-frequency rules.
+  for (const [source, lower, upper] of [
+    [radical, '-pi/4', 'pi/4'], ['sqrt(sin(x)+2)', '1', '0'], ['sqrt(sin(x)+2)', '0', '1'],
+    ['cos(2*x)/(1-cos(x))', '0', '2*pi'], ['cos(x**2)/(3+cos(x))', '0', '2*pi'],
+    ['log(log(x))/x**a', '1', 'oo'], ['sin(x)*log(log(x))', '1', 'oo'], ['1/cosh(x**3)', '0', 'oo'],
+  ] as const) {
+    const f = P(source), a = P(lower), b = P(upper);
+    expect(integrate(f, x, [a, b]).equals(sj.integral(f, [x, a, b]))).toBe(true);
+  }
+});
+
+it('preserves finite sums when concrete evaluation is unavailable', () => {
+  const saved = { ...impl };
+  delete impl.doit;
+  try {
+    expect(String(integrate(sj.Sum(sj.mul(x,n), [n,1,3]), x))).toBe('Sum(n*x**2/2, (n, 1, 3))');
+  } finally {
+    Object.assign(impl, saved);
+  }
+});
+
+it('integrates order terms only with respect to their expansion variable', () => {
+  const f = sj.SymFunction('f')(x);
+  expect(String(integrate(new sj.Order([x, x, sj.S.Zero]), x))).toBe('O(x**2)');
+  for (const term of [new sj.Order([x, y, sj.S.Zero]), new sj.Order([f, x, sj.S.Zero])]) {
+    expect(integrate(term, x).equals(sj.integral(term, x))).toBe(true);
+  }
+});
+
+it('retains whole definite integrals when no term or applicable kernel can be evaluated', () => {
+  const f = sj.SymFunction('f')(x), g = sj.SymFunction('g')(x);
+  for (const [body, lo, hi] of [
+    [f, sj.S.Zero, sj.mul(2,sj.pi)],
+    [sj.add(f,g), sj.S.Zero, sj.S.One],
+    [sj.pow(sj.add(1,f),-1), sj.S.Zero, sj.oo],
+    [P('cos(x)/sin(x)'), sj.S.NegativeInfinity, sj.S.Two],
+  ] as const) expect(integrate(body, x, [lo, hi]).equals(sj.integral(body, [x,lo,hi]))).toBe(true);
+});
+
+describe('definite integrals with parametric poles and Gaussian factors (SymPy 1.14 values)', () => {
+  const x = new Sym('x'), t = new Sym('t'), y = new Sym('y');
+  const l = new Sym('l', { positive: true }), r = new Sym('r', { real: true });
+  const P = (src: string) => parse(src, { symbols: { x, t, y, l, r } });
+  it('places a pole whose sign is known by assumptions', () => {
+    expect(sstr(integrate(P('3*(x - l/2)**2/(l*(x/l + 1)**4)'), x, [0, sj.oo]))).toBe('3*l**2/4');
+    expect(sstr(integrate(P('1/(x + l)**2'), x, [0, sj.oo]))).toBe('1/l');
+  });
+  it('ignores poles off the real axis', () => {
+    expect(sstr(integrate(P('1/(x**2 + l**2)'), x, [0, sj.oo]))).toBe('pi/(2*l)');
+  });
+  it('returns the generic finite-interval value and checks convergence at infinity', () => {
+    expect(sstr(integrate(P('1/(x + r)**2'), x, [0, 1]))).toBe('-1/(r + 1) + 1/r');
+    expect(sstr(integrate(P('1/(x + r)**2'), x, [0, sj.oo]))).toMatch(/^Piecewise\(\(1\/r, /);
+  });
+});
+
+it('keeps the given Piecewise integrand in an integral that stays unevaluated (SymPy 1.14)', () => {
+  const x = new Sym('x');
+  const f = sj.SymFunction('f');
+  const p = sj.piecewise([1, sj.Eq(f(x), 1)], [2, sj.Lt(x, 10)], [0, true]);
+  expect(sstr(integrate(p, x, [0, 5]))).toBe('Integral(Piecewise((1, Eq(f(x), 1)), (2, x < 10), (0, True)), (x, 0, 5))');
+});
+
+it('integrates through the Meijer G-functions when an endpoint limit of the antiderivative is not found', () => {
+  expect(sstr(integrate(parse('(besselj(1, x)/x)**2'), new Sym('x'), [0, sj.oo]))).toBe('4/(3*pi)');
+});
+
+it('constructs the Integral of a self-integrating integrand through that integrand (SymPy Integral.__new__)', () => {
+  const C = sj.CoordSys3D('C');
+  const [a, b] = sj.symbols('a b');
+  const [i, j] = C.baseVectors();
+  const v = sj.add(sj.mul(a, i), sj.mul(b, j));
+  expect(String(sj.integral(v, a, b))).toBe('(Integral(a, a, b))*C.i + (Integral(b, a, b))*C.j');
+  expect(String(sj.integral(v, [a, 0, 1], [b, 0, 2]))).toBe('(Integral(a, (a, 0, 1), (b, 0, 2)))*C.i + (Integral(b, (a, 0, 1), (b, 0, 2)))*C.j');
+  expect(String(sj.integral(sj.mul(a, sj.BaseDyadic(i, j)), a))).toBe('(Integral(a, a))*(C.i|C.j)');
+  expect(String(sj.integral(new sj.Quaternion(a, 1, 2, 3), a))).toBe('a**2/2 + a*i + 2*a*j + 3*a*k');
+  expect(sj.integral(sj.Vector.zero, a)).toBe(sj.Vector.zero);
+  // an unevaluated product integrates as any other expression (SymPy raises an AttributeError)
+  expect(sj.integral(sj.Cross(i, j), a).kind).toBe('Integral');
+  expect(sj.integral(i, [a, 0]).kind).toBe('Integral');
+});
+
+it('keeps singularities and zero slopes separate in elementary integration rules', () => {
+  const rate = sj.add(a, b);
+  const f = sj.exp(sj.add(sj.mul(rate, x), 1));
+  expect(integrate(f, x).subs(a, sj.mul(-1, b)).equals(sj.mul(x, sj.E))).toBe(true);
+  const radical = P('sqrt(3*x**2-5)'), point = sj.rational(3, 2);
+  expect(diff(integrate(radical, x), x).subs(x, point).toNumber()).toBeCloseTo(radical.subs(x, point).toNumber(), 10);
+  for (const source of ['sin(x**2)*sin(x)', 'sin(x**3)**2', 'cos(x**2)**4', 'x*acos(a*x)', 'sqrt(log(x))*x**2', 'li(1/x)']) {
+    const body = P(source);
+    expect(integrate(body, x).equals(sj.integral(body, x))).toBe(true);
+  }
+});
+
+it('computes the mean on either side of the unit circle and keeps poles on it', () => {
+  const period = [0, sj.mul(2, sj.pi)] as const;
+  expect(integrate(P('1/(1+2*exp(I*x))'), x, period)).toBe(sj.S.Zero);
+  expect(integrate(P('1/(1+exp(I*x))'), x, period)).toBeInstanceOf(sj.Integral);
+  expect(integrate(P('sin(1/x)'), x, [-1, 1])).toBe(sj.S.Zero);
+});
+
+it('evaluates the parameter branches of heuristic primitives at both bounds', () => {
+  const f = P('cos(a*x+b)');
+  const primitive = integrate(f, x, [1, y], { heurisch: true });
+  expect(primitive.subs(a, 0).equals(P('y*cos(b)-cos(b)'))).toBe(true);
+  expect(integrate(f, x, undefined, { heurisch: true, conds: 'none' }).equals(P('sin(a*x+b)/a'))).toBe(true);
+  expect(sj.ask(sj.Q.zero(sj.integral(0, [x, 0, 1])))).toBe(true);
+  expect(sj.ask(sj.Q.zero(sj.integral(1, [x, 0, 1])))).toBe(false);
+});
+
+it('recognizes uncovered intervals and known nonreal poles', () => {
+  expect(integrate(sj.piecewise([1, sj.Gt(x, 2)]), x, [0, pp])).toBe(sj.S.NaN);
+  expect(integrate(P('1/(x+I*p)**2'), x, [0, 1]).equals(P('-1/(I*p+1)-I/p'))).toBe(true);
+});
+
+it('uses zero integrands and the width of a definite interval in zero queries', () => {
+  expect(sj.ask(sj.Q.zero(sj.integral(0, x)))).toBe(true);
+  expect(sj.isZero(sj.integral(2, [x, 1, 3]))).toBe(false);
+});
+
+it('integrates affine Piecewise conditions on unions, isolated points and partial domains', () => {
+  const f = sj.piecewise([1, sj.or(sj.Lt(x, 1), sj.Gt(x, 3))], [0, true]);
+  expect(String(integrate(f, x))).toBe('Piecewise((x, x < 1), (1, x <= 3), (x - 2, True))');
+  expect(integrate(sj.piecewise([1, sj.Eq(x, 1)], [2, true]), x)).toEqual(x.mul(2));
+  const partial = sj.piecewise([1, sj.Gt(x, a.add(1))]);
+  expect(integrate(partial, x, [a, a.add(2)]).equals(sj.S.NaN)).toBe(true);
+  expect(String(integrate(sj.piecewise([1, sj.Gt(x, 1)]), x))).toBe('Piecewise((nan, x < 1), (x, True))');
+  const step = sj.piecewise([1, sj.Lt(x, a)], [2, true]);
+  expect(integrate(step, x, [2, 0]).equals(sj.Min(2, sj.Max(0, a)).sub(4))).toBe(true);
+  const thresholds = new sj.Piecewise([sj.S.One, new sj.Rel('Lt', x, a), sj.S.Two, new sj.Rel('Lt', x, b), sj.S.Zero, sj.S.true]);
+  expect(integrate(thresholds, x).subs(new Map([[a, 1], [b, 3], [x, 4]]))).toEqual(sj.sympify(5));
+});
+
+it('integrates an odd sine across a symmetric interval and a rational function with a nonreal pole', () => {
+  expect(integrate(sj.sin(x), x, [-1, 1])).toBe(sj.S.Zero);
+  const c = new Sym('c', { imaginary: true });
+  expect(integrate(x.sub(c).pow(-2), x, [0, 1]).equals(sj.sub(1, c).pow(-1).neg().sub(c.pow(-1)))).toBe(true);
+  expect(String(integrate(parse('(x + sin(x))**a'), x))).toBe('Integral((x + sin(x))**a, x)');
+});
+
+it('uses the scaled quadratic primitive and takes one-sided exponential integral limits', () => {
+  expect(integrate(P('(a+x**2)**(-3/2)'), x, [0, b]).equals(P('b/(a**(3/2)*sqrt(1+b**2/a))'))).toBe(true);
+  expect(integrate(P('(1+x)*exp(-1/x)/x**2'), x, [0, sj.oo])).toBe(sj.oo);
+});
+
+it('checks numerical improper bounds with real and imaginary parameter-dependent poles', () => {
+  expect(integrate(P('1/(x+I*p)**2'), x, [0, sj.oo]).equals(P('-I/p'))).toBe(true);
+  expect(integrate(P('(x+r)**(-1/2)'), x, [0, sj.oo]).has(sj.oo)).toBe(true);
+});
+
+it('uses the algebraic primitive for a quadratic without a Meijer G reduction', () => {
+  const f = P('(a*x**2+x+1)**(-3/2)');
+  const primitive = integrate(f, x);
+  expect(integrate(f, x, [0, y]).equals(sj.sub(primitive.subs(x, y), primitive.subs(x, 0)))).toBe(true);
+});
+
+it('clips symbolic piecewise intervals with disjunctions, holes and reversed bounds', () => {
+  const f = P('Piecewise((1,(x<1)|(x>2)))');
+  expect(String(integrate(f, x))).toBe('Piecewise((x, x < 1), (nan, x < 2), (x, True))');
+  expect(integrate(P('Piecewise((x,Eq(x,a)),(2,True))'), x, [pp, 0]).equals(sj.mul(-2, pp))).toBe(true);
+  expect(String(integrate(P('Piecewise((a,a<b),(2,a<c))'), a))).toContain('Max(b, c)');
+});
+
+it('integrates commensurate exponential powers by substitution', () => {
+  expect(integrate(P('3**x/sqrt(1+9**x)'), x).equals(P('asinh(3**x)/log(3)'))).toBe(true);
+});
+
+it('orders infinite limits against a symbolic endpoint', () => {
+  const f = P('Piecewise((1,(x>0)&(x<2)),(0,True))');
+  expect(integrate(f, x, [sj.oo, y]).equals(P('Max(0,y)-Max(2,y)'))).toBe(true);
+  expect(integrate(f, x, [y, sj.S.NegativeInfinity]).equals(P('Min(0,y)-Min(2,y)'))).toBe(true);
+});
+
+it('uses the order of the limits before testing for an undefined Piecewise segment', () => {
+  const f = P('Piecewise((x,(x>1)&(x<3)), (1,x<4))');
+  const forward = integrate(f, x, [1, y]);
+  const reverse = integrate(f, x, [y, 1]);
+  for (const end of [-1, 1, 2, 3, 4, 5]) {
+    expect(forward.subs(y, end).equals(integrate(f, x, [1, end]))).toBe(true);
+    expect(reverse.subs(y, end).equals(integrate(f, x, [end, 1]))).toBe(true);
+  }
 });
