@@ -11,10 +11,11 @@
 
 import { at, pair } from '../core/guard';
 import type { BoolOpName } from '../core/boolalg';
-import { BoolOp, and as coreAnd, not as coreNot, or as coreOr } from '../core/boolalg';
+import { BoolOp, booleanCalculus, and as coreAnd, not as coreNot, or as coreOr, xorArgs } from '../core/boolalg';
 import type { ExprLike, RelOp } from '../core/nodes';
 import { BoolAtom, Expr, ExtensionExpr, Float, Rational, Rel, S, Sym, impl, isNum } from '../core/nodes';
 import { isZero as triIsZero } from '../core/assumptions';
+import { Eq, piecewise } from '../core/logic';
 import { ordered } from '../core/match';
 import { rebuild } from '../core/traverse';
 import { couldExtractMinusSign } from '../core/ops';
@@ -224,54 +225,7 @@ export function notFn(x: BoolLike): Expr {
  * as in the algebraic normal form.
  */
 export function xorFn(xs: readonly BoolLike[], removeTrue = true): Expr {
-  const argset = new Map<string, Expr>();
-  const toggle = (a: Expr): void => {
-    if (isOp(a, 'Xor')) {
-      a.args.forEach(toggle);
-      return;
-    }
-    if (argset.has(a.key)) argset.delete(a.key);
-    else argset.set(a.key, a);
-  };
-  for (const x0 of xs) {
-    let a = toBool(x0);
-    if (isNum(a) || a instanceof BoolAtom) {
-      if (isTrueAtom(numberToBool(a))) a = S.true;
-      else continue;
-    }
-    if (isOp(a, 'Xor')) a.args.forEach(toggle);
-    else toggle(a);
-  }
-  const rels = [...argset.values()].filter((r): r is Rel => r instanceof Rel).map((r) => [r, relCanonical(r), relCanonical(relNegated(r))] as const);
-  let odd = false;
-  const remove: [Expr, Expr][] = [];
-  for (let i = 0; i < rels.length; i++) {
-    const [r, c, nc] = at(rels, i);
-    for (let j = i + 1; j < rels.length; j++) {
-      const [rj, cj] = at(rels, j);
-      if (cj.key === nc.key) {
-        odd = !odd;
-        remove.push([r, rj]);
-        break;
-      }
-      if (cj.key === c.key) {
-        remove.push([r, rj]);
-        break;
-      }
-    }
-  }
-  if (odd) toggle(S.true);
-  for (const [a, b] of remove) {
-    argset.delete(a.key);
-    argset.delete(b.key);
-  }
-  if (argset.size === 0) return S.false;
-  if (argset.size === 1) return at([...argset.values()], 0);
-  if (argset.has(S.true.key) && removeTrue) {
-    argset.delete(S.true.key);
-    return coreNot(xorFn([...argset.values()]));
-  }
-  return new BoolOp('Xor', ordered([...argset.values()]));
+  return xorArgs(xs.map((x) => numberToBool(toBool(x))), removeTrue, relCanonical);
 }
 
 // ---------------------------------------------------------------------------
@@ -377,6 +331,39 @@ export function Exclusive(...args: readonly BoolLike[]): Expr {
   return andFn(...out);
 }
 
+/** SymPy Boolean.as_set, using the real-set solver for relational leaves. */
+export function booleanAsSet<T extends Expr>(
+  input: BoolLike,
+  solveSet: (e: Expr) => T,
+  periodOf: (r: Rel, x: Sym) => Expr | undefined,
+  empty: T,
+  reals: T,
+): T {
+  const e = toBool(input);
+  const symbols = [...e.freeSymbols()].filter((arg) => arg instanceof Sym);
+  if (symbols.length !== 1) return solveSet(e);
+  const x = at(symbols, 0);
+  const visit = (arg: Expr): Expr => {
+    if (arg instanceof Sym) return S.true;
+    if (arg instanceof Rel) {
+      const period = periodOf(arg, x);
+      if (!period || period === S.Zero) return arg;
+      const result = solveSet(arg);
+      if (result === empty) return S.false;
+      if (result === reals) return S.true;
+      throw new NotImplementedError('as_set is not implemented for relationals with periodic solutions');
+    }
+    if (isITE(arg)) {
+      const branches = arg.args.map(visit);
+      const c = at(branches, 0);
+      return orFn(andFn(c, at(branches, 1)), andFn(notFn(c), at(branches, 2)));
+    }
+    if (isBooleanFunction(arg)) return rebuildBool(arg, arg.args.map(visit));
+    return arg;
+  };
+  return solveSet(visit(e));
+}
+
 /** SymPy binary_symbols: the symbols used as booleans. */
 export function binarySymbols(e: Expr): Map<string, Expr> {
   const out = new Map<string, Expr>();
@@ -399,6 +386,14 @@ export function binarySymbols(e: Expr): Map<string, Expr> {
   }
   return out;
 }
+
+booleanCalculus.derivative = (e, x) => {
+  if (!isBooleanFunction(e) || !binarySymbols(e).has(x.key)) return undefined;
+  const low = e.subs(x, S.false);
+  const high = e.subs(x, S.true);
+  const [a, b] = pair(ordered([low, high]));
+  return piecewise([S.Zero, Eq(a, b)], [S.One, true]);
+};
 
 const isEqNe = (e: Expr): e is Rel => e instanceof Rel && (e.op === 'Eq' || e.op === 'Ne');
 
@@ -427,6 +422,7 @@ function iteEval(a0: Expr, b: Expr, c: Expr): Expr | undefined {
  * the symbol or its negation.
  */
 export function ITE(a0: BoolLike, b0: BoolLike, c0: BoolLike, opts: LogicEvalOptions = {}): Expr {
+  if (arguments.length > 4 || opts instanceof Expr) throw new RangeError('ITE requires three operands');
   let a = toBool(a0);
   let b: Expr;
   let c: Expr;

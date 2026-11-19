@@ -605,3 +605,11 @@ it('matches exponential patterns only when the resulting power divides the sourc
   const derivative = sj.derivative(f, [[x, order]]);
   expect(sj.subs(sj.add(derivative, f), new Map<sj.Expr, sj.Expr>([[f, x], [derivative, y]])).equals(sj.add(x, y))).toBe(true);
 });
+
+it('leaves unrelated exponential substitution patterns alone', () => {
+  const [x, y, z] = sj.symbols('x y z');
+  const power = sj.pow(x, y);
+  for (const exponent of [y, new sj.Fn('log', [x])]) {
+    expect(power.subs(new sj.Pow(sj.S.E, exponent), z).key).toBe(power.key);
+  }
+});

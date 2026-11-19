@@ -19,6 +19,8 @@ import type { BoolLike } from './boolalg';
 import { Equivalent, LogicGate, LogicOp, andFn, boolXreplace, collect, conjuncts, evalBool, isBooleanFunction, isOp, notFn, toBool } from './boolalg';
 import { combinations } from './normalforms';
 import { toCnf } from './minimize';
+import type { EncodedCNF } from '../assumptions/cnf';
+import { linearSatisfiable } from './algorithms/lratheory';
 import { SATSolver } from './dpll';
 
 // ---------------------------------------------------------------------------
@@ -136,24 +138,39 @@ function encode(e: Expr): Encoded {
   return { symbols, clauses: data, unsat };
 }
 
+/** Keep the clause numbering supplied by an EncodedCNF, including sparse encodings. */
+function fromEncoded(input: EncodedCNF): Encoded {
+  const symbols: Expr[] = [];
+  const indices = new Map<number, number>();
+  for (const [atom, code] of input.encoding) {
+    if (typeof atom === 'function') throw new TypeError('SAT models require applied predicates');
+    indices.set(code, symbols.push(atom));
+  }
+  const clauses = input.data.map((clause) => [...clause].filter((v) => v !== 0)
+    .map((v) => Math.sign(v) * getOrThrow(indices, Math.abs(v))));
+  return { symbols, clauses, unsat: clauses.some((clause) => !clause.length) };
+}
+
+type Feasibility = (assignment: ReadonlySet<number>) => boolean;
+
 function toModel(symbols: readonly Expr[], lits: readonly number[]): ExprMap<boolean> {
   const sorted = [...lits].sort((a, b) => Math.abs(a) - Math.abs(b));
   return new ExprMap(sorted.map((l) => [at(symbols, Math.abs(l) - 1), l > 0] as const));
 }
 
-function firstModel(clauses: readonly (readonly number[])[], n: number): number[] | undefined {
-  const r = new SATSolver(clauses, n).findModels().next();
+function firstModel(clauses: readonly (readonly number[])[], n: number, feasible?: Feasibility): number[] | undefined {
+  const r = new SATSolver(clauses, n).findModels(feasible).next();
   return r.done === true ? undefined : r.value;
 }
 
 /** A model whose set of true variables is minimal (no model makes a proper subset true). */
-function minimize(clauses: readonly (readonly number[])[], n: number, model0: number[]): number[] {
+function minimize(clauses: readonly (readonly number[])[], n: number, model0: number[], feasible?: Feasibility): number[] {
   let model = model0;
   for (;;) {
     const trues = model.filter((l) => l > 0);
     if (!trues.length) return model;
     const falses = model.filter((l) => l < 0);
-    const next = firstModel([...clauses, ...falses.map((l) => [l]), trues.map((l) => -l)], n);
+    const next = firstModel([...clauses, ...falses.map((l) => [l]), trues.map((l) => -l)], n, feasible);
     if (!next) return model;
     model = next;
   }
@@ -163,6 +180,8 @@ function minimize(clauses: readonly (readonly number[])[], n: number, model0: nu
 export interface SatisfiableOptions {
   /** Return an iterator over all models (or over the single value false). */
   allModels?: boolean;
+  /** Require linear real arithmetic predicates to have a common solution. */
+  useLraTheory?: boolean;
   /** Return models whose set of true variables is minimal (SymPy minimal, minisat22). */
   minimal?: boolean;
 }
@@ -173,22 +192,26 @@ export interface SatisfiableOptions {
  * `allModels` an iterator over every model (yielding only false when there
  * is none). `satisfiable(true)` is the model {True: true}.
  */
-export function satisfiable(expr: BoolLike, opts?: SatisfiableOptions & { allModels?: false }): ExprMap<boolean> | false;
-export function satisfiable(expr: BoolLike, opts: SatisfiableOptions & { allModels: true }): Generator<ExprMap<boolean> | false, void, unknown>;
-export function satisfiable(expr: BoolLike, opts: SatisfiableOptions = {}): ExprMap<boolean> | false | Generator<ExprMap<boolean> | false, void, unknown> {
-  const { symbols, clauses, unsat } = encode(toBool(expr));
+export function satisfiable(expr: BoolLike | EncodedCNF, opts?: SatisfiableOptions & { allModels?: false }): ExprMap<boolean> | false;
+export function satisfiable(expr: BoolLike | EncodedCNF, opts: SatisfiableOptions & { allModels: true }): Generator<ExprMap<boolean> | false, void, unknown>;
+export function satisfiable(expr: BoolLike | EncodedCNF, opts: SatisfiableOptions = {}): ExprMap<boolean> | false | Generator<ExprMap<boolean> | false, void, unknown> {
+  const { symbols, clauses, unsat } = typeof expr === 'object' && 'encoding' in expr ? fromEncoded(expr) : encode(toBool(expr));
+  const feasible = opts.useLraTheory ? (lits: ReadonlySet<number>): boolean => linearSatisfiable(andFn(...[...lits].map((lit) => {
+    const atom = at(symbols, Math.abs(lit) - 1);
+    return lit > 0 ? atom : notFn(atom);
+  }))) : undefined;
   const n = symbols.length;
   const models = function* (): Generator<number[], void, unknown> {
     if (unsat) return;
     if (!opts.minimal) {
-      yield* new SATSolver(clauses, n).findModels();
+      yield* new SATSolver(clauses, n).findModels(feasible);
       return;
     }
     const cs = [...clauses];
     for (;;) {
-      const m = firstModel(cs, n);
+      const m = firstModel(cs, n, feasible);
       if (!m) return;
-      const min = minimize(cs, n, m);
+      const min = minimize(cs, n, m, feasible);
       yield min;
       // no later model makes a superset of these variables true
       cs.push(min.filter((l) => l > 0).map((l) => -l));

@@ -390,3 +390,20 @@ it('registers parser constructors for Boolean gates', async () => {
   expect(s(build('ITE', [x, y, z]))).toBe('ITE(x, y, z)');
   expect(() => build('ITE', [x, y])).toThrow(SyntaxError);
 });
+
+it('differentiates in binary symbols and preserves other derivative orders', () => {
+  const expr = And(x, y);
+  expect(String(expr.diff(x))).toBe('Piecewise((0, Eq(y, False)), (1, True))');
+  expect(sj.diff(expr, x, 0)).toBe(expr);
+  expect(sj.diff(expr, x, 2)).toBe(sj.S.Zero);
+  expect(sj.diff(And(sj.Gt(x, 0), y), x)).toBeInstanceOf(sj.Derivative);
+  expect(sj.asSet(sj.Lt(sj.sin(x), -2))).toBe(sj.EmptySet);
+  expect(() => Reflect.apply(Not, undefined, [x, y])).toThrow(TypeError);
+  expect(() => Reflect.apply(L.ITE, undefined, [x, y, z, {}, w])).toThrow(RangeError);
+});
+
+it('simplifies contradictory comparisons and preserves parity of independent predicates', () => {
+  expect(sj.simplify(And(sj.Lt(x, y), sj.Ge(x, y)))).toBe(F);
+  expect(sj.simplify(Xor(x, y)).key).toBe(Xor(x, y).key);
+  expect(String(sj.simplify(Xor(x, Not(y))))).toBe('x ^ y ^ True');
+});

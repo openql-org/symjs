@@ -28,7 +28,8 @@ import { simplifyRelation } from '../core/relational';
 import { isNegative } from '../core/assumptions';
 import type { Truth } from '../core/truth';
 import { BoolOp, and } from '../core/boolalg';
-import { Eq, Ge, Gt, Le, Lt, canonicalRelation, piecewise } from '../core/logic';
+import { simplifyBoolean } from '../logic/minimize';
+import { Ge, Gt, Le, Lt, canonicalRelation, piecewise } from '../core/logic';
 import { ordered } from '../core/match';
 import type { SetExpr } from '../sets/sets';
 import { EmptySet, Interval, Reals, cmpReal, complement, intersection, interval, union } from '../sets/sets';
@@ -299,31 +300,7 @@ export function simplify(ex: ExprLike | AlgebraicNumber, opts: SimplifyOptions =
       : new AlgebraicNumber(candidate, ex.coeffList, ex.alias === undefined ? {} : { alias: ex.alias });
   }
   const input = opts.inverse ? inversecombine(ex) : sympify(ex);
-  if (input instanceof BoolOp && input.op === 'And') {
-    const terms = input.args.map((a) => simplify(a, opts));
-    const fixed: Expr[] = [];
-    for (;;) {
-      const eq = terms.find((t): t is Rel => t instanceof Rel && t.op === 'Eq' &&
-        ((t.lhs instanceof Sym && t.rhs.freeSymbols().size === 0) || (t.rhs instanceof Sym && t.lhs.freeSymbols().size === 0)));
-      if (!eq) break;
-      const [v, c] = eq.lhs instanceof Sym ? eq.args : [eq.rhs, eq.lhs] as const;
-      fixed.push(Eq(v, c));
-      terms.splice(terms.indexOf(eq), 1);
-      for (const [j, t] of terms.entries()) terms[j] = xreplace(t, [[v, c]]);
-    }
-    // Compare bounds with the same left side, retaining the stronger constraints.
-    for (const [i, a] of terms.entries()) {
-      if (!(a instanceof Rel)) continue;
-      for (const [j, b] of terms.entries()) {
-        if (i === j || !(b instanceof Rel) || a.lhs.key !== b.lhs.key) continue;
-        if (a.op === 'Ge' && b.op === 'Le' && a.rhs.key === b.rhs.key) return simplify(and(...fixed, ...terms.filter((_, k) => k !== i && k !== j), Eq(a.lhs, a.rhs)), opts);
-        if (a.op !== b.op) continue;
-        const stronger = a.op === 'Gt' || a.op === 'Ge' ? Ge : a.op === 'Lt' || a.op === 'Le' ? Le : undefined;
-        if (stronger && stronger(a.rhs, b.rhs) === S.true) terms[j] = S.true;
-      }
-    }
-    return and(...fixed, ...terms);
-  }
+  if (input instanceof BoolOp) return simplifyBoolean(input, (arg) => simplify(arg, opts));
   if (input instanceof Piecewise) return simplifyPiecewise(input, opts);
   // (a sum with Kronecker deltas keeps its Piecewise terms apart: they become deltas below)
   if (input instanceof Add && input.args.some((term) => term instanceof Piecewise) && !some(input, (e) => e instanceof Fn && e.name === 'KroneckerDelta')) {

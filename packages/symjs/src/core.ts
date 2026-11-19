@@ -13,7 +13,7 @@
  */
 
 import type { Assumptions, Expr as ExprNode, ExprLike as ExprLikeT } from './core/nodes';
-import { Add as AddNode, Expr as ExprClass, Derivative as DerivativeNode, Dummy as DummyNode, Mul as MulNode, Piecewise as PiecewiseNode, Pow as PowNode, Sym as SymbolNode, registerHead } from './core/nodes';
+import { Add as AddNode, Expr as ExprClass, Derivative as DerivativeNode, Dummy as DummyNode, Mul as MulNode, Piecewise as PiecewiseNode, Pow as PowNode, Sym as SymbolNode, registerHead, Rational as RationalNode, impl } from './core/nodes';
 import type { Head } from './core/nodes';
 import { expandSymbolNames as expandNames } from './core/numberutils';
 import { derivative as derivativeFn } from './core/undef';
@@ -252,10 +252,23 @@ export {
   sinc,
   period,
 } from './functions/elementary/trigext';
-export {
-  diff,
-  fdiff,
-} from './calculus/diff';
+import { diff as scalarDiff } from './calculus/diff';
+import { booleanCalculus } from './core/boolalg';
+export { fdiff } from './calculus/diff';
+
+/** Differentiate an expression, including Boolean functions of binary symbols. */
+export function diff(ex: ExprLikeT, x: ExprNode, order: ExprLikeT = 1): ExprNode {
+  const e = sympifyFn(ex);
+  if (e.kind === 'BoolOp' || e.kind === 'Extension') {
+    const count = sympifyFn(order);
+    if (count instanceof RationalNode && count.isInteger && count.p > 0n && count.p <= BigInt(globalThis.Number.MAX_SAFE_INTEGER)) {
+      const first = booleanCalculus.derivative?.(e, x);
+      if (first !== undefined) return scalarDiff(first, x, count.p - 1n);
+    }
+  }
+  return scalarDiff(e, x, order);
+}
+impl.diff = diff;
 export {
   FunctionHead,
   SymFunction,
@@ -385,9 +398,14 @@ export {
 export {
   and as And,
   or as Or,
-  not as Not,
   xor as Xor,
 } from './core/boolalg';
+
+/** Logical negation of one proposition. */
+export function Not(x: ExprLikeT | boolean): ExprNode {
+  if (arguments.length !== 1) throw new TypeError('Not requires one argument');
+  return _not_(x);
+}
 
 const isCountPair = (v: ExprNode | readonly [ExprNode, number]): v is readonly [ExprNode, number] => Array.isArray(v);
 

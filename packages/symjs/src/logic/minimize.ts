@@ -10,8 +10,10 @@
  */
 
 import { at, cast, getOrThrow } from '../core/guard';
-import type { Expr } from '../core/nodes';
+import type { Expr, RelOp } from '../core/nodes';
 import { BoolAtom, Dummy, Rational, Rel, S, Sym, impl } from '../core/nodes';
+import { isPositive } from '../core/assumptions';
+import type { BoolOp } from '../core/boolalg';
 import { ExprMap } from '../core/exprmap';
 import { ordered } from '../core/match';
 import type { NoMatchResult } from '../core/truth';
@@ -30,10 +32,11 @@ import {
   notFn,
   orFn,
   relNegated,
+  rebuildBool,
   toBool,
   xorFn,
 } from './boolalg';
-import { distributeAndOverOr, distributeOrOverAnd, eliminateImplications, integerToTerm, isCnf, isDnf } from './normalforms';
+import { distributeAndOverOr, distributeOrOverAnd, eliminateImplications, integerToTerm, isCnf, isDnf, toAnf } from './normalforms';
 
 /** A term of a truth table: 0, 1, or 3 for "don't care" after merging (SymPy's encoding). */
 type Term = number[];
@@ -451,6 +454,100 @@ export function toDnf(expr: BoolLike, simplify: boolean | NormalFormOptions = fa
   return toForm(expr, 'dnf', simplify, force);
 }
 
+// The three bits describe lhs < rhs, lhs == rhs and lhs > rhs respectively.
+const orderMasks: Record<RelOp, number> = { Lt: 1, Eq: 2, Le: 3, Gt: 4, Ne: 5, Ge: 6 };
+const orderOps = ['Lt', 'Eq', 'Le', 'Gt', 'Ne', 'Ge'] as const;
+type Connective = 'And' | 'Or' | 'Xor';
+
+function combineMasks(op: Connective, a: number, b: number): number {
+  return op === 'And' ? a & b : op === 'Or' ? a | b : a ^ b;
+}
+
+/** Combine comparisons by partitioning the line at their one or two endpoints. */
+function combineRelations(op: Connective, a: Rel, b: Rel): Expr | undefined {
+  if (a.lhs.key !== b.lhs.key || [...a.args, b.rhs].some((v) => v instanceof Sym && v.assumptions.real === false)) return undefined;
+  const left = orderMasks[a.op], right = orderMasks[b.op];
+  if (a.rhs.key === b.rhs.key) {
+    const mask = combineMasks(op, left, right);
+    if (mask === 0) return S.false;
+    if (mask === 7) return S.true;
+    return new Rel(at(orderOps, mask - 1), a.lhs, a.rhs);
+  }
+  const delta = impl.add(b.rhs, impl.mul(-1, a.rhs));
+  const increasing = isPositive(delta) === true;
+  if (!increasing && isPositive(impl.mul(-1, delta)) !== true) return undefined;
+  // Below, at, between, at, and above the two endpoints.
+  const lower = (m: number) => (m & 3) | ((m & 4) ? 28 : 0);
+  const upper = (m: number) => ((m & 1) ? 7 : 0) | ((m & 6) << 2);
+  const l = increasing ? lower(left) : upper(left);
+  const r = increasing ? upper(right) : lower(right);
+  const mask = combineMasks(op, l, r);
+  if (!mask) return S.false;
+  if (mask === 31) return S.true;
+  if (mask === l) return a;
+  if (mask === r) return b;
+  return undefined;
+}
+
+/** Eliminate a symbol fixed by an equality, then simplify the remaining equations again. */
+function propagateEqualities(terms: Expr[], simplify: (arg: Expr) => Expr): void {
+  const fixed = new Set<string>();
+  for (;;) {
+    const eq = terms.find((t): t is Rel => t instanceof Rel && t.op === 'Eq' && t.lhs instanceof Sym &&
+      !fixed.has(t.lhs.key) && t.rhs.freeSymbols().size === 0);
+    if (!eq) break;
+    fixed.add(eq.lhs.key);
+    for (const [i, t] of terms.entries()) {
+      if (t !== eq && t.has(eq.lhs)) terms[i] = simplify(t.subs(eq.lhs, eq.rhs));
+    }
+  }
+}
+
+/** SymPy BooleanFunction._eval_simplify and the relational reductions of And, Or and Xor. */
+export function simplifyBoolean(input: BoolOp, simplify: (arg: Expr) => Expr): Expr {
+  const terms = input.args.map(simplify);
+  const op = input.op;
+  if (op === 'And') {
+    // Equal left sides imply equal right sides. Use the latter when it fixes a symbol.
+    for (const [i, a] of terms.entries()) {
+      if (!(a instanceof Rel && a.op === 'Eq' && a.lhs instanceof Sym)) continue;
+      for (const [j, b] of terms.entries()) {
+        if (j <= i || !(b instanceof Rel && b.op === 'Eq') || a.lhs.key !== b.lhs.key) continue;
+        const eq = simplify(new Rel('Eq', a.rhs, b.rhs));
+        if (eq instanceof Rel && eq.lhs instanceof Sym && eq.rhs.freeSymbols().size === 0) terms[j] = eq;
+      }
+    }
+    propagateEqualities(terms, simplify);
+  }
+  if (op === 'Or' || op === 'And' || op === 'Xor') {
+    for (let i = 0; i < terms.length; i++) {
+      const a = at(terms, i);
+      if (!(a instanceof Rel)) continue;
+      for (let j = 0; j < terms.length; j++) {
+        const b = at(terms, j);
+        if (j === i) continue;
+        if (b instanceof Rel) {
+          const combined = combineRelations(op, a, b);
+          if (combined !== undefined) {
+            terms.splice(Math.max(i, j), 1);
+            terms[Math.min(i, j)] = combined;
+            i = -1;
+            break;
+          }
+        } else if (op === 'Or' && isOp(b, 'And') && b.args.some((t) =>
+          t instanceof Rel && combineRelations(op, a, t)?.key === a.key)) {
+          terms.splice(j, 1);
+          i = -1;
+          break;
+        }
+      }
+    }
+  }
+  const result = rebuildBool(input, terms);
+  if (isOp(result, 'Xor')) return toAnf(result);
+  return simplifyLogic(result, { deep: false });
+}
+
 /** SymPy _finger: a fingerprint of every variable of a simplified (two-level) expression. */
 function finger(eq: Expr): Map<string, Expr[]> {
   const syms = collect(eq, (x) => x instanceof Sym);
@@ -487,18 +584,18 @@ function finger(eq: Expr): Map<string, Expr[]> {
   return inv;
 }
 
-function matchBool(f1: Expr, f2: Expr): ExprMap<Expr> | undefined {
+function matchBool(f1: Expr, f2: Expr): ExprMap<Expr> | false | undefined {
   const cls = (x: Expr): string => 'className' in x && typeof x.className === 'string' ? x.className : x.kind;
   if (cls(f1) !== cls(f2) || f1.kind !== f2.kind) return undefined;
   if (f1.args.length !== f2.args.length) return undefined;
   if (f1 instanceof Sym) return new ExprMap([[f1, f2]]);
   const a = finger(f1);
   const b = finger(f2);
-  if (a.size !== b.size) return undefined;
+  if (a.size !== b.size) return false;
   const m = new ExprMap<Expr>();
   for (const [k, xs] of a) {
     const ys = b.get(k);
-    if (!ys || ys.length !== xs.length) return undefined;
+    if (!ys || ys.length !== xs.length) return false;
     xs.forEach((x, i) => m.set(x, at(ys, i)));
   }
   return m;
@@ -507,12 +604,13 @@ function matchBool(f1: Expr, f2: Expr): ExprMap<Expr> | undefined {
 /**
  * SymPy bool_map: the simplified form of bool1 and a mapping of its
  * variables to those of bool2 under which both have the same truth table;
- * NoMatch when no such mapping is found (SymPy returns False or None).
+ * false for incompatible fingerprints, NoMatch for incompatible shapes.
  */
-export function boolMap(bool1: BoolLike, bool2: BoolLike): [Expr, ExprMap<Expr>] | NoMatchResult {
+export function boolMap(bool1: BoolLike, bool2: BoolLike): [Expr, ExprMap<Expr>] | false | NoMatchResult {
   const a = simplifyLogic(bool1);
   const b = simplifyLogic(bool2);
   const m = matchBool(a, b);
+  if (m === false) return false;
   if (!m || m.size === 0) return NoMatch;
   const sortedMap = new ExprMap<Expr>(ordered([...m.keys()]).map((k) => [k, getOrThrow(m, k)] as const));
   return [a, sortedMap];

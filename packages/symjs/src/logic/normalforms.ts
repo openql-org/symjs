@@ -9,7 +9,7 @@
 
 import { at, pair } from '../core/guard';
 import type { Expr } from '../core/nodes';
-import { Rational, S, Sym, impl } from '../core/nodes';
+import { Rational, S, Sym, impl, registerRewrite } from '../core/nodes';
 import { BoolOp } from '../core/boolalg';
 import type { BoolLike } from './boolalg';
 import {
@@ -69,15 +69,20 @@ function latticeToNnf(op: Lattice, args: readonly Expr[], simplify: boolean): Ex
 }
 
 /** Xor in NNF: the conjunction of the clauses with an even (Xor) or odd (Not Xor) number of negations. */
-function xorClauses(args: readonly Expr[], start: number): Expr[] {
+function xorClauses(args: readonly Expr[], start: number, op: Lattice = 'Or'): Expr[] {
   const out: Expr[] = [];
   for (let i = start; i <= args.length; i += 2) {
     for (const neg of combinations(args.length, i)) {
-      out.push(orFn(...args.map((s, j) => (neg.includes(j) ? notFn(s) : s))));
+      out.push(mk(op, args.map((s, j) => (neg.includes(j) ? notFn(s) : s))));
     }
   }
   return out;
 }
+
+registerRewrite('Xor', 'And', (args) => andFn(...xorClauses(args, 0)));
+registerRewrite('Xor', 'Or', (args) => orFn(...xorClauses(args, (args.length + 1) % 2, 'And')));
+registerRewrite('Or', 'Nand', (args) => notFn(andFn(...args.map(notFn))));
+registerRewrite('And', 'Nor', (args) => notFn(orFn(...args.map(notFn))));
 
 /** The to_nnf method of each boolean class. */
 function nnf(e: Expr, simplify: boolean): Expr {
