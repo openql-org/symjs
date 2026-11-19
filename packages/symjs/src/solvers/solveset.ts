@@ -514,12 +514,13 @@ function excludeFinitePoles(system: readonly Expr[], symbols: readonly Sym[], so
 /** SymPy substitution: extend known assignments by solving the remaining system. */
 export function substitution(
   system: readonly ExprLike[],
-  symbols: readonly Sym[],
+  symbols: readonly Expr[],
   result: readonly ReadonlyMap<Sym, ExprLike>[] = [new Map()],
   _knownSymbols: readonly Sym[] = [],
   exclude: readonly ExprLike[] = [],
-  allSymbols: readonly Sym[] = symbols,
+  allSymbols?: readonly Sym[],
 ): Expr[][] {
+  if (!symbols.every(v => v instanceof Sym)) throw new RangeError('substitution: unknowns must be symbols');
   if (system.length && !symbols.length && !result.some((known) => known.size)) throw new RangeError('substitution: at least one unknown is required');
   const out: Expr[][] = [];
   for (const known of result) {
@@ -531,7 +532,7 @@ export function substitution(
     for (const solution of solutions) {
       const assignments: [Expr, Expr][] = [...entries, ...free.map((v, i): [Expr, Expr] => [v, at(solution, i)])];
       if (exclude.some((e) => expand(subs(sympify(e), assignments)).equals(S.Zero))) continue;
-      out.push(allSymbols.map((v) => {
+      out.push((allSymbols ?? symbols).map((v) => {
         const value = assignments.find(([k]) => k.equals(v))?.[1] ?? v;
         const poles = system.flatMap((equation) => [...denoms(asEquation(equation), v)])
           .filter((d) => d.freeSymbols().size === 1 && d.has(v));

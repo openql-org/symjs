@@ -2307,11 +2307,11 @@ describe("sympy/functions/elementary/tests/test_hyperbolic.py", () => {
   });
   it("test_sinh:75", () => {
     const k = new Sym('k', { integer: true });
-    expect(equivalent(sympyStr(fn('sinh', [new Mul([pi, I, k])], { evaluate: true })), '0', [k], { fn: 'sinh', input: 'I*pi*k' })).toBe(true);
+    expect(sympyStr(fn('sinh', [new Mul([pi, I, k])], { evaluate: true }))).toBe('0');
   });
   it("test_sinh:76", () => {
     const k = new Sym('k', { integer: true });
-    expect(equivalent(sympyStr(fn('sinh', [new Mul([Rational.of(17n, 1n, { gcd: 1n }), pi, I, k])], { evaluate: true })), '0', [k], { fn: 'sinh', input: '17*I*pi*k' })).toBe(true);
+    expect(sympyStr(fn('sinh', [new Mul([Rational.of(17n, 1n, { gcd: 1n }), pi, I, k])], { evaluate: true }))).toBe('0');
   });
   it("test_sinh:78", () => {
     const k = new Sym('k', { integer: true });
@@ -2454,11 +2454,11 @@ describe("sympy/functions/elementary/tests/test_hyperbolic.py", () => {
   });
   it("test_cosh:161", () => {
     const k = new Sym('k', { integer: true });
-    expect(equivalent(sympyStr(fn('cosh', [new Mul([pi, I, k])], { evaluate: true })), '(-1)**k', [k], { fn: 'cosh', input: 'I*pi*k' })).toBe(true);
+    expect(sympyStr(fn('cosh', [new Mul([pi, I, k])], { evaluate: true }))).toBe('(-1)**k');
   });
   it("test_cosh:162", () => {
     const k = new Sym('k', { integer: true });
-    expect(equivalent(sympyStr(fn('cosh', [new Mul([Rational.of(17n, 1n, { gcd: 1n }), pi, I, k])], { evaluate: true })), '(-1)**k', [k], { fn: 'cosh', input: '17*I*pi*k' })).toBe(true);
+    expect(sympyStr(fn('cosh', [new Mul([Rational.of(17n, 1n, { gcd: 1n }), pi, I, k])], { evaluate: true }))).toBe('(-1)**k');
   });
   it("test_cosh:164", () => {
     const k = new Sym('k', { integer: true });
@@ -2963,11 +2963,11 @@ describe("sympy/functions/elementary/tests/test_hyperbolic.py", () => {
   });
   it("test_sech:483", () => {
     const k = new Sym('k', { integer: true });
-    expect(equivalent(sympyStr(fn('sech', [new Mul([pi, I, k])], { evaluate: true })), '(-1)**(-k)', [k], { fn: 'sech', input: 'I*pi*k' })).toBe(true);
+    expect(sympyStr(fn('sech', [new Mul([pi, I, k])], { evaluate: true }))).toBe('(-1)**(-k)');
   });
   it("test_sech:484", () => {
     const k = new Sym('k', { integer: true });
-    expect(equivalent(sympyStr(fn('sech', [new Mul([Rational.of(17n, 1n, { gcd: 1n }), pi, I, k])], { evaluate: true })), '(-1)**(-k)', [k], { fn: 'sech', input: '17*I*pi*k' })).toBe(true);
+    expect(sympyStr(fn('sech', [new Mul([Rational.of(17n, 1n, { gcd: 1n }), pi, I, k])], { evaluate: true }))).toBe('(-1)**(-k)');
   });
   it("test_sech:486", () => {
     const n = new Sym('n', { positive: true });
@@ -5047,7 +5047,7 @@ describe("sympy/functions/elementary/tests/test_trigonometric.py", () => {
   });
   it("test_sin:100", () => {
     const k = new Sym('k', { integer: true });
-    expect(equivalent(sympyStr(fn('sin', [new Mul([pi, k])], { evaluate: true })), '0', [k], { fn: 'sin', input: 'pi*k' })).toBe(true);
+    expect(sympyStr(fn('sin', [new Mul([pi, k])], { evaluate: true }))).toBe('0');
   });
   it("test_sin:101", () => {
     const k = new Sym('k', { integer: true });
@@ -5140,11 +5140,11 @@ describe("sympy/functions/elementary/tests/test_trigonometric.py", () => {
   });
   it("test_sin:142", () => {
     const k = new Sym('k', { integer: true });
-    expect(equivalent(sympyStr(fn('sin', [new Mul([pi, k])], { evaluate: true })), '0', [k], { fn: 'sin', input: 'pi*k' })).toBe(true);
+    expect(sympyStr(fn('sin', [new Mul([pi, k])], { evaluate: true }))).toBe('0');
   });
   it("test_sin:143", () => {
     const k = new Sym('k', { integer: true });
-    expect(equivalent(sympyStr(fn('sin', [new Mul([Rational.of(17n, 1n, { gcd: 1n }), pi, k])], { evaluate: true })), '0', [k], { fn: 'sin', input: '17*pi*k' })).toBe(true);
+    expect(sympyStr(fn('sin', [new Mul([Rational.of(17n, 1n, { gcd: 1n }), pi, k])], { evaluate: true }))).toBe('0');
   });
   it("test_sin:144", () => {
     const k = new Sym('k', { integer: true });
@@ -10437,11 +10437,11 @@ describe("sympy/functions/elementary/tests/test_trigonometric.py", () => {
   });
   it("test_cos:393", () => {
     const k = new Sym('k', { integer: true });
-    expect(equivalent(sympyStr(fn('cos', [new Mul([pi, k])], { evaluate: true })), '(-1)**k', [k], { fn: 'cos', input: 'pi*k' })).toBe(true);
+    expect(sympyStr(fn('cos', [new Mul([pi, k])], { evaluate: true }))).toBe('(-1)**k');
   });
   it("test_cos:394", () => {
     const k = new Sym('k', { integer: true });
-    expect(equivalent(sympyStr(fn('cos', [new Mul([Rational.of(2n, 1n, { gcd: 1n }), pi, k])], { evaluate: true })), '1', [k], { fn: 'cos', input: '2*pi*k' })).toBe(true);
+    expect(sympyStr(fn('cos', [new Mul([Rational.of(2n, 1n, { gcd: 1n }), pi, k])], { evaluate: true }))).toBe('1');
   });
   it("test_cos:395", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
@@ -13386,11 +13386,11 @@ describe("sympy/functions/elementary/tests/test_trigonometric.py", () => {
   });
   it("test_issue_4420:1416", () => {
     const i = new Sym('i', { integer: true });
-    expect(equivalent(sympyStr(fn('cos', [new Mul([Rational.of(4n, 1n, { gcd: 1n }), pi, i])], { evaluate: true })), '1', [i], { fn: 'cos', input: '4*pi*i' })).toBe(true);
+    expect(sympyStr(fn('cos', [new Mul([Rational.of(4n, 1n, { gcd: 1n }), pi, i])], { evaluate: true }))).toBe('1');
   });
   it("test_issue_4420:1417", () => {
     const i = new Sym('i', { integer: true });
-    expect(equivalent(sympyStr(fn('sin', [new Mul([Rational.of(4n, 1n, { gcd: 1n }), pi, i])], { evaluate: true })), '0', [i], { fn: 'sin', input: '4*pi*i' })).toBe(true);
+    expect(sympyStr(fn('sin', [new Mul([Rational.of(4n, 1n, { gcd: 1n }), pi, i])], { evaluate: true }))).toBe('0');
   });
   it("test_issue_4420:1418", () => {
     const i = new Sym('i', { integer: true });
@@ -13398,11 +13398,11 @@ describe("sympy/functions/elementary/tests/test_trigonometric.py", () => {
   });
   it("test_issue_4420:1421", () => {
     const i = new Sym('i', { integer: true });
-    expect(equivalent(sympyStr(fn('cos', [new Mul([Rational.of(3n, 1n, { gcd: 1n }), pi, i])], { evaluate: true })), '(-1)**i', [i], { fn: 'cos', input: '3*pi*i' })).toBe(true);
+    expect(sympyStr(fn('cos', [new Mul([Rational.of(3n, 1n, { gcd: 1n }), pi, i])], { evaluate: true }))).toBe('(-1)**i');
   });
   it("test_issue_4420:1422", () => {
     const i = new Sym('i', { integer: true });
-    expect(equivalent(sympyStr(fn('sin', [new Mul([Rational.of(3n, 1n, { gcd: 1n }), pi, i])], { evaluate: true })), '0', [i], { fn: 'sin', input: '3*pi*i' })).toBe(true);
+    expect(sympyStr(fn('sin', [new Mul([Rational.of(3n, 1n, { gcd: 1n }), pi, i])], { evaluate: true }))).toBe('0');
   });
   it("test_issue_4420:1423", () => {
     const i = new Sym('i', { integer: true });
@@ -13410,11 +13410,11 @@ describe("sympy/functions/elementary/tests/test_trigonometric.py", () => {
   });
   it("test_issue_4420:1426", () => {
     const i = new Sym('i', { integer: true });
-    expect(equivalent(sympyStr(fn('cos', [new Mul([new Float({ man: 1n, exp: 2n }, 53), pi, i])], { evaluate: true })), '1', [i], { fn: 'cos', input: '4.0*pi*i' })).toBe(true);
+    expect(sympyStr(fn('cos', [new Mul([new Float({ man: 1n, exp: 2n }, 53), pi, i])], { evaluate: true }))).toBe('1');
   });
   it("test_issue_4420:1427", () => {
     const i = new Sym('i', { integer: true });
-    expect(equivalent(sympyStr(fn('sin', [new Mul([new Float({ man: 1n, exp: 2n }, 53), pi, i])], { evaluate: true })), '0', [i], { fn: 'sin', input: '4.0*pi*i' })).toBe(true);
+    expect(sympyStr(fn('sin', [new Mul([new Float({ man: 1n, exp: 2n }, 53), pi, i])], { evaluate: true }))).toBe('0');
   });
   it("test_issue_4420:1428", () => {
     const i = new Sym('i', { integer: true });
@@ -13422,11 +13422,11 @@ describe("sympy/functions/elementary/tests/test_trigonometric.py", () => {
   });
   it("test_issue_4420:1431", () => {
     const i = new Sym('i', { integer: true });
-    expect(equivalent(sympyStr(fn('cos', [new Mul([new Float({ man: 3n, exp: 0n }, 53), pi, i])], { evaluate: true })), '(-1)**i', [i], { fn: 'cos', input: '3.0*pi*i' })).toBe(true);
+    expect(sympyStr(fn('cos', [new Mul([new Float({ man: 3n, exp: 0n }, 53), pi, i])], { evaluate: true }))).toBe('(-1)**i');
   });
   it("test_issue_4420:1432", () => {
     const i = new Sym('i', { integer: true });
-    expect(equivalent(sympyStr(fn('sin', [new Mul([new Float({ man: 3n, exp: 0n }, 53), pi, i])], { evaluate: true })), '0', [i], { fn: 'sin', input: '3.0*pi*i' })).toBe(true);
+    expect(sympyStr(fn('sin', [new Mul([new Float({ man: 3n, exp: 0n }, 53), pi, i])], { evaluate: true }))).toBe('0');
   });
   it("test_issue_4420:1433", () => {
     const i = new Sym('i', { integer: true });
@@ -13450,11 +13450,11 @@ describe("sympy/functions/elementary/tests/test_trigonometric.py", () => {
   });
   it("test_issue_4420:1442", () => {
     const e = new Sym('e', { even: true });
-    expect(equivalent(sympyStr(fn('cos', [new Mul([Rational.of(4n, 1n, { gcd: 1n }), pi, e])], { evaluate: true })), '1', [e], { fn: 'cos', input: '4*pi*e' })).toBe(true);
+    expect(sympyStr(fn('cos', [new Mul([Rational.of(4n, 1n, { gcd: 1n }), pi, e])], { evaluate: true }))).toBe('1');
   });
   it("test_issue_4420:1443", () => {
     const e = new Sym('e', { even: true });
-    expect(equivalent(sympyStr(fn('sin', [new Mul([Rational.of(4n, 1n, { gcd: 1n }), pi, e])], { evaluate: true })), '0', [e], { fn: 'sin', input: '4*pi*e' })).toBe(true);
+    expect(sympyStr(fn('sin', [new Mul([Rational.of(4n, 1n, { gcd: 1n }), pi, e])], { evaluate: true }))).toBe('0');
   });
   it("test_issue_4420:1444", () => {
     const e = new Sym('e', { even: true });
@@ -13462,11 +13462,11 @@ describe("sympy/functions/elementary/tests/test_trigonometric.py", () => {
   });
   it("test_issue_4420:1447", () => {
     const e = new Sym('e', { even: true });
-    expect(equivalent(sympyStr(fn('cos', [new Mul([Rational.of(3n, 1n, { gcd: 1n }), pi, e])], { evaluate: true })), '1', [e], { fn: 'cos', input: '3*pi*e' })).toBe(true);
+    expect(sympyStr(fn('cos', [new Mul([Rational.of(3n, 1n, { gcd: 1n }), pi, e])], { evaluate: true }))).toBe('1');
   });
   it("test_issue_4420:1448", () => {
     const e = new Sym('e', { even: true });
-    expect(equivalent(sympyStr(fn('sin', [new Mul([Rational.of(3n, 1n, { gcd: 1n }), pi, e])], { evaluate: true })), '0', [e], { fn: 'sin', input: '3*pi*e' })).toBe(true);
+    expect(sympyStr(fn('sin', [new Mul([Rational.of(3n, 1n, { gcd: 1n }), pi, e])], { evaluate: true }))).toBe('0');
   });
   it("test_issue_4420:1449", () => {
     const e = new Sym('e', { even: true });
@@ -13474,11 +13474,11 @@ describe("sympy/functions/elementary/tests/test_trigonometric.py", () => {
   });
   it("test_issue_4420:1452", () => {
     const e = new Sym('e', { even: true });
-    expect(equivalent(sympyStr(fn('cos', [new Mul([new Float({ man: 1n, exp: 2n }, 53), pi, e])], { evaluate: true })), '1', [e], { fn: 'cos', input: '4.0*pi*e' })).toBe(true);
+    expect(sympyStr(fn('cos', [new Mul([new Float({ man: 1n, exp: 2n }, 53), pi, e])], { evaluate: true }))).toBe('1');
   });
   it("test_issue_4420:1453", () => {
     const e = new Sym('e', { even: true });
-    expect(equivalent(sympyStr(fn('sin', [new Mul([new Float({ man: 1n, exp: 2n }, 53), pi, e])], { evaluate: true })), '0', [e], { fn: 'sin', input: '4.0*pi*e' })).toBe(true);
+    expect(sympyStr(fn('sin', [new Mul([new Float({ man: 1n, exp: 2n }, 53), pi, e])], { evaluate: true }))).toBe('0');
   });
   it("test_issue_4420:1454", () => {
     const e = new Sym('e', { even: true });
@@ -13486,11 +13486,11 @@ describe("sympy/functions/elementary/tests/test_trigonometric.py", () => {
   });
   it("test_issue_4420:1457", () => {
     const e = new Sym('e', { even: true });
-    expect(equivalent(sympyStr(fn('cos', [new Mul([new Float({ man: 3n, exp: 0n }, 53), pi, e])], { evaluate: true })), '1', [e], { fn: 'cos', input: '3.0*pi*e' })).toBe(true);
+    expect(sympyStr(fn('cos', [new Mul([new Float({ man: 3n, exp: 0n }, 53), pi, e])], { evaluate: true }))).toBe('1');
   });
   it("test_issue_4420:1458", () => {
     const e = new Sym('e', { even: true });
-    expect(equivalent(sympyStr(fn('sin', [new Mul([new Float({ man: 3n, exp: 0n }, 53), pi, e])], { evaluate: true })), '0', [e], { fn: 'sin', input: '3.0*pi*e' })).toBe(true);
+    expect(sympyStr(fn('sin', [new Mul([new Float({ man: 3n, exp: 0n }, 53), pi, e])], { evaluate: true }))).toBe('0');
   });
   it("test_issue_4420:1459", () => {
     const e = new Sym('e', { even: true });
@@ -13514,11 +13514,11 @@ describe("sympy/functions/elementary/tests/test_trigonometric.py", () => {
   });
   it("test_issue_4420:1467", () => {
     const o = new Sym('o', { odd: true });
-    expect(equivalent(sympyStr(fn('cos', [new Mul([Rational.of(4n, 1n, { gcd: 1n }), pi, o])], { evaluate: true })), '1', [o], { fn: 'cos', input: '4*pi*o' })).toBe(true);
+    expect(sympyStr(fn('cos', [new Mul([Rational.of(4n, 1n, { gcd: 1n }), pi, o])], { evaluate: true }))).toBe('1');
   });
   it("test_issue_4420:1468", () => {
     const o = new Sym('o', { odd: true });
-    expect(equivalent(sympyStr(fn('sin', [new Mul([Rational.of(4n, 1n, { gcd: 1n }), pi, o])], { evaluate: true })), '0', [o], { fn: 'sin', input: '4*pi*o' })).toBe(true);
+    expect(sympyStr(fn('sin', [new Mul([Rational.of(4n, 1n, { gcd: 1n }), pi, o])], { evaluate: true }))).toBe('0');
   });
   it("test_issue_4420:1469", () => {
     const o = new Sym('o', { odd: true });
@@ -13526,11 +13526,11 @@ describe("sympy/functions/elementary/tests/test_trigonometric.py", () => {
   });
   it("test_issue_4420:1472", () => {
     const o = new Sym('o', { odd: true });
-    expect(equivalent(sympyStr(fn('cos', [new Mul([Rational.of(3n, 1n, { gcd: 1n }), pi, o])], { evaluate: true })), '-1', [o], { fn: 'cos', input: '3*pi*o' })).toBe(true);
+    expect(sympyStr(fn('cos', [new Mul([Rational.of(3n, 1n, { gcd: 1n }), pi, o])], { evaluate: true }))).toBe('-1');
   });
   it("test_issue_4420:1473", () => {
     const o = new Sym('o', { odd: true });
-    expect(equivalent(sympyStr(fn('sin', [new Mul([Rational.of(3n, 1n, { gcd: 1n }), pi, o])], { evaluate: true })), '0', [o], { fn: 'sin', input: '3*pi*o' })).toBe(true);
+    expect(sympyStr(fn('sin', [new Mul([Rational.of(3n, 1n, { gcd: 1n }), pi, o])], { evaluate: true }))).toBe('0');
   });
   it("test_issue_4420:1474", () => {
     const o = new Sym('o', { odd: true });
@@ -13538,11 +13538,11 @@ describe("sympy/functions/elementary/tests/test_trigonometric.py", () => {
   });
   it("test_issue_4420:1477", () => {
     const o = new Sym('o', { odd: true });
-    expect(equivalent(sympyStr(fn('cos', [new Mul([new Float({ man: 1n, exp: 2n }, 53), pi, o])], { evaluate: true })), '1', [o], { fn: 'cos', input: '4.0*pi*o' })).toBe(true);
+    expect(sympyStr(fn('cos', [new Mul([new Float({ man: 1n, exp: 2n }, 53), pi, o])], { evaluate: true }))).toBe('1');
   });
   it("test_issue_4420:1478", () => {
     const o = new Sym('o', { odd: true });
-    expect(equivalent(sympyStr(fn('sin', [new Mul([new Float({ man: 1n, exp: 2n }, 53), pi, o])], { evaluate: true })), '0', [o], { fn: 'sin', input: '4.0*pi*o' })).toBe(true);
+    expect(sympyStr(fn('sin', [new Mul([new Float({ man: 1n, exp: 2n }, 53), pi, o])], { evaluate: true }))).toBe('0');
   });
   it("test_issue_4420:1479", () => {
     const o = new Sym('o', { odd: true });
@@ -13550,11 +13550,11 @@ describe("sympy/functions/elementary/tests/test_trigonometric.py", () => {
   });
   it("test_issue_4420:1482", () => {
     const o = new Sym('o', { odd: true });
-    expect(equivalent(sympyStr(fn('cos', [new Mul([new Float({ man: 3n, exp: 0n }, 53), pi, o])], { evaluate: true })), '-1', [o], { fn: 'cos', input: '3.0*pi*o' })).toBe(true);
+    expect(sympyStr(fn('cos', [new Mul([new Float({ man: 3n, exp: 0n }, 53), pi, o])], { evaluate: true }))).toBe('-1');
   });
   it("test_issue_4420:1483", () => {
     const o = new Sym('o', { odd: true });
-    expect(equivalent(sympyStr(fn('sin', [new Mul([new Float({ man: 3n, exp: 0n }, 53), pi, o])], { evaluate: true })), '0', [o], { fn: 'sin', input: '3.0*pi*o' })).toBe(true);
+    expect(sympyStr(fn('sin', [new Mul([new Float({ man: 3n, exp: 0n }, 53), pi, o])], { evaluate: true }))).toBe('0');
   });
   it("test_issue_4420:1484", () => {
     const o = new Sym('o', { odd: true });

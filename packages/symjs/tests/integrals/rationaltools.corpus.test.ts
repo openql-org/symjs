@@ -208,39 +208,39 @@ describe("sympy/integrals/tests/test_rationaltools.py", () => {
   it("test_issue_5981:142", () => {
     const u = new Sym('u');
     const v1 = u;
-    expect(sympyStr(integrate(new Pow(new Add([Rational.of(1n, 1n, { gcd: 1n }), new Pow(v1, Rational.of(2n, 1n, { gcd: 1n }))]), Rational.of(-1n, 1n, { gcd: 1n })), v1, undefined, { conds: 'piecewise' }))).toBe('atan(u)');
+    expect(sympyStr(integrate(new Pow(new Add([Rational.of(1n, 1n, { gcd: 1n }), new Pow(v1, Rational.of(2n, 1n, { gcd: 1n }))]), Rational.of(-1n, 1n, { gcd: 1n })), v1, undefined, { conds: 'piecewise', heurisch: false }))).toBe('atan(u)');
   });
   it("test_issue_10488:146", () => {
     const x = new Sym('x', { positive: true });
     const b = new Sym('b', { positive: true });
     const a = new Sym('a', { positive: true });
-    expect(sympyStr(integrate(new Mul([x, new Pow(new Add([b, new Mul([a, x])]), Rational.of(-1n, 1n, { gcd: 1n }))]), x, undefined, { conds: 'piecewise' }))).toBe('x/a - b*log(a*x + b)/a**2');
+    expect(sympyStr(integrate(new Mul([x, new Pow(new Add([b, new Mul([a, x])]), Rational.of(-1n, 1n, { gcd: 1n }))]), x, undefined, { conds: 'piecewise', heurisch: false }))).toBe('x/a - b*log(a*x + b)/a**2');
   });
   it("test_issues_8246_12050_13501_14080:151", () => {
     const x = new Sym('x');
     const a = new Sym('a', { nonzero: true });
-    expect(sympyStr(integrate(new Mul([a, new Pow(new Add([new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), new Pow(a, Rational.of(2n, 1n, { gcd: 1n }))]), Rational.of(-1n, 1n, { gcd: 1n }))]), x, undefined, { conds: 'piecewise' }))).toBe('atan(x/a)');
+    expect(sympyStr(integrate(new Mul([a, new Pow(new Add([new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), new Pow(a, Rational.of(2n, 1n, { gcd: 1n }))]), Rational.of(-1n, 1n, { gcd: 1n }))]), x, undefined, { conds: 'piecewise', heurisch: false }))).toBe('atan(x/a)');
   });
   it("test_issues_8246_12050_13501_14080:152", () => {
     const x = new Sym('x');
     const a = new Sym('a', { nonzero: true });
-    expect(sympyStr(integrate(new Pow(new Add([new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), new Pow(a, Rational.of(2n, 1n, { gcd: 1n }))]), Rational.of(-1n, 1n, { gcd: 1n })), x, undefined, { conds: 'piecewise' }))).toBe('atan(x/a)/a');
+    expect(sympyStr(integrate(new Pow(new Add([new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), new Pow(a, Rational.of(2n, 1n, { gcd: 1n }))]), Rational.of(-1n, 1n, { gcd: 1n })), x, undefined, { conds: 'piecewise', heurisch: false }))).toBe('atan(x/a)/a');
   });
   it("test_issues_8246_12050_13501_14080:153", () => {
     const x = new Sym('x');
     const a = new Sym('a', { nonzero: true });
-    expect(sympyStr(integrate(new Pow(new Add([Rational.of(1n, 1n, { gcd: 1n }), new Mul([new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), new Pow(a, Rational.of(2n, 1n, { gcd: 1n }))])]), Rational.of(-1n, 1n, { gcd: 1n })), x, undefined, { conds: 'piecewise' }))).toBe('atan(a*x)/a');
+    expect(sympyStr(integrate(new Pow(new Add([Rational.of(1n, 1n, { gcd: 1n }), new Mul([new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), new Pow(a, Rational.of(2n, 1n, { gcd: 1n }))])]), Rational.of(-1n, 1n, { gcd: 1n })), x, undefined, { conds: 'piecewise', heurisch: false }))).toBe('atan(a*x)/a');
   });
   it("test_issue_6308:158", () => {
     const x = new Sym('x');
     const a0 = new Sym('a0', { real: true });
     const k = new Sym('k', { real: true });
-    expect(sympyStr(integrate(new Mul([new Pow(new Add([Rational.of(1n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), new Pow(a0, Rational.of(2n, 1n, { gcd: 1n }))]), Rational.of(-1n, 1n, { gcd: 1n })), new Add([Rational.of(1n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), new Pow(k, Rational.of(2n, 1n, { gcd: 1n }))])])]), x, undefined, { conds: 'piecewise' }))).toBe('x - (a0**2 + k**2)*atan(x/sqrt(a0**2 + 1))/sqrt(a0**2 + 1)');
+    expect(sympyStr(integrate(new Mul([new Pow(new Add([Rational.of(1n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), new Pow(a0, Rational.of(2n, 1n, { gcd: 1n }))]), Rational.of(-1n, 1n, { gcd: 1n })), new Add([Rational.of(1n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), new Pow(k, Rational.of(2n, 1n, { gcd: 1n }))])])]), x, undefined, { conds: 'piecewise', heurisch: false }))).toBe('x - (a0**2 + k**2)*atan(x/sqrt(a0**2 + 1))/sqrt(a0**2 + 1)');
   });
   it("test_issue_5907:164", () => {
     const x = new Sym('x');
     const a = new Sym('a', { nonzero: true });
-    expect(sympyStr(integrate(new Pow(new Add([new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), new Pow(a, Rational.of(2n, 1n, { gcd: 1n }))]), Rational.of(-2n, 1n, { gcd: 1n })), x, undefined, { conds: 'piecewise' }))).toBe('x/(2*a**4 + 2*a**2*x**2) + atan(x/a)/(2*a**3)');
+    expect(sympyStr(integrate(new Pow(new Add([new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), new Pow(a, Rational.of(2n, 1n, { gcd: 1n }))]), Rational.of(-2n, 1n, { gcd: 1n })), x, undefined, { conds: 'piecewise', heurisch: false }))).toBe('x/(2*a**4 + 2*a**2*x**2) + atan(x/a)/(2*a**3)');
   });
   it("test_log_to_atan:171", () => {
     const x = new Sym('x');

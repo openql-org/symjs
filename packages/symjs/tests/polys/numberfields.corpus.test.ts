@@ -925,8 +925,8 @@ describe("sympy/polys/numberfields/tests/test_numbers.py", () => {
     const alpha = new Sym('alpha');
     expect(sympyStr([new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), [Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })], alpha], 'tt')).toBe('(sqrt(2), (1, 0), alpha)');
   });
-  it.fails("test_AlgebraicNumber:151", () => {
-    expect(sympyStr([new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), [Rational.of(2n, 1n, { gcd: 1n }), Rational.of(5n, 1n, { gcd: 1n })]], 'tt')).toBe('(sqrt(2), (1, 2, 3))');
+  it("test_AlgebraicNumber:151", () => {
+    expect(sympyStr([new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), [Rational.of(1n, 1n, { gcd: 1n }), Rational.of(2n, 1n, { gcd: 1n }), Rational.of(3n, 1n, { gcd: 1n })]], 'tt')).toBe('(sqrt(2), (1, 2, 3))');
   });
   // the printed result differs (false)
   //   assert a == b

@@ -470,7 +470,7 @@ describe("sympy/concrete/tests/test_delta.py", () => {
     const i = new Sym('i', { integer: true, finite: true });
     const j = new Sym('j', { integer: true, finite: true });
     const k = new Sym('k', { integer: true, finite: true });
-    expect(equivalent(sympyStr(deltaproduct(new Mul([x, new Add([y, KroneckerDelta(i, j)])]), [j, 1, k])), '(x*y)**k + Piecewise(((x*y)**(-1)*(x*y)**i*x*(x*y)**k*(x*y)**(-i), (i >= 1) & (i <= k)), (0, True))', [x, y, i, j, k], { fn: 'deltaproduct', input: 'x*(KroneckerDelta(i, j) + y)' })).toBe(true);
+    expect(sympyStr(deltaproduct(new Mul([x, new Add([y, KroneckerDelta(i, j)])]), [j, 1, k]))).toBe('(x*y)**k + Piecewise(((x*y)**(-1)*(x*y)**i*x*(x*y)**k*(x*y)**(-i), (i >= 1) & (i <= k)), (0, True))');
   });
   it("test_deltaproduct_mul_x_add_y_kd:144", () => {
     const x = new Sym('x', { commutative: false });
@@ -478,7 +478,7 @@ describe("sympy/concrete/tests/test_delta.py", () => {
     const i = new Sym('i', { integer: true, finite: true });
     const j = new Sym('j', { integer: true, finite: true });
     const k = new Sym('k', { integer: true, finite: true });
-    expect(equivalent(sympyStr(deltaproduct(new Mul([x, new Add([y, KroneckerDelta(i, j)])]), [j, k, 3])), '(x*y)**4*(x*y)**(-k) + Piecewise(((x*y)**i*(x*y)**(-k)*x*(x*y)**3*(x*y)**(-i), (i >= k) & (i <= 3)), (0, True))', [x, y, i, j, k], { fn: 'deltaproduct', input: 'x*(KroneckerDelta(i, j) + y)' })).toBe(true);
+    expect(sympyStr(deltaproduct(new Mul([x, new Add([y, KroneckerDelta(i, j)])]), [j, k, 3]))).toBe('(x*y)**4*(x*y)**(-k) + Piecewise(((x*y)**i*(x*y)**(-k)*x*(x*y)**3*(x*y)**(-i), (i >= k) & (i <= 3)), (0, True))');
   });
   it("test_deltaproduct_mul_x_add_y_kd:149", () => {
     const x = new Sym('x', { commutative: false });
@@ -487,7 +487,7 @@ describe("sympy/concrete/tests/test_delta.py", () => {
     const j = new Sym('j', { integer: true, finite: true });
     const k = new Sym('k', { integer: true, finite: true });
     const l = new Sym('l', { integer: true, finite: true });
-    expect(equivalent(sympyStr(deltaproduct(new Mul([x, new Add([y, KroneckerDelta(i, j)])]), [j, k, l])), 'x*y*(x*y)**l*(x*y)**(-k) + Piecewise(((x*y)**i*(x*y)**(-k)*x*(x*y)**l*(x*y)**(-i), (i >= k) & (i <= l)), (0, True))', [x, y, i, j, k, l], { fn: 'deltaproduct', input: 'x*(KroneckerDelta(i, j) + y)' })).toBe(true);
+    expect(sympyStr(deltaproduct(new Mul([x, new Add([y, KroneckerDelta(i, j)])]), [j, k, l]))).toBe('x*y*(x*y)**l*(x*y)**(-k) + Piecewise(((x*y)**i*(x*y)**(-k)*x*(x*y)**l*(x*y)**(-i), (i >= k) & (i <= l)), (0, True))');
   });
   it("test_deltaproduct_mul_x_add_y_twokd:157", () => {
     const x = new Sym('x', { commutative: false });
@@ -523,7 +523,7 @@ describe("sympy/concrete/tests/test_delta.py", () => {
     const i = new Sym('i', { integer: true, finite: true });
     const j = new Sym('j', { integer: true, finite: true });
     const k = new Sym('k', { integer: true, finite: true });
-    expect(equivalent(sympyStr(deltaproduct(new Mul([x, new Add([y, new Mul([Rational.of(2n, 1n, { gcd: 1n }), KroneckerDelta(i, j)])])]), [j, 1, k])), '(x*y)**k + Piecewise((2*(x*y)**(-1)*(x*y)**i*x*(x*y)**k*(x*y)**(-i), (i >= 1) & (i <= k)), (0, True))', [x, y, i, j, k], { fn: 'deltaproduct', input: 'x*(2*KroneckerDelta(i, j) + y)' })).toBe(true);
+    expect(sympyStr(deltaproduct(new Mul([x, new Add([y, new Mul([Rational.of(2n, 1n, { gcd: 1n }), KroneckerDelta(i, j)])])]), [j, 1, k]))).toBe('(x*y)**k + Piecewise((2*(x*y)**(-1)*(x*y)**i*x*(x*y)**k*(x*y)**(-i), (i >= 1) & (i <= k)), (0, True))');
   });
   it("test_deltaproduct_mul_x_add_y_twokd:167", () => {
     const x = new Sym('x', { commutative: false });
@@ -531,7 +531,7 @@ describe("sympy/concrete/tests/test_delta.py", () => {
     const i = new Sym('i', { integer: true, finite: true });
     const j = new Sym('j', { integer: true, finite: true });
     const k = new Sym('k', { integer: true, finite: true });
-    expect(equivalent(sympyStr(deltaproduct(new Mul([x, new Add([y, new Mul([Rational.of(2n, 1n, { gcd: 1n }), KroneckerDelta(i, j)])])]), [j, k, 3])), '(x*y)**4*(x*y)**(-k) + Piecewise((2*(x*y)**i*(x*y)**(-k)*x*(x*y)**3*(x*y)**(-i), (i >= k) & (i <= 3)), (0, True))', [x, y, i, j, k], { fn: 'deltaproduct', input: 'x*(2*KroneckerDelta(i, j) + y)' })).toBe(true);
+    expect(sympyStr(deltaproduct(new Mul([x, new Add([y, new Mul([Rational.of(2n, 1n, { gcd: 1n }), KroneckerDelta(i, j)])])]), [j, k, 3]))).toBe('(x*y)**4*(x*y)**(-k) + Piecewise((2*(x*y)**i*(x*y)**(-k)*x*(x*y)**3*(x*y)**(-i), (i >= k) & (i <= 3)), (0, True))');
   });
   it("test_deltaproduct_mul_x_add_y_twokd:172", () => {
     const x = new Sym('x', { commutative: false });
@@ -540,7 +540,7 @@ describe("sympy/concrete/tests/test_delta.py", () => {
     const j = new Sym('j', { integer: true, finite: true });
     const k = new Sym('k', { integer: true, finite: true });
     const l = new Sym('l', { integer: true, finite: true });
-    expect(equivalent(sympyStr(deltaproduct(new Mul([x, new Add([y, new Mul([Rational.of(2n, 1n, { gcd: 1n }), KroneckerDelta(i, j)])])]), [j, k, l])), 'x*y*(x*y)**l*(x*y)**(-k) + Piecewise((2*(x*y)**i*(x*y)**(-k)*x*(x*y)**l*(x*y)**(-i), (i >= k) & (i <= l)), (0, True))', [x, y, i, j, k, l], { fn: 'deltaproduct', input: 'x*(2*KroneckerDelta(i, j) + y)' })).toBe(true);
+    expect(sympyStr(deltaproduct(new Mul([x, new Add([y, new Mul([Rational.of(2n, 1n, { gcd: 1n }), KroneckerDelta(i, j)])])]), [j, k, l]))).toBe('x*y*(x*y)**l*(x*y)**(-k) + Piecewise((2*(x*y)**i*(x*y)**(-k)*x*(x*y)**l*(x*y)**(-i), (i >= k) & (i <= l)), (0, True))');
   });
   it("test_deltaproduct_mul_add_x_y_add_y_kd:180", () => {
     const x = new Sym('x', { commutative: false });
@@ -576,7 +576,7 @@ describe("sympy/concrete/tests/test_delta.py", () => {
     const i = new Sym('i', { integer: true, finite: true });
     const j = new Sym('j', { integer: true, finite: true });
     const k = new Sym('k', { integer: true, finite: true });
-    expect(equivalent(sympyStr(deltaproduct(new Mul([new Add([x, y]), new Add([y, KroneckerDelta(i, j)])]), [j, 1, k])), '((x + y)*y)**k + Piecewise((((x + y)*y)**(-1)*((x + y)*y)**i*(x + y)*((x + y)*y)**k*((x + y)*y)**(-i), (i >= 1) & (i <= k)), (0, True))', [x, y, i, j, k], { fn: 'deltaproduct', input: '(x + y)*(KroneckerDelta(i, j) + y)' })).toBe(true);
+    expect(sympyStr(deltaproduct(new Mul([new Add([x, y]), new Add([y, KroneckerDelta(i, j)])]), [j, 1, k]))).toBe('((x + y)*y)**k + Piecewise((((x + y)*y)**(-1)*((x + y)*y)**i*(x + y)*((x + y)*y)**k*((x + y)*y)**(-i), (i >= 1) & (i <= k)), (0, True))');
   });
   it("test_deltaproduct_mul_add_x_y_add_y_kd:191", () => {
     const x = new Sym('x', { commutative: false });
@@ -584,7 +584,7 @@ describe("sympy/concrete/tests/test_delta.py", () => {
     const i = new Sym('i', { integer: true, finite: true });
     const j = new Sym('j', { integer: true, finite: true });
     const k = new Sym('k', { integer: true, finite: true });
-    expect(equivalent(sympyStr(deltaproduct(new Mul([new Add([x, y]), new Add([y, KroneckerDelta(i, j)])]), [j, k, 3])), '((x + y)*y)**4*((x + y)*y)**(-k) + Piecewise((((x + y)*y)**i*((x + y)*y)**(-k)*(x + y)*((x + y)*y)**3*((x + y)*y)**(-i), (i >= k) & (i <= 3)), (0, True))', [x, y, i, j, k], { fn: 'deltaproduct', input: '(x + y)*(KroneckerDelta(i, j) + y)' })).toBe(true);
+    expect(sympyStr(deltaproduct(new Mul([new Add([x, y]), new Add([y, KroneckerDelta(i, j)])]), [j, k, 3]))).toBe('((x + y)*y)**4*((x + y)*y)**(-k) + Piecewise((((x + y)*y)**i*((x + y)*y)**(-k)*(x + y)*((x + y)*y)**3*((x + y)*y)**(-i), (i >= k) & (i <= 3)), (0, True))');
   });
   it("test_deltaproduct_mul_add_x_y_add_y_kd:195", () => {
     const x = new Sym('x', { commutative: false });
@@ -593,7 +593,7 @@ describe("sympy/concrete/tests/test_delta.py", () => {
     const j = new Sym('j', { integer: true, finite: true });
     const k = new Sym('k', { integer: true, finite: true });
     const l = new Sym('l', { integer: true, finite: true });
-    expect(equivalent(sympyStr(deltaproduct(new Mul([new Add([x, y]), new Add([y, KroneckerDelta(i, j)])]), [j, k, l])), '(x + y)*y*((x + y)*y)**l*((x + y)*y)**(-k) + Piecewise((((x + y)*y)**i*((x + y)*y)**(-k)*(x + y)*((x + y)*y)**l*((x + y)*y)**(-i), (i >= k) & (i <= l)), (0, True))', [x, y, i, j, k, l], { fn: 'deltaproduct', input: '(x + y)*(KroneckerDelta(i, j) + y)' })).toBe(true);
+    expect(sympyStr(deltaproduct(new Mul([new Add([x, y]), new Add([y, KroneckerDelta(i, j)])]), [j, k, l]))).toBe('(x + y)*y*((x + y)*y)**l*((x + y)*y)**(-k) + Piecewise((((x + y)*y)**i*((x + y)*y)**(-k)*(x + y)*((x + y)*y)**l*((x + y)*y)**(-i), (i >= k) & (i <= l)), (0, True))');
   });
   it("test_deltaproduct_mul_add_x_kd_add_y_kd:202", () => {
     const x = new Sym('x', { commutative: false });
@@ -633,7 +633,7 @@ describe("sympy/concrete/tests/test_delta.py", () => {
     const k = new Sym('k', { integer: true, finite: true });
     const y = new Sym('y', { commutative: false });
     const j = new Sym('j', { integer: true, finite: true });
-    expect(equivalent(sympyStr(deltaproduct(new Mul([new Add([x, KroneckerDelta(i, k)]), new Add([y, KroneckerDelta(i, j)])]), [j, 1, k])), '((KroneckerDelta(i, k) + x)*y)**k + Piecewise((((KroneckerDelta(i, k) + x)*y)**(-1)*((KroneckerDelta(i, k) + x)*y)**i*(KroneckerDelta(i, k) + x)*((KroneckerDelta(i, k) + x)*y)**k*((KroneckerDelta(i, k) + x)*y)**(-i), (i >= 1) & (i <= k)), (0, True))', [x, i, k, y, j], { fn: 'deltaproduct', input: '(KroneckerDelta(i, k) + x)*(KroneckerDelta(i, j) + y)' })).toBe(true);
+    expect(sympyStr(deltaproduct(new Mul([new Add([x, KroneckerDelta(i, k)]), new Add([y, KroneckerDelta(i, j)])]), [j, 1, k]))).toBe('((KroneckerDelta(i, k) + x)*y)**k + Piecewise((((KroneckerDelta(i, k) + x)*y)**(-1)*((KroneckerDelta(i, k) + x)*y)**i*(KroneckerDelta(i, k) + x)*((KroneckerDelta(i, k) + x)*y)**k*((KroneckerDelta(i, k) + x)*y)**(-i), (i >= 1) & (i <= k)), (0, True))');
   });
   it("test_deltaproduct_mul_add_x_kd_add_y_kd:218", () => {
     const x = new Sym('x', { commutative: false });
@@ -641,7 +641,7 @@ describe("sympy/concrete/tests/test_delta.py", () => {
     const k = new Sym('k', { integer: true, finite: true });
     const y = new Sym('y', { commutative: false });
     const j = new Sym('j', { integer: true, finite: true });
-    expect(equivalent(sympyStr(deltaproduct(new Mul([new Add([x, KroneckerDelta(i, k)]), new Add([y, KroneckerDelta(i, j)])]), [j, k, 3])), '((KroneckerDelta(i, k) + x)*y)**4*((KroneckerDelta(i, k) + x)*y)**(-k) + Piecewise((((KroneckerDelta(i, k) + x)*y)**i*((KroneckerDelta(i, k) + x)*y)**(-k)*(KroneckerDelta(i, k) + x)*((KroneckerDelta(i, k) + x)*y)**3*((KroneckerDelta(i, k) + x)*y)**(-i), (i >= k) & (i <= 3)), (0, True))', [x, i, k, y, j], { fn: 'deltaproduct', input: '(KroneckerDelta(i, k) + x)*(KroneckerDelta(i, j) + y)' })).toBe(true);
+    expect(sympyStr(deltaproduct(new Mul([new Add([x, KroneckerDelta(i, k)]), new Add([y, KroneckerDelta(i, j)])]), [j, k, 3]))).toBe('((KroneckerDelta(i, k) + x)*y)**4*((KroneckerDelta(i, k) + x)*y)**(-k) + Piecewise((((KroneckerDelta(i, k) + x)*y)**i*((KroneckerDelta(i, k) + x)*y)**(-k)*(KroneckerDelta(i, k) + x)*((KroneckerDelta(i, k) + x)*y)**3*((KroneckerDelta(i, k) + x)*y)**(-i), (i >= k) & (i <= 3)), (0, True))');
   });
   it("test_deltaproduct_mul_add_x_kd_add_y_kd:223", () => {
     const x = new Sym('x', { commutative: false });

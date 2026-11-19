@@ -3411,11 +3411,11 @@ describe("sympy/core/tests/test_expr.py", () => {
   });
   it("test_integrate:1509", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(x, x, undefined, { conds: 'piecewise' }))).toBe('x**2/2');
+    expect(sympyStr(integrate(x, x, undefined, { conds: 'piecewise', heurisch: false }))).toBe('x**2/2');
   });
   it("test_integrate:1510", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(x, x, [Rational.of(0n, 1n, { gcd: 1n }), Rational.of(1n, 1n, { gcd: 1n })], { conds: 'piecewise' }))).toBe('1/2');
+    expect(sympyStr(integrate(x, x, [Rational.of(0n, 1n, { gcd: 1n }), Rational.of(1n, 1n, { gcd: 1n })], { conds: 'piecewise', heurisch: false }))).toBe('1/2');
   });
   it("test_as_base_exp:1514", () => {
     const x = new Sym('x');
@@ -4476,7 +4476,7 @@ describe("sympy/core/tests/test_expr.py", () => {
   it.todo("test_issue_10755:2217");
   it("test_issue_11877:2222", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(fn('log', [new Add([Rational.of(1n, 2n, { gcd: 1n }), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), x])])], { evaluate: false }), x, [Rational.of(0n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })], { conds: 'piecewise' }))).toBe('-1/2 - log(2)/2');
+    expect(sympyStr(integrate(fn('log', [new Add([Rational.of(1n, 2n, { gcd: 1n }), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), x])])], { evaluate: false }), x, [Rational.of(0n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })], { conds: 'piecewise', heurisch: false }))).toBe('-1/2 - log(2)/2');
   });
   it("test_normal:2228", () => {
     const x = new Sym('x');

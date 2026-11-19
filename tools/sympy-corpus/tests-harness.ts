@@ -120,11 +120,8 @@ export function assertionOutcome(c: TestCase, outcome: Outcome, observation?: Ca
     ? { status: 'pass' } : { status: 'fail', got };
 }
 
-export function runTestCase(c: TestCase): TestOutcome {
-  if (c.exclusion) return { status: 'unsupported', reason: c.exclusion };
-  // A draw from Python's seeded random generator cannot be reproduced by the JS methods.
-  if (c.fn === '.random' && c.randomState === undefined) return { status: 'unsupported', reason: 'unrecorded random generator state' };
-  let observation: CaseObservation | undefined;
+/** Reconstruct the public call with the state recorded by the unit-test extractor. */
+export function replayCall(c: TestCase): TestCase {
   // These established public names capitalize the second word after "Non".
   const alias: Readonly<Record<string, string>> = { '.is_nonnegative': '.isNonNegative', '.is_nonzero': '.isNonZero', '.is_nonpositive': '.isNonPositive' };
   const fn = alias[c.fn];
@@ -136,6 +133,15 @@ export function runTestCase(c: TestCase): TestOutcome {
     const { original, index, computedTable } = c.polyReplay.submoduleDiscard;
     call.self = { ...original, discardBefore: index, computedTable };
   }
+  return call;
+}
+
+export function runTestCase(c: TestCase): TestOutcome {
+  if (c.exclusion) return { status: 'unsupported', reason: c.exclusion };
+  // A draw from Python's seeded random generator cannot be reproduced by the JS methods.
+  if (c.fn === '.random' && c.randomState === undefined) return { status: 'unsupported', reason: 'unrecorded random generator state' };
+  let observation: CaseObservation | undefined;
+  const call = replayCall(c);
   if (c.capturedPrinter) {
     const printer = { ...call, ...c.capturedPrinter, text: true };
     let printed: CaseObservation | undefined;

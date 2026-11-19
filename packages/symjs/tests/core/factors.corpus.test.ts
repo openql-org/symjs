@@ -991,7 +991,7 @@ describe("sympy/core/tests/test_exprtools.py", () => {
     const m = new Sym('m', { commutative: false });
     const n = new Sym('n', { commutative: false });
     const k = new Sym('k', { integer: true });
-    expect(equivalent(sympyStr(factorNc(new Add([new Pow(new Mul([m, n]), k), new Pow(new Mul([m, n]), new Add([Rational.of(1n, 1n, { gcd: 1n }), k]))]))), '(1 + m*n)*(m*n)**k', [m, n, k], { fn: 'factor_nc', input: '(m*n)**k + (m*n)**(k + 1)' })).toBe(true);
+    expect(sympyStr(factorNc(new Add([new Pow(new Mul([m, n]), k), new Pow(new Mul([m, n]), new Add([Rational.of(1n, 1n, { gcd: 1n }), k]))])))).toBe('(1 + m*n)*(m*n)**k');
   });
   it("test_factor_nc:396", () => {
     const x = new Sym('x');

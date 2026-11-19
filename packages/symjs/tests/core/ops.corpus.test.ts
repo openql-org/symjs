@@ -6329,15 +6329,15 @@ describe("sympy/functions/elementary/tests/test_miscellaneous.py", () => {
   });
   it("test_issue_12638:410", () => {
     const [a, b, c] = symbols('a b c');
-    expect(equivalent(sympyStr(fn('Min', [a, b, c, fn('Max', [a, b], { evaluate: false })], { evaluate: true })), 'Min(a, b, c)', [a, b, c], { fn: 'Min', input: 'a' })).toBe(true);
+    expect(sympyStr(fn('Min', [a, b, c, fn('Max', [a, b], { evaluate: false })], { evaluate: true }))).toBe('Min(a, b, c)');
   });
   it("test_issue_12638:411", () => {
     const [a, b, c] = symbols('a b c');
-    expect(equivalent(sympyStr(fn('Min', [a, b, fn('Max', [a, b, c], { evaluate: false })], { evaluate: true })), 'Min(a, b)', [a, b, c], { fn: 'Min', input: 'a' })).toBe(true);
+    expect(sympyStr(fn('Min', [a, b, fn('Max', [a, b, c], { evaluate: false })], { evaluate: true }))).toBe('Min(a, b)');
   });
   it("test_issue_12638:412", () => {
     const [a, b, c] = symbols('a b c');
-    expect(equivalent(sympyStr(fn('Min', [a, b, fn('Max', [a, c], { evaluate: false })], { evaluate: true })), 'Min(a, b)', [a, b, c], { fn: 'Min', input: 'a' })).toBe(true);
+    expect(sympyStr(fn('Min', [a, b, fn('Max', [a, c], { evaluate: false })], { evaluate: true }))).toBe('Min(a, b)');
   });
   it("test_issue_21399:416", () => {
     const [a, b, c] = symbols('a b c');
@@ -6361,7 +6361,7 @@ describe("sympy/functions/elementary/tests/test_miscellaneous.py", () => {
   });
   it("test_instantiation_evaluation:430", () => {
     const [x, y] = symbols('x y');
-    expect(equivalent(sympyStr(fn('Min', [x, fn('Max', [x, y], { evaluate: false })], { evaluate: true })), 'x', [x, y], { fn: 'Min', input: 'x' })).toBe(true);
+    expect(sympyStr(fn('Min', [x, fn('Max', [x, y], { evaluate: false })], { evaluate: true }))).toBe('x');
   });
   it("test_instantiation_evaluation:431", () => {
     const [x, y, w, z] = symbols('x y w z');
@@ -6369,7 +6369,7 @@ describe("sympy/functions/elementary/tests/test_miscellaneous.py", () => {
   });
   it("test_instantiation_evaluation:430 (2)", () => {
     const [x, y] = symbols('x y');
-    expect(equivalent(sympyStr(fn('Max', [x, fn('Min', [x, y], { evaluate: false })], { evaluate: true })), 'x', [x, y], { fn: 'Max', input: 'x' })).toBe(true);
+    expect(sympyStr(fn('Max', [x, fn('Min', [x, y], { evaluate: false })], { evaluate: true }))).toBe('x');
   });
   it("test_instantiation_evaluation:431 (2)", () => {
     const [x, y, w, z] = symbols('x y w z');

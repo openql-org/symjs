@@ -290,7 +290,7 @@ function deltaSum(f: Expr, k: Sym, a: Expr, b: Expr): Expr | undefined {
   }
   // (SymPy's value < oo for an infinite range holds: the value is finite)
   const cond = isOo(b) ? Le(a, value) : and(Le(a, value), Le(value, b));
-  return piecewise([xreplace(rest, [[k, value]]), cond], [S.Zero, true]);
+  return piecewise([powsimp(xreplace(rest, [[k, value]])), cond], [S.Zero, true]);
 }
 
 /**
@@ -368,7 +368,11 @@ function sumHyperFrom(fIn: Expr, k: Sym, a: Expr, zeros = 0): [Expr, Expr] | und
     const d = new Dummy('i', { integer: true, positive: true });
     // (SymPy simplifies the term at a positive integer; the automatic evaluation suffices for the terms met here)
     const z = xreplace(f, [[k, d]]);
-    if (z instanceof Rational && z.isZero) return [S.Zero, S.true];
+    if (z instanceof Rational && z.isZero) {
+      // A trigonometric factor vanishing at all integer samples has no term ratio there.
+      if (some(f, (t) => t instanceof Fn && ['sin', 'cos'].includes(t.name) && t.has(k))) return undefined;
+      return [S.Zero, S.true];
+    }
     // terms that vanish for every k from some point on (binomial(x, -k - 1)) would be skipped forever
     if (zeros >= 6) return undefined;
     return sumHyperFrom(xreplace(f, [[k, add(k, 1)]]), k, S.Zero, zeros + 1);

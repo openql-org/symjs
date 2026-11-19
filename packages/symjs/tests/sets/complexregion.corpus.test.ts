@@ -2255,7 +2255,7 @@ describe("sympy/sets/tests/test_fancysets.py", () => {
   });
   it("test_imageset_intersect_diophantine:819", () => {
     const [n, m] = symbols('n m');
-    expect(sympyStr(dummyEq(new SetOp('Intersection', [new ImageSet(n, new Mul([Rational.of(41n, 1n, { gcd: 1n }), n]), Integers), new ImageSet(m, new Add([Rational.of(40n, 1n, { gcd: 1n }), new Pow(m, Rational.of(2n, 1n, { gcd: 1n }))]), Integers)]), new SetOp('Intersection', [new ImageSet(n, new Mul([Rational.of(41n, 1n, { gcd: 1n }), n]), Integers), new ImageSet(m, new Add([Rational.of(40n, 1n, { gcd: 1n }), new Pow(m, Rational.of(2n, 1n, { gcd: 1n }))]), Integers)])))).toBe('True');
+    expect(sympyStr(dummyEq(new SetOp('Intersection', [new ImageSet(n, new Mul([Rational.of(41n, 1n, { gcd: 1n }), n]), Integers), new ImageSet(m, new Add([Rational.of(40n, 1n, { gcd: 1n }), new Pow(m, Rational.of(2n, 1n, { gcd: 1n }))]), Integers)]).asDummy(), new SetOp('Intersection', [new ImageSet(n, new Mul([Rational.of(41n, 1n, { gcd: 1n }), n]), Integers), new ImageSet(m, new Add([Rational.of(40n, 1n, { gcd: 1n }), new Pow(m, Rational.of(2n, 1n, { gcd: 1n }))]), Integers)]).asDummy()))).toBe('True');
   });
   it("test_imageset_intersect_diophantine:824", () => {
     const [n, m] = symbols('n m');
@@ -2267,11 +2267,11 @@ describe("sympy/sets/tests/test_fancysets.py", () => {
   });
   it("test_imageset_intersect_diophantine:830", () => {
     const n = new Sym('n');
-    expect(sympyStr(dummyEq(new SetOp('Intersection', [Integers, new ImageSet(n, new Mul([n, fn('log', [Rational.of(2n, 1n, { gcd: 1n })], { evaluate: false })]), Integers)]), new SetOp('Intersection', [Integers, new ImageSet(n, new Mul([n, fn('log', [Rational.of(2n, 1n, { gcd: 1n })], { evaluate: false })]), Integers)])))).toBe('True');
+    expect(sympyStr(dummyEq(new SetOp('Intersection', [Integers, new ImageSet(n, new Mul([n, fn('log', [Rational.of(2n, 1n, { gcd: 1n })], { evaluate: false })]), Integers)]).asDummy(), new SetOp('Intersection', [Integers, new ImageSet(n, new Mul([n, fn('log', [Rational.of(2n, 1n, { gcd: 1n })], { evaluate: false })]), Integers)]).asDummy()))).toBe('True');
   });
   it("test_imageset_intersect_diophantine:834", () => {
     const n = new Sym('n');
-    expect(sympyStr(dummyEq(new SetOp('Intersection', [new ImageSet(n, new Pow(n, Rational.of(3n, 1n, { gcd: 1n })), Integers), new ImageSet(n, new Add([Rational.of(1n, 1n, { gcd: 1n }), new Pow(n, Rational.of(3n, 1n, { gcd: 1n }))]), Integers)]), new SetOp('Intersection', [new ImageSet(n, new Pow(n, Rational.of(3n, 1n, { gcd: 1n })), Integers), new ImageSet(n, new Add([Rational.of(1n, 1n, { gcd: 1n }), new Pow(n, Rational.of(3n, 1n, { gcd: 1n }))]), Integers)])))).toBe('True');
+    expect(sympyStr(dummyEq(new SetOp('Intersection', [new ImageSet(n, new Pow(n, Rational.of(3n, 1n, { gcd: 1n })), Integers), new ImageSet(n, new Add([Rational.of(1n, 1n, { gcd: 1n }), new Pow(n, Rational.of(3n, 1n, { gcd: 1n }))]), Integers)]).asDummy(), new SetOp('Intersection', [new ImageSet(n, new Pow(n, Rational.of(3n, 1n, { gcd: 1n })), Integers), new ImageSet(n, new Add([Rational.of(1n, 1n, { gcd: 1n }), new Pow(n, Rational.of(3n, 1n, { gcd: 1n }))]), Integers)]).asDummy()))).toBe('True');
   });
   it("test_infinitely_indexed_set_3:842", () => {
     const [m, t] = symbols('m t');

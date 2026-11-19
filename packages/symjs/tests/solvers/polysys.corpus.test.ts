@@ -104,8 +104,9 @@ describe("sympy/solvers/tests/test_polysys.py", () => {
   //   assert solve_poly_system([x - 1], x) == [(S.One,)]
   //   => [(1,)]
   it.todo("test_solve_poly_system:31");
-  it.fails("test_solve_poly_system:33", () => {
-    expect(sympyStr([])).toBe('None');
+  it("test_solve_poly_system:33", () => {
+    const [y, x] = symbols('y x');
+    expect(sympyStr(solvePolySystem([new Add([y, new Mul([Rational.of(-1n, 1n, { gcd: 1n }), x])]), new Add([Rational.of(-1n, 1n, { gcd: 1n }), y, new Mul([Rational.of(-1n, 1n, { gcd: 1n }), x])])], [x, y], { rationalOnly: false, strict: false, distinguishInconsistent: true }))).toBe('None');
   });
   // a result object that did not come from the library
   //   assert solve_poly_system([y - x**2, y + x**2], x, y) == [(S.Zero, S.Zero)]
@@ -150,7 +151,7 @@ describe("sympy/solvers/tests/test_polysys.py", () => {
   it.todo("test_solve_poly_system:61");
   it("test_solve_poly_system:64", () => {
     const [x, y] = symbols('x y');
-    expect(() => solvePolySystem([new Add([new Pow(x, Rational.of(3n, 1n, { gcd: 1n })), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), new Pow(y, Rational.of(3n, 1n, { gcd: 1n }))])])], [x, y], { rationalOnly: false, strict: false })).toThrow(NotImplementedError);
+    expect(() => solvePolySystem([new Add([new Pow(x, Rational.of(3n, 1n, { gcd: 1n })), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), new Pow(y, Rational.of(3n, 1n, { gcd: 1n }))])])], [x, y], { rationalOnly: false, strict: false, distinguishInconsistent: true })).toThrow(NotImplementedError);
   });
   it("test_solve_poly_system:65", () => {
     const [z, x, y] = symbols('z x y');
@@ -160,7 +161,7 @@ describe("sympy/solvers/tests/test_polysys.py", () => {
     const v4 = y;
     const v5 = z;
     const v6 = sortGens([z, v1, v2, v3, v4, v5]);
-    expect(() => solvePolySystem([at(v6, 3), new Add([x, new Mul([v2, new Pow(y, Rational.of(2n, 1n, { gcd: 1n }))]), new Mul([Rational.of(-2n, 1n, { gcd: 1n }), v1, new Pow(v3, Rational.of(2n, 1n, { gcd: 1n }))])]), new Add([Rational.of(2n, 1n, { gcd: 1n }), new Mul([new Pow(v4, Rational.of(2n, 1n, { gcd: 1n })), new Add([Rational.of(-4n, 1n, { gcd: 1n }), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), v5])])])])], [at(v6, 0), at(v6, 1), at(v6, 3)], { rationalOnly: false, strict: false })).toThrow(NotImplementedError);
+    expect(() => solvePolySystem([at(v6, 3), new Add([x, new Mul([v2, new Pow(y, Rational.of(2n, 1n, { gcd: 1n }))]), new Mul([Rational.of(-2n, 1n, { gcd: 1n }), v1, new Pow(v3, Rational.of(2n, 1n, { gcd: 1n }))])]), new Add([Rational.of(2n, 1n, { gcd: 1n }), new Mul([new Pow(v4, Rational.of(2n, 1n, { gcd: 1n })), new Add([Rational.of(-4n, 1n, { gcd: 1n }), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), v5])])])])], [at(v6, 0), at(v6, 1), at(v6, 3)], { rationalOnly: false, strict: false, distinguishInconsistent: true })).toThrow(NotImplementedError);
   });
   // the arguments do not type-check against the public API
   //   raises(PolynomialError, lambda: solve_poly_system([1/x], x))
@@ -168,11 +169,11 @@ describe("sympy/solvers/tests/test_polysys.py", () => {
   it.todo("test_solve_poly_system:67");
   it("test_solve_poly_system:69", () => {
     const [x, y] = symbols('x y');
-    expect(() => solvePolySystem([new Add([Rational.of(-1n, 1n, { gcd: 1n }), x])], [x, y], { rationalOnly: false, strict: false })).toThrow(NotImplementedError);
+    expect(() => solvePolySystem([new Add([Rational.of(-1n, 1n, { gcd: 1n }), x])], [x, y], { rationalOnly: false, strict: false, distinguishInconsistent: true })).toThrow(NotImplementedError);
   });
   it("test_solve_poly_system:71", () => {
     const [y, x] = symbols('y x');
-    expect(() => solvePolySystem([new Add([Rational.of(-1n, 1n, { gcd: 1n }), y])], [x, y], { rationalOnly: false, strict: false })).toThrow(NotImplementedError);
+    expect(() => solvePolySystem([new Add([Rational.of(-1n, 1n, { gcd: 1n }), y])], [x, y], { rationalOnly: false, strict: false, distinguishInconsistent: true })).toThrow(NotImplementedError);
   });
   // the arguments do not type-check against the public API
   //   assert solve_poly_system([x**5 - x + 1], [x], strict=False) == []

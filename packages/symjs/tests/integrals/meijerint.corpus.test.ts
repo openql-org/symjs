@@ -300,13 +300,13 @@ describe("sympy/integrals/tests/test_meijerint.py", () => {
   it.todo("test_issue_8368:716");
   it("test_issue_10211:722", () => {
     const [h, y, x, w] = symbols('h y x w');
-    expect(sympyStr(integrate(integrate(new Pow(new Add([new Pow(h, Rational.of(2n, 1n, { gcd: 1n })), new Pow(new Add([y, new Mul([Rational.of(-1n, 1n, { gcd: 1n }), x])]), Rational.of(2n, 1n, { gcd: 1n }))]), Rational.of(-3n, 2n, { gcd: 1n })), x, [Rational.of(0n, 1n, { gcd: 1n }), w], { conds: 'piecewise' }), y, [Rational.of(0n, 1n, { gcd: 1n }), w], { conds: 'piecewise' }))).toBe('2*sqrt(1 + w**2/h**2)/h - 2/h');
+    expect(sympyStr(integrate(integrate(new Pow(new Add([new Pow(h, Rational.of(2n, 1n, { gcd: 1n })), new Pow(new Add([y, new Mul([Rational.of(-1n, 1n, { gcd: 1n }), x])]), Rational.of(2n, 1n, { gcd: 1n }))]), Rational.of(-3n, 2n, { gcd: 1n })), x, [Rational.of(0n, 1n, { gcd: 1n }), w], { conds: 'piecewise', heurisch: false }), y, [Rational.of(0n, 1n, { gcd: 1n }), w], { conds: 'piecewise', heurisch: false }))).toBe('2*sqrt(1 + w**2/h**2)/h - 2/h');
   });
   it("test_issue_11806:729", () => {
     const x = new Sym('x');
     const y = new Sym('y', { positive: true });
     const L = new Sym('L', { positive: true });
-    expect(sympyStr(integrate(new Pow(new Add([new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), new Pow(y, Rational.of(2n, 1n, { gcd: 1n }))]), Rational.of(-3n, 2n, { gcd: 1n })), x, [new Mul([Rational.of(-1n, 1n, { gcd: 1n }), L]), L], { conds: 'piecewise' }))).toBe('2*L/(y**2*sqrt(L**2 + y**2))');
+    expect(sympyStr(integrate(new Pow(new Add([new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), new Pow(y, Rational.of(2n, 1n, { gcd: 1n }))]), Rational.of(-3n, 2n, { gcd: 1n })), x, [new Mul([Rational.of(-1n, 1n, { gcd: 1n }), L]), L], { conds: 'piecewise', heurisch: false }))).toBe('2*L/(y**2*sqrt(L**2 + y**2))');
   });
   // the arguments do not type-check against the public API
   //   assert RR.almosteq((f/g).n(), 1.0, 1e-12)
@@ -315,7 +315,7 @@ describe("sympy/integrals/tests/test_meijerint.py", () => {
   it("test_issue_13536:743", () => {
     const x = new Sym('x');
     const a = new Sym('a', { positive: true });
-    expect(sympyStr(integrate(new Pow(x, Rational.of(-2n, 1n, { gcd: 1n })), x, [oo, a], { conds: 'piecewise' }))).toBe('-1/a');
+    expect(sympyStr(integrate(new Pow(x, Rational.of(-2n, 1n, { gcd: 1n })), x, [oo, a], { conds: 'piecewise', heurisch: false }))).toBe('-1/a');
   });
   // the arguments do not type-check against the public API
   //   assert integrate(cos(x**n)/x**n, x, meijerg=True).subs(n, 2).equals(

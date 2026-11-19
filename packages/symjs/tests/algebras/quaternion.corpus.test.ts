@@ -48,11 +48,11 @@ describe("doctests of sympy.algebras.quaternion", () => {
   });
   it("q.integrate(x)", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(Quaternion(Rational.of(1n, 1n, { gcd: 1n }), Rational.of(2n, 1n, { gcd: 1n }), Rational.of(3n, 1n, { gcd: 1n }), Rational.of(4n, 1n, { gcd: 1n }), { realField: true }), x, undefined, { conds: 'piecewise' }))).toBe('x + 2*x*i + 3*x*j + 4*x*k');
+    expect(sympyStr(integrate(Quaternion(Rational.of(1n, 1n, { gcd: 1n }), Rational.of(2n, 1n, { gcd: 1n }), Rational.of(3n, 1n, { gcd: 1n }), Rational.of(4n, 1n, { gcd: 1n }), { realField: true }), x, undefined, { conds: 'piecewise', heurisch: false }))).toBe('x + 2*x*i + 3*x*j + 4*x*k');
   });
   it("q.integrate((x, 1, 5))", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(Quaternion(Rational.of(1n, 1n, { gcd: 1n }), Rational.of(2n, 1n, { gcd: 1n }), Rational.of(3n, 1n, { gcd: 1n }), Rational.of(4n, 1n, { gcd: 1n }), { realField: true }), x, [Rational.of(1n, 1n, { gcd: 1n }), Rational.of(5n, 1n, { gcd: 1n })], { conds: 'piecewise' }))).toBe('4 + 8*i + 12*j + 16*k');
+    expect(sympyStr(integrate(Quaternion(Rational.of(1n, 1n, { gcd: 1n }), Rational.of(2n, 1n, { gcd: 1n }), Rational.of(3n, 1n, { gcd: 1n }), Rational.of(4n, 1n, { gcd: 1n }), { realField: true }), x, [Rational.of(1n, 1n, { gcd: 1n }), Rational.of(5n, 1n, { gcd: 1n })], { conds: 'piecewise', heurisch: false }))).toBe('4 + 8*i + 12*j + 16*k');
   });
   it("q.is_pure()", () => {
     expect(sympyStr(Quaternion(Rational.of(0n, 1n, { gcd: 1n }), Rational.of(8n, 1n, { gcd: 1n }), Rational.of(13n, 1n, { gcd: 1n }), Rational.of(12n, 1n, { gcd: 1n }), { realField: true }).isPure())).toBe('True');
@@ -444,19 +444,19 @@ describe("sympy/algebras/tests/test_quaternion.py", () => {
   });
   it("test_quaternion_functions:189", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(Quaternion(x, x, x, x, { realField: true }), x, undefined, { conds: 'piecewise' }))).toBe('x**2/2 + x**2/2*i + x**2/2*j + x**2/2*k');
+    expect(sympyStr(integrate(Quaternion(x, x, x, x, { realField: true }), x, undefined, { conds: 'piecewise', heurisch: false }))).toBe('x**2/2 + x**2/2*i + x**2/2*j + x**2/2*k');
   });
   it("test_quaternion_functions:192", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(Quaternion(Rational.of(1n, 1n, { gcd: 1n }), x, new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), new Pow(x, Rational.of(3n, 1n, { gcd: 1n })), { realField: true }), x, undefined, { conds: 'piecewise' }))).toBe('x + x**2/2*i + x**3/3*j + x**4/4*k');
+    expect(sympyStr(integrate(Quaternion(Rational.of(1n, 1n, { gcd: 1n }), x, new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), new Pow(x, Rational.of(3n, 1n, { gcd: 1n })), { realField: true }), x, undefined, { conds: 'piecewise', heurisch: false }))).toBe('x + x**2/2*i + x**3/3*j + x**4/4*k');
   });
   it("test_quaternion_functions:195", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(Quaternion(fn('sin', [x], { evaluate: false }), fn('cos', [x], { evaluate: false }), fn('sin', [new Mul([Rational.of(2n, 1n, { gcd: 1n }), x])], { evaluate: false }), fn('cos', [new Mul([Rational.of(2n, 1n, { gcd: 1n }), x])], { evaluate: false }), { realField: true }), x, undefined, { conds: 'piecewise' }))).toBe('(-cos(x)) + sin(x)*i + (-cos(2*x)/2)*j + sin(2*x)/2*k');
+    expect(sympyStr(integrate(Quaternion(fn('sin', [x], { evaluate: false }), fn('cos', [x], { evaluate: false }), fn('sin', [new Mul([Rational.of(2n, 1n, { gcd: 1n }), x])], { evaluate: false }), fn('cos', [new Mul([Rational.of(2n, 1n, { gcd: 1n }), x])], { evaluate: false }), { realField: true }), x, undefined, { conds: 'piecewise', heurisch: false }))).toBe('(-cos(x)) + sin(x)*i + (-cos(2*x)/2)*j + sin(2*x)/2*k');
   });
   it("test_quaternion_functions:198", () => {
     const [x, y, z] = symbols('x y z');
-    expect(sympyStr(integrate(integrate(Quaternion(new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), new Pow(y, Rational.of(2n, 1n, { gcd: 1n })), new Pow(z, Rational.of(2n, 1n, { gcd: 1n })), new Mul([x, y, z]), { realField: true }), x, undefined, { conds: 'piecewise' }), y, undefined, { conds: 'piecewise' }))).toBe('x**3*y/3 + x*y**3/3*i + x*y*z**2*j + x**2*y**2*z/4*k');
+    expect(sympyStr(integrate(integrate(Quaternion(new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), new Pow(y, Rational.of(2n, 1n, { gcd: 1n })), new Pow(z, Rational.of(2n, 1n, { gcd: 1n })), new Mul([x, y, z]), { realField: true }), x, undefined, { conds: 'piecewise', heurisch: false }), y, undefined, { conds: 'piecewise', heurisch: false }))).toBe('x**3*y/3 + x*y**3/3*i + x*y*z**2*j + x**2*y**2*z/4*k');
   });
   it("test_quaternion_functions:201", () => {
     const v1 = Quaternion.rotatePoint([1, 1, 1], Quaternion(Rational.of(1n, 1n, { gcd: 1n }), Rational.of(2n, 1n, { gcd: 1n }), Rational.of(3n, 1n, { gcd: 1n }), Rational.of(4n, 1n, { gcd: 1n }), { realField: true }));

@@ -11,29 +11,29 @@ describe("doctests of sympy.integrals.manualintegrate", () => {
   it("integrate(1/x)", () => {
     const x = new Sym('x');
     const v1 = x;
-    expect(sympyStr(integrate(pow(x, Rational.of(-1n, 1n, { gcd: 1n })), v1, undefined, { conds: 'piecewise' }))).toBe('log(x)');
+    expect(sympyStr(integrate(pow(x, Rational.of(-1n, 1n, { gcd: 1n })), v1, undefined, { conds: 'piecewise', heurisch: false }))).toBe('log(x)');
   });
   it("integrate(log(x))", () => {
     const x = new Sym('x');
     const v1 = x;
-    expect(sympyStr(integrate(fn('log', [v1], { evaluate: false }), v1, undefined, { conds: 'piecewise' }))).toBe('x*log(x) - x');
+    expect(sympyStr(integrate(fn('log', [v1], { evaluate: false }), v1, undefined, { conds: 'piecewise', heurisch: false }))).toBe('x*log(x) - x');
   });
   it("integrate(exp(x) / (1 + exp(2 * x)))", () => {
     const x = new Sym('x');
     const v1 = x;
-    expect(sympyStr(integrate(mul(pow(add(Rational.of(1n, 1n, { gcd: 1n }), new Pow(E, mul(Rational.of(2n, 1n, { gcd: 1n }), x))), Rational.of(-1n, 1n, { gcd: 1n })), new Pow(E, x)), v1, undefined, { conds: 'piecewise' }))).toBe('RootSum(4*_z**2 + 1, Lambda(_i, _i*log(2*_i + exp(x))))');
+    expect(sympyStr(integrate(mul(pow(add(Rational.of(1n, 1n, { gcd: 1n }), new Pow(E, mul(Rational.of(2n, 1n, { gcd: 1n }), x))), Rational.of(-1n, 1n, { gcd: 1n })), new Pow(E, x)), v1, undefined, { conds: 'piecewise', heurisch: false }))).toBe('RootSum(4*_z**2 + 1, Lambda(_i, _i*log(2*_i + exp(x))))');
   });
   it("integrate(cos(x)**4 * sin(x), x)", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(mul(pow(fn('cos', [x], { evaluate: false }), Rational.of(4n, 1n, { gcd: 1n })), fn('sin', [x], { evaluate: false })), x, undefined, { conds: 'piecewise' }))).toBe('-cos(x)**5/5');
+    expect(sympyStr(integrate(mul(pow(fn('cos', [x], { evaluate: false }), Rational.of(4n, 1n, { gcd: 1n })), fn('sin', [x], { evaluate: false })), x, undefined, { conds: 'piecewise', heurisch: false }))).toBe('-cos(x)**5/5');
   });
   it("integrate(cos(x)**4 * sin(x)**3, x)", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(mul(pow(fn('cos', [x], { evaluate: false }), Rational.of(4n, 1n, { gcd: 1n })), pow(fn('sin', [x], { evaluate: false }), Rational.of(3n, 1n, { gcd: 1n }))), x, undefined, { conds: 'piecewise' }))).toBe('cos(x)**7/7 - cos(x)**5/5');
+    expect(sympyStr(integrate(mul(pow(fn('cos', [x], { evaluate: false }), Rational.of(4n, 1n, { gcd: 1n })), pow(fn('sin', [x], { evaluate: false }), Rational.of(3n, 1n, { gcd: 1n }))), x, undefined, { conds: 'piecewise', heurisch: false }))).toBe('cos(x)**7/7 - cos(x)**5/5');
   });
   it("integrate(tan(x), x)", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(fn('tan', [x], { evaluate: false }), x, undefined, { conds: 'piecewise' }))).toBe('-log(cos(x))');
+    expect(sympyStr(integrate(fn('tan', [x], { evaluate: false }), x, undefined, { conds: 'piecewise', heurisch: false }))).toBe('-log(cos(x))');
   });
   it("manualintegrate(1 / x, x)", () => {
     const x = new Sym('x');

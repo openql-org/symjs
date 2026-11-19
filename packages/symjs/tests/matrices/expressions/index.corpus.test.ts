@@ -177,7 +177,7 @@ describe("sympy/matrices/expressions/tests/test_derivatives.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_matrix_derivative_vectors_and_scalars:182", () => {
+  it("test_matrix_derivative_vectors_and_scalars:182", () => {
     const k = new Sym('k');
     expect(sympyStr(MatMul(new MatrixSymbol('x', k, Rational.of(1n, 1n, { gcd: 1n })), Transpose(new MatrixSymbol('x', k, Rational.of(1n, 1n, { gcd: 1n }))), new MatrixSymbol('x', k, Rational.of(1n, 1n, { gcd: 1n }))).diff(new MatrixSymbol('x', k, Rational.of(1n, 1n, { gcd: 1n }))))).toBe('KroneckerProduct(I, x.T*x) + 2*x*x.T');
   });
@@ -309,7 +309,7 @@ describe("sympy/matrices/expressions/tests/test_derivatives.py", () => {
   //   assert expr.diff(X) == B*X*Inverse(A + X.T*C*X) - C*X*Inverse(A + X.T*C*X)*X.T*B*X*Inverse(A + X.T*C*X) - C.T*X*Inverse(A.T + (C*X).T*X)*X.T*B.T*X*Inverse(A.T + (C*X).T*X) + B.T*X*Inverse(A.T + (C*X).T*X)
   //   => B*X*(A + X.T*C*X)**(-1) - C*X*(A + X.T*C*X)**(-1)*X.T*B*X*(A + X.T*C*X)**(-1) + B.T*X*(A.T + X.T*C.T*X)**(-1) - C.T*X*(A.T + X.T*C.T*X)**(-1)*X.T*B.T*X*(A.T + X.T*C.T*X)**(-1)
   it.todo("test_matrix_derivatives_of_traces:329");
-  it.fails("test_derivatives_of_complicated_matrix_expr:335", () => {
+  it("test_derivatives_of_complicated_matrix_expr:335", () => {
     const k = new Sym('k');
     expect(sympyStr(MatMul(Transpose(new MatrixSymbol('a', k, Rational.of(1n, 1n, { gcd: 1n }))), MatAdd(MatMul(new MatrixSymbol('A', k, k), new MatrixSymbol('X', k, k), MatAdd(MatMul(new MatrixSymbol('X', k, k), new MatrixSymbol('A', k, k)), MatMul(Transpose(new MatrixSymbol('X', k, k)), new MatrixSymbol('B', k, k)))), MatMul(Transpose(new MatrixSymbol('B', k, k)), Transpose(new MatrixSymbol('X', k, k)), MatAdd(MatMul(new MatrixSymbol('B', k, k), MatAdd(MatMul(new MatrixSymbol('X', k, k), Transpose(new MatrixSymbol('D', k, k))), MatMul(Rational.of(-3n, 1n, { gcd: 1n }), new MatrixSymbol('X', k, k), new MatrixSymbol('D', k, k)), MatMul(new MatrixSymbol('B', k, k), new MatrixSymbol('A', k, k), new MatrixSymbol('X', k, k), Transpose(new MatrixSymbol('A', k, k))))), MatMul(new MatrixSymbol('a', k, Rational.of(1n, 1n, { gcd: 1n })), Transpose(new MatrixSymbol('b', k, Rational.of(1n, 1n, { gcd: 1n }))), MatAdd(MatMul(new MatrixSymbol('X', k, k), new MatrixSymbol('D', k, k), Transpose(new MatrixSymbol('X', k, k))), MatMul(Rational.of(-1n, 1n, { gcd: 1n }), Transpose(new MatrixSymbol('X', k, k)), Transpose(new MatrixSymbol('C', k, k)), new MatrixSymbol('A', k, k)), MatMul(new MatrixSymbol('X', k, k), MatAdd(MatMul(new MatrixSymbol('A', k, k), new MatrixSymbol('X', k, k)), MatMul(Transpose(new MatrixSymbol('X', k, k)), new MatrixSymbol('B', k, k))), new MatrixSymbol('D', k, k), new MatrixSymbol('B', k, k))), new MatrixSymbol('B', k, k))), new MatrixSymbol('B', k, k)), MatMul(Rational.of(42n, 1n, { gcd: 1n }), new MatrixSymbol('X', k, k), new MatrixSymbol('B', k, k), Transpose(new MatrixSymbol('X', k, k)), Transpose(new MatrixSymbol('A', k, k)), MatAdd(new MatrixSymbol('X', k, k), Transpose(new MatrixSymbol('X', k, k))))), new MatrixSymbol('b', k, Rational.of(1n, 1n, { gcd: 1n }))).diff(new MatrixSymbol('X', k, k)))).toBe('(B*(B*A*X*A.T - 3*X*D + X*D.T) + a*b.T*(X*(A*X + X.T*B)*D*B + X*D*X.T - X.T*C.T*A)*B)*B*b*a.T*B.T + B**2*b*a.T*B.T*X.T*a*b.T*X*D + 42*A*X*B.T*X.T*a*b.T + B*D*B**3*b*a.T*B.T*X.T*a*b.T*X + B*b*a.T*A*X + a*b.T*(42*X + 42*X.T)*A*X*B.T + b*a.T*X*B*a*b.T*B.T**2*X*D.T + b*a.T*X*B*a*b.T*B.T**3*D.T*(B.T*X + X.T*A.T) + 42*b*a.T*X*B*X.T*A.T + A.T*(42*X + 42*X.T)*b*a.T*X*B + A.T*B.T**2*X*B*a*b.T*B.T*A + A.T*a*b.T*(A.T*X.T + B.T*X) + A.T*X.T*b*a.T*X*B*a*b.T*B.T**3*D.T + B.T*X*B*a*b.T*B.T*D - 3*B.T*X*B*a*b.T*B.T*D.T - C.T*A*B**2*b*a.T*B.T*X.T*a*b.T + X.T*A.T*a*b.T*A.T');
   });
@@ -353,11 +353,11 @@ describe("sympy/matrices/expressions/tests/test_derivatives.py", () => {
     const k = new Sym('k');
     expect(sympyStr(MatPow(MatMul(Transpose(new MatrixSymbol('x', k, Rational.of(1n, 1n, { gcd: 1n }))), new MatrixSymbol('x', k, Rational.of(1n, 1n, { gcd: 1n }))), Rational.of(1n, 2n, { gcd: 1n })).diff(new MatrixSymbol('x', k, Rational.of(1n, 1n, { gcd: 1n }))))).toBe('x*(x.T*x)**(-1/2)');
   });
-  it.fails("test_derivatives_matrix_norms:375", () => {
+  it("test_derivatives_matrix_norms:375", () => {
     const k = new Sym('k');
     expect(sympyStr(MatPow(MatMul(Transpose(new MatrixSymbol('c', k, Rational.of(1n, 1n, { gcd: 1n }))), new MatrixSymbol('a', k, Rational.of(1n, 1n, { gcd: 1n })), Transpose(new MatrixSymbol('x', k, Rational.of(1n, 1n, { gcd: 1n }))), new MatrixSymbol('b', k, Rational.of(1n, 1n, { gcd: 1n }))), Rational.of(1n, 2n, { gcd: 1n })).diff(new MatrixSymbol('x', k, Rational.of(1n, 1n, { gcd: 1n }))))).toBe('(1/2)*b*a.T*c*(c.T*a*x.T*b)**(-1/2)');
   });
-  it.fails("test_derivatives_matrix_norms:378", () => {
+  it("test_derivatives_matrix_norms:378", () => {
     const k = new Sym('k');
     expect(sympyStr(MatPow(MatMul(Transpose(new MatrixSymbol('c', k, Rational.of(1n, 1n, { gcd: 1n }))), new MatrixSymbol('a', k, Rational.of(1n, 1n, { gcd: 1n })), Transpose(new MatrixSymbol('x', k, Rational.of(1n, 1n, { gcd: 1n }))), new MatrixSymbol('b', k, Rational.of(1n, 1n, { gcd: 1n }))), Rational.of(1n, 3n, { gcd: 1n })).diff(new MatrixSymbol('x', k, Rational.of(1n, 1n, { gcd: 1n }))))).toBe('(1/3)*b*a.T*c*(c.T*a*x.T*b)**(-2/3)');
   });
@@ -365,7 +365,7 @@ describe("sympy/matrices/expressions/tests/test_derivatives.py", () => {
     const k = new Sym('k');
     expect(sympyStr(MatPow(MatMul(Transpose(new MatrixSymbol('a', k, Rational.of(1n, 1n, { gcd: 1n }))), new MatrixSymbol('X', k, k), new MatrixSymbol('b', k, Rational.of(1n, 1n, { gcd: 1n }))), Rational.of(1n, 2n, { gcd: 1n })).diff(new MatrixSymbol('X', k, k)))).toBe('(1/2)*a*(a.T*X*b)**(-1/2)*b.T');
   });
-  it.fails("test_derivatives_matrix_norms:384", () => {
+  it("test_derivatives_matrix_norms:384", () => {
     const k = new Sym('k');
     expect(sympyStr(MatMul(Transpose(new MatrixSymbol('d', k, Rational.of(1n, 1n, { gcd: 1n }))), new MatrixSymbol('x', k, Rational.of(1n, 1n, { gcd: 1n })), MatPow(MatMul(Transpose(new MatrixSymbol('a', k, Rational.of(1n, 1n, { gcd: 1n }))), new MatrixSymbol('X', k, k), new MatrixSymbol('b', k, Rational.of(1n, 1n, { gcd: 1n }))), Rational.of(1n, 2n, { gcd: 1n })), Transpose(new MatrixSymbol('y', k, Rational.of(1n, 1n, { gcd: 1n }))), new MatrixSymbol('c', k, Rational.of(1n, 1n, { gcd: 1n }))).diff(new MatrixSymbol('X', k, k)))).toBe('(1/2)*a*(a.T*X*b)**(-1/2)*x.T*d*y.T*c*b.T');
   });
@@ -469,7 +469,7 @@ describe("sympy/matrices/expressions/tests/test_indexing.py", () => {
   it("test_pow_index:62", () => {
     expect(sympyStr(MatPow(new MatrixSymbol('A', Rational.of(2n, 1n, { gcd: 1n }), Rational.of(2n, 1n, { gcd: 1n })), Rational.of(2n, 1n, { gcd: 1n })).at(0, 0))).toBe('A[0, 0]**2 + A[0, 1]*A[1, 0]');
   });
-  it.fails("test_pow_index:65", () => {
+  it("test_pow_index:65", () => {
     const n = new Sym('n');
     expect(sympyStr(MatPow(new MatrixSymbol('A', Rational.of(2n, 1n, { gcd: 1n }), Rational.of(2n, 1n, { gcd: 1n })), n).at(0, 0))).toBe('2*(-sqrt((A[0, 0] + A[1, 1])**2 - 4*A[0, 0]*A[1, 1] + 4*A[0, 1]*A[1, 0])/2 + A[0, 0]/2 + A[1, 1]/2)**n*A[0, 1]*A[1, 0]/((sqrt(A[0, 0]**2 - 2*A[0, 0]*A[1, 1] + 4*A[0, 1]*A[1, 0] + A[1, 1]**2) + A[0, 0] - A[1, 1])*sqrt(A[0, 0]**2 - 2*A[0, 0]*A[1, 1] + 4*A[0, 1]*A[1, 0] + A[1, 1]**2)) - 2*(sqrt((A[0, 0] + A[1, 1])**2 - 4*A[0, 0]*A[1, 1] + 4*A[0, 1]*A[1, 0])/2 + A[0, 0]/2 + A[1, 1]/2)**n*A[0, 1]*A[1, 0]/((-sqrt(A[0, 0]**2 - 2*A[0, 0]*A[1, 1] + 4*A[0, 1]*A[1, 0] + A[1, 1]**2) + A[0, 0] - A[1, 1])*sqrt(A[0, 0]**2 - 2*A[0, 0]*A[1, 1] + 4*A[0, 1]*A[1, 0] + A[1, 1]**2))');
   });

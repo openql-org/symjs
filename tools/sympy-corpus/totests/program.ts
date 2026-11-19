@@ -140,11 +140,26 @@ export class Program {
     return text;
   }
 
+  /** Some expression factories can also return a simplified scalar. */
+  private instance(n: Node, cls: string): string {
+    this.helpers.add('asInstance');
+    return `asInstance(${this.node(n)}, ${this.ref('index', cls)})`;
+  }
+
   private nodeText(n: Node): string {
     const special = this.construction(n);
     if (special !== undefined) return special;
     switch (n.k) {
-      case 'call': return `${this.callee(n.fn)}(${this.args(n.args, n.fn.k === 'ref' && EXPR_LIKE.has(n.fn.name))})`;
+      case 'call': {
+        const fn = this.callee(n.fn);
+        const [arg] = n.args;
+        if ((fn === 'isConvergent' || fn === 'isAbsolutelyConvergent') && arg instanceof Snap) {
+          return `${fn}(${this.instance(arg.node, 'Concrete')})`;
+        }
+        // The upstream arity test deliberately passes a fourth operand in the options slot.
+        if (fn === 'ITE' && n.args[3] instanceof Snap) return `Reflect.apply(${fn}, undefined, [${this.args(n.args)}])`;
+        return `${fn}(${this.args(n.args, n.fn.k === 'ref' && EXPR_LIKE.has(n.fn.name))})`;
+      }
       case 'new': return `new ${this.callee(n.cls)}(${this.args(n.args)})`;
       case 'get':
         if (typeof n.name === 'string' && /^\d+$/.test(n.name)) {
@@ -152,7 +167,12 @@ export class Program {
           return `at(${this.node(n.obj)}, ${n.name})`;
         }
         return member(this.node(n.obj), n.name);
-      case 'method': return `${member(this.node(n.obj), n.name)}(${this.args(n.args)})`;
+      case 'method': {
+        const factory = n.obj.k === 'call' && n.obj.fn.k === 'ref' ? n.obj.fn.name : undefined;
+        const cls = factory === 'O' ? 'Order' : factory === 'AccumBounds' ? 'AccumBoundsNode' : undefined;
+        const obj = n.name === 'contains' && cls ? this.instance(n.obj, cls) : this.node(n.obj);
+        return `${member(obj, n.name)}(${this.args(n.args)})`;
+      }
       default: throw new Unprintable(n.k);
     }
   }
