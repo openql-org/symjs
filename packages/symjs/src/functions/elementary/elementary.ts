@@ -178,6 +178,8 @@ const evalSin: Evaluator = (x) => {
   if (x instanceof Rational && x.isZero) return S.Zero;
   const [rest, c] = splitPiTerm(x);
   if (rest instanceof Rational && rest.isZero) return sinPi(c);
+  const k = integerPiCoeff(x);
+  if (k !== undefined && isIntegerQ(k) === true) return S.Zero;
   if (couldExtractMinusSign(x)) return neg(sin(neg(x)));
   const m = peelHalfPi(c);
   if (!m.isZero) {
@@ -196,6 +198,8 @@ const evalCos: Evaluator = (x) => {
   if (x instanceof Rational && x.isZero) return S.One;
   const [rest, c] = splitPiTerm(x);
   if (rest instanceof Rational && rest.isZero) return cosPi(c);
+  const k = integerPiCoeff(x);
+  if (k !== undefined && isIntegerQ(k) === true) return pow(-1, k);
   if (couldExtractMinusSign(x)) return cos(neg(x));
   const m = peelHalfPi(c);
   if (!m.isZero) {

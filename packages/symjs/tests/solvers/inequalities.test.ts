@@ -960,3 +960,21 @@ it('retains the original condition when squaring a radical equation gives an ide
   const result = solveset(equation, x, Reals);
   expect(String(result)).toBe(String(new ConditionSet(x, Eq(equation, 0), Reals)));
 });
+
+it('uses the Hessian for multivariate convexity', () => {
+  expect(Q.isConvex(p('8*x**2-2*y**2'), x, y)).toBe(false);
+  expect(Q.isConvex(p('x**2+y**2'), x, y)).toBe(true);
+});
+
+it('evaluates products containing absolute value on one-sided intervals', () => {
+  expect(String(Q.maximum(p('(1+x**2)*abs(x)'), x, interval(-3, 0)))).toBe('30');
+  expect(String(Q.minimum(p('(1+x**2)*abs(x)'), x, interval(0, 2)))).toBe('0');
+});
+
+it('keeps an undecided parameter sign and checks extrema across zero', () => {
+  expect(Q.isIncreasing(p('x**2*y'), interval(1, 2), x)).toBeUndefined();
+  const f = p('abs(x)+x');
+  expect(String(Q.maximum(f, x, interval(-1, 2)))).toBe('4');
+  expect(() => Q.maximum(f, x, interval(y, 2))).toThrow(NotImplementedError);
+  expect(() => Q.maximum(f, x, interval(-1, y))).toThrow(NotImplementedError);
+});

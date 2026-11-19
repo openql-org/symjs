@@ -1472,12 +1472,12 @@ it('cuts the image of the integers by an interval with indexed-root shifts (SymP
   expect(cut.args.map(String).sort()).toEqual(['CRootOf(x**5 - x**2 + 1, 0)', 'CRootOf(x**5 - x**2 + 1, 0) + 1', 'CRootOf(x**5 - x**2 + 1, 0) + 2', 'CRootOf(x**5 - x**2 + 1, 0) - 1']);
 });
 
-it('preserves exclusions that can coincide with a remaining finite-set element', () => {
+it('takes common symbols out of a difference of finite sets and preserves unresolved value exclusions', () => {
   const [i, j, k, x, y] = sj.symbols('i j k x y');
   const F = sj.finiteSet;
   const show = (a: sj.SetExpr, b: sj.SetExpr) => String(sj.complement(a, b));
-  expect(show(F(i, j, k), F(j))).toBe('Complement({i, k}, {j})');
-  expect(show(F(i, j, k), F(j, 1))).toBe('Complement({i, k}, {1, j})');
+  expect(show(F(i, j, k), F(j))).toBe('{i, k}');
+  expect(show(F(i, j, k), F(j, 1))).toBe('Complement({i, k}, {1})');
   expect(show(F(1, 2, k), F(j))).toBe('Complement({1, 2, k}, {j})');
   expect(show(F(1, 2, 3), F(2, j))).toBe('Complement({1, 3}, {j})');
   expect(show(F(i, j), F(k))).toBe('Complement({i, j}, {k})');

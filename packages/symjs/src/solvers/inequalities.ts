@@ -24,6 +24,8 @@ import { Eq, Ge, Gt, Le, Lt, Ne, piecewise } from '../core/logic';
 import { mapBottomUp, piecewiseFold, some, subs, xreplace } from '../core/traverse';
 import { fn, log } from '../functions/elementary/elementary';
 import { Max, Min } from '../functions/special/special';
+import { hessian, isPositiveSemidefinite } from '../matrices/linalg';
+import type { Truth } from '../core/truth';
 import { diff } from '../calculus/diff';
 import { limit } from '../series/limits';
 import { factor, Poly } from '../polys/sympoly';
@@ -395,6 +397,10 @@ function solveSign(input: Expr, op: RelOp, x: Sym, domain: SetExpr): SetExpr {
       const argument = first(term.args);
       logArguments.set(argument.key, argument);
     }
+    if (term instanceof Fn && ['asin', 'acos'].includes(term.name) && term.has(x)) {
+      const u = first(term.args);
+      for (const endpoint of [add(u, -1), add(u, 1)]) radicands.set(endpoint.key, endpoint);
+    }
     if (term instanceof Pow && term.exp instanceof Rational && term.exp.q % 2n === 0n && term.base.has(x)) {
       radicands.set(term.base.key, term.base);
     }
@@ -716,6 +722,7 @@ export function solveset(fIn: ExprLike, symbol?: ExprLike, domain: SetExpr = Com
       }
       return solvePiecewise(g, x, domain, (expression, where) => solveset(expression, x, where));
     }
+    if (g instanceof Fn && g.name === 'sign') return solveset(first(g.args), x, domain);
     if (g instanceof Mul && !some(g, (factor) => factor instanceof Pow && isNegative(factor.exp) === true)) {
       const dependent = g.args.filter((factor) => factor.has(x));
       if (dependent.length > 1) return union(...dependent.map((factor) => solveset(factor, x, domain)));
@@ -901,6 +908,8 @@ function parametricRealRoots(num: Expr, den: Expr, x: Sym, original: Expr): SetE
     return union(finiteSet(...reals.filter((r) => !unknown.includes(r))), unknown.length ? new SetOp('Intersection', [finiteSet(...unknown), Reals]) : EmptySet);
   };
   const roots = solve(num, x);
+  // A principal Lambert W root does not enumerate all branches of a transcendental equation.
+  if (roots.some((r) => some(r, (t) => t instanceof Fn && t.name === 'LambertW'))) return new ConditionSet(x, Eq(original, 0), Reals);
   const poles = den.has(x) ? realPart(solve(den, x)) : EmptySet;
   if (some(original, (term) => term instanceof Pow && term.base.has(x) && term.exp.equals(S.Half.neg()))) {
     return union(...roots.map((root) => {
@@ -1334,6 +1343,7 @@ export function singularities(eIn: ExprLike, x: Sym, domain?: SetExpr): SetExpr 
     if (t instanceof Fn && ['log', 'asech', 'acsch'].includes(t.name)) sings = union(sings, solveset(first(t.args), x, dom));
     if (t instanceof Fn && ['atanh', 'acoth'].includes(t.name)) sings = union(sings, solveset(add(first(t.args), -1), x, dom), solveset(add(first(t.args), 1), x, dom));
     if (t instanceof Fn && ['tan', 'sec'].includes(t.name)) sings = union(sings, solveset(impl.sympify(cosOf(first(t.args))), x, dom));
+    if (t instanceof Fn && ['coth', 'csch'].includes(t.name)) sings = union(sings, solveset(fn('sinh', t.args), x, dom));
     if (t instanceof Fn && ['cot', 'csc'].includes(t.name)) sings = union(sings, solveset(sinOf(first(t.args)), x, dom));
   };
   visit(e);
@@ -1354,7 +1364,13 @@ function monotonic(f: Expr, op: RelOp, iv: SetExpr, x?: Sym): boolean | undefine
   if (x === undefined && free.length > 1) throw new NotImplementedError('The function has not yet been implemented for all multivariate expressions.');
   const v = x ?? free[0] ?? new Dummy('x');
   // sign(u) = u/Abs(u) away from u = 0 (the derivative of Abs): its zeros and poles are those of a quotient
-  const d = mapBottomUp(diff(f, v), (t) => (t instanceof Fn && t.name === 'sign' ? mul(first(t.args), pow(fn('abs', [first(t.args)]), -1)) : t));
+  let d = mapBottomUp(diff(f, v), (t) => (t instanceof Fn && t.name === 'sign' ? mul(first(t.args), pow(fn('abs', [first(t.args)]), -1)) : t));
+  // A nonzero constant factor affects monotonicity only through its sign.
+  if (d instanceof Mul) {
+    const constant = mul(...d.args.filter((a) => !a.has(v)));
+    const sign = fn('sign', [constant]);
+    if (sign instanceof Rational) d = mul(sign, ...d.args.filter((a) => a.has(v)));
+  }
   // the sign of f' is decided on the interval, or on one period of a periodic f' over the reals
   const dom = iv instanceof Interval ? iv : Reals;
   let ref = iv;
@@ -1396,7 +1412,11 @@ export function isMonotonic(f: ExprLike, iv: SetExpr = Reals, x?: Sym): boolean 
 }
 
 /** Convexity on a domain (second derivative nonnegative, no singularities). */
-export function isConvex(fIn: ExprLike, x: Sym, domain: SetExpr = Reals): boolean {
+export function isConvex(fIn: ExprLike, x: Sym, domain?: SetExpr): boolean;
+export function isConvex(fIn: ExprLike, x: Sym, ...others: Sym[]): Truth;
+export function isConvex(fIn: ExprLike, x: Sym, domainOrVariable: SetExpr | Sym = Reals, ...others: Sym[]): Truth {
+  if (domainOrVariable instanceof Sym) return isPositiveSemidefinite(hessian(fIn, [x, domainOrVariable, ...others]));
+  const domain = domainOrVariable;
   const f = sympify(fIn);
   const sings = singularities(f, x);
   if (sings instanceof FiniteSet && sings.args.some((p) => containsQ(domain, p) === true)) return false;
@@ -1424,6 +1444,17 @@ function extremeValues(f: Expr, x: Sym, domain: SetExpr): Expr[] {
     if (P && !(P instanceof Rational && P.isZero)) dom = interval(0, P);
   }
   const [lo, hi] = bounds(dom);
+  // Each side of zero has its own smooth branch of Abs(x).
+  const absolute = fn('abs', [x]);
+  if (absolute instanceof Fn && f.has(absolute)) {
+    const positiveBranch = xreplace(f, [[absolute, x]]);
+    const negativeBranch = xreplace(f, [[absolute, x.neg()]]);
+    if (isNonNegative(lo) === true) return extremeValues(positiveBranch, x, dom);
+    if (isNonNegative(hi.neg()) === true) return extremeValues(negativeBranch, x, dom);
+    if (cmpReal(lo, S.Zero) === -1 && cmpReal(hi, S.Zero) === 1) {
+      return [...extremeValues(negativeBranch, x, interval(lo, 0)), ...extremeValues(positiveBranch, x, interval(0, hi))];
+    }
+  }
   const num = fraction(cancel(diff(f, x)))[0];
   let crit: Expr[];
   try {

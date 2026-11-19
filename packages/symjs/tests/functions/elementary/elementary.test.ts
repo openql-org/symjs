@@ -915,3 +915,15 @@ it('transforms each branch and respects the argument of a negative real value', 
   expect(fn('asinh', [sj.oo])).toBe(sj.oo);
   expect(fn('acosh', [sj.oo])).toBe(sj.oo);
 });
+
+it('evaluates sine and cosine at integer multiples of pi', () => {
+  const n = symbol('n', { integer: true });
+  expect(sin(mul(n, pi))).toBe(S.Zero);
+  expect(cos(mul(n, pi)).equals(pow(-1, n))).toBe(true);
+});
+
+it('preserves an unknown argument and evaluates a negative Bessel value', () => {
+  const f = sj.SymFunction('f')(x);
+  expect(String(arg(f))).toBe('arg(f(x))');
+  expect(arg(parse('besselj(0, 3)'))).toBe(pi);
+});

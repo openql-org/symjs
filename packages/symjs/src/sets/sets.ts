@@ -2194,9 +2194,9 @@ export function complement(a: SetExpr, b: SetExpr): SetExpr {
       else if (c === undefined) unknown.push(x);
     }
     if (unknown.length) {
-      // A shared symbol can also equal a remaining element after substitution.
-      // Keep its exclusion on the unknown elements of the difference.
-      if (b instanceof FiniteSet && b.args.some((y) => a.args.some((v) => v.equals(y)) && unknown.some((v) => containsQ(finiteSet(y), v) === undefined))) {
+      // Cancel identical formal symbols. A value or compound expression can still
+      // specialize to an excluded element, so keep that exclusion unresolved.
+      if (b instanceof FiniteSet && b.args.some((y) => a.args.some((v) => v.equals(y)) && unknown.some((v) => !(v instanceof Sym && y instanceof Sym) && containsQ(finiteSet(y), v) === undefined))) {
         return union(finiteSet(...keep), new SetOp('Complement', [finiteSet(...unknown), b]));
       }
       // SymPy FiniteSet._complement: the elements of b that are elements of a are taken out of both; what is

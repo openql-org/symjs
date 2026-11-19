@@ -440,7 +440,7 @@ export function series(ex: ExprLike, variable?: Sym, x0x: ExprLike = 0, n = 6, d
   const terms = ps.terms.map((term) => {
     const raw = back(term.c);
     const coefficient = raw.has(S.I) && some(raw, (u) => u instanceof Pow && isE(u.base) && u.exp.has(S.Pi)) ? powsimp(raw) : raw;
-    const value = mul(e instanceof Pow && !e.base.has(x) && e.exp.has(x) ? expandMul(coefficient) : coefficient, pow(base, term.e));
+    const value = mul(!coefficient.isCommutative || e instanceof Pow && !e.base.has(x) && e.exp.has(x) ? expandMul(coefficient) : coefficient, pow(base, term.e));
     return opts.local && atZero ? expandMul(value) : value;
   });
   const body = add(...terms);

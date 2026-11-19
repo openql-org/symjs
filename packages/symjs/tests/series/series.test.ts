@@ -999,3 +999,9 @@ it('keeps a pure order from expanding an integral with a vanishing integrand', (
   const f = sj.integral(sj.mul(a, sj.SymFunction('f')(x)), [x, 0, z]);
   expect(series(f, a, 0, 1).equals(sj.O(a))).toBe(true);
 });
+
+it('collects noncommuting products in each Taylor coefficient', () => {
+  const a = symbol('a', { commutative: false }), b = symbol('b', { commutative: false }), x = symbol('x');
+  const f = parse('exp((a+b)*x)-exp(a*x)*exp(b*x)', { symbols: [a, b, x] });
+  expect(String(series(f, x, 0, 3))).toBe('x**2*(-a*b/2 + b*a/2) + O(x**3)');
+});

@@ -3101,7 +3101,7 @@ describe("sympy/sets/tests/test_sets.py", () => {
   });
   it("test_issue_9808:1366", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(Complement(finiteSet(Rational.of(1n, 1n, { gcd: 1n }), Rational.of(2n, 1n, { gcd: 1n }), x), finiteSet(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(3n, 1n, { gcd: 1n }), x, y)))).toBe('Complement({1}, {y})');
+    expect(sympyStr(Complement(finiteSet(Rational.of(1n, 1n, { gcd: 1n }), Rational.of(2n, 1n, { gcd: 1n }), x), finiteSet(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(3n, 1n, { gcd: 1n }), x, y)))).toBe('Complement({1}, {2, 3, x, y})');
   });
   it("test_issue_9956:1371", () => {
     expect(sympyMatches(Union(Reals, finiteSet(Rational.of(1n, 1n, { gcd: 1n }))), 'Interval(-oo, oo)')).toBe(true);
