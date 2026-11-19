@@ -16,7 +16,7 @@
  */
 
 import type { Assumptions, ExprLike } from './nodes';
-import { Add, BoolAtom, Constant, Expr, ExtensionExpr, Fn, Float, Mul, Piecewise, Pow, Rational, Rel, S, Special, Sym, functionFactHandlers, impl } from './nodes';
+import { Add, BoolAtom, Constant, Derivative, Dummy, Expr, ExtensionExpr, Fn, Float, Integral, Limit, Mul, Order, Piecewise, Pow, Rational, Rel, S, Special, Sym, UndefFn, Wild, WildFunction, functionFactHandlers, impl } from './nodes';
 import { add, couldExtractMinusSign, mul, pow, sympify } from './ops';
 import { mapBottomUp, some, xreplace } from './traverse';
 import { asRealImag } from './methods';
@@ -90,16 +90,17 @@ export class AppliedPredicate extends ExtensionExpr {
   /** The arguments of this applied predicate (SymPy AppliedPredicate.arguments). */
   get arguments(): readonly Expr[] { return this.args; }
   /** The predicate applied by this expression (SymPy AppliedPredicate.function). */
-  get function(): Predicate { return Q[this.predicate] ?? Predicate(this.predicate); }
+  get function(): Predicate { return this.appliedFunction ?? Q[this.predicate] ?? Predicate(this.predicate); }
   constructor(
     /** The predicate name (positive for Q.positive). */
     readonly predicate: string,
     args: readonly Expr[],
+    private readonly appliedFunction?: Predicate,
   ) {
     super(`Q.${predicate}`, args);
   }
   withArgs(args: readonly Expr[]): Expr {
-    return new AppliedPredicate(this.predicate, args);
+    return new AppliedPredicate(this.predicate, args, this.appliedFunction);
   }
   /** The (first) argument. */
   get arg(): Expr {
@@ -133,9 +134,108 @@ export interface Predicate {
   (...args: (ExprLike | boolean)[]): AppliedPredicate;
   /** The name (positive for Q.positive). */
   readonly predicateName: string;
+  /** Dispatch on one expression class per argument. The handler receives the arguments followed by the assumptions. */
+  register<T extends PredicateClass[]>(signature: readonly [...T], handler: (...args: [...PredicateArgs<T>, Expr]) => Truth): void;
 }
 
-const handlers = new Map<string, PredicateHandler[]>();
+/** Integer is represented by a Rational with denominator one. Other types use their expression class. */
+type PredicateClass = { readonly prototype: Expr } | 'Integer';
+type InstanceOfClass<T> = T extends { readonly prototype: infer E extends Expr } ? E : Rational;
+type PredicateArgs<T extends PredicateClass[]> = { [K in keyof T]: InstanceOfClass<T[K]> };
+// The signature trie invokes each method only after matching its registered argument types.
+type DispatchHandler = (...args: never) => Truth;
+
+/** Base for legacy handlers with static methods named for expression classes (SymPy AskHandler). */
+export class AskHandler {}
+
+type LegacyHandler = typeof AskHandler | PredicateHandler;
+const handlers = new WeakMap<Predicate, LegacyHandler[]>();
+
+function* argumentTypes(expr: Expr): Generator<object | 'Integer'> {
+  if (expr instanceof Rational && expr.isInteger) yield 'Integer';
+  let prototype: object = Object.getPrototypeOf(expr);
+  while (prototype !== Object.prototype) {
+    yield prototype;
+    prototype = Object.getPrototypeOf(prototype);
+  }
+}
+
+/** A signature trie. Walking each argument's classes from derived to base prefers the more specific method. */
+class PredicateMethods {
+  private readonly next = new Map<object | 'Integer', PredicateMethods>();
+  private method?: DispatchHandler;
+
+  register(signature: readonly PredicateClass[], handler: DispatchHandler): void {
+    if (!signature.length) throw new RangeError('Predicate handlers require at least one argument');
+    let node: PredicateMethods = this;
+    for (const cls of signature) {
+      const key = cls === 'Integer' ? cls : cls.prototype;
+      const child: PredicateMethods = node.next.get(key) ?? new PredicateMethods();
+      node.next.set(key, child);
+      node = child;
+    }
+    node.method = handler;
+  }
+
+  lookup(args: readonly Expr[], index = 0): DispatchHandler | undefined {
+    const arg = args[index];
+    if (arg === undefined) return this.method;
+    for (const cls of argumentTypes(arg)) {
+      const found = this.next.get(cls)?.lookup(args, index + 1);
+      if (found) return found;
+    }
+    return undefined;
+  }
+}
+
+const methods = new WeakMap<Predicate, PredicateMethods>();
+
+function isAskHandler(handler: LegacyHandler): handler is typeof AskHandler {
+  return handler === AskHandler || handler.prototype instanceof AskHandler;
+}
+
+// Core constructors can be renamed in a consumer bundle. Legacy static methods use their public class names.
+const legacyClassNames = new Map<object, string>(Object.entries({
+  Add, BoolAtom, BoolOp, Constant, Derivative, Dummy, Expr, ExtensionExpr, Float, Fn, Integral, Limit, Mul,
+  Order, Piecewise, Pow, Rational, Rel, Special, Symbol: Sym, UndefFn, Wild, WildFunction,
+}).map(([name, cls]) => [cls.prototype, name]));
+
+function evaluateAskHandler(handler: typeof AskHandler, expr: Expr, assumptions: Expr): Truth {
+  for (const cls of argumentTypes(expr)) {
+    const name = cls === 'Integer' ? cls : legacyClassNames.get(cls) ?? cls.constructor.name;
+    const method: unknown = Reflect.get(handler, name);
+    if (typeof method === 'function') {
+      const value: unknown = method.call(handler, expr, assumptions);
+      if (typeof value === 'boolean') return value;
+    }
+  }
+  return 'unknown';
+}
+
+function dispatch(predicate: Predicate | undefined, name: string, args: readonly Expr[], assumptions: Expr): Tri {
+  const method = predicate && methods.get(predicate)?.lookup(args);
+  if (method) {
+    const value: unknown = Reflect.apply(method, undefined, [...args, assumptions]);
+    if (typeof value === 'boolean') return value;
+  }
+  const key = Q[name];
+  const registered = (predicate && handlers.get(predicate)) ?? (key && handlers.get(key));
+  let result: Tri;
+  for (const handler of registered ?? []) {
+    const expr = at(args, 0);
+    if (isAskHandler(handler)) {
+      if (args.length !== 1) throw new RangeError('AskHandler takes one argument');
+      const value = evaluateAskHandler(handler, expr, assumptions);
+      if (value === 'unknown') continue;
+      if (result !== undefined && result !== value) throw new RangeError('Incompatible predicate handlers');
+      result = value;
+    } else {
+      const value = handler(expr, assumptions, args);
+      if (value !== 'unknown') return value;
+    }
+  }
+  return result;
+}
 
 /** Register an optional decision procedure for propositions. */
 export function registerPropositionHandler(handler: (proposition: Expr, assumptions: Expr) => Truth): void {
@@ -149,26 +249,34 @@ export function registerRefineHandler(handler: (expr: Expr, assumptions: Assumpt
 }
 const refineHandlers: ((expr: Expr, assumptions: Assumption) => Expr)[] = [];
 
-/**
- * A predicate with the given name (SymPy Predicate); handlers added with
- * registerHandler decide it in ask.
- */
 const REL_PREDICATES = { Gt: 'gt', Lt: 'lt', Ge: 'ge', Le: 'le', Eq: 'eq', Ne: 'ne' } as const;
 
+/**
+ * Create a callable predicate. Assign it to a custom key on Q and register methods by argument type,
+ * for example `p.register([Sym], (symbol, assumptions) => ask(Q.real(symbol), assumptions))`.
+ * Use `'Integer'` to select the integer members of Rational.
+ */
 export function Predicate(name: string, handler?: PredicateHandler): Predicate {
-  const f = (...argsIn: (ExprLike | boolean)[]): AppliedPredicate => {
+  const apply = (...argsIn: (ExprLike | boolean)[]): AppliedPredicate => {
     const args = argsIn.map((a) => (typeof a === 'boolean' ? (a ? S.true : S.false) : sympify(a)));
     // SymPy IsTruePredicate: Q.is_true of a predicate is the predicate, of a relation its predicate (Q.eq, Q.gt, ...)
     const a0 = args[0];
     if (name === 'is_true' && a0 instanceof AppliedPredicate) return a0;
     if (name === 'is_true' && a0 instanceof Rel) return new AppliedPredicate(REL_PREDICATES[a0.op], [a0.lhs, a0.rhs]);
-    return new AppliedPredicate(name, args);
+    return new AppliedPredicate(name, args, f);
   };
-  Object.defineProperty(f, 'predicateName', { value: name });
+  const f: Predicate = Object.assign(apply, {
+    predicateName: name,
+    register(signature: readonly PredicateClass[], method: DispatchHandler) {
+      const table = methods.get(f) ?? new PredicateMethods();
+      table.register(signature, method);
+      methods.set(f, table);
+    },
+  });
+  Object.defineProperty(f, 'predicateName', { writable: false, enumerable: false, configurable: false });
   Object.defineProperty(f, 'toString', { value: () => `Q.${name}` });
-  if (handler) registerHandler(name, handler);
-  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- predicateName was added above with Object.defineProperty (non-enumerable, read-only)
-  return f as Predicate;
+  if (handler) registerHandler(f, handler);
+  return f;
 }
 
 const BUILTIN = [
@@ -182,26 +290,28 @@ const BUILTIN = [
   'complex_elements',
 ] as const satisfies readonly PredicateName[];
 
-const predicates: Record<string, Predicate> = Object.fromEntries(BUILTIN.map((n) => [n, Predicate(n)]));
+const predicates: Record<string, Predicate> = Object.create(null);
+for (const name of BUILTIN) predicates[name] = Predicate(name);
 
 /** SymPy Q: the assumption predicates (Q.positive(x), Q.even(n), Q.gt(x, y), ...). */
 // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- predicates holds an entry for every name in BUILTIN, which covers PredicateName (checked by satisfies above)
-export const Q = predicates as { readonly [K in PredicateName]: Predicate } & { readonly [name: string]: Predicate | undefined };
+export const Q = predicates as { readonly [K in PredicateName]: Predicate } & { [name: string]: Predicate | undefined };
 
 /**
  * Adds a handler for a predicate (SymPy register_handler); a predicate not
  * in Q is added to it. The handler is tried before the built-in rules.
  */
-export function registerHandler(key: string | Predicate, handler: PredicateHandler): void {
+export function registerHandler(key: string | Predicate, handler: LegacyHandler): void {
   const name = typeof key === 'string' ? key : key.predicateName;
-  handlers.set(name, [...(handlers.get(name) ?? []), handler]);
-  if (!(name in predicates)) predicates[name] = Predicate(name);
+  const predicate = predicates[name] ??= typeof key === 'string' ? Predicate(name) : key;
+  handlers.set(predicate, [...(handlers.get(predicate) ?? []), handler]);
 }
 
 /** Removes a handler added by registerHandler (SymPy remove_handler). */
-export function removeHandler(key: string | Predicate, handler: PredicateHandler): void {
+export function removeHandler(key: string | Predicate, handler: LegacyHandler): void {
   const name = typeof key === 'string' ? key : key.predicateName;
-  handlers.set(name, (handlers.get(name) ?? []).filter((h) => h !== handler));
+  const predicate = Q[name];
+  if (predicate) handlers.set(predicate, (handlers.get(predicate) ?? []).filter((h) => h !== handler));
 }
 
 /** Assumptions: a boolean expression of predicates, a list of them (a conjunction), or true. */
@@ -559,17 +669,15 @@ class Decider {
   ) {}
 
   /** The predicate on e: true, false or undefined (unknown). */
-  q(name: string, e: Expr): Tri {
+  q(name: string, e: Expr, predicate = Q[name]): Tri {
     const known = this.branch.facts.get(e.key)?.facts.get(name);
     if (known !== undefined) return known;
     const symbolFact = e instanceof Sym ? e.assumptions0.get(name) : undefined;
     if (symbolFact !== undefined) return symbolFact;
     // nan has no handler in SymPy: every predicate but commutative is undecided on it
     if (e === S.NaN && name !== 'commutative') return undefined;
-    for (const h of handlers.get(name) ?? []) {
-      const r = h(e, this.assumptions, [e]);
-      if (r !== 'unknown') return r;
-    }
+    const result = dispatch(predicate, name, [e], this.assumptions);
+    if (result !== undefined) return result;
     // predicates refer to each other (integer <-> rational, real <-> imaginary): a query in progress is unknown
     const k = `${name}|${e.key}`;
     if (this.memo.has(k)) return this.memo.get(k) ?? undefined;
@@ -1225,13 +1333,9 @@ function decide(prop: Expr, d: Decider): Tri {
       return rel[2] ? v : notTri(v);
     }
     if (prop.args.length !== 1) {
-      for (const h of handlers.get(prop.predicate) ?? []) {
-        const r = h(prop.arg, d.assumptions, prop.args);
-        if (r !== 'unknown') return r;
-      }
-      return undefined;
+      return dispatch(prop.function, prop.predicate, prop.args, d.assumptions);
     }
-    return d.q(prop.predicate, prop.arg);
+    return d.q(prop.predicate, prop.arg, prop.function);
   }
   throw new TypeError(`ask: ${prop.toString()} is not a proposition`);
 }

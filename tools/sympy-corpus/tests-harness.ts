@@ -5,6 +5,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { Dyadic, Expr, capture, Matrix, sympify, sympifyMethod, Vector } from '../../packages/symjs/src';
 import { deserialize, equalsSerializedOperand, fmt, matchesSympyErratum, pyEquals, runCase } from './harness';
+import { capturedIterable, withQueryFixture } from './ports';
 import type { Case, CaseObservation, Outcome, Tree } from './harness';
 
 export interface TestCase extends Case {
@@ -146,7 +147,9 @@ export function runTestCase(c: TestCase): TestOutcome {
     const got = capture((print) => print(pattern));
     return got === c.expected ? { status: 'pass' } : { status: 'fail', got };
   }
-  const outcome = runCase(call, (event) => { observation = event; });
+  const captured = capturedIterable(c);
+  if (captured !== undefined) return captured === c.expected ? { status: 'pass' } : { status: 'fail', got: captured };
+  const outcome = withQueryFixture(c, () => runCase(call, (event) => { observation = event; }));
   const result = assertionOutcome(c, outcome, observation);
   return result.status === 'error' ? { ...result, phase: observation === undefined ? 'input' : 'error' in observation ? 'invoke' : 'result' } : result;
 }
