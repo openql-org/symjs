@@ -9,7 +9,10 @@
 // every entry point brings the core with its registrations
 import './core';
 import { impl } from './core/nodes';
-import { asSet as asSetOf } from './solvers/inequalities';
+import type { ExprLike } from './core/nodes';
+import { booleanAsSet } from './logic/boolalg';
+import { EmptySet, Reals, type SetExpr } from './sets/sets';
+import { asSet as asSetOf, periodicity as periodOf } from './solvers/inequalities';
 
 export {
   linsolve,
@@ -116,7 +119,6 @@ export { infinitesimals, checkinfsol } from './solvers/liegroup';
 export {
   solveset,
   solveUnivariateInequality,
-  asSet,
   solvePolyInequality,
   solveRationalInequalities,
   solvePolyInequalities,
@@ -164,7 +166,11 @@ export type { LPMatrixLike, LPBound, LPBounds } from './solvers/simplex';
 export { bivariateType } from './solvers/bivariate';
 export { SingleODEProblem, SingleODESolver, FirstLinear, getNumberedConstants, NthAlgebraic, ODEMatchError } from './solvers/ode/single';
 
-impl.asSet = asSetOf;
+/** The real solution set of a univariate Boolean condition. */
+export function asSet(input: ExprLike | boolean): SetExpr {
+  return booleanAsSet(input, asSetOf, periodOf, EmptySet, Reals);
+}
+impl.asSet = asSet;
 
 export { linodesolve } from './solvers/linodesolve';
 export type { LinodesolveOptions } from './solvers/linodesolve';

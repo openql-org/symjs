@@ -515,7 +515,7 @@ function subsOne(e: Expr, old: Expr, nw: Expr): Expr {
     const rs = defined(impl.subsSet, 'sets')(e, old, nw, (x) => subsOne(x, old, nw));
     if (rs !== undefined) return rs;
   }
-  if (e instanceof ExtensionExpr) {
+  if (e instanceof ExtensionExpr || e instanceof BoolOp) {
     const own = e.subsSelf(old, nw, (x) => subsOne(x, old, nw));
     if (own !== undefined) return own;
   }

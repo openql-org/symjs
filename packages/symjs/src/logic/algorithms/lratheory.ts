@@ -2,8 +2,10 @@
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 
 /** Exact feasibility for conjunctions of linear rational inequalities. */
-import { Add, Mul, Rational, Sym, type Expr } from '../../core/nodes';
-import { getOrThrow } from '../../core/guard';
+import { Add, BoolAtom, Mul, Rational, Rel, S, Sym, type Expr } from '../../core/nodes';
+import { BoolOp } from '../../core/boolalg';
+import { AppliedPredicate } from '../../core/refine';
+import { at, getOrThrow } from '../../core/guard';
 import { NotImplementedError } from '../../core/errors';
 
 /** Valid input outside linear real arithmetic. */
@@ -73,3 +75,39 @@ export function linearFeasible(constraints: readonly LinearConstraint[]): boolea
     return strict ? c.p < 0n : c.p <= 0n;
   });
 }
+
+const relationNames = { Eq: 'eq', Ne: 'ne', Lt: 'lt', Le: 'le', Gt: 'gt', Ge: 'ge' } as const;
+const complement: Record<string, string> = { eq: 'ne', ne: 'eq', lt: 'ge', le: 'gt', gt: 'le', ge: 'lt' };
+const signRelations: Record<string, string> = { positive: 'gt', negative: 'lt', nonpositive: 'le', nonnegative: 'ge', zero: 'eq', nonzero: 'ne', extended_positive: 'gt', extended_negative: 'lt', extended_nonpositive: 'le', extended_nonnegative: 'ge', extended_nonzero: 'ne' };
+
+/** Translate the Boolean skeleton to conjunctions of theory constraints. */
+function theoryBranches(e: Expr, negate = false): LinearConstraint[][] {
+  if (e instanceof BoolAtom) return e.value !== negate ? [[]] : [];
+  if (e instanceof BoolOp) {
+    if (e.op === 'Not') return theoryBranches(at(e.args, 0), !negate);
+    if (e.op !== 'And' && e.op !== 'Or') throw new UnhandledInput('Unsupported Boolean connective');
+    const parts = e.args.map((arg) => theoryBranches(arg, negate));
+    if ((e.op === 'And') === negate) return parts.flat();
+    return parts.reduce<LinearConstraint[][]>((a, b) => a.flatMap((x) => b.map((y) => [...x, ...y])), [[]]);
+  }
+  let name: string, lhs: Expr, rhs: Expr;
+  if (e instanceof Rel) {
+    name = relationNames[e.op]; lhs = e.lhs; rhs = e.rhs;
+  } else if (e instanceof AppliedPredicate) {
+    name = e.predicate; lhs = e.arg; rhs = e.args[1] ?? S.Zero;
+    if (['positive_infinite', 'negative_infinite', 'real', 'extended_real', 'finite'].includes(name)) linearForm(lhs);
+    if (['positive_infinite', 'negative_infinite'].includes(name)) return negate ? [[]] : [];
+    if (['real', 'extended_real', 'finite'].includes(name)) return negate ? [] : [[]];
+    name = signRelations[name] ?? name;
+  } else throw new UnhandledInput('Unsupported proposition');
+  if (negate) name = complement[name] ?? '';
+  if (!['eq', 'ne', 'lt', 'le', 'gt', 'ge'].includes(name)) throw new UnhandledInput('Unsupported predicate');
+  const form = combineLinear(linearForm(lhs), linearForm(rhs), Rational.of(-1));
+  const opposite = combineLinear(new Map(), form, Rational.of(-1));
+  if (name === 'eq') return [[{ form, strict: false }, { form: opposite, strict: false }]];
+  if (name === 'ne') return [[{ form, strict: true }], [{ form: opposite, strict: true }]];
+  return [[{ form: name === 'gt' || name === 'ge' ? opposite : form, strict: name === 'gt' || name === 'lt' }]];
+}
+
+/** Check a Boolean combination of linear constraints over real variables. */
+export const linearSatisfiable = (e: Expr): boolean => theoryBranches(e).some(linearFeasible);

@@ -63,6 +63,7 @@ export function className(e: Expr): string {
   if (e instanceof Rel && e.op === 'Eq') return 'Equality';
   if (e instanceof Fn) return ({ abs: 'Abs', ff: 'FallingFactorial', rf: 'RisingFactorial' } as Record<string, string>)[e.name] ?? e.name;
   if (e instanceof UndefFn) return e.name;
+  if (e instanceof BoolOp) return e.className;
   if (e instanceof ExtensionExpr) return e.name;
   if (e instanceof Add) return 'Add';
   if (e instanceof Mul) return 'Mul';

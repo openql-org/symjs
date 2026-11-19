@@ -153,3 +153,16 @@ describe('inference of unevaluated gates', () => {
     expect(all(L.Xnor(x, y, { evaluate: false }))).toEqual(['{x: False, y: False}', '{x: True, y: True}']);
   });
 });
+
+it('checks encoded clauses against a shared real assignment using their supplied numbers', () => {
+  const greater = sj.Q.gt(x, 2), less = sj.Q.lt(x, 1);
+  const encoding = new Map([[greater, 7], [less, 3]]);
+  const clauses = new sj.EncodedCNF([[3], [7, 0]], encoding);
+  expect(L.satisfiable(clauses)).toEqual(new sj.ExprMap([[less, true], [greater, true]]));
+  expect(L.satisfiable(clauses, { useLraTheory: true })).toBe(false);
+  const possible = new sj.EncodedCNF([[-3], [7]], encoding);
+  expect([...L.satisfiable(possible, { useLraTheory: true, allModels: true, minimal: true })])
+    .toEqual([new sj.ExprMap([[greater, true], [less, false]])]);
+  expect(L.satisfiable(new sj.EncodedCNF([[0]]))).toBe(false);
+  expect(() => L.satisfiable(new sj.EncodedCNF([[1]], [[sj.Q.positive, 1]]))).toThrow(TypeError);
+});

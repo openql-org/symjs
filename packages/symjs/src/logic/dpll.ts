@@ -186,11 +186,11 @@ export class SATSolver {
   }
 
   /** The models, each as the assigned literals (positive = true). */
-  *findModels(): Generator<number[]> {
+  *findModels(feasible?: (assignment: ReadonlySet<number>) => boolean): Generator<number[]> {
     if (this.isUnsatisfied) return;
     let flipVar = false;
     this.simplify();
-    if (this.unsatisfied()) return;
+    if (this.unsatisfied() || feasible?.(this.varSettings) === false) return;
     for (;;) {
       let lit: number;
       if (flipVar) {
@@ -212,7 +212,7 @@ export class SATSolver {
       }
       this.assign(lit);
       this.simplify();
-      if (this.unsatisfied()) {
+      if (this.unsatisfied() || feasible?.(this.varSettings) === false) {
         this.isUnsatisfied = false;
         while (this.current.flipped) {
           this.undo();
