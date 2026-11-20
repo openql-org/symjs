@@ -22,12 +22,20 @@ export interface ApiMembers {
   };
 }
 
+/** JavaScript's built-in constructors and prototypes. Their members differ between
+ * runtime versions (Error.isError, Map.prototype.getOrInsert), so they stay out of
+ * the snapshot. */
+const BUILTINS: ReadonlySet<unknown> = new Set(
+  [Object, Function, Error, TypeError, RangeError, Map, Set, WeakMap, WeakSet, Array, Promise, RegExp, Date, Number, String, Boolean, Symbol, BigInt, ArrayBuffer, Uint8Array, Float64Array]
+    .flatMap((ctor) => [ctor, ctor.prototype, Object.getPrototypeOf(ctor.prototype)])
+    .filter((value) => value !== null && value !== undefined));
+
 /** Inspect descriptors without constructing objects or invoking getters. Include
- * inherited members, but never JavaScript's Object/Function protocol methods. */
+ * inherited members, but never members of JavaScript's built-in classes. */
 function members(value: unknown): string[] {
   const names = new Set<string>();
   let current = value;
-  while (current !== null && (typeof current === 'object' || typeof current === 'function') && current !== Object.prototype && current !== Function.prototype) {
+  while (current !== null && (typeof current === 'object' || typeof current === 'function') && !BUILTINS.has(current)) {
     for (const name of Object.getOwnPropertyNames(current)) {
       if (name === 'constructor' || name.startsWith('_') || typeof current === 'function' && ['prototype', 'length', 'name', 'arguments', 'caller'].includes(name)) continue;
       const descriptor = Object.getOwnPropertyDescriptor(current, name);
