@@ -54,8 +54,9 @@ describe('solveEquations', () => {
     const equations = [p('y**2-x'), p('y+x**3+x**2+x-1/10')];
     const solutions = solveEquations(equations, [x, y]);
     expect(solutions).toHaveLength(2);
+    // the residual is exactly zero, so cap the working precision as SymPy's evalf does by default
     for (const solution of solutions) for (const equation of equations) {
-      expect(equation.subs([[x, at(solution, 0)], [y, at(solution, 1)]]).evalf(25).toNumber()).toBeCloseTo(0, 12);
+      expect(equation.subs([[x, at(solution, 0)], [y, at(solution, 1)]]).evalf(25, { maxn: 100 }).toNumber()).toBeCloseTo(0, 12);
     }
   });
 
