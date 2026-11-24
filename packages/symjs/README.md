@@ -10,6 +10,15 @@ factor(parse('x**3 - x')).toString(); // 'x*(x - 1)*(x + 1)'
 diff(sin(x).pow(2), x).toString();    // '2*sin(x)*cos(x)'
 ```
 
+The `ex` tagged template writes expressions with ordinary operators and embeds JavaScript values:
+
+```ts
+import { ex, symbols } from '@symjs/symjs';
+
+const [x] = symbols('x', { real: true });
+ex`(${x} + 1)^2/2`.toString(); // '(x + 1)**2/2'
+```
+
 Differential geometry is available through the `@symjs/symjs/diffgeom` subpath:
 
 ```ts

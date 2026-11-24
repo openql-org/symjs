@@ -31,6 +31,29 @@ diff(parse('x**x'), x).toString();           // 'x**x*(log(x) + 1)'
 roots(parse('x**2 + x + 1'), x);             // Map { -1/2 - sqrt(3)*I/2 => 1, -1/2 + sqrt(3)*I/2 => 1 }
 ```
 
+### Writing expressions with operators: the `ex` tagged template
+
+JavaScript has no operator overloading, so `x + 1` on an expression does not build an expression.
+The `ex` tagged template lets you write formulas with ordinary operators and embed JavaScript values with `${...}`:
+
+```ts
+import { ex, symbols, rational, diff } from '@symjs/symjs';
+
+const [x, y] = symbols('x y', { real: true });
+
+ex`(${x} + 1)^2/2 - ${rational(1, 3)}*${y}`.toString(); // '-y/3 + (x + 1)**2/2'
+ex`x**2 + 3*x - 1`;                                     // bare names refer to interpolated symbols of the same name...
+ex`x + ${x}`.toString();                                // '2*x' (...so this x is the real symbol above)
+diff(ex`sin(${x})^2`, x).toString();                    // '2*sin(x)*cos(x)'
+```
+
+- Operators: `+ - * /`, `^` and `**` for powers (right associative), `!` for factorial, unary `-`, parentheses.
+- Function calls and constants use SymPy's names (`sin`, `exp`, `sqrt`, `pi`, `E`, `I`, `oo`, ...).
+- Interpolated values may be expressions, `number`s (integers become exact rationals, non-integers `Float`s) or `bigint`s.
+- A bare name refers to an interpolated symbol of the same name in the same template; other names become plain symbols without assumptions.
+- Numbers written inside the template are exact (`1/3` is the rational one third).
+- The grammar is the one of `parse`; use `parse(src, options)` for a string built at runtime or for parser options.
+
 ## Packages: base and extend modules
 
 symjs is a bun workspace monorepo. The general-purpose CAS is the **base module**; functionality for a specific application domain is published as separate **extend module** packages, so applications install only what they use:

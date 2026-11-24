@@ -851,14 +851,15 @@ export function parse(src: string, opts: ParseOptions = {}): Expr {
 }
 
 /**
- * Tagged template for writing expressions inline; interpolated values may be
- * expressions or numbers.
+ * Tagged template for writing expressions with ordinary operators
+ * (`+ - * / ^ **`, function calls, constants such as `pi`, `E`, `I`, `oo`).
+ * Interpolated values may be expressions, numbers or bigints; a bare name in
+ * the template refers to an interpolated symbol of the same name, and other
+ * names become plain symbols. The grammar is the one of {@link parse}.
  *
  * @example
  * const t = symbol('theta', { real: true });
  * ex`cos(${t}/2) - I*sin(${t}/2)`
- *
- * @experimental May change in a minor release.
  */
 export function ex(strings: TemplateStringsArray, ...values: ExprLike[]): Expr {
   const tokens: Token[] = [];

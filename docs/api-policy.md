@@ -238,7 +238,7 @@ Every export of every entry point, and every public member of an exported class,
 | `compareKeys` | internal |  |  |
 | `latex` | stable |  | SymPy latex |
 | `parse` | stable | `parseExpr` | SymPy parse_expr (parse kept as alias) |
-| `ex` | experimental |  | tagged template parser |
+| `ex` | stable |  | tagged template parser |
 | `matrixExp` | stable |  | Matrix.exp |
 | `matrixLog` | stable |  | Matrix.log |
 | `ldl` | stable | `LDLdecomposition` | Matrix.LDLdecomposition |
