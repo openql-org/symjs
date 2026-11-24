@@ -17,6 +17,7 @@ import { add, exp, mul, pow, sympify } from '../../core/ops';
 import { asCoefficient, asIndependent } from '../../core/methods';
 import type { NoMatchResult } from '../../core/truth';
 import { NoMatch } from '../../core/truth';
+import { adjoint, transpose } from './elementary';
 import { rebuild, subs, xreplace } from '../../core/traverse';
 import { mpExprFns, mpFns } from '../../numeric/mpeval';
 import { numericFns } from '../../numeric/evalf';
@@ -408,6 +409,8 @@ parserHooks.constructors.set('polar_lift', arity('polar_lift', 1, polarLift));
 parserHooks.constructors.set('periodic_argument', arity('periodic_argument', 2, periodicArgument));
 parserHooks.constructors.set('principal_branch', arity('principal_branch', 2, principalBranch));
 parserHooks.constructors.set('unbranched_argument', arity('unbranched_argument', 1, unbranchedArgument));
+parserHooks.constructors.set('adjoint', arity('adjoint', 1, adjoint));
+parserHooks.constructors.set('transpose', arity('transpose', 1, transpose));
 // (no derivative: SymPy's exp_polar has no fdiff, diff(exp_polar(x), x) stays Derivative(exp_polar(x), x))
 // SymPy exp_polar._eval_evalf: exp of the argument (evaluated as an expression, so exp(I*pi) is
 // exactly -1), made real when an argument just below pi*I gives an imaginary part of the wrong

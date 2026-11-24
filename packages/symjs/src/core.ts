@@ -1310,10 +1310,3 @@ export { complexAccuracy, evalfRaw, getIntegerPart } from './numeric/evalf';
 export type { EvalfResult } from './numeric/evalf';
 export { LatticeOp } from './core/operations';
 export type { LatticeOperation } from './core/operations';
-
-// adjoint and transpose in parsed strings (FnName heads without a parser entry)
-import { parserHooks as _parserHooks_ } from './parsing/parser';
-import { adjoint as _adjoint_, transpose as _transpose_ } from './functions/elementary/elementary';
-import { at as _atCore_ } from './core/guard';
-_parserHooks_.constructors.set('adjoint', (args) => _adjoint_(_atCore_(args, 0)));
-_parserHooks_.constructors.set('transpose', (args) => _transpose_(_atCore_(args, 0)));

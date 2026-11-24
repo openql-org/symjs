@@ -30,6 +30,8 @@ const esbuild = createRequire(require.resolve('tsup'))('esbuild');
 // Assumption-aware solve loads the predicate engine; keep its cost explicit.
 // Order containment and AccumBounds interval comparisons add at most 1 KiB
 // to consumers of core; pretty also gains symbolic-tuple layout.
+// Complex powers split into real and imaginary parts, the parser's table of
+// SymPy function names and sstr of any object add at most 6 KiB to each consumer.
 // Public comparison, symbol-naming and numeric helpers add about 5 KiB to the
 // core namespace; shared arithmetic and symbol introspection add <1 KiB to strategies.
 // Precision-aware comparability, bound-variable hashing and full free-symbol
@@ -66,59 +68,59 @@ const esbuild = createRequire(require.resolve('tsup'))('esbuild');
 // also includes relational reduction and Boolean minimization.
 // Symbolic AccumBounds arithmetic and exact membership add less than 1 KiB to core consumers.
 const CASES = [
-  ['core', 'Rational', 302],
-  ['core', 'parse, str', 321],
-  ['core', 'parse, diff, expand, str, latex', 321],
-  ['core', '*', 397],
+  ['core', 'Rational', 304],
+  ['core', 'parse, str', 324],
+  ['core', 'parse, diff, expand, str, latex', 324],
+  ['core', '*', 401],
   // B-spline interpolation and multiset counting add approximately 5 KiB.
   // Meijer G derivatives, support intervals and branch-preserving integral rewrites.
-  ['special', '*', 536],
+  ['special', '*', 541],
   // The standalone simplify entry now loads doit, including integral/sum evaluation.
-  ['simplify', 'simplify', 1283],
+  ['simplify', 'simplify', 1288],
   // The polys entry re-exports the sparse domain matrices through a
   // side-effect-free module, and the matrices that number fields use call
   // simplify late-bound, so factor loads neither; the finite-domain Poly
   // methods and the polynomial-ring extensions add to it (measured 694 KiB).
-  ['polys', 'factor', 867],
+  ['polys', 'factor', 871],
   // Finite-domain Poly arithmetic/cancellation adds the shared GF algorithms
   // to consumers of the polynomial engine.
-  ['calculus', 'integrate', 1294],
-  ['solvers', 'solve', 1392],
-  ['solvers', 'dsolve', 1416],
-  ['sets', '*', 524],
-  ['matrices', 'Matrix', 1148],
-  ['printing', 'pretty', 340],
-  ['discrete', '*', 403],
-  ['strategies', '*', 313],
+  ['calculus', 'integrate', 1298],
+  ['solvers', 'solve', 1396],
+  ['solvers', 'dsolve', 1421],
+  ['sets', '*', 527],
+  ['matrices', 'Matrix', 1152],
+  ['printing', 'pretty', 343],
+  ['discrete', '*', 406],
+  ['strategies', '*', 315],
   // LaTeX parsing includes explicit matrix expressions and both hand-written grammars.
-  ['parsing', '*', 1077],
-  ['unify', '*', 320],
+  ['parsing', '*', 1081],
+  ['unify', '*', 322],
   // Matrices of numbers (quaternions, ciphers, Lie algebras) no longer bring
   // the simplification engine (measured 497/334/314 KiB, was 577/581/577).
-  ['algebras', 'Quaternion', 736],
-  ['holonomic', 'exprToHolonomic', 1472],
-  ['geometry', '*', 1346],
-  ['vector', '*', 1458],
-  ['stats', '*', 1641],
+  ['algebras', 'Quaternion', 740],
+  ['holonomic', 'exprToHolonomic', 1477],
+  ['geometry', '*', 1351],
+  ['vector', '*', 1462],
+  ['stats', '*', 1646],
   // Diagram layout, pretty grids and Xy-pic text generation.
-  ['categories', '*', 572],
+  ['categories', '*', 575],
   // Numeric meshing plus symbolic discontinuities and finite-sum evaluation.
-  ['plotting', '*', 1332],
-  ['crypto', '*', 472],
-  ['liealgebras', '*', 452],
+  ['plotting', '*', 1337],
+  ['crypto', '*', 475],
+  ['liealgebras', '*', 455],
   // The C99 math function classes with SymPy's class members (assumption queries, matching, logic forms; measured 396 KiB).
-  ['codegen', '*', 1068],
+  ['codegen', '*', 1072],
   // The root is side-effect free: a named import brings only the entry points
   // of the names used (measured 177 KiB, the core entry; was 1312).
-  ['index', 'Rational', 302],
+  ['index', 'Rational', 304],
   // The whole root namespace, including the codegen C math functions, densetools, Galois groups and
   // resolvents, PolyMatrix, multivariate resultants, tensor operators, TensorProduct, array conversions,
   // quadrature, exact cosine tables, symbolic acceleration and Sylow subgroups (measured 2730 KiB).
   // Tensor axis normalization, indexed broadcasting and matrix-array conversions.
   // Polynomial remainder sequences, Hensel lifting and module orders add up to 2 KiB.
-  ['index', '*', 3141],
+  ['index', '*', 3147],
   // Differential geometry includes symbolic inversion and curvature calculations.
-  ['diffgeom', '*', 1355],
+  ['diffgeom', '*', 1360],
 ];
 
 async function measure(entry, names) {

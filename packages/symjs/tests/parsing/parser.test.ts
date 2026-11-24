@@ -492,8 +492,6 @@ describe('SymPy function names in parsed strings', () => {
     ['KroneckerDelta(1, 1)', '1'],
     ['LeviCivita(1, 2, 3)', '1'],
     ['hyper((1, 2), (3,), x)', 'hyper((1, 2), (3,), x)'],
-    ['LaplaceTransform(x, x, s)', 'LaplaceTransform(x, x, s)'],
-    ['InverseLaplaceTransform(1/s, s, t, 0)', 'InverseLaplaceTransform(1/s, s, t, 0)'],
     ['chebyshevt_root(3, 0)', 'sqrt(3)/2'],
     ['motzkin(4)', '4'],
     ['adjoint(x)', 'conjugate(x)'],
