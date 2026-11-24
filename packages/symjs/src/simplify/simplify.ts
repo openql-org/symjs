@@ -295,11 +295,26 @@ function simplifyPiecewise(e: Piecewise, opts: SimplifyOptions): Expr {
 }
 
 /**
- * Simplify an expression (SymPy simplify): rational-function forms (cancel, together), the
- * special simplifications for the functions it contains (hyperexpand, besselsimp, trigsimp,
- * log expansion or combination, combsimp), power simplification and sign normalization; each
- * step keeps the shortest candidate by `measure` (count_ops), and a result longer than `ratio`
- * times the input is rejected.
+ * Simplifies an expression by trying rational-function forms (`cancel`,
+ * `together`), the simplifications for the functions it contains (`hyperexpand`,
+ * `besselsimp`, `trigsimp`, log expansion or combination, `combsimp`), power
+ * simplification and sign normalization. Each step keeps the shortest candidate
+ * by `measure` (`countOps` by default), and a result longer than `ratio` times
+ * the input is rejected.
+ *
+ * @param ex - The expression to simplify.
+ * @param opts - See {@link SimplifyOptions}.
+ * @returns The simplified expression.
+ * @see SymPy `sympy.simplify.simplify.simplify`
+ * @example
+ * ```ts
+ * import { ex, simplify, trigsimp } from '@symjs/symjs';
+ *
+ * const a = ex`(x + x**2)/(x*sin(y)**2 + x*cos(y)**2)`;
+ * a; // => (x**2 + x)/(x*sin(y)**2 + x*cos(y)**2)
+ * simplify(a); // => x + 1
+ * trigsimp(a); // => (x**2 + x)/x
+ * ```
  */
 export function simplify(ex: AlgebraicNumber, opts?: SimplifyOptions): AlgebraicNumber;
 export function simplify(ex: ExprLike, opts?: SimplifyOptions): Expr;

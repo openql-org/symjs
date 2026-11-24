@@ -1050,21 +1050,42 @@ function tsolveLambert(num: Expr, x: Sym, depth: number): Expr[] | undefined {
   return undefined;
 }
 
-/**
- * Solutions of the equation e = 0 (or Eq(lhs, rhs)) for x, sorted like
- * SymPy. Solutions violating the assumptions on x or making a denominator
- * vanish are removed unless check is false.
- */
 let noCubics = false;
 const uniqueKeys = (xs: Expr[]): Expr[] => [...new Map(xs.map((r) => [r.key, r])).values()];
 
+/** Options of {@link solve} (SymPy's flags of `solve`). */
 export interface SolveOptions {
+  /** Remove the solutions that violate the assumptions on the unknown or make a denominator vanish (default `true`). */
   check?: boolean;
+  /** `false` keeps the roots of cubics and quartics as `CRootOf` instead of radicals. */
   cubics?: boolean;
+  /** Allow solutions that still contain the unknown (an implicit solution). */
   implicit?: boolean;
+  /** Simplify the solutions (default `true`). */
   simplify?: boolean;
 }
 
+/**
+ * Solves the equation `e = 0` (or `Eq(lhs, rhs)`) for one unknown. The
+ * solutions are sorted as in SymPy; an equation without solutions gives an
+ * empty array. Systems of equations are solved by `solveSystem` and
+ * `linsolve`, and solution sets in a domain by `solveset`.
+ *
+ * @param e - The expression equal to zero, or an `Eq`.
+ * @param x - The unknown; by default the only free symbol of `e`.
+ * @param opts - See {@link SolveOptions}.
+ * @returns The solutions.
+ * @see SymPy `sympy.solvers.solvers.solve`
+ * @example
+ * ```ts
+ * import { Eq, ex, solve, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * solve(ex`x - 3`, x); // => [3]
+ * solve(Eq(x, 3), x); // => [3]
+ * solve(ex`x**2 - 4`); // => [-2, 2]
+ * ```
+ */
 export function solve(e: ExprLike, x?: Expr, opts: SolveOptions = {}): Expr[] {
   if (opts.cubics === false && !noCubics) {
     noCubics = true;

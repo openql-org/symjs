@@ -256,7 +256,27 @@ import { diff as scalarDiff } from './calculus/diff';
 import { booleanCalculus } from './core/boolalg';
 export { fdiff } from './calculus/diff';
 
-/** Differentiate an expression, including Boolean functions of binary symbols. */
+/**
+ * Differentiates an expression `order` times with respect to `x`; Boolean
+ * functions of binary symbols are differentiated as Boolean derivatives. A
+ * derivative that cannot be computed is returned as a `Derivative`.
+ *
+ * @param ex - The expression to differentiate.
+ * @param x - The variable.
+ * @param order - The order of the derivative.
+ * @returns The derivative.
+ * @see SymPy `sympy.core.function.diff`
+ * @example
+ * ```ts
+ * import { diff, ex, Function, symbols } from '@symjs/symjs';
+ *
+ * const [x, y] = symbols('x y');
+ * const f = Function('f');
+ * diff(ex`sin(x)`, x); // => cos(x)
+ * diff(f(x), x, 3); // => Derivative(f(x), (x, 3))
+ * diff(diff(ex`sin(x)*cos(y)`, x, 2), y, 2); // => sin(x)*cos(y)
+ * ```
+ */
 export function diff(ex: ExprLikeT, x: ExprNode, order: ExprLikeT = 1): ExprNode {
   const e = sympifyFn(ex);
   if (e.kind === 'BoolOp' || e.kind === 'Extension') {
@@ -355,12 +375,25 @@ type SplitNames<S extends string> =
 type ToSyms<T extends readonly unknown[]> = { [K in keyof T]: SymbolNode };
 export type SymbolTuple<S extends string> = string extends S ? SymbolNode[] : ToSyms<SplitNames<S>>;
 /**
- * Create several symbols at once from a space- or comma-separated list.
- * With a string literal the result is a typed tuple.
+ * Creates symbols from a list of names separated by spaces or commas. Ranges
+ * such as `x:3` or `a(1:3)` give numbered names. With a string literal the
+ * result is a typed tuple.
  *
+ * @param names - The names.
+ * @param assumptions - The assumptions of every symbol (`real`, `positive`, ...).
+ * @returns The symbols, in the order of the names.
+ * @see SymPy `sympy.core.symbol.symbols`
  * @example
- * const [theta, phi] = symbols('theta phi', { real: true });
-*/
+ * ```ts
+ * import { isReal, symbols } from '@symjs/symjs';
+ *
+ * symbols('x,y'); // => [x, y]
+ * symbols('x:5'); // => [x0, x1, x2, x3, x4]
+ * symbols('x5:10,y:3'); // => [x5, x6, x7, x8, x9, y0, y1, y2]
+ * const [theta] = symbols('theta', { real: true });
+ * isReal(theta); // => True
+ * ```
+ */
 export function symbols<S extends string>(names: S, assumptions: Assumptions = {}): SymbolTuple<S> {
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the tuple length is computed from the literal type S, which the type system cannot relate to the runtime split
   return expandNames(names).map((n) => new SymbolNode(n, assumptions)) as SymbolTuple<S>;

@@ -801,9 +801,28 @@ function cancelShiftedPowers(e: Expr, z: Sym): Expr {
 }
 
 /**
- * Limit of e as z -> z0. dir is '+' (default, like SymPy), '-' or '+-'
- * (two-sided; throws if the one-sided limits differ). Returns an unevaluated
- * `Limit` when the limit cannot be determined.
+ * Computes the limit of `ex` as `z` tends to `z0x`. A limit that cannot be
+ * determined is returned unevaluated as a `Limit`.
+ *
+ * @param ex - The expression.
+ * @param z - The variable.
+ * @param z0x - The point, which may be `oo` or `-oo`.
+ * @param dir - `'+'` (the default) or `'-'` for a one-sided limit, `'+-'` for
+ *   the two-sided limit.
+ * @returns The limit.
+ * @throws RangeError when the finite one-sided limits of a two-sided limit differ.
+ * @see SymPy `sympy.series.limits.limit`
+ * @example
+ * ```ts
+ * import { ex, limit, oo, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * limit(ex`sin(x)/x`, x, 0); // => 1
+ * limit(ex`1/x`, x, 0); // => oo
+ * limit(ex`1/x`, x, 0, '-'); // => -oo
+ * limit(ex`1/x`, x, 0, '+-'); // => zoo
+ * limit(ex`1/x`, x, oo); // => 0
+ * ```
  */
 export function limit(ex: ExprLike, z: Sym, z0x: ExprLike, dir: '+' | '-' | '+-' = '+'): Expr {
   return limitWithin(ex, z, z0x, dir, BUDGET);

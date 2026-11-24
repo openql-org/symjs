@@ -571,8 +571,28 @@ function applyBottomUp(e: Expr, f: (e: Expr) => Expr, deep: boolean): Expr {
 }
 
 /**
- * SymPy-compatible expand. Default hints: mul, multinomial, power_exp,
- * power_base, log (and deep). Optional: complex, trig, force.
+ * Expands an expression with the methods the hints select. The hints `mul`,
+ * `multinomial`, `power_exp`, `power_base`, `log` and `deep` are on by default;
+ * `complex`, `func`, `trig`, `basic` and `force` are off. `frac`, `numer` and
+ * `denom` expand only the numerator and denominator, or one of them.
+ *
+ * @param ex - The expression to expand.
+ * @param hints - The expansion methods, as SymPy's keyword arguments.
+ * @returns The expanded expression.
+ * @see SymPy `sympy.core.function.expand`
+ * @example
+ * ```ts
+ * import { ex, expand } from '@symjs/symjs';
+ *
+ * expand(ex`y*(x + z)`); // => x*y + y*z
+ * expand(ex`(x + y + z)**2`); // => x**2 + 2*x*y + 2*x*z + y**2 + 2*y*z + z**2
+ * expand(ex`exp(x + y)`); // => exp(x)*exp(y)
+ * expand(ex`2**(x + y)`); // => 2**x*2**y
+ * expand(ex`(x*y)**z`); // => (x*y)**z
+ * expand(ex`(x*y)**z`, { force: true }); // => x**z*y**z
+ * expand(ex`log(x**2*y)`, { force: true }); // => 2*log(x) + log(y)
+ * expand(ex`sin(x + y)`, { trig: true }); // => sin(x)*cos(y) + sin(y)*cos(x)
+ * ```
  */
 export function expand(ex: ExprLike, hints: ExpandHints = {}): Expr {
   const { frac, numer, denom, ...rest } = hints;

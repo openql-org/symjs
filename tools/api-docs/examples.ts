@@ -7,8 +7,8 @@
  * (docs/api-policy.md, "Documentation comments"). Each block is written to its own
  * module in a temporary directory, type-checked with `tsc` against the sources
  * (through the `paths` of the root tsconfig), and run with `bun`: a statement
- * followed by `// => result` (continuation lines `//   ...`) must print `result`
- * with `String()`.
+ * followed by `// => result` (continuation lines `//   ...`) must give `result`,
+ * a string as it is and any other value printed by `sstr` (SymPy's `str()`).
  *
  * Usage: `bun tools/api-docs/examples.ts [path filter...] [--no-run]`.
  */
@@ -100,9 +100,10 @@ export function instrument(example: Example): string {
 }
 
 const RUNNER = `
+const { sstr } = await import(process.argv[3]);
 let failures = 0;
 globalThis.__check = (value, expected, where) => {
-  const got = typeof value === 'string' ? value : String(value);
+  const got = typeof value === 'string' ? value : sstr(value);
   if (got !== expected) { failures++; console.log(\`\${where}: expected \${JSON.stringify(expected)}, got \${JSON.stringify(got)}\`); }
 };
 const files = JSON.parse(process.argv[2]);
@@ -156,7 +157,7 @@ if (import.meta.main) {
       if (run) {
         writeFileSync(join(dir, 'runner.mjs'), RUNNER);
         try {
-          execFileSync('bun', [join(dir, 'runner.mjs'), JSON.stringify(paths)], { stdio: 'inherit', cwd: dir });
+          execFileSync('bun', [join(dir, 'runner.mjs'), JSON.stringify(paths), join(SRC, 'index.ts')], { stdio: 'inherit', cwd: dir });
         } catch {
           failed = true;
         }

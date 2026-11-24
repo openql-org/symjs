@@ -1480,6 +1480,33 @@ export function integral(ex: ExprLike, ...limits: readonly (ExprLike | readonly 
   return result;
 }
 
+/**
+ * Integrates an expression with respect to a symbol: the antiderivative, or the
+ * definite integral between `limits`. An integral that cannot be computed is
+ * returned unevaluated as an `Integral`.
+ *
+ * @param ex - The integrand.
+ * @param x - The integration variable.
+ * @param limits - The lower and upper limits of a definite integral.
+ * @param opts - `conds: 'none'` drops the convergence conditions of a definite
+ *   integral (`'piecewise'`, the default, returns them as a `Piecewise`);
+ *   `heurisch: false` skips the heuristic Risch algorithm.
+ * @returns The integral.
+ * @throws RangeError when `x` is not a symbol.
+ * @see SymPy `sympy.integrals.integrals.integrate`
+ * @example
+ * ```ts
+ * import { ex, integrate, oo, symbols } from '@symjs/symjs';
+ *
+ * const [x, a] = symbols('x a');
+ * integrate(ex`x*y`, x); // => x**2*y/2
+ * integrate(ex`log(x)`, x); // => x*log(x) - x
+ * integrate(ex`log(x)`, x, [1, a]); // => a*log(a) - a + 1
+ * integrate(ex`sqrt(1 + x)`, x, [0, x]); // => 2*(x + 1)**(3/2)/3 - 2/3
+ * integrate(ex`x**a*exp(-x)`, x, [0, oo]); // => Piecewise((gamma(a + 1), re(a) > -1), (Integral(x**a*exp(-x), (x, 0, oo)), True))
+ * integrate(ex`x**a*exp(-x)`, x, [0, oo], { conds: 'none' }); // => gamma(a + 1)
+ * ```
+ */
 export function integrate(ex: ExprLike, x: Sym, limits?: readonly [ExprLike, ExprLike], opts: { conds?: 'piecewise' | 'none'; heurisch?: boolean } = {}): Expr {
   if (!(x instanceof Sym)) throw new RangeError('integrate: the integration variable must be a symbol');
   let f = sympify(ex);

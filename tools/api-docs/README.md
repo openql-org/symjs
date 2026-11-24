@@ -6,7 +6,7 @@ Checks of the documentation comments of `packages/symjs/src` against the rules o
 | Script | Purpose | Run with |
 |---|---|---|
 | `coverage.ts` | Emits the declarations with `tsc`, follows every entry point of `package.json` `exports` to the declaration of each export, and reports per source area which exports and public class members have a comment, `@param`/`@returns` for every signature, `@see SymPy` and `@example`. `--json <file>` writes one record per export (source file, members, missing parameters) | `bun run docs:coverage` (writes `docs/api-docs-coverage.md`) |
-| `examples.ts` | Extracts the fenced `ts` blocks of `@example`, type-checks them with `tsc` against the sources and runs them with `bun`; a statement followed by `// => result` must give `result` with `String()`. Path arguments restrict the check to files or directories; `--no-run` only type-checks | `bun run docs:examples [paths...]` |
+| `examples.ts` | Extracts the fenced `ts` blocks of `@example`, type-checks them with `tsc` against the sources and runs them with `bun`; a statement followed by `// => result` must give `result` (a string as it is, any other value through `sstr`, which prints like SymPy's `str()`). Path arguments restrict the check to files or directories; `--no-run` only type-checks | `bun run docs:examples [paths...]` |
 
 ## Writing a comment
 

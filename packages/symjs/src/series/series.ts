@@ -305,9 +305,27 @@ function singularityLocalForm(e: Expr, x: Sym, fromLeft: boolean): Expr {
 }
 
 /**
- * Series expansion of e about x = x0 up to O((x - x0)**n). Like SymPy, an
- * exact (finite) expansion is returned without an Order term.
- * The algebraic option uses an inverse-power expansion at infinity, as in formal series.
+ * Expands an expression in a series about `x = x0x` up to `O((x - x0x)**n)`.
+ * An exact (finite) expansion is returned without an `Order` term.
+ *
+ * @param ex - The expression.
+ * @param variable - The variable; by default the only free symbol of `ex`.
+ * @param x0x - The point of the expansion, which may be `oo`.
+ * @param n - The number of terms, the order of the `Order` term.
+ * @param dir - `'+'` (the default) or `'-'`, the side of the expansion.
+ * @param opts - `logx` replaces `log(x)` in the result; `algebraic` expands in
+ *   inverse powers at infinity, as formal series do.
+ * @returns The series with its `Order` term.
+ * @throws RangeError when `dir` is neither `'+'` nor `'-'`.
+ * @see SymPy `sympy.series.series.series`
+ * @example
+ * ```ts
+ * import { ex, series, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * series(ex`cos(x)`, x); // => 1 - x**2/2 + x**4/24 + O(x**6)
+ * series(ex`tan(x)`, x, 2, 3, '-'); // => tan(2) + (2 - x)*(-tan(2)**2 - 1) + (2 - x)**2*(tan(2)**3 + tan(2)) + O((x - 2)**3, (x, 2))
+ * ```
  */
 export function series(ex: ExprLike, variable?: Sym, x0x: ExprLike = 0, n = 6, dir: '+' | '-' = '+', opts: { logx?: Expr; local?: boolean; algebraic?: boolean } = {}): Expr {
   if (!['+', '-'].includes(dir)) throw new RangeError('Series direction must be + or -');
