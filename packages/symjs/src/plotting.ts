@@ -25,4 +25,10 @@ export { textplot, textplotStr } from './plotting/textplot';
 export { BaseSeries, Line2DBaseSeries, LineOver1DRangeSeries, ParametricLineBaseSeries, Parametric2DLineSeries, Line3DBaseSeries, Parametric3DLineSeries, List2DSeries, SurfaceBaseSeries, SurfaceOver2DRangeSeries, ParametricSurfaceSeries, ContourSeries, GenericDataSeries, ImplicitSeries, centersOfSegments, centersOfFaces, flat } from './plotting/series';
 export type { NumericFunction, PlotExpression, PlotBound, PlotRange, PlotParameters, NumericArray, IntervalBox, SeriesValues, JsonValue, RenderingOptions, PlotScale, SeriesKind, SeriesOptions, SeriesDescription } from './plotting/series';
 export { extractSolution } from './plotting/utils';
+/**
+ * Interval arithmetic for adaptive plotting: intervals with validity flags and
+ * the elementary functions on them.
+ *
+ * @see SymPy `sympy.plotting.intervalmath`
+ */
 export * as intervalmath from './plotting/intervalmath/index';

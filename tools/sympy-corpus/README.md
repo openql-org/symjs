@@ -28,10 +28,13 @@ tests cannot yet verify through the public API.
 Run both corpora or select a single category from the repository root.
 
 ```sh
-bunx vitest run --config tools/sympy-corpus/compat/vitest.config.ts --maxWorkers=2
+NODE_OPTIONS=--max-old-space-size=8192 bunx vitest run --config tools/sympy-corpus/compat/vitest.config.ts --maxWorkers=2
 bun run corpus:compat:doctest -- geometry
 bun run corpus:compat:unittest -- geometry
 ```
+
+The full replay runs every category project in one Vitest process, which needs
+more than Node's default heap; `NODE_OPTIONS` raises it.
 
 Each category runs as a Vitest project named `doctest-<category>` or
 `unittest-<category>`. Both runners use the same deserializer and public API adapters.

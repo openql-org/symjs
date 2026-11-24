@@ -21,8 +21,10 @@ export type PolyMatrixEntry = ExprLike | Poly;
 /** The generators of a polynomial matrix: one generator or a list of them (SymPy's tuple). */
 export type PolyMatrixGens = Expr | readonly Expr[];
 /** Options for constructing a polynomial matrix over a specified ring. */
-export interface PolyMatrixOptions { /** The polynomial ring for the matrix entries. */
-ring?: PolyMatrixRing | Domain | string }
+export interface PolyMatrixOptions {
+  /** The polynomial ring for the matrix entries. */
+  ring?: PolyMatrixRing | Domain | string;
+}
 /**
  * Supplies the matrix entry for the specified row and column.
  *

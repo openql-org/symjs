@@ -35,6 +35,12 @@ export { Matrix as MatrixBase } from './matrices/matrix';
 export { MatrixTranspose, MatrixAdjoint } from './matrices/matexpr';
 // matrix expressions (SymPy sympy.matrices.expressions)
 export * from './matrices/expressions/index';
+/**
+ * Linear algebra on symbolic matrices as functions: row reduction, rank, the
+ * null, column and row spaces, eigenvectors, diagonalization, the LU, QR,
+ * Cholesky and LDL decompositions, norms, singular values, the pseudo-inverse
+ * and the matrix exponential.
+ */
 export * as linalg from './matrices/linalg';
 export {
   rref,

@@ -249,6 +249,12 @@ export { fourierSeries, FourierSeries } from './series/fourier';
 // integration of polynomials over polytopes (SymPy sympy.integrals.intpoly); the helpers, whose names collide with
 // other SymPy functions (decompose, intersection, norm), are members of the namespace intpoly
 export { polytopeIntegrate } from './integrals/intpoly';
+/**
+ * The integration of polynomials over polytopes and its helpers (`decompose`,
+ * `intersection`, `norm`, ...), whose names collide with other functions.
+ *
+ * @see SymPy `sympy.integrals.intpoly`
+ */
 export * as intpoly from './integrals/intpoly';
 export type { PointLike, SegmentLike, PolygonLike, Hyperplane, Face, Polytope3D, MonomialRecord2D, MonomialRecord3D, MonomialTable3D } from './integrals/intpoly';
 // guessing sequences and generating functions (SymPy sympy.concrete.guess) and Pade approximants

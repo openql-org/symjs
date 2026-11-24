@@ -16,7 +16,7 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "coverage": "vitest run --coverage",
-    "corpus:compat": "vitest run --coverage --reporter=dot && vitest run --config tools/sympy-corpus/compat/vitest.config.ts",
+    "corpus:compat": "vitest run --coverage --reporter=dot && NODE_OPTIONS=--max-old-space-size=8192 vitest run --config tools/sympy-corpus/compat/vitest.config.ts",
     "corpus:generate": "bun tools/sympy-corpus/totests/generate.ts",
     "corpus:report": "vitest run --reporter=dot --reporter=./tools/sympy-corpus/corpus-report.ts .corpus.test.ts",
     "corpus:test-extract": "python3 -B -m unittest discover -s tools/sympy-reference -p 'test_extract*.py'",

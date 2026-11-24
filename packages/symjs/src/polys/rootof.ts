@@ -309,8 +309,10 @@ function getComplexes(factors: Factor[]): [ComplexInterval, Factor][] {
 }
 
 /** Options of indexed roots (rootof uses radicals by default, CRootOf does not). */
-export interface RootOfOptions { /** Whether to express an indexed root in radicals when possible. */
-radicals?: boolean; }
+export interface RootOfOptions {
+  /** Whether to express an indexed root in radicals when possible. */
+  radicals?: boolean;
+}
 
 /**
  * Selects an indexed polynomial root, retaining irreducible nontrivial factors as isolated-root

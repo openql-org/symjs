@@ -319,6 +319,8 @@ function lexOrder(terms: readonly Expr[], order = 'lex'): Expr[] {
         if (!hasFreeSymbols(factor) && !(factor instanceof ExtensionExpr && factor.isTaylorExpandable && impl.evalf(factor) instanceof ExtensionExpr)) {
           try {
             const v = impl.toComplex(factor);
+            // a function application without a finite value (yn(0, 0)) is a generator: SymPy's complex() of it fails
+            if (!(factor instanceof Special) && !(Number.isFinite(v.re) && Number.isFinite(v.im))) throw new RangeError('not a finite number');
             // avoid 0*oo = nan for real infinite factors
             coeff =
               v.im === 0

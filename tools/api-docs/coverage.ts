@@ -71,6 +71,8 @@ interface ModuleInfo {
   stars: string[];
   /** `export * as ns from` -> module. */
   namespaces: Map<string, string>;
+  /** The documentation comment of each `export * as` statement. */
+  namespaceDocs: Map<string, string>;
 }
 
 const DECLARATION = /^(export )?(?:declare )?(?:default )?(?:abstract )?(function|class|const|let|var|interface|type|enum|namespace) ([A-Za-z_$][\w$]*)/;
@@ -181,7 +183,7 @@ function moduleSpecifier(from: string, specifier: string): string {
 export function parseModule(file: string): ModuleInfo {
   const text = readFileSync(file, 'utf8');
   const lines = text.split('\n');
-  const info: ModuleInfo = { declarations: new Map(), links: new Map(), stars: [], namespaces: new Map() };
+  const info: ModuleInfo = { declarations: new Map(), links: new Map(), stars: [], namespaces: new Map(), namespaceDocs: new Map() };
   const imports = new Map<string, [string, string]>();
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]!;
@@ -203,7 +205,10 @@ export function parseModule(file: string): ModuleInfo {
         const ns = /import\s+\*\s+as\s+([\w$]+)/.exec(stmt);
         if (ns && target) imports.set(ns[1]!, [target, '*']);
       } else if (/^export\s+\*\s+as\s+([\w$]+)/.test(stmt)) {
-        info.namespaces.set(/^export\s+\*\s+as\s+([\w$]+)/.exec(stmt)![1]!, target!);
+        const ns = /^export\s+\*\s+as\s+([\w$]+)/.exec(stmt)![1]!;
+        info.namespaces.set(ns, target!);
+        const doc = precedingDoc(lines, i);
+        if (doc !== undefined) info.namespaceDocs.set(ns, doc);
       } else if (/^export\s+\*/.test(stmt)) {
         info.stars.push(target!);
       } else if (braces) {
@@ -263,7 +268,10 @@ function resolveExport(file: string, name: string, seen = new Set<string>()): Re
     if (local === '*') return { file: target, local: name, declaration: { kind: 'namespace', line: 1, docs: [], signatures: [], members: [] } };
     return resolveExport(target, local, seen);
   }
-  if (info.namespaces.has(name)) return { file: info.namespaces.get(name)!, local: name, declaration: { kind: 'namespace', line: 1, docs: [], signatures: [], members: [] } };
+  if (info.namespaces.has(name)) {
+    const doc = info.namespaceDocs.get(name);
+    return { file: info.namespaces.get(name)!, local: name, declaration: { kind: 'namespace', line: 1, docs: doc === undefined ? [] : [doc], signatures: [], members: [] } };
+  }
   for (const star of info.stars) {
     const r = resolveExport(star, name, seen);
     if (r) return r;
