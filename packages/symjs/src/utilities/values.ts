@@ -24,6 +24,9 @@ let nextObjectId = 0;
 /**
  * A string that is equal for two values exactly when they are equal in the
  * Python sense used by SymPy (the analogue of `hash` plus `==`).
+ *
+ * @param x - The value to examine.
+ * @returns A structural key for comparing values.
  */
 export function valueKey(x: unknown): string {
   switch (typeof x) {
@@ -58,7 +61,13 @@ export function valueKey(x: unknown): string {
   }
 }
 
-/** Python `a == b` for the values handled by {@link valueKey}. */
+/**
+ * Tests structural equality of scalars, expressions and containers.
+ *
+ * @param a - The first operand.
+ * @param b - The second operand.
+ * @returns Whether the two values have equal structural keys.
+ */
 export function valueEquals(a: unknown, b: unknown): boolean {
   if (a === b) return true;
   return valueKey(a) === valueKey(b);
@@ -68,10 +77,11 @@ const isNumeric = (x: unknown): x is number | bigint | boolean =>
   typeof x === 'number' || typeof x === 'bigint' || typeof x === 'boolean';
 
 /**
- * Python `a < b` as a three-way comparison: numbers (and booleans) by value,
- * strings lexicographically, arrays element by element, numeric expressions
- * by value and other expressions by their sort key. Throws a TypeError for
- * values that Python cannot order.
+ * Orders numbers by value, strings lexicographically and sequences element by element.
+ *
+ * @param a - The first operand.
+ * @param b - The second operand.
+ * @returns A negative, zero or positive number according to the ordering.
  */
 export function compareValues(a: unknown, b: unknown): number {
   if (isNumeric(a) && isNumeric(b)) {
@@ -111,20 +121,44 @@ function typeName(x: unknown): string {
 export class ValueMap<K, V> extends Map<K, V> {
   #byKey = new Map<string, K>();
 
+  /**
+   * Creates a ValueMap instance.
+   *
+   * @param entries - The initial key-value pairs.
+   */
   constructor(entries?: Iterable<readonly [K, V]> | null) {
     super();
     if (entries) for (const [k, v] of entries) this.set(k, v);
   }
 
+  /**
+   * Looks up a structurally equal key.
+   *
+   * @param k - The key compared by structural equality.
+   * @returns The associated value when the map contains the key.
+   */
   override get(k: K): V | undefined {
     const c = this.#byKey.get(valueKey(k));
     return c === undefined ? undefined : super.get(c);
   }
 
+  /**
+   * Tests whether a structurally equal key exists.
+   *
+   * @param k - The key compared by structural equality.
+   * @returns Whether a structurally equal key is present.
+   */
   override has(k: K): boolean {
     return this.#byKey.has(valueKey(k));
   }
 
+  /**
+   * Associates a value with a key using structural equality.
+   *
+   * @param k - The key compared by structural equality.
+   * @param v - The replacement value.
+   * @returns This instance.
+   */
   override set(k: K, v: V): this {
     const vk = valueKey(k);
     if (this.#byKey.has(vk)) return super.set(getOrThrow(this.#byKey, vk), v);
@@ -132,6 +166,12 @@ export class ValueMap<K, V> extends Map<K, V> {
     return super.set(k, v);
   }
 
+  /**
+   * Removes the entry with a structurally equal key.
+   *
+   * @param k - The key compared by structural equality.
+   * @returns Whether the entry was removed.
+   */
   override delete(k: K): boolean {
     const vk = valueKey(k);
     if (!this.#byKey.has(vk)) return false;
@@ -140,6 +180,7 @@ export class ValueMap<K, V> extends Map<K, V> {
     return super.delete(c);
   }
 
+  /** Removes every entry from the map. */
   override clear(): void {
     this.#byKey.clear();
     super.clear();
@@ -155,9 +196,16 @@ const isIterableObject = (x: unknown): x is Iterable<unknown> =>
   typeof x === 'object' && x !== null && typeof (x as { [Symbol.iterator]?: unknown })[Symbol.iterator] === 'function';
 
 /**
- * SymPy `default_sort_key` for any value: expressions use their sort key,
- * numbers are sympified, strings and other atoms are keyed by their text,
- * arrays (Python lists), sets and maps by the keys of their elements.
+ * Builds a comparable key for an expression, scalar or container of values.
+ *
+ * @param item - The value for which to construct an ordering key.
+ * @returns A key suitable for canonical ordering.
+ * @see SymPy `sympy.core.sorting.default_sort_key`
+ * @example
+ * ```ts
+ * import { defaultSortKey, ex } from '@symjs/symjs';
+ * Array.isArray(defaultSortKey(ex`x`)); // => True
+ * ```
  */
 export function defaultSortKeyOf(item: unknown): Key {
   if (item instanceof Expr) return sortKey(item);
@@ -220,9 +268,19 @@ export function nodesOf(e: unknown): number {
 export type KeyFunction<T> = (x: T) => unknown;
 
 /**
- * SymPy `ordered(seq, keys, default)` for any values: sort by the keys in
- * turn, breaking remaining ties with `_nodes` and `default_sort_key` when
- * `defaultKeys` is true; values that tie on every key keep their order.
+ * Sorts values by successive keys, breaking ties with the remaining keys and optionally the canonical order.
+ *
+ * @param seq - The input sequence or sequences, in order.
+ * @param keys - The function or functions producing comparison or grouping keys.
+ * @param defaultKeys - Whether canonical keys break ties left by the supplied keys.
+ * @returns The values in canonical or key-defined order.
+ * @throws RangeError when default ordering is disabled without supplying a key.
+ * @see SymPy `sympy.core.sorting.ordered`
+ * @example
+ * ```ts
+ * import { ex, orderedValues } from '@symjs/symjs';
+ * orderedValues([ex`x`, ex`1`, ex`x**2`]); // => [1, x, x**2]
+ * ```
  */
 export function orderedValues<T>(seq: Iterable<T>, keys?: KeyFunction<T> | readonly KeyFunction<T>[] | null, defaultKeys = true): T[] {
   const items = [...seq];

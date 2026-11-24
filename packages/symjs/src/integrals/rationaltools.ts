@@ -90,10 +90,13 @@ function polyCancel(f: Poly, g: Poly): [Expr, Poly, Poly] {
 }
 
 /**
- * The rational part of the integral of f/g (SymPy ratint_ratpart,
- * Horowitz-Ostrogradsky): [A/u, B/v] with g = u*v, u = gcd(g, g') and
- * integral(f/g) = A/u + integral(B/v).
+ * Splits a rational integrand into the derivative of a rational function and a remainder with square-free denominator.
  *
+ * @param f - The numerator polynomial.
+ * @param g - The denominator polynomial.
+ * @param x - The integration variable.
+ * @returns The rational primitive and the remaining integrand.
+ * @see SymPy `sympy.integrals.rationaltools.ratint_ratpart`
  * @example
  * ```ts
  * import { ex, Poly, ratintRatpart, symbols } from '@symjs/symjs';
@@ -193,10 +196,14 @@ export function ratintLogpart(f: Poly, g: Poly, x: Sym, t: Sym): [Poly, Poly][] 
 }
 
 /**
- * Convert a complex logarithm to real arctangents (SymPy log_to_atan):
+ * Converts a complex logarithm to real arctangents:
  * i*log((f + i*g)/(f - i*g)) as a sum of 2*atan terms with polynomial
  * arguments.
  *
+ * @param f0 - The real part of the polynomial argument.
+ * @param g0 - The imaginary part of the polynomial argument.
+ * @returns An equivalent real arctangent expression.
+ * @see SymPy `sympy.integrals.rationaltools.log_to_atan`
  * @example
  * ```ts
  * import { logToAtan, Poly, symbols } from '@symjs/symjs';

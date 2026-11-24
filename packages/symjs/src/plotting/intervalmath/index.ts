@@ -1,6 +1,11 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
-/** Interval functions are namespaced to distinguish them from symbolic functions. */
+/**
+ * Interval arithmetic and three-valued membership tests for implicit plotting.
+ *
+ * @see SymPy `sympy.plotting.intervalmath`
+ * @module intervalmath
+ */
 export { interval } from './interval_arithmetic';
 export type { IntervalLike } from './interval_arithmetic';
 export { intervalMembership } from './interval_membership';

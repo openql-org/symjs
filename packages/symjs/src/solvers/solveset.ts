@@ -29,7 +29,22 @@ import { integerLog } from '../core/numberutils';
 import { compareKeys, sortKey } from '../printing/sortkey';
 import { Eq, Ne } from '../core/logic';
 
-/** Whether every subexpression is finite at the proposed solution. */
+/**
+ * Tests whether substitution at a point keeps every subexpression finite.
+ *
+ * @param f - The expression whose subexpressions must remain finite.
+ * @param symbol - The independent variable.
+ * @param p - The proposed substitution value.
+ * @returns Whether every subexpression is defined at the point.
+ * @see SymPy `sympy.solvers.solveset.domain_check`
+ * @example
+ * ```ts
+ * import { domainCheck, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * domainCheck(1, x, 0); // => True
+ * ```
+ */
 export function domainCheck(f: ExprLike, symbol: Sym, p: ExprLike): boolean {
   const point = sympify(p);
   if (point instanceof Special) return false;
@@ -37,7 +52,23 @@ export function domainCheck(f: ExprLike, symbol: Sym, p: ExprLike): boolean {
   return check(sympify(f));
 }
 
-/** Linear coefficients followed by the constant term; rejects nonlinear structure before expansion. */
+/**
+ * Linear coefficients followed by the constant term; rejects nonlinear structure before expansion.
+ *
+ * @param eq - The equation, or an expression equal to zero.
+ * @param syms - The unknowns in the desired order.
+ * @returns The coefficients in variable order followed by the constant term.
+ * @throws RangeError when a variable is repeated.
+ * @throws NonlinearError when a product couples multiple unknowns.
+ * @see SymPy `sympy.solvers.solveset.linear_coeffs`
+ * @example
+ * ```ts
+ * import { ex, linearCoeffs, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * linearCoeffs(ex`2*x + 3`, x); // => [2, 3]
+ * ```
+ */
 export function linearCoeffs(eq: ExprLike, ...syms: Sym[]): Expr[] {
   if (new Set(syms.map((s) => s.key)).size !== syms.length) throw new RangeError('linearCoeffs: duplicate symbols');
   const zero = (): Expr[] => Array.from({ length: syms.length + 1 }, () => S.Zero);
@@ -60,17 +91,46 @@ export function linearCoeffs(eq: ExprLike, ...syms: Sym[]): Expr[] {
   return visit(asEquation(eq));
 }
 
-/** Solve over the real domain. */
+/**
+ * Solves over the real domain.
+ *
+ * @param f - The function or expression to analyze.
+ * @param symbol - The independent variable.
+ * @returns The set of solutions in the given domain.
+ * @see SymPy `sympy.solvers.solveset.solveset_real`
+ */
 export function solvesetReal(f: ExprLike, symbol: ExprLike): SetExpr {
   return solveset(f, symbol, Reals);
 }
 
-/** Solve over the complex domain. */
+/**
+ * Solves over the complex domain.
+ *
+ * @param f - The function or expression to analyze.
+ * @param symbol - The independent variable.
+ * @returns The set of solutions in the given domain.
+ * @see SymPy `sympy.solvers.solveset.solveset_complex`
+ */
 export function solvesetComplex(f: ExprLike, symbol: ExprLike): SetExpr {
   return solveset(f, symbol, Complexes);
 }
 
-/** Solve successive outer functions in a functional decomposition. */
+/**
+ * Solves successive outer functions in a functional decomposition.
+ *
+ * @param f - The function or expression to analyze.
+ * @param symbol - The independent variable.
+ * @param domain - The domain on which to compute the result.
+ * @returns The set of solutions in the given domain.
+ * @see SymPy `sympy.solvers.solveset.solve_decomposition`
+ * @example
+ * ```ts
+ * import { Reals, ex, solveDecomposition, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * solveDecomposition(ex`x**2 - 4`, x, Reals); // => {-2, 2}
+ * ```
+ */
 export function solveDecomposition(f: ExprLike, symbol: Sym, domain: SetExpr): SetExpr {
   const expression = sympify(f);
   let values: SetExpr = FiniteSet.of(S.Zero);
@@ -102,12 +162,36 @@ function invert(f: ExprLike, y: ExprLike, x: Sym, domain: SetExpr): [Expr, SetEx
   return solutions instanceof ConditionSet ? [expression, FiniteSet.of(value)] : [x, solutions];
 }
 
-/** Invert f(x) = y over the complex numbers, retaining unresolved equations. */
+/**
+ * Inverts f(x) = y over the complex numbers, retaining unresolved equations.
+ *
+ * @param f - The left-hand side to invert.
+ * @param y - The right-hand side, independent of the unknown.
+ * @param x - The unknown to isolate.
+ * @returns The remaining left-hand side and its possible values.
+ * @see SymPy `sympy.solvers.solveset.invert_complex`
+ * @example
+ * ```ts
+ * import { ex, invertComplex, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * invertComplex(ex`x + 2`, ex`y`, x); // => [x, {y - 2}]
+ * ```
+ */
 export function invertComplex(f: ExprLike, y: ExprLike, x: Sym): [Expr, SetExpr] {
   return invert(f, y, x, Complexes);
 }
 
-/** Invert f(x) = y over the real numbers, retaining unresolved equations. */
+/**
+ * Inverts f(x) = y over the real numbers, retaining unresolved equations.
+ *
+ * @param f - The left-hand side to invert.
+ * @param y - The right-hand side, independent of the unknown.
+ * @param x - The unknown to isolate.
+ * @returns The remaining left-hand side and its possible values.
+ * @throws RangeError when the left side is independent of the unknown or the right side depends on it.
+ * @see SymPy `sympy.solvers.solveset.invert_real`
+ */
 export function invertReal(f: ExprLike, y: ExprLike, x: Sym): [Expr, SetExpr] {
   const expression = sympify(f), value = sympify(y);
   if (![...expression.freeSymbols()].some((s) => s.equals(x)) || [...value.freeSymbols()].some((s) => s.equals(x))) throw new RangeError('invert: f must depend on x and y must be independent of x');
@@ -146,7 +230,23 @@ export function invertReal(f: ExprLike, y: ExprLike, x: Sym): [Expr, SetExpr] {
   return visit(expression, [value]);
 }
 
-/** Finite solutions, or representatives in one period; NoMatch for other infinite sets. */
+/**
+ * Finite solutions, or representatives in one period; NoMatch for other infinite sets.
+ *
+ * @param f - The function or expression to analyze.
+ * @param symbol - The independent variable.
+ * @param domain - The domain on which to compute the result.
+ * @returns A finite list of solutions or periodic representatives, or `NoMatch`.
+ * @throws NotImplementedError when solveset could not solve the equation.
+ * @see SymPy `sympy.solvers.solveset.solvify`
+ * @example
+ * ```ts
+ * import { Interval, ex, solvify, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * solvify(ex`tan(x)`, x, Interval.open(ex`-oo`, ex`oo`)); // => [0]
+ * ```
+ */
 export function solvify(f: ExprLike, symbol: Sym, domain: SetExpr): Expr[] | NoMatchResult {
   const result = solveset(f, symbol, domain);
   if (result === EmptySet) return [];
@@ -167,12 +267,46 @@ export function solvify(f: ExprLike, symbol: Sym, domain: SetExpr): Expr[] | NoM
 }
 
 /**
- * Solve a nonlinear system over the complex numbers. Infinite solution
+ * Solves a nonlinear system over the complex numbers. Infinite solution
  * components are ImageSets, rather than a list of principal logarithms.
  * The remaining algebraic systems use polynomial elimination.
+ *
+ * @param system - The target system of equations.
+ * @param symbols - Symbols should be given as a sequence eg.
+ * @param options - `asSet` requests a solution set.
+ * @returns Tuples in variable order, or the solution set when requested.
+ * @see SymPy `sympy.solvers.solveset.nonlinsolve`
+ * @example
+ * ```ts
+ * import { ex, nonlinsolve, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * nonlinsolve([ex`x**2 - 1`], [x]); // => [[-1], [1]]
+ * ```
  */
 export function nonlinsolve(system: readonly ExprLike[], symbols: readonly Expr[], options: { asSet: true }): SetExpr;
+/**
+ * Solves a nonlinear system over the complex numbers. Infinite solution
+ * components are ImageSets, rather than a list of principal logarithms.
+ * The remaining algebraic systems use polynomial elimination.
+ *
+ * @param system - The target system of equations.
+ * @param symbols - Symbols should be given as a sequence eg.
+ * @returns Tuples in variable order, or the solution set when requested.
+ * @see SymPy `sympy.solvers.solveset.nonlinsolve`
+ */
 export function nonlinsolve(system: readonly ExprLike[], symbols: readonly Expr[]): Expr[][];
+/**
+ * Solves a nonlinear system over the complex numbers. Infinite solution
+ * components are ImageSets, rather than a list of principal logarithms.
+ * The remaining algebraic systems use polynomial elimination.
+ *
+ * @param system - The target system of equations.
+ * @param targets - The unknowns in the desired order.
+ * @param options - `asSet` requests a solution set.
+ * @returns Tuples in variable order, or the solution set when requested.
+ * @see SymPy `sympy.solvers.solveset.nonlinsolve`
+ */
 export function nonlinsolve(system: readonly ExprLike[], targets: readonly Expr[], options?: { asSet: true }): SetExpr | Expr[][] {
   if (system.length === 1 && targets.length === 1) {
     const target = at(targets, 0);
@@ -511,7 +645,26 @@ function excludeFinitePoles(system: readonly Expr[], symbols: readonly Sym[], so
   return [...accepted.values()];
 }
 
-/** SymPy substitution: extend known assignments by solving the remaining system. */
+/**
+ * Extend known assignments by solving the remaining system.
+ *
+ * @param system - The target system of equations.
+ * @param symbols - The variable(s) for which the system is solved.
+ * @param result - If No symbol values is known then empty list otherwise symbol as keys and corresponding value in dict.
+ * @param _knownSymbols - Values are known for these variable(s).
+ * @param exclude - Mostly denominator expression(s) of the equations of the system.
+ * @param allSymbols - The unknowns of the equation system.
+ * @returns The assignments extended to all requested unknowns.
+ * @throws RangeError when an unknown is not a symbol.
+ * @see SymPy `sympy.solvers.solveset.substitution`
+ * @example
+ * ```ts
+ * import { ex, substitution, symbols } from '@symjs/symjs';
+ *
+ * const [x, y] = symbols('x y');
+ * substitution([ex`x - y`, ex`y - 1`], [x, y]); // => [[1, 1]]
+ * ```
+ */
 export function substitution(
   system: readonly ExprLike[],
   symbols: readonly Expr[],

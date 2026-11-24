@@ -8,8 +8,17 @@ import { AppliedPredicate } from '../../core/refine';
 import { at, getOrThrow } from '../../core/guard';
 import { NotImplementedError } from '../../core/errors';
 
-/** Valid input outside linear real arithmetic. */
+/**
+ * Valid input outside linear real arithmetic.
+ *
+ * @see SymPy `sympy.logic.algorithms.lra_theory.UnhandledInput`
+ */
 export class UnhandledInput extends NotImplementedError {
+  /**
+   * Creates an UnhandledInput instance.
+   *
+   * @param message - The reason for the error.
+   */
   constructor(message: string) {
     super(message);
     this.name = 'UnhandledInput';

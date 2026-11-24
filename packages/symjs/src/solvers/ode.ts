@@ -25,7 +25,21 @@ import { xreplace } from '../core/traverse';
 import { asEquation, linearEqToMatrix } from './solve';
 import { allOdeHints, classifyOde as classifyOdeHints, dsolveRaw } from './dsolve';
 
-/** Order of the highest derivative of f in e. */
+/**
+ * Order of the highest derivative of f in e.
+ *
+ * @param e - The expression containing derivatives.
+ * @param f - The applied function whose derivative order is measured.
+ * @returns The highest derivative order of the indicated function.
+ * @see SymPy `sympy.solvers.deutils.ode_order`
+ * @example
+ * ```ts
+ * import { AppliedUndef, ex, odeOrder, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * odeOrder(ex`Derivative(f(x), (x, 2)) + Derivative(g(x), (x, 3))`, new AppliedUndef('f', [x])); // => 2
+ * ```
+ */
 export function odeOrder(e: Expr, f: UndefFn): number {
   if (!e.has(f)) return 0;
   if (e instanceof Derivative) {
@@ -51,7 +65,20 @@ function nonlinearType(F: Expr, G: Expr, u: Sym, v: Sym, t: Expr): string | type
   return NoMatch;
 }
 
-/** Classify a system by its derivative orders, coefficients and linearity. */
+/**
+ * Classifies a system by its derivative orders, coefficients and linearity.
+ *
+ * @param eqs - The equations to solve simultaneously.
+ * @param funcs - The dependent functions in system order.
+ * @returns The derivative orders, coefficients and linearity of the system.
+ * @throws TypeError when the system has no dependent functions.
+ * @see SymPy `sympy.solvers.ode.ode.classify_sysode`
+ * @example
+ * ```ts
+ * import { classifySysode, ex } from '@symjs/symjs';
+ * classifySysode([ex`Derivative(f(t), t) - f(t)`]).get('no_of_equation'); // => 1
+ * ```
+ */
 export function classifySysode(eqs: readonly ExprLike[], funcs?: readonly UndefFn[]): Map<string, unknown> {
   const equations = eqs.map((e) => expand(asEquation(e)));
   const found = new Map<string, UndefFn>();
@@ -90,11 +117,17 @@ export function classifySysode(eqs: readonly ExprLike[], funcs?: readonly UndefF
  * hint the infinitesimals xi(x, f(x)) and eta(x, f(x)) of a known symmetry.
  */
 export interface DsolveOptions {
+  /** Initial values of the dependent functions or their derivatives. */
   ics?: [Expr, ExprLike][];
+  /** The classification hint selecting a solution method. */
   hint?: string;
+  /** The independent-variable component of a Lie symmetry generator. */
   xi?: ExprLike;
+  /** The dependent-variable component of a Lie symmetry generator. */
   eta?: ExprLike;
+  /** The number of terms requested in a series solution. */
   n?: number;
+  /** The point about which to expand a series solution. */
   x0?: ExprLike;
 }
 
@@ -128,6 +161,19 @@ const isExprList = <T>(v: T | readonly T[] | undefined): v is readonly T[] => Ar
  * ```
  */
 export function dsolve(eqIn: ExprLike, fx: Expr | undefined, opts: DsolveOptions & { hint: 'all' }): ReturnType<typeof allOdeHints>;
+/**
+ * Solves an ordinary differential equation, or a system of them, for the
+ * unknown functions with SymPy's classification hints. The result is
+ * `Eq(f(x), solution)`; an array of equations when the general solution has
+ * several branches. A system gives `[Eq(f(t), ...), Eq(g(t), ...)]`, or an array
+ * of such arrays when it has several families of solutions.
+ *
+ * @param eqIn - The equation, or an expression equal to zero.
+ * @param fx - The dependent function applied to its arguments.
+ * @param opts - The dsolve settings.
+ * @returns The solution equation or solution families for the selected hint.
+ * @see SymPy `sympy.solvers.ode.ode.dsolve`
+ */
 export function dsolve(eqIn: ExprLike | readonly ExprLike[], fx?: Expr | readonly Expr[], opts?: DsolveOptions): Expr | Expr[] | Expr[][];
 export function dsolve(eqIn: ExprLike | readonly ExprLike[], fx?: Expr | readonly Expr[], opts: DsolveOptions = {}): Expr | Expr[] | Expr[][] | ReturnType<typeof allOdeHints> {
   // a system of equations: a list of solutions, or a list of solution lists (SymPy)
@@ -219,7 +265,23 @@ function initialCondition(fx: UndefFn, x: Sym, cond: Expr, v: ExprLike): [Expr, 
   }
 }
 
-/** Classify an ODE after validating any supplied initial conditions. */
+/**
+ * Classifies an ODE after validating any supplied initial conditions.
+ *
+ * @param eq - The equation, or an expression equal to zero.
+ * @param fx - The dependent function applied to its arguments.
+ * @param opts - The settings for classify ode.
+ * @returns The names of applicable solution methods.
+ * @throws RangeError when the dependent function does not have exactly one independent variable.
+ * @see SymPy `sympy.solvers.ode.ode.classify_ode`
+ * @example
+ * ```ts
+ * import { AppliedUndef, classifyOde, ex, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * classifyOde(ex`Derivative(f(x), x) - f(x)`, new AppliedUndef('f', [x])).includes('1st_linear'); // => True
+ * ```
+ */
 export function classifyOde(eq: ExprLike, fx: UndefFn, opts: Pick<DsolveOptions, 'ics'> = {}): string[] {
   if (fx.args.length !== 1) throw new RangeError('expected a function of one independent variable');
   const x = cast(first(fx.args), Sym, 'independent variable');

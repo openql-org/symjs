@@ -283,13 +283,18 @@ export type ReprPrintable = Predicate | AlgebraicNumber | Domain | FiniteExtensi
 let reprOrder: SreprOptions['order'];
 
 /**
- * SymPy `srepr(expr)`: the expression as the SymPy constructor calls that
+ * The expression as the SymPy constructor calls that
  * rebuild it (`eval(srepr(expr)) == expr` in Python):
  * `srepr(x + 2)` is `Add(Sym('x'), Integer(2))`.
  *
  * Lists print as lists, `Map`s as dicts and `Set`s as sets, with their items
  * in srepr form; a JS number is a Python int (`2`), a string prints with its
  * quotes, booleans and null as `True`, `False` and `None`.
+ *
+ * @param expr - The value to format.
+ * @param options - The srepr settings.
+ * @returns The constructor representation.
+ * @see SymPy `sympy.printing.repr.srepr`
  */
 export function srepr(expr: ReprPrintable, options: SreprOptions = {}): string {
   for (const key of Object.keys(options)) if (key !== 'permCyclic' && key !== 'order') throw new TypeError(`Unknown setting '${key}'.`);
@@ -306,7 +311,7 @@ export function srepr(expr: ReprPrintable, options: SreprOptions = {}): string {
 export interface SreprOptions {
   /** Term ordering; 'none' preserves argument order and 'old' uses legacy ordering. */
   readonly order?: TermOrder | 'none' | 'old';
-  /** Permutations in cycle notation (default true) or as Permutation([...]) (SymPy perm_cyclic). */
+  /** Permutations in cycle notation (default true) or as Permutation([...]). */
   readonly permCyclic?: boolean;
 }
 

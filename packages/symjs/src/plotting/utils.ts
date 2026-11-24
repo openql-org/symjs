@@ -23,7 +23,16 @@ export function createRanges(expressions: readonly PlotExpression[], ranges: rea
   while (result.length < npar) result.push([new Dummy('x'), -10, 10]);
   return result;
 }
-/** Replace integer ImageSets by finite prefixes for exclusion-point sampling. */
+/**
+ * Replaces integer ImageSets by finite prefixes for exclusion-point sampling.
+ *
+ * @param solution - The proposed solution.
+ * @param n - The number of terms to take from an integer image set.
+ * @returns The set with infinite image components replaced by samples.
+ * @throws RangeError when the sample count is negative or nonintegral.
+ * @throws TypeError when the image domain cannot be enumerated as integers.
+ * @see SymPy `sympy.plotting.utils.extract_solution`
+ */
 export function extractSolution(solution: SetExpr, n = 10): SetExpr {
   if (!Number.isInteger(n) || n < 0) throw new RangeError('Sample count must be a nonnegative integer.');
   const images: ImageSet[] = [];

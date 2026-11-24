@@ -22,32 +22,110 @@ import { interval } from './intervalmath/interval_arithmetic';
 import { intervalMembership } from './intervalmath/interval_membership';
 import * as li from './intervalmath/lib_interval';
 
+/** A function that evaluates a plotted coordinate at numeric arguments. */
 export type NumericFunction = (...values: number[]) => number | ComplexValue;
+/** A symbolic expression or numeric function to sample. */
 export type PlotExpression = ExprLike | NumericFunction;
+/** An endpoint of a plotting range. */
 export type PlotBound = ExprLike | ComplexValue;
+/** A plotting variable with its lower and upper bounds. */
 export type PlotRange = readonly [Sym, PlotBound, PlotBound];
+/** Parameter values to substitute before sampling a series. */
 export type PlotParameters = ReadonlyMap<Sym, PlotBound>;
+/** A numeric coordinate array or mesh. */
 export type NumericArray = number[] | number[][];
+/** A pair of coordinate intervals bounding a cell of an implicit plot. */
 export type IntervalBox = [interval, interval];
+/** Sampled coordinates or interval boxes for a plot series. */
 export type SeriesValues = (NumericArray | IntervalBox[] | string)[];
+/** A value that can be represented in JSON. */
 export type JsonValue = string | number | boolean | JsonValue[] | { [key: string]: JsonValue };
+/** Rendering attributes passed to the plot connector. */
 export type RenderingOptions = Readonly<Record<string, JsonValue>>;
+/** The scale used to space samples along an axis. */
 export type PlotScale = 'linear' | 'log';
+/** Identifies the geometry represented by a plot series. */
 export type SeriesKind = 'line' | 'parametric2d' | 'parametric3d' | 'surface' | 'parametricSurface' | 'contour' | 'implicit' | 'list' | 'generic';
+/** Controls sampling, coordinates, colors and rendering of a series. */
 export interface SeriesOptions {
-  adaptive?: boolean; depth?: number; n?: number | readonly number[]; n1?: number; n2?: number; n3?: number;
-  nbOfPoints?: number; nbOfPointsX?: number; nbOfPointsY?: number; nbOfPointsU?: number; nbOfPointsV?: number;
-  xscale?: PlotScale; yscale?: PlotScale; zscale?: PlotScale; params?: PlotParameters;
-  isPolar?: boolean; isPoint?: boolean; isFilled?: boolean; useCm?: boolean; showInLegend?: boolean;
-  renderingKw?: RenderingOptions; contourKw?: RenderingOptions; clabels?: boolean;
-  colorFunc?: PlotExpression; lineColor?: string | number | Expr | NumericFunction; surfaceColor?: string | number | Expr | NumericFunction;
-  detectPoles?: boolean | 'symbolic'; eps?: number; exclude?: number | readonly number[];
-  onlyIntegers?: boolean; steps?: boolean; unwrap?: boolean | { period?: number; discont?: number };
+  /** Enables adaptive refinement of the sampling grid. */
+  adaptive?: boolean;
+  /** The maximum refinement depth for adaptive interval sampling. */
+  depth?: number;
+  /** The sample counts along the parameter directions. */
+  n?: number | readonly number[];
+  /** The sample count along the first parameter direction. */
+  n1?: number;
+  /** The sample count along the second parameter direction. */
+  n2?: number;
+  /** The sample count along the third parameter direction. */
+  n3?: number;
+  /** The sample count along the line. */
+  nbOfPoints?: number;
+  /** The sample count along x. */
+  nbOfPointsX?: number;
+  /** The sample count along y. */
+  nbOfPointsY?: number;
+  /** The sample count along u. */
+  nbOfPointsU?: number;
+  /** The sample count along v. */
+  nbOfPointsV?: number;
+  /** The sampling scale of the x axis. */
+  xscale?: PlotScale;
+  /** The sampling scale of the y axis. */
+  yscale?: PlotScale;
+  /** The sampling scale of the z axis. */
+  zscale?: PlotScale;
+  /** The parameter substitutions used to evaluate coordinates. */
+  params?: PlotParameters;
+  /** Indicates whether the coordinates use polar form. */
+  isPolar?: boolean;
+  /** Requests point markers for the series. */
+  isPoint?: boolean;
+  /** Requests filling of the plotted region. */
+  isFilled?: boolean;
+  /** Enables coloring with a colormap. */
+  useCm?: boolean;
+  /** Includes the series label in the plot legend. */
+  showInLegend?: boolean;
+  /** The rendering attributes supplied to the connector. */
+  renderingKw?: RenderingOptions;
+  /** The rendering attributes for contours. */
+  contourKw?: RenderingOptions;
+  /** Enables labels on contour levels. */
+  clabels?: boolean;
+  /** The function assigning colors to sampled coordinates. */
+  colorFunc?: PlotExpression;
+  /** The color or color function for the line. */
+  lineColor?: string | number | Expr | NumericFunction;
+  /** The color or color function for the surface. */
+  surfaceColor?: string | number | Expr | NumericFunction;
+  /** Requests breaks in sampled lines at detected poles. */
+  detectPoles?: boolean | 'symbolic';
+  /** The tolerance used when detecting discontinuities. */
+  eps?: number;
+  /** The abscissas to exclude from the sampled line. */
+  exclude?: number | readonly number[];
+  /** Restricts sampling to integer coordinates. */
+  onlyIntegers?: boolean;
+  /** Requests a stepped line between samples. */
+  steps?: boolean;
+  /** Controls unwrapping of jumps in sampled phase values. */
+  unwrap?: boolean | { period?: number; discont?: number };
+  /** Selects the real part, imaginary part, magnitude or argument of complex values. */
   return?: 'real' | 'imag' | 'abs' | 'arg';
   /** Backend optimization hint; symjs preserves analytic complex values in either mode. */
   forceRealEval?: boolean;
-  tx?: (x: number) => number; ty?: (y: number) => number; tz?: (z: number) => number; tp?: (p: number) => number;
+  /** The transformation applied to sampled x values. */
+  tx?: (x: number) => number;
+  /** The transformation applied to sampled y values. */
+  ty?: (y: number) => number;
+  /** The transformation applied to sampled z values. */
+  tz?: (z: number) => number;
+  /** The transformation applied to sampled parameter values. */
+  tp?: (p: number) => number;
 }
+/** A serializable series with sampled data, labels and rendering attributes. */
 export interface SeriesDescription {
   kind: SeriesKind;
   label: string;
@@ -81,30 +159,72 @@ export function discretize(start: number, end: number, n: number, scale: PlotSca
   return Array.from({ length: n }, (_, i) => i === 0 ? start : i === n - 1 ? end : scale === 'log' ? Math.sign(start) * Math.exp(Math.log(Math.abs(start)) + i / (n - 1) * Math.log(Math.abs(end / start))) : start + i / (n - 1) * (end - start));
 }
 
-/** Common numeric sampling and metadata for renderer-independent series. */
+/**
+ * Common numeric sampling and metadata for renderer-independent series.
+ *
+ * @see SymPy `sympy.plotting.series.BaseSeries`
+ */
 export abstract class BaseSeries {
+  /** Identifies the geometry represented by the series. */
   abstract readonly kind: SeriesKind;
+  /** The coordinate expressions or functions sampled by the series. */
   readonly expressions: (Expr | NumericFunction)[];
+  /**
+   * The plotting variables and their sampling intervals.
+   *
+   * @see SymPy `sympy.plotting.series.BaseSeries.ranges`
+   */
   ranges: PlotRange[];
+  /**
+   * The parameter substitutions used to evaluate coordinates.
+   *
+   * @see SymPy `sympy.plotting.series.BaseSeries.params`
+   */
   params: PlotParameters;
+  /**
+   * The rendering attributes supplied to the connector.
+   *
+   * @see SymPy `sympy.plotting.series.BaseSeries.rendering_kw`
+   */
   renderingKw: RenderingOptions;
   protected options: SeriesOptions;
   private counts: number[];
   private labelValue: string;
   private automaticLabel: boolean;
+  /** Enables adaptive refinement of the sampling grid. */
   adaptive: boolean;
+  /** The maximum refinement depth for adaptive interval sampling. */
   depth: number;
+  /** The sampling scale of the x axis. */
   xscale: PlotScale;
+  /** The sampling scale of the y axis. */
   yscale: PlotScale;
+  /** The sampling scale of the z axis. */
   zscale: PlotScale;
+  /** Indicates whether the coordinates use polar form. */
   isPolar: boolean;
+  /** Requests point markers for the series. */
   isPoint: boolean;
+  /** Requests filling of the plotted region. */
   isFilled: boolean;
+  /** Enables coloring with a colormap. */
   useCm: boolean;
+  /** Includes the series label in the plot legend. */
   showInLegend: boolean;
+  /** The function assigning colors to sampled coordinates. */
   colorFunc: PlotExpression | NoMatchResult;
   private lineColorValue: string | number | NoMatchResult = NoMatch;
   private surfaceColorValue: string | number | NoMatchResult = NoMatch;
+  /**
+   * Creates a BaseSeries instance.
+   *
+   * @param exprs - The coordinate expressions or numeric callbacks.
+   * @param ranges - The domains on which to sample them.
+   * @param label - The label displayed for this series.
+   * @param options - The series settings.
+   * @param defaultN - The default number of samples along each direction.
+   * @throws RangeError when the adaptive depth is outside the integer range 0 through 20.
+   */
   constructor(exprs: readonly PlotExpression[], ranges: readonly PlotRange[], label: string | NoMatchResult = '', options: SeriesOptions = {}, defaultN = 100) {
     this.expressions = exprs.map(expression); this.ranges = [...ranges]; this.options = options;
     this.params = options.params ?? new Map(); this.renderingKw = options.renderingKw ?? {};
@@ -120,29 +240,139 @@ export abstract class BaseSeries {
     this.automaticLabel = label instanceof NoMatchResult; this.labelValue = typeof label === 'string' ? label : '';
     this.validateSymbols();
   }
+  /**
+   * Represents the sample counts along the parameter directions.
+   *
+   * @returns The sample counts along the parameter directions.
+   * @see SymPy `sympy.plotting.series.BaseSeries.n`
+   */
   get n(): number[] { return [...this.counts]; }
+  /**
+   * The sample counts along the parameter directions.
+   *
+   * @param value - The value to assign or convert.
+   * @see SymPy `sympy.plotting.series.BaseSeries.n`
+   */
   set n(value: number | readonly number[]) { const ns = typeof value === 'number' ? [value] : [...value]; if (!ns.length || ns.length > 3) throw new RangeError('n requires one to three counts.'); ns.forEach((n, i) => { this.counts[i] = checkedN(n); }); }
+  /**
+   * Represents the color or color function for the line.
+   *
+   * @returns The color or color function for the line.
+   * @see SymPy `sympy.plotting.series.BaseSeries.line_color`
+   */
   get lineColor(): string | number | NoMatchResult { return this.lineColorValue; }
+  /**
+   * The color or color function for the line.
+   *
+   * @param value - The value to assign or convert.
+   * @see SymPy `sympy.plotting.series.BaseSeries.line_color`
+   */
   set lineColor(value: string | number | Expr | NumericFunction | NoMatchResult) {
     if (typeof value === 'function' || value instanceof Expr) { this.colorFunc = value; this.lineColorValue = NoMatch; }
     else { this.lineColorValue = value; if (!(value instanceof NoMatchResult)) this.colorFunc = NoMatch; }
   }
+  /**
+   * Represents the color or color function for the surface.
+   *
+   * @returns The color or color function for the surface.
+   * @see SymPy `sympy.plotting.series.BaseSeries.surface_color`
+   */
   get surfaceColor(): string | number | NoMatchResult { return this.surfaceColorValue; }
+  /**
+   * The color or color function for the surface.
+   *
+   * @param value - The value to assign or convert.
+   * @see SymPy `sympy.plotting.series.BaseSeries.surface_color`
+   */
   set surfaceColor(value: string | number | Expr | NumericFunction | NoMatchResult) {
     if (typeof value === 'function' || value instanceof Expr) { this.colorFunc = value; this.surfaceColorValue = NoMatch; }
     else { this.surfaceColorValue = value; if (!(value instanceof NoMatchResult)) this.colorFunc = NoMatch; }
   }
+  /**
+   * Represents the expression or coordinate functions used to generate samples.
+   *
+   * @returns The expression or coordinate functions used to generate samples.
+   * @see SymPy `sympy.plotting.series.BaseSeries.expr`
+   */
   get expr(): Expr | NumericFunction | readonly (Expr | NumericFunction)[] { return this.expressions.length === 1 ? first(this.expressions) : this.expressions; }
+  /**
+   * Represents the text identifying the series.
+   *
+   * @returns The text identifying the series.
+   * @see SymPy `sympy.plotting.series.BaseSeries.label`
+   */
   get label(): string { return this.getLabel(); }
+  /**
+   * The text identifying the series.
+   *
+   * @param value - The value to assign or convert.
+   * @see SymPy `sympy.plotting.series.BaseSeries.label`
+   */
   set label(value: string) { this.labelValue = value; this.automaticLabel = false; }
+  /**
+   * Indicates whether the series depends on adjustable parameters.
+   *
+   * @returns Whether adjustable parameters occur in the series.
+   * @see SymPy `sympy.plotting.series.BaseSeries.is_interactive`
+   */
   get isInteractive(): boolean { return this.params.size > 0; }
+  /**
+   * Identifies a planar line series.
+   *
+   * @returns Whether the series has this geometry.
+   * @see SymPy `sympy.plotting.series.BaseSeries.is_2Dline`
+   */
   get is2Dline(): boolean { return ['line', 'parametric2d', 'list'].includes(this.kind); }
+  /**
+   * Identifies a spatial line series.
+   *
+   * @returns Whether the series has this geometry.
+   * @see SymPy `sympy.plotting.series.BaseSeries.is_3Dline`
+   */
   get is3Dline(): boolean { return this.kind === 'parametric3d'; }
+  /**
+   * Identifies a surface series.
+   *
+   * @returns Whether the series has this geometry.
+   * @see SymPy `sympy.plotting.series.BaseSeries.is_3Dsurface`
+   */
   get is3Dsurface(): boolean { return this.kind === 'surface' || this.kind === 'parametricSurface'; }
+  /**
+   * Identifies a contour series.
+   *
+   * @returns Whether the series has this geometry.
+   * @see SymPy `sympy.plotting.series.BaseSeries.is_contour`
+   */
   get isContour(): boolean { return this.kind === 'contour'; }
+  /**
+   * Identifies an implicit plot series.
+   *
+   * @returns Whether the series has this geometry.
+   * @see SymPy `sympy.plotting.series.BaseSeries.is_implicit`
+   */
   get isImplicit(): boolean { return this.kind === 'implicit'; }
+  /**
+   * Identifies a series defined by coordinate functions of parameters.
+   *
+   * @returns Whether the series has this geometry.
+   * @see SymPy `sympy.plotting.series.BaseSeries.is_parametric`
+   */
   get isParametric(): boolean { return ['parametric2d', 'parametric3d', 'parametricSurface'].includes(this.kind) || this.kind === 'list' && this.useCm && !(this.colorFunc instanceof NoMatchResult); }
+  /**
+   * Identifies connector-defined plot data.
+   *
+   * @returns Whether the series has this geometry.
+   * @see SymPy `sympy.plotting.series.BaseSeries.is_generic`
+   */
   get isGeneric(): boolean { return this.kind === 'generic'; }
+  /**
+   * Formats the label for display, optionally using LaTeX.
+   *
+   * @param useLatex - Whether to format the label as LaTeX.
+   * @param wrapper - The backend might need the latex representation to be wrapped by some characters.
+   * @returns The formatted text.
+   * @see SymPy `sympy.plotting.series.BaseSeries.get_label`
+   */
   getLabel(useLatex = false, wrapper = '$%s$'): string {
     if (!this.automaticLabel) return this.labelValue;
     const exprs = this.isParametric && this.useCm && this.ranges.length === 1 ? [first(this.ranges)[0]] : this.expressions;
@@ -185,7 +415,18 @@ export abstract class BaseSeries {
   protected transform(data: number[][]): number[][];
   protected transform(data: number[][][]): number[][][];
   protected transform(data: NumericArray[]): NumericArray[] { return data.map((values, i) => { const f = at([this.options.tx, this.options.ty, this.kind === 'parametric2d' ? this.options.tp : this.options.tz, this.options.tp, this.options.tp], i); if (!f) return values; return isVector(values) ? values.map(f) : values.map((row) => row.map(f)); }); }
+  /**
+   * Computes the numeric coordinate arrays for the series.
+   *
+   * @returns The numeric coordinate arrays for the series.
+   * @see SymPy `sympy.plotting.series.BaseSeries.get_data`
+   */
   abstract getData(): SeriesValues;
+  /**
+   * Formats this value as a string.
+   *
+   * @returns The formatted text.
+   */
   toString(): string {
     if (this.kind === 'list') return '2D list plot';
     if (this.kind === 'generic') return 'Generic data series';
@@ -202,6 +443,11 @@ export abstract class BaseSeries {
     const parameters = [...this.params.keys()].map(String);
     return `${this.isInteractive ? 'interactive ' : ''}${prefixes[this.kind]}: ${value} for ${ranges}${parameters.length ? ` and parameters (${parameters.join(', ')}${parameters.length === 1 ? ',' : ''})` : ''}`;
   }
+  /**
+   * Builds a serializable description for a plotting connector.
+   *
+   * @returns The serializable plot data.
+   */
   toData(): SeriesDescription {
     const data = this.getData();
     const parameterName = this.colorFunc instanceof NoMatchResult ? 'parameter' : 'color';
@@ -212,9 +458,37 @@ export abstract class BaseSeries {
     if (!(this.colorFunc instanceof NoMatchResult)) color = encodePlotData(this instanceof ParametricLineBaseSeries || this instanceof List2DSeries && this.useCm ? last(data) : this.evalColorFunc(...data.filter((a): a is NumericArray => Array.isArray(a) && (a.length === 0 || typeof a[0] === 'number' || Array.isArray(a[0]) && (a[0].length === 0 || typeof a[0][0] === 'number')))));
     return { kind: this.kind, label: this.getLabel(), coordinates: Object.fromEntries(data.map((v, i) => [names[i] ?? `data${i}`, encodePlotData(v)])), style: { isPoint: this.isPoint, isFilled: this.isFilled, useCm: this.useCm, showInLegend: this.showInLegend, renderingKw: this.renderingKw, color } };
   }
+  /**
+   * Evaluates the color function at the sampled coordinates.
+   *
+   * @param data - The sampled coordinates passed to the color function.
+   * @returns One color value per sampled point.
+   * @see SymPy `sympy.plotting.series.BaseSeries.eval_color_func`
+   */
   evalColorFunc(...data: number[][]): number[];
+  /**
+   * Evaluates the color function at the sampled coordinates.
+   *
+   * @param data - The sampled coordinates passed to the color function.
+   * @returns One color value per sampled point.
+   * @see SymPy `sympy.plotting.series.BaseSeries.eval_color_func`
+   */
   evalColorFunc(...data: number[][][]): number[][];
+  /**
+   * Evaluates the color function at the sampled coordinates.
+   *
+   * @param data - The sampled coordinates passed to the color function.
+   * @returns One color value per sampled point.
+   * @see SymPy `sympy.plotting.series.BaseSeries.eval_color_func`
+   */
   evalColorFunc(...data: NumericArray[]): NumericArray;
+  /**
+   * Evaluates the color function at the sampled coordinates.
+   *
+   * @param data - The sampled coordinates passed to the color function.
+   * @returns One color value per sampled point.
+   * @see SymPy `sympy.plotting.series.BaseSeries.eval_color_func`
+   */
   evalColorFunc(...data: NumericArray[]): NumericArray {
     const input = this.colorFunc;
     if (input instanceof NoMatchResult) return this.isParametric && this.ranges.length === 1 ? data[data.length - 1] ?? [] : data[2] ?? data[1] ?? [];
@@ -231,17 +505,59 @@ export abstract class BaseSeries {
   }
 }
 
-/** Line sampling, exclusions, discontinuities and coordinate transforms. */
+/**
+ * Line sampling, exclusions, discontinuities and coordinate transforms.
+ *
+ * @see SymPy `sympy.plotting.series.Line2DBaseSeries`
+ */
 export abstract class Line2DBaseSeries extends BaseSeries {
+  /** The positions of detected poles along the line. */
   polesLocations: number[] = [];
+  /**
+   * Represents the independent variable along the line.
+   *
+   * @returns The independent variable along the line.
+   * @see SymPy `sympy.plotting.series.Line2DBaseSeries.var`
+   */
   get var(): Sym | NoMatchResult { return this.ranges[0]?.[0] ?? NoMatch; }
+  /**
+   * Represents the lower sampling bound along the line.
+   *
+   * @returns The lower sampling bound along the line.
+   * @see SymPy `sympy.plotting.series.Line2DBaseSeries.start`
+   */
   get start(): ComplexValue | NoMatchResult { return this.ranges.length ? this.bounds(0)[0] : NoMatch; }
+  /**
+   * Represents the upper sampling bound along the line.
+   *
+   * @returns The upper sampling bound along the line.
+   * @see SymPy `sympy.plotting.series.Line2DBaseSeries.end`
+   */
   get end(): ComplexValue | NoMatchResult { return this.ranges.length ? this.bounds(0)[1] : NoMatch; }
+  /**
+   * Represents the sample count along the line.
+   *
+   * @returns The sample count along the line.
+   */
   get nbOfPoints(): number { return first(this.n); }
+  /**
+   * The sample count along the line.
+   *
+   * @param n - The requested count.
+   */
   set nbOfPoints(n: number) { this.n = n; }
   protected abstract sample(): number[][];
   protected colorData(data: number[][]): number[][] { return data; }
   protected pointAt(_t: number): number[] { throw new NotImplementedError('This series has no continuous parameter.'); }
+  /**
+   * Computes the numeric coordinate arrays for the series.
+   *
+   * @returns The numeric coordinate arrays for the series.
+   * @throws TypeError when symbolic pole detection is requested for a numeric callback.
+   * @throws NotImplementedError when the discontinuities cannot be enumerated on the plotting range.
+   * @throws RangeError when the plotting range contains too many symbolic discontinuities to enumerate.
+   * @see SymPy `sympy.plotting.series.Line2DBaseSeries.get_data`
+   */
   getData(): number[][] {
     let data = this.sample();
     if (this.kind === 'line' && this.options.detectPoles === 'symbolic') {
@@ -292,7 +608,18 @@ export abstract class Line2DBaseSeries extends BaseSeries {
     if (this.options.steps) data = data.map((a, k) => { const repeated = a.flatMap((v) => Array<number>(this.is3Dline ? 3 : 2).fill(v)); return this.is3Dline ? repeated.slice(k === 0 ? 2 : k === 2 ? 1 : 0, repeated.length - (k === 0 ? 0 : k === 2 ? 1 : 2)) : k === 0 ? repeated.slice(1) : repeated.slice(0, -1); });
     return data;
   }
+  /**
+   * Returns the sampled coordinate arrays along the line.
+   *
+   * @returns The sampled coordinate arrays along the line.
+   */
   getPoints(): number[][] { const data = this.getData(); return this.isParametric ? data.slice(0, -1) : data; }
+  /**
+   * Computes the color values at the sampled coordinates.
+   *
+   * @returns The color values at the sampled coordinates.
+   * @see SymPy `sympy.plotting.series.Line2DBaseSeries.get_color_array`
+   */
   getColorArray(): NumericArray {
     const data = this.getData().map(centersOfSegments);
     if (this.isParametric && !(this.colorFunc instanceof NoMatchResult)) return last(data);
@@ -310,13 +637,32 @@ function adaptiveMesh(start: number, end: number, evaluate: (t: number) => numbe
   };
   refine(start, end, evaluate(start), evaluate(end), 0); return output;
 }
-/** Cartesian line; complex values are masked unless a real/imag/abs/arg projection is requested. */
+/**
+ * Cartesian line; complex values are masked unless a real/imag/abs/arg projection is requested.
+ *
+ * @see SymPy `sympy.plotting.series.LineOver1DRangeSeries`
+ */
 export class LineOver1DRangeSeries extends Line2DBaseSeries {
+  /** Identifies the geometry represented by the series. */
   readonly kind = 'line';
+  /**
+   * Creates a LineOver1DRangeSeries instance.
+   *
+   * @param expr - The expression to evaluate.
+   * @param range - The plotting variable and its sampling bounds.
+   * @param label - The label displayed for this series.
+   * @param options - The series settings.
+   * @throws RangeError when the endpoints have different imaginary parts.
+   */
   constructor(expr: PlotExpression, range: PlotRange, label: string | NoMatchResult = '', options: SeriesOptions = {}) { super([expr], [range], label, options, 1000); this.bounds(0); if (this.bounds(0)[0].im !== this.bounds(0)[1].im) throw new RangeError('Range endpoints must have equal imaginary parts.'); if (options.return) this.adaptive = false; }
   protected override pointAt(t: number): number[] { return [t, this.project(this.evaluator(first(this.expressions))(t))]; }
   protected sample(): number[][] { const f = this.evaluator(first(this.expressions)); const evaluate = (t: number): number[] => [t, this.project(f(t))]; const [a, b] = this.bounds(0); const xs = this.adaptive && !this.options.onlyIntegers ? adaptiveMesh(a.re, b.re, evaluate, this.depth, this.xscale === 'log') : this.mesh(0); return [xs, xs.map((x) => this.project(f(x)))]; }
 }
+/**
+ * Represents a line whose coordinates depend on a common parameter.
+ *
+ * @see SymPy `sympy.plotting.series.ParametricLineBaseSeries`
+ */
 export abstract class ParametricLineBaseSeries extends Line2DBaseSeries {
   protected override pointAt(t: number): number[] { return [...this.expressions.map((e) => real(this.evaluator(e)(t))), t]; }
   protected sample(): number[][] {
@@ -327,20 +673,82 @@ export abstract class ParametricLineBaseSeries extends Line2DBaseSeries {
     return data;
   }
   protected override colorData(data: number[][]): number[][] { if (!(this.colorFunc instanceof NoMatchResult)) data[data.length - 1] = this.evalColorFunc(...data); return data; }
+  /**
+   * Returns the sampled parameter values along the curve.
+   *
+   * @returns The sampled parameter values along the curve.
+   * @see SymPy `sympy.plotting.series.ParametricLineBaseSeries.get_parameter_points`
+   */
   getParameterPoints(): number[] { return last(this.getData()); }
 }
+/**
+ * Samples two coordinate functions along a parameter interval.
+ *
+ * @see SymPy `sympy.plotting.series.Parametric2DLineSeries`
+ */
 export class Parametric2DLineSeries extends ParametricLineBaseSeries {
+  /** Identifies the geometry represented by the series. */
   readonly kind = 'parametric2d';
+  /**
+   * Creates a Parametric2DLineSeries instance.
+   *
+   * @param x - The horizontal coordinate function.
+   * @param y - The second coordinate function.
+   * @param range - The plotting variable and its sampling bounds.
+   * @param label - The label displayed for this series.
+   * @param options - The series settings.
+   */
   constructor(x: PlotExpression, y: PlotExpression, range: PlotRange, label: string | NoMatchResult = '', options: SeriesOptions = {}) { super([x, y], [range], label, { ...options, useCm: options.useCm ?? true }, 1000); }
 }
+/**
+ * Represents a line in three-dimensional space.
+ *
+ * @see SymPy `sympy.plotting.series.Line3DBaseSeries`
+ */
 export abstract class Line3DBaseSeries extends ParametricLineBaseSeries {}
+/**
+ * Samples three coordinate functions along a parameter interval.
+ *
+ * @see SymPy `sympy.plotting.series.Parametric3DLineSeries`
+ */
 export class Parametric3DLineSeries extends Line3DBaseSeries {
+  /** Identifies the geometry represented by the series. */
   readonly kind = 'parametric3d';
+  /**
+   * Creates a Parametric3DLineSeries instance.
+   *
+   * @param x - The horizontal coordinate function.
+   * @param y - The second coordinate function.
+   * @param z - The vertical coordinate function.
+   * @param range - The plotting variable and its sampling bounds.
+   * @param label - The label displayed for this series.
+   * @param options - The series settings.
+   */
   constructor(x: PlotExpression, y: PlotExpression, z: PlotExpression, range: PlotRange, label: string | NoMatchResult = '', options: SeriesOptions = {}) { super([x, y, z], [range], label, { ...options, useCm: options.useCm ?? true }, 1000); }
 }
+/**
+ * Represents a planar series with explicitly supplied coordinate pairs.
+ *
+ * @see SymPy `sympy.plotting.series.List2DSeries`
+ */
 export class List2DSeries extends Line2DBaseSeries {
+  /** Identifies the geometry represented by the series. */
   readonly kind = 'list';
-  constructor(readonly listX: readonly PlotBound[], readonly listY: readonly PlotBound[], label: string | NoMatchResult = '', options: SeriesOptions = {}) {
+  /**
+   * Creates a List2DSeries instance.
+   *
+   * @param listX - The horizontal coordinates.
+   * @param listY - The vertical coordinates.
+   * @param label - The label displayed for this series.
+   * @param options - The series settings.
+   * @throws TypeError when a list series is missing its coordinate arrays.
+   * @throws RangeError when the coordinate lists have different lengths.
+   */
+  constructor(
+    /** The horizontal coordinates of the supplied points. */
+    readonly listX: readonly PlotBound[],
+    /** The vertical coordinates of the supplied points. */
+    readonly listY: readonly PlotBound[], label: string | NoMatchResult = '', options: SeriesOptions = {}) {
     super([], [], label, options, 1000);
     if (!Array.isArray(listX) || !Array.isArray(listY)) throw new TypeError('List series require coordinate arrays.');
     if (listX.length !== listY.length) throw new RangeError('Coordinate lists must have equal length.');
@@ -350,52 +758,283 @@ export class List2DSeries extends Line2DBaseSeries {
   }
   protected sample(): number[][] { const data = [this.listX.map((v) => real(this.bound(v))), this.listY.map((v) => real(this.bound(v)))]; if (this.useCm && !(this.colorFunc instanceof NoMatchResult)) { const colors = this.evalColorFunc(...data); data.push(colors); } return data; }
 }
+/**
+ * Represents a surface sampled on a two-dimensional grid.
+ *
+ * @see SymPy `sympy.plotting.series.SurfaceBaseSeries`
+ */
 export abstract class SurfaceBaseSeries extends BaseSeries {
   protected meshData(): number[][][] {
     const xs = this.mesh(0), ys = this.mesh(1), X = ys.map(() => [...xs]), Y = ys.map((y) => xs.map(() => y));
     const values = this.expressions.map((e) => { const f = this.evaluator(e); return ys.map((y) => xs.map((x) => real(f(x, y)))); });
     return [X, Y, ...values];
   }
+  /**
+   * Returns the coordinate meshes of the sampled surface.
+   *
+   * @returns The coordinate meshes of the sampled surface.
+   */
   getMeshes(): number[][][] { return this.getData().slice(0, 3); }
+  /**
+   * Computes the numeric coordinate arrays for the series.
+   *
+   * @returns The numeric coordinate arrays for the series.
+   * @see SymPy `sympy.plotting.series.SurfaceBaseSeries.get_data`
+   */
   abstract override getData(): number[][][];
+  /**
+   * Computes the color values at the sampled coordinates.
+   *
+   * @returns The color values at the sampled coordinates.
+   * @see SymPy `sympy.plotting.series.SurfaceBaseSeries.get_color_array`
+   */
   getColorArray(): NumericArray { const data = this.getData().map(centersOfFaces); if (typeof this.surfaceColor === 'number') return first(data).map((row) => row.map(() => Number(this.surfaceColor))); return this.evalColorFunc(...data); }
+  /**
+   * Represents the sampling variable along x.
+   *
+   * @returns The sampling variable along x.
+   */
   get varX(): Sym { return first(this.ranges)[0]; }
+  /**
+   * Represents the sampling variable along y.
+   *
+   * @returns The sampling variable along y.
+   */
   get varY(): Sym { return at(this.ranges, 1)[0]; }
+  /**
+   * Represents the lower sampling bound along x.
+   *
+   * @returns The lower sampling bound along x.
+   */
   get startX(): number { return this.bounds(0)[0].re; }
+  /**
+   * Represents the upper sampling bound along x.
+   *
+   * @returns The upper sampling bound along x.
+   */
   get endX(): number { return this.bounds(0)[1].re; }
+  /**
+   * Represents the lower sampling bound along y.
+   *
+   * @returns The lower sampling bound along y.
+   */
   get startY(): number { return this.bounds(1)[0].re; }
+  /**
+   * Represents the upper sampling bound along y.
+   *
+   * @returns The upper sampling bound along y.
+   */
   get endY(): number { return this.bounds(1)[1].re; }
+  /**
+   * Represents the sample count along x.
+   *
+   * @returns The sample count along x.
+   */
   get nbOfPointsX(): number { return first(this.n); }
+  /**
+   * The sample count along x.
+   *
+   * @param n - The requested count.
+   */
   set nbOfPointsX(n: number) { this.n = [n, at(this.n, 1)]; }
+  /**
+   * Represents the sample count along y.
+   *
+   * @returns The sample count along y.
+   */
   get nbOfPointsY(): number { return at(this.n, 1); }
+  /**
+   * The sample count along y.
+   *
+   * @param n - The requested count.
+   */
   set nbOfPointsY(n: number) { this.n = [first(this.n), n]; }
   protected transformed(data: number[][][]): number[][][] { return this.transform(data); }
 }
+/**
+ * Samples the height of a surface over two coordinate ranges.
+ *
+ * @see SymPy `sympy.plotting.series.SurfaceOver2DRangeSeries`
+ */
 export class SurfaceOver2DRangeSeries extends SurfaceBaseSeries {
+  /** Identifies the geometry represented by the series. */
   readonly kind: SeriesKind = 'surface';
+  /**
+   * Creates a SurfaceOver2DRangeSeries instance.
+   *
+   * @param expr - The expression to evaluate.
+   * @param x - The first coordinate range.
+   * @param y - The second coordinate range.
+   * @param label - The label displayed for this series.
+   * @param options - The series settings.
+   */
   constructor(expr: PlotExpression, x: PlotRange, y: PlotRange, label: string | NoMatchResult = '', options: SeriesOptions = {}) { super([expr], [x, y], label, options); }
+  /**
+   * Computes the numeric coordinate arrays for the series.
+   *
+   * @returns The numeric coordinate arrays for the series.
+   * @see SymPy `sympy.plotting.series.SurfaceOver2DRangeSeries.get_data`
+   */
   getData(): number[][][] { const data = this.meshData(); if (this.isPolar && this.is3Dsurface) { const r = first(data), theta = at(data, 1); data[0] = r.map((row, i) => row.map((v, j) => v * Math.cos(at(at(theta, i), j)))); data[1] = r.map((row, i) => row.map((v, j) => v * Math.sin(at(at(theta, i), j)))); } return this.transformed(data); }
 }
+/**
+ * Samples the three coordinates of a surface over two parameter ranges.
+ *
+ * @see SymPy `sympy.plotting.series.ParametricSurfaceSeries`
+ */
 export class ParametricSurfaceSeries extends SurfaceBaseSeries {
+  /** Identifies the geometry represented by the series. */
   readonly kind = 'parametricSurface';
+  /**
+   * Creates a ParametricSurfaceSeries instance.
+   *
+   * @param x - The horizontal coordinate function.
+   * @param y - The second coordinate function.
+   * @param z - The vertical coordinate function.
+   * @param u - The first parameter range.
+   * @param v - The second parameter range.
+   * @param label - The label displayed for this series.
+   * @param options - The series settings.
+   */
   constructor(x: PlotExpression, y: PlotExpression, z: PlotExpression, u: PlotRange, v: PlotRange, label: string | NoMatchResult = '', options: SeriesOptions = {}) { super([x, y, z], [u, v], label, options); }
+  /**
+   * Computes the numeric coordinate arrays for the series.
+   *
+   * @returns The numeric coordinate arrays for the series.
+   * @see SymPy `sympy.plotting.series.ParametricSurfaceSeries.get_data`
+   */
   getData(): number[][][] { const data = this.meshData(); return this.transformed([...data.slice(2), ...data.slice(0, 2)]); }
+  /**
+   * Returns the two parameter grids used to sample the surface.
+   *
+   * @returns The two parameter grids used to sample the surface.
+   * @see SymPy `sympy.plotting.series.ParametricSurfaceSeries.get_parameter_meshes`
+   */
   getParameterMeshes(): number[][][] { return this.getData().slice(3); }
-  get varU(): Sym { return this.varX; } get varV(): Sym { return this.varY; }
-  get startU(): number { return this.startX; } get endU(): number { return this.endX; }
-  get startV(): number { return this.startY; } get endV(): number { return this.endY; }
-  get nbOfPointsU(): number { return this.nbOfPointsX; } set nbOfPointsU(n: number) { this.nbOfPointsX = n; }
-  get nbOfPointsV(): number { return this.nbOfPointsY; } set nbOfPointsV(n: number) { this.nbOfPointsY = n; }
+  /**
+   * Represents the sampling variable along u.
+   *
+   * @returns The sampling variable along u.
+   * @see SymPy `sympy.plotting.series.ParametricSurfaceSeries.var_u`
+   */
+  get varU(): Sym { return this.varX; }
+  /**
+   * Represents the sampling variable along v.
+   *
+   * @returns The sampling variable along v.
+   * @see SymPy `sympy.plotting.series.ParametricSurfaceSeries.var_v`
+   */
+  get varV(): Sym { return this.varY; }
+  /**
+   * Represents the lower sampling bound along u.
+   *
+   * @returns The lower sampling bound along u.
+   * @see SymPy `sympy.plotting.series.ParametricSurfaceSeries.start_u`
+   */
+  get startU(): number { return this.startX; }
+  /**
+   * Represents the upper sampling bound along u.
+   *
+   * @returns The upper sampling bound along u.
+   * @see SymPy `sympy.plotting.series.ParametricSurfaceSeries.end_u`
+   */
+  get endU(): number { return this.endX; }
+  /**
+   * Represents the lower sampling bound along v.
+   *
+   * @returns The lower sampling bound along v.
+   * @see SymPy `sympy.plotting.series.ParametricSurfaceSeries.start_v`
+   */
+  get startV(): number { return this.startY; }
+  /**
+   * Represents the upper sampling bound along v.
+   *
+   * @returns The upper sampling bound along v.
+   * @see SymPy `sympy.plotting.series.ParametricSurfaceSeries.end_v`
+   */
+  get endV(): number { return this.endY; }
+  /**
+   * Represents the sample count along u.
+   *
+   * @returns The sample count along u.
+   * @see SymPy `sympy.plotting.series.ParametricSurfaceSeries.nb_of_points_u`
+   */
+  get nbOfPointsU(): number { return this.nbOfPointsX; }
+  /**
+   * The sample count along u.
+   *
+   * @param n - The requested count.
+   * @see SymPy `sympy.plotting.series.ParametricSurfaceSeries.nb_of_points_u`
+   */
+  set nbOfPointsU(n: number) { this.nbOfPointsX = n; }
+  /**
+   * Represents the sample count along v.
+   *
+   * @returns The sample count along v.
+   * @see SymPy `sympy.plotting.series.ParametricSurfaceSeries.nb_of_points_v`
+   */
+  get nbOfPointsV(): number { return this.nbOfPointsY; }
+  /**
+   * The sample count along v.
+   *
+   * @param n - The requested count.
+   * @see SymPy `sympy.plotting.series.ParametricSurfaceSeries.nb_of_points_v`
+   */
+  set nbOfPointsV(n: number) { this.nbOfPointsY = n; }
 }
+/**
+ * Samples a scalar field on a grid for a contour plot.
+ *
+ * @see SymPy `sympy.plotting.series.ContourSeries`
+ */
 export class ContourSeries extends SurfaceOver2DRangeSeries {
+  /** Identifies the geometry represented by the series. */
   override readonly kind = 'contour';
+  /** Indicates whether to label contour levels. */
   readonly showClabels: boolean;
+  /**
+   * Creates a ContourSeries instance.
+   *
+   * @param expr - The expression to evaluate.
+   * @param x - The first coordinate range.
+   * @param y - The second coordinate range.
+   * @param label - The label displayed for this series.
+   * @param options - The series settings.
+   */
   constructor(expr: PlotExpression, x: PlotRange, y: PlotRange, label: string | NoMatchResult = '', options: SeriesOptions = {}) { super(expr, x, y, label, { ...options, renderingKw: options.contourKw ?? options.renderingKw }); this.showClabels = options.clabels ?? true; }
 }
+/**
+ * Stores numeric data and rendering attributes for a connector-defined series.
+ *
+ * @see SymPy `sympy.plotting.series.GenericDataSeries`
+ */
 export class GenericDataSeries extends BaseSeries {
+  /** Identifies the geometry represented by the series. */
   readonly kind = 'generic';
-  constructor(readonly type: string, readonly args: NumericArray[], renderingKw: RenderingOptions = {}) { super([], [], '', { renderingKw }); }
+  /**
+   * Creates a GenericDataSeries instance.
+   *
+   * @param type - The connector-defined series identifier.
+   * @param args - The numeric data arrays.
+   * @param renderingKw - Rendering attributes for the connector.
+   */
+  constructor(
+    /** The connector-defined series type. */
+    readonly type: string,
+    /** The ordered arguments defining the expression. */
+    readonly args: NumericArray[], renderingKw: RenderingOptions = {}) { super([], [], '', { renderingKw }); }
+  /**
+   * Computes the numeric coordinate arrays for the series.
+   *
+   * @returns The numeric coordinate arrays for the series.
+   * @see SymPy `sympy.plotting.series.GenericDataSeries.get_data`
+   */
   getData(): NumericArray[] { return this.args; }
+  /**
+   * Builds a serializable description for a plotting connector.
+   *
+   * @returns The serializable plot data.
+   */
   override toData(): SeriesDescription { const data = super.toData(); data.coordinates['type'] = this.type; return data; }
 }
 /** Evaluate an expression as an enclosure, without Python code generation. */
@@ -410,10 +1049,32 @@ export function intervalEvaluate(e: Expr, values: ReadonlyMap<string, interval>)
   if (e instanceof Fn) { const f = Reflect.get(li, e.name); if (typeof f !== 'function') throw new NotImplementedError(`Interval function ${e.name} is not implemented.`); const v: unknown = Reflect.apply(f, li, e.args.map((a) => cast(intervalEvaluate(a, values), interval))); return cast(v, interval); }
   return new interval(real(toComplex(e)));
 }
+/**
+ * Samples the solution region of an implicit equation or inequality.
+ *
+ * @see SymPy `sympy.plotting.series.ImplicitSeries`
+ */
 export class ImplicitSeries extends BaseSeries {
+  /** Identifies the geometry represented by the series. */
   readonly kind = 'implicit';
+  /** Indicates whether the implicit relation includes an equality. */
   readonly hasEquality: boolean;
+  /**
+   * Creates an ImplicitSeries instance.
+   *
+   * @param expr - The expression to evaluate.
+   * @param x - The first coordinate range.
+   * @param y - The second coordinate range.
+   * @param label - The label displayed for this series.
+   * @param options - The series settings.
+   */
   constructor(expr: Expr, x: PlotRange, y: PlotRange, label: string | NoMatchResult = '', options: SeriesOptions = {}) { super([expr], [x, y], label, { ...options, depth: 4 + Math.min(4, Math.max(0, options.depth ?? 0)) }); const hasEquality = (e: Expr): boolean => e instanceof BoolOp ? e.args.some(hasEquality) : e instanceof Rel ? e.op === 'Eq' || e.op === 'Ge' || e.op === 'Le' : true; this.hasEquality = hasEquality(expr); }
+  /**
+   * Computes the numeric coordinate arrays for the series.
+   *
+   * @returns The numeric coordinate arrays for the series.
+   * @see SymPy `sympy.plotting.series.ImplicitSeries.get_data`
+   */
   getData(): SeriesValues {
     const e = cast(first(this.expressions), Expr);
     if (this.adaptive || e instanceof BoolOp) {
@@ -435,6 +1096,30 @@ export class ImplicitSeries extends BaseSeries {
     return [ys.map(() => [...xs]), ys.map((y) => xs.map(() => y)), ys.map((y) => xs.map((x) => real(f(x, y)))), equality ? 'contour' : 'contourf'];
   }
 }
+/**
+ * Computes the midpoint of each pair of consecutive samples.
+ *
+ * @param array - The samples at segment endpoints.
+ * @returns The midpoint of each pair of consecutive samples.
+ * @see SymPy `sympy.plotting.series.centers_of_segments`
+ */
 export const centersOfSegments = (array: readonly number[]): number[] => array.slice(1).map((v, i) => (v + at(array, i)) / 2);
+/**
+ * Averages the four corner values of each cell of a rectangular grid.
+ *
+ * @param array - The rectangular mesh of corner samples.
+ * @returns The resulting coordinate samples.
+ * @see SymPy `sympy.plotting.series.centers_of_faces`
+ */
 export const centersOfFaces = (array: readonly (readonly number[])[]): number[][] => array.slice(1).map((row, i) => row.slice(1).map((v, j) => (v + at(row, j) + at(at(array, i), j) + at(at(array, i), j + 1)) / 4));
+/**
+ * Tests whether three sampled points lie sufficiently close to a straight line.
+ *
+ * @param x - The first sampled point.
+ * @param y - The middle sampled point.
+ * @param z - The last sampled point.
+ * @param eps - The tolerance on the cosine of the angle between successive displacements.
+ * @returns Whether the sampled directions are collinear within tolerance.
+ * @see SymPy `sympy.plotting.series.flat`
+ */
 export function flat(x: readonly number[], y: readonly number[], z: readonly number[], eps = 1e-3): boolean { const a = y.map((v, i) => v - at(x, i)), b = z.map((v, i) => v - at(y, i)); const norm = Math.hypot(...a) * Math.hypot(...b); return norm === 0 || Math.abs(a.reduce((s, v, i) => s + v * at(b, i), 0) / norm - 1) < eps; }

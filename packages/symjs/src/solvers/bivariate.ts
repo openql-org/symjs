@@ -61,9 +61,22 @@ function bivariateCore(p: Poly, x0: Sym, y0: Sym): [Expr, Expr, Dummy] | undefin
 }
 
 /**
- * SymPy bivariate_type: if the polynomial f in x and y is P(u(x, y)) for
- * u = x*y, a*x + b*y, a*x*y + b*y or a*x*y + b*x, returns u(x, y), P(u) and
- * the positive dummy u; otherwise NoMatch.
+ * Looks for a representation of a bivariate polynomial as a univariate polynomial in a simpler expression.
+ *
+ * @remarks SymPy returns `(x + y, _u**2 - 3, _u)`.
+ *
+ * @param f - The polynomial in two variables.
+ * @param x - The first polynomial variable.
+ * @param y - The second polynomial variable.
+ * @returns The inner expression, its outer polynomial and the placeholder, or `NoMatch`.
+ * @see SymPy `sympy.solvers.bivariate.bivariate_type`
+ * @example
+ * ```ts
+ * import { bivariateType, ex, symbols } from '@symjs/symjs';
+ *
+ * const [x, y] = symbols('x y');
+ * bivariateType(ex`(x + y)**2 - 3`, x, y); // => [x + y, _u**2 - 3, _u]
+ * ```
  */
 export function bivariateType(f: ExprLike, x: Sym, y: Sym): [Expr, Expr, Dummy] | NoMatchResult {
   const e = Poly.from(f, [x, y]).asExpr();

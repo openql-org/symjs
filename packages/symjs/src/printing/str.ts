@@ -21,7 +21,11 @@ import { BoolOp } from '../core/boolalg';
 /** SymPy precedence values. */
 export const PREC = { REL: 35, ADD: 40, MUL: 50, POW: 60, FUNC: 70, ATOM: 1000 } as const;
 
-/** SymPy `PRECEDENCE`: the precedence values of the str printer. */
+/**
+ * The precedence values of the str printer.
+ *
+ * @see SymPy `sympy.printing.precedence.PRECEDENCE`
+ */
 export const PRECEDENCE: Readonly<Record<'Lambda' | 'Xor' | 'Or' | 'And' | 'Relational' | 'Add' | 'Mul' | 'Pow' | 'Func' | 'Not' | 'Atom' | 'BitwiseOr' | 'BitwiseXor' | 'BitwiseAnd', number>> = {
   Lambda: 1,
   Xor: 10,
@@ -68,7 +72,13 @@ export function declaredPrecedence(e: Expr, method: 'strPrecedence' | 'latexPrec
   return typeof p === 'number' ? p : undefined;
 }
 
-/** SymPy `precedence()`: the precedence of an expression for the str printer ({@link PRECEDENCE}). */
+/**
+ * Returns the precedence of an expression for the str printer ({@link PRECEDENCE}).
+ *
+ * @param e - The value to format.
+ * @returns The precedence of an expression for the str printer ({@link PRECEDENCE}).
+ * @see SymPy `sympy.printing.precedence.precedence`
+ */
 export function precedence(e: Expr): number {
   if (e instanceof ExtensionExpr && e.name === 'UnevaluatedExpr') return precedence(at(e.args, 0)) - 0.5;
   const declared = declaredPrecedence(e, 'strPrecedence');
@@ -228,6 +238,18 @@ export function withPermCyclic<T>(setting: boolean | undefined, f: () => T): T {
 /** The printer setting perm_cyclic of the print in progress. @internal */
 export const permCyclic = (): boolean => permCyclicSetting;
 
+/**
+ * Formats an expression in plain text.
+ *
+ * @param e - The value to format.
+ * @returns The plain-text representation.
+ * @see SymPy `sympy.printing.str.sstr`
+ * @example
+ * ```ts
+ * import { ex, str } from '@symjs/symjs';
+ * str(ex`x**2 + 1`); // => x**2 + 1
+ * ```
+ */
 export function str(e: Expr): string {
   printLevel++;
   try {

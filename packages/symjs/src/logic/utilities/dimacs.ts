@@ -12,8 +12,17 @@ import { Sym } from '../../core/nodes';
 import { andFn, notFn, orFn } from '../boolalg';
 
 /**
- * SymPy load: the CNF formula of a DIMACS text (comment lines `c ...` and the
+ * The CNF formula of a DIMACS text (comment lines `c ...` and the
  * problem line `p cnf ...` are skipped, 0 ends a clause).
+ *
+ * @param s - The DIMACS clause text.
+ * @returns The conjunction of the parsed clauses.
+ * @see SymPy `sympy.logic.utilities.dimacs.load`
+ * @example
+ * ```ts
+ * import { load } from '@symjs/symjs';
+ * load('1'); // => cnf_1
+ * ```
  */
 export function load(s: string): Expr {
   const clauses: Expr[] = [];

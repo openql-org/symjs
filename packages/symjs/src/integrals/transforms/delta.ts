@@ -274,41 +274,100 @@ function singularityAsHeaviside(x: Expr, a: Expr, n: Expr): Expr | undefined {
 }
 
 /**
- * The Heaviside step function (SymPy Heaviside): 0 for negative, 1 for
+ * The Heaviside step function: 0 for negative, 1 for
  * positive arguments and `H0` (default 1/2) at 0.
+ *
+ * @param x - The argument whose sign determines the step value.
+ * @param H0 - The value of the step function at zero.
+ * @returns The step value or symbolic step function.
+ * @see SymPy `sympy.functions.special.delta_functions.Heaviside`
+ * @example
+ * ```ts
+ * import { Heaviside } from '@symjs/symjs';
+ * Heaviside(9); // => 1
+ * ```
  */
 export function Heaviside(x: ExprLike, H0?: ExprLike): Expr {
   return H0 === undefined ? heavisideDef(x) : heavisideDef(x, H0);
 }
 
-/** The Dirac delta distribution and its k-th derivative (SymPy DiracDelta). */
+/**
+ * The Dirac delta distribution and its k-th derivative.
+ *
+ * @param x - The argument of the delta distribution.
+ * @param k - The nonnegative derivative order.
+ * @returns The delta distribution or its indicated derivative.
+ * @see SymPy `sympy.functions.special.delta_functions.DiracDelta`
+ * @example
+ * ```ts
+ * import { DiracDelta } from '@symjs/symjs';
+ * DiracDelta(1); // => 0
+ * ```
+ */
 export function DiracDelta(x: ExprLike, k?: ExprLike): Expr {
   return k === undefined ? diracDef(x) : diracDef(x, k);
 }
 
 /**
- * The singularity function <x - a>^n (SymPy SingularityFunction): (x - a)**n
+ * The singularity function <x - a>^n: (x - a)**n
  * for x >= a and 0 for x < a when n >= 0; for n = -1, -2, -3, -4 the derivatives
  * of the Dirac delta (oo at x = a, 0 elsewhere).
+ *
+ * @param variable - The independent variable of the singularity function.
+ * @param offset - The point at which the singularity occurs.
+ * @param exponent - The exponent of the power.
+ * @returns The value or symbolic singularity function.
+ * @see SymPy `sympy.functions.special.singularity_functions.SingularityFunction`
+ * @example
+ * ```ts
+ * import { SingularityFunction } from '@symjs/symjs';
+ * SingularityFunction(4, 1, 5); // => 243
+ * ```
  */
 export function SingularityFunction(variable: ExprLike, offset: ExprLike, exponent: ExprLike): Expr {
   return singularityDef(variable, offset, exponent);
 }
 
-/** True when e is an application of Heaviside. */
+/**
+ * True when e is an application of Heaviside.
+ *
+ * @param e - The expression to evaluate.
+ * @returns Whether the expression is an application of this function.
+ */
 export const isHeaviside = (e: Expr): boolean => heavisideDef.isApplied(e);
 
 impl.heaviside = (x) => Heaviside(x);
 
-/** True when e is an application of DiracDelta. */
+/**
+ * True when e is an application of DiracDelta.
+ *
+ * @param e - The expression to evaluate.
+ * @returns Whether the expression is an application of this function.
+ */
 export const isDiracDelta = (e: Expr): boolean => diracDef.isApplied(e);
 
-/** True when e is an application of SingularityFunction. */
+/**
+ * True when e is an application of SingularityFunction.
+ *
+ * @param e - The expression to evaluate.
+ * @returns Whether the expression is an application of this function.
+ */
 export const isSingularityFunction = (e: Expr): boolean => singularityDef.isApplied(e);
 
 /**
- * SymPy DiracDelta.is_simple: true when the argument of the DiracDelta `delta`
- * is a polynomial of degree 1 in x.
+ * Tests whether the argument of a Dirac delta is linear in the selected variable.
+ *
+ * @param delta - The delta distribution to inspect.
+ * @param x - The variable in which to test linearity.
+ * @returns Whether the delta argument is linear in the selected variable.
+ * @see SymPy `sympy.functions.special.delta_functions.DiracDelta.is_simple`
+ * @example
+ * ```ts
+ * import { DiracDelta, ex, isSimple, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * isSimple(DiracDelta(ex`x*y`), x); // => True
+ * ```
  */
 export function isSimple(delta: Expr, x: Expr): boolean {
   if (!isDiracDelta(delta)) throw new TypeError(`isSimple: ${String(delta)} is not a DiracDelta`);

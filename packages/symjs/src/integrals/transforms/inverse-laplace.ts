@@ -50,27 +50,64 @@ const isOneE = (e: Expr): boolean => e.key === S.One.key;
  * The unevaluated inverse Laplace transform of F(s) (SymPy
  * InverseLaplaceTransform); the fourth argument is the plane of
  * convergence (printed as _None when not given).
+ *
+ * @see SymPy `sympy.integrals.laplace.InverseLaplaceTransform`
  */
 export class InverseLaplaceTransform extends IntegralTransform {
+  /**
+   * Creates an InverseLaplaceTransform instance.
+   *
+   * @param F - The transformed function.
+   * @param s - The transform-domain variable.
+   * @param t - The time variable.
+   * @param plane - The boundary of the half-plane of convergence.
+   */
   constructor(F: ExprLike, s: ExprLike, t: ExprLike, plane?: ExprLike) {
     super('InverseLaplaceTransform', [sympify(F), sympify(s), sympify(t), plane === undefined ? NONE_SENTINEL : sympify(plane)]);
   }
-  /** SymPy InverseLaplaceTransform._name. */
+  /**
+   * The name of the integral transform.
+   *
+   * @see SymPy `sympy.integrals.laplace.InverseLaplaceTransform._name`
+   */
   static readonly transformName = 'Inverse Laplace';
+  /**
+   * Represents the name of the integral transform.
+   *
+   * @returns The name of the integral transform.
+   * @see SymPy `sympy.integrals.laplace.InverseLaplaceTransform._name`
+   */
   get transformName(): string {
     return 'Inverse Laplace';
   }
   protected get latexName(): string {
     return '\\mathcal{L}^{-1}';
   }
-  /** The plane of convergence, or undefined when not given (SymPy fundamental_plane). */
+  /**
+   * The optional real-part boundary of the Laplace convergence half-plane.
+   *
+   * @returns The convergence boundary when supplied.
+   * @see SymPy `sympy.integrals.laplace.InverseLaplaceTransform.fundamental_plane`
+   */
   get fundamentalPlane(): Expr | undefined {
     const p = at(this.args, 3);
     return p === NONE_SENTINEL ? undefined : p;
   }
+  /**
+   * Rebuilds the expression with replacement arguments.
+   *
+   * @param args - The operands in their defining order.
+   * @returns The expression with the replacement operands.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new InverseLaplaceTransform(...transformArgs(args), args[3]);
   }
+  /**
+   * Expresses the transform as a symbolic integral.
+   *
+   * @returns The defining integral expression.
+   * @see SymPy `sympy.integrals.laplace.InverseLaplaceTransform._as_integral`
+   */
   get asIntegral(): Expr {
     const c = new Dummy('c');
     const s = this.functionVariable;
@@ -78,7 +115,14 @@ export class InverseLaplaceTransform extends IntegralTransform {
     const integral = new Integral([mul(exp(mul(s, t)), this.function), s, sub(c, mul(S.I, S.Infinity)), add(c, mul(S.I, S.Infinity))]);
     return mul(integral, pow(mul(2, S.Pi, S.I), -1));
   }
-  /** Evaluate (SymPy doit): f, or [f, cond] with `noconds: false`. */
+  /**
+   * Evaluate: f, or [f, cond] with `noconds: false`.
+   *
+   * @param hints - The transform hints settings.
+   * @returns The transformed expression with convergence data when requested.
+   * @throws IntegralTransformError when evaluation is required and the transform cannot be computed.
+   * @see SymPy `sympy.integrals.laplace.InverseLaplaceTransform.doit`
+   */
   doit(hints: TransformHints = {}): Expr | InverseLaplacePair {
     const s = this.functionVariable;
     const r: InverseLaplacePair = s instanceof Sym ? inverseLaplaceTransformImpl(this.function, s, this.transformVariable, this.fundamentalPlane, hints.simplify ?? false, true) : [this, S.true];
@@ -621,9 +665,9 @@ export function inverseLaplaceTransformImpl(fn: Expr, s: Sym, t: Expr, plane: Ex
   return [result, and(...conditions)];
 }
 
-/** Options of inverseLaplaceTransform (SymPy keyword arguments). */
+/** Options of inverseLaplaceTransform. */
 export interface InverseLaplaceOptions extends TransformHints {
-  /** Return only f (SymPy noconds); default true. */
+  /** Returns only f; default true. */
   noconds?: boolean;
 }
 
@@ -633,6 +677,13 @@ export interface InverseLaplaceOptions extends TransformHints {
  * inverted stay as unevaluated InverseLaplaceTransform objects. With
  * `noconds: false` the result is [f, cond].
  *
+ * @param F - The transformed function.
+ * @param s - The transform-domain variable.
+ * @param t - The time variable.
+ * @param plane - The boundary of the half-plane of convergence.
+ * @param opts - `noconds` omits convergence data.
+ * @returns The transformed expression with convergence data when requested.
+ * @see SymPy `sympy.integrals.laplace.inverse_laplace_transform`
  * @example
  * ```ts
  * import { ex, inverseLaplaceTransform, symbols } from '@symjs/symjs';
@@ -643,7 +694,35 @@ export interface InverseLaplaceOptions extends TransformHints {
  * ```
  */
 export function inverseLaplaceTransform(F: ExprLike, s: Sym, t: ExprLike, plane: ExprLike | undefined, opts: InverseLaplaceOptions & { noconds: false }): InverseLaplacePair;
+/**
+ * The inverse Laplace transform f(t) of F(s) (SymPy
+ * inverse_laplace_transform). t is assumed real. Parts that cannot be
+ * inverted stay as unevaluated InverseLaplaceTransform objects. With
+ * `noconds: false` the result is [f, cond].
+ *
+ * @param F - The transformed function.
+ * @param s - The transform-domain variable.
+ * @param t - The time variable.
+ * @param plane - The boundary of the half-plane of convergence.
+ * @param opts - The inverse laplace settings.
+ * @returns The transformed expression with convergence data when requested.
+ * @see SymPy `sympy.integrals.laplace.inverse_laplace_transform`
+ */
 export function inverseLaplaceTransform(F: ExprLike, s: Sym, t: ExprLike, plane?: ExprLike, opts?: InverseLaplaceOptions): Expr;
+/**
+ * The inverse Laplace transform f(t) of F(s) (SymPy
+ * inverse_laplace_transform). t is assumed real. Parts that cannot be
+ * inverted stay as unevaluated InverseLaplaceTransform objects. With
+ * `noconds: false` the result is [f, cond].
+ *
+ * @param F - The transformed function.
+ * @param s - The transform-domain variable.
+ * @param t - The time variable.
+ * @param plane - The boundary of the half-plane of convergence.
+ * @param opts - The inverse laplace settings.
+ * @returns The transformed expression with convergence data when requested.
+ * @see SymPy `sympy.integrals.laplace.inverse_laplace_transform`
+ */
 export function inverseLaplaceTransform(F: Matrix, s: Sym, t: ExprLike, plane?: ExprLike, opts?: InverseLaplaceOptions): Matrix;
 export function inverseLaplaceTransform(F: ExprLike | Matrix, s: Sym, tIn: ExprLike, plane?: ExprLike, opts: InverseLaplaceOptions = {}): Expr | InverseLaplacePair | Matrix {
   const t = sympify(tIn);

@@ -72,7 +72,19 @@ function linearPde(eqIn: Expr, f: UndefFn): LinearPde | undefined {
   if (a.equals(0) && b.equals(0)) return undefined;
   return { f, x, y, a, b, c, forcing, constant: [a, b, c].every((v) => !v.has(x) && !v.has(y)) };
 }
-/** Supported SymPy hints of a first-order linear PDE, in SymPy's order. */
+/**
+ * Supported SymPy hints of a first-order linear PDE, in SymPy's order.
+ *
+ * @param equation - The equation, or an expression equal to zero.
+ * @param func - The dependent function applied to its arguments.
+ * @returns The names of applicable solution methods.
+ * @see SymPy `sympy.solvers.pde.classify_pde`
+ * @example
+ * ```ts
+ * import { classifyPde, ex } from '@symjs/symjs';
+ * classifyPde(ex`Derivative(f(x, y), x) + Derivative(f(x, y), y)`); // => [1st_linear_constant_coeff_homogeneous]
+ * ```
+ */
 export function classifyPde(equation: ExprLike, func?: Expr): string[] {
   const eq = asEquation(equation), f = dependent(eq, func), m = linearPde(eq, f);
   if (!m) return [];
@@ -80,11 +92,24 @@ export function classifyPde(equation: ExprLike, func?: Expr): string[] {
   return m.forcing.equals(0) ? ['1st_linear_constant_coeff_homogeneous'] : ['1st_linear_constant_coeff', '1st_linear_constant_coeff_Integral'];
 }
 /**
- * Solve a*x-derivative(f) + b*y-derivative(f) + c*f = forcing(x,y).
+ * Solves a*x-derivative(f) + b*y-derivative(f) + c*f = forcing(x,y).
  * With constant coefficients the arbitrary function is F(b*x-a*y); with
  * variable coefficients the characteristic is found by dsolve (SymPy
  * pde_1st_linear_variable_coeff). Higher orders are explicitly unsupported,
  * rather than assigned a partial solution.
+ *
+ * @param equation - The equation, or an expression equal to zero.
+ * @param func - The dependent function applied to its arguments.
+ * @param hint - The name of the solution method.
+ * @param solvefun - The arbitrary function used in the general solution.
+ * @returns An equation giving the dependent function.
+ * @throws NotImplementedError when the equation falls outside the supported first-order linear classes.
+ * @see SymPy `sympy.solvers.pde.pdsolve`
+ * @example
+ * ```ts
+ * import { ex, pdsolve } from '@symjs/symjs';
+ * pdsolve(ex`f(x, y) + Derivative(f(x, y), x) + Derivative(f(x, y), y)`); // => Eq(f(x, y), F(x - y)*exp(-x/2 - y/2))
+ * ```
  */
 export function pdsolve(equation: ExprLike, func?: Expr, hint = 'default', solvefun = SymFunction('F')): Expr {
   const eq = asEquation(equation), f = dependent(eq, func), m = linearPde(eq, f);
@@ -162,7 +187,23 @@ function variableCoeff(m: LinearPde, F: ReturnType<typeof SymFunction>): Expr {
   const final = odeSolution(deq, fx, '1st_linear').rhs;
   return Eq(f, simplifyVariableCoeff(final, newSymbols(final, deq, x, y), etat, eta, F));
 }
-/** Verify an explicit PDE solution by substituting and differentiating it. */
+/**
+ * Verify an explicit PDE solution by substituting and differentiating it.
+ *
+ * @remarks SymPy returns `(False, (x*F(4*x - 3*y) - 6*F(4*x - 3*y)/25 + 4*Subs(Derivative(F(_xi_1), _xi_1), _xi_1, 4*x - 3*y))*exp(-6*x/25 - 8*y/25))`.
+ *
+ * @param equation - The equation, or an expression equal to zero.
+ * @param solutionIn - The proposed solution.
+ * @param func - The dependent function applied to its arguments.
+ * @returns The verification flag and the residual after substitution.
+ * @throws NotImplementedError when the proposed solution does not isolate the dependent function.
+ * @see SymPy `sympy.solvers.pde.checkpdesol`
+ * @example
+ * ```ts
+ * import { checkpdesol, ex } from '@symjs/symjs';
+ * checkpdesol(ex`x*f(x, y) + Derivative(f(x, y), x)`, ex`Eq(f(x, y), F(4*x - 3*y)*exp(-6*x/25 - 8*y/25))`); // => [False, (x*F(4*x - 3*y) - 6*F(4*x - 3*y)/25 + 4*Subs(Derivative(F(_xi_1), _xi_1), _xi_1, 4*x - 3*y))*exp(-6*x/25 - 8*y/25)]
+ * ```
+ */
 export function checkpdesol(equation: ExprLike, solutionIn: ExprLike, func?: Expr): [boolean, Expr] {
   const eq = asEquation(equation), f = dependent(eq, func), solution = sympify(solutionIn);
   const rhs = solution instanceof Rel && solution.op === 'Eq'
@@ -186,7 +227,22 @@ export function checkpdesol(equation: ExprLike, solutionIn: ExprLike, func?: Exp
   return [residual.equals(0), residual];
 }
 
-/** Separate independent variables by an additive or multiplicative ansatz. */
+/**
+ * Separate independent variables by an additive or multiplicative ansatz.
+ *
+ * @param equation - The equation, or an expression equal to zero.
+ * @param func - The dependent function applied to its arguments.
+ * @param separated - The functions of separate groups of variables.
+ * @param strategy - The additive or multiplicative separation ansatz.
+ * @returns The two separated sides, or `NoMatch` when separation fails.
+ * @throws RangeError when the separation strategy is neither additive nor multiplicative.
+ * @see SymPy `sympy.solvers.pde.pde_separate`
+ * @example
+ * ```ts
+ * import { ex, pdeSeparate } from '@symjs/symjs';
+ * pdeSeparate(ex`Eq(Derivative(u(x, t), x), Derivative(u(x, t), t))`, ex`u(x, t)`, [ex`X(x)`, ex`T(t)`], 'mul'); // => [Derivative(X(x), x)/X(x), Derivative(T(t), t)/T(t)]
+ * ```
+ */
 export function pdeSeparate(equation: ExprLike, func: Expr, separated: readonly Expr[], strategy: 'add' | 'mul' = 'mul'): [Expr, Expr] | NoMatchResult {
   if (!['add', 'mul'].includes(strategy)) throw new RangeError('Unknown separation strategy');
   const f = cast(func, UndefFn), variables = separated.flatMap((s) => s.args);
@@ -223,5 +279,33 @@ export function pdeSeparate(equation: ExprLike, func: Expr, separated: readonly 
   lhs = expand(simplify(mul(lhs, pow(divisor, -1)))); rhs = expand(simplify(mul(rhs, pow(divisor, -1))));
   return has(lhs, others) || has(rhs, dep) ? NoMatch : [lhs, rhs];
 }
+/**
+ * Separates a partial differential equation using a sum of functions of disjoint variables.
+ *
+ * @param eq - The equation, or an expression equal to zero.
+ * @param f - The function or expression to analyze.
+ * @param separated - The functions of separate groups of variables.
+ * @returns The two separated sides, or `NoMatch` when separation fails.
+ * @see SymPy `sympy.solvers.pde.pde_separate_add`
+ * @example
+ * ```ts
+ * import { ex, pdeSeparateAdd } from '@symjs/symjs';
+ * pdeSeparateAdd(ex`Eq(Derivative(u(x, t), x), exp(u(x, t))*Derivative(u(x, t), t))`, ex`u(x, t)`, [ex`X(x)`, ex`T(t)`]); // => [exp(-X(x))*Derivative(X(x), x), exp(T(t))*Derivative(T(t), t)]
+ * ```
+ */
 export const pdeSeparateAdd = (eq: ExprLike, f: Expr, separated: readonly Expr[]): [Expr, Expr] | NoMatchResult => pdeSeparate(eq, f, separated, 'add');
+/**
+ * Separates a partial differential equation using a product of functions of disjoint variables.
+ *
+ * @param eq - The equation, or an expression equal to zero.
+ * @param f - The function or expression to analyze.
+ * @param separated - The functions of separate groups of variables.
+ * @returns The two separated sides, or `NoMatch` when separation fails.
+ * @see SymPy `sympy.solvers.pde.pde_separate_mul`
+ * @example
+ * ```ts
+ * import { ex, pdeSeparateMul } from '@symjs/symjs';
+ * pdeSeparateMul(ex`Eq(Derivative(u(x, y), (x, 2)), Derivative(u(x, y), (y, 2)))`, ex`u(x, y)`, [ex`X(x)`, ex`Y(y)`]); // => [Derivative(X(x), (x, 2))/X(x), Derivative(Y(y), (y, 2))/Y(y)]
+ * ```
+ */
 export const pdeSeparateMul = (eq: ExprLike, f: Expr, separated: readonly Expr[]): [Expr, Expr] | NoMatchResult => pdeSeparate(eq, f, separated, 'mul');

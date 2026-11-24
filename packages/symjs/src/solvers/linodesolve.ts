@@ -14,10 +14,15 @@ import { linodesolveType } from './odesystem';
 
 /** Parameters for a first-order linear matrix ODE. */
 export interface LinodesolveOptions {
+  /** The inhomogeneous forcing vector. */
   b?: Matrix;
+  /** An antiderivative of the coefficient matrix. */
   B?: Matrix;
+  /** The classification of the linear system. */
   type?: 'auto' | 'type1' | 'type2' | 'type3' | 'type4';
+  /** Whether to evaluate integrals in the solution. */
   doit?: boolean;
+  /** The independent variable after a change of variables. */
   tau?: Expr;
 }
 
@@ -35,7 +40,26 @@ function exponential(A: Matrix, scale: Expr = S.One): Matrix {
   return P.mul(D).mul(series).mul(P.inv()).map((e) => simplify(e));
 }
 
-/** Solve X'(t) = A(t) X(t) + b(t) when A commutes with its antiderivative. */
+/**
+ * Solves X'(t) = A(t) X(t) + b(t) when A commutes with its antiderivative.
+ *
+ * @param A - The square coefficient matrix.
+ * @param t - The independent variable.
+ * @param opts - The linodesolve settings.
+ * @returns The solution components in dependent-variable order.
+ * @throws TypeError when the coefficient input is not a matrix.
+ * @throws NonSquareMatrixError when the coefficient matrix is not square.
+ * @throws RangeError when the forcing vector has incompatible dimensions.
+ * @throws NotImplementedError when the matrix does not commute with its antiderivative.
+ * @see SymPy `sympy.solvers.ode.systems.linodesolve`
+ * @example
+ * ```ts
+ * import { Matrix, linodesolve, symbols } from '@symjs/symjs';
+ *
+ * const [t] = symbols('t');
+ * linodesolve(Matrix.of([[1]]), t); // => [C1*exp(t)]
+ * ```
+ */
 export function linodesolve(A: Matrix, t: Sym, opts: LinodesolveOptions = {}): Expr[] {
   if (!(A instanceof Matrix)) throw new TypeError('linodesolve: coefficients must be a matrix');
   if (A.rows !== A.cols) throw new NonSquareMatrixError('linodesolve: coefficients must be square');

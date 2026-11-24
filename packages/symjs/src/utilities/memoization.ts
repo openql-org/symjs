@@ -25,12 +25,16 @@ export interface RecurrenceMemo<T> {
 }
 
 /**
- * SymPy `recurrence_memo(initial)`: memoizes the recurrence `f(n, prev)`,
+ * Memoizes the recurrence `f(n, prev)`,
  * where `prev` holds the terms 0 .., n - 1 (the first ones are `initial`).
  *
- * ```
- * const factorial = recurrenceMemo([1])((n, prev) => n * at(prev, prev.length - 1));
- * factorial(4) // 24
+ * @param initial - The already known terms, starting at index zero.
+ * @returns A decorator caching previously computed recurrence values.
+ * @see SymPy `sympy.utilities.memoization.recurrence_memo`
+ * @example
+ * ```ts
+ * import { recurrenceMemo } from '@symjs/symjs';
+ * recurrenceMemo([1])((n, prev) => n * prev[n - 1])(4); // => 24
  * ```
  */
 export function recurrenceMemo<T>(initial: readonly T[]): (f: (n: number, prev: readonly T[]) => T) => RecurrenceMemo<T> {
@@ -51,10 +55,14 @@ export function recurrenceMemo<T>(initial: readonly T[]): (f: (n: number, prev: 
 }
 
 /**
- * SymPy `assoc_recurrence_memo(base_seq)`: memoizes the triangle `F(n, m)`
+ * Memoizes the triangle `F(n, m)`
  * (0 <= m <= n) whose rows start with `baseSeq(n)` and continue with
  * `f(n, m, rows)`, where `rows` holds the rows computed so far (the row
  * being built last).
+ *
+ * @param baseSeq - The function giving the first entry of each row.
+ * @returns A decorator caching previously computed recurrence values.
+ * @see SymPy `sympy.utilities.memoization.assoc_recurrence_memo`
  */
 export function assocRecurrenceMemo<T>(baseSeq: (n: number) => T): (f: (n: number, m: number, rows: readonly (readonly T[])[]) => T) => (n: number, m: number) => T {
   const cache: T[][] = [];

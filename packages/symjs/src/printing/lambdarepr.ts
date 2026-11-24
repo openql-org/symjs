@@ -19,8 +19,19 @@ const constants: Readonly<Record<string, string>> = {
   oo: 'mpmath.inf', '-oo': '-mpmath.inf', nan: 'mpmath.nan',
 };
 
-/** Python expression printer for interval arithmetic with mpmath. */
+/**
+ * Python expression printer for interval arithmetic with mpmath.
+ *
+ * @see SymPy `sympy.printing.lambdarepr.IntervalPrinter`
+ */
 export class IntervalPrinter {
+  /**
+   * Formats the supplied value using the printer settings.
+   *
+   * @param expression - The value to format.
+   * @returns The formatted text.
+   * @see SymPy `sympy.printing.lambdarepr.IntervalPrinter.doprint`
+   */
   doprint(expression: ExprLike): string {
     return this.print(sympify(expression));
   }

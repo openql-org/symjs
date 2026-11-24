@@ -65,10 +65,25 @@ class LitHeap {
   }
 }
 
-/** One decision level of the SAT search (SymPy Level). */
+/**
+ * One decision level of the SAT search.
+ *
+ * @see SymPy `sympy.logic.algorithms.dpll2.Level`
+ */
 export class Level {
+  /** The signed literals assigned at this search level or solver state. */
   readonly varSettings = new Set<number>();
-  constructor(readonly decision: number, readonly flipped = false) {}
+  /**
+   * Creates a Level instance.
+   *
+   * @param decision - The literal chosen at this decision level.
+   * @param flipped - Whether the opposite choice has already been tried.
+   */
+  constructor(
+    /** The decision literal for this level of the SAT search. */
+    readonly decision: number,
+    /** Indicates whether the opposite decision has already been tried. */
+    readonly flipped = false) {}
 }
 
 /** A complete DPLL search checkpoint; containers are copied when restored. */
@@ -87,14 +102,19 @@ export interface SATSolverState {
 }
 
 /**
- * SymPy SATSolver (dpll2) without clause learning: `findModels` yields
- * every model as the set of true/false literals of variables 1..n.
+ * Enumerates the satisfying assignments of a propositional formula encoded as clauses of signed integers.
+ *
+ * @see SymPy `sympy.logic.algorithms.dpll2.SATSolver`
  */
 export class SATSolver {
+  /** The clauses constraining a satisfying assignment. */
   readonly clauses: number[][];
+  /** The watched literals used to detect unit clauses. */
   readonly sentinels = new Map<number, Set<number>>();
   private readonly occurrence = new Map<number, number>();
+  /** Flags indicating which variable indices currently have assignments. */
   readonly variableSet: boolean[];
+  /** The signed literals assigned at this search level or solver state. */
   readonly varSettings = new Set<number>();
   private unitQueue: number[] = [];
   private isUnsatisfied = false;
@@ -104,17 +124,31 @@ export class SATSolver {
   /** The number of clauses learned before the checkpoint (this solver does not learn new clauses). */
   numLearnedClauses = 0;
 
-  /** The current VSIDS heap, including stale entries, in heap order. */
+  /**
+   * Represents the current VSIDS heap, including stale entries, in heap order.
+   *
+   * @returns The current VSIDS heap, including stale entries, in heap order.
+   */
   get litHeap(): [number, number][] {
     return this.heap.snapshot();
   }
 
-  /** The current VSIDS scores by signed literal. */
+  /**
+   * Represents the current VSIDS scores by signed literal.
+   *
+   * @returns The current VSIDS scores by signed literal.
+   */
   get litScores(): Map<number, number> {
     return new Map(this.scores);
   }
 
-  /** Restore a checkpoint, including pending propagation and decision levels. */
+  /**
+   * Restore a checkpoint, including pending propagation and decision levels.
+   *
+   * @param state - The checkpoint containing the clauses, assignments and decision levels.
+   * @returns A solver initialized from the saved search state.
+   * @throws RangeError when the checkpoint arrays have incompatible dimensions.
+   */
   static fromState(state: SATSolverState): SATSolver {
     if (state.levels.length === 0 || state.variableSet.length !== state.variables + 1) throw new RangeError('Invalid SAT checkpoint dimensions');
     const solver = new SATSolver(state.clauses, state.variables);
@@ -136,7 +170,11 @@ export class SATSolver {
     return solver;
   }
 
-  /** Save the search state without sharing mutable containers with the solver. */
+  /**
+   * Save the search state without sharing mutable containers with the solver.
+   *
+   * @returns A snapshot of the SAT search state.
+   */
   toState(): SATSolverState {
     return {
       clauses: this.clauses.map((clause) => [...clause]), variables: this.variableSet.length - 1,
@@ -148,6 +186,12 @@ export class SATSolver {
     };
   }
 
+  /**
+   * Creates a SATSolver instance.
+   *
+   * @param clauses - The clauses whose conjunction is being tested.
+   * @param nvars - The number of Boolean variables numbered from one.
+   */
   constructor(clauses: readonly (readonly number[])[], nvars: number) {
     this.variableSet = new Array<boolean>(nvars + 1).fill(false);
     this.clauses = clauses.map((c) => [...c]);
@@ -185,7 +229,18 @@ export class SATSolver {
     return last(this.levels);
   }
 
-  /** The models, each as the assigned literals (positive = true). */
+  /**
+   * The models, each as the assigned literals (positive = true).
+   *
+   * @param feasible - An optional predicate that rejects infeasible assignments.
+   * @returns An iterator over satisfying assignments as signed literals.
+   * @example
+   * ```ts
+   * import { SATSolver } from '@symjs/symjs/logic';
+   * const solver = new SATSolver([[1], [-1, 2]], 2);
+   * [...solver.findModels()]; // => [[1, 2]]
+   * ```
+   */
   *findModels(feasible?: (assignment: ReadonlySet<number>) => boolean): Generator<number[]> {
     if (this.isUnsatisfied) return;
     let flipVar = false;

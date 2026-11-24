@@ -25,11 +25,20 @@ import { expandMul } from '../../simplify/expand';
 import { simplify as simplifyExpr } from '../../simplify/simplify';
 
 /**
- * A transform could not be computed (SymPy IntegralTransformError). Raised
+ * A transform could not be computed. Raised
  * with the hint `needeval: true` instead of returning an unevaluated
  * transform object.
+ *
+ * @see SymPy `sympy.integrals.transforms.IntegralTransformError`
  */
 export class IntegralTransformError extends NotImplementedError {
+  /**
+   * Creates an IntegralTransformError instance.
+   *
+   * @param transform - The name of the transform.
+   * @param fn - The function whose transform was requested.
+   * @param msg - The reason for the error.
+   */
   constructor(
     transform: string,
     /** The function whose transform failed (undefined when unknown). */
@@ -41,11 +50,11 @@ export class IntegralTransformError extends NotImplementedError {
   }
 }
 
-/** Hints of the transforms (SymPy keyword arguments of doit). */
+/** Hints of the transforms. */
 export interface TransformHints {
   /** Simplify the result (default depends on the transform). */
   simplify?: boolean;
-  /** Return only the transformed expression, without convergence conditions. */
+  /** Returns only the transformed expression, without convergence conditions. */
   noconds?: boolean;
   /** Throw IntegralTransformError instead of returning an unevaluated transform. */
   needeval?: boolean;
@@ -183,33 +192,89 @@ export const hasUndefOf = (e: Expr, x: Expr): boolean => some(e, (n) => n instan
  * Base class of the unevaluated integral transforms (SymPy
  * IntegralTransform). The arguments are (function, function variable,
  * transform variable, extra arguments...); the function variable is bound.
+ *
+ * @see SymPy `sympy.integrals.transforms.IntegralTransform`
+ * @example
+ * ```ts
+ * import { FourierTransform, IntegralTransform, ex, symbols } from '@symjs/symjs';
+ *
+ * const [k, x] = symbols('k x');
+ * new FourierTransform(ex`exp(-x**2)`, x, k) instanceof IntegralTransform; // => True
+ * ```
  */
 export abstract class IntegralTransform extends ExtensionExpr {
-  /** The function to be transformed. */
+  /**
+   * Represents the function to be transformed.
+   *
+   * @returns The function to be transformed.
+   * @see SymPy `sympy.integrals.transforms.IntegralTransform.function`
+   */
   get function(): Expr {
     return at(this.args, 0);
   }
-  /** The dependent variable of the function to be transformed. */
+  /**
+   * Represents the dependent variable of the function to be transformed.
+   *
+   * @returns The dependent variable of the function to be transformed.
+   * @see SymPy `sympy.integrals.transforms.IntegralTransform.function_variable`
+   */
   get functionVariable(): Expr {
     return at(this.args, 1);
   }
-  /** The independent transform variable. */
+  /**
+   * Represents the independent transform variable.
+   *
+   * @returns The independent transform variable.
+   * @see SymPy `sympy.integrals.transforms.IntegralTransform.transform_variable`
+   */
   get transformVariable(): Expr {
     return at(this.args, 2);
   }
-  /** The descriptive name of the transform (SymPy _name, e.g. 'Laplace'). */
+  /**
+   * Represents the descriptive name of the transform.
+   *
+   * @returns The descriptive name of the transform.
+   */
   abstract get transformName(): string;
+  /**
+   * Identifies the bound variable and the arguments in its scope.
+   *
+   * @returns The argument indices of the bound variable and its scope.
+   */
   override bindings(): { variables: readonly number[]; scope: readonly number[] } {
     return { variables: [1], scope: [0] };
   }
-  /** The integral that defines the transform (SymPy as_integral). */
+  /**
+   * The integral that defines the transform.
+   *
+   * @returns The defining integral expression.
+   * @see SymPy `sympy.integrals.transforms.IntegralTransform._as_integral`
+   */
   abstract get asIntegral(): Expr;
-  /** Evaluate the transform (SymPy doit). */
+  /**
+   * Evaluates the transform.
+   *
+   * @param hints - The transform hints settings.
+   * @returns The transformed expression with convergence data when requested.
+   * @throws IntegralTransformError when evaluation is required and the transform cannot be computed.
+   * @see SymPy `sympy.integrals.transforms.IntegralTransform.doit`
+   */
   abstract doit(hints?: TransformHints): TransformResult;
+  /**
+   * Differentiates the transform when the variable permits a direct derivative.
+   *
+   * @param x - The original-domain variable.
+   * @returns The derivative for a variable handled by this transform hook.
+   */
   override diffSelf(x: Expr): Expr | undefined {
     if (![...this.freeSymbols()].some((v) => v.key === x.key)) return S.Zero;
     return derivative(this, [[x, 1]]);
   }
+  /**
+   * Evaluates the transform with its default hints.
+   *
+   * @returns The evaluated transform or its unevaluated expression.
+   */
   override doitSelf(): Expr {
     const r = this.doit();
     return isTransformTuple(r) ? r[0] : r;
@@ -218,12 +283,24 @@ export abstract class IntegralTransform extends ExtensionExpr {
   protected get latexName(): string | undefined {
     return undefined;
   }
+  /**
+   * Formats the expression using a LaTeX printer for its operands.
+   *
+   * @param print - The callback for printing child expressions.
+   * @returns The formatted LaTeX source.
+   */
   override printLatex(print: (e: Expr) => string): string {
     const name = this.latexName;
     // SymPy's _print_Function form for the transforms without a symbol of their own
     if (name === undefined) return `\\operatorname{${this.name}}{\\left(${this.args.map(print).join(',')} \\right)}`;
     return `${name}_{${print(this.functionVariable)}}\\left[${print(this.function)}\\right]\\left(${print(this.transformVariable)}\\right)`;
   }
+  /**
+   * Rewrites the transform in the requested representation when a rule applies.
+   *
+   * @param target - The target form or replacement expression.
+   * @returns The requested representation when the transform supports it.
+   */
   override rewriteSelf(target: string): Expr | undefined {
     return target === 'Integral' ? this.asIntegral : undefined;
   }

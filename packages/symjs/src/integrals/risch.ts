@@ -77,8 +77,19 @@ function ordered(es: Iterable<Expr>): Expr[] {
 }
 
 /**
- * The terms grouped by rational multiples (SymPy integer_powers):
+ * The terms grouped by rational multiples:
  * [(base, [(term, integer multiple)])], ordered by the base.
+ *
+ * @remarks SymPy returns `[(x/6, [(x, 6), (x/2, 3), (2*x/3, 4)]), (x**2 + 1, [(x**2 + 1, 1)])]`.
+ *
+ * @param exprs - The expressions to group by rational proportionality.
+ * @returns Groups of expressions with their integer exponents relative to a common base.
+ * @see SymPy `sympy.integrals.risch.integer_powers`
+ * @example
+ * ```ts
+ * import { ex, integerPowers } from '@symjs/symjs';
+ * integerPowers([ex`x`, ex`x/2`, ex`x**2 + 1`, ex`2*x/3`]); // => [[x/6, [[x, 6], [x/2, 3], [2*x/3, 4]]], [x**2 + 1, [[x**2 + 1, 1]]]]
+ * ```
  */
 export function integerPowers(exprs: readonly Expr[]): [Expr, [Expr, Rational][]][] {
   const terms: [Expr, [Expr, Rational][]][] = [];
@@ -124,12 +135,25 @@ export interface DifferentialExtensionOptions {
  * DifferentialExtension): the monomials T = [x, t0, t1, ...], their
  * derivations D, the integrand as fa/fd in the top monomial, and the back
  * substitutions. A manual extension is given as an {@link ExtensionSpec}.
+ *
+ * @see SymPy `sympy.integrals.risch.DifferentialExtension`
  */
 export class DifferentialExtension extends DiffExtension {
-  /** Whether tower generators are distinct dummy symbols. */
+  /**
+   * Determines whether tower generators are distinct dummy symbols.
+   *
+   * @see SymPy `sympy.integrals.risch.DifferentialExtension.dummy`
+   */
   readonly dummy: boolean;
   private ts: Generator<Sym, never>;
 
+  /**
+   * Creates a DifferentialExtension instance.
+   *
+   * @param f - The integrand.
+   * @param x - The integration variable.
+   * @param opts - The differential extension settings.
+   */
   constructor(f: ExprLike | ExtensionSpec, x?: Sym, opts: DifferentialExtensionOptions = {}) {
     if (!isSpec(f)) {
       const fe = sympify(f);
@@ -370,6 +394,11 @@ export class DifferentialExtension extends DiffExtension {
     return newExtension;
   }
 
+  /**
+   * Formats this value as a string.
+   *
+   * @returns The formatted text.
+   */
   override toString(): string {
     return `DifferentialExtension({fa=${String(this.fa)}, fd=${String(this.fd)}, D=[${this.D.map(String).join(', ')}]})`;
   }
@@ -497,14 +526,42 @@ export interface RischIntegrateOptions extends DifferentialExtensionOptions {
 }
 
 /**
- * The Risch algorithm (SymPy risch_integrate): an elementary antiderivative
- * of f, or an elementary part plus a NonElementaryIntegral, which proves
- * that the rest has no elementary antiderivative. Raises
- * NotImplementedError for integrands outside the supported transcendental
- * cases (trigonometric or algebraic functions).
+ * Finds an elementary antiderivative using the Risch algorithm. A remaining `NonElementaryIntegral` certifies that the corresponding part has no elementary antiderivative.
+ *
+ * @param f - The integrand.
+ * @param x - The integration variable.
+ * @param opts - `separateIntegral` separates the nonelementary part.
+ * @returns The elementary primitive and any residual nonelementary integral, separated if requested.
+ * @see SymPy `sympy.integrals.risch.risch_integrate`
+ * @example
+ * ```ts
+ * import { ex, rischIntegrate, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * rischIntegrate(ex`exp(-x**2)`, x); // => Integral(exp(-x**2), x)
+ * ```
  */
 export function rischIntegrate(f: ExprLike, x: Sym, opts: RischIntegrateOptions & { separateIntegral: true }): [Expr, Expr];
+/**
+ * Finds an elementary antiderivative using the Risch algorithm. A remaining `NonElementaryIntegral` certifies that the corresponding part has no elementary antiderivative.
+ *
+ * @param f - The integrand.
+ * @param x - The integration variable.
+ * @param opts - The risch integrate settings.
+ * @returns The elementary primitive and any residual nonelementary integral, separated if requested.
+ * @see SymPy `sympy.integrals.risch.risch_integrate`
+ */
 export function rischIntegrate(f: ExprLike, x: Sym, opts?: RischIntegrateOptions): Expr;
+/**
+ * Finds an elementary antiderivative using the Risch algorithm. A remaining `NonElementaryIntegral` certifies that the corresponding part has no elementary antiderivative.
+ *
+ * @param fIn - The integrand.
+ * @param x - The integration variable.
+ * @param opts - The risch integrate settings.
+ * @returns The elementary primitive and any residual nonelementary integral, separated if requested.
+ * @throws NotImplementedError when the integrand requires another type of differential extension.
+ * @see SymPy `sympy.integrals.risch.risch_integrate`
+ */
 export function rischIntegrate(fIn: ExprLike, x: Sym, opts: RischIntegrateOptions = {}): Expr | [Expr, Expr] {
   const f = sympify(fIn);
   const DE = opts.extension ?? new DifferentialExtension(f, x, { handleFirst: opts.handleFirst, dummy: true, rewriteComplex: opts.rewriteComplex });
@@ -541,14 +598,30 @@ export function rischIntegrate(fIn: ExprLike, x: Sym, opts: RischIntegrateOption
   }
 }
 
-/** Solve s*a + t*b = c, with degree(s) < degree(b), over the coefficient field (SymPy gcdex_diophantine). */
+/**
+ * Solves s*a + t*b = c, with degree(s) < degree(b), over the coefficient field.
+ *
+ * @param a - The coefficient of the first unknown polynomial.
+ * @param b - The coefficient of the second unknown polynomial.
+ * @param c - The polynomial on the right-hand side.
+ * @returns Polynomial coefficients satisfying the Bézout equation.
+ * @see SymPy `sympy.integrals.risch.gcdex_diophantine`
+ */
 export function gcdexDiophantine(a: Poly, b: Poly, c: Poly): [Poly, Poly] {
   const x = expectType(at(a.gens, 0), (g): g is Sym => g instanceof Sym);
   const result = kGcdexDiophantine(KPoly.of(a.asExpr(), x), KPoly.of(b.asExpr(), x), KPoly.of(c.asExpr(), x));
   return [Poly.from(result[0].asExpr(), [x], { field: true }), Poly.from(result[1].asExpr(), [x], { field: true })];
 }
 
-/** Numerator and denominator as polynomials in t, optionally cancelling their common factor (SymPy frac_in). */
+/**
+ * Numerator and denominator as polynomials in t, optionally cancelling their common factor.
+ *
+ * @param f - The rational expression to split.
+ * @param t - The polynomial generator.
+ * @param opts - `cancel` cancels common factors.
+ * @returns The numerator and denominator polynomials.
+ * @see SymPy `sympy.integrals.risch.frac_in`
+ */
 export function fracIn(f: ExprLike | Poly | readonly [Poly, Poly], t: Sym, opts: { cancel?: boolean } = {}): [Poly, Poly] {
   const input = isPolyPair(f)
     ? div(f[0].asExpr(), f[1].asExpr())
@@ -557,7 +630,22 @@ export function fracIn(f: ExprLike | Poly | readonly [Poly, Poly], t: Sym, opts:
   return [Poly.from(a.asExpr(), [t]), Poly.from(b.asExpr(), [t])];
 }
 
-/** Write a Laurent polynomial in t as a polynomial in t and z = 1/t (SymPy as_poly_1t). */
+/**
+ * Writes a Laurent polynomial in t as a polynomial in t and z = 1/t.
+ *
+ * @param p - The Laurent polynomial.
+ * @param t - The original generator.
+ * @param z - The generator representing the reciprocal of `t`.
+ * @returns The bivariate polynomial in the generator and its reciprocal.
+ * @see SymPy `sympy.integrals.risch.as_poly_1t`
+ * @example
+ * ```ts
+ * import { asPoly1t, ex, symbols } from '@symjs/symjs';
+ *
+ * const [t, z] = symbols('t z');
+ * asPoly1t(ex`t + 2/t + 3/t**2`, t, z).asExpr(); // => t + 3*z**2 + 2*z
+ * ```
+ */
 export function asPoly1t(p: ExprLike, t: Sym, z: Sym): Poly {
   const [a, b] = kAsPoly1t(sympify(p), t, z);
   return Poly.from(add(a.asExpr(), b.asExpr()), [t, z]);

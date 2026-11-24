@@ -49,59 +49,212 @@ import { ordered } from '../core/match';
 import { iproduct, roundrobin } from '../utilities/iterables';
 import { floatToString, precToDps } from '../numeric/mpf';
 
-/** Base class of all sets. */
+/**
+ * Represents a symbolic set and its membership, order and topological operations.
+ *
+ * @see SymPy `sympy.sets.sets.Set`
+ */
 export abstract class SetExpr extends Expr {
+  /**
+   * Identifies a symbolic set expression.
+   *
+   * @see SymPy `sympy.sets.sets.Set.kind`
+   */
   readonly kind = 'Set' as const;
-  /** SymPy's +, - and * on sets denote union, difference and Cartesian product. */
+  /**
+   * Forms the union with the other set.
+   *
+   * @param other - The right-hand operand.
+   * @returns The union of the sets.
+   * @see SymPy `sympy.sets.sets.Set.__add__`
+   */
   override add(other: ExprLike): SetExpr { return union(this, cast(sympify(other), SetExpr)); }
+  /**
+   * Computes the relative complement by removing the elements of the other set.
+   *
+   * @param other - The right-hand operand.
+   * @returns The elements of the first set outside the second.
+   * @see SymPy `sympy.sets.sets.Set.__sub__`
+   */
   override sub(other: ExprLike): SetExpr { return complement(this, cast(sympify(other), SetExpr)); }
+  /**
+   * Forms the Cartesian product with another set.
+   *
+   * @param other - The right-hand operand.
+   * @returns The Cartesian product of the two sets.
+   * @see SymPy `sympy.sets.sets.Set.__mul__`
+   */
   override mul(other: ExprLike): SetExpr { return productSet(this, cast(sympify(other), SetExpr)); }
+  /**
+   * Forms a Cartesian power of the set.
+   *
+   * @param exponent - The exponent of the power.
+   * @returns The repeated Cartesian product.
+   * @throws RangeError when the Cartesian exponent is not a nonnegative integer.
+   * @see SymPy `sympy.sets.sets.Set.__pow__`
+   */
   override pow(exponent: ExprLike): SetExpr {
     const n = sympify(exponent);
     if (!(n instanceof Rational && n.isInteger && !n.isNegative)) throw new RangeError('Cartesian powers require a nonnegative integer');
     return productSet(...Array.from({ length: Number(n.p) }, () => this));
   }
-  /** Definite membership, as required by the in operator. */
+  /**
+   * Definite membership, as required by the in operator.
+   *
+   * @param x - The candidate element.
+   * @returns Whether membership can be established for the element.
+   * @throws TypeError when membership is undecidable.
+   */
   hasElement(x: Expr): boolean {
     const result = contains(this, x);
     if (result instanceof BoolAtom) return result.value;
     throw new TypeError('cannot determine symbolic set membership');
   }
+  /**
+   * Represents the symbolic class name used by printers.
+   *
+   * @returns The symbolic class name used by printers.
+   */
   abstract get className(): string;
-  /** Set order is inclusion, with strict order excluding equality. */
+  /**
+   * Tests whether this set is a subset of the other set.
+   *
+   * @param other - The right-hand operand.
+   * @returns The result of the inclusion test, or `'unknown'` when undecidable.
+   * @see SymPy `sympy.sets.sets.Set.__le__`
+   */
   le(other: SetExpr): Truth { return isSubset(this, other) ?? 'unknown'; }
+  /**
+   * Tests whether this set is a superset of the other set.
+   *
+   * @param other - The right-hand operand.
+   * @returns The result of the inclusion test, or `'unknown'` when undecidable.
+   * @see SymPy `sympy.sets.sets.Set.__ge__`
+   */
   ge(other: SetExpr): Truth { return isSubset(other, this) ?? 'unknown'; }
+  /**
+   * Tests whether this set is a proper subset of the other set.
+   *
+   * @param other - The right-hand operand.
+   * @returns The result of the inclusion test, or `'unknown'` when undecidable.
+   * @see SymPy `sympy.sets.sets.Set.__lt__`
+   */
   lt(other: SetExpr): Truth { return this.key === other.key ? false : this.le(other); }
+  /**
+   * Tests whether this set is a proper superset of the other set.
+   *
+   * @param other - The right-hand operand.
+   * @returns The result of the inclusion test, or `'unknown'` when undecidable.
+   * @see SymPy `sympy.sets.sets.Set.__gt__`
+   */
   gt(other: SetExpr): Truth { return this.key === other.key ? false : this.ge(other); }
-  /** Whether this set has finitely many elements. */
+  /**
+   * Determines whether this set has finitely many elements.
+   *
+   * @returns Whether the set has finitely many elements.
+   * @see SymPy `sympy.sets.sets.Set.is_finite_set`
+   */
   get isFiniteSet(): Truth { return 'unknown'; }
+  /**
+   * Tests whether the set is known to be empty.
+   *
+   * @returns Whether the set is known to have no elements.
+   * @see SymPy `sympy.sets.sets.Set.is_empty`
+   */
   get isEmpty(): boolean {
     return false;
   }
+  /**
+   * Determines whether the set is empty, allowing an unknown result.
+   *
+   * @returns Whether the set is empty, or `'unknown'` when undecidable.
+   * @see SymPy `sympy.sets.sets.Set.is_empty`
+   */
   get isEmptyQ(): Truth { return this.isEmpty; }
+  /**
+   * Indicates whether the elements can be enumerated.
+   *
+   * @returns Whether the set supports element iteration.
+   * @see SymPy `sympy.sets.sets.Set.is_iterable`
+   */
   get isIterable(): boolean { return false; }
 
-  /** Topological boundary in the real line. */
+  /**
+   * Topological boundary in the real line.
+   *
+   * @returns The points in the closure outside the interior.
+   * @see SymPy `sympy.sets.sets.Set.boundary`
+   */
   get boundary(): SetExpr { throw new NotImplementedError(`boundary of ${this.className}`); }
+  /**
+   * Represents the union of the set and its boundary.
+   *
+   * @returns The union of the set and its boundary.
+   * @see SymPy `sympy.sets.sets.Set.closure`
+   */
   get closure(): SetExpr { return union(this, this.boundary); }
+  /**
+   * Represents the largest open subset of the set.
+   *
+   * @returns The largest open subset of the set.
+   * @see SymPy `sympy.sets.sets.Set.interior`
+   */
   get interior(): SetExpr { return complement(this, this.boundary); }
+  /**
+   * Determines whether the set contains its boundary.
+   *
+   * @returns Whether the set contains its boundary.
+   * @see SymPy `sympy.sets.sets.Set.is_closed`
+   */
   get isClosed(): Truth { return isSubset(this.boundary, this) ?? 'unknown'; }
+  /**
+   * Determines whether the set equals its interior.
+   *
+   * @returns Whether the set contains none of its boundary.
+   * @see SymPy `sympy.sets.sets.Set.is_open`
+   */
   get isOpen(): Truth { return isSubset(intersection(this, this.boundary), EmptySet) ?? 'unknown'; }
-  /** Lebesgue measure. */
+  /**
+   * Lebesgue measure.
+   *
+   * @returns The length, area or other measure of the set.
+   * @see SymPy `sympy.sets.sets.Set.measure`
+   */
   get measure(): Expr { throw new NotImplementedError(`measure of ${this.className}`); }
-  /** A set of the same class with new arguments (the sets of this module are rebuilt by rebuildSet). */
+  /**
+   * A set of the same class with new arguments (the sets of this module are rebuilt by rebuildSet).
+   *
+   * @param _args - The replacement operands in order.
+   * @returns The expression with the replacement operands.
+   */
   withArgs(_args: readonly Expr[]): Expr {
     return this;
   }
-  /** SymPy Set._contains for the set classes that define it: true, false or 'unknown'. */
+  /**
+   * Determines whether the given element belongs to the set.
+   *
+   * @param _x - The candidate element.
+   * @returns Whether the candidate belongs to the set, or `'unknown'` when undecidable.
+   * @see SymPy `sympy.sets.sets.Set._contains`
+   */
   elementOf(_x: Expr): Truth {
     return 'unknown';
   }
-  /** SymPy intersection_sets of this class: its intersection with another set, or undefined without a rule. */
+  /**
+   * Provides a set-specific simplification for an intersection when one applies.
+   *
+   * @param _other - The other set in the operation.
+   * @returns The simplified intersection when this pair of sets admits a reduction.
+   */
   intersectSelf(_other: SetExpr): SetExpr | undefined {
     return undefined;
   }
-  /** SymPy union_sets of this class: its union with another set, or undefined when the two do not combine. */
+  /**
+   * Provides a set-specific simplification for a union when one applies.
+   *
+   * @param _other - The other set in the operation.
+   * @returns The simplified union when this pair of sets admits a reduction.
+   */
   unionSelf(_other: SetExpr): SetExpr | undefined {
     return undefined;
   }
@@ -220,13 +373,88 @@ class NamedSet extends SetExpr {
   }
 }
 
+/**
+ * The set with no elements.
+ *
+ * @see SymPy `sympy.sets.sets.EmptySet`
+ * @example
+ * ```ts
+ * import { EmptySet, FiniteSet, Union } from '@symjs/symjs';
+ * Union(FiniteSet.of(1), EmptySet); // => {1}
+ * ```
+ */
 export const EmptySet = new NamedSet('EmptySet');
+/**
+ * The set of all real numbers.
+ *
+ * @see SymPy `sympy.sets.fancysets.Reals`
+ * @example
+ * ```ts
+ * import { Reals, contains, ex } from '@symjs/symjs';
+ * contains(Reals, ex`sqrt(2)`); // => True
+ * ```
+ */
 export const Reals = new NamedSet('Reals');
+/**
+ * The set of all rational numbers.
+ *
+ * @see SymPy `sympy.sets.fancysets.Rationals`
+ * @example
+ * ```ts
+ * import { Rationals, contains, ex } from '@symjs/symjs';
+ * contains(Rationals, ex`1/3`); // => True
+ * ```
+ */
 export const Rationals = new NamedSet('Rationals');
+/**
+ * The set of all integers.
+ *
+ * @see SymPy `sympy.sets.fancysets.Integers`
+ * @example
+ * ```ts
+ * import { Integers, contains, ex } from '@symjs/symjs';
+ * contains(Integers, ex`1/2`); // => False
+ * ```
+ */
 export const Integers = new NamedSet('Integers');
+/**
+ * The set of positive integers, starting at one.
+ *
+ * @see SymPy `sympy.sets.fancysets.Naturals`
+ * @example
+ * ```ts
+ * import { Naturals, contains, ex } from '@symjs/symjs';
+ * contains(Naturals, ex`0`); // => False
+ * ```
+ */
 export const Naturals = new NamedSet('Naturals');
+/**
+ * The set of nonnegative integers, including zero.
+ *
+ * @see SymPy `sympy.sets.fancysets.Naturals0`
+ */
 export const Naturals0 = new NamedSet('Naturals0');
+/**
+ * The set of all complex numbers.
+ *
+ * @see SymPy `sympy.sets.fancysets.Complexes`
+ * @example
+ * ```ts
+ * import { Complexes, contains, ex } from '@symjs/symjs';
+ * contains(Complexes, ex`I`); // => True
+ * ```
+ */
 export const Complexes = new NamedSet('Complexes');
+/**
+ * The set containing every element in the universe of discourse.
+ *
+ * @see SymPy `sympy.sets.sets.UniversalSet`
+ * @example
+ * ```ts
+ * import { FiniteSet, Intersection, UniversalSet } from '@symjs/symjs';
+ * Intersection(UniversalSet, FiniteSet.of(1, 2)); // => {1, 2}
+ * ```
+ */
 export const UniversalSet = new NamedSet('UniversalSet');
 
 /** Dispatch iteration to the domain, including the infinite standard number sets. */
@@ -236,7 +464,18 @@ function elements(s: SetExpr): Iterable<Expr> {
   throw new TypeError(`${s.className} is not iterable`);
 }
 
-/** The allowed argument counts of an undefined or wildcard function. */
+/**
+ * Returns the allowed argument counts of an undefined or wildcard function.
+ *
+ * @param f - The function whose admissible argument counts are requested.
+ * @returns The allowed argument counts of an undefined or wildcard function.
+ * @see SymPy `sympy.core.function.Function.nargs`
+ * @example
+ * ```ts
+ * import { SymFunction, nargs } from '@symjs/symjs';
+ * nargs(SymFunction('f', { nargs: [1, 2] })); // => {1, 2}
+ * ```
+ */
 export function nargs(f: UndefinedFunction | WildFunction): SetExpr {
   const arities = f instanceof WildFunction ? f.nargs : f.arity;
   return arities === undefined || isNoMatch(arities) ? Naturals0 : finiteSet(...arities);
@@ -246,27 +485,101 @@ export function nargs(f: UndefinedFunction | WildFunction): SetExpr {
 // Interval
 // ---------------------------------------------------------------------------
 
+/**
+ * Represents a real interval with independently open or closed endpoints.
+ *
+ * @see SymPy `sympy.sets.sets.Interval`
+ * @example
+ * ```ts
+ * import { Interval } from '@symjs/symjs';
+ * Interval.of(0, 1); // => Interval(0, 1)
+ * ```
+ */
 export class Interval extends SetExpr {
+  /**
+   * Tests whether this set has finitely many elements.
+   *
+   * @returns Whether the set has finitely many elements.
+   * @see SymPy `sympy.sets.sets.Interval.is_finite_set`
+   */
   override get isFiniteSet(): Truth {
     const order = cmpReal(this.start, this.end);
     return order === undefined ? 'unknown' : order >= 0;
   }
+  /**
+   * Determines whether the set is empty, allowing an unknown result.
+   *
+   * @returns Whether the set is empty, or `'unknown'` when undecidable.
+   * @see SymPy `sympy.sets.sets.Interval.is_empty`
+   */
   override get isEmptyQ(): Truth {
     if (isOo(this.end) && isReal(this.start) === true || isNegOo(this.start) && isReal(this.end) === true) return false;
     const width = add(this.end, neg(this.start));
     if (isPositive(width) === true || !this.leftOpen && !this.rightOpen && isNonNegative(width) === true) return false;
     return 'unknown';
   }
+  /**
+   * Tests whether the lower endpoint is negative infinity.
+   *
+   * @returns Whether the corresponding endpoint is infinite.
+   * @see SymPy `sympy.sets.sets.Interval.is_left_unbounded`
+   */
   get isLeftUnbounded(): boolean { return isNegOo(this.start); }
+  /**
+   * Tests whether the upper endpoint is positive infinity.
+   *
+   * @returns Whether the corresponding endpoint is infinite.
+   * @see SymPy `sympy.sets.sets.Interval.is_right_unbounded`
+   */
   get isRightUnbounded(): boolean { return isOo(this.end); }
+  /**
+   * The topological boundary of the set.
+   *
+   * @returns The points in the closure outside the interior.
+   * @see SymPy `sympy.sets.sets.Interval.boundary`
+   */
   override get boundary(): SetExpr { return finiteSet(...[this.start, this.end].filter((e) => !isInf(e))); }
+  /**
+   * The measure of the set.
+   *
+   * @returns The length, area or other measure of the set.
+   * @see SymPy `sympy.sets.sets.Interval.measure`
+   */
   override get measure(): Expr { return add(this.end, neg(this.start)); }
+  /**
+   * The ordered arguments defining the expression.
+   *
+   * @see SymPy `sympy.sets.sets.Interval.args`
+   */
   readonly args: readonly Expr[];
-  /** SymPy `Interval(a, b, left_open, right_open)` (EmptySet or a point when degenerate). */
+  /**
+   * Constructs an interval with the specified endpoint inclusion, reducing degenerate intervals to a singleton or the empty set.
+   *
+   * @param a - The lower endpoint.
+   * @param b - The upper endpoint.
+   * @param leftOpen - Whether to exclude this endpoint.
+   * @param rightOpen - Whether to exclude this endpoint.
+   * @returns An interval with the specified endpoint inclusion, reducing degenerate intervals to a singleton or the empty set.
+   * @see SymPy `sympy.sets.sets.Interval`
+   * @example
+   * ```ts
+   * import { Interval } from '@symjs/symjs';
+   * Interval.of(2, 2); // => {2}
+   * Interval.of(2, 2, true); // => EmptySet
+   * ```
+   */
   static of(a: ExprLike, b: ExprLike, leftOpen = false, rightOpen = false): SetExpr {
     return interval(a, b, leftOpen, rightOpen);
   }
-  /** The numeric endpoints at the requested binary precision (SymPy to_mpi). */
+  /**
+   * Returns the numeric endpoints at the requested binary precision.
+   *
+   * @param precision - The numeric working precision.
+   * @returns The numeric endpoints at the requested binary precision.
+   * @throws RangeError when the requested precision is not a positive integer.
+   * @throws TypeError when an interval endpoint is not numeric.
+   * @see SymPy `sympy.sets.sets.Interval.to_mpi`
+   */
   toMpi(precision = 53): readonly [Expr, Expr] {
     if (!Number.isSafeInteger(precision) || precision < 1) throw new RangeError('Expected positive precision');
     const endpoint = (x: Expr): Expr => {
@@ -277,34 +590,94 @@ export class Interval extends SetExpr {
     };
     return [endpoint(this.start), endpoint(this.end)];
   }
-  /** SymPy `Interval.open(a, b)`. */
+  /**
+   * The open of the interval.
+   *
+   * @param a - The lower endpoint.
+   * @param b - The upper endpoint.
+   * @returns The interval with the specified open endpoints.
+   * @see SymPy `sympy.sets.sets.Interval.open`
+   */
   static open(a: ExprLike, b: ExprLike): SetExpr {
     return interval(a, b, true, true);
   }
-  /** SymPy `Interval.Lopen(a, b)`: open on the left. */
+  /**
+   * Open on the left.
+   *
+   * @param a - The lower endpoint.
+   * @param b - The upper endpoint.
+   * @returns The interval with the specified open endpoints.
+   * @see SymPy `sympy.sets.sets.Interval.Lopen`
+   */
   static Lopen(a: ExprLike, b: ExprLike): SetExpr {
     return interval(a, b, true, false);
   }
-  /** SymPy `Interval.Ropen(a, b)`: open on the right. */
+  /**
+   * Open on the right.
+   *
+   * @param a - The lower endpoint.
+   * @param b - The upper endpoint.
+   * @returns The interval with the specified open endpoints.
+   * @see SymPy `sympy.sets.sets.Interval.Ropen`
+   */
   static Ropen(a: ExprLike, b: ExprLike): SetExpr {
     return interval(a, b, false, true);
   }
-  /** @internal use Interval.of() */
+  /**
+   * Creates an Interval instance.
+   *
+   * @param start - The lower endpoint.
+   * @param end - The upper endpoint.
+   * @param leftOpen - Whether to exclude this endpoint.
+   * @param rightOpen - Whether to exclude this endpoint.
+   * @internal use Interval.of()
+   */
   constructor(
+    /**
+     * The lower endpoint of the interval.
+     *
+     * @see SymPy `sympy.sets.sets.Interval.start`
+     */
     readonly start: Expr,
+    /**
+     * The upper endpoint of the interval.
+     *
+     * @see SymPy `sympy.sets.sets.Interval.end`
+     */
     readonly end: Expr,
+    /**
+     * Indicates whether the left endpoint is excluded.
+     *
+     * @see SymPy `sympy.sets.sets.Interval.left_open`
+     */
     readonly leftOpen: boolean,
+    /**
+     * Indicates whether the right endpoint is excluded.
+     *
+     * @see SymPy `sympy.sets.sets.Interval.right_open`
+     */
     readonly rightOpen: boolean,
   ) {
     super();
     this.args = [start, end, leftOpen ? S.true : S.false, rightOpen ? S.true : S.false];
   }
+  /**
+   * Represents the symbolic class name used by printers.
+   *
+   * @returns The symbolic class name used by printers.
+   */
   get className(): string {
     return 'Interval';
   }
   protected computeKey(): string {
     return `Interval(${this.start.key},${this.end.key},${this.leftOpen},${this.rightOpen})`;
   }
+  /**
+   * Formats the expression using a plain-text printer for its operands.
+   *
+   * @param p - The callback for printing child expressions.
+   * @returns The formatted text.
+   */
   printStr(p: (e: Expr) => string): string {
     const a = this.start;
     const b = this.end;
@@ -352,34 +725,104 @@ export const Ropen = (a: ExprLike, b: ExprLike): SetExpr => interval(a, b, false
 // FiniteSet
 // ---------------------------------------------------------------------------
 
+/**
+ * Represents a set of finitely many distinct elements.
+ *
+ * @see SymPy `sympy.sets.sets.FiniteSet`
+ * @example
+ * ```ts
+ * import { FiniteSet } from '@symjs/symjs';
+ * FiniteSet.of(1, 2, 3, 4); // => {1, 2, 3, 4}
+ * ```
+ */
 export class FiniteSet extends SetExpr {
+  /**
+   * Tests whether this set has finitely many elements.
+   *
+   * @returns Whether the set has finitely many elements.
+   * @see SymPy `sympy.sets.sets.FiniteSet.is_finite_set`
+   */
   override get isFiniteSet(): boolean { return true; }
+  /**
+   * Indicates whether the elements can be enumerated.
+   *
+   * @returns Whether the set supports element iteration.
+   * @see SymPy `sympy.sets.sets.FiniteSet.is_iterable`
+   */
   override get isIterable(): boolean { return true; }
+  /**
+   * The topological boundary of the set.
+   *
+   * @returns The points in the closure outside the interior.
+   * @see SymPy `sympy.sets.sets.FiniteSet.boundary`
+   */
   override get boundary(): SetExpr { return this; }
+  /**
+   * The measure of the set.
+   *
+   * @returns The length, area or other measure of the set.
+   * @see SymPy `sympy.sets.sets.FiniteSet.measure`
+   */
   override get measure(): Expr { return S.Zero; }
+  /**
+   * The ordered arguments defining the expression.
+   *
+   * @see SymPy `sympy.sets.sets.FiniteSet.args`
+   */
   readonly args: readonly Expr[];
-  /** SymPy `FiniteSet(*elements)` (EmptySet when empty, duplicates removed). */
+  /**
+   * Forms a set from the supplied elements, removing duplicates.
+   *
+   * @param xs - The elements of the set.
+   * @returns A set from the supplied elements, removing duplicates.
+   * @see SymPy `sympy.sets.sets.FiniteSet`
+   * @example
+   * ```ts
+   * import { FiniteSet } from '@symjs/symjs';
+   * FiniteSet.of(2, 1, 2); // => {1, 2}
+   * ```
+   */
   static of(...xs: ExprLike[]): SetExpr {
     return finiteSet(...xs);
   }
-  /** @internal use FiniteSet.of() */
+  /**
+   * Creates a FiniteSet instance.
+   *
+   * @param elems - The elements of the set.
+   * @internal use FiniteSet.of()
+   */
   constructor(elems: readonly Expr[]) {
     super();
     this.args = [...elems].sort((x, y) => compareKeys(sortKey(x), sortKey(y)));
   }
+  /**
+   * Represents the symbolic class name used by printers.
+   *
+   * @returns The symbolic class name used by printers.
+   */
   get className(): string {
     return 'FiniteSet';
   }
   protected computeKey(): string {
     return `{${this.args.map((a) => a.key).join(',')}}`;
   }
-  /** SymPy StrPrinter._print_FiniteSet: {a, b}, or FiniteSet(a, b) when an element contains a FiniteSet. */
+  /**
+   * {a, b}, or FiniteSet(a, b) when an element contains a FiniteSet.
+   *
+   * @param p - The callback for printing child expressions.
+   * @returns The formatted text.
+   */
   printStr(p: (e: Expr) => string): string {
     const items = this.args.map(p).join(', ');
     return this.args.some(hasFiniteSet) ? `FiniteSet(${items})` : `{${items}}`;
   }
   [Symbol.iterator](): Iterator<Expr> { return this.args[Symbol.iterator](); }
-  /** SymPy FiniteSet._eval_rewrite_as_PowerSet: all subsets of the largest member. */
+  /**
+   * All subsets of the largest member.
+   *
+   * @returns The power-set expression when the elements are all subsets of a common set.
+   * @see SymPy `sympy.sets.sets.FiniteSet._eval_rewrite_as_PowerSet`
+   */
   rewriteAsPowerSet(): SetExpr {
     if (!this.args.includes(EmptySet)) return this;
     const members = this.args.filter((a) => a instanceof FiniteSet);
@@ -387,7 +830,12 @@ export class FiniteSet extends SetExpr {
     if (BigInt(this.args.length) !== 2n ** BigInt(largest.args.length)) return this;
     return powerset(largest).key === this.key ? PowerSet(largest) : this;
   }
-  /** SymPy FiniteSet._eval_powerset: the FiniteSet of all subsets. */
+  /**
+   * Returns the FiniteSet of all subsets.
+   *
+   * @returns The FiniteSet of all subsets.
+   * @see SymPy `sympy.sets.sets.FiniteSet.powerset`
+   */
   powerset(): SetExpr {
     let subsets: Expr[][] = [[]];
     for (const x of this.args) subsets = [...subsets, ...subsets.map((t) => [...t, x])];
@@ -424,42 +872,116 @@ function infSign(e: Expr): 1 | -1 | undefined {
 const extPositive = (n: Expr): boolean => isPositive(n) === true || infSign(n) === 1;
 
 /**
- * The integers start, start + step, ... below stop (SymPy Range). start or stop may be infinite,
+ * The integers start, start + step, ... below stop. start or stop may be infinite,
  * and start, stop and step may be symbolic (integer-valued) expressions, as in SymPy:
  * Range(0, n, 1) prints as \text{Range}\left(n\right) and its size, inf and sup are only
  * known when the assumptions tell.
+ *
+ * @see SymPy `sympy.sets.fancysets.Range`
+ * @example
+ * ```ts
+ * import { Range } from '@symjs/symjs';
+ * Range.of(0, 10, 3); // => Range(0, 12, 3)
+ * ```
  */
 export class Range extends SetExpr {
+  /**
+   * The topological boundary of the set.
+   *
+   * @returns The points in the closure outside the interior.
+   * @see SymPy `sympy.sets.fancysets.Range.boundary`
+   */
   override get boundary(): SetExpr { return this; }
+  /**
+   * Indicates whether the elements can be enumerated.
+   *
+   * @returns Whether the set supports element iteration.
+   * @see SymPy `sympy.sets.fancysets.Range.is_iterable`
+   */
   override get isIterable(): boolean {
     const n = this.count();
     return n instanceof Rational && n.isInteger && !n.isNegative && this.args.every((a) => isIntegerQ(a) === true);
   }
+  /**
+   * The ordered arguments defining the expression.
+   *
+   * @see SymPy `sympy.sets.fancysets.Range.args`
+   */
   readonly args: readonly Expr[];
-  /** SymPy `Range(stop)` or `Range(start, stop, step)` (canonical, with Range(0, 0, 1) when empty). */
+  /**
+   * Constructs a progression with an exclusive stopping bound. With one argument the progression starts at zero.
+   *
+   * @param start - The initial value or index.
+   * @param stop - The exclusive upper bound.
+   * @param step - The increment between successive values.
+   * @returns A progression with an exclusive stopping bound.
+   * @see SymPy `sympy.sets.fancysets.Range`
+   * @example
+   * ```ts
+   * import { Range } from '@symjs/symjs';
+   * Range.of(0, 10, 3); // => Range(0, 12, 3)
+   * ```
+   */
   static of(start: ExprLike, stop?: ExprLike, step: ExprLike = 1): SetExpr {
     return range(start, stop, step);
   }
-  /** @internal use Range.of() */
+  /**
+   * Creates a Range instance.
+   *
+   * @param start - The initial value or index.
+   * @param stop - The exclusive upper bound.
+   * @param step - The increment between successive values.
+   * @internal use Range.of()
+   */
   constructor(
+    /**
+     * The first term of the arithmetic progression.
+     *
+     * @see SymPy `sympy.sets.fancysets.Range.start`
+     */
     readonly start: Expr,
+    /**
+     * The exclusive stopping bound of the progression.
+     *
+     * @see SymPy `sympy.sets.fancysets.Range.stop`
+     */
     readonly stop: Expr,
+    /**
+     * The difference between successive terms.
+     *
+     * @see SymPy `sympy.sets.fancysets.Range.step`
+     */
     readonly step: Expr,
   ) {
     super();
     this.args = [start, stop, step];
   }
+  /**
+   * Represents the symbolic class name used by printers.
+   *
+   * @returns The symbolic class name used by printers.
+   */
   get className(): string {
     return 'Range';
   }
   protected computeKey(): string {
     return `Range(${this.start.key},${this.stop.key},${this.step.key})`;
   }
-  /** Known to be empty (the canonical empty Range(0, 0, 1)). */
+  /**
+   * Known to be empty (the canonical empty Range(0, 0, 1)).
+   *
+   * @returns Whether the set is known to have no elements.
+   * @see SymPy `sympy.sets.fancysets.Range.is_empty`
+   */
   get isEmpty(): boolean {
     return this.start.key === this.stop.key;
   }
-  /** SymPy is_empty: true, false, or 'unknown' when the assumptions do not tell. */
+  /**
+   * True, false, or 'unknown' when the assumptions do not tell.
+   *
+   * @returns Whether the set is empty, or `'unknown'` when undecidable.
+   * @see SymPy `sympy.sets.fancysets.Range.is_empty`
+   */
   get isEmptyQ(): Truth {
     try {
       return isZero(this.size) ?? 'unknown';
@@ -467,7 +989,12 @@ export class Range extends SetExpr {
       return 'unknown';
     }
   }
-  /** SymPy size: the number of elements (oo for an infinite Range); a RangeError when unknown. */
+  /**
+   * The number of elements (oo for an infinite Range); a RangeError when unknown.
+   *
+   * @returns The number of elements (oo for an infinite Range).
+   * @see SymPy `sympy.sets.fancysets.Range.size`
+   */
   get size(): Expr {
     if (this.isEmpty) return S.Zero;
     const n = this.count();
@@ -484,20 +1011,35 @@ export class Range extends SetExpr {
     const count = asRat(size).p;
     for (let i = 0n; i < count; i++) yield add(this.start, mul(i, this.step));
   }
-  /** SymPy is_finite_set. */
+  /**
+   * Tests whether this set has finitely many elements.
+   *
+   * @returns Whether the set has finitely many elements.
+   * @see SymPy `sympy.sets.fancysets.Range.is_finite_set`
+   */
   override get isFiniteSet(): boolean {
     if (isIntegerQ(this.start) === true && isIntegerQ(this.stop) === true) return true;
     return !(this.size instanceof Special);
   }
-  /** SymPy reversed: the same elements in the opposite order. */
+  /**
+   * Represents the same elements in the opposite order.
+   *
+   * @returns The same elements in the opposite order.
+   * @throws RangeError when the requested operation requires a concrete range.
+   * @see SymPy `sympy.sets.fancysets.Range.reversed`
+   */
   get reversed(): Range {
     if (hasSymbol(this) && !(extPositive(this.count()) && this.args.every(integerOrInf))) throw new RangeError('invalid method for symbolic range');
     if (this.isEmpty) return this;
     return new Range(add(this.stop, neg(this.step)), add(this.start, neg(this.step)), neg(this.step));
   }
   /**
-   * SymPy r[i] for an integer index (0 and -1 are the ends; another index needs a known size).
-   * A RangeError when the Range is symbolic and the element unknown, or the index out of range.
+   * Returns the at of the range.
+   *
+   * @param i - The zero-based position.
+   * @returns The at of the range.
+   * @throws RangeError when the index is outside the range.
+   * @see SymPy `sympy.sets.fancysets.Range.__getitem__`
    */
   at(i: number): Expr {
     if (this.isEmpty) throw new RangeError('Range index out of range');
@@ -522,7 +1064,17 @@ export class Range extends SetExpr {
     if (isNonNegative(val) === false || isPositive(add(n, neg(val))) === false) throw new RangeError('Range index out of range');
     throw new RangeError(INVALID_SYMBOLIC);
   }
-  /** A slice of the range, with omitted bounds interpreted as in SymPy Range. */
+  /**
+   * Returns a slice of the range, with omitted bounds interpreted as in SymPy Range.
+   *
+   * @param start - The initial value or index.
+   * @param stop - The exclusive upper bound.
+   * @param step - The increment between successive values.
+   * @returns A slice of the range, with omitted bounds interpreted as in SymPy Range.
+   * @throws TypeError when a slice index is not an integer.
+   * @throws RangeError when the slice step is zero.
+   * @see SymPy `sympy.sets.fancysets.Range.__getitem__`
+   */
   slice(start?: number, stop?: number, step = 1): Range {
     for (const value of [start, stop, step]) if (value !== undefined && !Number.isSafeInteger(value)) throw new TypeError('slice indices must be integers');
     if (step === 0) throw new RangeError('slice step cannot be zero');
@@ -582,10 +1134,21 @@ export class Range extends SetExpr {
     }
     throw new RangeError(infinite);
   }
-  /** (stop - start)/step. */
+  /**
+   * (stop - start)/step.
+   *
+   * @returns The cardinality of the range.
+   * @see SymPy `sympy.sets.fancysets.Range.count`
+   */
   count(): Expr {
     return div(add(this.stop, neg(this.start)), this.step);
   }
+  /**
+   * Formats the expression using a plain-text printer for its operands.
+   *
+   * @param p - The callback for printing child expressions.
+   * @returns The formatted text.
+   */
   printStr(p: (e: Expr) => string): string {
     return `Range(${p(this.start)}, ${p(this.stop)}, ${p(this.step)})`;
   }
@@ -594,6 +1157,9 @@ export class Range extends SetExpr {
    * up to `most`, else the first two, an ellipsis and the last one (an infinite end is an
    * ellipsis); or, when the elements are unknown, the arguments of SymPy's
    * \text{Range}(...) form: Range(stop), Range(start, stop) when the step is 1, else all three.
+   *
+   * @param most - The most.
+   * @returns The symbolic range arguments or a shortened list of terms.
    */
   printForm(most: number): { elements: (Expr | 'dots')[] } | { symbolic: Expr[] } {
     const D = 'dots' as const;
@@ -773,10 +1339,37 @@ function integersIn(iv: Interval, low: Expr): SetExpr | undefined {
 // ImageSet / ConditionSet
 // ---------------------------------------------------------------------------
 
-/** { expr(v) : v in base } (SymPy ImageSet(Lambda(v, expr), base)). */
+/**
+ * { expr(v) : v in base } (SymPy ImageSet(Lambda(v, expr), base)).
+ *
+ * @see SymPy `sympy.sets.fancysets.ImageSet`
+ * @example
+ * ```ts
+ * import { ImageSet, Integers, ex, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * new ImageSet(x, ex`2*x`, Integers).lamda; // => Lambda(x, 2*x)
+ * ```
+ */
 export class ImageSet extends SetExpr {
+  /**
+   * Indicates whether the elements can be enumerated.
+   *
+   * @returns Whether the set supports element iteration.
+   * @see SymPy `sympy.sets.fancysets.ImageSet.is_iterable`
+   */
   override get isIterable(): boolean { return this.baseSets.every((set) => set.isIterable); }
-  /** Construct an ImageSet from the Lambda signature and its corresponding domains. */
+  /**
+   * Constructs the image of one or more base sets under a lambda, evaluating constant and identity mappings when possible.
+   *
+   * @param this - The static factory receiver.
+   * @param lambda - The mapping applied to points from the base sets.
+   * @param sets - The base sets, one per mapping variable.
+   * @returns The image of one or more base sets under a lambda, evaluating constant and identity mappings when possible.
+   * @throws RangeError when the mapping is not a lambda expression.
+   * @throws TypeError when a base domain is not a set.
+   * @see SymPy `sympy.sets.fancysets.ImageSet`
+   */
   static of(this: void, lambda: LambdaNode, ...sets: SetExpr[]): SetExpr {
     if (!(lambda instanceof LambdaNode)) throw new RangeError('First argument must be a Lambda');
     const vars = lambda.args.slice(0, -1);
@@ -795,22 +1388,61 @@ export class ImageSet extends SetExpr {
       seen.add(value.key);
     }
   }
+  /**
+   * Represents the Cartesian product of the base sets of the image.
+   *
+   * @returns The Cartesian product of the base sets of the image.
+   * @see SymPy `sympy.sets.fancysets.ImageSet.base_pset`
+   */
   get basePset(): SetExpr { return productSet(...this.baseSets); }
+  /**
+   * Evaluates the set expression when its defining data permit it.
+   *
+   * @returns The image set after evaluating the mapping.
+   * @see SymPy `sympy.sets.fancysets.ImageSet.doit`
+   */
   doit(): SetExpr {
     if (this.baseSets.length === 1) return imageSet(this.variable, this.expr, this.base);
     return this.baseSets.every((s) => s instanceof FiniteSet) ? finiteSet(...this) : this;
   }
+  /**
+   * Returns the symbols that occur free in this expression.
+   *
+   * @returns The symbols that occur free in this expression.
+   * @see SymPy `sympy.sets.fancysets.ImageSet.free_symbols`
+   */
   override freeSymbols(): Set<Expr> {
     return new Set([...this.lamda.freeSymbols(), ...this.baseSets.flatMap((s) => [...s.freeSymbols()])]);
   }
+  /**
+   * Renames bound variables to avoid capturing free symbols.
+   *
+   * @returns The expression with fresh bound symbols.
+   * @see SymPy `sympy.sets.fancysets.ImageSet.as_dummy`
+   */
   asDummy(): ImageSet {
     const reps = this.lamda.canonicalVariables;
     return new ImageSet(xreplace(this.variable, reps), xreplace(this.expr, reps), canonicalSet(first(this.baseSets)), ...this.baseSets.slice(1).map(canonicalSet));
   }
 
+  /**
+   * The ordered arguments defining the expression.
+   *
+   * @see SymPy `sympy.sets.fancysets.ImageSet.args`
+   */
   readonly args: readonly Expr[];
+  /**
+   * Creates an ImageSet instance.
+   *
+   * @param variable - The bound mapping variable.
+   * @param expr - The expression defining the image.
+   * @param firstBase - The domain or domains of the mapping variables.
+   * @param otherBases - The domain or domains of the mapping variables.
+   */
   constructor(
+    /** The bound variable of the image mapping. */
     readonly variable: Expr,
+    /** The expression evaluated at each point of the base set. */
     readonly expr: Expr,
     firstBase: SetExpr,
     ...otherBases: SetExpr[]
@@ -820,21 +1452,43 @@ export class ImageSet extends SetExpr {
     this.base = otherBases.length ? productSet(...this.baseSets) : firstBase;
     this.args = [variable, expr, ...this.baseSets];
   }
+  /**
+   * Represents the symbolic class name used by printers.
+   *
+   * @returns The symbolic class name used by printers.
+   */
   get className(): string {
     return 'ImageSet';
   }
-  /** SymPy ImageSet.lamda: the mapping as a Lambda. */
+  /**
+   * Represents the mapping as a Lambda.
+   *
+   * @returns The mapping as a Lambda.
+   * @see SymPy `sympy.sets.fancysets.ImageSet.lamda`
+   */
   get lamda(): LambdaNode {
     const vars = this.baseSets.length > 1 ? this.variable.args : [this.variable];
     return new LambdaNode([...vars, this.expr]);
   }
-  /** SymPy ImageSet.base_sets. */
+  /**
+   * Represents the base sets of the image set.
+   *
+   * @returns The base sets of the image set.
+   * @see SymPy `sympy.sets.fancysets.ImageSet.base_sets`
+   */
   get baseSets(): SetExpr[] { return [...this.domains]; }
   private readonly domains: readonly SetExpr[];
+  /** The first base set of the image mapping. */
   readonly base: SetExpr;
   protected computeKey(): string {
     return `ImageSet(${this.variable.key},${this.expr.key},${this.baseSets.map((s) => s.key).join(',')})`;
   }
+  /**
+   * Formats the expression using a plain-text printer for its operands.
+   *
+   * @param p - The callback for printing child expressions.
+   * @returns The formatted text.
+   */
   printStr(p: (e: Expr) => string): string {
     return `ImageSet(Lambda(${p(this.variable)}, ${p(this.expr)}), ${this.baseSets.map(p).join(', ')})`;
   }
@@ -844,37 +1498,107 @@ function canonicalSet(s: SetExpr): SetExpr {
   return s instanceof ImageSet || s instanceof ConditionSet || s instanceof SetOp ? s.asDummy() : s;
 }
 
-/** { v in base : condition } (SymPy ConditionSet). */
+/**
+ * { v in base : condition }.
+ *
+ * @see SymPy `sympy.sets.conditionset.ConditionSet`
+ * @example
+ * ```ts
+ * import { ConditionSet, Integers, ex, symbols } from '@symjs/symjs';
+ *
+ * const [n] = symbols('n', { negative: true });
+ * ConditionSet.of(ex`${n}`, false, Integers); // => EmptySet
+ * ```
+ */
 export class ConditionSet extends SetExpr {
+  /**
+   * The ordered arguments defining the expression.
+   *
+   * @see SymPy `sympy.sets.conditionset.ConditionSet.args`
+   */
   readonly args: readonly Expr[];
+  /**
+   * Creates a ConditionSet instance.
+   *
+   * @param variable - The symbol bound by the condition.
+   * @param condition - The predicate controlling application of the rule.
+   * @param base - The domain from which candidate elements are drawn.
+   */
   constructor(
+    /** The bound variable in the membership condition. */
     readonly variable: Expr,
+    /**
+     * The condition that selects elements from the base set.
+     *
+     * @see SymPy `sympy.sets.conditionset.ConditionSet.condition`
+     */
     readonly condition: Expr,
+    /** The domain over which the condition is tested. */
     readonly base: SetExpr,
   ) {
     super();
     this.args = [variable, condition, base];
   }
+  /**
+   * Represents the symbolic class name used by printers.
+   *
+   * @returns The symbolic class name used by printers.
+   */
   get className(): string {
     return 'ConditionSet';
   }
-  /** SymPy ConditionSet.sym. */
+  /**
+   * Represents the independent variable of the equation.
+   *
+   * @returns The independent variable of the equation.
+   * @see SymPy `sympy.sets.conditionset.ConditionSet.sym`
+   */
   get sym(): Expr {
     return this.variable;
   }
-  /** SymPy ConditionSet.base_set. */
+  /**
+   * Represents the set on which the condition is imposed.
+   *
+   * @returns The set on which the condition is imposed.
+   * @see SymPy `sympy.sets.conditionset.ConditionSet.base_set`
+   */
   get baseSet(): SetExpr {
     return this.base;
   }
+  /**
+   * Represents the symbols bound by the set definition.
+   *
+   * @returns The symbols bound by the set definition.
+   * @see SymPy `sympy.sets.conditionset.ConditionSet.bound_symbols`
+   */
   get boundSymbols(): Expr[] { return this.predicate.variables; }
   private get predicate(): LambdaNode { return new LambdaNode([this.variable, this.condition]); }
+  /**
+   * Returns the symbols that occur free in this expression.
+   *
+   * @returns The symbols that occur free in this expression.
+   * @see SymPy `sympy.sets.conditionset.ConditionSet.free_symbols`
+   */
   override freeSymbols(): Set<Expr> {
     return new Set([...this.predicate.freeSymbols(), ...this.base.freeSymbols()]);
   }
+  /**
+   * Renames bound variables to avoid capturing free symbols.
+   *
+   * @returns The expression with fresh bound symbols.
+   * @see SymPy `sympy.sets.conditionset.ConditionSet.as_dummy`
+   */
   asDummy(): ConditionSet {
     const reps = this.predicate.canonicalVariables;
     return new ConditionSet(xreplace(this.variable, reps), xreplace(this.condition, reps), canonicalSet(this.base));
   }
+  /**
+   * Builds the condition for an element to belong to the set.
+   *
+   * @param x - The candidate element.
+   * @returns The condition for an element to belong to the set.
+   * @see SymPy `sympy.sets.conditionset.ConditionSet.contains`
+   */
   membership(x: Expr): Expr {
     if (!sameSignature(this.variable, x)) return S.false;
     const inBase = containsQ(this.base, x);
@@ -887,27 +1611,65 @@ export class ConditionSet extends SetExpr {
       return new Contains(x, this);
     }
   }
+  /**
+   * Determines whether the given element belongs to the set.
+   *
+   * @param x - The candidate element.
+   * @returns Whether the candidate belongs to the set, or `'unknown'` when undecidable.
+   * @see SymPy `sympy.sets.conditionset.ConditionSet._contains`
+   */
   override elementOf(x: Expr): Truth {
     const result = this.membership(x);
     return result === S.true ? true : result === S.false ? false : 'unknown';
   }
-  /** SymPy ConditionSet(sym, condition, base) with the evaluation of its constructor. */
+  /**
+   * Restricts the base set to values satisfying the condition, evaluating membership for finite base sets when possible.
+   *
+   * @param sym - The independent variable.
+   * @param condition - The predicate controlling application of the rule.
+   * @param base - The domain to restrict by the condition.
+   * @returns The resulting symbolic set.
+   * @see SymPy `sympy.sets.conditionset.ConditionSet`
+   * @example
+   * ```ts
+   * import { ConditionSet, ex, FiniteSet, symbols } from '@symjs/symjs';
+   * const [x] = symbols('x');
+   * ConditionSet.of(x, ex`x > 0`, FiniteSet.of(-1, 0, 1)); // => {1}
+   * ```
+   */
   static of(sym: Expr, condition: ExprLike | boolean, base: SetExpr = UniversalSet): SetExpr {
     return conditionSet(sym, condition, base);
   }
   protected computeKey(): string {
     return `ConditionSet(${this.variable.key},${this.condition.key},${this.base.key})`;
   }
+  /**
+   * Formats the expression using a plain-text printer for its operands.
+   *
+   * @param p - The callback for printing child expressions.
+   * @returns The formatted text.
+   */
   printStr(p: (e: Expr) => string): string {
     return `ConditionSet(${p(this.variable)}, ${p(this.condition)}, ${p(this.base)})`;
   }
 }
 
 /**
- * SymPy imageset(Lambda(v, expr), base): the image is evaluated for a finite
+ * The image is evaluated for a finite
  * set, a union, an interval and a polynomial, a linear map of the integers
  * (in SymPy's canonical form) and a composition of image sets; otherwise an
  * ImageSet.
+ *
+ * @param v - The bound variable.
+ * @param exprIn - The expression defining the image.
+ * @param base - The domain of the mapping.
+ * @returns The set of all values the mapping attains.
+ * @see SymPy `sympy.sets.sets.imageset`
+ * @example
+ * ```ts
+ * import { Integers, ex, imageset } from '@symjs/symjs';
+ * imageset(ex`x`, ex`5 - 2*x`, Integers); // => ImageSet(Lambda(x, 2*x + 1), Integers)
+ * ```
  */
 export function imageSet(v: Expr, exprIn: ExprLike, base: SetExpr): SetExpr {
   const expr = sympify(exprIn);
@@ -1251,23 +2013,67 @@ function finiteLength(s: SetExpr): number {
   throw new TypeError(`Cannot determine a finite length for ${s.className}`);
 }
 
-/** The Cartesian product of sets (SymPy ProductSet); its elements are Tuples. */
+/**
+ * The Cartesian product of sets; its elements are Tuples.
+ *
+ * @see SymPy `sympy.sets.sets.ProductSet`
+ * @example
+ * ```ts
+ * import { Integers, ProductSetNode, Reals } from '@symjs/symjs';
+ * new ProductSetNode([Integers, Reals]).sets; // => [Integers, Reals]
+ * ```
+ */
 export class ProductSetNode extends SetExpr {
+  /**
+   * Determines whether the set is empty, allowing an unknown result.
+   *
+   * @returns Whether the set is empty, or `'unknown'` when undecidable.
+   * @see SymPy `sympy.sets.sets.ProductSet.is_empty`
+   */
   override get isEmptyQ(): Truth {
     const values = this.args.map((s) => s.isEmptyQ);
     return values.includes(true) ? true : values.every((v) => v === false) ? false : 'unknown';
   }
+  /**
+   * The number of tuples in a finite Cartesian product.
+   *
+   * @returns The number of elements in the set when finite and known.
+   */
   get length(): number {
     return this.args.reduce((n, s) => n * finiteLength(s), 1);
   }
+  /**
+   * The measure of the set.
+   *
+   * @returns The length, area or other measure of the set.
+   * @see SymPy `sympy.sets.sets.ProductSet.measure`
+   */
   override get measure(): Expr { return mul(...this.args.map((s) => s.measure)); }
+  /**
+   * Indicates whether the elements can be enumerated.
+   *
+   * @returns Whether the set supports element iteration.
+   * @see SymPy `sympy.sets.sets.ProductSet.is_iterable`
+   */
   override get isIterable(): boolean { return this.args.every((s) => s.isIterable); }
   *[Symbol.iterator](): Generator<Expr> {
     for (const row of iproduct(...this.args.map(elements))) yield new TupleNode(row);
   }
+  /**
+   * The topological boundary of the set.
+   *
+   * @returns The points in the closure outside the interior.
+   * @see SymPy `sympy.sets.sets.ProductSet.boundary`
+   */
   override get boundary(): SetExpr {
     return union(...this.args.map((_, i) => productSet(...this.args.map((s, j) => i === j ? s.boundary : s.closure))));
   }
+  /**
+   * Tests whether this set has finitely many elements.
+   *
+   * @returns Whether the set has finitely many elements.
+   * @see SymPy `sympy.sets.sets.ProductSet.is_finite_set`
+   */
   override get isFiniteSet(): Truth {
     if (this.args.some((s) => s.isEmpty || (s instanceof FiniteSet && s.args.length === 0))) return true;
     const values = this.args.map((s) => s.isFiniteSet);
@@ -1278,34 +2084,77 @@ export class ProductSetNode extends SetExpr {
       || (s instanceof Range && s.isEmptyQ === false));
     return values.includes(false) && nonempty ? false : 'unknown';
   }
-  constructor(readonly args: readonly SetExpr[]) {
+  /**
+   * Creates a ProductSetNode instance.
+   *
+   * @param args - The operands in their defining order.
+   */
+  constructor(
+    /**
+     * The ordered arguments defining the expression.
+     *
+     * @see SymPy `sympy.sets.sets.ProductSet.args`
+     */
+    readonly args: readonly SetExpr[]) {
     super();
   }
+  /**
+   * Represents the symbolic class name used by printers.
+   *
+   * @returns The symbolic class name used by printers.
+   */
   get className(): string {
     return 'ProductSet';
   }
-  /** SymPy ProductSet.sets. */
+  /**
+   * Represents the component sets defining the construction.
+   *
+   * @returns The component sets defining the construction.
+   * @see SymPy `sympy.sets.sets.ProductSet.sets`
+   */
   get sets(): SetExpr[] {
     return [...this.args];
   }
   protected computeKey(): string {
     return `ProductSet(${this.args.map((a) => a.key).join(',')})`;
   }
+  /**
+   * Formats the expression using a plain-text printer for its operands.
+   *
+   * @param p - The callback for printing child expressions.
+   * @returns The formatted text.
+   */
   printStr(p: (e: Expr) => string): string {
     return `ProductSet(${this.args.map(p).join(', ')})`;
   }
-  /** SymPy LatexPrinter._print_ProductSet: A \\times B, or A^{n} for a power of one set. */
+  /**
+   * A \\times B, or A^{n} for a power of one set.
+   *
+   * @param p - The callback for printing child expressions.
+   * @returns The formatted LaTeX source.
+   */
   printLatex(p: (e: Expr) => string): string {
     const paren = (s: SetExpr): string => (s instanceof SetOp || s instanceof SymmetricDifferenceNode || s instanceof ProductSetNode ? `\\left(${p(s)}\\right)` : p(s));
     if (this.args.every((s) => s.key === first(this.args).key)) return `${paren(first(this.args))}^{${this.args.length}}`;
     return this.args.map(paren).join(' \\times ');
   }
-  /** SymPy ProductSet.flatten: nested products as one product. */
+  /**
+   * Nested products as one product.
+   *
+   * @returns The Cartesian product with nested products expanded.
+   * @see SymPy `sympy.sets.sets.ProductSet.flatten`
+   */
   flatten(): SetExpr {
     const go = (xs: readonly SetExpr[]): SetExpr[] => xs.flatMap((x) => (x instanceof ProductSetNode ? go(x.args) : [x]));
     return productSet(...go(this.args));
   }
-  /** SymPy ProductSet._contains: a Tuple of as many elements, each in its set. */
+  /**
+   * A Tuple of as many elements, each in its set.
+   *
+   * @param x - The candidate element.
+   * @returns Whether the candidate belongs to the set, or `'unknown'` when undecidable.
+   * @see SymPy `sympy.sets.sets.ProductSet._contains`
+   */
   override elementOf(x: Expr): Truth {
     if (x instanceof Sym) return 'unknown';
     if (!(x instanceof TupleNode) || x.args.length !== this.args.length) return false;
@@ -1321,93 +2170,267 @@ export function productSet(...sets: SetExpr[]): SetExpr {
   return new ProductSetNode(sets);
 }
 
-/** SymPy ProductSet(A, B, ...). */
+/**
+ * Forms the Cartesian product of the given sets.
+ *
+ * @param sets - The factor sets in tuple order.
+ * @returns The set of ordered tuples.
+ * @see SymPy `sympy.sets.sets.ProductSet`
+ * @example
+ * ```ts
+ * import { FiniteSet, Interval, ProductSet } from '@symjs/symjs';
+ * ProductSet(Interval.of(0, 5), FiniteSet.of(1, 2, 3)); // => ProductSet(Interval(0, 5), {1, 2, 3})
+ * ```
+ */
 export const ProductSet = /* @__PURE__ */ callableClass(ProductSetNode, productSet);
+/** The instance type returned by `ProductSet`. */
 export type ProductSet = ProductSetNode;
 
-/** The set of all subsets of a set (SymPy PowerSet). */
+/**
+ * The set of all subsets of a set.
+ *
+ * @see SymPy `sympy.sets.powerset.PowerSet`
+ * @example
+ * ```ts
+ * import { FiniteSet, PowerSetNode } from '@symjs/symjs';
+ * new PowerSetNode(FiniteSet.of(1)).rewriteAsFiniteSet(); // => FiniteSet(EmptySet, {1})
+ * ```
+ */
 export class PowerSetNode extends SetExpr {
-  /** Number of subsets of an explicitly finite base set. */
+  /**
+   * The cardinality of the power set of a finite set.
+   *
+   * @returns The number of elements in the set when finite and known.
+   */
   get length(): number {
     return 2 ** finiteLength(this.arg);
   }
+  /**
+   * Tests whether this set has finitely many elements.
+   *
+   * @returns Whether the set has finitely many elements.
+   * @see SymPy `sympy.sets.powerset.PowerSet.is_finite_set`
+   */
   override get isFiniteSet(): Truth { return this.arg.isFiniteSet; }
+  /**
+   * The ordered arguments defining the expression.
+   *
+   * @see SymPy `sympy.sets.powerset.PowerSet.args`
+   */
   readonly args: readonly Expr[];
-  constructor(readonly arg: SetExpr) {
+  /**
+   * Creates a PowerSetNode instance.
+   *
+   * @param arg - The argument defining the node.
+   * @throws RangeError when the operand is not a set.
+   */
+  constructor(
+    /**
+     * The set whose subsets form the power set.
+     *
+     * @see SymPy `sympy.sets.powerset.PowerSet.arg`
+     */
+    readonly arg: SetExpr) {
     super();
     if (!(arg instanceof SetExpr)) throw new RangeError('PowerSet base must be a set');
     this.args = [arg];
   }
+  /**
+   * Represents the symbolic class name used by printers.
+   *
+   * @returns The symbolic class name used by printers.
+   */
   get className(): string {
     return 'PowerSet';
   }
   protected computeKey(): string {
     return `PowerSet(${this.arg.key})`;
   }
+  /**
+   * Formats the expression using a plain-text printer for its operands.
+   *
+   * @param p - The callback for printing child expressions.
+   * @returns The formatted text.
+   */
   printStr(p: (e: Expr) => string): string {
     return `PowerSet(${p(this.arg)})`;
   }
-  /** SymPy LatexPrinter._print_PowerSet. */
+  /**
+   * Formats the expression using a LaTeX printer for its operands.
+   *
+   * @param p - The callback for printing child expressions.
+   * @returns The formatted LaTeX source.
+   */
   printLatex(p: (e: Expr) => string): string {
     return `\\mathcal{P}\\left(${p(this.arg)}\\right)`;
   }
-  /** SymPy PowerSet._contains: a set is an element when it is a subset of the argument. */
+  /**
+   * A set is an element when it is a subset of the argument.
+   *
+   * @param x - The candidate element.
+   * @returns Whether the candidate belongs to the set, or `'unknown'` when undecidable.
+   * @see SymPy `sympy.sets.powerset.PowerSet._contains`
+   */
   override elementOf(x: Expr): Truth {
     return x instanceof SetExpr ? tri(isSubset(x, this.arg)) : 'unknown';
   }
-  /** SymPy PowerSet.rewrite(FiniteSet): the subsets of a finite set. */
+  /**
+   * Returns the subsets of a finite set.
+   *
+   * @returns The subsets of a finite set.
+   * @see SymPy `sympy.sets.powerset.PowerSet._eval_rewrite_as_FiniteSet`
+   */
   rewriteAsFiniteSet(): SetExpr {
     return this.arg instanceof FiniteSet || this.arg === EmptySet ? powerset(this.arg) : this;
   }
 }
 
-/** SymPy PowerSet(A): unevaluated (use powerset(A) or rewriteAsFiniteSet for the subsets of a finite set). */
+/**
+ * Represents the set of all subsets of a set.
+ *
+ * @param s - The set whose subsets are represented.
+ * @returns The symbolic set of subsets.
+ * @see SymPy `sympy.sets.powerset.PowerSet`
+ * @example
+ * ```ts
+ * import { EmptySet, PowerSet } from '@symjs/symjs';
+ * PowerSet(EmptySet); // => PowerSet(EmptySet)
+ * ```
+ */
 export const PowerSet = /* @__PURE__ */ callableClass(PowerSetNode, (s: SetExpr): PowerSetNode => new PowerSetNode(s));
+/** The instance type returned by `PowerSet`. */
 export type PowerSet = PowerSetNode;
 
-/** SymPy Set.powerset(): the subsets of a finite set, {EmptySet} for the empty set, otherwise PowerSet(s). */
+/**
+ * Returns the subsets of a finite set, {EmptySet} for the empty set, otherwise PowerSet(s).
+ *
+ * @param s - The input set.
+ * @returns The subsets of a finite set, {EmptySet} for the empty set, otherwise PowerSet(s).
+ * @see SymPy `sympy.sets.sets.Set.powerset`
+ * @example
+ * ```ts
+ * import { FiniteSet, powerset } from '@symjs/symjs';
+ * powerset(FiniteSet.of(1, 2)); // => FiniteSet(EmptySet, {1}, {2}, {1, 2})
+ * ```
+ */
 export function powerset(s: SetExpr): SetExpr {
   if (s === EmptySet) return finiteSet(EmptySet);
   if (s instanceof FiniteSet) return s.powerset();
   return new PowerSetNode(s);
 }
 
-/** The disjoint union of sets: the pairs (element, index of its set) (SymPy DisjointUnion). */
+/**
+ * The disjoint union of sets: the pairs (element, index of its set).
+ *
+ * @see SymPy `sympy.sets.sets.DisjointUnion`
+ * @example
+ * ```ts
+ * import { DisjointUnionNode, FiniteSet } from '@symjs/symjs';
+ * new DisjointUnionNode([FiniteSet.of(1), FiniteSet.of(1)]).sets.length; // => 2
+ * ```
+ */
 export class DisjointUnionNode extends SetExpr {
+  /**
+   * Indicates whether the elements can be enumerated.
+   *
+   * @returns Whether the set supports element iteration.
+   * @see SymPy `sympy.sets.sets.DisjointUnion.is_iterable`
+   */
   override get isIterable(): boolean { return !this.isEmpty && this.args.every((s) => s.isEmpty || s.isIterable); }
+  /**
+   * Tests whether this set has finitely many elements.
+   *
+   * @returns Whether the set has finitely many elements.
+   * @see SymPy `sympy.sets.sets.DisjointUnion.is_finite_set`
+   */
   override get isFiniteSet(): Truth { return truthAnd(...this.args.map((s) => s.isFiniteSet)); }
+  /**
+   * The cardinality of the tagged union.
+   *
+   * @returns The number of elements in the set when finite and known.
+   */
   get length(): number {
     return this.args.reduce((count, s) => count + finiteLength(s), 0);
   }
-  constructor(readonly args: readonly SetExpr[]) {
+  /**
+   * Creates a DisjointUnionNode instance.
+   *
+   * @param args - The operands in their defining order.
+   * @throws TypeError when an operand is not a set.
+   */
+  constructor(
+    /**
+     * The ordered arguments defining the expression.
+     *
+     * @see SymPy `sympy.sets.sets.DisjointUnion.args`
+     */
+    readonly args: readonly SetExpr[]) {
     super();
     if (args.some((s) => !(s instanceof SetExpr))) throw new TypeError('DisjointUnion requires sets');
   }
+  /**
+   * Represents the symbolic class name used by printers.
+   *
+   * @returns The symbolic class name used by printers.
+   */
   get className(): string {
     return 'DisjointUnion';
   }
-  /** SymPy DisjointUnion.sets. */
+  /**
+   * Represents the component sets defining the construction.
+   *
+   * @returns The component sets defining the construction.
+   * @see SymPy `sympy.sets.sets.DisjointUnion.sets`
+   */
   get sets(): SetExpr[] {
     return [...this.args];
   }
+  /**
+   * Tests whether the set is known to be empty.
+   *
+   * @returns Whether the set is known to have no elements.
+   * @see SymPy `sympy.sets.sets.DisjointUnion.is_empty`
+   */
   get isEmpty(): boolean {
     return this.args.every((a) => a.isEmpty);
   }
   protected computeKey(): string {
     return `DisjointUnion(${this.args.map((a) => a.key).join(',')})`;
   }
+  /**
+   * Formats the expression using a plain-text printer for its operands.
+   *
+   * @param p - The callback for printing child expressions.
+   * @returns The formatted text.
+   */
   printStr(p: (e: Expr) => string): string {
     return `DisjointUnion(${this.args.map(p).join(', ')})`;
   }
-  /** SymPy's LaTeX form (the default function form). */
+  /**
+   * SymPy's LaTeX form (the default function form).
+   *
+   * @param p - The callback for printing child expressions.
+   * @returns The formatted LaTeX source.
+   */
   printLatex(p: (e: Expr) => string): string {
     return `\\operatorname{DisjointUnion}\\left(${this.args.map(p).join(', ')}\\right)`;
   }
-  /** SymPy DisjointUnion.rewrite(Union): the union of the products (set_i x {i}). */
+  /**
+   * Returns the union of the products (set_i x {i}).
+   *
+   * @returns The union of the products (set_i x {i}).
+   * @see SymPy `sympy.sets.sets.DisjointUnion._eval_rewrite_as_Union`
+   */
   rewriteAsUnion(): SetExpr {
     return this.args.reduce<SetExpr>((acc, s, i) => union(acc, productSet(s, finiteSet(i))), EmptySet);
   }
-  /** SymPy DisjointUnion._contains: a pair (x, i) with x in the i-th set. */
+  /**
+   * A pair (x, i) with x in the i-th set.
+   *
+   * @param x - The candidate element.
+   * @returns Whether the candidate belongs to the set, or `'unknown'` when undecidable.
+   * @see SymPy `sympy.sets.sets.DisjointUnion._contains`
+   */
   override elementOf(x: Expr): Truth {
     if (!(x instanceof TupleNode) || x.args.length !== 2) return false;
     const i = at(x.args, 1);
@@ -1416,24 +2439,74 @@ export class DisjointUnionNode extends SetExpr {
   }
 }
 
-/** SymPy DisjointUnion(A, B, ...). */
+/**
+ * Forms the disjoint union by tagging elements with the index of their set.
+ *
+ * @param sets - The component sets in tag order.
+ * @returns The tagged union of the component sets.
+ * @see SymPy `sympy.sets.sets.DisjointUnion`
+ * @example
+ * ```ts
+ * import { DisjointUnion, FiniteSet, Interval } from '@symjs/symjs';
+ * DisjointUnion(FiniteSet.of(1, 2, 3), Interval.of(0, 5)); // => DisjointUnion({1, 2, 3}, Interval(0, 5))
+ * ```
+ */
 export const DisjointUnion = /* @__PURE__ */ callableClass(DisjointUnionNode, (...sets: SetExpr[]): DisjointUnionNode => new DisjointUnionNode(sets));
+/** The instance type returned by `DisjointUnion`. */
 export type DisjointUnion = DisjointUnionNode;
 
-/** The elements in exactly one of two sets, unevaluated (SymPy SymmetricDifference(a, b, evaluate=False)). */
+/**
+ * The elements in exactly one of two sets, unevaluated.
+ *
+ * @see SymPy `sympy.sets.sets.SymmetricDifference`
+ * @example
+ * ```ts
+ * import { Integers, Reals, SymmetricDifferenceNode } from '@symjs/symjs';
+ * new SymmetricDifferenceNode([Integers, Reals]).args.length; // => 2
+ * ```
+ */
 export class SymmetricDifferenceNode extends SetExpr {
-  constructor(readonly args: readonly SetExpr[]) {
+  /**
+   * Creates a SymmetricDifferenceNode instance.
+   *
+   * @param args - The operands in their defining order.
+   */
+  constructor(
+    /**
+     * The ordered arguments defining the expression.
+     *
+     * @see SymPy `sympy.sets.sets.SymmetricDifference.args`
+     */
+    readonly args: readonly SetExpr[]) {
     super();
   }
+  /**
+   * Represents the symbolic class name used by printers.
+   *
+   * @returns The symbolic class name used by printers.
+   */
   get className(): string {
     return 'SymmetricDifference';
   }
   protected computeKey(): string {
     return `SymmetricDifference(${this.args.map((a) => a.key).join(',')})`;
   }
+  /**
+   * Formats the expression using a plain-text printer for its operands.
+   *
+   * @param p - The callback for printing child expressions.
+   * @returns The formatted text.
+   */
   printStr(p: (e: Expr) => string): string {
     return `SymmetricDifference(${this.args.map(p).join(', ')})`;
   }
+  /**
+   * Determines whether the given element belongs to the set.
+   *
+   * @param x - The candidate element.
+   * @returns Whether the candidate belongs to the set, or `'unknown'` when undecidable.
+   * @see SymPy `sympy.sets.sets.SymmetricDifference._contains`
+   */
   override elementOf(x: Expr): Truth {
     const [a, b] = this.args.map((s) => containsQ(s, x));
     return a === undefined || b === undefined ? 'unknown' : a !== b;
@@ -1441,10 +2514,18 @@ export class SymmetricDifferenceNode extends SetExpr {
 }
 
 /**
- * SymPy SymmetricDifference(a, b) (a.symmetric_difference(b)): (a \ b) | (b \ a),
- * and a itself when b is empty; unevaluated with `evaluate: false`.
- * SymPy gives b for UniversalSet.symmetric_difference(b), which is wrong
- * (U ^ B is U \ B); the complement is kept here.
+ * Computes the set of elements belonging to exactly one of the two operands. Pass `{ evaluate: false }` to retain the symbolic operation.
+ *
+ * @param a - The first operand.
+ * @param b - The second operand.
+ * @param opts - `evaluate` enables evaluation.
+ * @returns The elements in exactly one operand.
+ * @see SymPy `sympy.sets.sets.SymmetricDifference`
+ * @example
+ * ```ts
+ * import { FiniteSet, ex, symmetricDifference } from '@symjs/symjs';
+ * symmetricDifference(FiniteSet.of(ex`1`, ex`2`, ex`3`), FiniteSet.of(ex`3`, ex`4`, ex`5`)); // => {1, 2, 4, 5}
+ * ```
  */
 export function symmetricDifference(a: SetExpr, b: SetExpr, opts: { evaluate?: boolean } = {}): SetExpr {
   if (opts.evaluate === false) return new SymmetricDifferenceNode([a, b]);
@@ -1453,8 +2534,21 @@ export function symmetricDifference(a: SetExpr, b: SetExpr, opts: { evaluate?: b
   return union(complement(b, a), complement(a, b));
 }
 
-/** SymPy SymmetricDifference(A, B). */
+/**
+ * Forms the set of elements belonging to exactly one of two sets.
+ *
+ * @param a - The first set.
+ * @param b - The second set.
+ * @returns The set of elements belonging to exactly one operand.
+ * @see SymPy `sympy.sets.sets.SymmetricDifference`
+ * @example
+ * ```ts
+ * import { FiniteSet, SymmetricDifference } from '@symjs/symjs';
+ * SymmetricDifference(FiniteSet.of(1, 2, 3), FiniteSet.of(3, 4, 5)); // => {1, 2, 4, 5}
+ * ```
+ */
 export const SymmetricDifference = /* @__PURE__ */ callableClass(SymmetricDifferenceNode, symmetricDifference);
+/** The instance type returned by `SymmetricDifference`. */
 export type SymmetricDifference = SymmetricDifferenceNode;
 
 const sortSets = (xs: SetExpr[]): SetExpr[] => [...xs].sort((a, b) => compareKeys(sortKey(a), sortKey(b)));
@@ -1613,31 +2707,83 @@ function imageContains(s: ImageSet, x: Expr): boolean | undefined {
   return rs.length === Math.max(...pc.keys()) && inBase.every((c) => c === false) ? false : undefined;
 }
 
-/** SymPy Contains(x, S): x is an element of the set, when that is not decided. */
+/**
+ * X is an element of the set, when that is not decided.
+ *
+ * @see SymPy `sympy.sets.contains.Contains`
+ * @example
+ * ```ts
+ * import { Contains, Integers, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * new Contains(x, Integers); // => Contains(x, Integers)
+ * ```
+ */
 export class Contains extends ExtensionExpr {
+  /**
+   * Creates a Contains instance.
+   *
+   * @param element - The candidate member.
+   * @param set - The set in which to test membership.
+   * @throws TypeError when the membership domain is not a set.
+   */
   constructor(
+    /** The candidate member of the set. */
     readonly element: Expr,
+    /** The set in the membership proposition. */
     readonly set: SetExpr,
   ) {
     super('Contains', [element, set]);
     if (!(set instanceof SetExpr)) throw new TypeError('Contains requires a set');
   }
+  /**
+   * The Boolean symbols in the membership expression.
+   *
+   * @returns The symbols used in Boolean positions, indexed by structural key.
+   * @see SymPy `sympy.sets.contains.Contains.binary_symbols`
+   */
   get binarySymbols(): Set<Expr> { return new Set(this.set.args.flatMap((s) => [...binarySymbols(s).values()])); }
+  /**
+   * Expresses the membership predicate as a set.
+   *
+   * @returns The solution set of the membership condition.
+   * @see SymPy `sympy.sets.contains.Contains.as_set`
+   */
   asSet(): SetExpr { return this.set; }
-  /** Rebuilding evaluates (Contains(x, Integers).subs(x, 2) is true). */
+  /**
+   * Rebuilding evaluates (Contains(x, Integers).subs(x, 2) is true).
+   *
+   * @param args - The operands in their defining order.
+   * @returns The expression with the replacement operands.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return contains(cast(at(args, 1), SetExpr, 'Contains set'), at(args, 0));
   }
-  /** SymPy LatexPrinter: x \in S. */
+  /**
+   * X \in S.
+   *
+   * @param print - The callback for printing child expressions.
+   * @returns The formatted LaTeX source.
+   */
   override printLatex(print: (e: Expr) => string): string {
     return `${print(this.element)} \\in ${print(this.set)}`;
   }
 }
 
 /**
- * SymPy Set.contains: true or false, a condition on x (for intervals,
+ * True or false, a condition on x (for intervals,
  * finite sets and unions, intersections and complements of them), or an
  * unevaluated Contains.
+ *
+ * @param s - The set defining the membership test.
+ * @param x - The candidate member.
+ * @returns A Boolean atom or an unevaluated membership proposition.
+ * @see SymPy `sympy.sets.sets.Set.contains`
+ * @example
+ * ```ts
+ * import { Interval, contains, ex } from '@symjs/symjs';
+ * contains(Interval.of(0, 1), ex`1/2`); // => True
+ * ```
  */
 export function contains(s: SetExpr, x: Expr): Expr {
   if (s instanceof Interval && (x === S.ComplexInfinity || x === S.NaN)) return S.false;
@@ -1671,7 +2817,18 @@ function intervalParts(s: SetExpr): Interval[] | undefined {
   return undefined;
 }
 
-/** Union of sets, merging overlapping intervals and absorbing points. */
+/**
+ * Union of sets, merging overlapping intervals and absorbing points.
+ *
+ * @param sets0 - The sets to combine.
+ * @returns The union of the sets.
+ * @see SymPy `sympy.sets.sets.Union`
+ * @example
+ * ```ts
+ * import { Interval, Union } from '@symjs/symjs';
+ * Union(Interval.of(1, 2), Interval.of(3, 4)); // => Union(Interval(1, 2), Interval(3, 4))
+ * ```
+ */
 export function union(...sets0: SetExpr[]): SetExpr {
   const sets = sets0.flatMap((s) => (s instanceof SetOp && s.op === 'Union' ? s.args : [s])).filter((s) => s !== EmptySet);
   if (!sets.length) return EmptySet;
@@ -1834,7 +2991,18 @@ function intersectFinite(sets: readonly SetExpr[]): SetExpr {
   return result.length === 1 ? first(result) : new SetOp('Intersection', result);
 }
 
-/** Intersection of sets. */
+/**
+ * Intersection of sets.
+ *
+ * @param sets - The sets to combine.
+ * @returns The elements common to all the sets.
+ * @see SymPy `sympy.sets.sets.Intersection`
+ * @example
+ * ```ts
+ * import { Intersection, Interval } from '@symjs/symjs';
+ * Intersection(Interval.of(1, 3), Interval.of(2, 4)); // => Interval(2, 3)
+ * ```
+ */
 export function intersection(...sets: SetExpr[]): SetExpr {
   if (sets.some((s) => s === EmptySet)) return EmptySet;
   if (!sets.length) return UniversalSet;
@@ -2161,7 +3329,19 @@ function intersectIntervals(a: Interval, b: Interval): SetExpr {
   return interval(start, end, lo, ro);
 }
 
-/** a \ b. */
+/**
+ * A \ b.
+ *
+ * @param a - The first operand.
+ * @param b - The second operand.
+ * @returns The elements of the first set outside the second.
+ * @see SymPy `sympy.sets.sets.Complement`
+ * @example
+ * ```ts
+ * import { Complement, FiniteSet, ex } from '@symjs/symjs';
+ * Complement(FiniteSet.of(ex`0`, ex`1`, ex`2`), FiniteSet.of(ex`1`)); // => {0, 2}
+ * ```
+ */
 export function complement(a: SetExpr, b: SetExpr): SetExpr {
   if (b === EmptySet) return a;
   if (a === EmptySet || b === UniversalSet || a.key === b.key) return EmptySet;
@@ -2297,7 +3477,15 @@ export function isSubset(a: SetExpr, b: SetExpr): boolean | undefined {
   return false;
 }
 
-/** The set as a condition on x (SymPy as_relational). */
+/**
+ * Expresses membership in a set as a condition on an element.
+ *
+ * @param s - The set defining the membership test.
+ * @param x - The candidate member.
+ * @returns A Boolean expression for membership.
+ * @throws NotImplementedError when the set has no supported representation for this operation.
+ * @see SymPy `sympy.sets.sets.Interval.as_relational`
+ */
 export function asRelational(s: SetExpr, x: Expr): Expr {
   if (s === EmptySet) return S.false;
   if (s === Reals) return and(Lt(S.NegativeInfinity, x), Lt(x, S.Infinity));
@@ -2339,7 +3527,19 @@ function extreme(xs: readonly Expr[], sign: 1 | -1): Expr {
   return best;
 }
 
-/** Infimum of a real set (SymPy Set.inf). */
+/**
+ * Infimum of a real set.
+ *
+ * @param s - The input set.
+ * @returns The greatest lower bound.
+ * @throws NotImplementedError when the set has no supported representation for this operation.
+ * @see SymPy `sympy.sets.sets.Set.inf`
+ * @example
+ * ```ts
+ * import { Interval, inf } from '@symjs/symjs';
+ * inf(Interval.open(0, 1)); // => 0
+ * ```
+ */
 export function inf(s: SetExpr): Expr {
   if (s instanceof Interval) return s.start;
   if (s === Reals || s === Integers) return S.NegativeInfinity;
@@ -2351,7 +3551,19 @@ export function inf(s: SetExpr): Expr {
   throw new NotImplementedError('inf: unsupported set');
 }
 
-/** Supremum of a real set (SymPy Set.sup). */
+/**
+ * Supremum of a real set.
+ *
+ * @param s - The input set.
+ * @returns The least upper bound.
+ * @throws NotImplementedError when the set has no supported representation for this operation.
+ * @see SymPy `sympy.sets.sets.Set.sup`
+ * @example
+ * ```ts
+ * import { Interval, sup } from '@symjs/symjs';
+ * sup(Interval.open(0, 1)); // => 1
+ * ```
+ */
 export function sup(s: SetExpr): Expr {
   if (s instanceof Interval) return s.end;
   if (s === Reals || s === Integers || s === Naturals || s === Naturals0) return S.Infinity;

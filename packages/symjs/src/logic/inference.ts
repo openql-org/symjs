@@ -176,24 +176,56 @@ function minimize(clauses: readonly (readonly number[])[], n: number, model0: nu
   }
 }
 
-/** Options of satisfiable (SymPy keyword arguments). */
+/** Options of satisfiable. */
 export interface SatisfiableOptions {
-  /** Return an iterator over all models (or over the single value false). */
+  /** Returns an iterator over all models (or over the single value false). */
   allModels?: boolean;
   /** Require linear real arithmetic predicates to have a common solution. */
   useLraTheory?: boolean;
-  /** Return models whose set of true variables is minimal (SymPy minimal, minisat22). */
+  /** Returns models whose set of true variables is minimal. */
   minimal?: boolean;
 }
 
 /**
- * SymPy satisfiable: a model (a Map from the atoms to true/false) of the
+ * A model (a Map from the atoms to true/false) of the
  * propositional sentence, or false when it is unsatisfiable. With
  * `allModels` an iterator over every model (yielding only false when there
  * is none). `satisfiable(true)` is the model {True: true}.
+ *
+ * @param expr - The Boolean expression to examine.
+ * @param opts - `allModels` requests all models.
+ * @returns A satisfying assignment, or `false` for an unsatisfiable formula.
+ * @see SymPy `sympy.logic.inference.satisfiable`
+ * @example
+ * ```ts
+ * import { satisfiable } from '@symjs/symjs';
+ * satisfiable(true); // => {True: True}
+ * ```
  */
 export function satisfiable(expr: BoolLike | EncodedCNF, opts?: SatisfiableOptions & { allModels?: false }): ExprMap<boolean> | false;
+/**
+ * A model (a Map from the atoms to true/false) of the
+ * propositional sentence, or false when it is unsatisfiable. With
+ * `allModels` an iterator over every model (yielding only false when there
+ * is none). `satisfiable(true)` is the model {True: true}.
+ *
+ * @param expr - The Boolean expression to examine.
+ * @param opts - `allModels` requests all models.
+ * @returns An iterator over satisfying assignments.
+ * @see SymPy `sympy.logic.inference.satisfiable`
+ */
 export function satisfiable(expr: BoolLike | EncodedCNF, opts: SatisfiableOptions & { allModels: true }): Generator<ExprMap<boolean> | false, void, unknown>;
+/**
+ * A model (a Map from the atoms to true/false) of the
+ * propositional sentence, or false when it is unsatisfiable. With
+ * `allModels` an iterator over every model (yielding only false when there
+ * is none). `satisfiable(true)` is the model {True: true}.
+ *
+ * @param expr - The Boolean expression to examine.
+ * @param opts - The satisfiable settings.
+ * @returns An iterator over satisfying assignments.
+ * @see SymPy `sympy.logic.inference.satisfiable`
+ */
 export function satisfiable(expr: BoolLike | EncodedCNF, opts: SatisfiableOptions = {}): ExprMap<boolean> | false | Generator<ExprMap<boolean> | false, void, unknown> {
   const { symbols, clauses, unsat } = typeof expr === 'object' && 'encoding' in expr ? fromEncoded(expr) : encode(toBool(expr));
   const feasible = opts.useLraTheory ? (lits: ReadonlySet<number>): boolean => linearSatisfiable(andFn(...[...lits].map((lit) => {
@@ -231,22 +263,54 @@ export function satisfiable(expr: BoolLike | EncodedCNF, opts: SatisfiableOption
   })();
 }
 
-/** SymPy valid: the sentence is true under every assignment. */
+/**
+ * Checks whether a proposition is true under every truth assignment.
+ *
+ * @param expr - The Boolean expression to examine.
+ * @returns Whether the proposition is true for every assignment.
+ * @see SymPy `sympy.logic.inference.valid`
+ * @example
+ * ```ts
+ * import { ex, valid } from '@symjs/symjs';
+ * valid(ex`A | B`); // => False
+ * ```
+ */
 export function valid(expr: BoolLike): boolean {
   return satisfiable(notFn(toBool(expr))) === false;
 }
 
 /**
- * SymPy entails: the formulas entail expr (with no formulas, expr is valid).
+ * Tests whether a set of premises implies a proposition. With no premises, this tests validity.
+ *
+ * @param expr - The Boolean expression to examine.
+ * @param formulaSet - The premises from which to test entailment.
+ * @returns Whether the premises imply the proposition.
+ * @see SymPy `sympy.logic.inference.entails`
+ * @example
+ * ```ts
+ * import { entails, ex } from '@symjs/symjs';
+ * entails(ex`Implies(A, B)`); // => False
+ * ```
  */
 export function entails(expr: BoolLike, formulaSet: Iterable<BoolLike> = []): boolean {
   return satisfiable(andFn(...[...formulaSet].map(toBool), notFn(toBool(expr)))) === false;
 }
 
 /**
- * SymPy pl_true: the value of expr under a (partial) assignment of its
- * symbols; 'unknown' (SymPy None) when not obvious. With `deep` the value
+ * The value of expr under a (partial) assignment of its
+ * symbols; 'unknown' when not obvious. With `deep` the value
  * under a partial assignment is decided by satisfiability.
+ *
+ * @param expr - The Boolean expression to examine.
+ * @param model - Mapping of symbols to boolean values to indicate assignment.
+ * @param deep - Gives the value of the expression under partial assignments correctly.
+ * @returns The truth value under the assignment, or `'unknown'` if undetermined.
+ * @see SymPy `sympy.logic.inference.pl_true`
+ * @example
+ * ```ts
+ * import { ex, plTrue } from '@symjs/symjs';
+ * plTrue(ex`A & B`, new Map([[ex`A`, false]])); // => False
+ * ```
  */
 export function plTrue(expr: BoolLike, model: ReadonlyMap<Expr, BoolLike> = new Map(), deep = false): Truth {
   const e = toBool(expr);
@@ -269,7 +333,19 @@ export function plTrue(expr: BoolLike, model: ReadonlyMap<Expr, BoolLike> = new 
   return 'unknown';
 }
 
-/** SymPy literal_symbol: the symbol of a literal (without the negation). */
+/**
+ * Returns the symbol of a literal (without the negation).
+ *
+ * @param literal - The symbol or its negation.
+ * @returns The symbol of a literal (without the negation).
+ * @throws RangeError when the argument is not a Boolean literal.
+ * @see SymPy `sympy.logic.inference.literal_symbol`
+ * @example
+ * ```ts
+ * import { ex, literalSymbol } from '@symjs/symjs';
+ * literalSymbol(ex`A`); // => A
+ * ```
+ */
 export function literalSymbol(literal: BoolLike): Expr {
   const e = toBool(literal);
   if (e instanceof BoolAtom || e instanceof Sym) return e;
@@ -277,34 +353,80 @@ export function literalSymbol(literal: BoolLike): Expr {
   throw new RangeError('Argument must be a boolean literal.');
 }
 
-/** SymPy PropKB: a knowledge base of propositional clauses. */
+/**
+ * A knowledge base of propositional clauses.
+ *
+ * @see SymPy `sympy.logic.inference.PropKB`
+ */
 export class PropKB {
   private readonly clauseMap = new Map<string, Expr>();
-  /** A knowledge base, optionally told a first sentence. */
+  /**
+   * A knowledge base, optionally told a first sentence.
+   *
+   * @param sentence - The proposition to assert or query.
+   */
   constructor(sentence?: BoolLike) {
     if (sentence !== undefined) this.tell(sentence);
   }
-  /** Add the clauses of the sentence (in CNF). */
+  /**
+   * Adds the clauses of the sentence (in CNF).
+   *
+   * @param sentence - The proposition to assert or query.
+   * @see SymPy `sympy.logic.inference.PropKB.tell`
+   */
   tell(sentence: BoolLike): void {
     for (const c of conjuncts(toCnf(sentence))) this.clauseMap.set(c.key, c);
   }
-  /** The query follows from the clauses. */
+  /**
+   * Tests whether the knowledge base entails the query.
+   *
+   * @param query - The proposition to assert or query.
+   * @returns Whether the premises imply the proposition.
+   * @see SymPy `sympy.logic.inference.PropKB.ask`
+   * @example
+   * ```ts
+   * import { ex, PropKB } from '@symjs/symjs';
+   * const facts = new PropKB(ex`A & B`);
+   * facts.ask(ex`A`); // => True
+   * ```
+   */
   ask(query: BoolLike): boolean {
     return entails(query, this.clauseMap.values());
   }
-  /** Remove the clauses of the sentence. */
+  /**
+   * Removes the clauses of the sentence.
+   *
+   * @param sentence - The proposition to assert or query.
+   * @see SymPy `sympy.logic.inference.PropKB.retract`
+   */
   retract(sentence: BoolLike): void {
     for (const c of conjuncts(toCnf(sentence))) this.clauseMap.delete(c.key);
   }
-  /** The clauses, ordered. */
+  /**
+   * Represents the clauses, ordered.
+   *
+   * @returns The clauses, ordered.
+   * @see SymPy `sympy.logic.inference.PropKB.clauses`
+   */
   get clauses(): Expr[] {
     return ordered([...this.clauseMap.values()]);
   }
 }
 
 /**
- * SymPy Boolean.equals: both formulas have the same atoms and the same truth
+ * Both formulas have the same atoms and the same truth
  * table. Relations are not supported (NotImplementedError, as in SymPy).
+ *
+ * @param a - The first Boolean formula.
+ * @param b - The formula to compare with the first.
+ * @returns Whether the two formulas have the same truth table.
+ * @throws NotImplementedError when the requested operation does not support relational expressions.
+ * @see SymPy `sympy.logic.boolalg.Boolean.equals`
+ * @example
+ * ```ts
+ * import { booleanEquals, ex } from '@symjs/symjs';
+ * booleanEquals(ex`~(A & B)`, ex`~A | ~B`); // => True
+ * ```
  */
 export function booleanEquals(a: BoolLike, b: BoolLike): boolean {
   const x = toBool(a);

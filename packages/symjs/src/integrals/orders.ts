@@ -6,14 +6,32 @@ import type { Poly } from '../polys/sympoly';
 import { KPoly } from './rischpoly';
 import { orderAt as polynomialOrder, orderAtOo as infinityOrder } from './rde';
 
-/** The multiplicity of an irreducible polynomial p in a; Infinity for zero. */
+/**
+ * Computes the multiplicity of an irreducible polynomial factor.
+ *
+ * @param a - The polynomial whose multiplicity is measured.
+ * @param p - The irreducible factor.
+ * @param t - The polynomial generator.
+ * @returns The multiplicity of the factor, or infinity for zero.
+ * @throws RangeError when the proposed factor is constant.
+ * @see SymPy `sympy.integrals.rde.order_at`
+ */
 export function orderAt(a: Poly, p: Poly, t: Sym): number {
   const factor = KPoly.of(p.asExpr(), t);
   if (factor.degree < 1) throw new RangeError('orderAt: a nonconstant polynomial factor is required');
   return polynomialOrder(KPoly.of(a.asExpr(), t), factor, t);
 }
 
-/** Order of vanishing at infinity of the rational function a/d. */
+/**
+ * Computes the order of vanishing of a rational function at infinity.
+ *
+ * @param a - The numerator polynomial.
+ * @param d - The denominator polynomial.
+ * @param t - The polynomial generator.
+ * @returns The denominator degree minus the numerator degree.
+ * @throws RangeError when the denominator is zero.
+ * @see SymPy `sympy.integrals.rde.order_at_oo`
+ */
 export function orderAtOo(a: Poly, d: Poly, t: Sym): number {
   const denominator = KPoly.of(d.asExpr(), t);
   if (denominator.isZero) throw new RangeError('orderAtOo: denominator must be nonzero');

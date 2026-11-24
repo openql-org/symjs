@@ -59,9 +59,23 @@ const CONSTRAINTS_UNION: Readonly<Record<string, readonly Cond[]>> = {
 const solveIneq = (r: Expr, x: Sym): SetExpr => expectType(solveUnivariateInequality(r, x, { relational: false }), (v): v is SetExpr => v instanceof SetExpr, 'set');
 
 /**
- * SymPy continuous_domain: the part of the real domain where f is
+ * The part of the real domain where f is
  * continuous (powers, exp, log, Abs, frac and the trigonometric and
  * hyperbolic functions and their inverses).
+ *
+ * @param fIn - The function or expression to analyze.
+ * @param symbol - The independent variable.
+ * @param domain - The domain over which the continuity of the symbol has to be checked.
+ * @returns The subset of the domain where the function is continuous.
+ * @throws NotImplementedError when the domain is not contained in the real line.
+ * @see SymPy `sympy.calculus.util.continuous_domain`
+ * @example
+ * ```ts
+ * import { Interval, continuousDomain, ex, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * continuousDomain(ex`tan(x)`, x, Interval.of(0, ex`pi`)); // => Union(Interval.Ropen(0, pi/2), Interval.Lopen(pi/2, pi))
+ * ```
  */
 export function continuousDomain(fIn: ExprLike, symbol: Sym, domain: SetExpr): SetExpr {
   const f = sympify(fIn);
@@ -103,9 +117,22 @@ function pieces(s: SetExpr): SetExpr[] {
 }
 
 /**
- * SymPy function_range: the range of the real function f of symbol on the
+ * The range of the real function f of symbol on the
  * domain, from its values at the ends of the intervals of continuity and at
  * the critical points.
+ *
+ * @param fIn - The function or expression to analyze.
+ * @param symbol - The independent variable.
+ * @param domainIn - The domain under which the range of the function has to be found.
+ * @returns The values attained by the function on the domain.
+ * @see SymPy `sympy.calculus.util.function_range`
+ * @example
+ * ```ts
+ * import { Interval, ex, functionRange, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * functionRange(ex`sqrt(x)`, x, Interval.of(-5, 9)); // => Interval(0, 3)
+ * ```
  */
 export function functionRange(fIn: ExprLike, symbol: Sym, domainIn: SetExpr): SetExpr {
   const f = sympify(fIn);
@@ -150,9 +177,16 @@ export function functionRange(fIn: ExprLike, symbol: Sym, domainIn: SetExpr): Se
 }
 
 /**
- * SymPy lcim: the least common multiple of rational numbers, or of
- * irrational numbers with a common irrational factor (periods such as 2*pi
- * and 3*pi); NoMatch (SymPy None) otherwise.
+ * Finds the least common integer multiple of the supplied real numbers when one exists.
+ *
+ * @param numbersIn - Numbers (rational and/or irrational) for which lcim is to be found.
+ * @returns The least common integer multiple of the supplied real numbers when one exists.
+ * @see SymPy `sympy.calculus.util.lcim`
+ * @example
+ * ```ts
+ * import { ex, lcim } from '@symjs/symjs';
+ * lcim([ex`1/2`, ex`3/4`, ex`5/6`]); // => 15/2
+ * ```
  */
 export function lcim(numbersIn: readonly ExprLike[]): Expr | NoMatchResult {
   const numbers = numbersIn.map(sympify);

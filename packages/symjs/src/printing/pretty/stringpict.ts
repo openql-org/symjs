@@ -44,9 +44,17 @@ export interface RenderOptions {
   readonly useUnicode?: boolean;
 }
 
-/** SymPy `stringPict`: an ASCII (or unicode) picture of equal-length lines. */
+/**
+ * An ASCII (or unicode) picture of equal-length lines.
+ *
+ * @see SymPy `sympy.printing.pretty.stringpict.stringPict`
+ */
 export class StringPict {
-  /** SymPy `stringPict.LINE`. */
+  /**
+   * A horizontal rule spanning the width of the surrounding picture.
+   *
+   * @see SymPy `sympy.printing.pretty.stringpict.stringPict.LINE`
+   */
   static readonly LINE: typeof LINE = LINE;
 
   /** The source string. */
@@ -56,30 +64,58 @@ export class StringPict {
   /** The line number of the baseline. */
   baseline: number;
 
+  /**
+   * Creates a StringPict instance.
+   *
+   * @param s - The input text.
+   * @param baseline - The row aligned with the baseline of adjacent forms.
+   */
   constructor(s: string, baseline = 0) {
     this.s = s;
     this.picture = StringPict.equalLengths(splitLines(s));
     this.baseline = baseline;
   }
 
-  /** SymPy `equalLengths`: center lines to a common width. */
+  /**
+   * Center lines to a common width.
+   *
+   * @param lines - The lines to pad to a common width.
+   * @returns The lines padded to a common width.
+   * @see SymPy `sympy.printing.pretty.stringpict.stringPict.equalLengths`
+   */
   static equalLengths(lines: readonly string[]): string[] {
     if (lines.length === 0) return [''];
     const width = Math.max(...lines.map(lineWidth));
     return lines.map((l) => center(l, width));
   }
 
-  /** The height of the picture in characters. */
+  /**
+   * Returns the height of the picture in characters.
+   *
+   * @returns The height of the picture in characters.
+   * @see SymPy `sympy.printing.pretty.stringpict.stringPict.height`
+   */
   height(): number {
     return this.picture.length;
   }
 
-  /** The width of the picture in characters. */
+  /**
+   * Returns the width of the picture in characters.
+   *
+   * @returns The width of the picture in characters.
+   * @see SymPy `sympy.printing.pretty.stringpict.stringPict.width`
+   */
   width(): number {
     return lineWidth(firstOf(this.picture));
   }
 
-  /** SymPy `stringPict.next`: put pictures next to each other, aligned on their baselines. */
+  /**
+   * Put pictures next to each other, aligned on their baselines.
+   *
+   * @param args - The operands in their defining order.
+   * @returns The resulting text picture and its baseline.
+   * @see SymPy `sympy.printing.pretty.stringpict.stringPict.next`
+   */
   static next(...args: PictLike[]): PictPair {
     const objects = args.map(toPict);
     const newBaseline = Math.max(...objects.map((o) => o.baseline));
@@ -101,19 +137,35 @@ export class StringPict {
     return [result.join('\n'), newBaseline];
   }
 
-  /** Put pictures to the right of this one. */
+  /**
+   * Put pictures to the right of this one.
+   *
+   * @param args - The operands in their defining order.
+   * @returns The resulting text picture and its baseline.
+   * @see SymPy `sympy.printing.pretty.stringpict.stringPict.right`
+   */
   right(...args: PictLike[]): PictPair {
     return StringPict.next(this, ...args);
   }
 
-  /** Put pictures (left to right) to the left of this one. */
+  /**
+   * Put pictures (left to right) to the left of this one.
+   *
+   * @param args - The operands in their defining order.
+   * @returns The resulting text picture and its baseline.
+   * @see SymPy `sympy.printing.pretty.stringpict.stringPict.left`
+   */
   left(...args: PictLike[]): PictPair {
     return StringPict.next(...args, this);
   }
 
   /**
-   * SymPy `stringPict.stack`: put pictures on top of each other, centered.
+   * Put pictures on top of each other, centered.
    * The baseline is that of the second picture.
+   *
+   * @param args - The operands in their defining order.
+   * @returns The resulting text picture and its baseline.
+   * @see SymPy `sympy.printing.pretty.stringpict.stringPict.stack`
    */
   static stack(...args: (PictLike | typeof LINE)[]): PictPair {
     const objects0 = args.map((a) => (a === LINE ? a : toPict(a)));
@@ -125,13 +177,25 @@ export class StringPict {
     return [newPicture.join('\n'), newBaseline];
   }
 
-  /** Put pictures under this one; the baseline stays that of this picture. */
+  /**
+   * Put pictures under this one; the baseline stays that of this picture.
+   *
+   * @param args - The operands in their defining order.
+   * @returns The resulting text picture and its baseline.
+   * @see SymPy `sympy.printing.pretty.stringpict.stringPict.below`
+   */
   below(...args: (PictLike | typeof LINE)[]): PictPair {
     const [s] = StringPict.stack(this, ...args);
     return [s, this.baseline];
   }
 
-  /** Put pictures above this one; the baseline stays that of this picture. */
+  /**
+   * Put pictures above this one; the baseline stays that of this picture.
+   *
+   * @param args - The operands in their defining order.
+   * @returns The resulting text picture and its baseline.
+   * @see SymPy `sympy.printing.pretty.stringpict.stringPict.above`
+   */
   above(...args: (PictLike | typeof LINE)[]): PictPair {
     const [s] = StringPict.stack(...args, this);
     return [s, splitLines(s).length - this.height() + this.baseline];
@@ -140,6 +204,12 @@ export class StringPict {
   /**
    * Put parentheses (or other brackets: '[', '{', '|', 'lfloor', ...) around
    * this picture; an empty or undefined side has none.
+   *
+   * @param left - The left delimiter.
+   * @param right - The right delimiter.
+   * @param ifasciiNougly - Whether to omit oversized delimiters in ASCII mode.
+   * @returns The resulting text picture and its baseline.
+   * @see SymPy `sympy.printing.pretty.stringpict.stringPict.parens`
    */
   parens(left: string | undefined = '(', right: string | undefined = ')', ifasciiNougly = false): PictPair {
     let h = this.height();
@@ -160,7 +230,12 @@ export class StringPict {
     return [res.picture.join('\n'), res.baseline];
   }
 
-  /** Precede the picture by a slash of the proper size. */
+  /**
+   * Precede the picture by a slash of the proper size.
+   *
+   * @returns The resulting text picture and its baseline.
+   * @see SymPy `sympy.printing.pretty.stringpict.stringPict.leftslash`
+   */
   leftslash(): PictPair {
     const height = Math.max(this.baseline, this.height() - 1 - this.baseline) * 2 + 1;
     const lines: string[] = [];
@@ -169,8 +244,12 @@ export class StringPict {
   }
 
   /**
-   * SymPy `stringPict.render`: the picture as a string, broken into chunks
+   * The picture as a string, broken into chunks
    * of `numColumns` (default 80) columns when `wrapLine` is not false.
+   *
+   * @param options - The render settings.
+   * @returns The formatted text.
+   * @see SymPy `sympy.printing.pretty.stringpict.stringPict.render`
    */
   render(options: RenderOptions = {}): string {
     if (options.wrapLine === false) return this.picture.join('\n');
@@ -207,13 +286,24 @@ export class StringPict {
     return screens.join('\n\n');
   }
 
-  /** Does the picture equal the string (lines joined by newlines) or another picture? */
+  /**
+   * Does the picture equal the string (lines joined by newlines) or another picture?
+   *
+   * @param o - The picture to compare.
+   * @returns Whether the operands are equal.
+   * @see SymPy `sympy.printing.pretty.stringpict.stringPict.__eq__`
+   */
   equals(o: unknown): boolean {
     if (typeof o === 'string') return this.picture.join('\n') === o;
     if (o instanceof StringPict) return o.picture.length === this.picture.length && o.picture.every((l, i) => l === this.picture[i]);
     return false;
   }
 
+  /**
+   * Formats this value as a string.
+   *
+   * @returns The formatted text.
+   */
   toString(): string {
     return this.picture.join('\n');
   }
@@ -223,36 +313,98 @@ export class StringPict {
 export const Binding = { ATOM: 0, FUNC: 1, DIV: 2, POW: 3, MUL: 4, ADD: 5, NEG: 6, OPEN: 7, LINE: 8 } as const;
 
 /**
- * SymPy `prettyForm`: a {@link StringPict} with a binding power used to
+ * A {@link StringPict} with a binding power used to
  * decide where parentheses are needed when combined.
+ *
+ * @see SymPy `sympy.printing.pretty.stringpict.prettyForm`
  */
 export class PrettyForm extends StringPict {
+  /**
+   * The binding level for atoms.
+   *
+   * @see SymPy `sympy.printing.pretty.stringpict.prettyForm.ATOM`
+   */
   static readonly ATOM = Binding.ATOM;
+  /**
+   * The binding level for function applications.
+   *
+   * @see SymPy `sympy.printing.pretty.stringpict.prettyForm.FUNC`
+   */
   static readonly FUNC = Binding.FUNC;
+  /**
+   * The binding level for fractions.
+   *
+   * @see SymPy `sympy.printing.pretty.stringpict.prettyForm.DIV`
+   */
   static readonly DIV = Binding.DIV;
+  /**
+   * The binding level for powers.
+   *
+   * @see SymPy `sympy.printing.pretty.stringpict.prettyForm.POW`
+   */
   static readonly POW = Binding.POW;
+  /**
+   * The binding level for products.
+   *
+   * @see SymPy `sympy.printing.pretty.stringpict.prettyForm.MUL`
+   */
   static readonly MUL = Binding.MUL;
+  /**
+   * The binding level for sums.
+   *
+   * @see SymPy `sympy.printing.pretty.stringpict.prettyForm.ADD`
+   */
   static readonly ADD = Binding.ADD;
+  /**
+   * The binding level for negation.
+   *
+   * @see SymPy `sympy.printing.pretty.stringpict.prettyForm.NEG`
+   */
   static readonly NEG = Binding.NEG;
+  /**
+   * The binding level for ungrouped forms.
+   *
+   * @see SymPy `sympy.printing.pretty.stringpict.prettyForm.OPEN`
+   */
   static readonly OPEN = Binding.OPEN;
 
+  /** The binding strength used to decide when parentheses are needed. */
   binding: number;
   /** For function applications: the function name part (used by powers like sin²(x)). */
   prettyFunc: StringPict | undefined;
   /** For function applications: the parenthesized arguments. */
   prettyArgs: StringPict | undefined;
 
+  /**
+   * Creates a PrettyForm instance.
+   *
+   * @param s - The input text.
+   * @param baseline - The row aligned with the baseline of adjacent forms.
+   * @param binding - The operator binding strength used when adding parentheses.
+   */
   constructor(s: string, baseline = 0, binding: number = Binding.ATOM) {
     super(s, baseline);
     this.binding = binding;
   }
 
-  /** A prettyForm from a `(string, baseline)` pair. */
+  /**
+   * Returns a prettyForm from a `(string, baseline)` pair.
+   *
+   * @param pair - The picture text and its baseline.
+   * @param binding - The operator binding strength used when adding parentheses.
+   * @returns A prettyForm from a `(string, baseline)` pair.
+   */
   static of(pair: PictPair, binding: number = Binding.ATOM): PrettyForm {
     return new PrettyForm(pair[0], pair[1], binding);
   }
 
-  /** SymPy `prettyForm.__add__`: a sum; negative terms reuse their minus sign. */
+  /**
+   * A sum; negative terms reuse their minus sign.
+   *
+   * @param forms - The typeset summands.
+   * @returns A sum.
+   * @see SymPy `sympy.printing.pretty.stringpict.prettyForm.__add__`
+   */
   static add(...forms: PrettyForm[]): PrettyForm {
     const result: PictLike[] = [];
     forms.forEach((f, i) => {
@@ -264,7 +416,13 @@ export class PrettyForm extends StringPict {
     return PrettyForm.of(StringPict.next(...result), Binding.ADD);
   }
 
-  /** SymPy `prettyForm.__truediv__`: a stacked fraction. */
+  /**
+   * Returns a stacked fraction.
+   *
+   * @param den - The denominator polynomial.
+   * @returns A stacked fraction.
+   * @see SymPy `sympy.printing.pretty.stringpict.prettyForm.__truediv__`
+   */
   div(den: PrettyForm): PrettyForm {
     let num: StringPict = this;
     let d: StringPict = den;
@@ -274,7 +432,14 @@ export class PrettyForm extends StringPict {
     return PrettyForm.of(StringPict.stack(num, LINE, d), Binding.DIV);
   }
 
-  /** SymPy `prettyForm.__mul__`: a product; `-1*x` prints as `-x`. */
+  /**
+   * A product; `-1*x` prints as `-x`.
+   *
+   * @param first - The first typeset factor.
+   * @param others - The remaining factors in display order.
+   * @returns A product.
+   * @see SymPy `sympy.printing.pretty.stringpict.prettyForm.__mul__`
+   */
   static mul(first: PrettyForm, ...others: PrettyForm[]): PrettyForm {
     if (others.length === 0) return first;
     const degree = '°';
@@ -309,7 +474,13 @@ export class PrettyForm extends StringPict {
     return PrettyForm.of(StringPict.next(...result), bin);
   }
 
-  /** SymPy `prettyForm.__pow__`: a power with the exponent raised; `sin(x)**2` prints as sin²(x). */
+  /**
+   * A power with the exponent raised; `sin(x)**2` prints as sin²(x).
+   *
+   * @param b0 - The typeset exponent.
+   * @returns A power with the exponent raised.
+   * @see SymPy `sympy.printing.pretty.stringpict.prettyForm.__pow__`
+   */
   pow(b0: PrettyForm): PrettyForm {
     let a: StringPict = this;
     let b: StringPict = b0;

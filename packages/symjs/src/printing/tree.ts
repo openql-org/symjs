@@ -21,8 +21,19 @@ export interface TreeOptions {
 }
 
 /**
- * SymPy `pprint_nodes(subtrees)`: the subtrees one below the other, joined
- * by `+-` branches (`|` continues a branch that has more below it).
+ * Joins formatted child subtrees using branch lines and vertical guides.
+ *
+ * @param subtrees - The child trees as multiline strings.
+ * @returns The formatted text.
+ * @see SymPy `sympy.printing.tree.pprint_nodes`
+ * @example
+ * ```ts
+ * import { pprintNodes } from '@symjs/symjs';
+ * pprintNodes(['a', 'b1\nb2', 'c']).trimEnd(); // => +-a
+ * //   +-b1
+ * //   | b2
+ * //   +-c
+ * ```
  */
 export function pprintNodes(subtrees: readonly string[]): string {
   const indent = (s: string, last: boolean): string => {
@@ -57,8 +68,13 @@ function viewTree(view: BasicView, assumptions: boolean): string {
 }
 
 /**
- * SymPy `print_node(node, assumptions=True)`: the class name and the str()
+ * The class name and the str()
  * form of the node, then its assumption facts, one per line.
+ *
+ * @param node - The expression whose node information to display.
+ * @param options - The tree settings.
+ * @returns The formatted node.
+ * @see SymPy `sympy.printing.tree.print_node`
  */
 export function printNode(node: Expr, options: TreeOptions = {}): string {
   return viewNode(basicView(node), options.assumptions ?? true);
@@ -73,15 +89,21 @@ export function tree(node: Expr, options: TreeOptions = {}): string {
 }
 
 /**
- * SymPy `print_tree(node, assumptions=True)`: SymPy prints the tree; symjs
- * has no console output, so this returns the text that would be printed
- * (followed by a newline).
+ * Formats the expression tree as indented text with one node per branch.
  *
- * ```
- * printTree(pow(y, x), { assumptions: false })
- * // Pow: y**x
- * // +-Symbol: y
- * // +-Symbol: x
+ * @param node - The expression at the root of the tree.
+ * @param options - The tree settings.
+ * @returns The formatted text.
+ * @see SymPy `sympy.printing.tree.print_tree`
+ * @example
+ * ```ts
+ * import { ex, printTree, symbols } from '@symjs/symjs';
+ *
+ * const [y] = symbols('y', { even: true });
+ * const [x] = symbols('x', { odd: true });
+ * printTree(ex`${y}**${x}`, { assumptions: false }).trimEnd(); // => Pow: y**x
+ * //   +-Symbol: y
+ * //   +-Symbol: x
  * ```
  */
 export function printTree(node: Expr, options: TreeOptions = {}): string {

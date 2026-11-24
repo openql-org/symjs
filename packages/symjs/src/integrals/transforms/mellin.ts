@@ -287,26 +287,57 @@ export function mellinTransformImpl(f: Expr, x: Sym, s: Expr, simplify: boolean)
 }
 
 /**
- * The unevaluated Mellin transform of f(x) (SymPy MellinTransform).
+ * The unevaluated Mellin transform of f(x).
+ *
+ * @see SymPy `sympy.integrals.transforms.MellinTransform`
  */
 export class MellinTransform extends GenericIntegralTransform {
+  /**
+   * Creates a MellinTransform instance.
+   *
+   * @param f - The function to transform.
+   * @param x - The original-domain variable.
+   * @param s - The transform-domain variable.
+   */
   constructor(f: ExprLike, x: ExprLike, s: ExprLike) {
     super('MellinTransform', [sympify(f), sympify(x), sympify(s)]);
   }
-  /** SymPy MellinTransform._name. */
+  /**
+   * The name of the integral transform.
+   *
+   * @see SymPy `sympy.integrals.transforms.MellinTransform._name`
+   */
   static readonly transformName = 'Mellin';
+  /**
+   * Represents the name of the integral transform.
+   *
+   * @returns The name of the integral transform.
+   * @see SymPy `sympy.integrals.transforms.MellinTransform._name`
+   */
   get transformName(): string {
     return 'Mellin';
   }
   protected get latexName(): string {
     return '\\mathcal{M}';
   }
+  /**
+   * Rebuilds the expression with replacement arguments.
+   *
+   * @param args - The operands in their defining order.
+   * @returns The expression with the replacement operands.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new MellinTransform(...transformArgs(args));
   }
   protected withFunction(f: Expr): IntegralTransform {
     return new MellinTransform(f, this.functionVariable, this.transformVariable);
   }
+  /**
+   * Expresses the transform as a symbolic integral.
+   *
+   * @returns The defining integral expression.
+   * @see SymPy `sympy.integrals.transforms.MellinTransform._as_integral`
+   */
   get asIntegral(): Expr {
     const x = this.functionVariable;
     return new Integral([mul(this.function, pow(x, sub(this.transformVariable, 1))), x, S.Zero, S.Infinity]);
@@ -336,10 +367,16 @@ export class MellinTransform extends GenericIntegralTransform {
 
 /**
  * The Mellin transform F(s) of f(x), the integral of x**(s - 1)*f(x) over
- * (0, oo) (SymPy mellin_transform). Returns [F, [a, b], cond] with the
+ * (0, oo). Returns [F, [a, b], cond] with the
  * fundamental strip a < Re(s) < b, F alone with `noconds: true`, or an
  * unevaluated MellinTransform.
  *
+ * @param f - The function to transform.
+ * @param x - The original-domain variable.
+ * @param s - The transform-domain variable.
+ * @param hints - The transform hints settings.
+ * @returns The transformed expression with convergence data when requested.
+ * @see SymPy `sympy.integrals.transforms.mellin_transform`
  * @example
  * ```ts
  * import { exp, mellinTransform, symbols } from '@symjs/symjs';
@@ -767,20 +804,46 @@ const NONE_SENTINEL = new Dummy('None');
 /**
  * The unevaluated inverse Mellin transform of F(s) over the strip (a, b)
  * (SymPy InverseMellinTransform).
+ *
+ * @see SymPy `sympy.integrals.transforms.InverseMellinTransform`
  */
 export class InverseMellinTransform extends GenericIntegralTransform {
+  /**
+   * Creates an InverseMellinTransform instance.
+   *
+   * @param F - The transformed function.
+   * @param s - The transform-domain variable.
+   * @param x - The original-domain variable.
+   * @param a - The lower real-part bound of the fundamental strip.
+   * @param b - The upper real-part bound of the fundamental strip.
+   */
   constructor(F: ExprLike, s: ExprLike, x: ExprLike, a?: ExprLike, b?: ExprLike) {
     super('InverseMellinTransform', [sympify(F), sympify(s), sympify(x), a === undefined ? NONE_SENTINEL : sympify(a), b === undefined ? NONE_SENTINEL : sympify(b)]);
   }
-  /** SymPy InverseMellinTransform._name. */
+  /**
+   * The name of the integral transform.
+   *
+   * @see SymPy `sympy.integrals.transforms.InverseMellinTransform._name`
+   */
   static readonly transformName = 'Inverse Mellin';
+  /**
+   * Represents the name of the integral transform.
+   *
+   * @returns The name of the integral transform.
+   * @see SymPy `sympy.integrals.transforms.InverseMellinTransform._name`
+   */
   get transformName(): string {
     return 'Inverse Mellin';
   }
   protected get latexName(): string {
     return '\\mathcal{M}^{-1}';
   }
-  /** The fundamental strip; undefined bounds were not given (SymPy fundamental_strip). */
+  /**
+   * The lower and upper real-part bounds of the fundamental strip.
+   *
+   * @returns The pair of bounds, with omitted endpoints left unspecified.
+   * @see SymPy `sympy.integrals.transforms.InverseMellinTransform.fundamental_strip`
+   */
   get fundamentalStrip(): [Expr | undefined, Expr | undefined] {
     const [a, b] = [at(this.args, 3), at(this.args, 4)];
     return [a === NONE_SENTINEL ? undefined : a, b === NONE_SENTINEL ? undefined : b];
@@ -788,6 +851,12 @@ export class InverseMellinTransform extends GenericIntegralTransform {
   protected override get defaultNoconds(): boolean {
     return true;
   }
+  /**
+   * Rebuilds the expression with replacement arguments.
+   *
+   * @param args - The operands in their defining order.
+   * @returns The expression with the replacement operands.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new InverseMellinTransform(...transformArgs(args), args[3], args[4]);
   }
@@ -795,6 +864,12 @@ export class InverseMellinTransform extends GenericIntegralTransform {
     const [a, b] = this.fundamentalStrip;
     return new InverseMellinTransform(f, this.functionVariable, this.transformVariable, a, b);
   }
+  /**
+   * Expresses the transform as a symbolic integral.
+   *
+   * @returns The defining integral expression.
+   * @see SymPy `sympy.integrals.transforms.InverseMellinTransform._as_integral`
+   */
   get asIntegral(): Expr {
     const c = new Dummy('c');
     const s = this.functionVariable;
@@ -811,10 +886,17 @@ export class InverseMellinTransform extends GenericIntegralTransform {
 
 /**
  * The inverse Mellin transform of F(s) over the fundamental strip
- * strip = [a, b] (SymPy inverse_mellin_transform); x is assumed positive.
+ * strip = [a, b]; x is assumed positive.
  * One bound may be undefined. Returns f, [f, cond] with `noconds: false`,
  * or an unevaluated InverseMellinTransform.
  *
+ * @param F - The transformed function.
+ * @param s - The transform-domain variable.
+ * @param x - The original-domain variable.
+ * @param strip - The lower and upper boundaries of the fundamental strip.
+ * @param hints - The transform hints settings.
+ * @returns The transformed expression with convergence data when requested.
+ * @see SymPy `sympy.integrals.transforms.inverse_mellin_transform`
  * @example
  * ```ts
  * import { gamma, inverseMellinTransform, oo, symbols } from '@symjs/symjs';

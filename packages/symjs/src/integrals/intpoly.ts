@@ -4,32 +4,10 @@
 // License, Copyright (c) 2006-2023 SymPy Development Team.
 
 /**
- * @file Integration of polynomials over 2- and 3-polytopes (SymPy
- * polytope_integrate and its helpers), by the evaluation technique of Chin,
- * Lasserre and Sukumar, "Numerical integration of homogeneous functions on
- * convex and nonconvex polygons and polyhedra", Computational Mechanics 56.6
- * (2015): the integral of a homogeneous polynomial over the polytope is
- * reduced to integrals over its facets (generalized Stokes and Euler
- * theorems).
+ * Integrates polynomials over polygons and polyhedra and computes their boundary integrals.
  *
- * The integrals layer does not depend on the geometry layer at run time: a
- * Polygon, Segment or Point of `@symjs/symjs/geometry` is accepted by its
- * structure (a polygon's `vertices` and `sides`, a segment's `points`, a
- * point's coordinates), and the segments built from a hyperplane
- * representation or a clockwise sort are plain `{ points }` records.
- *
- * Differences from SymPy (mathematical correctness first):
- * - `norm` of a three-dimensional point is its Euclidean norm (SymPy 1.14
- *   adds z instead of z**2).
- * - `maxDegree: 0` gives the table of the monomials of degree 0 (SymPy tests
- *   `if max_degree:` and integrates the polynomial 0 instead).
- * - `bestOrigin` divides exactly (SymPy divides Python integers to a float:
- *   `(0, 3.0)` there is `[0, 3]` here).
- * - The integral over a 3-polytope integrates each homogeneous component
- *   with its own degree (SymPy 1.14 passes the whole polynomial and returns
- *   nan for one that is not homogeneous).
- * - A missing result (`intersection` of parallel lines, SymPy None) is an
- *   empty array.
+ * @see SymPy `sympy.integrals.intpoly`
+ * @module intpoly
  */
 
 import type { ExprLike } from '../core/nodes';
@@ -100,13 +78,26 @@ function toInt(e: Expr): number {
 }
 
 /**
- * Integrates polynomials over 2- and 3-polytopes (SymPy polytope_integrate).
+ * Integrates polynomials over 2- and 3-polytopes.
  * The polytope is a Polygon, a list of hyperplanes [a, b] of a 2-polytope,
  * or a 3-polytope [vertices, ...faces]. With `maxDegree` and a list of
  * polynomials the result maps each polynomial of total degree at most
  * maxDegree to its integral; with `maxDegree` alone it maps every monomial
  * up to that degree to its integral; a list of polynomials without
  * `maxDegree` maps each of them (2D) to its integral.
+ *
+ * @param polyIn - The polygon, half-space representation or polyhedron bounding the integral.
+ * @param expr - The polynomial or collection of polynomials to integrate.
+ * @param opts - `clockwise` sorts vertices clockwise, `maxDegree` limits the monomial degree.
+ * @returns The integral, or a map of polynomials to their integrals.
+ * @throws TypeError when clockwise sorting is requested without polygon vertices.
+ * @throws NotImplementedError when a three-dimensional polytope is specified by half-spaces.
+ * @see SymPy `sympy.integrals.intpoly.polytope_integrate`
+ * @example
+ * ```ts
+ * import { polytopeIntegrate } from '@symjs/symjs';
+ * polytopeIntegrate([[[-1, 0], 0], [[1, 2], 4], [[0, -1], 0]], 1); // => 4
+ * ```
  */
 export function polytopeIntegrate(
   polyIn: PolygonLike | readonly Hyperplane[] | Polytope3D,
@@ -201,8 +192,16 @@ function polynomialIntegrate(polynomials: ReadonlyMap<number, Expr>, facets: rea
 
 /**
  * The integral of a uni/bi/trivariate polynomial over a 3-polytope, reduced
- * to integrals over its faces (SymPy main_integrate3d). With maxDegree the
+ * to integrals over its faces. With maxDegree the
  * result maps every monomial up to that degree to its integral.
+ *
+ * @param exprIn - The input polynomial.
+ * @param facets - The boundary faces of the polytope.
+ * @param vertices - Vertices that constitute the Polytope.
+ * @param hpParams - Hyperplane Parameters of the facets.
+ * @param maxDegree - Max degree of constituent monomial in given list of polynomial.
+ * @returns The integral of a uni/bi/trivariate polynomial over a 3-polytope, reduced to integrals over its faces.
+ * @see SymPy `sympy.integrals.intpoly.main_integrate3d`
  */
 export function mainIntegrate3d(exprIn: ExprLike, facets: readonly Face[], vertices: readonly PointLike[], hpParams: readonly Hyperplane[], maxDegree?: number): Expr | ExprMap<Expr> {
   const dims = [X, Y, Z];
@@ -245,9 +244,16 @@ export function mainIntegrate3d(exprIn: ExprLike, facets: readonly Face[], verti
 
 /**
  * The integral of a uni/bivariate polynomial (or of each of a list of them)
- * over a 2-polytope, reduced to its boundary facets (SymPy main_integrate).
+ * over a 2-polytope, reduced to its boundary facets.
  * With maxDegree the result maps every monomial up to that degree (and 0)
  * to its integral.
+ *
+ * @param exprIn - The input polynomial.
+ * @param facets - Facets(Line Segments) of the 2-Polytope.
+ * @param hpParams - Hyperplane Parameters of the facets.
+ * @param maxDegree - The maximum degree of any monomial of the input polynomial.
+ * @returns The integral of a uni/bivariate polynomial (or of each of a list of them) over a 2-polytope, reduced to its boundary facets.
+ * @see SymPy `sympy.integrals.intpoly.main_integrate`
  */
 export function mainIntegrate(exprIn: ExprLike | readonly ExprLike[], facets: readonly SegmentLike[], hpParams: readonly Hyperplane[], maxDegree?: number): Expr | ExprMap<Expr> {
   const dims = [X, Y];
@@ -281,7 +287,17 @@ export function mainIntegrate(exprIn: ExprLike | readonly ExprLike[], facets: re
 
 /**
  * The integral of a uni/bi/trivariate homogeneous polynomial of the given
- * degree over one face of a 3-polytope (SymPy polygon_integrate).
+ * degree over one face of a 3-polytope.
+ *
+ * @param facet - The vertex indices of the face to integrate over.
+ * @param hpParam - The normal and offset defining the supporting hyperplane or planes.
+ * @param index - The position of the face in the facet list.
+ * @param facets - The boundary faces of the polytope.
+ * @param vertices - Vertices that constitute the facet.
+ * @param exprIn - The input polynomial.
+ * @param degree - The total degree of the homogeneous integrand.
+ * @returns The integral over the selected face.
+ * @see SymPy `sympy.integrals.intpoly.polygon_integrate`
  */
 export function polygonIntegrate(
   facet: Face,
@@ -308,7 +324,15 @@ export function polygonIntegrate(
   return div(result, degree + 2);
 }
 
-/** The signed distance between a 3D point and a line segment of the plane with normal a (SymPy distance_to_side). */
+/**
+ * The signed distance between a 3D point and a line segment of the plane with normal a.
+ *
+ * @param point - The point in the ambient coordinate space.
+ * @param lineSeg - The endpoints of the line segment.
+ * @param a - The normal vector of the plane containing the segment.
+ * @returns The signed perpendicular distance.
+ * @see SymPy `sympy.integrals.intpoly.distance_to_side`
+ */
 export function distanceToSide(point: PointLike, lineSeg: readonly PointLike[], a: readonly ExprLike[]): Expr {
   const [x1, x2] = [coords(at(lineSeg, 0)), coords(at(lineSeg, 1))];
   const nA = norm(a);
@@ -321,7 +345,17 @@ export function distanceToSide(point: PointLike, lineSeg: readonly PointLike[], 
   return add(...[0, 1, 2].map((i) => mul(sub(at(x1, i), at(p, i)), at(nSide, i))));
 }
 
-/** The line integral of a homogeneous polynomial of the given degree over a 3D line segment (SymPy lineseg_integrate). */
+/**
+ * The line integral of a homogeneous polynomial of the given degree over a 3D line segment.
+ *
+ * @param polygon - Face of a 3-Polytope.
+ * @param index - Index of line_seg in polygon.
+ * @param lineSeg - Line Segment.
+ * @param exprIn - The expression to evaluate.
+ * @param degree - The total degree of the homogeneous integrand.
+ * @returns The integral over the segment.
+ * @see SymPy `sympy.integrals.intpoly.lineseg_integrate`
+ */
 export function linesegIntegrate(polygon: readonly unknown[], index: number, lineSeg: readonly PointLike[], exprIn: ExprLike, degree: number): Expr {
   const expr = sympify(exprIn);
   if (isZero(expr) === true) return S.Zero;
@@ -341,7 +375,17 @@ export function linesegIntegrate(polygon: readonly unknown[], index: number, lin
 
 /**
  * The integral of a homogeneous polynomial of the given degree over the
- * facet facets[index] of a 2-polytope (SymPy integration_reduction).
+ * facet facets[index] of a 2-polytope.
+ *
+ * @param facets - List of facets of the polytope.
+ * @param index - Index referencing the facet to integrate the expression over.
+ * @param a - Hyperplane parameter denoting direction.
+ * @param b - Hyperplane parameter denoting distance.
+ * @param exprIn - The expression to integrate over the facet.
+ * @param dims - List of symbols denoting axes.
+ * @param degree - Degree of the homogeneous polynomial.
+ * @returns The integral over the selected facet.
+ * @see SymPy `sympy.integrals.intpoly.integration_reduction`
  */
 export function integrationReduction(
   facets: readonly SegmentLike[],
@@ -363,9 +407,17 @@ export function integrationReduction(
 }
 
 /**
- * The left integral of Eq. 10 of Chin et al. in 2D (SymPy left_integral2D):
+ * The left integral of Eq. 10 of Chin et al. in 2D:
  * the polynomial at the intersections of facets[index] with its neighbours,
  * times their distances from x0.
+ *
+ * @param m - The index in the defining equation.
+ * @param index - The zero-based position.
+ * @param facets - The boundary faces of the polytope.
+ * @param x0 - The point at which to start the calculation.
+ * @param exprIn - The expression to evaluate.
+ * @param gens - The ordered polynomial generators.
+ * @returns The contribution of the facet boundary.
  */
 export function leftIntegral2D(m: number, index: number, facets: readonly SegmentLike[], x0: PointLike, exprIn: ExprLike, gens: readonly Expr[]): Expr {
   const expr = sympify(exprIn);
@@ -382,11 +434,25 @@ export function leftIntegral2D(m: number, index: number, facets: readonly Segmen
 }
 
 /**
- * integration_reduction by dynamic programming (SymPy
- * integration_reduction_dynamic): the value of a monomial over a facet from
- * the values of the monomials of lower degree in monomialValues (the records
- * of gradientTerms). In 3D maxIndex is the z index of the monomial and
- * vertices and hpParam give the face.
+ * Computes a facet integral of a monomial using previously computed integrals of lower-degree monomials.
+ *
+ * @param facets - Facets of the Polytope.
+ * @param index - The index of the facet to integrate over.
+ * @param _a - The normal vector of the supporting hyperplane.
+ * @param _b - The offset of the supporting hyperplane.
+ * @param exprIn - Input monomial.
+ * @param degree - The total degree of the homogeneous integrand.
+ * @param dims - Tuple denoting axes variables.
+ * @param xIndexIn - The first index of the current monomial in the recurrence table.
+ * @param yIndex - The second monomial index in the three-dimensional recurrence.
+ * @param maxIndex - The maximum degree in two dimensions or current degree in three dimensions.
+ * @param x0 - The point at which to start the calculation.
+ * @param monomialValues - List of monomial values constituting the polynomial.
+ * @param monomIndex - Index of monomial whose integration is being found.
+ * @param vertices - Coordinates of vertices constituting the 3-Polytope.
+ * @param hpParam - Hyperplane Parameter of the face of the facets[index].
+ * @returns The integral over the selected facet.
+ * @see SymPy `sympy.integrals.intpoly.integration_reduction_dynamic`
  */
 export function integrationReductionDynamic(
   facets: readonly SegmentLike[] | readonly Face[],
@@ -438,9 +504,17 @@ export function integrationReductionDynamic(
 }
 
 /**
- * The left integral of Eq. 10 of Chin et al. in 3D (SymPy left_integral3D):
+ * The left integral of Eq. 10 of Chin et al. in 3D:
  * the integrals over the sides of the face facets[index] times their
  * distances from its first vertex.
+ *
+ * @param facets - The boundary faces of the polytope.
+ * @param index - The zero-based position.
+ * @param expr - The expression to evaluate.
+ * @param vertices - The vertex coordinates.
+ * @param hpParam - The normal and offset defining the supporting hyperplane or planes.
+ * @param degree - The total degree of the homogeneous integrand.
+ * @returns The contribution of the facet boundary.
  */
 export function leftIntegral3D(facets: readonly Face[], index: number, expr: ExprLike, vertices: readonly PointLike[], hpParam: Hyperplane, degree: number): Expr {
   let value: Expr = S.Zero;
@@ -456,10 +530,33 @@ export function leftIntegral3D(facets: readonly Face[], index: number, expr: Exp
 
 /**
  * The monomials up to y**binomialPower (2D) or z**binomialPower (3D) as the
- * records that the dynamic programming fills in (SymPy gradient_terms).
+ * records that the dynamic programming fills in.
+ *
+ * @param binomialPower - Power upto which terms are generated.
+ * @param noOfGens - Denotes whether terms are being generated for 2D or 3D case.
+ * @returns The monomials and their indices for the requested number of variables.
+ * @see SymPy `sympy.integrals.intpoly.gradient_terms`
  */
 export function gradientTerms(binomialPower?: number, noOfGens?: 2): MonomialRecord2D[];
+/**
+ * The monomials up to y**binomialPower (2D) or z**binomialPower (3D) as the
+ * records that the dynamic programming fills in.
+ *
+ * @param binomialPower - Power upto which terms are generated.
+ * @param noOfGens - Denotes whether terms are being generated for 2D or 3D case.
+ * @returns The monomials and their indices for the requested number of variables.
+ * @see SymPy `sympy.integrals.intpoly.gradient_terms`
+ */
 export function gradientTerms(binomialPower: number, noOfGens: 3): MonomialTable3D;
+/**
+ * The monomials up to y**binomialPower (2D) or z**binomialPower (3D) as the
+ * records that the dynamic programming fills in.
+ *
+ * @param binomialPower - Power upto which terms are generated.
+ * @param noOfGens - Denotes whether terms are being generated for 2D or 3D case.
+ * @returns The monomials and their indices for the requested number of variables.
+ * @see SymPy `sympy.integrals.intpoly.gradient_terms`
+ */
 export function gradientTerms(binomialPower = 0, noOfGens: 2 | 3 = 2): MonomialRecord2D[] | MonomialTable3D {
   if (noOfGens === 2) {
     const terms: MonomialRecord2D[] = [];
@@ -484,7 +581,12 @@ export function gradientTerms(binomialPower = 0, noOfGens: 2 | 3 = 2): MonomialR
 
 /**
  * The hyperplane parameters [a, b] of the sides of a polygon, or of the
- * faces of a 3-polytope with the given vertices (SymPy hyperplane_parameters).
+ * faces of a 3-polytope with the given vertices.
+ *
+ * @param poly - The polygon or list of polyhedron faces.
+ * @param vertices - The coordinates indexed by the polyhedron faces.
+ * @returns The normal vector and offset of each supporting hyperplane.
+ * @see SymPy `sympy.integrals.intpoly.hyperplane_parameters`
  */
 export function hyperplaneParameters(poly: PolygonLike | readonly Face[], vertices?: readonly PointLike[]): [Expr[], Expr][] {
   if (isPolygonLike(poly)) {
@@ -509,7 +611,15 @@ export function hyperplaneParameters(poly: PolygonLike | readonly Face[], vertic
   });
 }
 
-/** The cross product (v2 - v1) x (v3 - v1) (SymPy cross_product). */
+/**
+ * Computes the cross product of the displacements from the first vertex to the other two.
+ *
+ * @param v1 - The common origin of the two displacement vectors.
+ * @param v2In - The endpoint of the first displacement.
+ * @param v3In - The endpoint of the second displacement.
+ * @returns The oriented normal vector.
+ * @see SymPy `sympy.integrals.intpoly.cross_product`
+ */
 export function crossProduct(v1: readonly ExprLike[], v2In: readonly ExprLike[], v3In: readonly ExprLike[]): Expr[] {
   const d = (v: readonly ExprLike[], j: number): Expr => sub(at(v, j), at(v1, j));
   const [A0, A1, A2, B0, B1, B2] = [d(v2In, 0), d(v2In, 1), d(v2In, 2), d(v3In, 0), d(v3In, 1), d(v3In, 2)];
@@ -517,9 +627,14 @@ export function crossProduct(v1: readonly ExprLike[], v2In: readonly ExprLike[],
 }
 
 /**
- * A point of the line segment whose inner product with the gradient of expr
- * gives the least maximum total power (SymPy best_origin; not used by the
- * main algorithm). a and b are the hyperplane parameters of the segment.
+ * Selects an origin on the segment that minimizes the highest power in the gradient reduction.
+ *
+ * @param a - The normal of the supporting line.
+ * @param b - Its offset.
+ * @param lineseg - Line segment on which to find the origin.
+ * @param exprIn - The expression which determines the best point.
+ * @returns The two coordinates of the selected origin.
+ * @see SymPy `sympy.integrals.intpoly.best_origin`
  */
 export function bestOrigin(a: readonly ExprLike[], b: ExprLike, lineseg: SegmentLike, exprIn: ExprLike): [Expr, Expr] {
   const [p, q] = [coords(at(lineseg.points, 0)), coords(at(lineseg.points, 1))];
@@ -560,11 +675,31 @@ export function bestOrigin(a: readonly ExprLike[], b: ExprLike, lineseg: Segment
 }
 
 /**
- * The homogeneous components of a polynomial by degree, or with separate
- * the set of its terms (SymPy decompose).
+ * Splits a polynomial into homogeneous components or individual terms.
+ *
+ * @param exprIn - The polynomial to split.
+ * @param separate - Whether to return the individual terms.
+ * @returns The components grouped by degree, or the individual terms when separated.
+ * @see SymPy `sympy.integrals.intpoly.decompose`
  */
 export function decompose(exprIn: ExprLike, separate?: false): Map<number, Expr>;
+/**
+ * Splits a polynomial into homogeneous components or individual terms.
+ *
+ * @param exprIn - The polynomial to split.
+ * @param separate - Whether to return the individual terms.
+ * @returns The components grouped by degree, or the individual terms when separated.
+ * @see SymPy `sympy.integrals.intpoly.decompose`
+ */
 export function decompose(exprIn: ExprLike, separate: true): Set<Expr>;
+/**
+ * Splits a polynomial into homogeneous components or individual terms.
+ *
+ * @param exprIn - The polynomial to split.
+ * @param separate - Whether to return the individual terms.
+ * @returns The components grouped by degree, or the individual terms when separated.
+ * @see SymPy `sympy.integrals.intpoly.decompose`
+ */
 export function decompose(exprIn: ExprLike, separate = false): Map<number, Expr> | Set<Expr> {
   const expr = sympify(exprIn);
   const dict = new Map<number, Expr>();
@@ -600,8 +735,14 @@ const uniqueSet = (es: readonly Expr[]): Set<Expr> => new Set(new ExprMap(es.map
 
 /**
  * The vertices of a polygon (or a list of points) sorted clockwise, or
- * anticlockwise, around their centre (SymPy point_sort); 3D points are
+ * anticlockwise, around their centre; 3D points are
  * sorted around the given normal of their plane.
+ *
+ * @param poly - 2D or 3D Polygon.
+ * @param normal - The normal of the plane which the 3-Polytope is a part of.
+ * @param clockwise - Whether to order vertices clockwise.
+ * @returns The vertices of a polygon (or a list of points) sorted clockwise, or anticlockwise, around their centre.
+ * @see SymPy `sympy.integrals.intpoly.point_sort`
  */
 export function pointSort(poly: PolygonLike | readonly PointLike[], normal?: readonly ExprLike[], clockwise = true): PointLike[] {
   const pts = isPolygonLike(poly) ? poly.vertices : poly;
@@ -683,7 +824,13 @@ function sortLikePython<T>(xs: readonly T[], cmp: (a: T, b: T) => number): T[] {
   return a;
 }
 
-/** The Euclidean norm of a point, of a sequence of coordinates or of the values of a map (SymPy norm). */
+/**
+ * The Euclidean norm of a point, of a sequence of coordinates or of the values of a map.
+ *
+ * @param point - This denotes a point in the dimension_al spac_e.
+ * @returns The Euclidean length.
+ * @see SymPy `sympy.integrals.intpoly.norm`
+ */
 export function norm(point: PointLike | ReadonlyMap<unknown, ExprLike>): Expr {
   const cs = point instanceof Expr || isSeq(point) ? coords(point) : [...point.values()];
   return pow(add(...cs.map((c) => pow(c, 2))), S.Half);
@@ -692,8 +839,14 @@ export function norm(point: PointLike | ReadonlyMap<unknown, ExprLike>): Expr {
 /**
  * The intersection of two line segments ('segment2D' and 'segment3D': of
  * their lines in the xy plane) or of two hyperplanes [a, b] of the plane
- * ('plane2D') (SymPy intersection of intpoly). Lines that do not meet in
- * one point give an empty array (SymPy None).
+ * ('plane2D'). Lines that do not meet in
+ * one point give an empty array.
+ *
+ * @param geom1 - The first line or segment.
+ * @param geom2 - The second line or segment.
+ * @param intersectionType - The geometry convention for the intersection test.
+ * @returns The coordinates of the intersection, or an empty array if there is none.
+ * @see SymPy `sympy.integrals.intpoly.intersection`
  */
 export function intersection(geom1: SegmentLike | Hyperplane, geom2: SegmentLike | Hyperplane, intersectionType: string): Expr[] {
   if (intersectionType.slice(0, -2) === 'segment' && 'points' in geom1 && 'points' in geom2) {
@@ -716,7 +869,13 @@ export function intersection(geom1: SegmentLike | Hyperplane, geom2: SegmentLike
   return [];
 }
 
-/** True for a vertex: a geometric Point or a tuple of two or three coordinates (SymPy is_vertex). */
+/**
+ * True for a vertex: a geometric Point or a tuple of two or three coordinates.
+ *
+ * @param ent - Denotes a geometric entity representing a point.
+ * @returns Whether the value represents a vertex.
+ * @see SymPy `sympy.integrals.intpoly.is_vertex`
+ */
 export function isVertex(ent: unknown): boolean {
   if (Array.isArray(ent)) return ent.length === 2 || ent.length === 3;
   return ent instanceof Expr && 'isPoint' in ent && ent.isPoint === true;

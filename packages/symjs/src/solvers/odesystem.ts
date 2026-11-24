@@ -50,9 +50,23 @@ const isZero = (e: Expr) => e instanceof Rational && e.isZero;
 const isOne = (e: Expr) => e instanceof Rational && e.p === 1n && e.q === 1n;
 
 /**
- * SymPy dsolve([eq1, eq2, ...], [f(t), g(t), ...]): a list of solutions
+ * A list of solutions
  * [Eq(f(t), ...), Eq(g(t), ...)], or, like SymPy, a list of such lists when the
  * system has several solution families (a nonlinear triangular system).
+ *
+ * @param eqsIn - System of ODEs to be solved.
+ * @param funcsIn - List of dependent variables that make up the system of ODEs.
+ * @param t - Independent variable in the system of ODEs.
+ * @param ics - Set of initial boundary/conditions for the system of ODEs.
+ * @param options - `simplify` simplifies the result, `doit` evaluates integrals.
+ * @returns Families of solution equations, one equation per dependent function.
+ * @throws RangeError when the dependent functions use different independent variables.
+ * @see SymPy `sympy.solvers.ode.systems.dsolve_system`
+ * @example
+ * ```ts
+ * import { dsolveSystem, ex } from '@symjs/symjs';
+ * dsolveSystem([ex`Eq(Derivative(f(x), x), g(x))`, ex`Eq(Derivative(g(x), x), f(x))`]); // => [[Eq(f(x), -C1*exp(-x) + C2*exp(x)), Eq(g(x), C1*exp(-x) + C2*exp(x))]]
+ * ```
  */
 export function dsolveSystem(eqsIn: readonly ExprLike[], funcsIn?: readonly UndefFn[], t?: Sym, ics?: ReadonlyMap<Expr, ExprLike>, options: { simplify?: boolean; doit?: boolean } = {}): Expr[][] {
   const sols = dsolveSystemAll(eqsIn, funcsIn, options);
@@ -67,7 +81,23 @@ export function dsolveSystem(eqsIn: readonly ExprLike[], funcsIn?: readonly Unde
   });
 }
 
-/** Solve an ODE system for each function's highest derivative. */
+/**
+ * Solves an ODE system for each function's highest derivative.
+ *
+ * @param eqs - List of the ODEs.
+ * @param funcs - List of dependent variables.
+ * @param t - Independent variable.
+ * @returns Equivalent systems solved for their highest derivatives.
+ * @throws RangeError when a dependent function has no derivative in the system.
+ * @see SymPy `sympy.solvers.ode.systems.canonical_odes`
+ * @example
+ * ```ts
+ * import { AppliedUndef, canonicalOdes, ex, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * canonicalOdes([ex`Eq(-7*f(x) + Derivative(f(x), x), 12*g(x))`, ex`Eq(g(x) + Derivative(g(x), x), 20*f(x))`], [new AppliedUndef('f', [x]), new AppliedUndef('g', [x])], x); // => [[Eq(Derivative(f(x), x), 7*f(x) + 12*g(x)), Eq(Derivative(g(x), x), 20*f(x) - g(x))]]
+ * ```
+ */
 export function canonicalOdes(eqs: readonly ExprLike[], funcs: readonly UndefFn[], t: Sym): Expr[][] {
   const equations = eqs.map(asEquation);
   const derivatives = funcs.map((f) => {
@@ -86,14 +116,48 @@ export function canonicalOdes(eqs: readonly ExprLike[], funcs: readonly UndefFn[
     .map((row) => derivatives.map((d, i) => Eq(d, at(row, i))));
 }
 
-/** exp(A*t) for a constant square coefficient matrix. */
+/**
+ * Exp(A*t) for a constant square coefficient matrix.
+ *
+ * @param A - The square coefficient matrix.
+ * @param t - The independent variable.
+ * @returns The matrix exponential of the coefficient matrix times the independent variable.
+ * @throws RangeError when the matrix is not square or depends on the time variable.
+ * @see SymPy `sympy.solvers.ode.systems.matrix_exp`
+ * @example
+ * ```ts
+ * import { Matrix, odeMatrixExp, symbols } from '@symjs/symjs';
+ *
+ * const [t] = symbols('t');
+ * odeMatrixExp(Matrix.of([[1, 0], [0, 1]]), t); // => Matrix([
+ * //   [exp(t),      0],
+ * //   [     0, exp(t)]])
+ * ```
+ */
 export function matrixExp(A: Matrix, t: Sym): Matrix {
   if (A.rows !== A.cols || A.data.some((e) => e.has(t))) throw new RangeError('expected a square matrix independent of t');
   const z = new Dummy('lambda');
   return analyticFunc(A, exp(mul(t, z)), z);
 }
 
-/** Classify a first-order linear system by forcing and commutativity with its antiderivative. */
+/**
+ * Classifies a first-order linear system by forcing and commutativity with its antiderivative.
+ *
+ * @param A - The square coefficient matrix.
+ * @param t - The independent variable.
+ * @param b - The inhomogeneous forcing column.
+ * @returns The equation type and the coefficient antiderivative when applicable.
+ * @throws RangeError when the system dimensions disagree.
+ * @throws NotImplementedError when the coefficient matrix does not commute with its antiderivative.
+ * @see SymPy `sympy.solvers.ode.systems.linodesolve_type`
+ * @example
+ * ```ts
+ * import { Matrix, linodesolveType, symbols } from '@symjs/symjs';
+ *
+ * const [t] = symbols('t');
+ * linodesolveType(Matrix.of([[1, 0], [0, 1]]), t).get('type_of_equation'); // => type1
+ * ```
+ */
 export function linodesolveType(A: Matrix, t: Sym, b?: Matrix): Map<string, string | Matrix | NoMatchResult> {
   if (A.rows !== A.cols || (b !== undefined && (b.rows !== A.rows || b.cols !== 1))) throw new RangeError('linodesolveType: incompatible system dimensions');
   const variable = A.data.some((e) => e.has(t));
@@ -692,7 +756,20 @@ function subexprs(e: Expr, pred: (x: Expr) => boolean): Expr[] {
   return [...out.values()];
 }
 
-/** SymPy sub_func_doit: func replaced by value in eq, with the derivatives of func evaluated. */
+/**
+ * Func replaced by value in eq, with the derivatives of func evaluated.
+ *
+ * @param eqIn - The equation, or an expression equal to zero.
+ * @param funcIn - The dependent function applied to its arguments.
+ * @param valueIn - The expression to substitute for the unknown function.
+ * @returns The equation after substitution and differentiation.
+ * @see SymPy `sympy.solvers.ode.subscheck.sub_func_doit`
+ * @example
+ * ```ts
+ * import { ex, subFuncDoit } from '@symjs/symjs';
+ * subFuncDoit(ex`3*Derivative(y(x), x) - 1`, ex`y(x)`, ex`x`); // => 2
+ * ```
+ */
 export function subFuncDoit(eqIn: ExprLike, funcIn: ExprLike, valueIn: ExprLike): Expr {
   const [eq, func, value] = [sympify(eqIn), sympify(funcIn), sympify(valueIn)];
   const reps: [Expr, Expr][] = [[func, value]];
@@ -726,17 +803,75 @@ function solvedFor(solIn: Expr, func?: Expr): [Expr, Expr] {
 }
 
 /**
- * SymPy `checkodesol(ode, sol)`: substitutes the solution into the ODE and
+ * Substitutes the solution into the ODE and
  * checks that the result is 0. For a system (arrays of equations and of
  * solutions, one per function) the result is `[true, [0, 0, ...]]` when every
  * equation vanishes, else `[false, residuals]`; for one equation
  * `[true, 0]` or `[false, residual]`. Solutions must be explicit (solved for
  * the function); SymPy's further methods for implicit solutions are not
  * ported.
+ *
+ * @remarks SymPy returns `(False, 2)`.
+ *
+ * @param ode - The differential equation to check.
+ * @param sol - The proposed solution.
+ * @returns The verification flag and the residual after substitution.
+ * @see SymPy `sympy.solvers.ode.subscheck.checkodesol`
+ * @example
+ * ```ts
+ * import { checkodesol, ex } from '@symjs/symjs';
+ * checkodesol(ex`Derivative(f(x), (x, 2))`, ex`x**2`); // => [False, 2]
+ * ```
  */
 export function checkodesol(ode: readonly ExprLike[], sol: ExprLike | readonly ExprLike[]): [boolean, Expr[]];
+/**
+ * Substitutes the solution into the ODE and
+ * checks that the result is 0. For a system (arrays of equations and of
+ * solutions, one per function) the result is `[true, [0, 0, ...]]` when every
+ * equation vanishes, else `[false, residuals]`; for one equation
+ * `[true, 0]` or `[false, residual]`. Solutions must be explicit (solved for
+ * the function); SymPy's further methods for implicit solutions are not
+ * ported.
+ *
+ * @param ode - The differential equation to check.
+ * @param sol - The proposed solution.
+ * @param func - The dependent function applied to its arguments.
+ * @returns The verification flag and the residual after substitution.
+ * @see SymPy `sympy.solvers.ode.subscheck.checkodesol`
+ */
 export function checkodesol(ode: ExprLike, sol: readonly ExprLike[], func?: Expr): [boolean, Expr][];
+/**
+ * Substitutes the solution into the ODE and
+ * checks that the result is 0. For a system (arrays of equations and of
+ * solutions, one per function) the result is `[true, [0, 0, ...]]` when every
+ * equation vanishes, else `[false, residuals]`; for one equation
+ * `[true, 0]` or `[false, residual]`. Solutions must be explicit (solved for
+ * the function); SymPy's further methods for implicit solutions are not
+ * ported.
+ *
+ * @param ode - The differential equation to check.
+ * @param sol - The proposed solution.
+ * @param func - The dependent function applied to its arguments.
+ * @returns The verification flag and the residual after substitution.
+ * @see SymPy `sympy.solvers.ode.subscheck.checkodesol`
+ */
 export function checkodesol(ode: ExprLike, sol: ExprLike, func?: Expr): [boolean, Expr];
+/**
+ * Substitutes the solution into the ODE and
+ * checks that the result is 0. For a system (arrays of equations and of
+ * solutions, one per function) the result is `[true, [0, 0, ...]]` when every
+ * equation vanishes, else `[false, residuals]`; for one equation
+ * `[true, 0]` or `[false, residual]`. Solutions must be explicit (solved for
+ * the function); SymPy's further methods for implicit solutions are not
+ * ported.
+ *
+ * @param ode - The differential equation to check.
+ * @param sol - The proposed solution.
+ * @param func - The dependent function applied to its arguments.
+ * @returns The verification flag and the residual after substitution.
+ * @throws RangeError when number of solutions provided does not match the number of equations.
+ * @see SymPy `sympy.solvers.ode.subscheck.checkodesol`
+ */
 export function checkodesol(ode: ExprLike | readonly ExprLike[], sol: ExprLike | readonly ExprLike[], func?: Expr): [boolean, Expr] | [boolean, Expr[]] | [boolean, Expr][] {
   const residual = (e: Expr): Expr => (e instanceof Rel && e.op === 'Eq' ? add(e.lhs, mul(-1, e.rhs)) : e);
   if (isList(ode)) {
@@ -797,20 +932,56 @@ export function checkodesol(ode: ExprLike | readonly ExprLike[], sol: ExprLike |
 }
 
 /**
- * SymPy checksysodesol: checkodesol of a system of ODEs (one equation and
+ * Checkodesol of a system of ODEs (one equation and
  * one solution per function): [true, [0, 0, ...]] when the solutions satisfy
  * the equations, else [false, residuals].
+ *
+ * @param eqs - The equations to solve simultaneously.
+ * @param sols - The candidate solutions.
+ * @returns The verification flag and the residual after substitution.
+ * @see SymPy `sympy.solvers.ode.subscheck.checksysodesol`
+ * @example
+ * ```ts
+ * import { checksysodesol, ex } from '@symjs/symjs';
+ * checksysodesol([ex`Derivative(f(x), x) - f(x)`], [ex`Eq(f(x), exp(x))`]); // => [True, [0]]
+ * ```
  */
 export function checksysodesol(eqs: readonly ExprLike[], sols: readonly ExprLike[]): [boolean, Expr[]] {
   return checkodesol(eqs, sols);
 }
 
-/** A derivative exceeds the requested order of the matrix equation. */
+/**
+ * A derivative exceeds the requested order of the matrix equation.
+ *
+ * @see SymPy `sympy.solvers.ode.systems.ODEOrderError`
+ */
 export class ODEOrderError extends RangeError {}
-/** An ODE system is nonlinear in the dependent functions or their derivatives. */
+/**
+ * An ODE system is nonlinear in the dependent functions or their derivatives.
+ *
+ * @see SymPy `sympy.solvers.ode.systems.ODENonlinearError`
+ */
 export class ODENonlinearError extends RangeError {}
 
-/** Express A_n X^(n) = A_(n-1) X^(n-1) + ... + A_0 X + b. */
+/**
+ * Express A_n X^(n) = A_(n-1) X^(n-1) + ... + A_0 X + b.
+ *
+ * @param equations - The equations to solve simultaneously.
+ * @param funcs - The dependent variables of the system of ODEs.
+ * @param t - The independent variable.
+ * @param order - The order of the system of ODEs.
+ * @returns The coefficient matrices by derivative order and the forcing column.
+ * @throws RangeError when the order is negative or nonintegral.
+ * @throws ODENonlinearError when the system of ODEs is nonlinear.
+ * @see SymPy `sympy.solvers.ode.systems.linear_ode_to_matrix`
+ * @example
+ * ```ts
+ * import { AppliedUndef, ex, linearOdeToMatrix, symbols } from '@symjs/symjs';
+ *
+ * const [t] = symbols('t');
+ * linearOdeToMatrix([ex`Derivative(f(t), t) - f(t)`], [new AppliedUndef('f', [t])], t, 1); // => [[Matrix([[1]]), Matrix([[1]])], Matrix([[0]])]
+ * ```
+ */
 export function linearOdeToMatrix(equations: readonly Expr[], funcs: readonly UndefFn[], t: Sym, order: number): [Matrix[], Matrix] {
   if (!Number.isInteger(order) || order < 0) throw new RangeError('order must be a nonnegative integer');
   const check = (e: Expr): void => {

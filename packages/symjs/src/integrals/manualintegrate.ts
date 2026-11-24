@@ -33,8 +33,19 @@ import { cancel } from '../simplify/rational';
 const isZero = (e: Expr): boolean => e instanceof Rational && e.isZero;
 
 /**
- * Elementary antiderivatives using the shared substitution, parts and polynomial rules.
- * Preserve the manual tangent rule's logarithm of cosine; unresolved inputs remain Integrals.
+ * Finds an antiderivative using substitution, integration by parts and other elementary integration rules. Unresolved integrals remain symbolic.
+ *
+ * @param f - The integrand.
+ * @param x - The integration variable.
+ * @returns An antiderivative, with unresolved integrals left unevaluated.
+ * @see SymPy `sympy.integrals.manualintegrate.manualintegrate`
+ * @example
+ * ```ts
+ * import { ex, manualintegrate, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * manualintegrate(ex`1/x`, x); // => log(x)
+ * ```
  */
 export function manualintegrate(f: ExprLike, x: Sym): Expr {
   const e = sympify(f);
@@ -453,7 +464,15 @@ function substitutionExpr(value: ExprLike | ReadonlyMap<ExprLike, ExprLike> | re
   throw new RangeError('expected an expression');
 }
 
-/** Substitute expressions, also replacing powers of the argument of a logarithm. */
+/**
+ * Substitutes expressions, also replacing powers of the argument of a logarithm.
+ *
+ * @param expr - The expression to evaluate.
+ * @param args - The expression and its replacement, or the collection of substitution pairs.
+ * @returns The expression after substitution.
+ * @throws RangeError when the replacements are neither pairs nor an old and new expression.
+ * @see SymPy `sympy.integrals.manualintegrate.manual_subs`
+ */
 export function manualSubs(expr: ExprLike, ...args: readonly (ExprLike | ReadonlyMap<ExprLike, ExprLike> | readonly (readonly [Expr, Expr])[])[]): Expr {
   let sequence: readonly (readonly [Expr, Expr])[];
   if (args.length === 2) sequence = [[substitutionExpr(at(args, 0)), substitutionExpr(at(args, 1))]];
@@ -481,7 +500,15 @@ function manualDiff(e: Expr, x: Sym): Expr {
   return diff(e, x);
 }
 
-/** Find substitutions whose derivative divides the integrand and eliminates the integration variable. */
+/**
+ * Finds substitutions whose derivative divides the integrand and eliminates the integration variable.
+ *
+ * @param f - The integrand.
+ * @param x - The integration variable.
+ * @param u - The new integration variable.
+ * @returns Candidate substitutions with their constant factors and transformed integrands.
+ * @see SymPy `sympy.integrals.manualintegrate.find_substitutions`
+ */
 export function findSubstitutions(f: ExprLike, x: Sym, u: Sym): [Expr, Expr, Expr][] {
   const e = sympify(f), results: [Expr, Expr, Expr][] = [];
   const seen = new Set<string>();

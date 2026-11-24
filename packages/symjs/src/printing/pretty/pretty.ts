@@ -82,7 +82,7 @@ import {
 
 /** Settings of the pretty printer (SymPy's `PrettyPrinter` settings in camelCase). */
 export interface PrettyOptions {
-  /** Use unicode characters (default: the module-wide flag of {@link pprintUseUnicode}, initially true). */
+  /** Uses unicode characters (default: the module-wide flag of {@link pprintUseUnicode}, initially true). */
   readonly useUnicode?: boolean;
   /** Break lines longer than `numColumns` (default true). */
   readonly wrapLine?: boolean;
@@ -99,13 +99,13 @@ export interface PrettyOptions {
   readonly mulSymbol?: string;
   /** Letter of the imaginary unit in unicode mode: 'i' (default, ⅈ) or 'j' (ⅉ). */
   readonly imaginaryUnit?: 'i' | 'j';
-  /** Print exponents 1/n as roots (default true); false prints x**(1/3) as a power. */
+  /** Prints exponents 1/n as roots (default true); false prints x**(1/3) as a power. */
   readonly rootNotation?: boolean;
-  /** Use the single-character square root sign when unambiguous (default true). */
+  /** Uses the single-character square root sign when unambiguous (default true). */
   readonly useUnicodeSqrtChar?: boolean;
   /** 'bold' prints matrix symbols in a bold face (used by matrix hooks; default 'plain'). */
   readonly matSymbolStyle?: 'plain' | 'bold';
-  /** Permutations in cycle notation (default true) or as a two-row array (SymPy perm_cyclic). */
+  /** Permutations in cycle notation (default true) or as a two-row array. */
   readonly permCyclic?: boolean;
 }
 
@@ -118,7 +118,13 @@ export interface MatrixLike {
 
 /** A Python-style tuple for the printer (JS arrays print as lists `[...]`). */
 export class PrettyTuple {
+  /** The values in the tuple, in order. */
   readonly items: readonly Printable[];
+  /**
+   * Creates a PrettyTuple instance.
+   *
+   * @param items - The tuple entries in display order.
+   */
   constructor(...items: Printable[]) {
     this.items = items;
   }
@@ -272,12 +278,22 @@ const never: Parenthesize = () => false;
 // The printer
 // ---------------------------------------------------------------------------
 
-/** SymPy `PrettyPrinter`: converts an expression into a 2D picture ({@link PrettyForm}). */
+/**
+ * Converts an expression into a 2D picture ({@link PrettyForm}).
+ *
+ * @see SymPy `sympy.printing.pretty.pretty.PrettyPrinter`
+ */
 export class PrettyPrinter {
+  /** The formatting settings for this printer. */
   readonly settings: Required<Omit<PrettyOptions, 'mulSymbol'>> & { readonly mulSymbol: string | undefined };
   /** SymPy `_print_level`: the nesting depth of the current `print` call. */
   private level = 0;
 
+  /**
+   * Creates a PrettyPrinter instance.
+   *
+   * @param options - The pretty settings.
+   */
   constructor(options: PrettyOptions = {}) {
     const iu: string = options.imaginaryUnit ?? 'i';
     if (iu !== 'i' && iu !== 'j') throw new RangeError(`'imaginaryUnit' must be either 'i' or 'j', not '${String(iu)}'`);
@@ -297,17 +313,33 @@ export class PrettyPrinter {
     };
   }
 
-  /** Whether unicode output is used. */
+  /**
+   * Determines whether unicode output is used.
+   *
+   * @returns Whether this printer uses Unicode characters.
+   */
   get useUnicode(): boolean {
     return prettyUseUnicode();
   }
 
-  /** SymPy `doprint`: the rendered string (lines wrapped per the settings). */
+  /**
+   * The rendered string (lines wrapped per the settings).
+   *
+   * @param e - The value to format.
+   * @returns The formatted text.
+   * @see SymPy `sympy.printing.pretty.pretty.PrettyPrinter.doprint`
+   */
   doprint(e: Printable): string {
     return this.print(e).render({ wrapLine: this.settings.wrapLine, numColumns: this.settings.numColumns, useUnicode: this.settings.useUnicode });
   }
 
-  /** SymPy `_print`: the picture of an expression or value. */
+  /**
+   * The picture of an expression or value.
+   *
+   * @param e - The value to format.
+   * @returns The typeset picture with its binding strength.
+   * @see SymPy `sympy.printing.pretty.pretty.PrettyPrinter._print`
+   */
   print(e: Printable): PrettyForm {
     this.level++;
     try {
@@ -317,7 +349,13 @@ export class PrettyPrinter {
     }
   }
 
-  /** SymPy `emptyPrinter`: the str form on one line. */
+  /**
+   * Returns the str form on one line.
+   *
+   * @param e - The value to format.
+   * @returns The str form on one line.
+   * @see SymPy `sympy.printing.pretty.pretty.PrettyPrinter.emptyPrinter`
+   */
   emptyPrinter(e: Expr): PrettyForm {
     return new PrettyForm(str(e));
   }
@@ -421,7 +459,18 @@ export class PrettyPrinter {
 
   // ---- sequences ----------------------------------------------------------
 
-  /** SymPy `_print_seq`: items separated by a delimiter, in optional brackets. */
+  /**
+   * Items separated by a delimiter, in optional brackets.
+   *
+   * @param seq - The input sequence or sequences, in order.
+   * @param left - The opening delimiter.
+   * @param right - The closing delimiter.
+   * @param delimiter - The text inserted between adjacent entries.
+   * @param parenthesize - Whether to enclose the sequence in delimiters.
+   * @param ifasciiNougly - Whether to omit oversized delimiters in ASCII mode.
+   * @returns A delimited picture of the sequence.
+   * @see SymPy `sympy.printing.pretty.pretty.PrettyPrinter._print_seq`
+   */
   printSeq(
     seq: readonly Printable[],
     left?: string,
@@ -466,7 +515,15 @@ export class PrettyPrinter {
 
   // ---- functions ----------------------------------------------------------
 
-  /** SymPy `_helper_print_function`: name(args) with the arguments in (big) parentheses. */
+  /**
+   * Name(args) with the arguments in (big) parentheses.
+   *
+   * @param funcName - The name to display before the arguments.
+   * @param args0 - The replacement operands in order.
+   * @param opts - `sort` orders partitions by size, `left` controls left, `right` controls right, `delimiter` controls delimiter.
+   * @returns A picture of the function applied to its arguments.
+   * @see SymPy `sympy.printing.pretty.pretty.PrettyPrinter._helper_print_function`
+   */
   printFunction(funcName: string, args0: readonly Expr[], opts: { sort?: boolean; left?: string; right?: string; delimiter?: string } = {}): PrettyForm {
     const args = opts.sort === true ? [...args0].sort(byKey) : args0;
     const prettyFunc = new PrettyForm(prettySymbol(funcName));
@@ -1184,7 +1241,13 @@ export class PrettyPrinter {
     return PrettyForm.of(D.parens('[', ']'));
   }
 
-  /** SymPy `_print_matrix_contents`: the grid of entries (without brackets). */
+  /**
+   * Returns the grid of entries (without brackets).
+   *
+   * @param m - The index in the defining equation.
+   * @returns The grid of entries (without brackets).
+   * @see SymPy `sympy.printing.pretty.pretty.PrettyPrinter._print_matrix_contents`
+   */
   printMatrixContents(m: MatrixLike): PrettyForm {
     const Ms: PrettyForm[][] = [];
     for (let i = 0; i < m.rows; i++) {
@@ -1452,31 +1515,55 @@ export function pretty(expr: Printable, options: PrettyOptions = {}): string {
 }
 
 /**
- * SymPy `pretty_print(expr, **settings)` / `pprint`. SymPy prints the
- * pretty form; symjs has no console output, so this returns the text that
- * would be printed (the pretty form followed by a newline).
+ * Prints expr in pretty form.
+ *
+ * @param expr - The value to format.
+ * @param options - The pretty settings.
+ * @returns The formatted text.
+ * @see SymPy `sympy.printing.pretty.pretty.pretty_print`
  */
 export function prettyPrint(expr: Printable, options: PrettyOptions = {}): string {
   return `${pretty(expr, options)}\n`;
 }
 
-/** SymPy `pprint`: alias of {@link prettyPrint} (returns the text that would be printed). */
+/**
+ * Alias of {@link prettyPrint} (returns the text that would be printed).
+ *
+ * @param expr - The value to format.
+ * @param options - The settings for pprint.
+ * @returns The multiline pretty-printed text.
+ * @see SymPy `sympy.printing.pretty.pretty.pretty_print`
+ */
 export const pprint: (expr: Printable, options?: PrettyOptions) => string = prettyPrint;
 
 /**
- * SymPy `pprint_use_unicode(flag=None)`: with no argument return whether the
+ * With no argument return whether the
  * pretty printer uses unicode by default; otherwise set it and return the
  * previous value (alias of `prettyUseUnicode`).
+ *
+ * @param flag - The new default, omitted to query the current setting.
+ * @returns The previous Unicode setting, or the current setting if queried.
+ * @see SymPy `sympy.printing.pretty.pretty_symbology.pretty_use_unicode`
  */
 export const pprintUseUnicode: (flag?: boolean) => boolean = prettyUseUnicode;
 
-/** SymPy `pprint_try_use_unicode`: use unicode when available, which it always is in JavaScript (alias of `prettyTryUseUnicode`). */
+/**
+ * Uses unicode when available, which it always is in JavaScript (alias of `prettyTryUseUnicode`).
+ *
+ * @returns No value.
+ * @see SymPy `sympy.printing.pretty.pretty_symbology.pretty_try_use_unicode`
+ */
 export const pprintTryUseUnicode: () => void = prettyTryUseUnicode;
 
 /**
- * SymPy `pager_print`: the pretty form meant for a pager. Lines are not
- * wrapped unless `numColumns` is given (SymPy uses 500000 columns). Returns
+ * The pretty form meant for a pager. Lines are not
+ * wrapped unless `numColumns` is given. Returns
  * the text instead of opening a pager.
+ *
+ * @param expr - The value to format.
+ * @param options - The pretty settings.
+ * @returns The pretty form meant for a pager.
+ * @see SymPy `sympy.printing.pretty.pretty.pager_print`
  */
 export function pagerPrint(expr: Printable, options: PrettyOptions = {}): string {
   return pretty(expr, { ...options, numColumns: options.numColumns ?? 500000 });

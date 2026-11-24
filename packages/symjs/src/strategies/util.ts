@@ -20,7 +20,7 @@ import { Add, Derivative, Dummy, ExtensionExpr, Fn, Integral, Limit, Mul, Order,
 import { rebuild } from '../core/traverse';
 import { setClass } from '../printing/sets';
 
-/** How a traversal takes a tree apart and puts it together (SymPy `basic_fns`, `expr_fns`). */
+/** How a traversal takes a tree apart and puts it together. */
 export interface TreeFns {
   /** The operator of a node (the node itself, as the template of `new`). */
   readonly op: (e: Expr) => Expr;
@@ -39,10 +39,14 @@ function two(args: readonly Expr[], name: string): [Expr, Expr] {
 }
 
 /**
- * SymPy `Basic.__new__(type(op), *args)`: a node of the class of `op` with
+ * A node of the class of `op` with
  * the given arguments, without evaluation (`Add` keeps `1 + 2`). Sets, whose
  * classes belong to a higher layer, are rebuilt with evaluation; an atom is
  * returned as it is.
+ *
+ * @param op - The operator of the term.
+ * @param args - The operands in their defining order.
+ * @returns A node of the class of `op` with the given arguments, without evaluation (`Add` keeps `1 + 2`).
  */
 export function basicNew(op: Expr, args: readonly Expr[]): Expr {
   if (op instanceof ExtensionExpr) return op.withArgs(args);
@@ -76,6 +80,15 @@ const REL_CLASS: Readonly<Record<Rel['op'], string>> = {
  * `Pow`, the name of a function (`sin`, `f`), `Basic` (or the head of a
  * {@link BasicNode}), `And`, `StrictLessThan`, `FiniteSet`, `Symbol`,
  * `Integer`, ...
+ *
+ * @param e - The expression to evaluate.
+ * @returns The formatted text.
+ * @example
+ * ```ts
+ * import { ex } from '@symjs/symjs';
+ * import { funcName } from '@symjs/symjs/utilities';
+ * funcName(ex`x < 1`); // => StrictLessThan
+ * ```
  */
 export function funcName(e: Expr): string {
   if (e instanceof ExtensionExpr) return e.name;
@@ -91,14 +104,26 @@ export function funcName(e: Expr): string {
   return setClass(e) ?? e.kind;
 }
 
-/** SymPy `assoc(d, k, v)`: a copy of the map `d` with `k` associated to `v`. */
+/**
+ * A copy of the map `d` with `k` associated to `v`.
+ *
+ * @param d - The map to copy before adding the association.
+ * @param k - The requested selection size.
+ * @param v - The replacement value.
+ * @returns The new map containing the association.
+ * @see SymPy `sympy.strategies.util.assoc`
+ */
 export function assoc<K, V>(d: ReadonlyMap<K, V>, k: K, v: V): Map<K, V> {
   const copy = new Map(d);
   copy.set(k, v);
   return copy;
 }
 
-/** SymPy `basic_fns`: nodes are rebuilt without evaluation ({@link basicNew}). */
+/**
+ * Nodes are rebuilt without evaluation ({@link basicNew}).
+ *
+ * @see SymPy `sympy.strategies.util.basic_fns`
+ */
 export const basicFns: TreeFns = {
   op: (e) => e,
   new: basicNew,
@@ -106,7 +131,11 @@ export const basicFns: TreeFns = {
   children: (e) => e.args,
 };
 
-/** SymPy `expr_fns`: like {@link basicFns}, but nodes are rebuilt with evaluation. */
+/**
+ * Like {@link basicFns}, but nodes are rebuilt with evaluation.
+ *
+ * @see SymPy `sympy.strategies.util.expr_fns`
+ */
 export const exprFns: TreeFns = { ...basicFns, new: (op, args) => rebuild(op, args) };
 
 export { basicNew as new };
