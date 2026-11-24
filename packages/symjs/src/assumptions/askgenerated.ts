@@ -149,17 +149,32 @@ const KNOWN_FACTS_DICT: Readonly<Record<string, readonly [string, string]>> = {
 const clauses = (table: readonly string[]): Literal[][] =>
   table.map((c) => c.split(' ').map((l) => (l.startsWith('!') ? new Literal(predicateNamed(l.slice(1)), true) : new Literal(predicateNamed(l)))));
 
-/** Known facts between unary predicates as CNF clauses (SymPy get_all_known_facts). */
+/**
+ * Known facts between unary predicates as CNF clauses.
+ *
+ * @returns Clauses relating the built-in unary predicates.
+ * @see SymPy `sympy.assumptions.ask_generated.get_all_known_facts`
+ */
 export function getAllKnownFacts(): Literal[][] {
   return clauses([...NUMBER_FACTS, ...MATRIX_FACTS]);
 }
 
-/** Known facts between unary predicates for matrices as CNF clauses (SymPy get_all_known_matrix_facts). */
+/**
+ * Known facts between unary predicates for matrices as CNF clauses.
+ *
+ * @returns Clauses relating the matrix predicates.
+ * @see SymPy `sympy.assumptions.ask_generated.get_all_known_matrix_facts`
+ */
 export function getAllKnownMatrixFacts(): Literal[][] {
   return clauses(MATRIX_FACTS);
 }
 
-/** Known facts between unary predicates for numbers as CNF clauses (SymPy get_all_known_number_facts). */
+/**
+ * Known facts between unary predicates for numbers as CNF clauses.
+ *
+ * @returns Clauses relating the number predicates.
+ * @see SymPy `sympy.assumptions.ask_generated.get_all_known_number_facts`
+ */
 export function getAllKnownNumberFacts(): Literal[][] {
   return clauses(NUMBER_FACTS);
 }
@@ -167,8 +182,10 @@ export function getAllKnownNumberFacts(): Literal[][] {
 const predicates = (names: string): Set<Predicate> => new Set(names === '' ? [] : names.split(' ').map(predicateNamed));
 
 /**
- * The predicates implied and rejected by each unary predicate (SymPy
- * get_known_facts_dict).
+ * The predicates implied and rejected by each unary predicate.
+ *
+ * @returns A map from each predicate to its implied and rejected predicates.
+ * @see SymPy `sympy.assumptions.ask_generated.get_known_facts_dict`
  */
 export function getKnownFactsDict(): Map<Predicate, [Set<Predicate>, Set<Predicate>]> {
   return new Map(Object.entries(KNOWN_FACTS_DICT).map(([k, [implied, rejected]]) => [predicateNamed(k), [predicates(implied), predicates(rejected)]] as const));

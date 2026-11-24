@@ -51,8 +51,24 @@ export function seriesTerms(e: Expr, x: Sym, x0: Expr, n: number, dir: '+' | '-'
 }
 
 /**
- * SymPy Expr.lseries: the terms of the series of e about x0, lazily (an
+ * The terms of the series of e about x0, lazily (an
  * iterator that computes more terms as they are requested).
+ *
+ * @param ex - Expression to expand or evaluate.
+ * @param x - Variable of the expansion.
+ * @param x0 - Point about which to expand.
+ * @param dir - Side from which the variable approaches the point.
+ * @returns An iterator yielding successive nonzero terms.
+ * @see SymPy `sympy.core.expr.Expr.lseries`
+ * @example
+ * ```ts
+ * import { lseries, sin, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * const terms = lseries(sin(x), x);
+ * terms.next().value; // => x
+ * terms.next().value; // => -x**3/6
+ * ```
  */
 export function* lseries(ex: ExprLike, x: Sym, x0: ExprLike = 0, dir: '+' | '-' = '+'): Generator<Expr, void, undefined> {
   const e = sympify(ex);
@@ -69,8 +85,14 @@ export function* lseries(ex: ExprLike, x: Sym, x0: ExprLike = 0, dir: '+' | '-' 
 }
 
 /**
- * SymPy Expr.dir(x, cdir): the direction in which e approaches its value at
+ * The direction in which e approaches its value at
  * x = 0 when x approaches 0 from the direction cdir.
+ *
+ * @param ex - Expression to expand or evaluate.
+ * @param x - Variable of the expansion.
+ * @param cdir - Direction of approach in the complex plane.
+ * @returns The direction from which the expression approaches its value.
+ * @see SymPy `sympy.core.expr.Expr.dir`
  */
 export function dir(ex: ExprLike, x: Sym, cdir: ExprLike): Expr {
   let arg = sympify(ex);

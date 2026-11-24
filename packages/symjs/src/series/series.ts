@@ -34,6 +34,20 @@ const isSymList = (v: Sym | readonly Sym[] | undefined): v is readonly Sym[] => 
 /**
  * O(expr) for x -> x0. Like SymPy, the argument is reduced to its leading
  * power: O(x + x**2) = O(x), O(cos(x)) = O(1), O(cos(x), x, pi/2) = O(x - pi/2).
+ *
+ * @param ex - Expression to expand or evaluate.
+ * @param xIn - Variable of the expansion.
+ * @param x0 - Point about which to expand.
+ * @returns The order term for the leading asymptotic behavior.
+ * @throws RangeError when a variable occurs more than once.
+ * @throws NotImplementedError when the order variables approach different points.
+ * @see SymPy `sympy.series.order.Order`
+ * @example
+ * ```ts
+ * import { O, ex } from '@symjs/symjs';
+ *
+ * O(ex`x + x**2`); // => O(x)
+ * ```
  */
 export function O(ex: ExprLike, xIn?: Sym | readonly Sym[], x0: ExprLike = 0): Expr {
   const e = mapBottomUp(sympify(ex), (v) => v instanceof Integral && impl.doit ? impl.doit(v) : v);
@@ -637,7 +651,22 @@ function essentialSeries(e: Expr, x: Sym, x0: Expr, n: number, dir: '+' | '-', e
 impl.series = series;
 impl.leadterm = (e, x) => leadterm(e, x);
 
-/** Leading term c*x**e of e as x -> 0 (SymPy leadterm): [c, e]. */
+/**
+ * Leading term c*x**e of e as x -> 0 (SymPy leadterm): [c, e].
+ *
+ * @param ex - Expression to expand or evaluate.
+ * @param x - Variable of the expansion.
+ * @returns The coefficient and exponent of the leading term.
+ * @throws NotImplementedError when the matrix factors depend on the expansion variable.
+ * @see SymPy `sympy.core.expr.Expr.leadterm`
+ * @example
+ * ```ts
+ * import { ex, leadterm, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * leadterm(ex`1/x**2 + x + x**2`, x); // => [1, -2]
+ * ```
+ */
 export function leadterm(ex: ExprLike, x: Sym): [Expr, Expr] {
   const e = sympify(ex);
   if (isMulLike(e) && !(e instanceof Mul)) {
@@ -780,8 +809,22 @@ for (const name of ['erf', 'erfc', 'erfi'] as const) leadingTermRules[name] = (e
 };
 
 /**
- * SymPy as_leading_term(x, cdir=...): the leading term as x -> 0 from the direction cdir (0 when
+ * The leading term as x -> 0 from the direction cdir (0 when
  * not given: the side does not matter, or x approaches 0 from above).
+ *
+ * @param ex - Expression to expand or evaluate.
+ * @param x - Variable of the expansion.
+ * @param opts - Use `cdir` for the approach direction and `logx` to represent the logarithm of the variable.
+ * @returns The first nonzero asymptotic term.
+ * @throws NotImplementedError when the direction or the leading asymptotic behavior is unsupported.
+ * @see SymPy `sympy.core.expr.Expr.as_leading_term`
+ * @example
+ * ```ts
+ * import { asLeadingTerm, ex, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * asLeadingTerm(ex`1/x**2 + x + x**2`, x); // => x**(-2)
+ * ```
  */
 export function asLeadingTerm(ex: ExprLike, x: Sym, opts: { cdir?: ExprLike; logx?: ExprLike } = {}): Expr {
   let e = sympify(ex);
@@ -915,9 +958,15 @@ const SERIES_TERMS: Readonly<Record<string, (n: number, x: Expr) => Expr>> = {
 };
 
 /**
- * SymPy Expr.taylor_term(n, x): the n-th term of the Maclaurin series, f^(n)(0)*x**n/n!; for cot,
+ * The n-th term of the Maclaurin series, f^(n)(0)*x**n/n!; for cot,
  * csc, asec, acsc, asech and acsch of x the n-th term of their series at 0.
  * For log(x), SymPy's class convention gives the n-th term of log(1 + x).
+ *
+ * @param eIn - Expression to evaluate.
+ * @param n - Term index.
+ * @param x - Variable of the expansion.
+ * @returns The term of the requested order.
+ * @see SymPy `sympy.core.expr.Expr.taylor_term`
  */
 export function taylorTerm(eIn: ExprLike, n: number, x: Sym): Expr {
   const e = sympify(eIn);
@@ -927,11 +976,25 @@ export function taylorTerm(eIn: ExprLike, n: number, x: Sym): Expr {
 }
 
 /**
- * SymPy Expr.aseries(x, n, hir): asymptotic expansion at x -> oo in the most
+ * Asymptotic expansion at x -> oo in the most
  * rapidly varying decaying exponential w = exp(-b*x). Without hir only the
  * leading term in w is kept and its coefficient is expanded in 1/x; with hir
  * the terms up to w**n. Expressions without exponentials give their series
  * at infinity; growing exponentials are returned unchanged.
+ *
+ * @param ex - Expression to expand or evaluate.
+ * @param x - Variable of the expansion.
+ * @param n - Truncation order.
+ * @param hir - Keep the hierarchy of rapidly varying subexpressions.
+ * @returns The asymptotic expansion at positive infinity.
+ * @see SymPy `sympy.core.expr.Expr.aseries`
+ * @example
+ * ```ts
+ * import { aseries, ex, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * aseries(ex`1/x`, x, 8); // => 1/x
+ * ```
  */
 export function aseries(ex: ExprLike, x: Sym, n = 6, hir = false): Expr {
   const e = sympify(ex);
@@ -1012,7 +1075,15 @@ function orderVariables(o: Order): Sym[] {
   return o.args.length > 1 ? o.args.slice(1, -1).filter((v): v is Sym => v instanceof Sym) : [...o.expr.freeSymbols()].filter((s) => s instanceof Sym);
 }
 
-/** The leading expression and merged (variable, point) pairs of an Order. */
+/**
+ * The leading expression and merged (variable, point) pairs of an Order.
+ *
+ * @param o - Order term to inspect.
+ * @param existing - Variable and limit-point pairs to merge.
+ * @returns The leading expression and the merged variable–point pairs.
+ * @throws NotImplementedError when matching variables have different limit points.
+ * @see SymPy `sympy.series.order.Order.as_expr_variables`
+ */
 export function asExprVariables(o: Order, existing: readonly (readonly [Sym, Expr])[] = []): [Expr, [Sym, Expr][]] {
   const p = o.args.length > 1 ? at(o.args, -1) : S.Zero;
   const variables = new Map<string, [Sym, Expr]>();

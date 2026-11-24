@@ -43,7 +43,24 @@ import { AccumBoundsNode } from '../core/accumbounds';
 import { limit } from './limits';
 import { doit } from '../calculus/doit';
 
-/** Coefficients of a rational function, or of a function with a rational derivative. */
+/**
+ * Coefficients of a rational function, or of a function with a rational derivative.
+ *
+ * @param f - Function to expand.
+ * @param x - Variable of the expansion.
+ * @param k - Coefficient index.
+ * @param order - Maximum differential order to consider.
+ * @param full - Use full partial-fraction decomposition.
+ * @returns The coefficient formula, independent part and starting index, or `NoMatch`.
+ * @see SymPy `sympy.series.formal.rational_algorithm`
+ * @example
+ * ```ts
+ * import { ex, rationalAlgorithm, symbols } from '@symjs/symjs';
+ *
+ * const [x, k] = symbols('x k');
+ * rationalAlgorithm(ex`1/(1-x)`, x, k); // => [1, 0, 0]
+ * ```
+ */
 export function rationalAlgorithm(f: ExprLike, x: Sym, k: Sym, order = 4, full = false): [Expr, Expr, number] | NoMatchResult {
   let derivative = sympify(f);
   const derivatives: Expr[] = [];
@@ -93,7 +110,21 @@ export function rationalAlgorithm(f: ExprLike, x: Sym, k: Sym, order = 4, full =
 
 const isZeroExpr = (e: Expr): boolean => e instanceof Rational && e.isZero;
 
-/** Group terms whose quotients are rational functions of x. */
+/**
+ * Group terms whose quotients are rational functions of x.
+ *
+ * @param terms - Terms to group by rational dependence.
+ * @param x - Variable of the expansion.
+ * @returns One sum per group of rationally dependent terms.
+ * @see SymPy `sympy.series.formal.rational_independent`
+ * @example
+ * ```ts
+ * import { ex, rationalIndependent, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * rationalIndependent([ex`cos(x)`, ex`sin(x)`], x); // => [cos(x), sin(x)]
+ * ```
+ */
 export function rationalIndependent(terms: readonly ExprLike[], x: Sym): Expr[] {
   const independent: Expr[] = [];
   for (const term of terms.map(sympify)) {
@@ -133,27 +164,102 @@ function differentialRecurrence(DE: ExprLike, r: UndefinedFunction, k: Sym, ordi
     r(add(k, order - power - shift)))));
 }
 
-/** Convert a constant-coefficient differential equation to an exponential-series recurrence. */
+/**
+ * Convert a constant-coefficient differential equation to an exponential-series recurrence.
+ *
+ * @param DE - Linear differential equation, written as an expression equal to zero.
+ * @param r - Function representing the sequence of coefficients.
+ * @param k - Coefficient index.
+ * @returns The recurrence for the exponential-series coefficients.
+ * @throws TypeError when the equation is not linear and homogeneous with constant coefficients.
+ * @see SymPy `sympy.series.formal.exp_re`
+ * @example
+ * ```ts
+ * import { Derivative, SymFunction, expRe, symbols } from '@symjs/symjs';
+ *
+ * const [x, k] = symbols('x k');
+ * const f = SymFunction('f'), r = SymFunction('r');
+ * expRe(Derivative(f(x), x).sub(f(x)), r, k); // => -r(k) + r(k + 1)
+ * ```
+ */
 export function expRe(DE: ExprLike, r: UndefinedFunction, k: Sym): Expr {
   return differentialRecurrence(DE, r, k, false);
 }
 
-/** Convert a polynomial-coefficient differential equation to an ordinary-series recurrence. */
+/**
+ * Convert a polynomial-coefficient differential equation to an ordinary-series recurrence.
+ *
+ * @param DE - Linear differential equation, written as an expression equal to zero.
+ * @param r - Function representing the sequence of coefficients.
+ * @param k - Coefficient index.
+ * @returns The recurrence for ordinary power-series coefficients.
+ * @throws TypeError when the equation is not linear and homogeneous with polynomial coefficients.
+ * @see SymPy `sympy.series.formal.hyper_re`
+ * @example
+ * ```ts
+ * import { Derivative, SymFunction, hyperRe, symbols } from '@symjs/symjs';
+ *
+ * const [x, k] = symbols('x k');
+ * const f = SymFunction('f'), r = SymFunction('r');
+ * hyperRe(Derivative(f(x), x).sub(f(x)), r, k); // => (k + 1)*r(k + 1) - r(k)
+ * ```
+ */
 export function hyperRe(DE: ExprLike, r: UndefinedFunction, k: Sym): Expr {
   return differentialRecurrence(DE, r, k, true);
 }
 
-/** SymPy FormalPowerSeries: the power series of a function, truncated on request. */
+/**
+ * The power series of a function, truncated on request.
+ *
+ * @see SymPy `sympy.series.formal.FormalPowerSeries`
+ * @example
+ * ```ts
+ * import { ex, fps, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * const f = fps(ex`log(1 + x)`, x);
+ * f.coeff(3); // => 1/3
+ * ```
+ */
 export class FormalPowerSeries extends SeriesBase {
+  /** The expression class name used when printing the series. */
   override readonly name = 'FormalPowerSeries';
   /** The factor of the function free of x but with other symbols (x**n), kept out of the expansion (SymPy symb). */
   private readonly symb: Expr;
   /** The function without that factor. */
   private readonly core: Expr;
+  /**
+   * Constructs a new `FormalPowerSeries`.
+   *
+   * @param fn - Function represented by the series.
+   * @param x - Variable of the expansion.
+   * @param x0 - Point about which to expand.
+   * @param direction - Side from which the variable approaches the point.
+   */
   constructor(
+    /**
+     * The function represented by the series.
+     *
+     * @see SymPy `sympy.series.formal.FormalPowerSeries.function`
+     */
     readonly fn: Expr,
+    /**
+     * The independent variable of the series.
+     *
+     * @see SymPy `sympy.series.formal.FormalPowerSeries.x`
+     */
     readonly x: Sym,
+    /**
+     * The expansion point.
+     *
+     * @see SymPy `sympy.series.formal.FormalPowerSeries.x0`
+     */
     readonly x0: Expr,
+    /**
+     * The direction of approach to the expansion point.
+     *
+     * @see SymPy `sympy.series.formal.FormalPowerSeries.dir`
+     */
     readonly direction: '+' | '-',
   ) {
     super(fn, x, x0, direction === '+' ? 1 : -1);
@@ -177,16 +283,58 @@ export class FormalPowerSeries extends SeriesBase {
     this.core = core;
     this.symb = symb;
   }
+  /**
+   * Rebuilds this expression with the supplied operands.
+   *
+   * @param args - Replacement operands in the original order.
+   * @returns The rebuilt expression.
+   */
   override withArgs(args: readonly Expr[]): Expr {
     return new FormalPowerSeries(at(args, 0), cast(at(args, 1), Sym), at(args, 2), at(args, 3).key === S.One.key ? '+' : '-');
   }
+  /**
+   * Applies substitution rules specific to this series.
+   *
+   * @param old - Expression being replaced.
+   * @returns The replacement expression when this hook supplies one.
+   */
   override subsSelf(old: Expr): Expr | undefined {
     return old.has(this.x) ? this : undefined;
   }
+  /**
+   * The leading term of the represented function.
+   *
+   * @returns The first nonzero asymptotic term.
+   * @see SymPy `sympy.series.formal.FormalPowerSeries.as_leading_term`
+   */
   asLeadingTerm(): Expr { return asLeadingTerm(this.fn, this.x); }
+  /**
+   * The inclusive interval of term indices.
+   *
+   * @returns The inclusive interval of term indices.
+   * @see SymPy `sympy.series.formal.FormalPowerSeries.interval`
+   */
   override get interval(): SetExpr { return interval(0, S.Infinity); }
+  /**
+   * The first index of the series or sequence.
+   *
+   * @returns The first index of the series or sequence.
+   * @see SymPy `sympy.series.formal.FormalPowerSeries.start`
+   */
   override get start(): Expr { return S.Zero; }
+  /**
+   * The last index of the series or sequence.
+   *
+   * @returns The last index of the series or sequence.
+   * @see SymPy `sympy.series.formal.FormalPowerSeries.stop`
+   */
   override get stop(): Expr { return S.Infinity; }
+  /**
+   * The number of terms, possibly infinite.
+   *
+   * @returns The number of terms, possibly infinite.
+   * @see SymPy `sympy.series.formal.FormalPowerSeries.length`
+   */
   override get length(): Expr { return S.Infinity; }
 
   /** The term of order k, retaining zero terms and the independent part at zero. */
@@ -199,11 +347,22 @@ export class FormalPowerSeries extends SeriesBase {
     return add(...seriesTerms(this.core, this.x, this.x0, k + 1, this.direction).terms.filter((t) => !lower.has(t.key)).map((t) => this.withSymb(t)));
   }
 
-  /** SymPy LatexPrinter._print_FormalPowerSeries: the infinite representation. */
+  /**
+   * Formats the infinite power-series representation in LaTeX.
+   *
+   * @param print - Printer used for the component expressions.
+   * @returns The LaTeX representation.
+   */
   printLatex(print: (e: Expr) => string): string {
     return print(this.infinite);
   }
-  /** The coefficient sum, including the terms before the recurrence starts. */
+  /**
+   * The coefficient sum, including the terms before the recurrence starts.
+   *
+   * @returns The coefficient sum, including the terms before the recurrence starts.
+   * @throws NotImplementedError when no coefficient formula is available.
+   * @see SymPy `sympy.series.formal.FormalPowerSeries.infinite`
+   */
   get infinite(): Expr {
     const k = new Dummy('k');
     const step = this.direction === '+' ? 1 : -1;
@@ -216,7 +375,13 @@ export class FormalPowerSeries extends SeriesBase {
     const term = this.withSymb(mul(ak, pow(shift, k)));
     return add(this.withSymb(subs(independent, [[this.x, shift]])), new Concrete('Sum', [term, k, Rational.of(start), S.Infinity]));
   }
-  /** The series up to O((x - x0)**n) (SymPy truncate). */
+  /**
+   * The series up to O((x - x0)**n).
+   *
+   * @param n - Truncation order.
+   * @returns The truncated expansion.
+   * @see SymPy `sympy.series.formal.FormalPowerSeries.truncate`
+   */
   truncate(n = 6): Expr {
     if (this.symb.key === S.One.key) {
       const s = series(this.fn, this.x, this.x0, n, this.direction, { algebraic: true });
@@ -240,7 +405,13 @@ export class FormalPowerSeries extends SeriesBase {
     const xk = isZeroExpr(this.x0) ? this.x : sub(this.x, this.x0);
     return add(this.polynomial(n), O(this.withSymb(pow(xk, n)), this.x, this.x0));
   }
-  /** The truncated series without the Order term (SymPy polynomial). */
+  /**
+   * The truncated series without the Order term.
+   *
+   * @param n - Truncation order.
+   * @returns The truncated series without the Order term.
+   * @see SymPy `sympy.series.formal.FormalPowerSeries.polynomial`
+   */
   polynomial(n = 6): Expr {
     return add(...seriesTerms(this.core, this.x, this.x0, n, this.direction).terms.map((t) => this.withSymb(t)));
   }
@@ -248,7 +419,13 @@ export class FormalPowerSeries extends SeriesBase {
   private withSymb(t: Expr): Expr {
     return this.symb.key === S.One.key ? t : powsimp(mul(factorTerms(t), this.symb));
   }
-  /** The coefficient of (x - x0)**k. */
+  /**
+   * The coefficient of (x - x0)**k.
+   *
+   * @param k - Coefficient index.
+   * @returns The coefficient of the specified power.
+   * @see SymPy `sympy.series.formal.FormalPowerSeries.coeff`
+   */
   coeff(k: number): Expr {
     const poly = add(...seriesTerms(this.core, this.x, this.x0, k + 1, this.direction).terms);
     const c = subs(diff(poly, this.x, k), [[this.x, this.x0]]);
@@ -256,7 +433,12 @@ export class FormalPowerSeries extends SeriesBase {
     for (let i = 2n; i <= BigInt(k); i++) f *= i;
     return this.withSymb(mul(c, Rational.of(1n, f)));
   }
-  /** The first n nonzero terms. */
+  /**
+   * The first n nonzero terms.
+   *
+   * @param n - Number of terms to use.
+   * @returns The first n nonzero terms.
+   */
   terms(n: number): Expr[] {
     const out: Expr[] = [];
     for (const t of lseries(this.core, this.x, this.x0, this.direction)) {
@@ -274,31 +456,89 @@ export class FormalPowerSeries extends SeriesBase {
     if (this.direction !== other.direction) throw new RangeError('Both series should be calculated from the same direction.');
     if (this.x0.key !== other.x0.key) throw new RangeError('Both series should be calculated about the same point.');
   }
+  /**
+   * The sum with the other operand.
+   *
+   * @param other - Other operand.
+   * @returns The sum with the other operand.
+   * @throws RangeError when the expansion points or directions differ.
+   */
   override add(other: ExprLike): Expr {
     if (!(other instanceof FormalPowerSeries)) return super.add(other);
     this.checkPoint(other);
     const sum = add(this.fn, subs(other.fn, [[other.x, this.x]]));
     return sum.has(this.x) ? new FormalPowerSeries(sum, this.x, this.x0, this.direction) : sum;
   }
-  /** The series of the product of the functions (SymPy FormalPowerSeries.product). */
+  /**
+   * The series of the product of the functions.
+   *
+   * @param other - Other operand.
+   * @param x - Variable of the expansion.
+   * @returns The series of the product of the functions.
+   * @throws RangeError when the expansion variables, points or directions differ.
+   * @see SymPy `sympy.series.formal.FormalPowerSeries.product`
+   * @example
+   * ```ts
+   * import { exp, fps, sin, symbols } from '@symjs/symjs';
+   *
+   * const [x] = symbols('x');
+   * const f = fps(exp(x), x);
+   * f.product(fps(sin(x), x), x).truncate(4); // => x + x**2 + x**3/3 + O(x**4)
+   * ```
+   */
   product(other: FormalPowerSeries, x?: Sym): FormalPowerSeries {
     this.check(other, x);
     return new FormalPowerSeries(mul(this.fn, other.fn), this.x, this.x0, this.direction);
   }
-  /** The series of the composition f(g(x)) with the inner series g without constant term (SymPy FormalPowerSeries.compose). */
+  /**
+   * The series of the composition f(g(x)) with the inner series g without constant term.
+   *
+   * @param other - Other operand.
+   * @param x - Variable of the expansion.
+   * @returns The series of the composition f(g(x)) with the inner series g without constant term.
+   * @throws RangeError when the expansions have incompatible variables, points or directions, or the inner series has a nonzero constant term.
+   * @see SymPy `sympy.series.formal.FormalPowerSeries.compose`
+   * @example
+   * ```ts
+   * import { exp, fps, sin, symbols } from '@symjs/symjs';
+   *
+   * const [x] = symbols('x');
+   * const f = fps(exp(x), x);
+   * f.compose(fps(sin(x), x), x).truncate(); // => 1 + x + x**2/2 - x**4/8 - x**5/15 + O(x**6)
+   * ```
+   */
   compose(other: FormalPowerSeries, x?: Sym): FormalPowerSeries {
     this.check(other, x);
     if (!isZeroExpr(other.coeff(0))) throw new RangeError('The formal power series of the inner function should not have any constant coefficient term.');
     return new FormalPowerSeries(subs(this.fn, [[this.x, other.fn]]), this.x, this.x0, this.direction);
   }
-  /** The series of 1/f, for a series with a constant term (SymPy FormalPowerSeries.inverse; its symbol argument is not used). */
+  /**
+   * The series of 1/f, for a series with a constant term (SymPy FormalPowerSeries.inverse; its symbol argument is not used).
+   *
+   * @returns The series of 1/f, for a series with a constant term.
+   * @throws RangeError when the constant term is zero.
+   * @see SymPy `sympy.series.formal.FormalPowerSeries.inverse`
+   * @example
+   * ```ts
+   * import { exp, fps, symbols } from '@symjs/symjs';
+   *
+   * const [x] = symbols('x');
+   * const f = fps(exp(x), x);
+   * f.inverse().truncate(); // => 1 - x + x**2/2 - x**3/6 + x**4/24 - x**5/120 + O(x**6)
+   * ```
+   */
   inverse(): FormalPowerSeries {
     if (isZeroExpr(this.coeff(0))) throw new RangeError('Constant coefficient should exist for an inverse of a formal power series to exist.');
     return new FormalPowerSeries(pow(this.fn, -1), this.x, this.x0, this.direction);
   }
   /**
-   * The series of the antiderivative (SymPy FormalPowerSeries.integrate), or
+   * The series of the antiderivative, or
    * with limits the definite integral of the function.
+   *
+   * @param x - Variable of the expansion.
+   * @param limits - Lower and upper endpoints of the interval.
+   * @returns The series of the antiderivative, or with limits the definite integral of the function.
+   * @see SymPy `sympy.series.formal.FormalPowerSeries.integrate`
    */
   override integrate(x?: Sym): FormalPowerSeries;
   override integrate(x: Sym, limits: readonly [ExprLike, ExprLike]): Expr;
@@ -307,6 +547,11 @@ export class FormalPowerSeries extends SeriesBase {
     if (limits) return integrate(this.fn, v, [sympify(limits[0]), sympify(limits[1])]);
     return new FormalPowerSeries(integrate(this.fn, v), this.x, this.x0, this.direction);
   }
+  /**
+   * The string representation of this expression.
+   *
+   * @returns The formatted expression.
+   */
   override toString(): string {
     const k = new Dummy('k');
     const direction = this.direction === '+' ? 1 : -1;
@@ -317,6 +562,11 @@ export class FormalPowerSeries extends SeriesBase {
     return `FormalPowerSeries(${str(this.fn)}, ${str(this.x)}, ${str(this.x0)}, ${direction}, (${seq}, SeqFormula(${str(xk)}, (${str(k)}, 0, oo)), ${str(description.independent)}))`;
   }
 
+  /**
+   * Formats the expression using the supplied expression printer.
+   *
+   * @returns A plain-text representation.
+   */
   override printStr(): string {
     return this.toString();
   }
@@ -373,8 +623,24 @@ export class FormalPowerSeries extends SeriesBase {
 }
 
 /**
- * SymPy fps(f, x, x0, dir): the formal power series of f about x0. Without x, the
+ * The formal power series of f about x0. Without x, the
  * only free symbol of f is the variable, and f without free symbols is returned as it is.
+ *
+ * @param ex - Expression to expand or evaluate.
+ * @param x - Variable of the expansion.
+ * @param x0 - Point about which to expand.
+ * @param direction - Side from which the variable approaches the point.
+ * @param options - Enable rational-function or hypergeometric coefficient searches with `rational` and `hyper`.
+ * @returns The formal series, or the expression itself when it is independent of the variable or no expansion is found.
+ * @throws NotImplementedError when the expression has several free variables and no expansion variable is specified.
+ * @see SymPy `sympy.series.formal.fps`
+ * @example
+ * ```ts
+ * import { ex, fps, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * fps(ex`log(1 + x)`, x).truncate(); // => x - x**2/2 + x**3/3 - x**4/4 + x**5/5 + O(x**6)
+ * ```
  */
 export function fps(ex: number | bigint | Rational, x: Sym, x0?: ExprLike, direction?: '+' | '-'): Expr;
 export function fps(ex: ExprLike, x: Sym, x0?: ExprLike, direction?: '+' | '-'): FormalPowerSeries;
@@ -398,7 +664,16 @@ export function fps(ex: ExprLike, x?: Sym, x0: ExprLike = 0, direction: '+' | '-
 }
 
 
-/** Discover linear differential equations over the rational functions in x. */
+/**
+ * Discover linear differential equations over the rational functions in x.
+ *
+ * @param fIn - Function to expand.
+ * @param x - Variable of the expansion.
+ * @param g - Unknown function in the differential equation.
+ * @param order - Maximum differential order to consider.
+ * @returns An iterator of differential equations paired with their orders.
+ * @see SymPy `sympy.series.formal.simpleDE`
+ */
 export function* simpleDE(fIn: ExprLike, x: Sym, g: UndefinedFunction, order = 4): Generator<[Expr, number]> {
   const f = sympify(fIn);
   const derivatives: Expr[] = [f];
@@ -426,9 +701,30 @@ export function* simpleDE(fIn: ExprLike, x: Sym, g: UndefinedFunction, order = 4
   }
 }
 
+/** A coefficient formula, the initial terms outside the formula, and the first index it covers. */
 export type HyperSeriesResult = [Expr, Expr, number];
 
-/** Solve a two-term ordinary-series recurrence obtained from a linear DE. */
+/**
+ * Solve a two-term ordinary-series recurrence obtained from a linear DE.
+ *
+ * @param fIn - Function to expand.
+ * @param x - Variable of the expansion.
+ * @param DE - Linear differential equation, written as an expression equal to zero.
+ * @param order - Order of the differential equation.
+ * @param g - Unknown function in the differential equation.
+ * @param k - Coefficient index.
+ * @returns The coefficient formula, initial terms and starting index, or `NoMatch`.
+ * @throws RangeError when the differential order is not a positive integer.
+ * @see SymPy `sympy.series.formal.solve_de`
+ * @example
+ * ```ts
+ * import { Derivative, SymFunction, exp, solveDe, symbols } from '@symjs/symjs';
+ *
+ * const [x, k] = symbols('x k');
+ * const f = SymFunction('f');
+ * solveDe(exp(x), x, Derivative(f(x), x).sub(f(x)), 1, f, k); // => [Piecewise((1/factorial(k), Eq(Mod(k, 1), 0)), (0, True)), 1, 1]
+ * ```
+ */
 export function solveDe(fIn: ExprLike, x: Sym, DE: ExprLike, order: number, g: UndefinedFunction, k: Sym): HyperSeriesResult | NoMatchResult {
   if (!Number.isInteger(order) || order < 1) throw new RangeError('positive differential order required');
   const f = sympify(fIn);
@@ -477,7 +773,23 @@ export function solveDe(fIn: ExprLike, x: Sym, DE: ExprLike, order: number, g: U
   return [piecewise(...branches, [S.Zero, true]), independent, lastInitial + 1];
 }
 
-/** Discover a differential equation and solve its hypergeometric coefficient recurrence. */
+/**
+ * Discover a differential equation and solve its hypergeometric coefficient recurrence.
+ *
+ * @param f - Function to expand.
+ * @param x - Variable of the expansion.
+ * @param k - Coefficient index.
+ * @param order - Maximum differential order to consider.
+ * @returns The coefficient formula, initial terms and starting index, or `NoMatch`.
+ * @see SymPy `sympy.series.formal.hyper_algorithm`
+ * @example
+ * ```ts
+ * import { exp, hyperAlgorithm, symbols } from '@symjs/symjs';
+ *
+ * const [x, k] = symbols('x k');
+ * hyperAlgorithm(exp(x), x, k); // => [Piecewise((1/factorial(k), Eq(Mod(k, 1), 0)), (0, True)), 1, 1]
+ * ```
+ */
 export function hyperAlgorithm(f: ExprLike, x: Sym, k: Sym, order = 4): HyperSeriesResult | NoMatchResult {
   const g = SymFunction('g');
   for (const [equation, n] of simpleDE(f, x, g, order)) {

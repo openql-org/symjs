@@ -13,7 +13,22 @@ import type { NoMatchResult } from '../core/truth';
 import { NoMatch } from '../core/truth';
 import { atan, im } from '../functions/elementary/elementary';
 
-/** SymPy refine_Pow: remove even parts of exponents of -1, and refine real powers. */
+/**
+ * Remove even parts of exponents of -1, and refine real powers.
+ *
+ * @param expr - Expression to evaluate.
+ * @param assumptions - Facts assumed to hold.
+ * @returns The refined expression, or `NoMatch` when this rule does not apply.
+ * @see SymPy `sympy.assumptions.refine.refine_Pow`
+ * @example
+ * ```ts
+ * import { Q, ex, refinePow, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * refinePow(ex`(-1)**x`, Q.even(x)); // => 1
+ * refinePow(ex`(-1)**x`, Q.odd(x)); // => -1
+ * ```
+ */
 export function refinePow(expr: ExprLike, assumptions: Assumption = true): Expr | NoMatchResult {
   const e = sympify(expr);
   if (!(e instanceof Pow)) return NoMatch;
@@ -36,14 +51,44 @@ export function refinePow(expr: ExprLike, assumptions: Assumption = true): Expr 
   return result.equals(e) ? NoMatch : result;
 }
 
-/** SymPy refine_abs: simplify an absolute value when its sign is known. */
+/**
+ * Simplify an absolute value when its sign is known.
+ *
+ * @param expr - Expression to evaluate.
+ * @param assumptions - Facts assumed to hold.
+ * @returns The refined expression, or `NoMatch` when this rule does not apply.
+ * @see SymPy `sympy.assumptions.refine.refine_abs`
+ * @example
+ * ```ts
+ * import { Q, ex, refineAbs, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * refineAbs(ex`Abs(x)`, Q.positive(x)); // => x
+ * refineAbs(ex`Abs(x)`, Q.negative(x)); // => -x
+ * ```
+ */
 export function refineAbs(expr: ExprLike, assumptions: Assumption = true): Expr | NoMatchResult {
   const e = sympify(expr);
   const result = refine(e, assumptions);
   return result.equals(e) ? NoMatch : result;
 }
 
-/** SymPy refine_arg: the argument of a positive or negative real value. */
+/**
+ * Simplifies the complex argument using the assumed sign.
+ *
+ * @param expr - Expression to evaluate.
+ * @param assumptions - Facts assumed to hold.
+ * @returns The refined expression, or `NoMatch` when this rule does not apply.
+ * @see SymPy `sympy.assumptions.refine.refine_arg`
+ * @example
+ * ```ts
+ * import { Q, ex, refineArg, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * refineArg(ex`arg(x)`, Q.positive(x)); // => 0
+ * refineArg(ex`arg(x)`, Q.negative(x)); // => pi
+ * ```
+ */
 export function refineArg(expr: ExprLike, assumptions: Assumption = true): Expr | NoMatchResult {
   const x = at(sympify(expr).args, 0);
   if (ask(Q.positive(x), assumptions) === true) return S.Zero;
@@ -51,7 +96,21 @@ export function refineArg(expr: ExprLike, assumptions: Assumption = true): Expr 
   return NoMatch;
 }
 
-/** SymPy refine_atan2: select the quadrant under the given assumptions. */
+/**
+ * Select the quadrant under the given assumptions.
+ *
+ * @param expr - Expression to evaluate.
+ * @param assumptions - Facts assumed to hold.
+ * @returns The expression simplified under the given facts.
+ * @see SymPy `sympy.assumptions.refine.refine_atan2`
+ * @example
+ * ```ts
+ * import { Q, and, ex, refineAtan2, symbols } from '@symjs/symjs';
+ *
+ * const [x, y] = symbols('x y');
+ * refineAtan2(ex`atan2(y, x)`, and(Q.zero(y), Q.negative(x))); // => pi
+ * ```
+ */
 export function refineAtan2(expr: ExprLike, assumptions: Assumption = true): Expr {
   const e = sympify(expr);
   const [y, x] = pair(e.args);
@@ -70,7 +129,22 @@ export function refineAtan2(expr: ExprLike, assumptions: Assumption = true): Exp
   return e;
 }
 
-/** SymPy refine_re: real part under assumptions. */
+/**
+ * Simplifies the real part under the given assumptions.
+ *
+ * @param expr - Expression to evaluate.
+ * @param assumptions - Facts assumed to hold.
+ * @returns The expression simplified under the given facts.
+ * @see SymPy `sympy.assumptions.refine.refine_re`
+ * @example
+ * ```ts
+ * import { Q, ex, refineRe, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * refineRe(ex`re(x)`, Q.real(x)); // => x
+ * refineRe(ex`re(x)`, Q.imaginary(x)); // => 0
+ * ```
+ */
 export function refineRe(expr: ExprLike, assumptions: Assumption = true): Expr {
   const e = sympify(expr);
   const x = at(e.args, 0);
@@ -79,7 +153,22 @@ export function refineRe(expr: ExprLike, assumptions: Assumption = true): Expr {
   return e;
 }
 
-/** SymPy refine_im: imaginary part under assumptions. */
+/**
+ * Simplifies the imaginary part under the given assumptions.
+ *
+ * @param expr - Expression to evaluate.
+ * @param assumptions - Facts assumed to hold.
+ * @returns The expression simplified under the given facts.
+ * @see SymPy `sympy.assumptions.refine.refine_im`
+ * @example
+ * ```ts
+ * import { Q, ex, refineIm, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * refineIm(ex`im(x)`, Q.real(x)); // => 0
+ * refineIm(ex`im(x)`, Q.imaginary(x)); // => -I*x
+ * ```
+ */
 export function refineIm(expr: ExprLike, assumptions: Assumption = true): Expr {
   const e = sympify(expr);
   const x = at(e.args, 0);
@@ -88,7 +177,21 @@ export function refineIm(expr: ExprLike, assumptions: Assumption = true): Expr {
   return e;
 }
 
-/** SymPy refine_sign: sign on the real and imaginary axes. */
+/**
+ * Simplifies the sign using facts about the real and imaginary axes.
+ *
+ * @param expr - Expression to evaluate.
+ * @param assumptions - Facts assumed to hold.
+ * @returns The expression simplified under the given facts.
+ * @see SymPy `sympy.assumptions.refine.refine_sign`
+ * @example
+ * ```ts
+ * import { Q, and, refineSign, sign, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x', { real: true });
+ * refineSign(sign(x), and(Q.positive(x), Q.nonzero(x))); // => 1
+ * ```
+ */
 export function refineSign(expr: ExprLike, assumptions: Assumption = true): Expr {
   const e = sympify(expr);
   const x = at(e.args, 0);
@@ -102,7 +205,21 @@ export function refineSign(expr: ExprLike, assumptions: Assumption = true): Expr
   return e;
 }
 
-/** SymPy refine_matrixelement: use the upper triangle of a symmetric matrix. */
+/**
+ * Use the upper triangle of a symmetric matrix.
+ *
+ * @param expr - Expression to evaluate.
+ * @param assumptions - Facts assumed to hold.
+ * @returns The refined expression, or `NoMatch` when this rule does not apply.
+ * @see SymPy `sympy.assumptions.refine.refine_matrixelement`
+ * @example
+ * ```ts
+ * import { MatrixSymbol, Q, refineMatrixelement } from '@symjs/symjs';
+ *
+ * const X = MatrixSymbol('X', 3, 3);
+ * refineMatrixelement(X.at(1, 0), Q.symmetric(X)); // => X[0, 1]
+ * ```
+ */
 export function refineMatrixelement(expr: ExprLike, assumptions: Assumption = true): Expr | NoMatchResult {
   const e = sympify(expr);
   if (!(e instanceof ExtensionExpr) || e.name !== 'MatrixElement') return NoMatch;

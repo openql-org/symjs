@@ -108,33 +108,86 @@ export function reduceRationalInequalitiesWrap(condition: Expr, v: Sym): SetExpr
 // Domains
 // ---------------------------------------------------------------------------
 
-/** SymPy SingleContinuousDomain(symbol, set): a continuous variable and its interval. */
+/**
+ * A continuous variable and its interval.
+ *
+ * @see SymPy `sympy.stats.crv.SingleContinuousDomain`
+ */
 export class SingleContinuousDomain extends SingleDomain {
+  /**
+   * Constructs a new `SingleContinuousDomain`.
+   *
+   * @param args - Operands in the order `symbol`, `set`.
+   */
   constructor(args: readonly Expr[]) {
     super(args, 'SingleContinuousDomain');
   }
+  /**
+   * Whether the domain is continuous.
+   *
+   * @returns `true` for this domain.
+   * @see SymPy `sympy.stats.crv.SingleContinuousDomain.is_Continuous`
+   */
   override get isContinuous(): boolean {
     return true;
   }
+  /**
+   * The expectation of the expression over the specified variables.
+   *
+   * @param expr - Expression to evaluate.
+   * @param variables - Variables to integrate or sum over.
+   * @returns The expected value over the selected variables.
+   * @throws RangeError when the requested variables do not match the domain symbol.
+   * @see SymPy `sympy.stats.crv.SingleContinuousDomain.compute_expectation`
+   */
   override computeExpectation(expr: Expr, variables?: Iterable<Sym>): Expr {
     const vs = variables === undefined ? this.symbols : [...variables];
     if (!vs.length) return expr;
     if (vs.length !== 1 || first(vs).key !== this.symbol.key) throw new RangeError('Values should be equal');
     return makeIntegral(expr, [limitOver(this.symbol, this.set)]);
   }
+  /**
+   * The condition expressing membership in this domain.
+   *
+   * @returns The condition expressing membership in this domain.
+   * @see SymPy `sympy.stats.crv.SingleContinuousDomain.as_boolean`
+   */
   override asBoolean(): Expr {
     return asRelational(this.set, this.symbol);
   }
 }
 
-/** SymPy ProductContinuousDomain(*domains). */
+/**
+ * The Cartesian product of continuous domains.
+ *
+ * @see SymPy `sympy.stats.crv.ProductContinuousDomain`
+ */
 export class ProductContinuousDomain extends ProductDomain {
+  /**
+   * Constructs a new `ProductContinuousDomain`.
+   *
+   * @param args - Operands in the order `domains`.
+   */
   constructor(args: readonly Expr[]) {
     super(args, 'ProductContinuousDomain');
   }
+  /**
+   * Whether the domain is continuous.
+   *
+   * @returns `true` for this domain.
+   * @see SymPy `sympy.stats.crv.ProductContinuousDomain.is_Continuous`
+   */
   override get isContinuous(): boolean {
     return true;
   }
+  /**
+   * The expectation of the expression over the specified variables.
+   *
+   * @param exprIn - Expression to evaluate.
+   * @param variables - Variables to integrate or sum over.
+   * @returns The expected value over the selected variables.
+   * @see SymPy `sympy.stats.crv.ProductContinuousDomain.compute_expectation`
+   */
   override computeExpectation(exprIn: Expr, variables?: readonly Sym[]): Expr {
     const vs = new Set((variables ?? this.symbols).map((s) => s.key));
     let expr = exprIn;
@@ -146,14 +199,39 @@ export class ProductContinuousDomain extends ProductDomain {
   }
 }
 
-/** SymPy ConditionalContinuousDomain(fulldomain, condition). */
+/**
+ * The subset of a continuous domain satisfying a condition.
+ *
+ * @see SymPy `sympy.stats.crv.ConditionalContinuousDomain`
+ */
 export class ConditionalContinuousDomain extends ConditionalDomain {
+  /**
+   * Constructs a new `ConditionalContinuousDomain`.
+   *
+   * @param args - Operands in the order `fulldomain`, `condition`.
+   */
   constructor(args: readonly Expr[]) {
     super('ConditionalContinuousDomain', [at(args, 0), conditionOnSymbols(at(args, 1))]);
   }
+  /**
+   * Whether the domain is continuous.
+   *
+   * @returns `true` for this domain.
+   * @see SymPy `sympy.stats.crv.ConditionalContinuousDomain.is_Continuous`
+   */
   override get isContinuous(): boolean {
     return true;
   }
+  /**
+   * The expectation of the expression over the specified variables.
+   *
+   * @param expr - Expression to evaluate.
+   * @param variables - Variables to integrate or sum over.
+   * @returns The expected value over the selected variables.
+   * @throws NotImplementedError when the condition cannot be reduced to supported integration limits.
+   * @throws TypeError when the condition cannot be reduced to supported integration limits.
+   * @see SymPy `sympy.stats.crv.ConditionalContinuousDomain.compute_expectation`
+   */
   override computeExpectation(expr: Expr, variables?: readonly Sym[]): Expr {
     const vs = variables ?? this.symbols;
     if (!vs.length) return expr;
@@ -185,6 +263,13 @@ export class ConditionalContinuousDomain extends ConditionalDomain {
     }
     return makeIntegral(integrand, limits);
   }
+  /**
+   * The set of outcomes in this domain.
+   *
+   * @returns The set of outcomes in this domain.
+   * @throws NotImplementedError when the conditional domain has no implemented set representation.
+   * @see SymPy `sympy.stats.crv.ConditionalContinuousDomain.set`
+   */
   override get set(): SetExpr {
     if (this.symbols.length === 1) return intersection(this.fulldomain.set, reduceRationalInequalitiesWrap(this.condition, first(this.symbols)));
     throw new NotImplementedError('Set of Conditional Domain not Implemented');
@@ -198,25 +283,47 @@ export const realLine: SetExpr = new Interval(S.NegativeInfinity, S.Infinity, tr
 // Distributions
 // ---------------------------------------------------------------------------
 
-/** SymPy ContinuousDistribution. */
+/**
+ * Base class for probability laws described by a continuous density.
+ *
+ * @see SymPy `sympy.stats.crv.ContinuousDistribution`
+ * @example
+ * ```ts
+ * import { NormalDistribution, ex } from '@symjs/symjs';
+ *
+ * const law = new NormalDistribution([ex`0`, ex`1`]);
+ * law.pdf(0); // => sqrt(2)/(2*sqrt(pi))
+ * ```
+ */
 export abstract class ContinuousDistribution extends Distribution {}
 
-/** A result that a distribution defines in closed form, or undefined (SymPy None) to compute it by integration. */
+/** An optional closed-form result used by distribution hooks before falling back to integration or summation. */
 export type ClosedForm = Expr | undefined;
 
 /**
- * SymPy SingleContinuousDistribution: a continuous distribution of one
+ * A continuous distribution of one
  * variable. Subclasses define `pdf` and `set` and may give closed forms of
  * the cdf, characteristic and moment generating functions and quantile
  * (SymPy _cdf, _characteristic_function, _moment_generating_function,
  * _quantile), which are otherwise computed by integration.
+ *
+ * @see SymPy `sympy.stats.crv.SingleContinuousDistribution`
  */
 export abstract class SingleContinuousDistribution extends ContinuousDistribution {
-  /** SymPy Interval(-oo, oo) (which prints as an interval, unlike S.Reals). */
+  /**
+   * The support of the distribution, by default the entire real line.
+   *
+   * @returns The support of the distribution, by default the entire real line.
+   * @see SymPy `sympy.stats.crv.SingleContinuousDistribution.set`
+   */
   get set(): SetExpr {
     return realLine;
   }
-  /** Checks the parameters (SymPy check), called when a random symbol is created. */
+  /**
+   * Checks the parameters, called when a random symbol is created.
+   *
+   * @see SymPy `sympy.stats.crv.SingleContinuousDistribution.check`
+   */
   check(): void {}
   protected cdfClosed(_x: Expr): ClosedForm {
     return undefined;
@@ -231,38 +338,71 @@ export abstract class SingleContinuousDistribution extends ContinuousDistributio
   protected quantileClosed(_p: Expr): ClosedForm {
     return undefined;
   }
-  /** SymPy compute_cdf: the integral of the pdf from the left end. */
+  /**
+   * Integrates the density from the lower support endpoint to a variable upper limit.
+   *
+   * @returns The cumulative distribution function.
+   * @see SymPy `sympy.stats.crv.SingleContinuousDistribution.compute_cdf`
+   */
   computeCdf(): LambdaNode {
     const x = new Dummy('x', { real: true });
     const z = new Dummy('z', { real: true });
     const left = inf(this.set);
     return Lambda(z, piecewise([integrateFromLeft(doit(this.pdf(x)), x, left, z), Ge(z, left)], [0, true]));
   }
-  /** The cumulative distribution function at x (SymPy cdf). */
+  /**
+   * The cumulative distribution function at x.
+   *
+   * @param xIn - Variable of the expansion.
+   * @returns The cumulative probability at the argument.
+   * @see SymPy `sympy.stats.crv.SingleContinuousDistribution.cdf`
+   */
   cdf(xIn: ExprLike): Expr {
     const x = sympify(xIn);
     return this.cdfClosed(x) ?? this.computeCdf().call(x);
   }
-  /** SymPy compute_characteristic_function. */
+  /**
+   * The characteristic function of the expression.
+   *
+   * @returns The characteristic function of the expression.
+   * @see SymPy `sympy.stats.crv.SingleContinuousDistribution.compute_characteristic_function`
+   */
   computeCharacteristicFunction(): LambdaNode {
     const x = new Dummy('x', { real: true });
     const t = new Dummy('t', { real: true });
     const [, a, b] = limitOver(x, this.set);
     return Lambda(t, integrate(mul(exp(mul(S.I, t, x)), this.pdf(x)), x, [a, b]));
   }
-  /** The characteristic function at t (SymPy characteristic_function). */
+  /**
+   * The characteristic function at t.
+   *
+   * @param tIn - Argument of the transform.
+   * @returns The characteristic function at t.
+   * @see SymPy `sympy.stats.crv.SingleContinuousDistribution.characteristic_function`
+   */
   characteristicFunction(tIn: ExprLike): Expr {
     const t = sympify(tIn);
     return this.characteristicFunctionClosed(t) ?? this.computeCharacteristicFunction().call(t);
   }
-  /** SymPy compute_moment_generating_function. */
+  /**
+   * The moment generating function of the expression.
+   *
+   * @returns The moment generating function of the expression.
+   * @see SymPy `sympy.stats.crv.SingleContinuousDistribution.compute_moment_generating_function`
+   */
   computeMomentGeneratingFunction(): LambdaNode {
     const x = new Dummy('x', { real: true });
     const t = new Dummy('t', { real: true });
     const [, a, b] = limitOver(x, this.set);
     return Lambda(t, integrate(mul(exp(mul(t, x)), this.pdf(x)), x, [a, b]));
   }
-  /** The moment generating function at t (SymPy moment_generating_function). */
+  /**
+   * The moment generating function at t.
+   *
+   * @param tIn - Argument of the transform.
+   * @returns The moment generating function at t.
+   * @see SymPy `sympy.stats.crv.SingleContinuousDistribution.moment_generating_function`
+   */
   momentGeneratingFunction(tIn: ExprLike): Expr {
     const t = sympify(tIn);
     return this.momentGeneratingFunctionClosed(t) ?? this.computeMomentGeneratingFunction().call(t);
@@ -271,6 +411,12 @@ export abstract class SingleContinuousDistribution extends ContinuousDistributio
    * The expectation of expr, an expression of var (SymPy expectation): the
    * moments of a polynomial come from the Taylor series of the moment
    * generating function when it has a closed form; otherwise the integral.
+   *
+   * @param expr - Expression to evaluate.
+   * @param v - Symbol distributed according to this law.
+   * @param opts - Evaluation controls for integrals, sums and compound distributions.
+   * @returns The expectation of expr, an expression of var.
+   * @see SymPy `sympy.stats.crv.SingleContinuousDistribution.expectation`
    */
   expectation(expr: Expr, v: Sym, opts: ComputeOptions = {}): Expr {
     const [, a, b] = limitOver(v, this.set);
@@ -288,7 +434,12 @@ export abstract class SingleContinuousDistribution extends ContinuousDistributio
     for (let k = 0; k <= deg; k++) terms.push(mul(p.get(k) ?? S.Zero, cancel(defined(taylor).get(k) ?? S.Zero), factorial(k)));
     return add(...terms);
   }
-  /** SymPy compute_quantile: the solutions of cdf(x) = p in the set. */
+  /**
+   * The solutions of cdf(x) = p in the set.
+   *
+   * @returns The quantile function.
+   * @see SymPy `sympy.stats.crv.SingleContinuousDistribution.compute_quantile`
+   */
   computeQuantile(): LambdaNode {
     const x = new Dummy('x', { real: true });
     const p = new Dummy('p', { real: true });
@@ -297,7 +448,13 @@ export abstract class SingleContinuousDistribution extends ContinuousDistributio
     const q = solveset(add(c, mul(-1, p)), x, this.set);
     return Lambda(p, piecewise([q, and(Ge(p, 0), Le(p, 1))], [S.NaN, true]));
   }
-  /** The quantile function at p (SymPy quantile). */
+  /**
+   * The quantile function at p.
+   *
+   * @param pIn - Cumulative probability at which to evaluate the quantile.
+   * @returns The quantile function at p.
+   * @see SymPy `sympy.stats.crv.SingleContinuousDistribution.quantile`
+   */
   quantile(pIn: ExprLike): Expr {
     const p = sympify(pIn);
     return this.quantileClosed(p) ?? this.computeQuantile().call(p);
@@ -314,25 +471,70 @@ export function removeO(e: Expr): Expr {
 // Probability spaces
 // ---------------------------------------------------------------------------
 
-/** SymPy ContinuousPSpace(domain, density): a continuous probability space; density is a Lambda of the symbols. */
+/**
+ * A continuous probability space; density is a Lambda of the symbols.
+ *
+ * @see SymPy `sympy.stats.crv.ContinuousPSpace`
+ */
 export class ContinuousPSpace extends PSpace {
+  /**
+   * Constructs a new `ContinuousPSpace`.
+   *
+   * @param args - Operands in the order `domain`, `density`.
+   * @param name - Expression class name used for the node.
+   */
   constructor(args: readonly Expr[], name = 'ContinuousPSpace') {
     super(args, name);
   }
+  /**
+   * Whether the probability space is continuous.
+   *
+   * @returns `true` for this space.
+   * @see SymPy `sympy.stats.crv.ContinuousPSpace.is_Continuous`
+   */
   override get isContinuous(): boolean {
     return true;
   }
+  /**
+   * Whether the probability space is real.
+   *
+   * @returns `true` for this space.
+   * @see SymPy `sympy.stats.crv.ContinuousPSpace.is_real`
+   */
   override get isReal(): boolean {
     return true;
   }
+  /**
+   * The density expressed in the underlying symbols of the space.
+   *
+   * @returns The joint density in the symbols of the space.
+   * @see SymPy `sympy.stats.crv.ContinuousPSpace.pdf`
+   */
   override get pdf(): Expr {
     return cast(this.density, LambdaNode, 'density').call(...this.domain.symbols);
   }
+  /**
+   * The expectation of the expression over the specified variables.
+   *
+   * @param exprIn - Expression to evaluate.
+   * @param rvsIn - Random variables to integrate or sum over.
+   * @param _opts - Evaluation options accepted by the probability-space interface.
+   * @returns The expected value over the selected variables.
+   * @see SymPy `sympy.stats.crv.ContinuousPSpace.compute_expectation`
+   */
   override computeExpectation(exprIn: Expr, rvsIn?: readonly RandomSymbol[], _opts: ComputeOptions = {}): Expr {
     const rvs = rvsIn ?? this.values;
     const expr = xreplace(exprIn, rvs.map((rv) => [rv, rv.symbol] as const));
     return this.domain.computeExpectation(mul(this.pdf, expr), rvs.map((rv) => rv.symbol));
   }
+  /**
+   * The distribution of the expression on this probability space.
+   *
+   * @param expr - Expression to evaluate.
+   * @param _opts - Evaluation options accepted by the probability-space interface.
+   * @returns The probability distribution of the expression.
+   * @see SymPy `sympy.stats.crv.ContinuousPSpace.compute_density`
+   */
   override computeDensity(expr: Expr, _opts: ComputeOptions = {}): DensityResult {
     const keys = new Set(this.values.map((v) => v.key));
     if (expr instanceof RandomSymbol && keys.has(expr.key)) {
@@ -342,6 +544,14 @@ export class ContinuousPSpace extends PSpace {
     const z = new Dummy('z', { real: true });
     return Lambda(z, this.computeExpectation(DiracDelta(add(expr, mul(-1, z)))));
   }
+  /**
+   * The cumulative distribution function of the expression.
+   *
+   * @param expr - Expression to evaluate.
+   * @returns The cumulative distribution function.
+   * @throws RangeError when the expression has several random variables.
+   * @see SymPy `sympy.stats.crv.ContinuousPSpace.compute_cdf`
+   */
   override computeCdf(expr: Expr): DensityResult {
     if (!isInterval(this.domain.set)) throw new RangeError('CDF not well defined on multivariate expressions');
     const d = densityCall(this.computeDensity(expr));
@@ -350,6 +560,14 @@ export class ContinuousPSpace extends PSpace {
     const left = inf(this.domain.set);
     return Lambda(z, piecewise([integrateFromLeft(d(x), x, left, z), Ge(z, left)], [0, true]));
   }
+  /**
+   * The characteristic function of the expression.
+   *
+   * @param expr - Expression to evaluate.
+   * @returns The characteristic function of the expression.
+   * @throws NotImplementedError when the expression has several random variables.
+   * @see SymPy `sympy.stats.crv.ContinuousPSpace.compute_characteristic_function`
+   */
   override computeCharacteristicFunction(expr: Expr): Expr {
     if (!isInterval(this.domain.set)) throw new NotImplementedError('Characteristic function of multivariate expressions not implemented');
     const d = densityCall(this.computeDensity(expr));
@@ -362,6 +580,14 @@ export class ContinuousPSpace extends PSpace {
     }
     return Lambda(t, transform);
   }
+  /**
+   * The moment generating function of the expression.
+   *
+   * @param expr - Expression to evaluate.
+   * @returns The moment generating function of the expression.
+   * @throws NotImplementedError when the expression has several random variables.
+   * @see SymPy `sympy.stats.crv.ContinuousPSpace.compute_moment_generating_function`
+   */
   override computeMomentGeneratingFunction(expr: Expr): Expr {
     if (!isInterval(this.domain.set)) throw new NotImplementedError('Moment generating function of multivariate expressions not implemented');
     const d = densityCall(this.computeDensity(expr));
@@ -369,6 +595,14 @@ export class ContinuousPSpace extends PSpace {
     const t = new Dummy('t', { real: true });
     return Lambda(t, integrate(mul(exp(mul(t, x)), d(x)), x, [S.NegativeInfinity, S.Infinity]));
   }
+  /**
+   * The quantile function of the expression.
+   *
+   * @param expr - Expression to evaluate.
+   * @returns The quantile function.
+   * @throws RangeError when the expression has several random variables.
+   * @see SymPy `sympy.stats.crv.ContinuousPSpace.compute_quantile`
+   */
   override computeQuantile(expr: Expr): Expr {
     if (!isInterval(this.domain.set)) throw new RangeError('Quantile not well defined on multivariate expressions');
     const d = densityCall(this.computeCdf(expr));
@@ -376,6 +610,14 @@ export class ContinuousPSpace extends PSpace {
     const p = new Dummy('p', { positive: true });
     return Lambda(p, solveset(add(d(x), mul(-1, p)), x, this.domain.set));
   }
+  /**
+   * The probability that the event holds.
+   *
+   * @param conditionIn - Condition on the random variables.
+   * @param opts - Evaluation controls for integrals, sums and compound distributions.
+   * @returns The probability of the event.
+   * @see SymPy `sympy.stats.crv.ContinuousPSpace.probability`
+   */
   override probability(conditionIn: Expr, opts: ComputeOptions = {}): Expr {
     const z = new Dummy('z', { real: true });
     let condition = conditionIn;
@@ -418,6 +660,14 @@ export class ContinuousPSpace extends PSpace {
     const result = space.probability(rel(r.op, space.value, comp));
     return condInv ? add(1, mul(-1, result)) : result;
   }
+  /**
+   * The subset of the domain on which the condition holds.
+   *
+   * @param condition - Condition on the random variables.
+   * @returns The domain satisfying the condition.
+   * @throws NotImplementedError when the condition involves multiple continuous random variables.
+   * @see SymPy `sympy.stats.crv.ContinuousPSpace.where`
+   */
   override where(condition: Expr): RandomDomain {
     const rvs = randomSymbols(condition);
     const keys = new Set(this.values.map((v) => v.key));
@@ -426,6 +676,13 @@ export class ContinuousPSpace extends PSpace {
     const iv = intersection(reduceRationalInequalitiesWrap(condition, rv), this.domain.set);
     return new SingleContinuousDomain([rv.symbol, iv]);
   }
+  /**
+   * The probability space restricted to outcomes satisfying the condition.
+   *
+   * @param conditionIn - Condition on the random variables.
+   * @returns The conditioned probability space.
+   * @see SymPy `sympy.stats.crv.ContinuousPSpace.conditional_space`
+   */
   override conditionalSpace(conditionIn: Expr): PSpace {
     const condition = xreplace(conditionIn, this.values.map((rv) => [rv, rv.symbol] as const));
     const domain = new ConditionalContinuousDomain([this.domain, condition]);
@@ -443,35 +700,100 @@ export function densityCall(d: DensityResult): (x: Expr) => Expr {
   return (x) => dist.pdf(x);
 }
 
-/** SymPy SingleContinuousPSpace(s, distribution): a continuous random variable with a distribution. */
+/**
+ * A continuous random variable with a distribution.
+ *
+ * @see SymPy `sympy.stats.crv.SingleContinuousPSpace`
+ */
 export class SingleContinuousPSpace extends ContinuousPSpace {
+  /**
+   * Constructs a new `SingleContinuousPSpace`.
+   *
+   * @param args - Operands in the order `s`, `distribution`.
+   */
   constructor(args: readonly Expr[]) {
     super([symbolConverter(at(args, 0)), cast(at(args, 1), Distribution, 'distribution')], 'SingleContinuousPSpace');
   }
+  /**
+   * Whether the probability space is single.
+   *
+   * @returns `true` for this space.
+   */
   override get isSingle(): boolean {
     return true;
   }
+  /**
+   * The underlying symbol naming the random variable.
+   *
+   * @returns The underlying symbol naming the random variable.
+   * @see SymPy `sympy.stats.crv.SingleContinuousPSpace.symbol`
+   */
   get symbol(): Sym {
     return cast(at(this.args, 0), Sym);
   }
+  /**
+   * The probability law governing the random variable.
+   *
+   * @returns The probability law governing the random variable.
+   * @see SymPy `sympy.stats.crv.SingleContinuousPSpace.distribution`
+   */
   get distribution(): SingleContinuousDistribution {
     return cast(at(this.args, 1), SingleContinuousDistribution);
   }
+  /**
+   * The random symbol with this probability space.
+   *
+   * @returns The random symbol with this probability space.
+   * @see SymPy `sympy.stats.crv.SingleContinuousPSpace.value`
+   */
   get value(): RandomSymbol {
     return new RandomSymbol(this.symbol, this);
   }
+  /**
+   * The density expressed in the underlying symbols of the space.
+   *
+   * @returns The joint density in the symbols of the space.
+   * @see SymPy `sympy.stats.crv.SingleContinuousPSpace.pdf`
+   */
   override get pdf(): Expr {
     return this.distribution.pdf(this.symbol);
   }
+  /**
+   * The support of the distribution.
+   *
+   * @returns The support of the distribution.
+   * @see SymPy `sympy.stats.crv.SingleContinuousPSpace.set`
+   */
   get set(): SetExpr {
     return this.distribution.set;
   }
+  /**
+   * The domain of outcomes of this probability space.
+   *
+   * @returns The domain of outcomes of this probability space.
+   * @see SymPy `sympy.stats.crv.SingleContinuousPSpace.domain`
+   */
   override get domain(): RandomDomain {
     return new SingleContinuousDomain([this.symbol, this.set]);
   }
+  /**
+   * The density of the random variable or expression.
+   *
+   * @returns The density of the random variable or expression.
+   * @see SymPy `sympy.stats.crv.SingleContinuousPSpace.density`
+   */
   override get density(): Expr {
     return this.distribution;
   }
+  /**
+   * The expectation of the expression over the specified variables.
+   *
+   * @param exprIn - Expression to evaluate.
+   * @param rvsIn - Random variables to integrate or sum over.
+   * @param opts - Evaluation controls for integrals, sums and compound distributions.
+   * @returns The expected value over the selected variables.
+   * @see SymPy `sympy.stats.crv.SingleContinuousPSpace.compute_expectation`
+   */
   override computeExpectation(exprIn: Expr, rvsIn?: readonly RandomSymbol[], opts: ComputeOptions = {}): Expr {
     const rvs = rvsIn?.length ? rvsIn : [this.value];
     if (!rvs.some((rv) => rv.key === this.value.key)) return exprIn;
@@ -479,6 +801,13 @@ export class SingleContinuousPSpace extends ContinuousPSpace {
     // (SymPy falls back to the integral on a PoleError, which the series of symjs does not raise)
     return this.distribution.expectation(expr, this.value.symbol, { evaluate: opts.evaluate ?? false });
   }
+  /**
+   * The cumulative distribution function of the expression.
+   *
+   * @param expr - Expression to evaluate.
+   * @returns The cumulative distribution function.
+   * @see SymPy `sympy.stats.crv.SingleContinuousPSpace.compute_cdf`
+   */
   override computeCdf(expr: Expr): DensityResult {
     if (expr instanceof Pow && expr.base.key === this.value.key && expr.exp instanceof Rational && expr.exp.isInteger && expr.exp.isPositive && expr.exp.p % 2n === 0n) {
       // X**(2*n) <= z exactly when -z**(1/(2*n)) <= X <= z**(1/(2*n)).
@@ -492,16 +821,38 @@ export class SingleContinuousPSpace extends ContinuousPSpace {
     const z = new Dummy('z', { real: true });
     return Lambda(z, this.distribution.cdf(z));
   }
+  /**
+   * The characteristic function of the expression.
+   *
+   * @param expr - Expression to evaluate.
+   * @returns The characteristic function of the expression.
+   * @see SymPy `sympy.stats.crv.SingleContinuousPSpace.compute_characteristic_function`
+   */
   override computeCharacteristicFunction(expr: Expr): Expr {
     if (expr.key !== this.value.key) return super.computeCharacteristicFunction(expr);
     const t = new Dummy('t', { real: true });
     return Lambda(t, this.distribution.characteristicFunction(t));
   }
+  /**
+   * The moment generating function of the expression.
+   *
+   * @param expr - Expression to evaluate.
+   * @returns The moment generating function of the expression.
+   * @see SymPy `sympy.stats.crv.SingleContinuousPSpace.compute_moment_generating_function`
+   */
   override computeMomentGeneratingFunction(expr: Expr): Expr {
     if (expr.key !== this.value.key) return super.computeMomentGeneratingFunction(expr);
     const t = new Dummy('t', { real: true });
     return Lambda(t, this.distribution.momentGeneratingFunction(t));
   }
+  /**
+   * The distribution of the expression on this probability space.
+   *
+   * @param expr - Expression to evaluate.
+   * @returns The probability distribution of the expression.
+   * @throws RangeError when the transformation cannot be inverted.
+   * @see SymPy `sympy.stats.crv.SingleContinuousPSpace.compute_density`
+   */
   override computeDensity(expr: Expr): DensityResult {
     if (expr.key === this.value.key) return this.density;
     const y = new Dummy('y', { real: true });
@@ -511,6 +862,13 @@ export class SingleContinuousPSpace extends ContinuousPSpace {
     const fx = this.distribution;
     return Lambda(y, add(...gs.args.map((g) => mul(fx.pdf(g), abs(g.diff(y))))));
   }
+  /**
+   * The quantile function of the expression.
+   *
+   * @param expr - Expression to evaluate.
+   * @returns The quantile function.
+   * @see SymPy `sympy.stats.crv.SingleContinuousPSpace.compute_quantile`
+   */
   override computeQuantile(expr: Expr): Expr {
     if (expr.key !== this.value.key) return super.computeQuantile(expr);
     const p = new Dummy('p', { real: true });

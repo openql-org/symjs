@@ -40,10 +40,24 @@ export interface SataskOptions {
 type Prop = ExprLike | boolean;
 
 /**
- * SymPy satask: the truth value of the proposition under the assumptions
+ * The truth value of the proposition under the assumptions
  * and the context, decided by a SAT solver over every fact relevant to the
  * expressions involved; 'unknown' when it cannot be determined. Throws a
  * RangeError when the assumptions are inconsistent.
+ *
+ * @param proposition - Proposition whose truth is to be decided.
+ * @param assumptions - Facts assumed to hold.
+ * @param opts - Additional assumptions in `context`, whether to `useKnownFacts`, and the maximum number of `iterations`.
+ * @returns Whether the predicate holds, or `'unknown'` when undecided.
+ * @throws RangeError when the assumptions are inconsistent.
+ * @see SymPy `sympy.assumptions.satask.satask`
+ * @example
+ * ```ts
+ * import { Q, abs, satask, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * satask(Q.zero(abs(x)), Q.zero(x)); // => True
+ * ```
  */
 export function satask(proposition: Prop, assumptions: Prop = true, opts: SataskOptions = {}): Truth {
   const context = [...(opts.context ?? globalAssumptions)];
@@ -65,9 +79,16 @@ function isSatisfiable(enc: EncodedCNF): boolean {
 }
 
 /**
- * SymPy check_satisfiability: true when only the proposition is consistent
+ * True when only the proposition is consistent
  * with the facts, false when only its negation is, 'unknown' when both are;
  * a RangeError when neither is (inconsistent assumptions).
+ *
+ * @param prop - Proposition to include.
+ * @param negProp - Negation of the proposition.
+ * @param factbase - Encoded clauses assumed to hold.
+ * @returns Whether the predicate holds, or `'unknown'` when undecided.
+ * @throws RangeError when the fact base is inconsistent.
+ * @see SymPy `sympy.assumptions.satask.check_satisfiability`
  */
 export function checkSatisfiability(prop: CNF, negProp: CNF, factbase: EncodedCNF): Truth {
   const satTrue = factbase.copy();
@@ -82,7 +103,13 @@ export function checkSatisfiability(prop: CNF, negProp: CNF, factbase: EncodedCN
   throw new RangeError('Inconsistent assumptions');
 }
 
-/** SymPy find_symbols: every Symbol in a CNF or an expression. */
+/**
+ * Every Symbol in a CNF or an expression.
+ *
+ * @param pred - Predicate or clauses to inspect.
+ * @returns The distinct symbols in the formula.
+ * @see SymPy `sympy.assumptions.satask.find_symbols`
+ */
 export function findSymbols(pred: CNF | PredicateLike): Set<Expr> {
   if (pred instanceof CNF) {
     const out = new Map<string, Expr>();
@@ -97,9 +124,24 @@ const keysOf = (s: Iterable<Expr>): Set<string> => new Set([...s].map((e) => e.k
 const meets = (a: ReadonlySet<string>, b: ReadonlySet<string>): boolean => [...a].some((k) => b.has(k));
 
 /**
- * SymPy extract_predargs: every expression in the argument of a predicate
+ * Every expression in the argument of a predicate
  * of the proposition, and of the predicates of the assumptions and the
  * context that share symbols with it (transitively).
+ *
+ * @param proposition - Proposition whose truth is to be decided.
+ * @param assumptions - Facts assumed to hold.
+ * @param context - Additional facts in the local context.
+ * @returns The expressions appearing as predicate arguments.
+ * @see SymPy `sympy.assumptions.satask.extract_predargs`
+ * @example
+ * ```ts
+ * import { CNF, Q, abs, and, extractPredargs, symbols } from '@symjs/symjs';
+ *
+ * const [x, y] = symbols('x y');
+ * const prop = CNF.fromProp(Q.zero(abs(x.mul(y))));
+ * const assumptions = CNF.fromProp(and(Q.zero(x), Q.zero(y)));
+ * extractPredargs(prop, assumptions).size; // => 3
+ * ```
  */
 export function extractPredargs(proposition: CNF, assumptions?: CNF, context?: CNF): Set<Expr> {
   const reqKeys = keysOf(findSymbols(proposition));
@@ -127,9 +169,21 @@ export function extractPredargs(proposition: CNF, assumptions?: CNF, context?: C
 }
 
 /**
- * SymPy get_relevant_clsfacts: the class facts (sathandlers) of the
+ * The class facts (sathandlers) of the
  * expressions added to relevantFacts, and the expressions they introduce
  * that are not among exprs (the candidates of the next round).
+ *
+ * @param exprs - Expressions whose facts are needed.
+ * @param relevantFacts - Previously collected facts in conjunctive normal form.
+ * @returns Newly discovered expressions and the accumulated clauses.
+ * @see SymPy `sympy.assumptions.satask.get_relevant_clsfacts`
+ * @example
+ * ```ts
+ * import { ex, getRelevantClsfacts } from '@symjs/symjs';
+ *
+ * const [argumentsOfFacts] = getRelevantClsfacts([ex`Abs(x*y)`]);
+ * argumentsOfFacts.size; // => 1
+ * ```
  */
 export function getRelevantClsfacts(exprs: Iterable<Expr>, relevantFacts: CNF = new CNF()): [Set<Expr>, CNF] {
   const given = [...exprs];
@@ -155,11 +209,23 @@ const isNumberKind = (e: Expr): boolean =>
   !isMatrixKind(e) && !(e instanceof BoolAtom || e instanceof Rel || e instanceof BoolOp || e instanceof AppliedPredicate);
 
 /**
- * SymPy get_all_relevant_facts: the class facts relevant to the
- * proposition, the assumptions and the context, found by repeating
- * getRelevantClsfacts until no new expression appears (or `iterations`
- * times), with the known facts of every expression involved, as an
- * EncodedCNF.
+ * Collects facts about the query expressions and the expressions introduced by their class rules.
+ *
+ * @param proposition - Proposition whose truth is to be decided.
+ * @param assumptions - Facts assumed to hold.
+ * @param context - Additional facts in the local context.
+ * @param useKnownFacts - Include implications between the built-in predicates.
+ * @param iterations - Maximum number of rounds of fact extraction.
+ * @returns Integer-encoded clauses relevant to the query.
+ * @see SymPy `sympy.assumptions.satask.get_all_relevant_facts`
+ * @example
+ * ```ts
+ * import { CNF, Q, getAllRelevantFacts, symbols } from '@symjs/symjs';
+ *
+ * const [x, y] = symbols('x y');
+ * const facts = getAllRelevantFacts(CNF.fromProp(Q.nonzero(x.mul(y))), CNF.fromProp(Q.nonzero(x)), CNF.fromProp(Q.nonzero(y)));
+ * facts.data.length > 0; // => True
+ * ```
  */
 export function getAllRelevantFacts(proposition: CNF, assumptions: CNF, context: CNF, useKnownFacts = true, iterations = Infinity): EncodedCNF {
   let i = 0;

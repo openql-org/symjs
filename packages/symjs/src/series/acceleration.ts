@@ -14,7 +14,24 @@ function index(n: number): void {
   if (!Number.isSafeInteger(n) || n < 0) throw new RangeError('Sequence indices must be nonnegative safe integers');
 }
 
-/** Richardson extrapolation of A(k) from n through n + N, with exact symbolic arithmetic. */
+/**
+ * Richardson extrapolation of A(k) from n through n + N, with exact symbolic arithmetic.
+ *
+ * @param sequence - Expression for a term of the sequence.
+ * @param variable - Independent variable.
+ * @param n - Nonnegative index at which to extrapolate.
+ * @param N - Order of the extrapolation.
+ * @returns The extrapolated limit estimate.
+ * @throws RangeError when either index is not a nonnegative safe integer.
+ * @see SymPy `sympy.series.acceleration.richardson`
+ * @example
+ * ```ts
+ * import { ex, richardson, symbols } from '@symjs/symjs';
+ *
+ * const [n] = symbols('n');
+ * richardson(ex`(1 + 1/n)**n`, n, 2, 2); // => 259/96
+ * ```
+ */
 export function richardson(sequence: ExprLike, variable: ExprLike, n: number, N: number): Expr {
   index(n); index(N);
   const A = sympify(sequence), k = sympify(variable);
@@ -26,7 +43,25 @@ export function richardson(sequence: ExprLike, variable: ExprLike, n: number, N:
   return add(...terms);
 }
 
-/** The m-fold recursive Shanks transformation of the symbolic sequence A(k) at n. */
+/**
+ * The m-fold recursive Shanks transformation of the symbolic sequence A(k) at n.
+ *
+ * @param sequence - Expression for a term of the sequence.
+ * @param variable - Independent variable.
+ * @param n - Nonnegative index at which to extrapolate.
+ * @param m - Number of recursive transformations.
+ * @returns The transformed sequence value.
+ * @throws RangeError when the index or recursion depth is not a nonnegative safe integer.
+ * @see SymPy `sympy.series.acceleration.shanks`
+ * @example
+ * ```ts
+ * import { Sum, ex, shanks, symbols } from '@symjs/symjs';
+ *
+ * const [k, n] = symbols('k n');
+ * const partial = Sum(ex`(-1)**(k + 1)/k`, [k, 1, n]);
+ * shanks(partial, n, 3); // => 29/42
+ * ```
+ */
 export function shanks(sequence: ExprLike, variable: ExprLike, n: number, m = 1): Expr {
   index(n); index(m);
   const A = sympify(sequence), k = sympify(variable);

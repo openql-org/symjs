@@ -27,7 +27,7 @@ const defaultX: Sym = /* @__PURE__ */ new Sym('x');
 
 /** Options of approximants. */
 export interface ApproximantsOptions {
-  /** true: simplify every approximant (slower, useful when symbols are involved). */
+  /** True: simplify every approximant (slower, useful when symbols are involved). */
   simplify?: boolean;
 }
 
@@ -38,12 +38,24 @@ function trimZeros(p: Expr[]): void {
 
 /**
  * The consecutive Pade approximants of the series with coefficients l, as
- * rational functions of X (SymPy approximants). The last one is the
+ * rational functions of X. The last one is the
  * rational generating function of the sequence, if it has one. The
  * coefficients may be symbolic.
  *
  * Example: for lucas(0..15) the approximants are 2, -4/(x - 2),
  * (5*x - 2)/(3*x - 1), (x - 2)/(x**2 + x - 1).
+ *
+ * @param lIn - Coefficients in increasing degree.
+ * @param X - Variable of the rational approximants.
+ * @param opts - Set `simplify` to simplify each approximant.
+ * @returns An iterator over successive rational approximants.
+ * @see SymPy `sympy.series.approximants.approximants`
+ * @example
+ * ```ts
+ * import { approximants } from '@symjs/symjs';
+ *
+ * [...approximants([2, 1, 3, 4, 7, 11])]; // => [2, -4/(x - 2), (5*x - 2)/(3*x - 1), (x - 2)/(x**2 + x - 1)]
+ * ```
  */
 export function* approximants(lIn: readonly ExprLike[], X: Expr = defaultX, opts: ApproximantsOptions = {}): Generator<Expr, void, undefined> {
   let l = lIn.map(sympify);

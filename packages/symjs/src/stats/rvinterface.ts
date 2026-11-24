@@ -37,20 +37,67 @@ const isEmptySpace = (x: Expr): boolean => isRandom(x) && pspace(x).key === new 
 /** The optional condition as an argument list. */
 const cond = (args: readonly Expr[], condition: ExprLike | undefined): Expr[] => (condition === undefined ? [...args] : [...args, sympify(condition)]);
 
-/** The n-th moment of X about c, optionally given a condition (SymPy moment). */
+/**
+ * The n-th moment of X about c, optionally given a condition.
+ *
+ * @param X - Random expression.
+ * @param n - Order of the moment.
+ * @param c - Center about which to take the moment.
+ * @param condition - Condition on the random variables.
+ * @param opts - Set `evaluate` to false to retain an unevaluated expression.
+ * @returns The expectation of `(X - c)**n`.
+ * @see SymPy `sympy.stats.rv_interface.moment`
+ * @example
+ * ```ts
+ * import { Die, moment } from '@symjs/symjs';
+ *
+ * const X = Die('X', 6);
+ * moment(X, 1, 6); // => -5/2
+ * ```
+ */
 export function moment(X: ExprLike, n: ExprLike, c: ExprLike = 0, condition?: ExprLike, opts: ProbabilityOptions = {}): Expr {
   const m = new MomentNode(cond([sympify(X), sympify(n), sympify(c)], condition));
   return opts.evaluate ?? true ? m.doit() : rewrite(m, 'Integral');
 }
 
-/** The variance of a random expression, optionally given a condition (SymPy variance). */
+/**
+ * The variance of a random expression, optionally given a condition.
+ *
+ * @param X - Random expression.
+ * @param condition - Condition on the random variables.
+ * @param opts - Set `evaluate` to false to retain an unevaluated expression.
+ * @returns The second central moment.
+ * @see SymPy `sympy.stats.rv_interface.variance`
+ * @example
+ * ```ts
+ * import { Die, variance } from '@symjs/symjs';
+ *
+ * const X = Die('X', 6);
+ * variance(X.mul(2)); // => 35/3
+ * ```
+ */
 export function variance(X: ExprLike, condition?: ExprLike, opts: ProbabilityOptions = {}): Expr {
   const x = sympify(X);
   if (isEmptySpace(x)) return Variance(x, condition);
   return cmoment(x, 2, condition, opts);
 }
 
-/** The standard deviation of a random expression (SymPy std, standard_deviation). */
+/**
+ * The standard deviation of a random expression (SymPy std, standard_deviation).
+ *
+ * @param X - Random expression.
+ * @param condition - Condition on the random variables.
+ * @param opts - Set `evaluate` to false to retain an unevaluated expression.
+ * @returns The square root of the variance.
+ * @see SymPy `sympy.stats.rv_interface.standard_deviation`
+ * @example
+ * ```ts
+ * import { Bernoulli, ex, std } from '@symjs/symjs';
+ *
+ * const B = Bernoulli('B', ex`1/2`);
+ * std(B); // => 1/2
+ * ```
+ */
 export function std(X: ExprLike, condition?: ExprLike, opts: ProbabilityOptions = {}): Expr {
   return sqrt(variance(X, condition, opts));
 }
@@ -61,7 +108,21 @@ export interface EntropyOptions extends ProbabilityOptions {
   readonly b?: ExprLike;
 }
 
-/** The entropy of a random expression (SymPy entropy, H). */
+/**
+ * The entropy of a random expression (SymPy entropy, H).
+ *
+ * @param expr - Expression to evaluate.
+ * @param condition - Condition on the random variables.
+ * @param opts - Use `b` for the logarithm base and `evaluate` to control evaluation.
+ * @returns The entropy in the requested logarithm base.
+ * @see SymPy `sympy.stats.rv_interface.entropy`
+ * @example
+ * ```ts
+ * import { Die, entropy } from '@symjs/symjs';
+ *
+ * entropy(Die('D', 4)); // => log(4)
+ * ```
+ */
 export function entropy(expr: ExprLike, condition?: ExprLike, opts: EntropyOptions = {}): Expr {
   const pdf = density(expr, condition, opts);
   const base = opts.b === undefined ? S.E : sympify(opts.b);
@@ -71,10 +132,40 @@ export function entropy(expr: ExprLike, condition?: ExprLike, opts: EntropyOptio
   return expectation(mul(-1, lg(f)));
 }
 
-/** SymPy H: the entropy. */
+/**
+ * Computes the entropy of a random expression.
+ *
+ * @param expr - Expression to evaluate.
+ * @param condition - Condition on the random variables.
+ * @param opts - Use `b` for the logarithm base and `evaluate` to control evaluation.
+ * @returns The entropy in the requested logarithm base.
+ * @see SymPy `sympy.stats.rv_interface.entropy`
+ * @example
+ * ```ts
+ * import { Die, H } from '@symjs/symjs';
+ *
+ * H(Die('D', 4)); // => log(4)
+ * ```
+ */
 export const H = entropy;
 
-/** The covariance of two random expressions (SymPy covariance). */
+/**
+ * The covariance of two random expressions.
+ *
+ * @param X - Random expression.
+ * @param Y - Second random expression.
+ * @param condition - Condition on the random variables.
+ * @param opts - Set `evaluate` to false to retain an unevaluated expression.
+ * @returns The expectation of the product of the centered variables.
+ * @see SymPy `sympy.stats.rv_interface.covariance`
+ * @example
+ * ```ts
+ * import { Exponential, covariance } from '@symjs/symjs';
+ *
+ * const X = Exponential('X', 1), Y = Exponential('Y', 1);
+ * covariance(X, Y); // => 0
+ * ```
+ */
 export function covariance(X: ExprLike, Y: ExprLike, condition?: ExprLike, opts: ProbabilityOptions = {}): Expr {
   const [x, y] = [sympify(X), sympify(Y)];
   if (isEmptySpace(x) || isEmptySpace(y)) {
@@ -83,39 +174,145 @@ export function covariance(X: ExprLike, Y: ExprLike, condition?: ExprLike, opts:
   return expectation(mul(sub(x, expectation(x, condition, opts)), sub(y, expectation(y, condition, opts))), condition, opts);
 }
 
-/** The correlation of two random expressions (SymPy correlation). */
+/**
+ * The correlation of two random expressions.
+ *
+ * @param X - Random expression.
+ * @param Y - Second random expression.
+ * @param condition - Condition on the random variables.
+ * @param opts - Set `evaluate` to false to retain an unevaluated expression.
+ * @returns The covariance divided by the product of the standard deviations.
+ * @see SymPy `sympy.stats.rv_interface.correlation`
+ * @example
+ * ```ts
+ * import { Exponential, correlation } from '@symjs/symjs';
+ *
+ * const X = Exponential('X', 1), Y = Exponential('Y', 1);
+ * correlation(X, Y); // => 0
+ * ```
+ */
 export function correlation(X: ExprLike, Y: ExprLike, condition?: ExprLike, opts: ProbabilityOptions = {}): Expr {
   return mul(covariance(X, Y, condition, opts), pow(mul(std(X, condition, opts), std(Y, condition, opts)), -1));
 }
 
-/** The n-th central moment of a random expression (SymPy cmoment). */
+/**
+ * The n-th central moment of a random expression.
+ *
+ * @param X - Random expression.
+ * @param n - Order of the moment.
+ * @param condition - Condition on the random variables.
+ * @param opts - Set `evaluate` to false to retain an unevaluated expression.
+ * @returns The moment of order `n` about the mean.
+ * @see SymPy `sympy.stats.rv_interface.cmoment`
+ * @example
+ * ```ts
+ * import { Die, cmoment } from '@symjs/symjs';
+ *
+ * const X = Die('X', 6);
+ * cmoment(X, 3); // => 0
+ * ```
+ */
 export function cmoment(X: ExprLike, n: ExprLike, condition?: ExprLike, opts: ProbabilityOptions = {}): Expr {
   const m = new CentralMomentNode(cond([sympify(X), sympify(n)], condition));
   return opts.evaluate ?? true ? m.doit() : rewrite(m, 'Integral');
 }
 
-/** The n-th standardized moment of a random expression (SymPy smoment). */
+/**
+ * The n-th standardized moment of a random expression.
+ *
+ * @param X - Random expression.
+ * @param n - Order of the moment.
+ * @param condition - Condition on the random variables.
+ * @param opts - Set `evaluate` to false to retain an unevaluated expression.
+ * @returns The central moment divided by the standard deviation to power `n`.
+ * @see SymPy `sympy.stats.rv_interface.smoment`
+ * @example
+ * ```ts
+ * import { Exponential, smoment } from '@symjs/symjs';
+ *
+ * const Y = Exponential('Y', 1);
+ * smoment(Y, 4); // => 9
+ * ```
+ */
 export function smoment(X: ExprLike, n: ExprLike, condition?: ExprLike, opts: ProbabilityOptions = {}): Expr {
   const sigma = std(X, condition, opts);
   return mul(pow(pow(sigma, -1), n), cmoment(X, n, condition, opts));
 }
 
-/** The skewness of a random expression (SymPy skewness). */
+/**
+ * The skewness of a random expression.
+ *
+ * @param X - Random expression.
+ * @param condition - Condition on the random variables.
+ * @param opts - Set `evaluate` to false to retain an unevaluated expression.
+ * @returns The third standardized moment.
+ * @see SymPy `sympy.stats.rv_interface.skewness`
+ * @example
+ * ```ts
+ * import { Gt, Normal, simplify, skewness } from '@symjs/symjs';
+ *
+ * skewness(Normal('X', 0, 1)); // => 0
+ * const X = Normal('X', 0, 1);
+ * simplify(skewness(X, Gt(X, 0))); // => sqrt(2)*(4 - pi)/(-2 + pi)**(3/2)
+ * ```
+ */
 export function skewness(X: ExprLike, condition?: ExprLike, opts: ProbabilityOptions = {}): Expr {
   return smoment(X, 3, condition, opts);
 }
 
-/** The kurtosis of a random expression (SymPy kurtosis). */
+/**
+ * The kurtosis of a random expression.
+ *
+ * @param X - Random expression.
+ * @param condition - Condition on the random variables.
+ * @param opts - Set `evaluate` to false to retain an unevaluated expression.
+ * @returns The fourth standardized moment.
+ * @see SymPy `sympy.stats.rv_interface.kurtosis`
+ * @example
+ * ```ts
+ * import { Normal, kurtosis } from '@symjs/symjs';
+ *
+ * kurtosis(Normal('X', 0, 1)); // => 3
+ * ```
+ */
 export function kurtosis(X: ExprLike, condition?: ExprLike, opts: ProbabilityOptions = {}): Expr {
   return smoment(X, 4, condition, opts);
 }
 
-/** The n-th factorial moment E(X*(X - 1)*...*(X - n + 1)) (SymPy factorial_moment). */
+/**
+ * The n-th factorial moment E(X*(X - 1)*...*(X - n + 1)).
+ *
+ * @param X - Random expression.
+ * @param n - Order of the moment.
+ * @param condition - Condition on the random variables.
+ * @param opts - Set `evaluate` to false to retain an unevaluated expression.
+ * @returns The expectation of the falling factorial of order `n`.
+ * @see SymPy `sympy.stats.rv_interface.factorial_moment`
+ * @example
+ * ```ts
+ * import { Binomial, ex, factorialMoment } from '@symjs/symjs';
+ *
+ * factorialMoment(Binomial('Y', 2, ex`1/2`), 2); // => 1/2
+ * ```
+ */
 export function factorialMoment(X: ExprLike, n: ExprLike, condition?: ExprLike, opts: ProbabilityOptions = {}): Expr {
   return expectation(ff(X, n), condition, opts);
 }
 
-/** The median of a random expression: the set of medians (SymPy median). */
+/**
+ * The median of a random expression: the set of medians.
+ *
+ * @param X - Random expression.
+ * @returns The set of medians of a random expression, or the input value for a deterministic expression.
+ * @throws NotImplementedError when no median algorithm is available for the probability space.
+ * @see SymPy `sympy.stats.rv_interface.median`
+ * @example
+ * ```ts
+ * import { Normal, median } from '@symjs/symjs';
+ *
+ * median(Normal('N', 3, 1)); // => {3}
+ * ```
+ */
 export function median(X: ExprLike): Expr {
   const x = sympify(X);
   if (!isRandom(x)) return x;
@@ -145,7 +342,24 @@ function spaceSet(ps: PSpace): SetExpr {
   return cast(s, SetExpr, 'set of the probability space');
 }
 
-/** The coskewness of three random expressions (SymPy coskewness). */
+/**
+ * The coskewness of three random expressions.
+ *
+ * @param X - Random expression.
+ * @param Y - Second random expression.
+ * @param Z - Third random expression.
+ * @param condition - Condition on the random variables.
+ * @param opts - Set `evaluate` to false to retain an unevaluated expression.
+ * @returns The normalized mixed third central moment.
+ * @see SymPy `sympy.stats.rv_interface.coskewness`
+ * @example
+ * ```ts
+ * import { Exponential, coskewness } from '@symjs/symjs';
+ *
+ * const X = Exponential('X', 1), Y = Exponential('Y', 1);
+ * coskewness(X, Y, Y); // => 0
+ * ```
+ */
 export function coskewness(X: ExprLike, Y: ExprLike, Z: ExprLike, condition?: ExprLike, opts: ProbabilityOptions = {}): Expr {
   const [x, y, z] = [sympify(X), sympify(Y), sympify(Z)];
   const num = expectation(

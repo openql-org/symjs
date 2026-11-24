@@ -1052,7 +1052,16 @@ function unsureFinite(l: Expr): boolean {
   return l.has(S.Infinity) && !isInf(l);
 }
 
-/** Compute a limit from the limits of its arguments, or return Unsolved. */
+/**
+ * Compute a limit from the limits of its arguments, or return Unsolved.
+ *
+ * @param e - Expression to evaluate.
+ * @param z - Limit variable.
+ * @param point - Point approached by the variable.
+ * @param direction - Side from which the variable approaches the point.
+ * @returns The limit, or `Unsolved` when component limits do not determine it.
+ * @see SymPy `sympy.series.limits.heuristics`
+ */
 export function heuristics(e: Expr, z: Sym, point: Expr, direction: '+' | '-'): Expr | UnsolvedResult {
   return orUnsolved(heuristicLimit(e, z, point, direction, BUDGET));
 }

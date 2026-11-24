@@ -15,8 +15,23 @@ import { collect } from '../simplify/radsimp';
 import { series } from './series';
 
 /**
- * SymPy residue(expr, x, x0): the coefficient of 1/(x - x0) in the Laurent
+ * The coefficient of 1/(x - x0) in the Laurent
  * series of expr about x = x0.
+ *
+ * @param ex - Expression to expand or evaluate.
+ * @param x - Variable of the expansion.
+ * @param x0 - Point about which to expand.
+ * @returns The coefficient of the inverse first power about the specified point.
+ * @throws NotImplementedError when the Laurent expansion contains an unsupported term.
+ * @see SymPy `sympy.series.residues.residue`
+ * @example
+ * ```ts
+ * import { ex, residue, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * residue(ex`1/x`, x, 0); // => 1
+ * residue(ex`2/sin(x)`, x, 0); // => 2
+ * ```
  */
 export function residue(ex: ExprLike, x: Sym, x0: ExprLike = 0): Expr {
   const p = sympify(x0);
