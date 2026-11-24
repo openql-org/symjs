@@ -17,6 +17,7 @@ import { Add, Constant, ExtensionExpr, Fn, Mul, Order, Pow, Rational, S, Special
 import { numAdd, numCmp, numMul, numNeg } from '../core/num';
 import { add, exp, mul, pow } from '../core/ops';
 import { xreplace as subs } from '../core/traverse';
+import { evalf } from '../numeric/evalf';
 import { fn, log } from '../functions/elementary/elementary';
 import { fnTaylorAtZero } from '../calculus/diff';
 import { expandMul as expand } from '../simplify/expand';
@@ -60,7 +61,8 @@ export function isZeroCoeff(c: Expr): boolean {
   const samples: [number, number][] = syms.length === 0 ? [[0, 0]] : [[0.6180339887, -1.3247179572], [-2.2055694304, 0.7548776662]];
   try {
     return samples.every(([re, im]) => {
-      const val = subs(x, syms.map((y, j): [Expr, Expr] => [y, add(re + 0.1 * j, mul(im, S.I))])).toComplex();
+      // (evaluated with the values, without rebuilding the expression at the sample point)
+      const val = evalf(x, 15, { subs: new Map(syms.map((y, j) => [y, { re: re + 0.1 * j, im }])) }).toComplex();
       return Math.hypot(val.re, val.im) < 1e-12;
     });
   } catch {

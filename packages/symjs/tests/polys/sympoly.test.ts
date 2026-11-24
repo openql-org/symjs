@@ -578,9 +578,10 @@ describe('further Poly cases', () => {
     expect(() => P('x - pi', x).norm()).toThrow(sj.DomainError);
     expect(() => P('x - pi*sqrt(2)', x).norm()).toThrow(sj.DomainError);
     // SymPy gives the roots as CRootOf of the degree-8 norm; symjs keeps the radicals
-    // (the square root factored as SymPy's roots_quadratic does over EX: factor_terms(sqrt(2 - 4*I)/2) = sqrt(2)*sqrt(1 - 2*I)/2)
+    // (the square root factored as SymPy's roots_quadratic does over EX: factor_terms(sqrt(2 - 4*I)/2) = sqrt(2)*sqrt(1 - 2*I)/2,
+    // then split as SymPy's expand(complex=True) splits sqrt(2)/2 -+ sqrt(2)*sqrt(1 - 2*I)/2)
     expect(show(P('x**2 - sqrt(2)*x + I', x).allRoots({ extension: true }))).toBe(
-      '[-sqrt(2)*re(sqrt(1 - 2*I))/2 + sqrt(2)/2 - sqrt(2)*I*im(sqrt(1 - 2*I))/2, sqrt(2)/2 + sqrt(2)*re(sqrt(1 - 2*I))/2 + sqrt(2)*I*im(sqrt(1 - 2*I))/2]',
+      '[-sqrt(2)*5**(1/4)*cos(atan(2)/2)/2 + sqrt(2)/2 + sqrt(2)*5**(1/4)*I*sin(atan(2)/2)/2, sqrt(2)/2 + sqrt(2)*5**(1/4)*cos(atan(2)/2)/2 - sqrt(2)*5**(1/4)*I*sin(atan(2)/2)/2]',
     );
     const r = sj.rootof(parse('x**3 - x - 2'), 0);
     expect(show(P('x**3 - x - 1', x).whichAllRoots([r, parse('1'), parse('2'), parse('3')]))).toBe('[]');

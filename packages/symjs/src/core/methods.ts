@@ -681,8 +681,8 @@ export function asRealImag(eIn: ExprLike): [Expr, Expr] {
     }
     return [real, imag];
   }
-  // SymPy Pow.as_real_imag splits an integer power without expanding it first
-  if (e0 instanceof Pow && e0.exp instanceof Rational && e0.exp.isInteger) return [re(e0), im(e0)];
+  // SymPy Pow.as_real_imag splits a rational power without expanding it first
+  if (e0 instanceof Pow && e0.exp instanceof Rational) return impl.powRealImag?.(e0) ?? [re(e0), im(e0)];
   const e = expandMul(e0);
   return [re(e), im(e)];
 }
@@ -1375,3 +1375,5 @@ export function rcall(eIn: ExprLike, ...args: (ExprLike | null)[]): Expr {
 export function prod(a: Iterable<ExprLike>, start: ExprLike = 1): Expr {
   return mul(start, ...a);
 }
+
+impl.coeff = (e, x, n, right) => coeff(e, x, n, right);

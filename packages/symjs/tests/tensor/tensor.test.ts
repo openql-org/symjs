@@ -114,7 +114,7 @@ describe('index types, indices, symmetries and heads', () => {
     expect(() => A.at(i, j)).toThrow('number');
     expect(String(TensorHead('S', []).at())).toBe('S');
     const t = T.at(i, i.neg());
-    expect([String(t), str(t.free), str(t.dum), t.extRank, t.rank, String(t.coeff), t.nocoeff === t]).toEqual(['T(L_0, -L_0)', '[]', '[[0, 1]]', 2, 0, '1', true]);
+    expect([String(t), str(t.free), str(t.dum), t.extRank, t.rank, String(t.coEff), t.nocoeff === t]).toEqual(['T(L_0, -L_0)', '[]', '[[0, 1]]', 2, 0, '1', true]);
     expect([str(T.at(j, i).freeArgs), str(T.at(j, i).getFreeIndices()), str(t.split()), t.sortedComponents() === t]).toEqual(['[i, j]', '[j, i]', '[T(L_0, -L_0)]', true]);
     expect(t.withArgs(t.args).equals(t)).toBe(true);
     expect(() => T.at(i, i)).toThrow('two equal contravariant indices in slots 0 and 1');
@@ -176,7 +176,7 @@ describe('products and sums', () => {
   it('splits products and gives the coefficient', () => {
     const t = mul(2, A.at(i), B.at(j), x) as TensMul;
     expect(str(t.split())).toBe('[2*x*A(i), B(j)]');
-    expect([String(t.coeff), String(t.nocoeff)]).toEqual(['2*x', 'A(i)*B(j)']);
+    expect([String(t.coEff), String(t.nocoeff)]).toEqual(['2*x', 'A(i)*B(j)']);
   });
   it('collects and orders terms like SymPy', () => {
     const got = [
@@ -221,7 +221,7 @@ describe('products and sums', () => {
     expect(String(add(new TensMul([0, A.at(i)]), B.at(i)))).toBe('B(i)');
     expect(add(new TensMul([0, A.at(i)]), new TensMul([0, B.at(i)]))).toBe(S.Zero);
     const s = add(A.at(i), B.at(i)) as TensAdd;
-    expect([String(s.coeff), s.nocoeff === s, s.rank, str(s.getFreeIndices()), str(s.getIndices())]).toEqual(['1', true, 1, '[i]', '[i]']);
+    expect([String(s.coEff), s.nocoeff === s, s.rank, str(s.getFreeIndices()), str(s.getIndices())]).toEqual(['1', true, 1, '[i]', '[i]']);
     expect(str((add(mul(A.at(j), A.at(j.neg())), mul(B.at(i), B.at(i.neg()))) as TensAdd).getIndices())).toBe('[L_0, -L_0]');
     expect((add(mul(A.at(j), A.at(j.neg())), x) as TensAdd).rank).toBe(0);
     expect(s.withArgs(s.args).equals(s)).toBe(true);
@@ -457,7 +457,7 @@ describe('component arrays', () => {
     const S2 = TensorHead('A', [L, L], TensorSymmetry.fullySymmetric(2));
     expect(str(S2.at(si, sj).getFreeIndices())).toBe('[i, j]');
     const te = TensorElement(S2.at(si, sj), new Map([[si, 2]])) as TensorElement;
-    expect([String(te), str(te.getFreeIndices()), str(te.getIndices()), String(te.coeff), te.nocoeff === te, String(te.expr), String(te.indexMap)]).toEqual(['TensorElement(A(i, j), {i: 2})', '[j]', '[j]', '1', true, 'A(i, j)', '{i: 2}']);
+    expect([String(te), str(te.getFreeIndices()), str(te.getIndices()), String(te.coEff), te.nocoeff === te, String(te.expr), String(te.indexMap)]).toEqual(['TensorElement(A(i, j), {i: 2})', '[j]', '[j]', '1', true, 'A(i, j)', '{i: 2}']);
     expect(te.withArgs(te.args).equals(te)).toBe(true);
     expect([te.doitShallow(), te.canonBp(), te.contractMetric(), te.substituteIndices()].every((v) => v === te)).toBe(true);
     expect(String(te.replaceIndices(new Map([[li.key, lk]])))).toBe('TensorElement(A(k, j), {k: 2})');

@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import { replayDeadlineMs } from './replay.js';
 import { readIndex, type Category, type Index } from '../corpus.js';
 import type { TestOutcome } from '../unittest-harness.js';
+import { writeEquivalentCases, type EquivalentCase } from './equivalent-cases.js';
 
 export interface Counts { cases: number; exact: number; equivalent: number; fail: number; unsupported: number; error: number }
 export interface Audit extends Category {
@@ -21,6 +22,7 @@ export interface CategoryResult {
   category: string; seconds: number; total: Counts; modules: Record<string, Counts>;
   failureGroups: Record<string, number>; apiGroups: Record<string, number>;
   failures: { id: string; fn: string; expected: string; outcome: TestOutcome }[];
+  equivalents?: EquivalentCase[];
   exclusions?: { id: string; reason: string }[];
   exceptionMismatches: { id: string; expected: string; actual: string }[];
 }
@@ -52,7 +54,7 @@ export function writeUnittestReport(directory: string, suiteSeconds: number): bo
   const lines = [
     '# SymPy unit-test agreement from harness replay (`bun run corpus:compat`)', '',
     `Reference: SymPy ${index.sympy}. Independent of the doctest corpus and its ratchet.`, '',
-    `Measured **${total.cases}** cases: **${total.exact} exact**, **${total.equivalent} equivalent**, **${failing.length} failing**. Agreement: **${ratio(total.exact + total.equivalent, total.cases)}**.`, '',
+    `Measured **${total.cases}** cases: **${total.exact} exact**, **${total.equivalent} equivalent**, **${failing.length} failing**. Agreement: **${ratio(total.exact + total.equivalent, total.cases)}**; exact: **${ratio(total.exact, total.cases)}**. The equivalent cases are listed in [unittest-equivalent-cases.md](unittest-equivalent-cases.md).`, '',
     `Compatibility suite wall time: **${suiteSeconds.toFixed(2)} s**. Sum of category replay times: **${seconds.toFixed(2)} s** (projects run in parallel).`, '',
     `Extraction wall time: **${index.lastRunSeconds.toFixed(2)} s**, ${index.jobs} processes, ${index.timeoutSeconds} s per upstream test. Retained modules reuse established observations; their time covers loading and auditing, not re-execution.`, '',
     `Synchronous replay has a ${replayDeadlineMs('core') / 1000} s deadline per core/polys case and ${replayDeadlineMs('tensor') / 1000} s elsewhere. Deadlines remain visible as failing/inconclusive observations and are never accepted as expected exceptions. Their IDs are stored separately in the ratchet: an unfinished assertion cannot establish or resolve a correctness regression.`, '',
@@ -83,6 +85,7 @@ export function writeUnittestReport(directory: string, suiteSeconds: number): bo
   for (const { file, reason } of index.excludedFiles) lines.push(`| ${file} | ${reason} |`);
   lines.push('', `Accepted exception class mismatches: **${mismatch.length}**. Their case IDs and classes are retained in unittest-report.json.`, '');
   writeFileSync(new URL('../../../docs/unittest-compat-report.md', import.meta.url), lines.join('\n'));
+  writeEquivalentCases('unittest', results.flatMap((r) => r.equivalents ?? []));
   writeFileSync(new URL('./results/unittest-report.json', import.meta.url), JSON.stringify({
     sympy: index.sympy, suiteSeconds, seconds, total,
     categories: Object.fromEntries(results.map((r) => [r.category, { ...r, failures: r.failures.length }])),

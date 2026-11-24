@@ -9,6 +9,7 @@ import type { Case, Outcome } from '../harness.js';
 import type { Evidence, adapterInventory } from '../adapter-audit.js';
 import type { BaseCheckResult } from './base-scope.js';
 import type { OdeCheckResult } from '../ode-checks.js';
+import { writeEquivalentCases } from './equivalent-cases.js';
 
 export interface DoctestResult {
   results: { c: Pick<Case, 'module' | 'src' | 'fn' | 'category' | 'expected'>; o: Outcome; evidence: Evidence }[];
@@ -195,6 +196,7 @@ export function writeDoctestReport(directory: string): boolean {
   );
   lines.push(
     `**Measured corpus only: result agreement ${pct(total.pass + total.equivalent, total.cases)} (${total.pass + total.equivalent}/${total.cases}; exact ${pct(total.pass, total.cases)} ${total.pass}, equivalent ${total.equivalent}; ${ported} run as JavaScript translations), API presence ${pct(total.apiDone, total.api)} (${total.apiDone}/${total.api})**`,
+    'The equivalent cases are listed in [doctest-equivalent-cases.md](doctest-equivalent-cases.md).',
     '',
   );
   lines.push(
@@ -306,6 +308,7 @@ export function writeDoctestReport(directory: string): boolean {
     ) + '\n',
   );
 
+  writeEquivalentCases('doctest', results.flatMap(({ c, o }) => o.status === 'equivalent' ? [{ id: `${c.module}: ${c.src}`, fn: c.fn, got: o.got, expected: c.expected }] : []));
   const failing = categories.flatMap(r => r.failing).sort();
   const api = categories.flatMap(r => r.missingApi).sort();
   const timeouts = categories.flatMap(r => r.timeouts).sort();

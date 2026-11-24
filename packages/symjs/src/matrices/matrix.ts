@@ -506,9 +506,9 @@ export class Matrix {
   // ---- transformation --------------------------------------------------------------
 
   subs(s: Substitution): Matrix;
-  subs(from: Expr, to: ExprLike): Matrix;
-  subs(a: Substitution | Expr, b?: ExprLike): Matrix {
-    const spec: Substitution = a instanceof Expr ? [[a, defined(b, 'subs replacement')]] : a;
+  subs(from: Expr | string, to: ExprLike): Matrix;
+  subs(a: Substitution | Expr | string, b?: ExprLike): Matrix {
+    const spec: Substitution = a instanceof Expr || typeof a === 'string' ? [[typeof a === 'string' ? new Sym(a) : a, defined(b, 'subs replacement')]] : a;
     return this.map((e) => subs(e, spec));
   }
   expand(): Matrix {

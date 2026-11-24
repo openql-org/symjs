@@ -54,6 +54,30 @@ diff(ex`sin(${x})^2`, x).toString();                    // '2*sin(x)*cos(x)'
 - Numbers written inside the template are exact (`1/3` is the rational one third).
 - The grammar is the one of `parse`; use `parse(src, options)` for a string built at runtime or for parser options.
 
+### Passing hints and keyword arguments
+
+SymPy's keyword arguments (`expand(e, trig=True)`) are passed as an options object in the last argument.
+Writing `trig=True` in JavaScript is an assignment to a variable, not a keyword argument, and throws `ReferenceError: True is not defined`.
+
+```ts
+import { ex, expand, factor, symbols } from '@symjs/symjs';
+
+const [a, b] = symbols('a b');
+const [x, y] = symbols('x y', { positive: true });
+
+expand(ex`tan(${a} + ${b})`, { trig: true }).toString();
+// 'tan(a)/(-tan(a)*tan(b) + 1) + tan(b)/(-tan(a)*tan(b) + 1)'
+expand(ex`log(${x}*${y}^2)`, { log: true }).toString();               // 'log(x) + 2*log(y)'
+expand(ex`exp(${a} + ${b})*(${a} + 1)`, { mul: false }).toString();   // '(a + 1)*exp(a)*exp(b)'
+expand(ex`(${a} + 1)^2/(${b} + 1)^2`, { frac: true }).toString();     // '(a**2 + 2*a + 1)/(b**2 + 2*b + 1)'
+expand(ex`(3*${a} + 2)^2`, { modulus: 5 }).toString();                // '4*a**2 + 2*a + 4'
+factor(ex`${a}^2 + 1`, { gaussian: true }).toString();                // '(a - I)*(a + I)'
+```
+
+- Option names are SymPy's keyword names as written there (`power_exp`, `power_base`, `multinomial`, ...); `True`/`False` become `true`/`false`.
+- Options left out take SymPy's defaults, so `{ mul: false }` turns off one hint and keeps the others on.
+- The accepted options of each function are listed in its type (`ExpandHints` for `expand`).
+
 ## Packages: base and extend modules
 
 symjs is a bun workspace monorepo. The general-purpose CAS is the **base module**; functionality for a specific application domain is published as separate **extend module** packages, so applications install only what they use:

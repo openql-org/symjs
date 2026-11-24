@@ -43,7 +43,7 @@ export class PartialDerivativeNode extends TensExpr {
     if (vars.length === 1) return `\\frac{\\partial}{\\partial {${print(first(vars))}}}{${body}}`;
     return `\\frac{\\partial^{${vars.length}}}{${vars.map((v) => `\\partial {${print(v)}}`).join(' ')}}{${body}}`;
   }
-  get coeff(): Expr { return S.One; }
+  get coEff(): Expr { return S.One; }
   get nocoeff(): Expr { return this; }
   getIndices(): TensorIndexNode[] { return [...this.indices]; }
   getFreeIndices(): TensorIndexNode[] { return [...this.freeIndices]; }

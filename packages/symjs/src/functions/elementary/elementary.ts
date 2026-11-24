@@ -8,11 +8,12 @@
 import { accumBoundsFunction } from './accumbounds';
 import { AccumBounds } from '../../core/accumbounds';
 import { piecewise } from '../../core/logic';
-import { asRealImag } from '../../core/methods';
+import { asNumerDenom, asRealImag } from '../../core/methods';
+import { fact } from '../../core/exprfacts';
 import { expectType, first } from '../../core/guard';
 import { precToDps } from '../../numeric/mpf';
 import { isIntegerQ, isNegative, isNonNegative, isNonZero, isPositive, isReal } from '../../core/assumptions';
-import type { ExprLike, FnName } from '../../core/nodes';
+import type { ExprLike, FnName, Num } from '../../core/nodes';
 import {
   Add,
   Constant,
@@ -32,8 +33,8 @@ import {
   Sym, registerFunctionHeads,
   UndefFn,
 } from '../../core/nodes';
-import { numAbs, numNeg, ratFloor, ratMod } from '../../core/num';
-import { add, couldExtractMinusSign, exp, mul, neg, pow, splitCoeff, sqrt, sympify } from '../../core/ops';
+import { numAbs, numAdd, numDiv, numMul, numNeg, ratFloor, ratMod } from '../../core/num';
+import { add, couldExtractMinusSign, exp, mul, neg, pow, splitCoeff, sqrt, sub, sympify } from '../../core/ops';
 
 export type Evaluator = (x: Expr, ...rest: Expr[]) => Expr | undefined;
 
@@ -380,10 +381,21 @@ const evalAbs: Evaluator = (x) => {
   }
   if (x instanceof Special) return x.name === 'nan' ? S.NaN : S.Infinity;
   if (isI(x)) return S.One;
+  // a nonreal number with floating-point parts: its value a + b*I first (SymPy's sqrt(expand_mul(arg*conj))
+  // gives the same Float)
+  if (!isNumericComplex(x) && x.freeSymbols().size === 0 && x.has(S.I) && hasFloat(x)) {
+    const v = x.evalf();
+    if (isNumericComplex(v)) return abs(v);
+  }
   if (isNonNegative(x)) return x;
   if (isNegative(x)) return neg(x);
   // SymPy Abs.eval: signsimp(arg) takes the minus sign out of a sum (Abs(1 - x) = Abs(x - 1))
   if (x instanceof Add && couldExtractMinusSign(x)) return abs(neg(x));
+  // SymPy Abs.eval: a numerator without symbols over a denominator with symbols (Abs(2/z**2) = 2/Abs(z**2))
+  {
+    const [n, d] = asNumerDenom(x);
+    if (d.freeSymbols().size > 0 && n.freeSymbols().size === 0) return mul(abs(n), pow(abs(d), -1));
+  }
   if (x instanceof Mul) {
     // SymPy Abs.eval: factors whose Abs evaluates to something other than an Abs come out, the rest
     // stay inside a single Abs (each factor by the registered Abs rules, such as those of polar
@@ -417,20 +429,49 @@ const evalAbs: Evaluator = (x) => {
       }
       if (isNonNegative(b) === true) return pow(b, re(e));
       if (isNegative(b) === true) return mul(pow(neg(b), re(e)), exp(mul(-1, S.Pi, im(e))));
+      return undefined;
     }
-    // a complex base: SymPy keeps Abs(x**2); symjs gives Abs(x)**2 (relied on by the transforms code)
-    if (isReal(e) === true) return pow(abs(b), e);
+    // a complex base without symbols: exp(re(e*log(b))) with log(b) = lr + I*li
+    if (b.freeSymbols().size === 0) {
+      const [lr, li] = asRealImag(log(b));
+      return exp(sub(mul(re(e), lr), mul(im(e), li)));
+    }
+    // a complex base with symbols: SymPy compares the power with its conjugate, and keeps Abs when the
+    // conjugate only wraps a part of the power (conjugate(sqrt(z))) or symbols of unknown realness
+    const conj = conjugate(x);
+    const conjugates = (y: Expr): Expr[] => y instanceof Fn && y.name === 'conjugate' ? [y] : y.args.flatMap(conjugates);
+    const own = new Set(conjugates(x).map((c) => c.key));
+    const fresh = conjugates(conj).filter((c) => !own.has(c.key));
+    if (fresh.length > 0 && fresh.every((c) => x.has(first(c.args)))) return undefined;
+    if (conj.key === x.key || conj.key === neg(x).key) return undefined;
+    const unknown = [...x.freeSymbols()].filter((v) => isReal(v) === undefined);
+    if (unknown.length > 0 && unknown.every((v) => conj.has(conjugate(v)))) return undefined;
+    return sqrt(mul(x, conj));
   }
   if (x instanceof Fn && (x.name === 'abs' || x.name === 'conjugate')) return abs(first(x.args));
   // SymPy Abs.eval keeps Abs of an imaginary symbol (its assumptions never fix the sign of -I*x)
   if (x instanceof Sym && x.assumptions.imaginary === true) return undefined;
-  // a + b*I with real a, b
+  // a + b*I with real a, b (a symbol of unknown realness outside the functions keeps re() and im())
+  if (hasBareComplexSymbol(x)) return undefined;
   const [a, b] = reIm(x);
   if (!(b instanceof Rational && b.isZero) && !hasReIm(a) && !hasReIm(b)) {
     return sqrt(add(pow(a, 2), pow(b, 2)));
   }
   return undefined;
 };
+
+/** A number a, a*I or a + b*I with numeric a, b. */
+const isNumericComplex = (e: Expr): boolean => {
+  const imaginary = (t: Expr): boolean => isI(t) || (t instanceof Mul && t.args.length === 2 && isNum(first(t.args)) && isI(t.args[1] ?? S.Zero));
+  return isNum(e) || imaginary(e) || (e instanceof Add && e.args.length === 2 && isNum(first(e.args)) && imaginary(e.args[1] ?? S.Zero));
+};
+
+/** A floating-point number somewhere in the expression. */
+const hasFloat = (e: Expr): boolean => e instanceof Float || e.args.some(hasFloat);
+
+/** A symbol neither known real nor imaginary, outside the function applications. */
+const hasBareComplexSymbol = (e: Expr): boolean =>
+  e instanceof Sym ? isReal(e) === undefined && e.assumptions.imaginary !== true : !(e instanceof Fn) && e.args.some(hasBareComplexSymbol);
 
 const hasReIm = (e: Expr): boolean =>
   (e instanceof Fn && (e.name === 're' || e.name === 'im')) || e.args.some(hasReIm);
@@ -455,7 +496,10 @@ function unitRoot(x: Expr): [Expr, Expr] | undefined {
 }
 
 /** SymPy re/im: an imaginary argument (or one whose product with I is real) is I times a real. */
-const isImaginaryArg = (x: Expr): boolean => (x instanceof Sym && x.assumptions.imaginary === true) || isReal(mul(S.I, x)) === true;
+const isImaginaryArg = (x: Expr): boolean =>
+  (x instanceof Sym && x.assumptions.imaginary === true) || isReal(mul(S.I, x)) === true ||
+  // (a root such as sqrt(n) for a negative n; an integer power gives the same parts by the binomial expansion)
+  (x instanceof Pow && x.exp instanceof Rational && !x.exp.isInteger && fact(x, 'imaginary') === true);
 
 /** log of a nonnegative argument: an extended real number (-oo at 0), as SymPy's re and im take it. */
 const isExtendedRealLog = (x: Expr): boolean => x instanceof Fn && x.name === 'log' && isNonNegative(first(x.args)) === true;
@@ -486,14 +530,38 @@ function baseRealImag(b: Expr): [Expr, Expr] {
 }
 
 /**
- * SymPy Pow.as_real_imag for an integer exponent: with base = a + b*I, the binomial
- * expansion of (a + b*I)**n, or of (a/m - b*I/m)**-n with m = a**2 + b**2 when n < 0.
+ * SymPy Pow.as_real_imag for a rational exponent, with base = a + b*I. An integer
+ * exponent n gives the binomial expansion of (a + b*I)**n, or of (a/m - b*I/m)**-n
+ * with m = a**2 + b**2 when n < 0. Another exponent e gives the principal value
+ * r**e*cos(e*t) + I*r**e*sin(e*t) with r = sqrt(a**2 + b**2) and t = atan2(b, a).
  */
-function integerPowerParts(x: Expr): [Expr, Expr] | undefined {
-  if (!(x instanceof Pow && x.exp instanceof Rational && x.exp.isInteger) || (x.base instanceof Constant && x.base.name === 'E')) return undefined;
+function powerParts(x: Expr): [Expr, Expr] | undefined {
+  if (!(x instanceof Pow && x.exp instanceof Rational) || (x.base instanceof Constant && x.base.name === 'E')) return undefined;
+  const e = x.exp;
   let [a, b] = baseRealImag(x.base);
+  if (!e.isInteger) {
+    if (b instanceof Rational && b.isZero && e.p === 1n && e.q === 2n) {
+      if (isNonNegative(a) === true) return [x, S.Zero];
+      if (isReal(a) === true && isPositive(a) === false) return [S.Zero, pow(neg(x.base), e)];
+    }
+    const rp = pow(pow(add(pow(a, 2), pow(b, 2)), S.Half), e);
+    const tp = mul(fn('atan2', [b, a]), e);
+    return [mul(rp, cos(tp)), mul(rp, sin(tp))];
+  }
   if (b instanceof Rational && b.isZero) return undefined;
-  let n = x.exp.p;
+  let n = e.p;
+  // a numeric base: the power computed as a number (SymPy expands it as a multinomial first)
+  if (isNum(a) && isNum(b)) {
+    let [ar, ai]: [Num, Num] = [a, b];
+    if (n < 0n) {
+      const m = numAdd(numMul(a, a), numMul(b, b));
+      [ar, ai] = [numDiv(a, m), numNeg(numDiv(b, m))];
+      n = -n;
+    }
+    let [pr, pi]: [Num, Num] = [S.One, S.Zero];
+    for (let k = 0n; k < n; k++) [pr, pi] = [numAdd(numMul(pr, ar), numNeg(numMul(pi, ai))), numAdd(numMul(pr, ai), numMul(pi, ar))];
+    return [pr, pi];
+  }
   if (n < 0n) {
     const m = add(pow(a, 2), pow(b, 2));
     [a, b] = [mul(a, pow(m, -1)), neg(mul(b, pow(m, -1)))];
@@ -510,6 +578,8 @@ function integerPowerParts(x: Expr): [Expr, Expr] | undefined {
   return [add(...real), add(...imaginary)];
 }
 
+impl.powRealImag = powerParts;
+
 const evalRe: Evaluator = (x) => {
   if (x instanceof ExtensionExpr) {
     const parts = x.asRealImagSelf();
@@ -525,11 +595,11 @@ const evalRe: Evaluator = (x) => {
     if (part !== undefined) return part;
   }
   if (x instanceof Fn && x.name === 'conjugate') return re(first(x.args));
+  if (isImaginaryArg(x)) return S.Zero;
   {
-    const parts = integerPowerParts(x);
+    const parts = powerParts(x);
     if (parts !== undefined) return parts[0];
   }
-  if (isImaginaryArg(x)) return S.Zero;
   return undefined;
 };
 
@@ -548,11 +618,11 @@ const evalIm: Evaluator = (x) => {
     if (part !== undefined) return part;
   }
   if (x instanceof Fn && x.name === 'conjugate') return neg(im(first(x.args)));
+  if (isImaginaryArg(x)) return mul(-1, S.I, x);
   {
-    const parts = integerPowerParts(x);
+    const parts = powerParts(x);
     if (parts !== undefined) return parts[1];
   }
-  if (isImaginaryArg(x)) return mul(-1, S.I, x);
   return undefined;
 };
 

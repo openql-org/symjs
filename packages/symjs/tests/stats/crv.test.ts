@@ -87,8 +87,7 @@ describe('continuous probability spaces (SymPy crv) 3', () => {
   });
   // SymPy raises ValueError (Can not solve sqrt(e) for e): solveset gives an ImageSet with the condition y >= 0
   it("density sqrt", () => expect(() => density(sqrt(Exponential('e', 1)))).toThrow('Can not solve sqrt(e) for e'));
-  // SymPy: sqrt(2)*exp(-z/2)/(2*sqrt(pi)*Abs(sqrt(z))) (the same for a real z)
-  it("density X**2", () => expect(show(ap(density(pow(Xn, 2)), z))).toBe('sqrt(2)*exp(-z/2)/(2*sqrt(pi)*sqrt(Abs(z)))'));
+  it("density X**2", () => expect(show(ap(density(pow(Xn, 2)), z))).toBe('sqrt(2)*exp(-z/2)/(2*sqrt(pi)*Abs(sqrt(z)))'));
   it("density sin", () => expect(() => density(sin(Xn))).toThrow(RangeError));
   // SymPy: (2 - erfc(sqrt(2)*I*t))*exp(-2*t**2)/2 + exp(-2*t**2)*erfc(sqrt(2)*I*t)/2 (both are exp(-2*t**2))
   it("cf of 2X", () => expect(show(ap(characteristicFunction(mul(2, Xn)), t))).toBe('sqrt(2)*I*(-sqrt(2)*I*pi*t*exp(-2*t**2)*erf(sqrt(2)*I*t) - sqrt(2)*I*pi*t*exp(-2*t**2))/(4*pi*t) - sqrt(2)*I*(-sqrt(2)*I*pi*t*exp(-2*t**2)*erf(sqrt(2)*I*t) + sqrt(2)*I*pi*t*exp(-2*t**2))/(4*pi*t)'));

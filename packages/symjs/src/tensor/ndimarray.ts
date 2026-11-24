@@ -509,9 +509,9 @@ export abstract class NDimArray extends ExtensionExpr {
   }
 
   /** Substitution in every element (a Substitution, or `from` and `to`). */
-  override subs(a: Substitution | Expr, b?: ExprLike): this {
+  override subs(a: Substitution | Expr | string, b?: ExprLike): this {
     let r: Expr;
-    if (a instanceof Expr) {
+    if (a instanceof Expr || typeof a === 'string') {
       if (b === undefined) throw new TypeError('subs(from, to) requires a replacement');
       r = super.subs(a, b);
     } else r = super.subs(a);

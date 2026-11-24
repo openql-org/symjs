@@ -485,3 +485,90 @@ describe('real and imaginary parts of integer powers (SymPy Pow.as_real_imag)', 
       .toBe('x**2/(x**4 + 2*x**2*y**2 + y**4) - 2*I*x*y/(x**4 + 2*x**2*y**2 + y**4) - y**2/(x**4 + 2*x**2*y**2 + y**4)');
   });
 });
+
+describe('powers of complex numbers: Pow.as_real_imag, Add._eval_power and Abs (SymPy 1.14)', () => {
+  const symbols = { x: new Sym('x', { real: true }), y: new Sym('y', { real: true }), z: new Sym('z'), p: new Sym('p', { positive: true }), n: new Sym('n', { negative: true }) };
+  const P = (t: string): sj.Expr => sj.parse(t, { symbols });
+  const evaluate = (src: string): string => {
+    const complex = /^expand_complex\((.*)\)$/.exec(src);
+    if (complex) return sj.sstr(sj.expandComplex(P(complex[1] ?? '')));
+    const parts = /^\((.*)\)\.as_real_imag\(\)$/.exec(src);
+    if (parts) return `(${sj.asRealImag(P(parts[1] ?? '')).map((e) => sj.sstr(e)).join(', ')})`;
+    return sj.sstr(P(src));
+  };
+  // [SymPy source, str() of the SymPy 1.14 result]
+  it.each([
+    ["(-3+4*I)**(1/2)", "1 + 2*I"],
+    ["(1+I)**(1/2)", "sqrt(1 + I)"],
+    ["(12+16*I)**(-1/2)", "(2 - I)/10"],
+    ["(12+16*I)**(1/2)", "4 + 2*I"],
+    ["(3-4*I)**(-1/2)", "(2 + I)/5"],
+    ["(3/4+I)**(1/2)", "1 + I/2"],
+    ["(3+4*I)**(-1)", "(3 - 4*I)/25"],
+    ["(3+4*I)**(-3/2)", "(2 - 11*I)/125"],
+    ["(3+4*I)**(1/2)", "2 + I"],
+    ["(3+4*I)**(3/2)", "2 + 11*I"],
+    ["(4*I)**(1/2)", "2*sqrt(I)"],
+    ["(5+12*I)**(5/2)", "-597 + 122*I"],
+    ["(6+8*I)**(-1/2)", "sqrt(2)*(2 - I)/10"],
+    ["(6+8*I)**(-3/2)", "sqrt(2)*(2 - 11*I)/500"],
+    ["(6+8*I)**(1/2)", "sqrt(2)*(2 + I)"],
+    ["(sqrt(-p)).as_real_imag()", "(0, sqrt(p))"],
+    ["(sqrt(x + I*y)).as_real_imag()", "((x**2 + y**2)**(1/4)*cos(atan2(y, x)/2), (x**2 + y**2)**(1/4)*sin(atan2(y, x)/2))"],
+    ["Abs((1 + I)**(1/2))", "2**(1/4)"],
+    ["Abs((1 + I)**3)", "2*sqrt(2)"],
+    ["Abs((1 + I)**y)", "exp(y*log(sqrt(2)))"],
+    ["Abs((1 + I)**z)", "exp(log(sqrt(2))*re(z) - pi*im(z)/4)"],
+    ["Abs((2 + I)**(1/3))", "5**(1/6)"],
+    ["Abs((x + I*y)**(1/2))", "Abs(sqrt(x + I*y))"],
+    ["Abs((x + I*y)**2)", "sqrt((x - I*y)**2*(x + I*y)**2)"],
+    ["Abs(1/(x + I*y))", "1/sqrt(x**2 + y**2)"],
+    ["Abs(2/z**2)", "2/Abs(z**2)"],
+    ["Abs(exp(z)*z**2)", "exp(re(z))*Abs(z**2)"],
+    ["Abs(I**(1/3))", "1"],
+    ["Abs(n**z)", "(-n)**re(z)*exp(-pi*im(z))"],
+    ["Abs(p**z)", "p**re(z)"],
+    ["abs(sqrt(z))", "Abs(sqrt(z))"],
+    ["Abs(sqrt(z))", "Abs(sqrt(z))"],
+    ["Abs(x**(1/2))", "Abs(sqrt(x))"],
+    ["Abs(x**2)", "x**2"],
+    ["Abs(x**3)", "x**2*Abs(x)"],
+    ["Abs(z**(-1))", "1/Abs(z)"],
+    ["Abs(z**2)", "Abs(z**2)"],
+    ["Abs(z**3)", "Abs(z**3)"],
+    ["Abs(z**y)", "Abs(z**y)"],
+    ["arg(sqrt(1 + I))", "atan(sqrt(1/2 - sqrt(2)/4)/sqrt(sqrt(2)/4 + 1/2))"],
+    ["expand_complex((1 + I)**(1/3))", "2**(1/6)*(sqrt(2)/4 + sqrt(6)/4) + 2**(1/6)*I*(-sqrt(2)/4 + sqrt(6)/4)"],
+    ["expand_complex(sqrt(x + I*y))", "I*(x**2 + y**2)**(1/4)*sin(atan2(y, x)/2) + (x**2 + y**2)**(1/4)*cos(atan2(y, x)/2)"],
+    ["expand_complex(sqrt(z))", "I*(re(z)**2 + im(z)**2)**(1/4)*sin(atan2(im(z), re(z))/2) + (re(z)**2 + im(z)**2)**(1/4)*cos(atan2(im(z), re(z))/2)"],
+    ["expand_complex(x**(1/3))", "I*sin(atan2(0, x)/3)*Abs(x)**(1/3) + cos(atan2(0, x)/3)*Abs(x)**(1/3)"],
+    ["im((x + I*y)**(-3/2))", "-sin(3*atan2(y, x)/2)/(x**2 + y**2)**(3/4)"],
+    ["im(sqrt(-p))", "sqrt(p)"],
+    ["im(sqrt(1 + I))", "2**(1/4)*sqrt(1/2 - sqrt(2)/4)"],
+    ["im(sqrt(n))", "-I*sqrt(n)"],
+    ["im(sqrt(x + I*y))", "(x**2 + y**2)**(1/4)*sin(atan2(y, x)/2)"],
+    ["im(sqrt(x))", "sin(atan2(0, x)/2)*sqrt(Abs(x))"],
+    ["im(sqrt(z))", "(re(z)**2 + im(z)**2)**(1/4)*sin(atan2(im(z), re(z))/2)"],
+    ["im(z**(-1/2))", "-sin(atan2(im(z), re(z))/2)/(re(z)**2 + im(z)**2)**(1/4)"],
+    ["re((1 + I)**(3/2))", "2**(3/4)*sqrt(1/2 - sqrt(2)/4)"],
+    ["re((3 + 4*I)**(1/2))", "2"],
+    ["re(sqrt(1 + I))", "2**(1/4)*sqrt(sqrt(2)/4 + 1/2)"],
+    ["re(sqrt(2)*sqrt(z))", "sqrt(2)*(re(z)**2 + im(z)**2)**(1/4)*cos(atan2(im(z), re(z))/2)"],
+    ["re(sqrt(I*p))", "sqrt(2)*sqrt(p)/2"],
+    ["re(sqrt(n))", "0"],
+    ["re(sqrt(p))", "sqrt(p)"],
+    ["re(sqrt(x + I*y))", "(x**2 + y**2)**(1/4)*cos(atan2(y, x)/2)"],
+    ["re(sqrt(x))", "cos(atan2(0, x)/2)*sqrt(Abs(x))"],
+    ["re(sqrt(z))", "(re(z)**2 + im(z)**2)**(1/4)*cos(atan2(im(z), re(z))/2)"],
+    ["re(sqrt(z)**3)", "(re(z)**2 + im(z)**2)**(3/4)*cos(3*atan2(im(z), re(z))/2)"],
+    ["re(x**(1/3))", "cos(atan2(0, x)/3)*Abs(x)**(1/3)"],
+    ["re(z**(1/3))", "(re(z)**2 + im(z)**2)**(1/6)*cos(atan2(im(z), re(z))/3)"],
+    ["sqrt(-3-4*I)", "1 - 2*I"],
+    ["sqrt(1 + 15*I/8)", "5/4 + 3*I/4"],
+    ["sqrt(2+2*I)", "sqrt(2 + 2*I)"],
+    ["sqrt(3/26 - 2*I/13)", "sqrt(26)*(2 - I)/26"],
+    ["sqrt(32+24*I)", "6 + 2*I"],
+  ])('%s', (src, expected) => {
+    expect(evaluate(src)).toBe(expected);
+  });
+});

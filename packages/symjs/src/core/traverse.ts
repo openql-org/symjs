@@ -110,7 +110,8 @@ function toPairs(s: Substitution): [Expr, Expr][] {
   const out: [Expr, Expr][] = [];
   const key = (k: Expr | string): Expr => (typeof k === 'string' ? new Sym(k) : k);
   if (isSubsMap(s)) for (const [k, v] of s) out.push([key(k), sympify(v)]);
-  else if (isSubsPairs(s)) for (const [k, v] of s) out.push([k, sympify(v)]);
+  // (a symbol name may also come as the key of a pair from JavaScript code)
+  else if (isSubsPairs(s)) for (const [k, v] of s) out.push([key(k), sympify(v)]);
   else for (const [k, v] of Object.entries(s)) out.push([key(k), sympify(v)]);
   return out;
 }

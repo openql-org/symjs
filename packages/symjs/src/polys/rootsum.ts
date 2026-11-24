@@ -7,7 +7,7 @@
  * apart_list, assemble_partfrac_list).
  */
 
-import { at, cast, first, pair } from '../core/guard';
+import { at, cast, defined, first, pair } from '../core/guard';
 import type { ExprLike, Substitution } from '../core/nodes';
 import { Add, Dummy, Expr, ExtensionExpr, Mul, Rational, S, Sym } from '../core/nodes';
 import { add, mul, pow, sympify } from '../core/ops';
@@ -69,8 +69,9 @@ export class RootSumNode extends ExtensionExpr {
     return RootSum(this.poly, cast(this.variable, Sym), Lambda(first(fun.variables), d(fun.expr, x)), { auto: this.auto });
   }
   override subs(s: Substitution): Expr;
-  override subs(from: Expr, to: ExprLike): Expr;
-  override subs(from: Substitution | Expr, to?: ExprLike): Expr {
+  override subs(from: Expr | string, to: ExprLike): Expr;
+  override subs(from: Substitution | Expr | string, to?: ExprLike): Expr {
+    if (typeof from === 'string') return this.subs(new Sym(from), defined(to, 'subs replacement'));
     if (!(from instanceof Expr)) return super.subs(from);
     if (to === undefined) throw new TypeError('subs(from, to) requires a replacement');
     const replacement = sympify(to);

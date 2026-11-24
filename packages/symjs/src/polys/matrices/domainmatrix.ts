@@ -365,7 +365,10 @@ export class DomainMatrix {
     return A.mul(K.quo(K.one, l.element));
   }
   /** A**n for an integer n >= 0 (repeated squaring). */
-  pow(n: number): DomainMatrix {
+  pow(k: number | Rational): DomainMatrix {
+    // (SymPy DomainMatrix.__pow__: the exponent must be an integer, not a Rational such as 1/2)
+    const n = k instanceof Rational ? (k.isInteger ? Number(k.p) : Number.NaN) : k;
+    if (!Number.isInteger(n)) throw new TypeError('Power of a DomainMatrix must be an integer');
     const [nrows, ncols] = this.shape;
     if (nrows !== ncols) throw new DMNonSquareMatrixError('Power of a nonsquare matrix');
     if (n < 0) throw new NotImplementedError('Negative powers');

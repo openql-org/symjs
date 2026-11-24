@@ -594,7 +594,7 @@ export abstract class TensExpr extends ExtensionExpr {
   /** The free indices in slot order. */
   abstract getFreeIndices(): TensorIndexNode[];
   /** The scalar coefficient. */
-  abstract get coeff(): Expr;
+  abstract get coEff(): Expr;
   /** The expression without its coefficient. */
   abstract get nocoeff(): Expr;
   /** @internal Indices replaced (keys: index keys), without evaluation. */
@@ -765,7 +765,7 @@ export class Tensor extends TensExpr {
   get extRank(): number {
     return this.indexStructure.extRank;
   }
-  get coeff(): Expr {
+  get coEff(): Expr {
     return S.One;
   }
   get nocoeff(): Expr {
@@ -1057,11 +1057,11 @@ export class TensMul extends TensExpr {
     );
     this.isCanonBp = isCanonBp;
   }
-  get coeff(): Expr {
+  get coEff(): Expr {
     return mul(...this.args.filter((a) => !isTens(a)));
   }
   get nocoeff(): Expr {
-    return tensMul(...this.args, pow(this.coeff, -1));
+    return tensMul(...this.args, pow(this.coEff, -1));
   }
   /** The tensor heads of the factors (sums excluded). */
   get components(): TensorHeadNode[] {
@@ -1135,7 +1135,7 @@ export class TensMul extends TensExpr {
         rest = rest.filter((f) => !selected.includes(f));
       }
       if (rest.length) return NoMatch;
-      const scalar = match(mul(sign, coeff), this.coeff);
+      const scalar = match(mul(sign, coeff), this.coEff);
       if (!scalar) return NoMatch;
       for (const [k, v] of scalar) matched.set(k, v);
       return matched;
@@ -1189,7 +1189,7 @@ export class TensMul extends TensExpr {
         }
       }
     }
-    const coeff = mul(sign, this.coeff);
+    const coeff = mul(sign, this.coEff);
     return tensMul(...(coeff.equals(1) ? cv : [coeff, ...cv]));
   }
   canonBp(): Expr {
@@ -1304,7 +1304,7 @@ export class TensMul extends TensExpr {
   override printStr(print: (e: Expr) => string): string {
     let args = [...this.args];
     let sign = '';
-    if (couldExtractMinusSign(this.coeff)) {
+    if (couldExtractMinusSign(this.coEff)) {
       sign = '-';
       if (first(args).equals(-1)) args = args.slice(1);
       else args[0] = neg(first(args));
@@ -1315,7 +1315,7 @@ export class TensMul extends TensExpr {
   override printLatex(print: (e: Expr) => string): string {
     let args = [...this.args];
     let sign = '';
-    if (couldExtractMinusSign(this.coeff)) {
+    if (couldExtractMinusSign(this.coEff)) {
       sign = '-';
       if (first(args).equals(-1)) args = args.slice(1);
       else args[0] = neg(first(args));
@@ -1352,7 +1352,7 @@ export class TensAdd extends TensExpr {
   constructor(args: readonly Expr[]) {
     super('TensAdd', args);
   }
-  get coeff(): Expr {
+  get coEff(): Expr {
     return S.One;
   }
   get nocoeff(): Expr {
@@ -1420,7 +1420,7 @@ function newTensAdd(argsIn: readonly ExprLike[]): Expr {
     .map(sympify)
     .filter((x) => !x.equals(0))
     .flatMap((x) => (x instanceof Add || x instanceof TensAdd ? x.args : [x]))
-    .filter((x) => !isTens(x) || !x.coeff.equals(0));
+    .filter((x) => !isTens(x) || !x.coEff.equals(0));
   args.sort((a, b) => compareKeys(defaultSortKey(a), defaultSortKey(b)));
   if (!args.length) return S.Zero;
   if (args.length === 1) return first(args);
@@ -1438,7 +1438,7 @@ function collectTerms(args: readonly Expr[]): Expr[] {
     }
     const t = arg.nocoeff;
     const entry = terms.get(t.key) ?? [t, []];
-    entry[1].push(arg.coeff);
+    entry[1].push(arg.coEff);
     terms.set(t.key, entry);
   }
   const out = [...terms.values()].flatMap(([t, cs]) => {
@@ -1647,7 +1647,7 @@ export class TensorElementNode extends TensExpr {
   get indexMap(): DictNode {
     return cast(at(this.args, 1), DictNode);
   }
-  get coeff(): Expr {
+  get coEff(): Expr {
     return S.One;
   }
   get nocoeff(): Expr {

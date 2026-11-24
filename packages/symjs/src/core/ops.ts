@@ -37,7 +37,7 @@ import {
   impl,
   isNum,
 } from './nodes';
-import { mkFloat, numAdd, numDiv, numInv, numMul, numNeg, numPowInt, ratFloor, toMpf } from './num';
+import { mkFloat, numAbs, numAdd, numDiv, numInv, numMul, numNeg, numPowInt, ratFloor, toMpf } from './num';
 import { ZERO as MPF_ZERO, precToDps } from '../numeric/mpf';
 import { cpow as mpCpow, powReal as mpPowReal } from '../numeric/mpfun';
 import { factorInt, gcd, iroot, ipow, perfectPower } from './numbers';
@@ -826,6 +826,25 @@ export function pow(bx: ExprLike, ex: ExprLike): Expr {
     return e.isNegative ? S.Zero : S.ComplexInfinity;
   }
 
+  // SymPy Add._eval_power: the square root of a + b*I is rational when (a, b, |a + b*I|) is a
+  // Pythagorean triple, sqrt((D - a)/2)*((D + a)/|b| + sign(b)*I) for D = sqrt(a**2 + b**2)
+  if (b instanceof Add && e instanceof Rational && e.q === 2n) {
+    const pc = pureComplex(b);
+    const d = pc && pc[0] instanceof Rational && pc[1] instanceof Rational ? rationalSqrt(numAdd(numMul(pc[0], pc[0]), numMul(pc[1], pc[1]))) : undefined;
+    if (pc && d) {
+      const [r, i] = pc;
+      const root = pow(pow(numDiv(numAdd(d, numNeg(r)), S.Two), S.Half), Rational.of(e.p));
+      // the principal value, expanded as SymPy's expand_multinomial does
+      const a = numDiv(numAdd(d, r), numAbs(i));
+      const sb = i instanceof Rational && i.isNegative ? S.NegOne : S.One;
+      let [re0, im0]: [Num, Num] = [S.One, S.Zero];
+      for (let k = 0n; k < (e.p < 0n ? -e.p : e.p); k++) [re0, im0] = [numAdd(numMul(re0, a), numNeg(numMul(im0, sb))), numAdd(numMul(re0, sb), numMul(im0, a))];
+      const power = add(re0, mul(im0, S.I));
+      const value = e.p < 0n ? pow(power, -1) : power;
+      return root instanceof Rational && root.isOne ? value : mul(root, value);
+    }
+  }
+
   if (b instanceof Add && e instanceof Rational && e.p === -1n && e.q === 1n) {
     const pc = pureComplex(b);
     if (pc) {
@@ -1146,6 +1165,13 @@ function powSpecial(b: Expr, e: Expr): Expr | undefined {
     return up ? S.Zero : v > 0 ? S.Infinity : S.ComplexInfinity;
   }
   return up ? S.ComplexInfinity : S.Zero;
+}
+
+/** The square root of a nonnegative rational when it is rational. */
+function rationalSqrt(v: Num): Rational | undefined {
+  if (!(v instanceof Rational) || v.isNegative) return undefined;
+  const p = iroot(v.p, 2n), q = iroot(v.q, 2n);
+  return p * p === v.p && q * q === v.q ? Rational.of(p, q) : undefined;
 }
 
 /** SymPy `pure_complex`: a + b*I with numeric a, b. */

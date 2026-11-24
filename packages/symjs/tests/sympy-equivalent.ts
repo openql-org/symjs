@@ -12,8 +12,16 @@
  * never equivalent: "cannot compute" is not the same capability.
  */
 
+import { TestRunner } from 'vitest';
 import * as sj from '../src';
 import { Expr } from '../src';
+
+declare module 'vitest' {
+  interface TaskMeta {
+    /** Set when the test passed a comparison by equivalence only (the printed forms differ). */
+    sympyEquivalent?: { got: string; expected: string };
+  }
+}
 
 type V =
   | { t: 'expr'; e: Expr }
@@ -248,6 +256,16 @@ function renameBound(s: string): string {
 
 export function equivalent(got: string, expected: string, symbols: readonly sj.Sym[] = [], opts: EquivalenceOptions = {}): boolean {
   if (got === expected) return true;
+  const result = equivalentForm(got, expected, symbols, opts);
+  // the running test records the equivalence, so a report can tell it from an exact match
+  if (result) {
+    const test = TestRunner.getCurrentTest();
+    if (test !== undefined && test.meta.sympyEquivalent === undefined) test.meta.sympyEquivalent = { got, expected };
+  }
+  return result;
+}
+
+function equivalentForm(got: string, expected: string, symbols: readonly sj.Sym[], opts: EquivalenceOptions): boolean {
   if (/ConditionSet|Lambda\(/.test(expected) && renameBound(got) === renameBound(expected)) return true;
   if (opts.fn && FORM_FUNCTIONS.has(opts.fn)) {
     // the input came back unchanged: compatible only when SymPy's result is that same expression

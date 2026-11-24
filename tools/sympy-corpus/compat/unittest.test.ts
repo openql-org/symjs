@@ -38,6 +38,7 @@ it(`measures SymPy ${category} unit tests and enforces their ratchet`, () => {
       const status = o.status === 'pass' ? 'exact' : o.status;
       for (const counts of [result.total, result.modules[c.module] ??= emptyCounts()]) { counts.cases++; counts[status]++; }
       if (o.exceptionMismatch) result.exceptionMismatches.push({ id, ...o.exceptionMismatch });
+      if (o.status === 'equivalent') (result.equivalents ??= []).push({ id, fn: c.fn, got: o.got, expected: c.expected });
       if (o.status !== 'pass' && o.status !== 'equivalent') {
         result.failures.push({ id, fn: c.fn, expected: c.expected, outcome: o });
         const kind = failureKind(o);

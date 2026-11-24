@@ -341,8 +341,7 @@ describe('sympy.integrals.laplace doctests', () => {
     const x = new Sym('x');
     expect(String(simplifyConds(Lt(abs(pow(x, 2)), 1), x, 1))).toBe('False');
     expect(String(simplifyConds(Lt(abs(pow(x, 2)), 1), x, 2))).toBe('False');
-    // symjs evaluates Abs(x**2) to Abs(x)**2 where SymPy keeps Abs(x**2)
-    expect(String(simplifyConds(Lt(abs(pow(x, 2)), 1), x, 0))).toBe('Abs(x)**2 < 1');
+    expect(String(simplifyConds(Lt(abs(pow(x, 2)), 1), x, 0))).toBe('Abs(x**2) < 1');
     expect(String(simplifyConds(Lt(abs(pow(x, -2)), 1), x, 1))).toBe('True');
     expect(String(simplifyConds(Lt(1, abs(x)), x, 1))).toBe('True');
     expect(String(simplifyConds(Lt(1, abs(pow(x, -1))), x, 1))).toBe('False');
@@ -603,8 +602,8 @@ describe('laplace: simplifyConds and laplaceDeepCollect', () => {
       ['Ne(x, x**2)', 1, 'Ne(x, x**2)'],
     ];
     for (const [e, A, want] of cases) expect(String(simplifyConds(Ps(e), x, A)), e).toBe(want);
-    // symjs writes Abs(x**2) as Abs(x)**2 and Abs(1/x) as 1/Abs(x) (SymPy: Abs(x) < Abs(x**2), 1 < Abs(1/x))
-    expect(String(simplifyConds(Ps('Abs(x) < Abs(x**2)'), x, 1))).toBe('Abs(x) < Abs(x)**2');
+    // symjs writes Abs(1/x) as 1/Abs(x) (SymPy: 1 < Abs(1/x))
+    expect(String(simplifyConds(Ps('Abs(x) < Abs(x**2)'), x, 1))).toBe('Abs(x) < Abs(x**2)');
     expect(String(simplifyConds(Ps('1 < Abs(1/x)'), x, 0))).toBe('1 < 1/Abs(x)');
   });
   it('an atom that is not a polynomial is kept', () => {

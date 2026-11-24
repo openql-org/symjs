@@ -764,7 +764,7 @@ describe("sympy/tensor/tests/test_tensor.py", () => {
   });
   it("test_mul:710", () => {
     const dim_L = new Sym('dim_L');
-    expect(sympyStr(new Tensor(TensorHead('A', [TensorIndexType('Lorentz', { dim: dim_L, dummyName: 'L' }), TensorIndexType('Lorentz', { dim: dim_L, dummyName: 'L' })], new TensorSymmetry(2, 1)), [TensorIndex('a', TensorIndexType('Lorentz', { dim: dim_L, dummyName: 'L' }), true), TensorIndex('b', TensorIndexType('Lorentz', { dim: dim_L, dummyName: 'L' }), true)]).coeff)).toBe('1');
+    expect(sympyStr(new Tensor(TensorHead('A', [TensorIndexType('Lorentz', { dim: dim_L, dummyName: 'L' }), TensorIndexType('Lorentz', { dim: dim_L, dummyName: 'L' })], new TensorSymmetry(2, 1)), [TensorIndex('a', TensorIndexType('Lorentz', { dim: dim_L, dummyName: 'L' }), true), TensorIndex('b', TensorIndexType('Lorentz', { dim: dim_L, dummyName: 'L' }), true)]).coEff)).toBe('1');
   });
   it("test_mul:712", () => {
     const dim_L = new Sym('dim_L');

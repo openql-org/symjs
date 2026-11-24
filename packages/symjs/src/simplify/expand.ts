@@ -547,8 +547,8 @@ export function asRealImagExpand(e: Expr): [Expr, Expr] {
     const ia = im(e.exp);
     return [mul(pow(S.E, ra), cos(ia)), mul(pow(S.E, ra), sin(ia))];
   }
-  // SymPy Pow.as_real_imag splits an integer power without expanding it first
-  if (e instanceof Pow && e.exp instanceof Rational && e.exp.isInteger) return [re(e), im(e)];
+  // SymPy Pow.as_real_imag splits a rational power without expanding it first
+  if (e instanceof Pow && e.exp instanceof Rational) return impl.powRealImag?.(e) ?? [re(e), im(e)];
   // SymPy Add.as_real_imag: the parts of each term
   if (e instanceof Add) {
     const parts = e.args.map(asRealImagExpand);
@@ -629,7 +629,7 @@ export function expand(ex: ExprLike, hints: ExpandHints = {}): Expr {
   if (h.complex) e = expandComplexNode(e);
   for (let round = 0; round < 6; round++) {
     const was = e;
-    if (h.complex) e = applyBottomUp(e, expandComplexNode, false);
+    if (h.complex && round > 0) e = applyBottomUp(e, expandComplexNode, false);
     if (h.log) e = applyBottomUp(e, (x) => expandLogNode(x, h.force, h.factor === true), h.deep);
     // SymPy applies the hints in the order log, multinomial, mul, power_base, power_exp, trig
     // (without multinomial, SymPy's mul hint leaves integer powers of sums as they are)

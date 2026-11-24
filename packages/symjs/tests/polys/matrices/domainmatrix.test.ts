@@ -264,3 +264,10 @@ it('constructs rationals from numerator-denominator tuples and multiplies matric
   expect(B.mul(N).toMatrix().isZero).toBe(true);
   expect(DomainMatrix.fromList([[1n]],QQ).toMatrix().toString()).toBe('Matrix([[1]])');
 });
+
+it('takes integer powers only (SymPy test_DomainMatrix_pow)', () => {
+  const A = DM([[1, 2], [3, 4]], ZZ);
+  expect(A.pow(Rational.of(2)).equals(DM([[7, 10], [15, 22]], ZZ))).toBe(true);
+  expect(() => A.pow(Rational.of(1, 2))).toThrow(TypeError);
+  expect(() => A.pow(0.5)).toThrow(TypeError);
+});

@@ -9,7 +9,7 @@ it('tracks opposite derivative variance, canonical contractions and nested deriv
   expect(String(derivative)).toBe('PartialDerivative(A(i), A(j))');
   expect(derivative.getIndices().map(String)).toEqual(['i', '-j']);
   expect(derivative.getFreeIndices().map(String)).toEqual(['i', '-j']);
-  expect(derivative.coeff).toBe(S.One); expect(derivative.nocoeff).toBe(derivative);
+  expect(derivative.coEff).toBe(S.One); expect(derivative.nocoeff).toBe(derivative);
   expect(derivative.isCommutative).toBe(false);
   expect(String(doit(derivative))).toBe(String(derivative));
   expect(String(derivative.canonBp())).toBe(String(derivative));

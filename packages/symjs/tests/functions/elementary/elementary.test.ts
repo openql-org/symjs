@@ -489,9 +489,8 @@ describe('elementary: cases outside the table', () => {
     expect(String(adjoint(pow(x, y)))).toBe('conjugate(x**y)');
   });
   it('Abs of a power of a complex base', () => {
-    // SymPy keeps Abs(x**2) and Abs(x**r); symjs pulls the real exponent out
-    expect(String(sj.abs(pow(x, 2)))).toBe('Abs(x)**2');
-    expect(String(sj.abs(pow(x, new Sym('r', { real: true }))))).toBe('Abs(x)**r');
+    expect(String(sj.abs(pow(x, 2)))).toBe('Abs(x**2)');
+    expect(String(sj.abs(pow(x, new Sym('r', { real: true }))))).toBe('Abs(x**r)');
   });
   it('forEachEntry skips missing entries', () => {
     const seen: string[] = [];

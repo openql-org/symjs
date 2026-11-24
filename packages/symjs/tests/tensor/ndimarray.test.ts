@@ -822,3 +822,9 @@ it('classifies heterogeneous explicit matrix kinds without deprecated entries', 
     expect(kindOf(new Integral([ImmutableMatrix(matrix), x]))).toBe(MatrixKind(expected));
   }
 });
+
+it('substitutes a symbol given by name in every element', async () => {
+  const sj = await import('../../src');
+  const x = new sj.Sym('x');
+  expect(String(sj.ImmutableDenseNDimArray.fromiter([[x, x.pow(2)]]).subs('x', 3))).toBe('[3, 9]');
+});

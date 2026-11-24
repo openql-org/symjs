@@ -509,3 +509,8 @@ it('specializes a symbolic matrix power at an integer exponent', () => {
   const matrix = Matrix.of([[a, 1], [1, a]]);
   expect(matrix.pow(x).subs(x, 2).expand().equals(matrix.mul(matrix).expand())).toBe(true);
 });
+
+it('substitutes a symbol given by name (SymPy subs takes a string as that symbol)', () => {
+  const [x] = symbols('x');
+  expect(String(Matrix.of([[x, 1], [2, x]]).subs('x', 5))).toBe('Matrix([[5, 1], [2, 5]])');
+});

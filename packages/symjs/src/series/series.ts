@@ -1040,6 +1040,26 @@ impl.rebuildOrder = (args) => {
   return O(first(args), variables.length ? variables : undefined, args.length === 1 ? S.Zero : at(args, -1));
 };
 
+/** Containment decided by the leading term of the quotient at the point (cached: sums repeat the quotients). */
+const leadingCache = new Map<string, boolean | undefined>();
+function leadingDecides(quotient: Expr, variable: Sym, point: Expr): boolean | undefined {
+  const key = `${quotient.key}|${variable.key}|${point.key}`;
+  if (leadingCache.has(key)) return leadingCache.get(key);
+  let decided: boolean | undefined;
+  const t = new Sym('_o');
+  try {
+    const expander = new Expander(t);
+    const shifted = point instanceof Special ? mul(point.name === 'oo' ? 1 : -1, pow(t, -1)) : add(point, t);
+    const lead = expander.leading(subs(quotient, [[variable, shifted]]));
+    if (!lead.c.has(t) && !lead.c.has(expander.L)) decided = !lead.e.isPositive;
+  } catch {
+    // Essential singularities require the limit algorithms.
+  }
+  if (leadingCache.size >= 4096) leadingCache.clear();
+  leadingCache.set(key, decided);
+  return decided;
+}
+
 function orderContains(o: Order, e: Expr, strict = true): boolean | 'unknown' {
   let variables = orderVariables(o);
   const point = o.args.length > 1 ? at(o.args, -1) : S.Zero;
@@ -1066,20 +1086,14 @@ function orderContains(o: Order, e: Expr, strict = true): boolean | 'unknown' {
   if (!variables.length) return ![S.Infinity, S.NegativeInfinity, S.ComplexInfinity].some((v) => other.has(v));
   let result: boolean | 'unknown' = 'unknown';
   for (const variable of variables) {
-    const quotient = mul(o.expr, pow(other, -1));
-    const t = new Sym('_o');
-    try {
-      const expander = new Expander(t);
-      const shifted = point instanceof Special ? mul(point.name === 'oo' ? 1 : -1, pow(t, -1)) : add(point, t);
-      const lead = expander.leading(subs(quotient, [[variable, shifted]]));
-      if (!lead.c.has(t) && !lead.c.has(expander.L)) {
-        const contained = !lead.e.isPositive;
-        if (result !== 'unknown' && result !== contained) return 'unknown';
-        result = contained;
-        continue;
-      }
-    } catch {
-      // Essential singularities require the limit algorithms.
+    // (factors free of the variable only scale the leading term: they are left out of the expansion)
+    const varying = other instanceof Mul && other.args.some((f) => f.has(variable)) ? mul(...other.args.filter((f) => f.has(variable))) : other;
+    const quotient = mul(o.expr, pow(varying, -1));
+    const decided = leadingDecides(quotient, variable, point);
+    if (decided !== undefined) {
+      if (result !== 'unknown' && result !== decided) return 'unknown';
+      result = decided;
+      continue;
     }
     const ratio = impl.limit(powsimp(quotient), variable, point, '+');
     if (ratio instanceof Limit && ratio.expr instanceof Pow && ratio.expr.base.equals(variable) && ratio.expr.exp.freeSymbols().size) {

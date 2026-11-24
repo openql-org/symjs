@@ -19,6 +19,16 @@ const [x] = symbols('x', { real: true });
 ex`(${x} + 1)^2/2`.toString(); // '(x + 1)**2/2'
 ```
 
+SymPy's keyword arguments are passed as an options object (`expand(e, trig=True)` in SymPy):
+
+```ts
+import { ex, expand, symbols } from '@symjs/symjs';
+
+const [a, b] = symbols('a b');
+expand(ex`tan(${a} + ${b})`, { trig: true }).toString();
+// 'tan(a)/(-tan(a)*tan(b) + 1) + tan(b)/(-tan(a)*tan(b) + 1)'
+```
+
 Differential geometry is available through the `@symjs/symjs/diffgeom` subpath:
 
 ```ts

@@ -434,3 +434,42 @@ it('exposes the default extension hooks', () => {
   expect(box.integrateSelf(x, undefined, identity)).toBeUndefined();
   expect(box.simplifySelf(identity)).toBeUndefined();
 });
+
+describe('conversion to JavaScript primitives', () => {
+  const x = new sj.Sym('x');
+  const asNumber = (e: sj.Expr): number => Number(e);
+  it('prints the expression where JavaScript wants a string', () => {
+    expect(`${sj.I}`).toBe('I');
+    expect('x = ' + String(x)).toBe('x = x');
+    expect(['value', x].join(' ')).toBe('value x');
+  });
+  it('gives the value of a real number', () => {
+    expect(asNumber(sj.factorial(50))).toBe(3.0414093201713376e64);
+    expect(asNumber(sj.sqrt(2))).toBeCloseTo(Math.SQRT2, 15);
+    expect(asNumber(sj.pi)).toBeCloseTo(Math.PI, 15);
+  });
+  it('rejects JavaScript arithmetic on other expressions', () => {
+    const message = /Cannot convert I to a JavaScript number: JavaScript operators .* use the methods \.add\(\)/;
+    expect(() => asNumber(sj.I)).toThrow(TypeError);
+    expect(() => asNumber(sj.I)).toThrow(message);
+    expect(() => asNumber(x)).toThrow(/Cannot convert x to a JavaScript number/);
+    expect(() => asNumber(sj.parse('3 + 2*I'))).toThrow(TypeError);
+  });
+});
+
+describe('subs with a symbol name (SymPy 1.14)', () => {
+  const [a, b, c, x] = ['a', 'b', 'c', 'x'].map((n) => new sj.Sym(n)) as [sj.Sym, sj.Sym, sj.Sym, sj.Sym];
+  const e = a.mul(x.pow(2)).add(b.mul(x)).add(c);
+  it('takes a string as the symbol of that name', () => {
+    expect(sj.sstr(e.subs('x', 3))).toBe('9*a + 3*b + c');
+    expect(sj.sstr(sj.subs(e, [['x', 3]] as unknown as sj.Substitution))).toBe('9*a + 3*b + c');
+    expect(sj.sstr(e.subs({ x: 3 }))).toBe('9*a + 3*b + c');
+  });
+  it('rejects an old value that is not an expression', () => {
+    expect(() => e.subs(globalThis.Symbol('x') as unknown as sj.Expr, 3)).toThrow(sj.SympifyError);
+  });
+  it('names a symbol without assumptions', () => {
+    const y = new sj.Sym('y', { real: true });
+    expect(sj.sstr(y.add(1).subs('y', 2))).toBe('y + 1');
+  });
+});

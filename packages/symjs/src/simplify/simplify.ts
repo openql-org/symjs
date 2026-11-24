@@ -443,8 +443,13 @@ export function simplify(ex: ExprLike | AlgebraicNumber, opts: SimplifyOptions =
   const expr2 = shorter(together(expr, { deep: true }), together(expr1, { deep: true }));
   expr = ratio === Infinity ? expr2 : shorter(expr2, expr1, expr);
   expr = factorTerms(expr, { sign: false });
-  if (some(expr, (sign) => sign instanceof Fn && sign.name === 'sign' &&
-      some(expr, (absolute) => absolute instanceof Fn && absolute.name === 'abs' && first(absolute.args).equals(first(sign.args))))) {
+  // (Abs(z) or Abs(z**e), as Abs keeps a power of a base of unknown sign)
+  const absOf = (absolute: Expr, z: Expr): boolean => {
+    if (!(absolute instanceof Fn && absolute.name === 'abs')) return false;
+    const a = first(absolute.args);
+    return a.equals(z) || (a instanceof Pow && a.base.equals(z));
+  };
+  if (some(expr, (sign) => sign instanceof Fn && sign.name === 'sign' && some(expr, (absolute) => absOf(absolute, first(sign.args))))) {
     const folded = piecewiseFold(expr.rewrite('Abs', { pattern: ['sign'] }));
     if (folded instanceof Piecewise) return simplifyPiecewise(folded, opts);
   }

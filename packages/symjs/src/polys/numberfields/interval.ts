@@ -152,9 +152,20 @@ export function algebraicEnclosure(expression:Expr,bits:number):AlgebraicBox {
     }
     if(e instanceof Fn&&['sin','cos','tan'].includes(e.name)){
       const arg=first(e.args),factors=arg instanceof Mul?arg.args:[arg];
-      let c=one,hasPi=false;
-      for(const f of factors){if(f instanceof Constant&&f.name==='pi')hasPi=true;else if(f instanceof Rational)c=times(c,f);else throw new NotImplementedError('trigonometric argument must be a rational multiple of pi');}
-      if(!hasPi)throw new NotImplementedError('trigonometric argument must contain pi');
+      let c=one,hasPi=false,angle:RationalInterval|undefined;
+      for(const f of factors){
+        if(f instanceof Constant&&f.name==='pi')hasPi=true;
+        else if(f instanceof Rational)c=times(c,f);
+        // the principal angle of atan(y) or atan2(y, x) (Pow.as_real_imag writes the argument of a root so)
+        else if(angle===undefined&&f instanceof Fn&&f.name==='atan'&&f.args.length===1)angle=argument([[one,one],visit(first(f.args))[0]],bits);
+        else if(angle===undefined&&f instanceof Fn&&f.name==='atan2'&&f.args.length===2)angle=argument([visit(at(f.args,1))[0],visit(first(f.args))[0]],bits);
+        else throw new NotImplementedError('trigonometric argument must be a rational multiple of pi');
+      }
+      if(angle!==undefined&&!hasPi){
+        const scaled=product(angle,[c,c]),s=sinCosInterval(scaled,false,bits),t=sinCosInterval(scaled,true,bits);
+        return [e.name==='sin'?s:e.name==='cos'?t:product(s,reciprocal(t)),Z];
+      }
+      if(!hasPi||angle!==undefined)throw new NotImplementedError('trigonometric argument must contain pi');
       const s=trig(c,false,bits),t=trig(c,true,bits);
       return [e.name==='sin'?s:e.name==='cos'?t:product(s,reciprocal(t)),Z];
     }

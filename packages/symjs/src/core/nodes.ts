@@ -13,7 +13,7 @@
  * definitions free of circular imports.
  */
 
-import { InvariantError, NotImplementedError, NotLoadedError } from './errors';
+import { InvariantError, NotImplementedError, NotLoadedError, SympifyError } from './errors';
 import type { Kind } from './kind';
 import { at } from './guard';
 import { classOf } from './callable';
@@ -291,6 +291,7 @@ export interface Impl {
   subs(e: Expr, s: Substitution): Expr;
   xreplace(e: Expr, s: Substitution): Expr;
   diff(e: Expr, x: Expr, n: ExprLike): Expr;
+  coeff(e: Expr, x: ExprLike, n: number, right: boolean): Expr;
   expand(e: Expr): Expr;
   simplify(e: Expr): Expr;
   evalf(e: Expr, n?: number | NumericValues, opts?: EvalfOptions): Expr;
@@ -340,6 +341,8 @@ export interface Impl {
   expandMul?(e: Expr): Expr;
   /** as_real_imag of exp and functions (registered by simplify/expand). */
   asRealImagExpand?(e: Expr): [Expr, Expr];
+  /** SymPy Pow.as_real_imag of a rational power (undefined: as re() and im() give them). */
+  powRealImag?(e: Expr): [Expr, Expr] | undefined;
   /**
    * Arithmetic of nodes that define their own operators (SymPy _op_priority,
    * as Quaternion does; installed by registerArithmetic): add, mul or pow
@@ -627,12 +630,15 @@ export abstract class Expr {
 
   // ---- manipulation --------------------------------------------------------
   subs(s: Substitution): Expr;
-  subs(from: Expr, to: ExprLike): Expr;
-  subs(a: Substitution | Expr, b?: ExprLike): Expr {
-    if (a instanceof Expr) {
+  /** `from` may be a symbol name: SymPy subs takes a string as the symbol of that name. */
+  subs(from: Expr | string, to: ExprLike): Expr;
+  subs(a: Substitution | Expr | string, b?: ExprLike): Expr {
+    if (a instanceof Expr || typeof a === 'string') {
       if (b === undefined) throw new TypeError('subs(from, to) requires a replacement');
-      return impl.subs(this, [[a, b]]);
+      return impl.subs(this, [[typeof a === 'string' ? new Sym(a) : a, b]]);
     }
+    // SymPy subs raises SympifyError for an old value it cannot convert (a JavaScript Symbol('x'))
+    if (typeof a !== 'object') throw new SympifyError(`Cannot convert ${String(a)} to an expression`, a);
     return impl.subs(this, a);
   }
   diff(x: Expr, n: ExprLike = 1): Expr {
@@ -649,6 +655,10 @@ export abstract class Expr {
   /** Indefinite integral w.r.t. x, or definite over [a, b] when limits are given. */
   integrate(x: Sym, limits?: [ExprLike, ExprLike]): Expr {
     return impl.integrate(this, x, limits);
+  }
+  /** Coefficient of `x**n` in the expression (SymPy `Expr.coeff`). */
+  coeff(x: ExprLike, n = 1, right = false): Expr {
+    return impl.coeff(this, x, n, right);
   }
   expand(): Expr {
     return impl.expand(this);
@@ -681,6 +691,27 @@ export abstract class Expr {
     return impl.toComplex(this, values);
   }
   /** Numerically evaluate to a real number (throws if the result is not real). */
+  /**
+   * JavaScript's conversion of the expression to a primitive. A string is the printed form, so that
+   * `'x = ' + expr` and template literals print it. A number (`2 * expr`, `Number(expr)`) is the
+   * value of a real number; any other expression raises a TypeError, since JavaScript's arithmetic
+   * operators do not apply to expressions (`2 * I` would otherwise be NaN).
+   */
+  [Symbol.toPrimitive](hint: 'number' | 'string' | 'default'): string | number {
+    if (hint !== 'number') return this.toString();
+    let value: number | undefined;
+    if (this.freeSymbols().size === 0) {
+      try {
+        value = this.toNumber();
+      } catch {
+        value = undefined;
+      }
+    }
+    if (value === undefined || Number.isNaN(value)) {
+      throw new TypeError(`Cannot convert ${this.toString()} to a JavaScript number: JavaScript operators (+, -, *, /, **) do not apply to symjs expressions; use the methods .add(), .sub(), .mul(), .div(), .pow() or parse('...')`);
+    }
+    return value;
+  }
   toNumber(values?: NumericValues, tol = 1e-12): number {
     const c = impl.toComplex(this, values);
     if (Math.abs(c.im) > tol * Math.max(1, Math.abs(c.re))) {

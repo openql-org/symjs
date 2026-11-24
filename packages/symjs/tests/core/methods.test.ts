@@ -74,6 +74,11 @@ describe('keepCoeff and argsCnc', () => {
 });
 
 describe('coeff', () => {
+  it('Expr.coeff method', () => {
+    expect(String(sj.expand(E('(x + y)**6')).coeff(x, 3))).toBe('20*y**3');
+    expect(String(E('x**2 + 3*x + 2').coeff(x))).toBe('3');
+    expect(String(E('x**2 + 3*x + 2').coeff(x, 0))).toBe('2');
+  });
   it('commutative', () => {
     expect(String(sj.coeff(E('x + 1'), 0))).toBe('0');
     expect(String(sj.coeff(x, x))).toBe('1');

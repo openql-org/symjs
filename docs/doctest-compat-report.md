@@ -10,6 +10,7 @@ Reference: SymPy 1.14.0.
 - **Fully covered**: source files whose unit tests reach 100% coverage. This measures test coverage, not SymPy behavior.
 
 **Measured corpus only: result agreement 100.0% (9657/9657; exact 99.5% 9613, equivalent 44; 139 run as JavaScript translations), API presence 100.0% (1667/1667)**
+The equivalent cases are listed in [doctest-equivalent-cases.md](doctest-equivalent-cases.md).
 
 **Verified public-call results: 5186/9657 (53.7%)**. This conservative count includes automatic public calls and reviewed conversion adapters. Results depending on harness computations, unaudited adapters or translations are unverified. It is not the coverage of all SymPy functionality.
 

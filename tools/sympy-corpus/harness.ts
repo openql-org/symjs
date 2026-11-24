@@ -5103,6 +5103,8 @@ export const ADAPTERS: Record<string, Adapter> = {
     for (const k of Object.keys(kw)) if (k !== 'right') throw new Unsupported(`kwargs ${k}`);
     // the term of a sequence at a point (SymPy SeqBase.coeff)
     if (self instanceof sj.SeqBase) return self.coeff(asExpr(args[0]));
+    // the scalar coefficient of a tensor expression (SymPy TensExpr.coeff property)
+    if (self instanceof sj.TensExpr && args.length === 0) return self.coEff;
     const n = args[1] instanceof sj.Rational ? Number(args[1].p) : 1;
     const r = kw['right'];
     return sj.coeff(asExpr(self), asExpr(args[0]), n, r === true || (r instanceof sj.Rational && !r.isZero));
