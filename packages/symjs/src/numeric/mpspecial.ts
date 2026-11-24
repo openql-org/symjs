@@ -135,7 +135,10 @@ function stirlingReal(w: Mpf, wp: number): Mpf {
   return s;
 }
 
-/** log Gamma(z) (principal branch: loggamma(z+1) = loggamma(z) + log(z)). */
+/**
+ * Evaluates the principal branch of the log-gamma function, satisfying
+ * `loggamma(z + 1) = loggamma(z) + log(z)`.
+ */
 export function cloggamma(z: Mpc, prec: number): Mpc {
   const wp = prec + 30 + Math.max(0, Math.ceil(Math.log2(cabsD(z) + 2)));
   const N = shiftCount(z, wp);
@@ -197,7 +200,10 @@ function gammaUncached(z: Mpc, prec: number): Mpc {
   return rnd(g, prec);
 }
 
-/** polygamma(n, z) for integer n >= 0. */
+/**
+ * Evaluates the polygamma function of nonnegative integer order `n` at `z`, with order zero
+ * giving the digamma function.
+ */
 export function cpolygamma(n: number, z: Mpc, prec: number): Mpc {
   const wp = prec + 30 + 2 * n;
   const N = shiftCount(z, wp) + n;
@@ -329,7 +335,7 @@ export function cerfi(z: Mpc, prec: number): Mpc {
   return rnd(cmul(erfSeries(z, wp, 1), real(twoOverSqrtPi(wp)), wp), prec);
 }
 
-/** erfinv(x) for real |x| < 1 by Newton iteration. */
+/** Computes the inverse error function for real `x` with `abs(x) < 1` by Newton iteration. */
 export function erfinv(x: Mpf, prec: number): Mpf {
   const xv = F.toNumber(x);
   if (Math.abs(xv) >= 1) throw new RangeError('erfinv domain');

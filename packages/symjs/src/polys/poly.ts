@@ -24,7 +24,11 @@ import { expand as expandHints, expandMul as expand } from '../simplify/expand';
 import { decomposePower, factorTerms } from '../simplify/exprtools';
 import type { PolynomialDomainOptions } from './sympoly';
 
-/** cancel, registered by simplify/rational (which imports this module). @internal */
+/**
+ * Holds callbacks for rational cancellation, polynomial factorization and root finding.
+ *
+ * @internal
+ */
 export const polyHooks: {
   cancel?: (e: Expr) => Expr;
   cancelDomain?: (e: Expr, opts: PolynomialDomainOptions) => Expr;
@@ -707,10 +711,12 @@ function splitFactors(e: Expr, x: Sym): [Expr, number][] | undefined {
 }
 
 /**
- * SymPy preprocess_roots for coefficients that are monomials in symbols: each symbol a whose
- * exponents are a fixed multiple r of the degrees in x (reversed when they grow towards the
- * constant term) is set to 1, and the roots are scaled by a**(-r). [scale, new coefficients] or
- * undefined when neither a symbolic scale nor an integer basis is removable.
+ * Looks for a change of variable `x = scale*y` that simplifies the polynomial coefficients.
+ * Returns the scale and transformed coefficients when a symbolic factor or integer basis can be
+ * removed. A coefficient symbol whose exponent varies with degree at an integer slope `r`
+ * contributes its inverse `r`th power to the scale.
+ *
+ * @see SymPy `sympy.polys.polyroots.preprocess_roots`
  */
 export function preprocessRootCoefficients(coeffs: ReadonlyMap<number, Expr>): [Expr, Map<number, Expr>] | undefined {
   if (coeffs.size < 2) return undefined;

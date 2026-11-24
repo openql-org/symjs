@@ -108,7 +108,7 @@ export function fromNumber(v: number): Mpf {
   return strip(hi >>> 31 ? -mant : mant, e);
 }
 
-/** p/q rounded to prec bits. */
+/** Converts the rational number `pIn/qIn` to a floating-point value rounded to `prec` bits. */
 export function fromRational(pIn: bigint, qIn: bigint, prec: number): Mpf {
   let p = pIn;
   let q = qIn;
@@ -144,7 +144,7 @@ export function mag(a: Mpf): number {
   return a.man === 0n ? -Infinity : Number(a.exp) + bitLength(a.man);
 }
 
-/** mag of a != 0 as an exact bigint. */
+/** Returns one plus the leading bit's exponent for nonzero `a`, as an exact bigint. */
 export function magExact(a: Mpf): bigint {
   return a.exp + BigInt(bitLength(a.man));
 }
@@ -422,7 +422,10 @@ function toDigitsExp(aIn: Mpf, dps: number): [string, string, bigint] {
   return [sgn, digits, exponent];
 }
 
-/** mpmath to_str. */
+/**
+ * Formats a floating-point number to `dps` significant decimal digits, using the exponent bounds
+ * to choose fixed or scientific notation.
+ */
 export function toStr(a: Mpf, dps: number, stripZeros = true, minFixedIn?: number, maxFixedIn?: number): string {
   let minFixed = minFixedIn;
   let maxFixed = maxFixedIn;
@@ -467,7 +470,10 @@ export function toStr(a: Mpf, dps: number, stripZeros = true, minFixedIn?: numbe
   return `${sgn}${digits}e${exponent}`;
 }
 
-/** SymPy StrPrinter._print_Float. */
+/**
+ * Formats a floating-point value for display at its binary precision, optionally stripping
+ * trailing decimal zeros.
+ */
 export function floatToString(a: Mpf, prec: number, stripZeros: boolean): string {
   const dps = prec < 5 ? 0 : precToDps(prec);
   let rv = toStr(a, dps, stripZeros);

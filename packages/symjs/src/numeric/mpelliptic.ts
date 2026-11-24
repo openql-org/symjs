@@ -133,7 +133,7 @@ function carlsonRF(x: Mpc, y: Mpc, z: Mpc, r: Mpf, wp: number): Mpc {
 function carlsonRJ(x: Mpc, y: Mpc, z: Mpc, p: Mpc, r: Mpf, wp: number): Mpc {
   if (czero(p) || [x, y, z].filter(czero).length > 1) throw new RangeError('RJ is infinite');
   const nonneg = (v: Mpc) => v[0].man >= 0n;
-  /** r is real and nonnegative and a, b are complex conjugates. */
+  /** Tests whether `r` is real and nonnegative and `a` and `b` are complex conjugates. */
   const realConj = (r: Mpc, a: Mpc, b: Mpc): boolean => {
     if (!isRealC(r) || r[0].man < 0n) return false;
     return ceq([a[0], F.neg(a[1])], b);
@@ -265,11 +265,11 @@ function carlsonRJCore(x: Mpc, y: Mpc, z: Mpc, p: Mpc, r: Mpf, wp: number): Mpc 
 
 /** The Carlson integrals at working precision prec + 20 with mpmath's tolerance eps 2**10. */
 const carlsonTol = (wp: number): Mpf => ({ man: 1n, exp: BigInt(11 - wp) });
-/** mpmath elliprc. */
+/** Evaluates Carlson's degenerate symmetric elliptic integral `R_C(x, y)`. */
 export const RC = (x: Mpc, y: Mpc, prec: number): Mpc => carlsonRC(x, y, carlsonTol(prec + 20), prec + 20);
-/** mpmath elliprf. */
+/** Evaluates Carlson's symmetric elliptic integral of the first kind, `R_F(x, y, z)`. */
 export const RF = (x: Mpc, y: Mpc, z: Mpc, prec: number): Mpc => carlsonRF(x, y, z, carlsonTol(prec + 20), prec + 20);
-/** mpmath elliprj. */
+/** Evaluates Carlson's symmetric elliptic integral of the third kind, `R_J(x, y, z, p)`. */
 export const RJ = (x: Mpc, y: Mpc, z: Mpc, p: Mpc, prec: number): Mpc => carlsonRJ(x, y, z, p, carlsonTol(prec + 20), prec + 20);
 
 /** Sum terms evaluated at working precision wp, again with the cancellation of the first sum added (mpmath sum_accurately). */

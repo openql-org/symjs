@@ -133,16 +133,20 @@ export function pureComplex(v: ExprLike, orReal = false): [Expr, Expr] | NoMatch
   return !imaginary.equals(S.Zero) || orReal ? [real, imaginary] : NoMatch;
 }
 
-/** SymPy's raw mpf representation: sign, mantissa, exponent, bit count. */
+/**
+ * Represents a binary floating-point value as a tuple of sign bit, mantissa, exponent and
+ * mantissa bit count.
+ */
 export type RawMpfTuple = readonly [number, number, number, number];
 /** A scaled zero wraps the sign to distinguish it from an ordinary mpf value. */
 export type ScaledZero = readonly [readonly [number], number, number, number];
 
 /**
- * encode a magnitude with unknown precision, or unwrap its sign.
+ * Encodes a signed power of two as a scaled zero of unknown precision, or unwraps a scaled zero
+ * into its raw tuple.
  *
  * @remarks
- * For `ok`, SymPy displays `(0, 1, 100, 1)`.
+ * SymPy displays the unwrapped tuple in the example as `(0, 1, 100, 1)`.
  * @param mag - The binary magnitude exponent or an encoded scaled zero.
  * @param sign - The sign, one or minus one.
  * @returns The scaled-zero and accuracy pair, or the unwrapped raw tuple.
@@ -383,7 +387,7 @@ function specialPart(p: MpPart, prec: number): Expr {
   return F.isZero(p) ? S.Zero : new Float(p, prec);
 }
 
-/** evalf at a binary precision. */
+/** Evaluates an expression numerically at a target precision of `prec` bits. */
 export function evalfPrec(e: Expr, prec: number, values?: NumericValues, chop?: boolean | number, options: Pick<EvalfOptions, 'maxn' | 'strict'> = {}): Expr {
   const maxPrec = options.maxn === undefined ? Infinity : dpsToPrec(options.maxn);
   const raw = makeRawLookup(values);
@@ -427,7 +431,7 @@ export function evalfPrec(e: Expr, prec: number, values?: NumericValues, chop?: 
       return undefined;
     }
   };
-  /** SymPy _eval_evalf: the numeric parts evaluated, the others kept. */
+  /** Evaluates the numeric parts of an expression and preserves the remaining symbolic terms. */
   const go = (x: Expr): Expr => {
     if (x instanceof Integral && isZero(x.integrand) === true) return S.Zero;
     const v = numeric(x, noValue);

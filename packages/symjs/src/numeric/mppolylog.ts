@@ -158,7 +158,10 @@ function polylogGeneral(s: Mpc, z: Mpc, wp: number): Mpc {
   return cadd(cmul(cgamma(csub(M.C1, s, wp), wp), M.cpow(M.cneg(u), csub(s, M.C1, wp), wp), wp), v, wp);
 }
 
-/** eta(s) = (1 - 2**(1 - s)) zeta(s), eta(1) = log 2 (mpmath altzeta). */
+/**
+ * Evaluates the Dirichlet eta function as `(1 - 2**(1 - s)) * zeta(s)`, with the limiting value
+ * `log(2)` at 1.
+ */
 export function caltzeta(s: Mpc, prec: number): Mpc {
   if (eq(s, 1)) return [M.mpLn2(prec), ZERO];
   const wp = prec + 20 + Math.max(0, -Math.max(F.mag(F.sub(s[0], F.ONE)), F.mag(s[1])));
@@ -262,10 +265,13 @@ function expm1(x: Mpf, wp: number): Mpf {
 }
 
 /**
- * mpmath stieltjes(n, a): the generalized Stieltjes constant gamma_n(a) for an integer n >= 0 and a
- * real a > 0, by the integral
- * gamma_n(a) = log(a)**n/(2 a) - log(a)**(n + 1)/(n + 1)
- *   + 2/a int_0^oo Re[(x/a - i) log(a - i x)**n]/((1 + (x/a)**2) (exp(2 pi x) - 1)) dx.
+ * Computes the generalized Stieltjes constant `γ_n(a)` for nonnegative integer `n` and positive
+ * real `a` by integrating over the positive real axis.
+ *
+ * @remarks
+ * The constant equals `log(a)**n/(2*a) - log(a)**(n + 1)/(n + 1)` plus `2/a` times the
+ * integral from zero to infinity of
+ * `Re((x/a - i) * log(a - i*x)**n) / ((1 + (x/a)**2) * (exp(2*π*x) - 1))`.
  */
 export function stieltjes(n: number, a: Mpf, prec: number): Mpf {
   const wp = prec + 10 + Math.floor(Math.sqrt(n));

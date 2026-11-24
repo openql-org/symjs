@@ -73,12 +73,21 @@ function floorDiv(a: bigint, b: bigint): bigint {
   return (a % b !== 0n && (a < 0n) !== (b < 0n)) ? q - 1n : q;
 }
 
-/** SymPy K.convert(a): a value as an element of K (CoercionFailed when it is not one). */
+/**
+ * Converts a value to an element of the coefficient domain `K`, raising `CoercionFailed` if
+ * conversion fails.
+ *
+ * @see SymPy `sympy.polys.domains.domain.Domain.convert`
+ */
 export function groundConvert(K: Domain, a: ExprLike): Expr {
   return K.fromSympy(sympify(a));
 }
 
-/** a == 0 in K. */
+/**
+ * Tests whether `a` is zero in the coefficient domain `K`.
+ *
+ * @see SymPy `sympy.polys.domains.domain.Domain.is_zero`
+ */
 export const groundIsZero = (K: Domain, a: Expr): boolean => K.isZero(a) || (a instanceof Rational && a.isZero);
 
 /** Exact coefficient equality, including numeric units stored as either rationals or floats. */
@@ -88,7 +97,12 @@ export function groundEq(a: Expr, b: Expr): boolean {
   return x !== undefined && y !== undefined && x[0]*y[1] === y[0]*x[1];
 }
 
-/** SymPy K.is_negative(a). */
+/**
+ * Tests whether a coefficient is negative in `K`, using the leading coefficient for polynomials
+ * and the leading coefficient of the numerator for rational functions.
+ *
+ * @see SymPy `sympy.polys.domains.domain.Domain.is_negative`
+ */
 export function groundIsNegative(K: Domain, a: Expr): boolean {
   if (a instanceof Rational || a instanceof Float) return K.isNegative(a);
   if (K instanceof PolynomialRing || K instanceof FractionField) {
@@ -100,7 +114,12 @@ export function groundIsNegative(K: Domain, a: Expr): boolean {
   return splitCoeff(a)[0].isNegative;
 }
 
-/** SymPy K.quo(a, b): floor division in ZZ, the quotient in a field. */
+/**
+ * Computes the quotient of `a` by `b` in `K`, using floor division for integers and exact
+ * division for fields.
+ *
+ * @see SymPy `sympy.polys.domains.domain.Domain.quo`
+ */
 export function groundQuo(K: Domain, a: Expr, b: Expr): Expr {
   if (groundIsZero(K, b)) throw new RangeError('division by zero');
   if (isZZ(K)) return Rational.of(floorDiv(rat(a).p, rat(b).p));
@@ -109,7 +128,12 @@ export function groundQuo(K: Domain, a: Expr, b: Expr): Expr {
   return groundExquo(K, a, b);
 }
 
-/** SymPy K.rem(a, b): the Python remainder in ZZ, zero in a field. */
+/**
+ * Computes the remainder of `a` divided by `b` in `K`. Integers use the remainder from floor
+ * division, and field elements give zero for a nonzero divisor.
+ *
+ * @see SymPy `sympy.polys.domains.domain.Domain.rem`
+ */
 export function groundRem(K: Domain, a: Expr, b: Expr): Expr {
   if (groundIsZero(K, b)) throw new RangeError('division by zero');
   if (isZZ(K)) {
@@ -121,7 +145,12 @@ export function groundRem(K: Domain, a: Expr, b: Expr): Expr {
   return K.sub(a, K.mul(groundExquo(K, a, b), b));
 }
 
-/** SymPy K.exquo(a, b): the exact quotient (ExactQuotientFailed when b does not divide a). */
+/**
+ * Computes the exact quotient of `a` by `b` in `K`, raising `ExactQuotientFailed` if a nonzero
+ * `b` does not divide `a`.
+ *
+ * @see SymPy `sympy.polys.domains.domain.Domain.exquo`
+ */
 export function groundExquo(K: Domain, a: Expr, b: Expr): Expr {
   if (groundIsZero(K, b)) throw new RangeError('division by zero');
   if (isZZ(K)) {
@@ -139,10 +168,19 @@ export function groundExquo(K: Domain, a: Expr, b: Expr): Expr {
   }
 }
 
-/** SymPy K.abs(a). */
+/**
+ * Returns the absolute value of `a` according to the sign convention of `K`.
+ *
+ * @see SymPy `sympy.polys.domains.domain.Domain.abs`
+ */
 export const groundAbs = (K: Domain, a: Expr): Expr => (groundIsNegative(K, a) ? K.neg(a) : a);
 
-/** SymPy K.gcd(a, b) (ZZ: nonnegative; QQ: gcd of numerators over lcm of denominators; other fields: one). */
+/**
+ * Computes the greatest common divisor in `K`. For integers the result is nonnegative, and for
+ * rationals it is the GCD of the numerators divided by the LCM of the denominators.
+ *
+ * @see SymPy `sympy.polys.domains.domain.Domain.gcd`
+ */
 export function groundGcd(K: Domain, a: Expr, b: Expr): Expr {
   if (isZZ(K)) return Rational.of(igcd(rat(a).p, rat(b).p));
   if (K instanceof RationalField) {
@@ -155,7 +193,11 @@ export function groundGcd(K: Domain, a: Expr, b: Expr): Expr {
   return K.one;
 }
 
-/** SymPy K.lcm(a, b). */
+/**
+ * Computes the least common multiple of two coefficients in `K`.
+ *
+ * @see SymPy `sympy.polys.domains.domain.Domain.lcm`
+ */
 export function groundLcm(K: Domain, a: Expr, b: Expr): Expr {
   if (isZZ(K)) return Rational.of(ilcm(rat(a).p, rat(b).p));
   if (K instanceof RationalField) {
@@ -167,13 +209,25 @@ export function groundLcm(K: Domain, a: Expr, b: Expr): Expr {
   return K.mul(a, b);
 }
 
-/** SymPy K.numer(a) / K.denom(a) of a QQ element. */
+/**
+ * Returns the positive denominator of a rational coefficient in lowest terms.
+ *
+ * @see SymPy `sympy.polys.domains.rationalfield.RationalField.denom`
+ */
 export const groundDenom = (a: Expr): Expr => Rational.of(rat(a).q);
 
-/** a**n in K. */
+/**
+ * Raises `a` to the integer power `n` and normalizes the result in `K`.
+ *
+ * @see SymPy `sympy.polys.domains.domain.Domain.pow`
+ */
 export const groundPow = (K: Domain, a: Expr, n: number): Expr => K.canon(pow(a, n));
 
-/** SymPy K.get_ring(): the ring of integers of QQ (DomainError otherwise). */
+/**
+ * Returns the integer ring for rational coefficients and otherwise returns the input domain.
+ *
+ * @see SymPy `sympy.polys.domains.domain.Domain.get_ring`
+ */
 export function groundRing(K: Domain): Domain {
   if (K instanceof RationalField) return ZZ;
   return K;
@@ -188,13 +242,23 @@ export function groundRing(K: Domain): Domain {
  */
 export const hasAssocRing = (K: Domain): boolean => K instanceof RationalField || K instanceof IntegerRing;
 
-/** SymPy K.canonical_unit(a): -1 for a negative element, else 1. */
+/**
+ * Returns the unit that normalizes `a` in `K`. Gaussian elements rotate into the first quadrant,
+ * and other coefficients use their sign.
+ *
+ * @see SymPy `sympy.polys.domains.domain.Domain.canonical_unit`
+ */
 export function canonicalUnit(K: Domain, a: Expr): Expr {
   if (K instanceof GaussianIntegerRing || K instanceof GaussianRationalField) return K.toSympy(K.canonicalUnit(a));
   return groundIsNegative(K, a) ? K.neg(K.one) : K.one;
 }
 
-/** SymPy K.is_unit(a). */
+/**
+ * Tests a coefficient for invertibility, accepting any nonzero element in a field and the
+ * elements 1 and −1 in other domains.
+ *
+ * @see SymPy `sympy.polys.domains.ring.Ring.is_unit`
+ */
 export function groundIsUnit(K: Domain, a: Expr): boolean {
   if (K.isField) return !groundIsZero(K, a);
   return groundEq(a, K.one) || groundEq(a, K.neg(K.one));

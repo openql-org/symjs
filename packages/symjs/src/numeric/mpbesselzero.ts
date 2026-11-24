@@ -46,8 +46,8 @@ export function mcmahon(v: number, m: number): [number, number] {
 const signJ = (v: Mpf, x: number): number => F.sign(besselJ(v, F.fromNumber(x), 64));
 
 /**
- * n intervals isolating the n simple zeros of J_v in [a, b] (mpmath generalized_bisection),
- * with at most maxPoints sample points.
+ * Isolates the `n` simple zeros of the Bessel function `J_v` in `[a, b]` by finding one
+ * sign-changing interval per zero, using at most `maxPoints` samples per pass.
  */
 export function isolate(v: Mpf, a: number, b: number, n: number, maxPoints = 1 << 16): [number, number][] {
   for (let N = n + 1; N <= maxPoints; N *= 2) {

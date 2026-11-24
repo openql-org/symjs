@@ -41,20 +41,33 @@ export const elemEq = (a: Expr, b: Expr): boolean => a.key === b.key;
 export const isZZ = (K: Domain): boolean => K instanceof IntegerRing;
 export const isQQ = (K: Domain): boolean => K instanceof RationalField;
 
-/** SymPy K.is_Exact: every domain but the floating-point ones. */
+/**
+ * Tests whether the matrix coefficient domain uses exact arithmetic.
+ *
+ * @see SymPy `sympy.polys.domains.domain.Domain.is_Exact`
+ */
 export const isExact = (K: Domain): boolean => K.ground !== 'RR';
 
 /** The polynomial of a polynomial-ring or fraction-field element over its symbols (lex order). */
 const polyOf = (K: Domain, a: Expr): Poly => Poly.from(a, K.symbols, { domain: K.ground });
 
-/** SymPy K.is_negative: the sign of the leading ground coefficient. */
+/**
+ * Tests whether a matrix coefficient is negative, using the leading ground coefficient for a
+ * polynomial or for the numerator of a rational function.
+ *
+ * @see SymPy `sympy.polys.domains.domain.Domain.is_negative`
+ */
 export function isNegative(K: Domain, a: Expr): boolean {
   if (K instanceof PolynomialRing) return K.isNegative(polyOf(K, a).LC());
   if (K instanceof FractionField) return K.isNegative(polyOf(K, fraction(a)[0]).LC());
   return K.isNegative(a);
 }
 
-/** SymPy K.canonical_unit, expressed in the matrix's coefficient representation. */
+/**
+ * Returns the canonical unit of `a` as a matrix coefficient expression.
+ *
+ * @see SymPy `sympy.polys.domains.domain.Domain.canonical_unit`
+ */
 export function canonicalUnit(K: Domain, a: Expr): Expr {
   return K.toSympy(K.canonicalUnit(a));
 }
@@ -62,7 +75,7 @@ export function canonicalUnit(K: Domain, a: Expr): Expr {
 /** The multiplicative inverse in a field (SymPy a**-1). */
 export const inv = (K: Domain, a: Expr): Expr => K.quo(K.one, a);
 
-/** a/b in a field (SymPy a/b of field elements). */
+/** Divides the field element `a` by the field element `b`. */
 export const fdiv = (K: Domain, a: Expr, b: Expr): Expr => K.quo(a, b);
 
 /** Python floor division and modulo of integers. */
@@ -76,7 +89,12 @@ function floorDivmod(a: bigint, b: bigint): [bigint, bigint] {
   return [q, r];
 }
 
-/** SymPy K.div: floor division with remainder in ZZ, exact division in a field. */
+/**
+ * Returns the quotient and remainder of `a` divided by `b` in `K`. Integers use floor division,
+ * and division in a field has zero remainder.
+ *
+ * @see SymPy `sympy.polys.domains.domain.Domain.div`
+ */
 export function div(K: Domain, a: Expr, b: Expr): [Expr, Expr] {
   if (K.isZero(b)) throw new RangeError('division by zero');
   if (isZZ(K)) {
@@ -92,12 +110,25 @@ export function div(K: Domain, a: Expr, b: Expr): [Expr, Expr] {
   return [K.toSympy(q), K.toSympy(r)];
 }
 
-/** SymPy K.quo (floor division in ZZ). */
+/**
+ * Computes the quotient of `a` by `b` in `K`, rounding down for integer coefficients.
+ *
+ * @see SymPy `sympy.polys.domains.domain.Domain.quo`
+ */
 export const quo = (K: Domain, a: Expr, b: Expr): Expr => first(div(K, a, b));
-/** SymPy K.rem. */
+/**
+ * Computes the remainder of `a` divided by `b` in `K`.
+ *
+ * @see SymPy `sympy.polys.domains.domain.Domain.rem`
+ */
 export const rem = (K: Domain, a: Expr, b: Expr): Expr => at(div(K, a, b), 1);
 
-/** SymPy K.exquo: the exact quotient; throws ExactQuotientFailed when b does not divide a. */
+/**
+ * Computes the exact quotient of `a` by `b` in `K`, raising `ExactQuotientFailed` if a nonzero
+ * `b` does not divide `a`.
+ *
+ * @see SymPy `sympy.polys.domains.domain.Domain.exquo`
+ */
 export function exquo(K: Domain, a: Expr, b: Expr): Expr {
   if (K.isZero(b)) throw new RangeError('division by zero');
   if (K.isField) return K.quo(a, b);
@@ -114,33 +145,62 @@ export function exquo(K: Domain, a: Expr, b: Expr): Expr {
   }
 }
 
-/** SymPy K.numer: the numerator of a field element in the associated ring. */
+/**
+ * Returns the numerator of a field element as an element of its associated ring.
+ *
+ * @see SymPy `sympy.polys.domains.domain.Domain.numer`
+ */
 export function numer(K: Domain, a: Expr): Expr {
   if (isQQ(K)) return Rational.of(rat(a).p);
   return K.getRing().canon(fraction(a)[0]);
 }
 
-/** SymPy K.denom: the denominator of a field element in the associated ring (1 for a ring element). */
+/**
+ * Returns the denominator in the associated ring for a rational number or rational function, and
+ * one for a ring element.
+ *
+ * @see SymPy `sympy.polys.domains.domain.Domain.denom`
+ */
 export function denom(K: Domain, a: Expr): Expr {
   if (isQQ(K)) return Rational.of(rat(a).q);
   if (K instanceof FractionField) return K.getRing().canon(fraction(a)[1]);
   return K.one;
 }
 
-/** SymPy K.has_assoc_Ring: a field with a ring of which it is the fraction field (QQ, K(x)). */
+/**
+ * Tests whether the coefficient domain is the rational field or a rational function field with
+ * an associated ring.
+ *
+ * @see SymPy `sympy.polys.domains.domain.Domain.has_assoc_Ring`
+ */
 export const hasAssocRing = (K: Domain): boolean => isQQ(K) || K instanceof FractionField;
 
-/** SymPy K.has_assoc_Field: ZZ and the polynomial rings. */
+/**
+ * Tests whether the coefficient domain is the integer ring or a polynomial ring with an
+ * associated fraction field.
+ *
+ * @see SymPy `sympy.polys.domains.domain.Domain.has_assoc_Field`
+ */
 export const hasAssocField = (K: Domain): boolean => isZZ(K) || K instanceof PolynomialRing;
 
-/** SymPy K.is_PID: ZZ, the exact fields and univariate polynomial rings over a field. */
+/**
+ * Tests whether the matrix algorithms recognize `K` as a principal ideal domain, including the
+ * integers, exact fields and univariate polynomial rings over exact fields.
+ *
+ * @see SymPy `sympy.polys.domains.domain.Domain.is_PID`
+ */
 export function isPID(K: Domain): boolean {
   if (isZZ(K)) return true;
   if (K instanceof PolynomialRing) return K.symbols.length === 1 && K.ground !== 'ZZ' && K.ground !== 'RR';
   return K.isField && isExact(K);
 }
 
-/** SymPy K.gcd (over a field with an associated ring: gcd of numerators over lcm of denominators). */
+/**
+ * Computes the greatest common divisor in `K`. In a rational number or rational function field
+ * it divides the GCD of the numerators by the LCM of the denominators.
+ *
+ * @see SymPy `sympy.polys.domains.domain.Domain.gcd`
+ */
 export function gcd(K: Domain, a: Expr, b: Expr): Expr {
   if (isZZ(K)) return Rational.of(igcd(rat(a).p, rat(b).p));
   if (isQQ(K)) {
@@ -156,7 +216,11 @@ export function gcd(K: Domain, a: Expr, b: Expr): Expr {
   return K.one;
 }
 
-/** SymPy K.lcm. */
+/**
+ * Computes the least common multiple of two matrix coefficients in `K`.
+ *
+ * @see SymPy `sympy.polys.domains.domain.Domain.lcm`
+ */
 export function lcm(K: Domain, a: Expr, b: Expr): Expr {
   if (isZZ(K)) return Rational.of(ilcm(rat(a).p, rat(b).p));
   if (isQQ(K)) {
@@ -171,7 +235,12 @@ export function lcm(K: Domain, a: Expr, b: Expr): Expr {
   return K.mul(a, b);
 }
 
-/** SymPy K.gcdex: [s, t, g] with s*a + t*b = g = gcd(a, b). */
+/**
+ * Computes Bézout coefficients and the greatest common divisor as `[s, t, g]` satisfying
+ * `s*a + t*b = g`.
+ *
+ * @see SymPy `sympy.polys.domains.domain.Domain.gcdex`
+ */
 export function gcdex(K: Domain, a: Expr, b: Expr): [Expr, Expr, Expr] {
   if (K instanceof PolynomialRing && K.symbols.length === 1 && K.dom.isField) {
     const [s, t, g] = polyOf(K, a).gcdex(polyOf(K, b), false);
@@ -182,20 +251,29 @@ export function gcdex(K: Domain, a: Expr, b: Expr): [Expr, Expr, Expr] {
   return [Rational.of(s), Rational.of(t), Rational.of(g)];
 }
 
-/** SymPy K.cofactors: [gcd(a, b), a/gcd, b/gcd]. */
+/**
+ * Returns the greatest common divisor `g` and the cofactors `a/g` and `b/g`. When both inputs
+ * are zero, all three results are zero.
+ *
+ * @see SymPy `sympy.polys.domains.domain.Domain.cofactors`
+ */
 export function cofactors(K: Domain, a: Expr, b: Expr): [Expr, Expr, Expr] {
   const g = gcd(K, a, b);
   if (K.isZero(g)) return [g, K.zero, K.zero];
   return [g, exquo(K, a, g), exquo(K, b, g)];
 }
 
-/** SymPy K.convert_from(a, K0): an element of K0 as an element of K. */
+/**
+ * Converts an element of the source domain `K0` to the destination domain `K`.
+ *
+ * @see SymPy `sympy.polys.domains.domain.Domain.convert_from`
+ */
 export function convertFrom(K: Domain, a: Expr, K0: Domain): Expr {
   if (K.equals(K0)) return a;
   return K.fromSympy(K0.toSympy(a));
 }
 
-/** str() of a domain element. */
+/** Formats an element of `K` as a string. */
 export function elemStr(K: Domain, a: Expr): string {
   if (K instanceof FiniteField) return String(K.convert(a));
   if (K instanceof RealField) {
@@ -205,7 +283,7 @@ export function elemStr(K: Domain, a: Expr): string {
   return str(K.toSympy(a));
 }
 
-/** repr() of a domain element: MPQ(p,q) for QQ (SymPy's pure Python ground type), str otherwise. */
+/** Formats a rational coefficient as `MPQ(p,q)` and other coefficients in their usual string form. */
 export function elemRepr(K: Domain, a: Expr): string {
   if (isQQ(K)) {
     const r = rat(a);
@@ -218,10 +296,10 @@ export function elemRepr(K: Domain, a: Expr): string {
 export const bitLength = (n: bigint): number => (n === 0n ? 0 : (n < 0n ? -n : n).toString(2).length);
 
 /**
- * SymPy construct_domain for the DomainMatrix modules: the domain that
- * constructDomain chooses for the expressions (ZZ, QQ, RR, ZZ_I, QQ_I, a
- * polynomial ring, a fraction field or EX), with the expressions as its
- * elements in the expression form the matrices keep.
+ * Chooses a common coefficient domain for the expressions and returns it with the converted
+ * elements in the expression form used by domain matrices.
+ *
+ * @see SymPy `sympy.polys.constructor.construct_domain`
  */
 export function domainOfExprs(exprsIn: readonly ExprLike[], opts: { field?: boolean } = {}): [Domain, Expr[]] {
   const exprs = exprsIn.map((e) => sympify(e));

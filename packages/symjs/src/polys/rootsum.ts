@@ -343,7 +343,12 @@ export function assemblePartfracList(list: [Expr, Poly, PartfracTerm[], Sym]): E
 
 const hasRootSum = (e: Expr): boolean => e instanceof RootSumNode || e.args.some(hasRootSum);
 
-/** SymPy apart(f, x, full=True): the terms without a RootSum are factored (as one fraction, like SymPy's factor). */
+/**
+ * Computes the full partial fraction decomposition in `x`, combining and factoring each term
+ * that contains no `RootSum`.
+ *
+ * @see SymPy `sympy.polys.partfrac.apart`
+ */
 export function apartFull(f: ExprLike, x: Sym): Expr {
   const r = assemblePartfracList(apartList(f, x));
   return add(...(r instanceof Add ? r.args : [r]).map((t) => (hasRootSum(t) ? t : factor(together(t)))));

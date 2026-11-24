@@ -183,9 +183,9 @@ function toZZ(e: Expr, vars: readonly Expr[]): [ZPoly, bigint] | undefined {
 }
 
 /**
- * gcd(f, g) of expanded nonzero polynomials with rational coefficients by the heuristic GCD, with
- * the cofactors f/gcd and g/gcd; the gcd as mgcd normalizes it. Undefined when the coefficients
- * are not rational or the heuristic fails (`start` is the first evaluation point of heuGcd, for tests).
+ * Attempts to compute the normalized GCD and both cofactors of two expanded nonzero polynomials
+ * with rational coefficients. The heuristic uses `start` as its first evaluation point when
+ * supplied.
  */
 export function heuGcdCofactors(f: Expr, g: Expr, vars: readonly Expr[], start?: bigint): [Expr, Expr, Expr] | undefined {
   const zf = toZZ(f, vars);
@@ -239,7 +239,7 @@ export function mgcd(f0: Expr, g0: Expr, vars: readonly Expr[]): Expr {
   return normalizeSign(expand(mul(c, g1)), live);
 }
 
-/** lcm of two polynomials. */
+/** Computes the least common multiple of two polynomials in the given variables. */
 export function mlcm(f: Expr, g: Expr, vars: readonly Expr[]): Expr {
   if (isZeroE(f) || isZeroE(g)) return S.Zero;
   const d = mgcd(f, g, vars);

@@ -84,7 +84,12 @@ export function symmetrize(fIn: ExprLike, gensIn: readonly Sym[] = [], symbols?:
   return [add(...symmetric), f.asExpr(), syms.map((s, i): [Sym, Expr] => [s, at(polys, i)])];
 }
 
-/** symmetrize with the elementary polynomials substituted back (formal=False). */
+/**
+ * Decomposes a polynomial into a symmetric part and a remainder, expressing the symmetric part
+ * in the original generators.
+ *
+ * @see SymPy `sympy.polys.polyfuncs.symmetrize`
+ */
 export function symmetrizeExpr(fIn: ExprLike, gens: readonly Sym[] = []): [Expr, Expr] {
   const [s, r, m] = symmetrize(fIn, gens);
   return [xreplace(s, m), r];

@@ -100,7 +100,10 @@ export function pgcd(a0: P, b0: P, p: bigint): P {
   return monic(a, p);
 }
 
-/** s, t with s*a + t*b = 1 modulo p (a, b coprime). */
+/**
+ * Computes Bézout coefficients `s` and `t` for coprime polynomials `a` and `b` such that
+ * `s*a + t*b = 1` modulo `p`.
+ */
 export function pgcdex(a0: P, b0: P, p: bigint): [P, P] {
   let [r0, r1] = [pmod(a0, p), pmod(b0, p)];
   let [s0, s1]: [P, P] = [[1n], []];

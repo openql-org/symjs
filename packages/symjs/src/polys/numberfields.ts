@@ -90,8 +90,10 @@ function points(k: number, bound: number): number[][] {
 }
 
 /**
- * SymPy _choose_factor: the factor that vanishes at v, decided numerically
- * (at small integer values of the symbols of the domain). @internal
+ * Selects the polynomial factor that vanishes at `x = v`, using small integer substitutions for
+ * symbols in the coefficient domain when needed.
+ *
+ * @internal
  */
 export function chooseFactor(factors: readonly Expr[], x: Sym, v: Expr, dom: Ground): Expr {
   if (factors.length === 1) return first(factors);

@@ -45,7 +45,7 @@ export function mpLn10(prec: number): Mpf {
 export function mpApery(prec: number): Mpf {
   return fromFx(aperyFixed(prec + 10), prec + 10, prec);
 }
-/** zeta(5). */
+/** Evaluates the Riemann zeta function at 5 to `prec` bits. */
 export function mpZeta5(prec: number): Mpf {
   return fromFx(zeta5Fixed(prec + 10), prec + 10, prec);
 }
@@ -100,7 +100,7 @@ export function cbrt(x: Mpf, prec: number): Mpf {
   return nthRoot(x, 3n, prec);
 }
 
-/** x**(1/n) for x > 0 via an integer root. */
+/** Computes the positive `n`th root of a positive real number using an integer root of the scaled mantissa. */
 export function nthRoot(x: Mpf, n: bigint, prec: number): Mpf {
   let shift = BigInt(Math.max(0, Number(n) * (prec + 4) - F.bitLength(x.man)));
   while ((((x.exp - shift) % n) + n) % n !== 0n) shift++;
@@ -316,7 +316,7 @@ export function tanh(x: Mpf, prec: number): Mpf {
   return F.div(sinh(x, wp), cosh(x, wp), prec);
 }
 
-/** x**y for x > 0. */
+/** Raises a positive real base `x` to the real power `y`. */
 export function powReal(x: Mpf, y: Mpf, prec: number): Mpf {
   const wp = prec + 20 + Math.max(0, F.mag(y)) + Math.max(0, Math.ceil(Math.log2(Math.abs(F.mag(x)) + 1)));
   return exp(F.mul(y, log(x, wp), wp), prec);
@@ -480,7 +480,7 @@ export function ctanh(z: Mpc, prec: number): Mpc {
 const mulI = (z: Mpc): Mpc => [F.neg(z[1]), z[0]];
 const mulNegI = (z: Mpc): Mpc => [z[1], F.neg(z[0])];
 
-/** asin z = -i log(iz + sqrt(1 - z^2)) */
+/** Computes the complex inverse sine, `-i * log(i*z + sqrt(1 - z**2))`. */
 export function casin(z: Mpc, prec: number): Mpc {
   const wp = prec + 20;
   if (isReal(z) && F.cmp(F.abs(z[0]), ONE) <= 0) {
@@ -502,7 +502,7 @@ export function cacos(z: Mpc, prec: number): Mpc {
   return [F.sub(F.ldexp(mpPi(wp), -1), a[0], prec), F.round(F.neg(a[1]), prec)];
 }
 
-/** atan z = i/2 (log(1 - iz) - log(1 + iz)) */
+/** Computes the complex inverse tangent, `i/2 * (log(1 - i*z) - log(1 + i*z))`. */
 export function catan(z: Mpc, prec: number): Mpc {
   if (isReal(z)) return [atan(z[0], prec), ZERO];
   const wp = prec + 20;
@@ -512,7 +512,7 @@ export function catan(z: Mpc, prec: number): Mpc {
   return [F.round(F.ldexp(r[0], -1), prec), F.round(F.ldexp(r[1], -1), prec)];
 }
 
-/** asinh z = log(z + sqrt(z^2 + 1)) */
+/** Computes the complex inverse hyperbolic sine, `log(z + sqrt(z**2 + 1))`. */
 export function casinh(z: Mpc, prec: number): Mpc {
   const wp = prec + 20;
   if (isReal(z)) {
@@ -524,14 +524,14 @@ export function casinh(z: Mpc, prec: number): Mpc {
   return [F.round(r[0], prec), F.round(r[1], prec)];
 }
 
-/** acosh z = log(z + sqrt(z + 1) sqrt(z - 1)) */
+/** Computes the complex inverse hyperbolic cosine, `log(z + sqrt(z + 1) * sqrt(z - 1))`. */
 export function cacosh(z: Mpc, prec: number): Mpc {
   const wp = prec + 20;
   const r = clog(cadd(z, cmul(csqrt(cadd(z, C1, wp), wp), csqrt(csub(z, C1, wp), wp), wp), wp), wp);
   return [F.round(r[0], prec), F.round(r[1], prec)];
 }
 
-/** atanh z = (log(1 + z) - log(1 - z)) / 2 */
+/** Computes the complex inverse hyperbolic tangent, `(log(1 + z) - log(1 - z))/2`. */
 export function catanh(z: Mpc, prec: number): Mpc {
   const wp = prec + 20;
   const r = csub(clog(cadd(C1, z, wp), wp), clog(csub(C1, z, wp), wp), wp);

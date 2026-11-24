@@ -426,7 +426,11 @@ export abstract class GaussianDomain extends Domain {
   fromSympy(eIn: ExprLike): Expr {
     return this.toSympy(this.convert(sympify(eIn)));
   }
-  /** x + I*y (SymPy to_sympy). */
+  /**
+   * Converts a Gaussian element with coordinates `x` and `y` to the expression `x + I*y`.
+   *
+   * @see SymPy `sympy.polys.domains.gaussiandomains.GaussianDomain.to_sympy`
+   */
   override toSympy(a: unknown): Expr {
     if (!(a instanceof GaussianElement)) return super.toSympy(a);
     const [x, y] = [Rational.of(a.re.numerator, a.re.denominator), Rational.of(a.im.numerator, a.im.denominator)];
@@ -456,7 +460,11 @@ export abstract class GaussianDomain extends Domain {
   override isZero(a: unknown): boolean {
     return a instanceof GaussianElement ? a.isZero : super.isZero(a);
   }
-  /** SymPy: Gaussian elements are neither positive nor negative. */
+  /**
+   * Returns `false` for every Gaussian element because the domain has no ordering.
+   *
+   * @see SymPy `sympy.polys.domains.gaussiandomains.GaussianDomain.is_negative`
+   */
   override isNegative(_a: unknown): boolean {
     return false;
   }

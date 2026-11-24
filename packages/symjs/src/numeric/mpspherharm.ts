@@ -203,7 +203,10 @@ export function addPart(a: MpPart, b: MpPart, wp: number): MpPart {
 /** @internal */
 export const negPart = (a: MpPart): MpPart => (typeof a !== 'string' ? F.neg(a) : a === 'nan' ? a : a === 'inf' ? '-inf' : 'inf');
 
-/** x*y as mpmath multiplies an mpf or mpc by an mpf or mpc. */
+/**
+ * Multiplies real or complex floating-point values at `wp` bits, including values with infinite
+ * or NaN components.
+ */
 export function mulX(x: XVal, y: XVal, wp: number): XVal {
   if (x.im === undefined && y.im === undefined) return { re: mulPart(x.re, y.re, wp) };
   if (x.im === undefined) return { re: mulPart(x.re, y.re, wp), im: mulPart(x.re, defined(y.im), wp) };

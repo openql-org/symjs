@@ -816,19 +816,19 @@ const cachedConstant =
   (prec) =>
     caches[name].get(prec);
 
-/** floor(pi * 2**prec), up to a few ulp (likewise below). */
+/** Approximates `floor(π * 2**prec)` to within a few units in the last place. */
 export const piFixed = cachedConstant('pi');
-/** e. */
+/** Computes Euler's number in fixed point with `prec` fractional bits. */
 export const eFixed = cachedConstant('e');
-/** ln 2. */
+/** Computes the natural logarithm of 2 in fixed point with `prec` fractional bits. */
 export const ln2Fixed = cachedConstant('ln2');
-/** ln 3. */
+/** Computes the natural logarithm of 3 in fixed point with `prec` fractional bits. */
 export const ln3Fixed = cachedConstant('ln3');
-/** ln 5. */
+/** Computes the natural logarithm of 5 in fixed point with `prec` fractional bits. */
 export const ln5Fixed = cachedConstant('ln5');
-/** ln 7. */
+/** Computes the natural logarithm of 7 in fixed point with `prec` fractional bits. */
 export const ln7Fixed = cachedConstant('ln7');
-/** ln 10. */
+/** Computes the natural logarithm of 10 in fixed point with `prec` fractional bits. */
 export const ln10Fixed = cachedConstant('ln10');
 /** Euler's constant gamma. */
 export const eulerFixed = cachedConstant('euler');
@@ -836,7 +836,7 @@ export const eulerFixed = cachedConstant('euler');
 export const catalanFixed = cachedConstant('catalan');
 /** Apery's constant zeta(3). */
 export const aperyFixed = cachedConstant('apery');
-/** zeta(5). */
+/** Computes the Riemann zeta function at 5 in fixed point with `prec` fractional bits. */
 export const zeta5Fixed = cachedConstant('zeta5');
 /** The lemniscate constant varpi = Gamma(1/4)^2 / (2 sqrt(2 pi)). */
 export const lemniscateFixed = cachedConstant('lemniscate');
@@ -863,7 +863,7 @@ const derived = {
   }),
 };
 
-/** floor(phi * 2**prec) with phi = (1 + sqrt 5)/2. */
+/** Computes `floor(φ * 2**prec)` for the golden ratio `φ = (1 + sqrt(5))/2`. */
 export const phiFixed = (prec: number): bigint => derived.phi.get(prec);
 /** Gamma(1/4). */
 export const gamma14Fixed = (prec: number): bigint => derived.gamma14.get(prec);
@@ -887,8 +887,8 @@ function lnPrimeFixed(p: bigint, prec: number): bigint {
 }
 
 /**
- * ln n for an integer n >= 1 as fixed point, from the logarithms of its
- * prime factors (found by trial division, so meant for small n).
+ * Computes the fixed-point natural logarithm of a positive integer by summing the logarithms of
+ * its prime factors, found by trial division.
  */
 export function lnIntFixed(nIn: bigint, prec: number): bigint {
   const wp = prec + 10;

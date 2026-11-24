@@ -22,12 +22,22 @@ import { canonicalUnit, div, exquo, gcd, gcdex, isPID, isZZ, rat } from './domai
 import { DomainMatrix } from './domainmatrix';
 import { DMDomainError, DMShapeError } from './exceptions';
 
-/** SymPy smith_normal_form: the diagonal matrix of the invariant factors. */
+/**
+ * Computes the Smith normal form of a matrix over a principal ideal domain, with its invariant
+ * factors on the diagonal.
+ *
+ * @see SymPy `sympy.polys.matrices.normalforms.smith_normal_form`
+ */
 export function smithNormalForm(m: DomainMatrix): DomainMatrix {
   return DomainMatrix.diag(invariantFactors(m), m.domain, m.shape);
 }
 
-/** SymPy is_smith_normal_form: diagonal with each diagonal element dividing the next. */
+/**
+ * Tests whether the matrix is diagonal with each diagonal entry dividing the next and all zero
+ * diagonal entries trailing.
+ *
+ * @see SymPy `sympy.polys.matrices.normalforms.is_smith_normal_form`
+ */
 export function isSmithNormalForm(mIn: DomainMatrix): boolean {
   const K = mIn.domain;
   const [rows, cols] = mIn.shape;
@@ -61,12 +71,22 @@ function addRows(m: Expr[][], i: number, j: number, a: Expr, b: Expr, c: Expr, d
   });
 }
 
-/** SymPy invariant_factors: the invariant factors of a matrix over a principal ideal domain. */
+/**
+ * Computes the invariant factors of a matrix over a principal ideal domain in divisibility
+ * order.
+ *
+ * @see SymPy `sympy.polys.matrices.normalforms.invariant_factors`
+ */
 export function invariantFactors(m: DomainMatrix): Expr[] {
   return smithNormalDecomp0(m.toList(), m.domain, m.shape, false)[0];
 }
 
-/** SymPy smith_normal_decomp: [smf, s, t] with smf = s*m*t and s, t invertible. */
+/**
+ * Returns the Smith normal form and invertible left and right transformation matrices as
+ * `[smf, s, t]`, with `smf = s*m*t`.
+ *
+ * @see SymPy `sympy.polys.matrices.normalforms.smith_normal_decomp`
+ */
 export function smithNormalDecomp(m: DomainMatrix): [DomainMatrix, DomainMatrix, DomainMatrix] {
   const K = m.domain;
   const [rows, cols] = m.shape;
@@ -306,9 +326,11 @@ function hermiteNormalFormModuloD(Ain: DomainMatrix, D: bigint): DomainMatrix {
 }
 
 /**
- * SymPy hermite_normal_form: the Hermite normal form of a matrix over ZZ;
- * with D (a positive multiple of the determinant of a full-rank matrix) the
- * computation is done modulo D.
+ * Computes the Hermite normal form of an integer matrix. For a matrix of full row rank, a
+ * positive multiple `D` of the determinant of its Hermite normal form permits computation modulo
+ * `D`.
+ *
+ * @see SymPy `sympy.polys.matrices.normalforms.hermite_normal_form`
  */
 export function hermiteNormalForm(A: DomainMatrix, opts: { D?: bigint | number; checkRank?: boolean } = {}): DomainMatrix {
   if (!isZZ(A.domain)) throw new DMDomainError('Matrix must be over domain ZZ.');
