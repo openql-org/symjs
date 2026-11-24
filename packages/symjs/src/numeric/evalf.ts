@@ -432,11 +432,23 @@ export function evalfPrec(e: Expr, prec: number, values?: NumericValues, chop?: 
 const isVector = (a: number | C | readonly (number | C)[]): a is readonly (number | C)[] => Array.isArray(a);
 
 /**
- * Compile an expression into a fast numeric function of the given symbols.
+ * Compiles an expression into a fast numeric function of the given symbols.
+ * The function takes numbers or complex values `{ re, im }` and returns a
+ * complex value `{ re, im }` in double precision.
  *
+ * @param ex - The expression.
+ * @param params - The symbols, in the order of the arguments of the function.
+ * @returns The numeric function.
+ * @see SymPy `sympy.utilities.lambdify.lambdify`
  * @example
- * const f = lambdify(cos(theta).mul(exp(I.mul(phi))), [theta, phi]);
- * f(0.1, 0.2) // => { re, im }
+ * ```ts
+ * import { ex, lambdify, symbols } from '@symjs/symjs';
+ *
+ * const [x, y] = symbols('x y');
+ * const f = lambdify(ex`sin(x) + y`, [x, y]);
+ * f(0, 2).re; // => 2
+ * lambdify(ex`exp(I*x)`, [x])(Math.PI).re; // => -1
+ * ```
  */
 export function lambdify(ex: ExprLike, params: readonly Sym[]): (...args: (number | C | readonly (number | C)[])[]) => C {
   const e = sympify(ex);

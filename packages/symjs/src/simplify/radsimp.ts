@@ -144,17 +144,37 @@ function extractPattern(term: Expr, p: Expr, exact: boolean): [Expr, Expr] | und
 /** Array.isArray does not narrow a readonly array union. */
 const isExprList = (v: readonly Expr[] | Expr): v is readonly Expr[] => Array.isArray(v);
 
-/**
- * Collect additive terms by powers of the given patterns (SymPy collect):
- * collect(a*x**2 + b*x**2 + a*x - b*x + c, x) = c + x**2*(a + b) + x*(a - b).
- * With several patterns, terms free of the first pattern are collected by the next.
- */
+/** Options of {@link collect}. */
 interface CollectOptions {
   exact?: boolean | null;
   func?: (c: Expr) => Expr;
   distributeOrderTerm?: boolean;
 }
 
+/**
+ * Collects the additive terms of an expression by powers of the given patterns.
+ * With several patterns, the terms free of the first pattern are collected by
+ * the next. With `evaluate: false` the result is a `Map` from each power to its
+ * coefficient.
+ *
+ * @param ex - The expression.
+ * @param syms - The pattern or patterns: symbols, powers, function applications
+ *   or products of them.
+ * @param opts - `evaluate: false` returns the coefficients; `exact` matches the
+ *   patterns exactly; `func` is applied to each coefficient.
+ * @returns The collected expression, or the coefficients.
+ * @see SymPy `sympy.simplify.radsimp.collect`
+ * @example
+ * ```ts
+ * import { collect, ex, symbols } from '@symjs/symjs';
+ *
+ * const [x, y] = symbols('x y');
+ * collect(ex`a*x**2 + b*x**2 + a*x - b*x + c`, x); // => c + x**2*(a + b) + x*(a - b)
+ * collect(ex`a*x**2 + b*x**2 + a*x - b*x + c`, x, { evaluate: false }).get(x); // => a - b
+ * collect(ex`x**2 + y*x**2 + x*y + y + a*y`, [x, y]); // => x**2*(y + 1) + x*y + y*(a + 1)
+ * collect(ex`a*sin(2*x) + b*sin(2*x)`, ex`sin(2*x)`); // => (a + b)*sin(2*x)
+ * ```
+ */
 export function collect(ex: ExprLike, syms: readonly Expr[] | Expr, opts: CollectOptions & { evaluate: false }): Map<Expr, Expr>;
 export function collect(ex: ExprLike, syms: readonly Expr[] | Expr, opts?: CollectOptions & { evaluate?: true }): Expr;
 export function collect(ex: ExprLike, syms: readonly Expr[] | Expr, opts: CollectOptions & { evaluate?: boolean } = {}): Expr | Map<Expr, Expr> {

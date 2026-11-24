@@ -17,7 +17,16 @@ import { SympifyError } from './errors';
  * under this key is converted by calling it.
  *
  * @example
- * class Pair { [sympifyMethod]() { return Matrix([[1], [2]]); } }
+ * ```ts
+ * import { Matrix, sympify, sympifyMethod } from '@symjs/symjs';
+ *
+ * class Pair {
+ *   [sympifyMethod]() { return Matrix.of([[1], [2]]); }
+ * }
+ * sympify(new Pair()); // => Matrix([
+ * //   [1],
+ * //   [2]])
+ * ```
  *
  * @experimental May change in a minor release.
  */
@@ -39,9 +48,23 @@ export interface Sympifiable {
 export const converter = new Map<Function, (x: never) => unknown>();
 
 /**
- * SymPy sympify: an expression from a number or expression; objects
- * defining [sympifyMethod] or registered in `converter` are converted by
- * them, and arrays, Sets and Maps element by element.
+ * Converts a value to an expression: numbers (integers exactly, other numbers
+ * as `Float`), bigints and Booleans; objects that define `[sympifyMethod]` or
+ * are registered in `converter`; arrays, `Set`s and `Map`s element by element.
+ * Strings are not parsed: use `parse` or the `ex` template.
+ *
+ * @param x - The value.
+ * @returns The expression, or the container of expressions.
+ * @throws SympifyError when the value cannot be converted.
+ * @see SymPy `sympy.core.sympify.sympify`
+ * @example
+ * ```ts
+ * import { isInteger, sympify } from '@symjs/symjs';
+ *
+ * isInteger(sympify(2)); // => True
+ * sympify(2.5); // => 2.50000000000000
+ * sympify([1, 2n]); // => [1, 2]
+ * ```
  */
 export function sympify(x: Sympifiable): unknown;
 export function sympify<K, V>(x: ReadonlyMap<K, V>): Map<unknown, unknown>;

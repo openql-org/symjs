@@ -1014,18 +1014,178 @@ function shouldEvalf(a: Expr): number {
   return Math.max(r instanceof Float ? r.prec : -1, im instanceof Float ? im.prec : -1);
 }
 
+/**
+ * The sine function. Exact values are given at the rational multiples of
+ * `pi` whose sine is a known radical.
+ *
+ * @param x - The argument.
+ * @returns The function applied to `x`, evaluated where the value is known.
+ * @see SymPy `sympy.functions.elementary.trigonometric.sin`
+ * @example
+ * ```ts
+ * import { ex, pi, sin, Symbol } from '@symjs/symjs';
+ *
+ * const x = Symbol('x');
+ * sin(ex`x**2`).diff(x); // => 2*x*cos(x**2)
+ * sin(pi); // => 0
+ * sin(ex`pi/2`); // => 1
+ * sin(ex`pi/6`); // => 1/2
+ * sin(ex`pi/12`); // => -sqrt(2)/4 + sqrt(6)/4
+ * ```
+ */
 export const sin = (x: ExprLike): Expr => fn('sin', [x]);
+/**
+ * The cosine function. Exact values are given at the rational multiples of
+ * `pi` whose cosine is a known radical.
+ *
+ * @param x - The argument.
+ * @returns The function applied to `x`, evaluated where the value is known.
+ * @see SymPy `sympy.functions.elementary.trigonometric.cos`
+ * @example
+ * ```ts
+ * import { cos, ex, pi, Symbol } from '@symjs/symjs';
+ *
+ * const x = Symbol('x');
+ * cos(ex`x**2`).diff(x); // => -2*x*sin(x**2)
+ * cos(pi); // => -1
+ * cos(ex`pi/2`); // => 0
+ * cos(ex`2*pi/3`); // => -1/2
+ * cos(ex`pi/12`); // => sqrt(2)/4 + sqrt(6)/4
+ * ```
+ */
 export const cos = (x: ExprLike): Expr => fn('cos', [x]);
+/**
+ * The tangent function.
+ *
+ * @param x - The argument.
+ * @returns The function applied to `x`, evaluated where the value is known.
+ * @see SymPy `sympy.functions.elementary.trigonometric.tan`
+ * @example
+ * ```ts
+ * import { ex, tan, Symbol } from '@symjs/symjs';
+ *
+ * const x = Symbol('x');
+ * tan(ex`pi/4`); // => 1
+ * tan(ex`x`).diff(x); // => tan(x)**2 + 1
+ * ```
+ */
 export const tan = (x: ExprLike): Expr => fn('tan', [x]);
+/**
+ * The inverse sine function, with values in `[-pi/2, pi/2]` for real arguments in `[-1, 1]`.
+ *
+ * @param x - The argument.
+ * @returns The function applied to `x`, evaluated where the value is known.
+ * @see SymPy `sympy.functions.elementary.trigonometric.asin`
+ * @example
+ * ```ts
+ * import { asin, ex, Symbol } from '@symjs/symjs';
+ *
+ * const x = Symbol('x');
+ * asin(1); // => pi/2
+ * asin(-1); // => -pi/2
+ * asin(ex`x`).diff(x); // => 1/sqrt(1 - x**2)
+ * ```
+ */
 export const asin = (x: ExprLike): Expr => fn('asin', [x]);
+/**
+ * The inverse cosine function, with values in `[0, pi]` for real arguments in `[-1, 1]`.
+ *
+ * @param x - The argument.
+ * @returns The function applied to `x`, evaluated where the value is known.
+ * @see SymPy `sympy.functions.elementary.trigonometric.acos`
+ * @example
+ * ```ts
+ * import { acos, ex, Symbol } from '@symjs/symjs';
+ *
+ * const x = Symbol('x');
+ * acos(1); // => 0
+ * acos(0); // => pi/2
+ * acos(ex`x`).diff(x); // => -1/sqrt(1 - x**2)
+ * ```
+ */
 export const acos = (x: ExprLike): Expr => fn('acos', [x]);
+/**
+ * The inverse tangent function, with values in `(-pi/2, pi/2)` for real arguments.
+ *
+ * @param x - The argument.
+ * @returns The function applied to `x`, evaluated where the value is known.
+ * @see SymPy `sympy.functions.elementary.trigonometric.atan`
+ * @example
+ * ```ts
+ * import { atan, ex, Symbol } from '@symjs/symjs';
+ *
+ * const x = Symbol('x');
+ * atan(0); // => 0
+ * atan(1); // => pi/4
+ * atan(ex`x`).diff(x); // => 1/(x**2 + 1)
+ * ```
+ */
 export const atan = (x: ExprLike): Expr => fn('atan', [x]);
+/**
+ * The hyperbolic sine function, `(exp(x) - exp(-x))/2`.
+ *
+ * @param x - The argument.
+ * @returns The function applied to `x`, evaluated where the value is known.
+ * @see SymPy `sympy.functions.elementary.hyperbolic.sinh`
+ * @example
+ * ```ts
+ * import { ex, sinh, Symbol } from '@symjs/symjs';
+ *
+ * const x = Symbol('x');
+ * sinh(0); // => 0
+ * sinh(ex`x`).diff(x); // => cosh(x)
+ * ```
+ */
 export const sinh = (x: ExprLike): Expr => fn('sinh', [x]);
+/**
+ * The hyperbolic cosine function, `(exp(x) + exp(-x))/2`.
+ *
+ * @param x - The argument.
+ * @returns The function applied to `x`, evaluated where the value is known.
+ * @see SymPy `sympy.functions.elementary.hyperbolic.cosh`
+ * @example
+ * ```ts
+ * import { cosh, ex, Symbol } from '@symjs/symjs';
+ *
+ * const x = Symbol('x');
+ * cosh(0); // => 1
+ * cosh(ex`x`).diff(x); // => sinh(x)
+ * ```
+ */
 export const cosh = (x: ExprLike): Expr => fn('cosh', [x]);
+/**
+ * The hyperbolic tangent function, `sinh(x)/cosh(x)`.
+ *
+ * @param x - The argument.
+ * @returns The function applied to `x`, evaluated where the value is known.
+ * @see SymPy `sympy.functions.elementary.hyperbolic.tanh`
+ * @example
+ * ```ts
+ * import { ex, tanh, Symbol } from '@symjs/symjs';
+ *
+ * const x = Symbol('x');
+ * tanh(0); // => 0
+ * tanh(ex`x`).diff(x); // => 1 - tanh(x)**2
+ * ```
+ */
 export const tanh = (x: ExprLike): Expr => fn('tanh', [x]);
 /**
- * Natural logarithm, or log(x, base) = log(x)/log(base) like SymPy
- * (pulling out integer powers of a rational base first).
+ * The natural logarithm, or the logarithm to `base` as `log(x)/log(base)`
+ * (integer powers of a rational base are pulled out first). For complex
+ * arguments it is the principal branch, with the imaginary part in `(-pi, pi]`.
+ *
+ * @param x - The argument.
+ * @param base - The base; the natural logarithm when omitted.
+ * @returns The logarithm.
+ * @see SymPy `sympy.functions.elementary.exponential.log`
+ * @example
+ * ```ts
+ * import { ex, log } from '@symjs/symjs';
+ *
+ * log(8, 2); // => 3
+ * log(ex`8/3`, 2); // => -log(3)/log(2) + 3
+ * log(ex`-1 + I*sqrt(3)`); // => log(2) + 2*I*pi/3
+ * ```
  */
 export function log(x: ExprLike, base?: ExprLike): Expr {
   if (base === undefined) return fn('log', [x]);

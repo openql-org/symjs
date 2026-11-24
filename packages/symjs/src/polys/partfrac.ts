@@ -44,7 +44,27 @@ function domainFactors(Q: Expr, opts: ApartOptions): [Expr, [Expr, number][]] {
   return [content, factors];
 }
 
-/** Partial fraction decomposition of a rational function in x. */
+/**
+ * Computes the partial fraction decomposition of a rational function in `xIn`.
+ * The denominator is factored over the rationals unless the options select
+ * another domain; `full` gives Bronstein's decomposition over the algebraic
+ * closure, with the sums over the roots of irreducible factors as `RootSum`.
+ *
+ * @param fIn - The rational function.
+ * @param xIn - The variable; may be omitted for a univariate function.
+ * @param opts - See {@link ApartOptions}.
+ * @returns The decomposition.
+ * @see SymPy `sympy.polys.partfrac.apart`
+ * @example
+ * ```ts
+ * import { apart, ex, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * apart(ex`y/(x + 2)/(x + 1)`, x); // => -y/(x + 2) + y/(x + 1)
+ * apart(ex`y/(x**2 + x + 1)`, x); // => y/(x**2 + x + 1)
+ * apart(ex`y/(x**2 + x + 1)`, x, { full: true }); // => RootSum(_w**2 + _w + 1, Lambda(_a, (-2*_a*y/3 - y/3)/(-_a + x)))
+ * ```
+ */
 export function apart(fIn: ExprLike, xIn?: Sym, opts: ApartOptions = {}): Expr {
   const f = cancel(together(sympify(fIn)));
   let x = xIn;

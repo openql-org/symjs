@@ -838,10 +838,24 @@ class Parser {
 }
 
 /**
- * Parse a string into an expression.
+ * Parses a string in SymPy's syntax into an expression. Unknown names become
+ * symbols (with `assumptions`) or undefined functions when they are called;
+ * `^` is a power unless `convertXor` is `false`.
  *
+ * @param src - The text of the expression.
+ * @param opts - See {@link ParseOptions}.
+ * @returns The expression.
+ * @throws SyntaxError when the text is not a valid expression.
+ * @see SymPy `sympy.parsing.sympy_parser.parse_expr`
  * @example
- * parse('cos(theta/2)^2 + sin(theta/2)^2', { assumptions: { real: true } })
+ * ```ts
+ * import { parse, simplify } from '@symjs/symjs';
+ *
+ * parse('x**2 + 2*x + 1'); // => x**2 + 2*x + 1
+ * parse('2*x^3'); // => 2*x**3
+ * parse('1 + 2', { evaluate: false }); // => 1 + 2
+ * simplify(parse('cos(t/2)^2 + sin(t/2)^2', { assumptions: { real: true } })); // => 1
+ * ```
  */
 export function parse(src: string, opts: ParseOptions = {}): Expr {
   const tokens: Token[] = [];
@@ -857,9 +871,21 @@ export function parse(src: string, opts: ParseOptions = {}): Expr {
  * the template refers to an interpolated symbol of the same name, and other
  * names become plain symbols. The grammar is the one of {@link parse}.
  *
+ * @param strings - The literal parts of the template.
+ * @param values - The interpolated values.
+ * @returns The expression.
+ * @throws SyntaxError when the text is not a valid expression.
  * @example
- * const t = symbol('theta', { real: true });
- * ex`cos(${t}/2) - I*sin(${t}/2)`
+ * ```ts
+ * import { ex, isReal, symbols } from '@symjs/symjs';
+ *
+ * const [t] = symbols('theta', { real: true });
+ * ex`cos(${t}/2) - I*sin(${t}/2)`; // => -I*sin(theta/2) + cos(theta/2)
+ * ex`${t} + theta`; // => 2*theta
+ * isReal(ex`${t}/2 + theta`); // => True
+ * isReal(ex`theta`); // => unknown
+ * ex`(x + 1)^2/${2n}`; // => (x + 1)**2/2
+ * ```
  */
 export function ex(strings: TemplateStringsArray, ...values: ExprLike[]): Expr {
   const tokens: Token[] = [];

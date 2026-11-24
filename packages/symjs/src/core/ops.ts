@@ -1204,12 +1204,46 @@ export function div(a: ExprLike, b: ExprLike): Expr {
   return mul(x, pow(y, S.NegOne));
 }
 
-/** Square root: x^(1/2). */
+/**
+ * The principal square root, `x**(1/2)`. `sqrt(x**2)` is `x` only when `x` is
+ * known to be nonnegative.
+ *
+ * @param x - The argument.
+ * @returns The square root.
+ * @see SymPy `sympy.functions.elementary.miscellaneous.sqrt`
+ * @example
+ * ```ts
+ * import { ex, sqrt, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * const [y] = symbols('y', { positive: true });
+ * sqrt(x); // => sqrt(x)
+ * sqrt(x).pow(2); // => x
+ * sqrt(ex`x**2`); // => sqrt(x**2)
+ * sqrt(y.pow(2)); // => y
+ * sqrt(8); // => 2*sqrt(2)
+ * ```
+ */
 export function sqrt(x: ExprLike): Expr {
   return pow(x, S.Half);
 }
 
-/** The exponential function, represented as E^x. */
+/**
+ * The exponential function `e**x`, represented as the power `E**x`.
+ *
+ * @param x - The exponent.
+ * @returns `E**x`, evaluated where the value is known.
+ * @see SymPy `sympy.functions.elementary.exponential.exp`
+ * @example
+ * ```ts
+ * import { exp, ex, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * exp(x); // => exp(x)
+ * exp(x).diff(x); // => exp(x)
+ * exp(ex`I*pi`); // => -1
+ * ```
+ */
 export function exp(x: ExprLike): Expr {
   return pow(S.E, x);
 }

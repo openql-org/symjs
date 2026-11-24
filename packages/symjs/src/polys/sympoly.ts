@@ -308,6 +308,25 @@ function sympifyLeaf(x: unknown): Expr {
   throw new SympifyError(`Cannot convert ${String(x)} to an expression`, x);
 }
 
+/**
+ * A polynomial in the given generators with coefficients in a domain (`ZZ`,
+ * `QQ`, `RR`, algebraic fields, finite fields, polynomial rings, ...). Create
+ * one with {@link Poly.from}; the generators are found from the expression
+ * when they are not given.
+ *
+ * @see SymPy `sympy.polys.polytools.Poly`
+ * @example
+ * ```ts
+ * import { ex, Poly, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * const p = Poly.from(ex`x**2 + 2*x + 1`, [x]);
+ * p; // => Poly(x**2 + 2*x + 1, x, domain='ZZ')
+ * p.degree(); // => 2
+ * p.factorList(); // => [1, [[Poly(x + 1, x, domain='ZZ'), 2]]]
+ * Poly.from(ex`x**2 + 1`, [x], { modulus: 2 }); // => Poly(x**2 + 1, x, modulus=2)
+ * ```
+ */
 export class Poly {
   readonly gens: readonly Expr[];
   /** terms in lex order, highest first; coefficients are nonzero */

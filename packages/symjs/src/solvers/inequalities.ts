@@ -648,7 +648,27 @@ function linearInequality(r: Rel, x: Sym): Expr {
   return main;
 }
 
-/** SymPy solveset for equations and inequalities in one variable. */
+/**
+ * Solves an equation or inequality in one variable and returns the set of its
+ * solutions in `domain`: a finite set, an interval, a union, an `ImageSet` for
+ * periodic solutions, or a `ConditionSet` when the solutions cannot be found.
+ *
+ * @param fIn - The expression equal to zero, an `Eq`, or a relation.
+ * @param symbol - The unknown; by default the only free symbol.
+ * @param domain - The set the solutions are taken from (`Complexes` by default).
+ * @returns The solution set.
+ * @see SymPy `sympy.solvers.solveset.solveset`
+ * @example
+ * ```ts
+ * import { ex, Reals, solveset, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * solveset(ex`x**2 - 1`, x); // => {-1, 1}
+ * solveset(ex`exp(x) - 1`, x); // => ImageSet(Lambda(_n, 2*_n*I*pi), Integers)
+ * solveset(ex`exp(x) - 1`, x, Reals); // => {0}
+ * solveset(ex`x**2 > 4`, x, Reals); // => Union(Interval.open(-oo, -2), Interval.open(2, oo))
+ * ```
+ */
 export function solveset(fIn: ExprLike, symbol?: ExprLike, domain: SetExpr = Complexes): SetExpr {
   const f = sympify(fIn);
   if (!(domain instanceof SetExpr)) throw new TypeError('solveset: a set domain is required');

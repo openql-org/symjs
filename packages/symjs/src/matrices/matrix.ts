@@ -52,6 +52,24 @@ export function classof(a: { readonly classPriority: number }, b: { readonly cla
   return a.classPriority > b.classPriority ? a.constructor : b.constructor;
 }
 
+/**
+ * A mutable matrix of expressions. Create one with {@link Matrix.of} from its
+ * rows; its methods give the arithmetic, determinant, inverse, reductions,
+ * eigenvalues and decompositions.
+ *
+ * @see SymPy `sympy.matrices.dense.MutableDenseMatrix`
+ * @example
+ * ```ts
+ * import { Matrix } from '@symjs/symjs';
+ *
+ * const m = Matrix.of([[1, 2], [3, 4]]);
+ * m.det(); // => -2
+ * m.inv(); // => Matrix([
+ * //   [ -2,    1],
+ * //   [3/2, -1/2]])
+ * m.mul(m).row(0); // => Matrix([[7, 10]])
+ * ```
+ */
 export class Matrix {
   get classPriority(): number { return 8; }
 

@@ -77,7 +77,26 @@ export function denom(ex: ExprLike, opts: { exact?: boolean } = {}): Expr {
   return fraction(ex, opts)[1];
 }
 
-/** Combine a sum of fractions over a common denominator (recursively). */
+/**
+ * Combines a sum of rational expressions over a common denominator, denesting
+ * the fractions inside it. The result is not expanded or cancelled.
+ *
+ * @param ex - The expression.
+ * @param opts - `deep` also combines inside the arguments of functions.
+ * @returns The combined expression.
+ * @see SymPy `sympy.polys.rationaltools.together`
+ * @example
+ * ```ts
+ * import { ex, together } from '@symjs/symjs';
+ *
+ * together(ex`1/x + 1/y`); // => (x + y)/(x*y)
+ * together(ex`1/x + 1/y + 1/z`); // => (x*y + x*z + y*z)/(x*y*z)
+ * together(ex`1/(x*y) + 1/y**2`); // => (x + y)/(x*y**2)
+ * together(ex`1/(1 + 1/x) + 1/(1 + 1/y)`); // => (x*(y + 1) + y*(x + 1))/((x + 1)*(y + 1))
+ * together(ex`exp(1/x + 1/y)`, { deep: true }); // => exp((x + y)/(x*y))
+ * together(ex`1/exp(x) + 1/(x*exp(x))`); // => (x + 1)*exp(-x)/x
+ * ```
+ */
 export function together(ex: ExprLike, opts: { deep?: boolean } = {}): Expr {
   const deep = opts.deep ?? false;
   // SymPy _together: gcd_terms over the recursively combined terms of every sum
@@ -128,10 +147,23 @@ function radicalContentRatio(n: Expr, d: Expr): Expr | undefined {
 }
 
 /**
- * SymPy cancel: p/q with expanded p and q, their gcd cancelled in the polynomial ring over the
- * generators of p and q (symbols, functions, radicals, ...), normalised as SymPy's
- * PolyElement.cancel does: denominators cleared, p and q with integer (Gaussian) coefficients and
- * the leading coefficient of q (lex order of the generators) canonical.
+ * Puts a rational function in the canonical form `p/q`, with `p` and `q`
+ * expanded polynomials without common factors. The polynomials are taken over
+ * the generators of the expression (symbols, functions, radicals, ...) with
+ * integer (or Gaussian integer) coefficients, normalised as SymPy's
+ * `PolyElement.cancel` does.
+ *
+ * @param ex - The expression.
+ * @param opts - The coefficient domain, as for {@link factor}.
+ * @returns The cancelled expression.
+ * @see SymPy `sympy.polys.polytools.cancel`
+ * @example
+ * ```ts
+ * import { cancel, ex } from '@symjs/symjs';
+ *
+ * cancel(ex`(2*x**2 - 2)/(x**2 - 2*x + 1)`); // => (2*x + 2)/(x - 1)
+ * cancel(ex`x/2 + 1`); // => x/2 + 1
+ * ```
  */
 export function cancel(ex: ExprLike, opts: PolynomialDomainOptions & { greedy?: boolean } = {}): Expr {
   const input = sympify(ex);

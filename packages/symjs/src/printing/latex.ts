@@ -1253,13 +1253,24 @@ export class LatexPrinter {
 }
 
 /**
- * SymPy `latex(expr, **settings)`: the LaTeX form of an expression, a
- * matrix, or a list, dict, set, string, boolean or null, with the printer's
- * settings ({@link LatexOptions}). Numbers are sympified; a string prints
- * as text, as in SymPy (it is not parsed).
+ * Prints the LaTeX form of an expression, a matrix, or an array, `Map`, `Set`,
+ * string, Boolean or `null`. Numbers are sympified; a string prints as text
+ * (it is not parsed).
  *
  * A call made while printing (by a node's own LaTeX method) without
  * options uses the settings of the print in progress.
+ *
+ * @param expr - The value to print.
+ * @param options - The printer's settings, see {@link LatexOptions}.
+ * @returns The LaTeX text.
+ * @see SymPy `sympy.printing.latex.latex`
+ * @example
+ * ```ts
+ * import { ex, latex } from '@symjs/symjs';
+ *
+ * latex(ex`x**2/2 + sqrt(y)`); // => \frac{x^{2}}{2} + \sqrt{y}
+ * latex(ex`exp(x)*sin(2*x)`); // => e^{x} \sin{\left(2 x \right)}
+ * ```
  */
 export function latex(expr: LatexPrintable, options?: LatexOptions): string {
   if (depth > 0 && options === undefined) return printValue(expr);

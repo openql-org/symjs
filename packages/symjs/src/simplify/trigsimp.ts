@@ -83,10 +83,23 @@ export interface TrigsimpOptions {
 // ---------------------------------------------------------------------------
 
 /**
- * Simplify expressions containing trigonometric (and hyperbolic) functions
- * (SymPy trigsimp). The default method 'matching' is SymPy's futrig: Fu's
+ * Simplifies an expression with trigonometric and hyperbolic functions by
+ * known identities. The default method `'matching'` is SymPy's `futrig`: Fu's
  * transformation rules applied greedily, minimizing the number of
- * trigonometric functions, then count_ops.
+ * trigonometric functions and then `countOps`.
+ *
+ * @param ex - The expression.
+ * @param opts - See {@link TrigsimpOptions}.
+ * @returns The simplified expression.
+ * @see SymPy `sympy.simplify.trigsimp.trigsimp`
+ * @example
+ * ```ts
+ * import { ex, trigsimp } from '@symjs/symjs';
+ *
+ * trigsimp(ex`2*sin(x)**2 + 2*cos(x)**2`); // => 2
+ * trigsimp(ex`log(2*sin(x)**2 + 2*cos(x)**2)`); // => log(2)
+ * trigsimp(ex`3*tanh(x)**7 - 2/coth(x)**7`); // => tanh(x)**7
+ * ```
  */
 export function trigsimp(ex: ExprLike, opts: TrigsimpOptions = {}): Expr {
   const expr = sympify(ex);

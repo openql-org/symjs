@@ -179,7 +179,39 @@ function orderTruth(op: 'Lt' | 'Le' | 'Gt' | 'Ge', d: Expr): boolean | undefined
   return undefined;
 }
 
+/**
+ * The equation `a = b`. It evaluates to `true` or `false` when the two sides
+ * are known to be equal or different, and stays unevaluated otherwise.
+ *
+ * @param a - The left-hand side.
+ * @param b - The right-hand side.
+ * @returns The equation, or a Boolean.
+ * @see SymPy `sympy.core.relational.Equality`
+ * @example
+ * ```ts
+ * import { Eq, ex, simplify } from '@symjs/symjs';
+ *
+ * Eq(ex`y`, ex`x + x**2`); // => Eq(y, x**2 + x)
+ * Eq(2, 5); // => False
+ * simplify(Eq(ex`exp(x)`, ex`sinh(x) + cosh(x)`)); // => True
+ * ```
+ */
 export const Eq = (a: ExprLike, b: ExprLike): Expr => rel('Eq', a, b);
+/**
+ * The relation `a != b`, the negation of {@link Eq}.
+ *
+ * @param a - The left-hand side.
+ * @param b - The right-hand side.
+ * @returns The relation, or a Boolean.
+ * @see SymPy `sympy.core.relational.Unequality`
+ * @example
+ * ```ts
+ * import { ex, Ne } from '@symjs/symjs';
+ *
+ * Ne(ex`y`, ex`x + x**2`); // => Ne(y, x**2 + x)
+ * Ne(2, 5); // => True
+ * ```
+ */
 export const Ne = (a: ExprLike, b: ExprLike): Expr => rel('Ne', a, b);
 export const Lt = (a: ExprLike, b: ExprLike): Expr => rel('Lt', a, b);
 export const Le = (a: ExprLike, b: ExprLike): Expr => rel('Le', a, b);

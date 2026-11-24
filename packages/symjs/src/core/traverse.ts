@@ -573,9 +573,30 @@ function substitutionSize(e: Expr): number {
 }
 
 /**
- * Substitution like SymPy `subs`: pairs are applied in order (unless
- * `simultaneous`), and sums, products and powers are matched algebraically,
- * e.g. (x + y + z).subs(x + y, 1) = z + 1 and (x**4).subs(x**2, y) = y**2.
+ * Substitutes expressions in an expression. The pairs are applied one after
+ * the other unless `simultaneous`, and sums, products and powers are matched
+ * algebraically (`(x**4).subs(x**2, y)` is `y**2`). The method `Expr.subs`
+ * takes the same arguments, or one old and one new value.
+ *
+ * @param e - The expression.
+ * @param s - The pairs `[old, new]`, as a `Map`, an array of pairs, or an object
+ *   whose keys are symbol names.
+ * @param opts - `simultaneous` substitutes all pairs at once.
+ * @returns The expression after the substitution.
+ * @see SymPy `sympy.core.basic.Basic.subs`
+ * @example
+ * ```ts
+ * import { ex, pi, subs, symbols } from '@symjs/symjs';
+ *
+ * const [x, y] = symbols('x y');
+ * ex`1 + x*y`.subs(x, pi); // => pi*y + 1
+ * subs(ex`1 + x*y`, { x: pi, y: 2 }); // => 1 + 2*pi
+ * subs(ex`x + y`, [[y, x.pow(2)], [x, 2]]); // => 6
+ * subs(ex`x + y`, [[x, 2], [y, x.pow(2)]]); // => x**2 + 2
+ * ex`x**2 + x**4`.subs(x.pow(2), y); // => y**2 + y
+ * subs(ex`x/y`, [[x, 0], [y, 0]]); // => 0
+ * subs(ex`x/y`, [[x, 0], [y, 0]], { simultaneous: true }); // => nan
+ * ```
  */
 export function subs(e: Expr, s: Substitution, opts: { simultaneous?: boolean } = {}): Expr {
   let pairs = toPairs(s);

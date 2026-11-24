@@ -725,7 +725,28 @@ function evalProduct(term: Expr, k: Sym, a: Expr, n: Expr): Expr | undefined {
   return undefined;
 }
 
-/** Evaluate sums and products (SymPy summation / doit). */
+/**
+ * Computes the sum of `f` over each `[k, a, b]` of `limits`, from the
+ * innermost (first) to the outermost. A sum that cannot be computed is
+ * returned unevaluated as a `Sum`.
+ *
+ * @param f - The summand.
+ * @param limits - The index and its lower and upper bounds, which may be
+ *   infinite.
+ * @returns The sum.
+ * @see SymPy `sympy.concrete.summations.summation`
+ * @example
+ * ```ts
+ * import { ex, factorial, oo, summation, symbols } from '@symjs/symjs';
+ *
+ * const [i, n, m] = symbols('i n m', { integer: true });
+ * const [x] = symbols('x');
+ * summation(ex`2*${i} - 1`, [i, 1, n]); // => n**2
+ * summation(ex`1/2**${i}`, [i, 0, oo]); // => 2
+ * summation(i, [i, 0, n], [n, 0, m]); // => m**3/6 + m**2/2 + m/3
+ * summation(x.pow(n).div(factorial(n)), [n, 0, oo]); // => exp(x)
+ * ```
+ */
 export function summation(f: ExprLike, ...limits: [Sym, ExprLike, ExprLike][]): Expr {
   if (limits.length === 0) throw new RangeError('summation requires a definite limit');
   let e = sympify(f);
@@ -766,6 +787,25 @@ function inheritedDummy(k: Sym, a: Expr, b: Expr): Dummy | undefined {
   return new Dummy('d', { ...have, ...add_ });
 }
 
+/**
+ * Computes the product of `f` over each `[k, a, b]` of `limits`, from the
+ * innermost (first) to the outermost. A product that cannot be computed is
+ * returned unevaluated as a `Product`.
+ *
+ * @param f - The factor.
+ * @param limits - The index and its lower and upper bounds.
+ * @returns The product.
+ * @see SymPy `sympy.concrete.products.product`
+ * @example
+ * ```ts
+ * import { product, symbols } from '@symjs/symjs';
+ *
+ * const [i, n, m, k] = symbols('i n m k', { integer: true });
+ * product(i, [i, 1, k]); // => factorial(k)
+ * product(m, [i, 1, k]); // => m**k
+ * product(i, [i, 1, k], [k, 1, n]); // => Product(factorial(k), (k, 1, n))
+ * ```
+ */
 export function product(f: ExprLike, ...limits: [Sym, ExprLike, ExprLike][]): Expr {
   // SymPy product() is Product.doit(deep=False), which powsimps the result (2**(n*(n + 1)/2))
   // (a number times a sum is distributed, as SymPy's Mul does: 2**(-a**2/2 + a/2 + n**2/2 + n/2))

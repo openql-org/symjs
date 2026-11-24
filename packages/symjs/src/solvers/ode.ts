@@ -101,12 +101,31 @@ export interface DsolveOptions {
 const isExprList = <T>(v: T | readonly T[] | undefined): v is readonly T[] => Array.isArray(v);
 
 /**
- * Solve an ordinary differential equation for f(x) with SymPy's hints
- * (solvers/dsolve.ts). Returns Eq(f(x), solution); like SymPy, a list of
- * equations is returned when the general solution has several branches.
- * A system gives [Eq(f(t), ...), Eq(g(t), ...)], or a list of such lists when
- * it has several solution families.
- * ics lists initial conditions, e.g. [[f(0), 1], [Subs(Derivative(f(x), x), x, 0), 0]].
+ * Solves an ordinary differential equation, or a system of them, for the
+ * unknown functions with SymPy's classification hints. The result is
+ * `Eq(f(x), solution)`; an array of equations when the general solution has
+ * several branches. A system gives `[Eq(f(t), ...), Eq(g(t), ...)]`, or an array
+ * of such arrays when it has several families of solutions.
+ *
+ * @param eqIn - The equation (an expression equal to zero, or an `Eq`), or the
+ *   equations of a system.
+ * @param fx - The unknown function applied to its variable (`f(x)`), or the
+ *   functions of a system; found from the equation when omitted.
+ * @param opts - `ics` gives initial conditions as pairs, such as
+ *   `[[f(0), 1], [Subs(Derivative(f(x), x), x, 0), 0]]`; `hint` selects a
+ *   method (`'all'` returns the solution of every applicable hint); `n` and
+ *   `x0` set the order and the point of a power series solution.
+ * @returns The solution.
+ * @see SymPy `sympy.solvers.ode.ode.dsolve`
+ * @example
+ * ```ts
+ * import { dsolve, ex, Function, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * const f = Function('f');
+ * dsolve(ex`Derivative(f(x), x, 2) + 9*f(x)`, f(x)); // => Eq(f(x), C1*sin(3*x) + C2*cos(3*x))
+ * dsolve(ex`Derivative(f(x), x) - f(x)`, f(x), { ics: [[f(0), 2]] }); // => Eq(f(x), 2*exp(x))
+ * ```
  */
 export function dsolve(eqIn: ExprLike, fx: Expr | undefined, opts: DsolveOptions & { hint: 'all' }): ReturnType<typeof allOdeHints>;
 export function dsolve(eqIn: ExprLike | readonly ExprLike[], fx?: Expr | readonly Expr[], opts?: DsolveOptions): Expr | Expr[] | Expr[][];

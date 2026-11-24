@@ -756,7 +756,23 @@ export function asRational(e: Expr, what = 'value'): Rational {
   return e;
 }
 
-/** Exact rational number p/q (q > 0, gcd(p, q) = 1). Integers have q = 1. */
+/**
+ * An exact rational number `p/q` in lowest terms with `q > 0`; integers have
+ * `q = 1`. Create one with {@link Rational.of}; arithmetic on rationals stays
+ * exact.
+ *
+ * @see SymPy `sympy.core.numbers.Rational`
+ * @example
+ * ```ts
+ * import { Rational } from '@symjs/symjs';
+ *
+ * const r = Rational.of(3, 6);
+ * r; // => 1/2
+ * [r.p, r.q]; // => [1, 2]
+ * r.add(1); // => 3/2
+ * Rational.of(2n ** 70n); // => 1180591620717411303424
+ * ```
+ */
 export class Rational extends Expr {
   readonly kind = 'Rational' as const;
   readonly args: readonly Expr[] = [];
@@ -858,7 +874,20 @@ const negativeShift = (): never => {
   throw new RangeError('negative shift count');
 };
 
-/** Floating-point number. */
+/**
+ * A floating-point number with a precision in bits (53, double precision, by
+ * default). Numbers of higher precision come from `evalf`.
+ *
+ * @see SymPy `sympy.core.numbers.Float`
+ * @example
+ * ```ts
+ * import { ex, Float, pi } from '@symjs/symjs';
+ *
+ * new Float(0.1); // => 0.100000000000000
+ * new Float(0.25).add(ex`x`); // => x + 0.25
+ * pi.evalf(30); // => 3.14159265358979323846264338328
+ * ```
+ */
 export class Float extends Expr {
   readonly kind = 'Float' as const;
   readonly args: readonly Expr[] = [];
@@ -1350,6 +1379,20 @@ export class Order extends Expr {
 // Singletons
 // ---------------------------------------------------------------------------
 
+/**
+ * The singleton numbers, constants and Booleans: `S.Zero`, `S.One`,
+ * `S.Half`, `S.Pi`, `S.I`, `S.Infinity`, `S.NaN`, `S.true`, ... Each is a single
+ * shared instance, so it can be compared with `===`.
+ *
+ * @see SymPy `sympy.core.singleton.S`
+ * @example
+ * ```ts
+ * import { ex, S } from '@symjs/symjs';
+ *
+ * S.Half; // => 1/2
+ * ex`x - x` === S.Zero; // => True
+ * ```
+ */
 export const S = {
   Zero: Rational.of(0n),
   One: Rational.of(1n),
@@ -1372,11 +1415,82 @@ export const S = {
   false: new BoolAtom(false),
 } as const;
 
+/**
+ * The ratio of a circle's circumference to its diameter.
+ *
+ * @see SymPy `sympy.core.numbers.Pi`
+ * @example
+ * ```ts
+ * import { cos, pi } from '@symjs/symjs';
+ *
+ * cos(pi); // => -1
+ * pi.evalf(20); // => 3.1415926535897932385
+ * ```
+ */
 export const pi = S.Pi;
+/**
+ * The base of the natural logarithm, `exp(1)`.
+ *
+ * @see SymPy `sympy.core.numbers.Exp1`
+ * @example
+ * ```ts
+ * import { E, log } from '@symjs/symjs';
+ *
+ * log(E); // => 1
+ * E.evalf(20); // => 2.7182818284590452354
+ * ```
+ */
 export const E = S.E;
+/**
+ * The imaginary unit, `sqrt(-1)`.
+ *
+ * @see SymPy `sympy.core.numbers.ImaginaryUnit`
+ * @example
+ * ```ts
+ * import { ex, I } from '@symjs/symjs';
+ *
+ * I.pow(2); // => -1
+ * ex`(2 + 3*I)*(1 - I)`.expand(); // => 5 + I
+ * ```
+ */
 export const I = S.I;
+/**
+ * Positive infinity, for limits, intervals and the bounds of integrals and sums.
+ *
+ * @see SymPy `sympy.core.numbers.Infinity`
+ * @example
+ * ```ts
+ * import { ex, limit, oo, Symbol } from '@symjs/symjs';
+ *
+ * limit(ex`1/x`, Symbol('x'), oo); // => 0
+ * oo.add(1); // => oo
+ * ```
+ */
 export const oo = S.Infinity;
+/**
+ * Complex infinity, the infinity of the extended complex plane without a
+ * direction (for example `1/0`).
+ *
+ * @see SymPy `sympy.core.numbers.ComplexInfinity`
+ * @example
+ * ```ts
+ * import { ex } from '@symjs/symjs';
+ *
+ * ex`1/0`; // => zoo
+ * ```
+ */
 export const zoo = S.ComplexInfinity;
+/**
+ * Not a number, the result of an undefined operation such as `0/0` or `oo - oo`.
+ *
+ * @see SymPy `sympy.core.numbers.NaN`
+ * @example
+ * ```ts
+ * import { ex } from '@symjs/symjs';
+ *
+ * ex`oo - oo`; // => nan
+ * ```
+ */
 export const nan = S.NaN;
 
 /** Canonical ordering of arguments: numbers first, then by structural key. */
