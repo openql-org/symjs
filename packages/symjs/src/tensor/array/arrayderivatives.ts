@@ -22,7 +22,11 @@ import { convertArrayToMatrix } from './expressions/fromarraytomatrix';
 
 /** Derivative variables, optionally followed by their multiplicity. */
 export type ArrayDerivativeVariable = Expr | Matrix | number | readonly [Expr | Matrix, number];
-export interface ArrayDerivativeOptions { evaluate?: boolean }
+/** Options controlling evaluation of an array derivative. */
+export interface ArrayDerivativeOptions {
+  /** Evaluate the derivative immediately when true. */
+  evaluate?: boolean
+}
 const normalize = (expr: ExprLike | Matrix): Expr => expr instanceof Matrix ? new ImmutableMatrixNode(expr) : expr instanceof NDimArray ? expr.asImmutable() : sympify(expr);
 const shaped = (expr: Expr): boolean => expr instanceof MatrixExpr || expr instanceof NDimArray || expr instanceof ArrayExpr || expr instanceof ArrayDerivativeNode;
 const scalar = (expr: Expr): boolean => !shaped(expr) && (!(expr instanceof ExtensionExpr) || expr.isScalar);
@@ -130,15 +134,52 @@ function once(expr: Expr, variable: Expr): Expr | NoMatchResult {
   return NoMatch;
 }
 
-/** Unevaluated array derivative; variable axes precede expression axes. */
+/**
+ * An unevaluated derivative whose shape includes the axes of its array variables.
+ *
+ * @see SymPy `sympy.tensor.array.array_derivatives.ArrayDerivative`
+ * @example
+ * ```ts
+ * import { ArrayDerivative, ex } from '@symjs/symjs';
+ *
+ * ArrayDerivative(ex`x**2`, ex`x`, { evaluate: true }); // => 2*x
+ * ```
+ */
 export class ArrayDerivativeNode extends Derivative {
+  /**
+   * The lengths of the axes in order.
+   *
+   * @see SymPy `sympy.tensor.array.array_derivatives.ArrayDerivative.shape`
+   */
   readonly shape: readonly Expr[];
+  /**
+   * Whether this expression represents a scalar.
+   *
+   * @see SymPy `sympy.tensor.array.array_derivatives.ArrayDerivative.is_scalar`
+   */
   readonly isScalar = false;
+  /**
+   * Constructs an instance of `ArrayDerivativeNode`.
+   *
+   * @param args - Operands in their defining order.
+   */
   constructor(args: readonly Expr[]) {
     super(args);
     this.shape = Object.freeze([...this.variableCount.flatMap(([variable, count]) => Array.from({ length: count }, () => getShape(variable)).flat()), ...getShape(this.expr)]);
   }
+  /**
+   * Rebuilds the expression with replacement arguments in their original order.
+   *
+   * @param args - Replacement arguments in the same order as `args` on the original expression.
+   * @returns The rebuilt expression.
+   */
   override withArgs(args: readonly Expr[]): ArrayDerivativeNode { return new ArrayDerivativeNode(args); }
+  /**
+   * Evaluates the derivative with respect to each variable in turn.
+   *
+   * @returns The evaluated expression when the operation can be performed.
+   * @see SymPy `sympy.tensor.array.array_derivatives.ArrayDerivative.doit`
+   */
   override doit(): Expr {
     let result = this.expr;
     const variables = this.variableCount;
@@ -187,7 +228,22 @@ function create(expr: ExprLike | Matrix, ...spec: (ArrayDerivativeVariable | Arr
   return evaluate ? node.doit() : node;
 }
 
-/** SymPy ArrayDerivative; use evaluate: true or doit() to compute its value. */
+/**
+ * Differentiates scalar, matrix or array expressions with respect to scalar or array variables.
+ *
+ * @param expr - Symbolic expression on which to operate.
+ * @param spec - Differentiation variables, optional repetition counts and evaluation options.
+ * @returns The unevaluated derivative, or its value when evaluation is requested.
+ * @throws RangeError when a variable or repetition count is invalid or the differentiation variable is ambiguous.
+ * @throws TypeError when a repetition count precedes the first variable.
+ * @see SymPy `sympy.tensor.array.array_derivatives.ArrayDerivative`
+ * @example
+ * ```ts
+ * import { ArrayDerivative, ex } from '@symjs/symjs';
+ *
+ * ArrayDerivative(ex`x**2`, ex`x`, { evaluate: true }); // => 2*x
+ * ```
+ */
 export const ArrayDerivative = /* @__PURE__ */ callableClass(ArrayDerivativeNode, create);
 export type ArrayDerivative = ArrayDerivativeNode;
 

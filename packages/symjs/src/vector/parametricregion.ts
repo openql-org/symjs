@@ -32,8 +32,27 @@ import { ImplicitRegionNode } from './implicitregion';
 /** A bound of a parametric region: a parameter, or [parameter, lower, upper]. */
 export type ParametricBound = Expr | readonly [ExprLike, ExprLike, ExprLike];
 
-/** SymPy ParametricRegion(definition, *bounds): the base scalars as functions of parameters. */
+/**
+ * The base scalars as functions of parameters.
+ *
+ * @see SymPy `sympy.vector.parametricregion.ParametricRegion`
+ * @remarks SymPy prints the coordinate tuple as `(t, t**2)`. The coordinates here form an ordered array.
+ * @example
+ * ```ts
+ * import { ParametricRegion, ex } from '@symjs/symjs';
+ *
+ * const region = ParametricRegion([ex`t`, ex`t**2`], [ex`t`, -1, 2]);
+ * region.definition; // => [t, t**2]
+ * ```
+ */
 export class ParametricRegionNode extends ExtensionExpr {
+  /**
+   * Constructs an instance of `ParametricRegionNode`.
+   *
+   * @param definition - Coordinate expressions in the region parameters.
+   * @param bounds - Parameters or triples of parameter, lower bound and upper bound.
+   * @throws RangeError when a parameter bound is not a triple.
+   */
   constructor(definition: ExprLike | readonly ExprLike[] | TupleNode, ...bounds: (ParametricBound | TupleNode)[]) {
     const def = definition instanceof TupleNode ? definition : new TupleNode((Array.isArray(definition) ? definition : [definition]).map((d: ExprLike) => sympify(d)));
     const bs = bounds.map((b) => {
@@ -44,30 +63,72 @@ export class ParametricRegionNode extends ExtensionExpr {
     });
     super('ParametricRegion', [def, ...bs]);
   }
+  /**
+   * Rebuilds the expression with replacement arguments in their original order.
+   *
+   * @param args - Replacement arguments in the same order as `args` on the original expression.
+   * @returns The rebuilt expression.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new ParametricRegionNode(at(args, 0), ...args.slice(1));
   }
-  /** SymPy definition: the base scalars in terms of the parameters. */
+  /**
+   * The base scalars in terms of the parameters.
+   *
+   * @returns The base scalars in terms of the parameters.
+   * @see SymPy `sympy.vector.parametricregion.ParametricRegion.definition`
+   */
   get definition(): Expr[] {
     return [...at(this.args, 0).args];
   }
-  /** SymPy parameters. */
+  /**
+   * Parameter symbols or names.
+   *
+   * @returns The independent parameters in definition order.
+   * @see SymPy `sympy.vector.parametricregion.ParametricRegion.parameters`
+   */
   get parameters(): Expr[] {
     return this.args.slice(1).map((b) => (b instanceof TupleNode ? at(b.args, 0) : b));
   }
-  /** SymPy limits: the lower and upper bounds of the bounded parameters. */
+  /**
+   * The lower and upper bounds of the bounded parameters.
+   *
+   * @returns The lower and upper bounds of the bounded parameters.
+   * @see SymPy `sympy.vector.parametricregion.ParametricRegion.limits`
+   */
   get limits(): ExprMap<[Expr, Expr]> {
     const m = new ExprMap<[Expr, Expr]>();
     for (const b of this.args.slice(1)) if (b instanceof TupleNode) m.set(at(b.args, 0), [at(b.args, 1), at(b.args, 2)]);
     return m;
   }
-  /** SymPy dimensions: the number of bounded parameters (1 for a curve, 2 for a surface, 3 for a volume). */
+  /**
+   * The number of bounded parameters (1 for a curve, 2 for a surface, 3 for a volume).
+   *
+   * @returns The number of bounded parameters (1 for a curve, 2 for a surface, 3 for a volume).
+   * @see SymPy `sympy.vector.parametricregion.ParametricRegion.dimensions`
+   */
   get dimensions(): number {
     return this.limits.size;
   }
 }
 
-/** SymPy ParametricRegion(definition, *bounds). */
+/**
+ * A region described by coordinate functions of one or more parameters, optionally with bounds.
+ *
+ * @param definition - Coordinate expressions in the region parameters.
+ * @param bounds - Parameters or triples of parameter, lower bound and upper bound.
+ * @returns The resulting `ParametricRegion` expression.
+ * @throws RangeError when a parameter bound is not a triple.
+ * @see SymPy `sympy.vector.parametricregion.ParametricRegion`
+ * @remarks SymPy prints the coordinate tuple as `(t, t**2)`. The coordinates here form an ordered array.
+ * @example
+ * ```ts
+ * import { ParametricRegion, ex } from '@symjs/symjs';
+ *
+ * const region = ParametricRegion([ex`t`, ex`t**2`], [ex`t`, -1, 2]);
+ * region.definition; // => [t, t**2]
+ * ```
+ */
 export const ParametricRegion = /* @__PURE__ */ callableClass(
   ParametricRegionNode,
   (definition: ExprLike | readonly ExprLike[] | TupleNode, ...bounds: (ParametricBound | TupleNode)[]): ParametricRegionNode => new ParametricRegionNode(definition, ...bounds),
@@ -75,9 +136,20 @@ export const ParametricRegion = /* @__PURE__ */ callableClass(
 export type ParametricRegion = ParametricRegionNode;
 
 /**
- * SymPy parametric_region_list(reg, parameter): the parametric regions of a
- * geometric entity (point, curve, ellipse, segment, polygon) or an
+ * The parametric regions of a geometric entity (point, curve, ellipse, segment, polygon) or an
  * implicit region (with the parameters of its rational parametrization).
+ *
+ * @param reg - Geometric or implicit region to parametrize.
+ * @param parameter - Symbol or name used for the parametrization.
+ * @returns The parametrizations covering the supplied region.
+ * @throws RangeError when no parametrization can be found for the region.
+ * @see SymPy `sympy.vector.parametricregion.parametric_region_list`
+ * @example
+ * ```ts
+ * import { Point, parametricRegionList } from '@symjs/symjs';
+ *
+ * parametricRegionList(Point(2, 5)); // => [ParametricRegion((2, 5))]
+ * ```
  */
 export function parametricRegionList(reg: Expr, parameter?: string | Sym | readonly (string | Sym)[]): ParametricRegionNode[] {
   if (reg instanceof PointNode) return [new ParametricRegionNode(reg.args)];

@@ -8,16 +8,34 @@
  * Undecidable error of sympy.utilities.misc that the geometry raises.
  */
 
-/** An exception raised by geometry entities (SymPy GeometryError, a ValueError). */
+/**
+ * An exception raised by geometry entities.
+ *
+ * @see SymPy `sympy.geometry.exceptions.GeometryError`
+ */
 export class GeometryError extends RangeError {
+  /**
+   * Constructs an instance of `GeometryError`.
+   *
+   * @param message - Explanation of the error.
+   */
   constructor(message: string) {
     super(message);
     this.name = 'GeometryError';
   }
 }
 
-/** A question about a geometry entity that cannot be decided (SymPy Undecidable, a ValueError). */
+/**
+ * An error indicating that a geometric predicate could not be decided from the given expressions.
+ *
+ * @see SymPy `sympy.utilities.misc.Undecidable`
+ */
 export class Undecidable extends RangeError {
+  /**
+   * Constructs an instance of `Undecidable`.
+   *
+   * @param message - Explanation of the error.
+   */
   constructor(message: string) {
     super(message);
     this.name = 'Undecidable';

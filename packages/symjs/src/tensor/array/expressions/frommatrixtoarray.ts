@@ -10,7 +10,13 @@ import { KroneckerProductNode } from '../../../matrices/expressions/kronecker';
 import { Mul, Pow, Rational } from '../../../core/nodes';
 import { ArrayAdd, ArrayContraction, ArrayTensorProduct, ArrayDiagonal, ArrayElementwiseApplyFunc, PermuteDims, Reshape, getRank } from './arrayexpressions';
 
-/** Express matrix operations as tensor products, axis permutations and contractions. */
+/**
+ * Express matrix operations as tensor products, axis permutations and contractions.
+ *
+ * @param expr - Symbolic expression on which to operate.
+ * @returns The equivalent array expression.
+ * @see SymPy `sympy.tensor.array.expressions.from_matrix_to_array.convert_matrix_to_array`
+ */
 export function convertMatrixToArray(expr: Expr): Expr {
   if (expr instanceof ElementwiseApplyFunctionNode) return new ArrayElementwiseApplyFunc(expr.function, convertMatrixToArray(expr.expr));
   if (expr instanceof HadamardPowerNode) {

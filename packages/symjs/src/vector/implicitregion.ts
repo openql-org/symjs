@@ -85,30 +85,74 @@ function firstNonRoot(e: Expr, p: Sym): number | undefined {
   for (let n = 0; ; n++) if (!isZero(subs(e, [[p, integerAt(n)]]))) return integerAt(n);
 }
 
-/** SymPy ImplicitRegion(variables, equation): the region where equation vanishes. */
+/**
+ * The region where equation vanishes.
+ *
+ * @see SymPy `sympy.vector.implicitregion.ImplicitRegion`
+ * @example
+ * ```ts
+ * import { ImplicitRegion, ex } from '@symjs/symjs';
+ *
+ * const region = ImplicitRegion([ex`x`, ex`y`], ex`y**2 - 4*x`);
+ * region.degree; // => 2
+ * ```
+ */
 export class ImplicitRegionNode extends ExtensionExpr {
+  /**
+   * Constructs an instance of `ImplicitRegionNode`.
+   *
+   * @param variables - Variables in the order they are supplied.
+   * @param equation - Implicit equation defining the region.
+   */
   constructor(variables: readonly ExprLike[] | TupleNode, equation: ExprLike) {
     const vars = variables instanceof TupleNode ? variables : new TupleNode(variables.map(sympify));
     const eq = sympify(equation);
     super('ImplicitRegion', [vars, eq instanceof Rel && eq.op === 'Eq' ? add(eq.lhs, mul(-1, eq.rhs)) : eq]);
   }
+  /**
+   * Rebuilds the expression with replacement arguments in their original order.
+   *
+   * @param args - Replacement arguments in the same order as `args` on the original expression.
+   * @returns The rebuilt expression.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new ImplicitRegionNode(cast(at(args, 0), TupleNode, 'variables'), at(args, 1));
   }
-  /** SymPy variables: the variables that map to the base scalars. */
+  /**
+   * The variables that map to the base scalars.
+   *
+   * @returns The differentiation variables in their original order.
+   * @see SymPy `sympy.vector.implicitregion.ImplicitRegion.variables`
+   */
   get variables(): Sym[] {
     return at(this.args, 0).args.map((v) => cast(v, Sym, 'variable'));
   }
-  /** SymPy equation (lhs - rhs of an Eq). */
+  /**
+   * Implicit equation defining the region.
+   *
+   * @returns Implicit equation defining the region.
+   * @see SymPy `sympy.vector.implicitregion.ImplicitRegion.equation`
+   */
   get equation(): Expr {
     return at(this.args, 1);
   }
-  /** SymPy degree: the total degree of the equation. */
+  /**
+   * The total degree of the equation.
+   *
+   * @returns The total degree of the equation.
+   * @see SymPy `sympy.vector.implicitregion.ImplicitRegion.degree`
+   */
   get degree(): number {
     return totalDegree(this.equation);
   }
 
-  /** SymPy regular_point: a point on the region. */
+  /**
+   * A point on the region.
+   *
+   * @returns A point on the region.
+   * @throws NotImplementedError when a regular point cannot be found.
+   * @see SymPy `sympy.vector.implicitregion.ImplicitRegion.regular_point`
+   */
   regularPoint(): Expr[] {
     const eq = this.equation;
     const vars = this.variables;
@@ -139,7 +183,12 @@ export class ImplicitRegionNode extends ExtensionExpr {
     throw new NotImplementedError('no regular point of the region is known');
   }
 
-  /** SymPy singular_points: the points of the region where all partial derivatives vanish. */
+  /**
+   * The points of the region where all partial derivatives vanish.
+   *
+   * @returns The points of the region where all partial derivatives vanish.
+   * @see SymPy `sympy.vector.implicitregion.ImplicitRegion.singular_points`
+   */
   singularPoints(): SetExpr {
     const eq = this.equation;
     const vars = this.variables;
@@ -148,8 +197,12 @@ export class ImplicitRegionNode extends ExtensionExpr {
   }
 
   /**
-   * SymPy multiplicity(point): the multiplicity of a point of the region (the
-   * lowest total degree of the equation shifted to the point).
+   * The multiplicity of a point of the region (the lowest total degree of the equation shifted to
+   * the point).
+   *
+   * @param pointIn - Point at which to evaluate the operation.
+   * @returns The multiplicity of a point of the region (the lowest total degree of the equation shifted to the point).
+   * @see SymPy `sympy.vector.implicitregion.ImplicitRegion.multiplicity`
    */
   multiplicity(pointIn: GeometryEntity | readonly ExprLike[] | TupleNode): number {
     const point = pointIn instanceof GeometryEntity || pointIn instanceof TupleNode ? pointIn.args : pointIn.map(sympify);
@@ -163,9 +216,14 @@ export class ImplicitRegionNode extends ExtensionExpr {
   }
 
   /**
-   * SymPy rational_parametrization(parameters=('t', 's'), reg_point=None): a
-   * rational parametrization of the region, from a regular point of a conic
-   * (`regPoint` when none is found) or a point of multiplicity degree - 1.
+   * A rational parametrization of the region, from a regular point of a conic (`regPoint` when none
+   * is found) or a point of multiplicity degree - 1.
+   *
+   * @param parametersIn - Parameter symbols or names.
+   * @param opts - `regPoint`.
+   * @returns A rational parametrization of the region, from a regular point of a conic (`regPoint` when none is found) or a point of multiplicity degree - 1.
+   * @throws NotImplementedError when the region has more than three variables or the region is linear in three variables or the region does not satisfy the monoid parametrization criterion.
+   * @see SymPy `sympy.vector.implicitregion.ImplicitRegion.rational_parametrization`
    */
   rationalParametrization(parametersIn?: string | Sym | readonly (string | Sym)[], opts: { regPoint?: readonly ExprLike[] } = {}): Expr[] {
     const equation = this.equation;
@@ -349,7 +407,21 @@ function regularPointEllipse(a: Expr, b: Expr, c: Expr, d: Expr, e: Expr, f: Exp
   return [mul(add(y, mul(-1, b, yr), mul(-1, d)), mul(2, a).pow(-1)), yr];
 }
 
-/** SymPy ImplicitRegion(variables, equation); an Eq is taken as lhs - rhs. */
+/**
+ * The locus where a scalar expression in the supplied variables vanishes.
+ *
+ * @param variables - Variables in the order they are supplied.
+ * @param equation - Implicit equation defining the region.
+ * @returns The resulting `ImplicitRegion` expression.
+ * @see SymPy `sympy.vector.implicitregion.ImplicitRegion`
+ * @example
+ * ```ts
+ * import { ImplicitRegion, ex } from '@symjs/symjs';
+ *
+ * const region = ImplicitRegion([ex`x`, ex`y`], ex`y**2 - 4*x`);
+ * region.degree; // => 2
+ * ```
+ */
 export const ImplicitRegion = /* @__PURE__ */ callableClass(
   ImplicitRegionNode,
   (variables: readonly ExprLike[] | TupleNode, equation: ExprLike): ImplicitRegionNode => new ImplicitRegionNode(variables, equation),

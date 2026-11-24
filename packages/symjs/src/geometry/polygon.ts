@@ -90,12 +90,35 @@ const lexLess = (a: readonly number[], b: readonly number[]): boolean => {
   return at(a, i) < at(b, i);
 };
 
-/** SymPy Polygon: a simple polygon given by its vertices. */
+/**
+ * A simple polygon given by its vertices.
+ *
+ * @see SymPy `sympy.geometry.polygon.Polygon`
+ * @example
+ * ```ts
+ * import { Polygon } from '@symjs/symjs';
+ *
+ * Polygon([0, 0], [1, 0], [5, 1], [0, 1]); // => Polygon(Point2D(0, 0), Point2D(1, 0), Point2D(5, 1), Point2D(0, 1))
+ * Polygon([0, 0], [1, 0]); // => Segment2D(Point2D(0, 0), Point2D(1, 0))
+ * ```
+ */
 export class PolygonNode extends GeometrySet {
+  /**
+   * Constructs an instance of `PolygonNode`.
+   *
+   * @param vertices - Vertices in boundary order.
+   * @param name - Symbolic name.
+   */
   constructor(vertices: readonly Expr[], name = 'Polygon') {
     super(name, vertices);
   }
 
+  /**
+   * Rebuilds the expression with replacement arguments in their original order.
+   *
+   * @param args - Replacement arguments in the same order as `args` on the original expression.
+   * @returns The rebuilt expression.
+   */
   override withArgs(args: readonly Expr[]): Expr {
     return newPolygon(args.map(asPoint));
   }
@@ -104,16 +127,32 @@ export class PolygonNode extends GeometrySet {
     return `${this.name}(${canonicalKeys(this.args).join(',')})`;
   }
 
+  /**
+   * The number of coordinates in the surrounding space.
+   *
+   * @returns The number of coordinates in the surrounding space.
+   * @see SymPy `sympy.geometry.polygon.Polygon.ambient_dimension`
+   */
   get ambientDimension(): number {
     return at(this.vertices, 0).ambientDimension;
   }
 
-  /** The vertices in order (SymPy vertices). */
+  /**
+   * The vertices in order.
+   *
+   * @returns The vertices in order.
+   * @see SymPy `sympy.geometry.polygon.Polygon.vertices`
+   */
   get vertices(): PointNode[] {
     return this.args.map(asPoint);
   }
 
-  /** The signed area: positive for counterclockwise vertices (SymPy area). */
+  /**
+   * The signed area: positive for counterclockwise vertices.
+   *
+   * @returns The signed area: positive for counterclockwise vertices.
+   * @see SymPy `sympy.geometry.polygon.Polygon.area`
+   */
   get area(): Expr {
     const args = this.vertices;
     let area: Expr = S.Zero;
@@ -125,7 +164,16 @@ export class PolygonNode extends GeometrySet {
     return mul(simplify(area), S.Half);
   }
 
-  /** SymPy Polygon._is_clockwise(a, b, c): the turn a -> b -> c is clockwise (or straight). */
+  /**
+   * The turn a -> b -> c is clockwise (or straight).
+   *
+   * @param a - First point of the turn.
+   * @param b - Vertex of the turn.
+   * @param c - Final point of the turn.
+   * @returns The turn a -> b -> c is clockwise (or straight).
+   * @throws RangeError when the orientation cannot be determined.
+   * @see SymPy `sympy.geometry.polygon.Polygon._is_clockwise`
+   */
   static isClockwise(a: PointNode, b: PointNode, c: PointNode): boolean {
     const ba = b.sub(a);
     const ca = c.sub(a);
@@ -135,7 +183,13 @@ export class PolygonNode extends GeometrySet {
     return res;
   }
 
-  /** The interior angle at each vertex (SymPy angles). */
+  /**
+   * The interior angle at each vertex.
+   *
+   * @returns The interior angle at each vertex.
+   * @throws RangeError when the orientation cannot be determined.
+   * @see SymPy `sympy.geometry.polygon.Polygon.angles`
+   */
   get angles(): ExprMap<Expr> {
     const args = this.vertices;
     const n = args.length;
@@ -153,7 +207,12 @@ export class PolygonNode extends GeometrySet {
     return ret;
   }
 
-  /** The perimeter (SymPy perimeter). */
+  /**
+   * The perimeter.
+   *
+   * @returns The perimeter.
+   * @see SymPy `sympy.geometry.polygon.Polygon.perimeter`
+   */
   get perimeter(): Expr {
     const args = this.vertices;
     let p: Expr = S.Zero;
@@ -161,7 +220,12 @@ export class PolygonNode extends GeometrySet {
     return simplify(p);
   }
 
-  /** The centroid (SymPy centroid). */
+  /**
+   * The centroid.
+   *
+   * @returns The centroid.
+   * @see SymPy `sympy.geometry.polygon.Polygon.centroid`
+   */
   get centroid(): PointNode {
     const A = pow(mul(6, this.area), -1);
     let cx: Expr = S.Zero;
@@ -177,7 +241,13 @@ export class PolygonNode extends GeometrySet {
     return toPoint([simplify(mul(A, cx)), simplify(mul(A, cy))]);
   }
 
-  /** The second moments of area (Ixx, Iyy, Ixy) about the centroid or a point (SymPy second_moment_of_area). */
+  /**
+   * The second moments of area (Ixx, Iyy, Ixy) about the centroid or a point.
+   *
+   * @param point - Point at which to evaluate the operation.
+   * @returns The second moments of area (Ixx, Iyy, Ixy) about the centroid or a point.
+   * @see SymPy `sympy.geometry.polygon.Polygon.second_moment_of_area`
+   */
   secondMomentOfArea(point?: PointInput): [Expr, Expr, Expr] {
     let Ixx: Expr = S.Zero;
     let Iyy: Expr = S.Zero;
@@ -206,7 +276,13 @@ export class PolygonNode extends GeometrySet {
     ];
   }
 
-  /** The first moments of area (Qx, Qy) about the centroid or a point (SymPy first_moment_of_area). */
+  /**
+   * The first moments of area (Qx, Qy) about the centroid or a point.
+   *
+   * @param point - Point at which to evaluate the operation.
+   * @returns The first moments of area (Qx, Qy) about the centroid or a point.
+   * @see SymPy `sympy.geometry.polygon.Polygon.first_moment_of_area`
+   */
   firstMomentOfArea(point?: PointInput): [Expr, Expr] {
     const c = this.centroid;
     const [xc, yc] = [c.coordinate(0), c.coordinate(1)];
@@ -226,13 +302,24 @@ export class PolygonNode extends GeometrySet {
     return [Qx, Qy];
   }
 
-  /** The polar second moment of area (SymPy polar_second_moment_of_area). */
+  /**
+   * The polar second moment of area.
+   *
+   * @returns The polar second moment of area.
+   * @see SymPy `sympy.geometry.polygon.Polygon.polar_second_moment_of_area`
+   */
   polarSecondMomentOfArea(): Expr {
     const [a, b] = this.secondMomentOfArea();
     return add(a, b);
   }
 
-  /** The section moduli (Sx, Sy) about the centroid or a point (SymPy section_modulus). */
+  /**
+   * The section moduli (Sx, Sy) about the centroid or a point.
+   *
+   * @param point - Point at which to evaluate the operation.
+   * @returns The section moduli (Sx, Sy) about the centroid or a point.
+   * @see SymPy `sympy.geometry.polygon.Polygon.section_modulus`
+   */
   sectionModulus(point?: PointInput): [Expr, Expr] {
     const c = this.centroid;
     const [xc, yc] = [c.coordinate(0), c.coordinate(1)];
@@ -250,7 +337,12 @@ export class PolygonNode extends GeometrySet {
     return [mul(sx, pow(y, -1)), mul(sy, pow(x, -1))];
   }
 
-  /** The sides as segments, starting from the last vertex (SymPy sides). */
+  /**
+   * The sides as segments, starting from the last vertex.
+   *
+   * @returns The sides as segments, starting from the last vertex.
+   * @see SymPy `sympy.geometry.polygon.Polygon.sides`
+   */
   get sides(): SegmentNode[] {
     const args = this.vertices;
     const n = args.length;
@@ -262,13 +354,24 @@ export class PolygonNode extends GeometrySet {
     return res;
   }
 
+  /**
+   * The bounding rectangle as `[xmin, ymin, xmax, ymax]`.
+   *
+   * @returns Return a tuple (xmin, ymin, xmax, ymax) representing the bounding rectangle for the geometric figure.
+   * @see SymPy `sympy.geometry.polygon.Polygon.bounds`
+   */
   override get bounds(): [Expr, Expr, Expr, Expr] {
     const xs = this.vertices.map((p) => p.coordinate(0));
     const ys = this.vertices.map((p) => p.coordinate(1));
     return [pyMin(xs), pyMin(ys), pyMax(xs), pyMax(ys)];
   }
 
-  /** The polygon is convex (SymPy is_convex). */
+  /**
+   * The polygon is convex.
+   *
+   * @returns The polygon is convex.
+   * @see SymPy `sympy.geometry.polygon.Polygon.is_convex`
+   */
   isConvex(): boolean {
     const args = this.vertices;
     const n = args.length;
@@ -289,7 +392,13 @@ export class PolygonNode extends GeometrySet {
     return true;
   }
 
-  /** The point lies inside the polygon (SymPy encloses_point; 'unknown' with symbolic coordinates). */
+  /**
+   * The point lies inside the polygon.
+   *
+   * @param pIn - Point used in the geometric construction or comparison.
+   * @returns The point lies inside the polygon.
+   * @see SymPy `sympy.geometry.polygon.Polygon.encloses_point`
+   */
   override enclosesPoint(pIn: PointInput): boolean | 'unknown' {
     const p = toPoint(pIn, { dim: 2 });
     if (this.vertices.some((v) => v.key === p.key) || this.sides.some((s) => s.contains(p))) return false;
@@ -330,8 +439,12 @@ export class PolygonNode extends GeometrySet {
   }
 
   /**
-   * The point of the boundary at the fraction t of the perimeter, as a
-   * Piecewise over the sides (SymPy arbitrary_point).
+   * The point of the boundary at the fraction t of the perimeter, as a Piecewise over the sides.
+   *
+   * @param parameter - Symbol or name used for the parametrization.
+   * @returns The point of the boundary at the fraction t of the perimeter, as a Piecewise over the sides.
+   * @throws RangeError when the requested parameter name already occurs in the entity.
+   * @see SymPy `sympy.geometry.polygon.Polygon.arbitrary_point`
    */
   override arbitraryPoint(parameter: string | Sym | null = 't'): Expr {
     const t = realSymbol(parameter ?? 't');
@@ -351,7 +464,16 @@ export class PolygonNode extends GeometrySet {
     return piecewise(...sides);
   }
 
-  /** The fraction of the perimeter at which the arbitrary point is other (SymPy parameter_value). */
+  /**
+   * The fraction of the perimeter at which the arbitrary point is other.
+   *
+   * @param otherIn - Point on the entity for which to find the parameter values.
+   * @param t - Parameter symbol.
+   * @returns The fraction of the perimeter at which the arbitrary point is other.
+   * @throws NotImplementedError when the calculation requires numeric coordinates.
+   * @throws RangeError when the operand is not a point or the point does not belong to the entity or membership of the point cannot be established.
+   * @see SymPy `sympy.geometry.polygon.Polygon.parameter_value`
+   */
   override parameterValue(otherIn: PointInput, t: Expr): ExprMap<Expr> {
     const other = otherIn instanceof GeometryEntity ? otherIn : toPoint(otherIn, { dim: this.ambientDimension });
     if (!(other instanceof PointNode)) throw new RangeError('other must be a point');
@@ -370,12 +492,24 @@ export class PolygonNode extends GeometrySet {
     throw new RangeError(`Given point is not on ${this.name}`);
   }
 
-  /** The parameter interval of the arbitrary point used for plotting (SymPy plot_interval). */
+  /**
+   * The parameter interval of the arbitrary point used for plotting.
+   *
+   * @param parameter - Symbol or name used for the parametrization.
+   * @returns The parameter interval of the arbitrary point used for plotting.
+   * @see SymPy `sympy.geometry.polygon.Polygon.plot_interval`
+   */
   plotInterval(parameter: string | Sym = 't'): [Sym, Expr, Expr] {
     return [typeof parameter === 'string' ? new Sym(parameter, { real: true }) : parameter, S.Zero, S.One];
   }
 
-  /** The points and segments common to the polygon and o (SymPy intersection). */
+  /**
+   * The points and segments common to the polygon and o.
+   *
+   * @param o - Entity to intersect with this one.
+   * @returns The points and segments common to the polygon and o.
+   * @see SymPy `sympy.geometry.polygon.Polygon.intersection`
+   */
   override intersection(o: unknown): GeometryEntity[] {
     const k: unknown[] = o instanceof PolygonNode ? o.sides : [o];
     let res: GeometryEntity[] = [];
@@ -392,8 +526,13 @@ export class PolygonNode extends GeometrySet {
   }
 
   /**
-   * The polygons above and below a line that cuts the polygon (SymPy
-   * cut_section); EmptySet for a side without a polygon (SymPy None).
+   * The polygons above and below a line that cuts the polygon (SymPy cut_section); EmptySet for a
+   * side without a polygon.
+   *
+   * @param line - Line defining the direction or reflection axis.
+   * @returns The polygons above and below a line that cuts the polygon (SymPy cut_section); EmptySet for a side without a polygon.
+   * @throws RangeError when the line misses the polygon.
+   * @see SymPy `sympy.geometry.polygon.Polygon.cut_section`
    */
   cutSection(line: Line2DNode): [PolygonNode | typeof EmptySet, PolygonNode | typeof EmptySet] {
     if (this.intersection(line).length === 0) throw new RangeError('This line does not intersect the polygon');
@@ -435,7 +574,14 @@ export class PolygonNode extends GeometrySet {
     return [part(upper), part(lower)];
   }
 
-  /** The shortest distance to a point, or between two convex polygons (SymPy distance). */
+  /**
+   * The shortest distance to a point, or between two convex polygons.
+   *
+   * @param o - Entity to measure the distance to.
+   * @returns The shortest distance to a point, or between two convex polygons.
+   * @throws NotImplementedError when the distance to the supplied entity is unsupported.
+   * @see SymPy `sympy.geometry.polygon.Polygon.distance`
+   */
   override distance(o: unknown): Expr {
     if (o instanceof PointNode) {
       let dist: Expr = S.Infinity;
@@ -508,7 +654,13 @@ export class PolygonNode extends GeometrySet {
     return minDist;
   }
 
-  /** SymPy `o in polygon`: o is the polygon, lies on a side, or is a vertex. */
+  /**
+   * O is the polygon, lies on a side, or is a vertex.
+   *
+   * @param o - Point or entity tested for containment.
+   * @returns Whether the operand belongs to the entity.
+   * @see SymPy `sympy.geometry.polygon.Polygon.contains`
+   */
   override contains(o: unknown): boolean {
     if (o instanceof PolygonNode) return polygonEquals(this, o);
     if (o instanceof SegmentNode) return this.sides.some((s) => s.contains(o));
@@ -517,8 +669,12 @@ export class PolygonNode extends GeometrySet {
   }
 
   /**
-   * The rays from the vertices that bisect the interior angles, with the
-   * direction point evaluated to prec digits when given (SymPy bisectors).
+   * The rays from the vertices that bisect the interior angles, with the direction point evaluated
+   * to prec digits when given.
+   *
+   * @param prec - Numerical precision.
+   * @returns The rays from the vertices that bisect the interior angles, with the direction point evaluated to prec digits when given.
+   * @see SymPy `sympy.geometry.polygon.Polygon.bisectors`
    */
   bisectors(prec?: number): ExprMap<LinearEntity> {
     const b = new ExprMap<LinearEntity>();
@@ -537,13 +693,24 @@ export class PolygonNode extends GeometrySet {
     return b;
   }
 
-  /** SymPy GeometryEntity.encloses for a polygon: every vertex (and the center of a regular polygon) is enclosed. */
+  /**
+   * Every vertex (and the center of a regular polygon) is enclosed.
+   *
+   * @param container - Geometric entity tested for enclosure.
+   * @returns Whether the supplied entity encloses this one.
+   */
   override enclosedBy(container: GeometryEntity): boolean {
     if (this instanceof RegularPolygonNode && container.enclosesPoint(this.center) !== true) return false;
     return this.vertices.every((v) => container.enclosesPoint(v) === true);
   }
 
-  /** The polygons are the same: equal vertices in the same cyclic order (SymPy ==). */
+  /**
+   * The polygons are the same: equal vertices in the same cyclic order.
+   *
+   * @param o - Object to compare with this one.
+   * @returns Whether the operands are equal.
+   * @see SymPy `sympy.geometry.polygon.Polygon.equals`
+   */
   override equals(o: ExprLike): boolean {
     return o instanceof PolygonNode && polygonEquals(this, o);
   }
@@ -596,32 +763,73 @@ const pyMin = (xs: readonly Expr[]): Expr => xs.reduce((m, x) => (pyLt(x, m) ? x
 const pyMax = (xs: readonly Expr[]): Expr => xs.reduce((m, x) => (pyGt(x, m) ? x : m));
 const pyMax2 = (a: Expr, b: Expr): Expr => (pyGt(b, a) ? b : a);
 
-/** SymPy RegularPolygon: a regular n-gon with a center, a radius and a rotation. */
+/**
+ * A regular n-gon with a center, a radius and a rotation.
+ *
+ * @see SymPy `sympy.geometry.polygon.RegularPolygon`
+ * @example
+ * ```ts
+ * import { RegularPolygon } from '@symjs/symjs';
+ *
+ * const p = RegularPolygon([0, 0], 5, 3);
+ * p.vertices[0]; // => Point2D(5, 0)
+ * ```
+ */
 export class RegularPolygonNode extends PolygonNode {
   readonly #args: Expr[];
 
+  /**
+   * Constructs an instance of `RegularPolygonNode`.
+   *
+   * @param c - Center of the polygon.
+   * @param r - Circumradius of the polygon.
+   * @param n - Number of sides.
+   * @param rot - Initial rotation in radians.
+   */
   constructor(c: Point2DNode, r: Expr, n: Expr, rot: Expr) {
     const args = [c, r, n, rot];
     super(args, 'RegularPolygon');
     this.#args = args;
   }
 
+  /**
+   * Rebuilds the expression with replacement arguments in their original order.
+   *
+   * @param args - Replacement arguments in the same order as `args` on the original expression.
+   * @returns The rebuilt expression.
+   */
   override withArgs(args: readonly Expr[]): Expr {
     return newRegularPolygon(at(args, 0), at(args, 1), at(args, 2), at(args, 3));
   }
 
-  /** The structural key follows the rotation, which spin changes. */
+  /**
+   * The structural key follows the rotation, which spin changes.
+   *
+   * @returns The structural key follows the rotation, which spin changes.
+   */
   override get key(): string {
     return `RegularPolygon(${this.#args.map((a) => a.key).join(',')})`;
   }
 
-  /** The center, radius, number of sides and rotation evaluated numerically (SymPy _eval_evalf). */
+  /**
+   * The center, radius, number of sides and rotation evaluated numerically.
+   *
+   * @param evalfArg - Function that evaluates an operand numerically.
+   * @param _dps - Decimal digits of numerical precision.
+   * @returns The numerically evaluated expression.
+   * @see SymPy `sympy.geometry.polygon.RegularPolygon._eval_evalf`
+   */
   override evalfSelf(evalfArg: (e: Expr) => Expr, _dps: number): Expr {
     const [c, r, n, a] = this.#args;
     return newRegularPolygon(evalfArg(d(c)), evalfArg(d(r)), d(n), evalfArg(d(a)));
   }
 
-  /** The signed area (SymPy area). */
+  /**
+   * The signed area.
+   *
+   * @returns The signed area.
+   * @see SymPy `sympy.geometry.polygon.RegularPolygon.area`
+   */
   override get area(): Expr {
     // SymPy's order of the binary products: sign(r)*n*length**2/(4*tan(pi/n))
     const num = mul(mul(sign(this.radius), sideCount(this)), pow(this.length, 2));
@@ -629,66 +837,142 @@ export class RegularPolygonNode extends PolygonNode {
   }
 
 
-  /** The length of a side (SymPy length). */
+  /**
+   * The length of a side.
+   *
+   * @returns The length of a side.
+   * @see SymPy `sympy.geometry.polygon.RegularPolygon.length`
+   */
   get length(): Expr {
     return mul(this.radius, 2, sin(mul(S.Pi, pow(sideCount(this), -1))));
   }
 
-  /** The center (SymPy center). */
+  /**
+   * The center.
+   *
+   * @returns The center.
+   * @see SymPy `sympy.geometry.polygon.RegularPolygon.center`
+   */
   get center(): Point2DNode {
     return as2D(at(this.#args, 0));
   }
-  /** The centroid: the center (SymPy centroid). */
+  /**
+   * The centroid: the center.
+   *
+   * @returns The centroid: the center.
+   * @see SymPy `sympy.geometry.polygon.RegularPolygon.centroid`
+   */
   override get centroid(): PointNode {
     return this.center;
   }
-  /** The circumcenter: the center (SymPy circumcenter). */
+  /**
+   * The circumcenter: the center.
+   *
+   * @returns The circumcenter: the center.
+   * @see SymPy `sympy.geometry.polygon.RegularPolygon.circumcenter`
+   */
   get circumcenter(): Point2DNode {
     return this.center;
   }
-  /** The radius of the circumcircle (SymPy radius). */
+  /**
+   * The radius of the circumcircle.
+   *
+   * @returns The radius of the circumcircle.
+   * @see SymPy `sympy.geometry.polygon.RegularPolygon.radius`
+   */
   get radius(): Expr {
     return at(this.#args, 1);
   }
-  /** The circumradius: the radius (SymPy circumradius). */
+  /**
+   * The circumradius: the radius.
+   *
+   * @returns The circumradius: the radius.
+   * @see SymPy `sympy.geometry.polygon.RegularPolygon.circumradius`
+   */
   get circumradius(): Expr {
     return this.radius;
   }
-  /** The rotation angle (SymPy rotation). */
+  /**
+   * The rotation angle.
+   *
+   * @returns The rotation angle.
+   * @see SymPy `sympy.geometry.polygon.RegularPolygon.rotation`
+   */
   get rotation(): Expr {
     return at(this.#args, 3);
   }
-  /** The radius of the incircle (SymPy apothem). */
+  /**
+   * The radius of the incircle.
+   *
+   * @returns The radius of the incircle.
+   * @see SymPy `sympy.geometry.polygon.RegularPolygon.apothem`
+   */
   get apothem(): Expr {
     return mul(this.radius, cos(mul(S.Pi, pow(sideCount(this), -1))));
   }
-  /** The inradius: the apothem (SymPy inradius). */
+  /**
+   * The inradius: the apothem.
+   *
+   * @returns The inradius: the apothem.
+   * @see SymPy `sympy.geometry.polygon.RegularPolygon.inradius`
+   */
   get inradius(): Expr {
     return this.apothem;
   }
-  /** The interior angle (SymPy interior_angle). */
+  /**
+   * The interior angle.
+   *
+   * @returns The interior angle.
+   * @see SymPy `sympy.geometry.polygon.RegularPolygon.interior_angle`
+   */
   get interiorAngle(): Expr {
     return mul(add(sideCount(this), -2), S.Pi, pow(sideCount(this), -1));
   }
-  /** The exterior angle (SymPy exterior_angle). */
+  /**
+   * The exterior angle.
+   *
+   * @returns The exterior angle.
+   * @see SymPy `sympy.geometry.polygon.RegularPolygon.exterior_angle`
+   */
   get exteriorAngle(): Expr {
     return mul(2, S.Pi, pow(sideCount(this), -1));
   }
-  /** The circumscribed circle (SymPy circumcircle). */
+  /**
+   * The circumscribed circle.
+   *
+   * @returns The circumscribed circle.
+   * @see SymPy `sympy.geometry.polygon.RegularPolygon.circumcircle`
+   */
   get circumcircle(): GeometryEntity {
     return newCircle(this.center, this.radius);
   }
-  /** The inscribed circle (SymPy incircle). */
+  /**
+   * The inscribed circle.
+   *
+   * @returns The inscribed circle.
+   * @see SymPy `sympy.geometry.polygon.RegularPolygon.incircle`
+   */
   get incircle(): GeometryEntity {
     return newCircle(this.center, this.apothem);
   }
-  /** The interior angle at every vertex (SymPy angles). */
+  /**
+   * The interior angle at every vertex.
+   *
+   * @returns The interior angle at every vertex.
+   * @see SymPy `sympy.geometry.polygon.RegularPolygon.angles`
+   */
   override get angles(): ExprMap<Expr> {
     const ang = this.interiorAngle;
     return new ExprMap(this.vertices.map((v): [Expr, Expr] => [v, ang]));
   }
 
-  /** The point lies inside the polygon (SymPy encloses_point). */
+  /**
+   * The point lies inside the polygon.
+   *
+   * @param p - Point used in the geometric construction or comparison.
+   * @returns The point lies inside the polygon.
+   * @see SymPy `sympy.geometry.polygon.RegularPolygon.encloses_point`
+   */
   override enclosesPoint(p: PointInput): boolean | 'unknown' {
     const c = this.center;
     const dist = asSegLength(Segment(c, p));
@@ -697,12 +981,24 @@ export class RegularPolygonNode extends PolygonNode {
     return super.enclosesPoint(p);
   }
 
-  /** Rotate the polygon in place about its center (SymPy spin). */
+  /**
+   * Rotate the polygon in place about its center.
+   *
+   * @param angle - Rotation angle in radians.
+   * @see SymPy `sympy.geometry.polygon.RegularPolygon.spin`
+   */
   spin(angle: ExprLike): void {
     this.#args[3] = add(d(this.#args[3]), angle);
   }
 
-  /** The polygon rotated about pt (SymPy rotate). */
+  /**
+   * The polygon rotated about pt.
+   *
+   * @param angle - Rotation angle in radians.
+   * @param pt - Center of rotation, defaulting to the origin.
+   * @returns The polygon rotated about pt.
+   * @see SymPy `sympy.geometry.polygon.RegularPolygon.rotate`
+   */
   override rotate(angle: ExprLike, pt?: PointInput | null): GeometryEntity {
     const [c, r, n, rot] = this.#args;
     const rp = new RegularPolygonNode(as2D(d(c)), d(r), d(n), d(rot));
@@ -710,7 +1006,15 @@ export class RegularPolygonNode extends PolygonNode {
     return GeometryEntity.prototype.rotate.call(rp, angle, pt);
   }
 
-  /** The polygon scaled by x and y about pt: a regular polygon when x == y (SymPy scale). */
+  /**
+   * The polygon scaled by x and y about pt: a regular polygon when x == y.
+   *
+   * @param x - Scale factor along the x axis.
+   * @param y - Scale factor along the y axis.
+   * @param pt - Fixed point of the scaling, defaulting to the origin.
+   * @returns The polygon scaled by x and y about pt: a regular polygon when x == y.
+   * @see SymPy `sympy.geometry.polygon.RegularPolygon.scale`
+   */
   override scale(x: ExprLike = 1, y: ExprLike = 1, pt?: PointInput | null): GeometryEntity {
     if (pt !== undefined && pt !== null) return GeometryEntity.prototype.scale.call(this, x, y, pt);
     if (!same(sympify(x), y)) return newPolygon(this.vertices).scale(x, y);
@@ -718,7 +1022,13 @@ export class RegularPolygonNode extends PolygonNode {
     return newRegularPolygon(d(c), mul(d(r), x), d(n), d(rot));
   }
 
-  /** The reflection in a line (SymPy reflect). */
+  /**
+   * The reflection in a line.
+   *
+   * @param line - Line defining the direction or reflection axis.
+   * @returns The reflection in a line.
+   * @see SymPy `sympy.geometry.polygon.RegularPolygon.reflect`
+   */
   override reflect(line: Parameters<GeometryEntity['reflect']>[0]): GeometryEntity {
     const [c, r, n, rot0] = this.#args;
     const v = at(this.vertices, 0);
@@ -731,7 +1041,12 @@ export class RegularPolygonNode extends PolygonNode {
     return newRegularPolygon(cc, mul(-1, d(r)), d(n), add(d(rot0), ang));
   }
 
-  /** The vertices (SymPy vertices). */
+  /**
+   * The vertices.
+   *
+   * @returns The vertices.
+   * @see SymPy `sympy.geometry.polygon.RegularPolygon.vertices`
+   */
   override get vertices(): PointNode[] {
     const c = this.center;
     const r = absExpr(this.radius);
@@ -749,17 +1064,44 @@ const sideCount = (p: RegularPolygonNode): Expr => at(p.args, 2);
 const asRational = (e: Expr): Rational => expectType(e, (v): v is Rational => v instanceof Rational, 'the number of sides');
 const asSegLength = (e: Expr): Expr => (e instanceof SegmentNode ? e.length : S.Zero);
 
-/** SymPy Triangle: a polygon with three vertices. */
+/**
+ * A polygon with three vertices.
+ *
+ * @see SymPy `sympy.geometry.polygon.Triangle`
+ * @example
+ * ```ts
+ * import { Triangle } from '@symjs/symjs';
+ *
+ * Triangle([0, 0], [4, 0], [4, 3]); // => Triangle(Point2D(0, 0), Point2D(4, 0), Point2D(4, 3))
+ * ```
+ */
 export class TriangleNode extends PolygonNode {
+  /**
+   * Constructs an instance of `TriangleNode`.
+   *
+   * @param vertices - Vertices in boundary order.
+   */
   constructor(vertices: readonly PointNode[]) {
     super(vertices, 'Triangle');
   }
 
+  /**
+   * Rebuilds the expression with replacement arguments in their original order.
+   *
+   * @param args - Replacement arguments in the same order as `args` on the original expression.
+   * @returns The rebuilt expression.
+   */
   override withArgs(args: readonly Expr[]): Expr {
     return newTriangle(args.map(asPoint));
   }
 
-  /** The triangles are similar (SymPy is_similar). */
+  /**
+   * The triangles are similar.
+   *
+   * @param t2 - Tensor expression containing Riemann factors.
+   * @returns The triangles are similar.
+   * @see SymPy `sympy.geometry.polygon.Triangle.is_similar`
+   */
   override isSimilar(t2: GeometryEntity): boolean {
     if (!(t2 instanceof PolygonNode)) return false;
     const [a1, a2, a3] = this.sides.map((s) => s.length);
@@ -774,29 +1116,54 @@ export class TriangleNode extends PolygonNode {
     return sim(A, B, C) || sim(A, C, B) || sim(B, A, C) || sim(B, C, A) || sim(C, A, B) || sim(C, B, A);
   }
 
-  /** All sides have the same length (SymPy is_equilateral). */
+  /**
+   * All sides have the same length.
+   *
+   * @returns Whether all three side lengths are equal.
+   * @see SymPy `sympy.geometry.polygon.Triangle.is_equilateral`
+   */
   isEquilateral(): boolean {
     return new Set(this.sides.map((s) => s.length.key)).size <= 1;
   }
 
-  /** Two sides have the same length (SymPy is_isosceles). */
+  /**
+   * Two sides have the same length.
+   *
+   * @returns Whether at least two side lengths are equal.
+   * @see SymPy `sympy.geometry.polygon.Triangle.is_isosceles`
+   */
   isIsosceles(): boolean {
     return new Set(this.sides.map((s) => s.length.key)).size < 3;
   }
 
-  /** All sides have different lengths (SymPy is_scalene). */
+  /**
+   * All sides have different lengths.
+   *
+   * @returns Whether the three side lengths are pairwise distinct.
+   * @see SymPy `sympy.geometry.polygon.Triangle.is_scalene`
+   */
   isScalene(): boolean {
     return new Set(this.sides.map((s) => s.length.key)).size === 3;
   }
 
-  /** The triangle has a right angle (SymPy is_right). */
+  /**
+   * The triangle has a right angle.
+   *
+   * @returns The triangle has a right angle.
+   * @see SymPy `sympy.geometry.polygon.Triangle.is_right`
+   */
   isRight(): boolean {
     const [s0, s1, s2] = this.sides.map(d);
     const [a, b, c] = [d(s0), d(s1), d(s2)];
     return a.isPerpendicular(b) || b.isPerpendicular(c) || a.isPerpendicular(c);
   }
 
-  /** The altitude from each vertex (SymPy altitudes). */
+  /**
+   * The altitude from each vertex.
+   *
+   * @returns The altitude from each vertex.
+   * @see SymPy `sympy.geometry.polygon.Triangle.altitudes`
+   */
   get altitudes(): ExprMap<Expr> {
     const s = this.sides;
     const v = this.vertices;
@@ -807,7 +1174,12 @@ export class TriangleNode extends PolygonNode {
     ]);
   }
 
-  /** The intersection of the altitudes (SymPy orthocenter). */
+  /**
+   * The intersection of the altitudes.
+   *
+   * @returns The intersection of the altitudes.
+   * @see SymPy `sympy.geometry.polygon.Triangle.orthocenter`
+   */
   get orthocenter(): PointNode {
     const a = this.altitudes;
     const v = this.vertices;
@@ -816,23 +1188,43 @@ export class TriangleNode extends PolygonNode {
     return asPoint(at(l0.intersection(l1), 0));
   }
 
-  /** The center of the circumcircle (SymPy circumcenter). */
+  /**
+   * The center of the circumcircle.
+   *
+   * @returns The center of the circumcircle.
+   * @see SymPy `sympy.geometry.polygon.Triangle.circumcenter`
+   */
   get circumcenter(): PointNode {
     const [a, b] = this.sides.map((x) => x.perpendicularBisector());
     return asPoint(at(d(a).intersection(d(b)), 0));
   }
 
-  /** The radius of the circumcircle (SymPy circumradius). */
+  /**
+   * The radius of the circumcircle.
+   *
+   * @returns The radius of the circumcircle.
+   * @see SymPy `sympy.geometry.polygon.Triangle.circumradius`
+   */
   get circumradius(): Expr {
     return this.circumcenter.distance(at(this.vertices, 0));
   }
 
-  /** The circle through the vertices (SymPy circumcircle). */
+  /**
+   * The circle through the vertices.
+   *
+   * @returns The circle through the vertices.
+   * @see SymPy `sympy.geometry.polygon.Triangle.circumcircle`
+   */
   get circumcircle(): GeometryEntity {
     return newCircle(this.circumcenter, this.circumradius);
   }
 
-  /** The angle bisectors from each vertex to the opposite side (SymPy Triangle.bisectors). */
+  /**
+   * The angle bisectors from each vertex to the opposite side.
+   *
+   * @returns The angle bisectors from each vertex to the opposite side.
+   * @see SymPy `sympy.geometry.polygon.Triangle.bisectors`
+   */
   override bisectors(): ExprMap<LinearEntity> {
     const s = this.sides.map((l) => Line(l));
     const v = this.vertices;
@@ -845,7 +1237,12 @@ export class TriangleNode extends PolygonNode {
     ]);
   }
 
-  /** The center of the incircle (SymPy incenter). */
+  /**
+   * The center of the incircle.
+   *
+   * @returns The center of the incircle.
+   * @see SymPy `sympy.geometry.polygon.Triangle.incenter`
+   */
   get incenter(): PointNode {
     const s = this.sides;
     const l = [1, 2, 0].map((i) => at(s, i).length);
@@ -856,17 +1253,32 @@ export class TriangleNode extends PolygonNode {
     return toPoint([x, y]);
   }
 
-  /** The radius of the incircle (SymPy inradius). */
+  /**
+   * The radius of the incircle.
+   *
+   * @returns The radius of the incircle.
+   * @see SymPy `sympy.geometry.polygon.Triangle.inradius`
+   */
   get inradius(): Expr {
     return simplify(mul(2, this.area, pow(this.perimeter, -1)));
   }
 
-  /** The inscribed circle (SymPy incircle). */
+  /**
+   * The inscribed circle.
+   *
+   * @returns The inscribed circle.
+   * @see SymPy `sympy.geometry.polygon.Triangle.incircle`
+   */
   get incircle(): GeometryEntity {
     return newCircle(this.incenter, this.inradius);
   }
 
-  /** The radius of the excircle opposite each side (SymPy exradii). */
+  /**
+   * The radius of the excircle opposite each side.
+   *
+   * @returns The radius of the excircle opposite each side.
+   * @see SymPy `sympy.geometry.polygon.Triangle.exradii`
+   */
   get exradii(): ExprMap<Expr> {
     const side = this.sides;
     const [a, b, c] = side.map((x) => x.length);
@@ -879,7 +1291,12 @@ export class TriangleNode extends PolygonNode {
     ]);
   }
 
-  /** The center of the excircle opposite each side, by SymPy's formula (SymPy excenters). */
+  /**
+   * The center of the excircle opposite each side, by SymPy's formula.
+   *
+   * @returns The center of the excircle opposite each side, by SymPy's formula.
+   * @see SymPy `sympy.geometry.polygon.Triangle.excenters`
+   */
   get excenters(): ExprMap<Expr> {
     const s = this.sides;
     const v = this.vertices;
@@ -896,7 +1313,12 @@ export class TriangleNode extends PolygonNode {
     ]);
   }
 
-  /** The median from each vertex (SymPy medians). */
+  /**
+   * The median from each vertex.
+   *
+   * @returns The median from each vertex.
+   * @see SymPy `sympy.geometry.polygon.Triangle.medians`
+   */
   get medians(): ExprMap<Expr> {
     const s = this.sides;
     const v = this.vertices;
@@ -907,20 +1329,35 @@ export class TriangleNode extends PolygonNode {
     ]);
   }
 
-  /** The triangle of the midpoints of the sides (SymPy medial). */
+  /**
+   * The triangle of the midpoints of the sides.
+   *
+   * @returns The triangle of the midpoints of the sides.
+   * @see SymPy `sympy.geometry.polygon.Triangle.medial`
+   */
   get medial(): GeometryEntity {
     const s = this.sides;
     return newTriangle([at(s, 0).midpoint, at(s, 1).midpoint, at(s, 2).midpoint]);
   }
 
-  /** The nine-point circle (SymPy nine_point_circle). */
+  /**
+   * The nine-point circle.
+   *
+   * @returns The nine-point circle.
+   * @see SymPy `sympy.geometry.polygon.Triangle.nine_point_circle`
+   */
   get ninePointCircle(): GeometryEntity {
     const m = cast(this.medial, PolygonNode, 'Triangle');
     const [a, b, c] = m.vertices;
     return newCircle(d(a), d(b), d(c));
   }
 
-  /** The Euler line, or the orthocenter of an equilateral triangle (SymPy eulerline). */
+  /**
+   * The Euler line, or the orthocenter of an equilateral triangle.
+   *
+   * @returns The Euler line, or the orthocenter of an equilateral triangle.
+   * @see SymPy `sympy.geometry.polygon.Triangle.eulerline`
+   */
   get eulerline(): GeometryEntity {
     if (this.isEquilateral()) return this.orthocenter;
     return Line(this.orthocenter, this.circumcenter);
@@ -999,12 +1436,24 @@ export function newRegularPolygon(cIn: PointInput, rIn: ExprLike, nIn: ExprLike,
   return new RegularPolygonNode(c, d(r), d(n), rv);
 }
 
-/** Degrees to radians (SymPy rad). */
+/**
+ * Degrees to radians.
+ *
+ * @param deg_ - Angle in degrees.
+ * @returns The equivalent angle in radians.
+ * @see SymPy `sympy.geometry.polygon.rad`
+ */
 export function rad(deg_: ExprLike): Expr {
   return mul(deg_, S.Pi, Rational.of(1n, 180n));
 }
 
-/** Radians to degrees (SymPy deg). */
+/**
+ * Radians to degrees.
+ *
+ * @param r - Angle in radians.
+ * @returns The equivalent angle in degrees.
+ * @see SymPy `sympy.geometry.polygon.deg`
+ */
 export function deg(r: ExprLike): Expr {
   return mul(r, pow(S.Pi, -1), 180);
 }
@@ -1032,7 +1481,7 @@ function sas(l1: Expr, dg: Expr, l2: Expr): GeometryEntity {
   return newTriangle([[0, 0], [l2, 0], [mul(cos(rad(dg)), l1), mul(sin(rad(dg)), l1)]]);
 }
 
-/** Options of Polygon (SymPy n: a regular polygon). */
+/** Options of Polygon. */
 export interface PolygonOptions {
   /** The number of sides of a regular polygon (Polygon(center, radius, {n})). */
   n?: number;
@@ -1040,7 +1489,7 @@ export interface PolygonOptions {
   evaluate?: boolean;
 }
 
-/** Options of Triangle (SymPy sss, asa, sas). */
+/** Options of Triangle. */
 export interface TriangleOptions {
   /** Three side lengths. */
   sss?: readonly ExprLike[];
@@ -1056,9 +1505,19 @@ const evaluateOpt = (o: Record<string, unknown>): { evaluate?: boolean } => (typ
 const triple = (v: unknown): Expr[] | undefined => (Array.isArray(v) ? v.map((x) => simplify(sympify(x))) : undefined);
 
 /**
- * SymPy Polygon(*vertices): a Polygon, Triangle, Segment or Point;
- * Polygon(center, radius, {n}) or Polygon(center, radius, rot, {n}) is a
- * RegularPolygon.
+ * Constructs the polygon bounded by the supplied vertices. Supplying a center, radius and side
+ * count constructs a regular polygon.
+ *
+ * @param args - Boundary vertices, or center and radius with the number of regular sides in `n`.
+ * @returns The resulting geometric entity, including a lower-dimensional entity for degenerate input.
+ * @see SymPy `sympy.geometry.polygon.Polygon`
+ * @example
+ * ```ts
+ * import { Polygon } from '@symjs/symjs';
+ *
+ * Polygon([0, 0], [1, 0], [5, 1], [0, 1]); // => Polygon(Point2D(0, 0), Point2D(1, 0), Point2D(5, 1), Point2D(0, 1))
+ * Polygon([0, 0], [1, 0]); // => Segment2D(Point2D(0, 0), Point2D(1, 0))
+ * ```
  */
 export const Polygon = /* @__PURE__ */ callableClass(PolygonNode, (...args: (PointInput | ExprLike | PolygonOptions)[]): GeometryEntity => {
   const last = args[args.length - 1];
@@ -1078,7 +1537,23 @@ const exprLike = (v: unknown): ExprLike => {
   throw new TypeError(`Expecting an expression, not ${typeof v}`);
 };
 
-/** SymPy RegularPolygon(c, r, n, rot=0). */
+/**
+ * A regular polygon specified by its center, circumradius, number of sides and rotation.
+ *
+ * @param c - Center of the polygon.
+ * @param r - Circumradius of the polygon.
+ * @param n - Number of sides.
+ * @param rot - Initial rotation in radians.
+ * @returns The resulting `RegularPolygon` expression.
+ * @see SymPy `sympy.geometry.polygon.RegularPolygon`
+ * @example
+ * ```ts
+ * import { RegularPolygon } from '@symjs/symjs';
+ *
+ * const p = RegularPolygon([0, 0], 5, 3);
+ * p.vertices[0]; // => Point2D(5, 0)
+ * ```
+ */
 export const RegularPolygon = /* @__PURE__ */ callableClass(
   RegularPolygonNode,
   (c: PointInput, r: ExprLike, n: ExprLike, rot: ExprLike = 0): RegularPolygonNode => newRegularPolygon(c, r, n, rot),
@@ -1086,8 +1561,18 @@ export const RegularPolygon = /* @__PURE__ */ callableClass(
 export type RegularPolygon = RegularPolygonNode;
 
 /**
- * SymPy Triangle(p1, p2, p3), or Triangle({sss}), Triangle({asa}),
- * Triangle({sas}) from sides and angles in degrees.
+ * A polygon with three vertices and three sides.
+ *
+ * @param args - Three vertices or side and angle data supplied as `sss`, `asa` or `sas`.
+ * @returns The resulting geometric entity, including a lower-dimensional entity for degenerate input.
+ * @throws GeometryError when the inputs do not specify three vertices or a supported side and angle combination.
+ * @see SymPy `sympy.geometry.polygon.Triangle`
+ * @example
+ * ```ts
+ * import { Triangle } from '@symjs/symjs';
+ *
+ * Triangle([0, 0], [4, 0], [4, 3]); // => Triangle(Point2D(0, 0), Point2D(4, 0), Point2D(4, 3))
+ * ```
  */
 export const Triangle = /* @__PURE__ */ callableClass(TriangleNode, (...args: (PointInput | TriangleOptions)[]): GeometryEntity => {
   const last = args[args.length - 1];

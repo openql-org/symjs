@@ -100,7 +100,22 @@ function parseIndexed(expr: Expr, ranges: readonly IndexRange[] = []): IndexedRe
   throw new NotImplementedError('unsupported operation on indexed array entries');
 }
 
-/** Turn explicit sums and repeated indices into contractions and diagonals. */
+/**
+ * Turn explicit sums and repeated indices into contractions and diagonals.
+ *
+ * @param expr - Symbolic expression on which to operate.
+ * @param firstIndices - Free indices to place first in the array axis order.
+ * @returns The corresponding array expression, with the requested free axes first.
+ * @throws RangeError when a free index is repeated.
+ * @see SymPy `sympy.tensor.array.expressions.from_indexed_to_array.convert_indexed_to_array`
+ * @example
+ * ```ts
+ * import { MatrixSymbol, convertIndexedToArray, ex } from '@symjs/symjs';
+ *
+ * const M = MatrixSymbol('M', 3, 3);
+ * convertIndexedToArray(M.at(ex`i`, ex`i`)); // => ArrayDiagonal(M, (0, 1))
+ * ```
+ */
 export function convertIndexedToArray(expr: Expr, firstIndices: readonly Expr[] = []): Expr {
   if (new Set(firstIndices.map((i) => i.key)).size !== firstIndices.length) throw new RangeError('free indices cannot be repeated');
   if (hasShiftedIndices(expr)) return expr;

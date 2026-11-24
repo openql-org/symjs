@@ -24,33 +24,66 @@ const isInfinite = (e: Expr): boolean => e instanceof Special && (e.name === 'oo
 /** The range argument of Idx: a dimension n (bounds 0 and n - 1) or a pair [lower, upper]. */
 export type IdxRange = ExprLike | readonly ExprLike[];
 
-/** Bounds of each index of an Indexed expression (SymPy Indexed.ranges). */
+/**
+ * Finds the inclusive index bounds of an indexed expression.
+ *
+ * @param e - Expression to inspect.
+ * @returns One pair of inclusive bounds per index, or `NoMatch` where bounds are unavailable.
+ * @see SymPy `sympy.tensor.indexed.Indexed.ranges`
+ */
 export function ranges(e: Indexed): (readonly [Expr, Expr] | NoMatchResult)[] {
   return e.indices.map((i) => i instanceof IdxNode && !isNoMatch(i.lower) && !isNoMatch(i.upper) ? [i.lower, i.upper] : NoMatch);
 }
 
 /**
- * SymPy Idx(label, range): an integer index. The label is an integer
- * symbol (a string gives an integer Symbol) or an integer expression; the
- * range is a dimension n (bounds 0 and n - 1) or a pair [lower, upper].
+ * An integer index. The label is an integer symbol (a string gives an integer Symbol) or an
+ * integer expression; the range is a dimension n (bounds 0 and n - 1) or a pair [lower, upper].
  *
- * Idx is a symbol (it prints as its label, is integer and real, is its own
- * free symbol and can be differentiated by); its structural key includes
- * the bounds, so `Idx('i', 3)` differs from `Idx('i')` and from the symbol
- * `i`. `Idx(n)` with an integer n gives n itself.
+ * Idx is a symbol (it prints as its label, is integer and real, is its own free symbol and can be
+ * differentiated by); its structural key includes the bounds, so `Idx('i', 3)` differs from
+ * `Idx('i')` and from the symbol `i`. `Idx(n)` with an integer n gives n itself.
+ *
+ * @see SymPy `sympy.tensor.indexed.Idx`
  */
 export class IdxNode extends Sym {
+  /**
+   * The index label followed by the bounds tuple when a range is supplied.
+   *
+   * @see SymPy `sympy.tensor.indexed.Idx.args`
+   */
   override readonly args: readonly Expr[];
+  /**
+   * The top-level function in an expression.
+   *
+   * @returns The top-level function in an expression.
+   * @see SymPy `sympy.tensor.indexed.Idx.func`
+   */
   override get func(): typeof makeIdx {
     return makeIdx;
   }
+  /**
+   * Whether the index behaves as an atomic expression.
+   *
+   * @returns Whether the index behaves as an atomic expression.
+   */
   override get isAtom(): boolean {
     return true;
   }
-  /** The label (an integer symbol or integer expression). */
+  /**
+   * The label (an integer symbol or integer expression).
+   *
+   * @see SymPy `sympy.tensor.indexed.Idx.label`
+   */
   readonly label: Expr;
   readonly #bounds: readonly [Expr, Expr] | undefined;
 
+  /**
+   * Constructs an instance of `IdxNode`.
+   *
+   * @param label - Symbolic label used to identify this object.
+   * @param range - Dimension or pair of inclusive index bounds.
+   * @throws TypeError when the label is not integer-valued or the node constructor receives a literal integer label.
+   */
   constructor(label: string | Expr, range?: IdxRange) {
     const lab = typeof label === 'string' ? new Sym(label, { integer: true }) : label;
     if (lab instanceof Rational) throw new TypeError('Idx: an integer label gives the integer itself; call Idx(n)');
@@ -61,22 +94,40 @@ export class IdxNode extends Sym {
     this.args = [lab, ...(this.#bounds ? [new TupleNode(this.#bounds)] : [])];
   }
 
-  /** The lower bound (SymPy Idx.lower), or NoMatch when the index has no range (SymPy None). */
+  /**
+   * The lower bound, or NoMatch when the index has no range.
+   *
+   * @returns The inclusive lower bound, or `NoMatch` for an unbounded index.
+   * @see SymPy `sympy.tensor.indexed.Idx.lower`
+   */
   get lower(): Expr | NoMatchResult {
     return this.#bounds ? this.#bounds[0] : NoMatch;
   }
-  /** The upper bound (SymPy Idx.upper), or NoMatch when the index has no range (SymPy None). */
+  /**
+   * The upper bound, or NoMatch when the index has no range.
+   *
+   * @returns The inclusive upper bound, or `NoMatch` for an unbounded index.
+   * @see SymPy `sympy.tensor.indexed.Idx.upper`
+   */
   get upper(): Expr | NoMatchResult {
     return this.#bounds ? this.#bounds[1] : NoMatch;
   }
 
+  /**
+   * Applies a substitution to the label and bounds of the index.
+   *
+   * @param f - Substitution function applied to the label and bounds.
+   * @returns The transformed tensor expression.
+   */
   override substituteInner(f: (e: Expr) => Expr): Expr {
     return makeIdx(f(this.label), this.#bounds?.map(f));
   }
 
   /**
-   * LaTeX form like SymPy: the label with the range as a subscript
-   * (`{i}_{0\mathrel{..}\nobreak 3}`), or the label alone.
+   * LaTeX form like SymPy: the label with the range as a subscript (`{i}_{0\mathrel{..}\nobreak
+   * 3}`), or the label alone.
+   *
+   * @returns The formatted text.
    */
   override toLatex(): string {
     const lab = latex(this.label);

@@ -23,11 +23,11 @@ import type { CoordSysBase} from './basisdependent';
 import { basisAdd, expressHook, vectorHooks } from './basisdependent';
 import { Cross, CrossNode, Dot, OPERATOR_PRECEDENCE, Vector, connected, VectorAddNode, VectorMulNode, coordSystems, parenMul, vectorFamily } from './vector';
 
-/** The options of the operators (SymPy keyword arguments). */
+/** The options of the operators. */
 export interface OperatorOptions {
   /**
-   * Evaluate the derivatives (SymPy doit; true by default for the
-   * functions, false for the methods of Del).
+   * Evaluate the derivatives (SymPy doit; true by default for the functions, false for the methods
+   * of Del).
    */
   readonly doit?: boolean;
 }
@@ -48,88 +48,286 @@ abstract class VectorOperator extends ExtensionExpr {
   }
 }
 
-/** SymPy Gradient(expr): the unevaluated gradient of a scalar field. */
+/**
+ * The unevaluated gradient of a scalar field.
+ *
+ * @see SymPy `sympy.vector.operators.Gradient`
+ * @example
+ * ```ts
+ * import { CoordSys3D, Gradient } from '@symjs/symjs';
+ *
+ * const R = CoordSys3D('R');
+ * Gradient(R.x.mul(R.y).mul(R.z)); // => Gradient(R.x*R.y*R.z)
+ * ```
+ */
 export class GradientNode extends VectorOperator {
+  /**
+   * Constructs an instance of `GradientNode`.
+   *
+   * @param expr - Symbolic expression on which to operate.
+   */
   constructor(expr: ExprLike) {
     super('Gradient', [sympify(expr)]);
   }
+  /**
+   * Rebuilds the expression with replacement arguments in their original order.
+   *
+   * @param args - Replacement arguments in the same order as `args` on the original expression.
+   * @returns The rebuilt expression.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new GradientNode(at(args, 0));
   }
-  /** A gradient is a vector. */
+  /**
+   * A gradient is a vector.
+   *
+   * @returns A gradient is a vector.
+   * @see SymPy `sympy.vector.operators.Gradient.is_scalar`
+   */
   override get isScalar(): boolean {
     return false;
   }
+  /**
+   * Evaluates this node when expression evaluation reaches it.
+   *
+   * @returns The evaluated expression.
+   */
   override doitSelf(): Expr {
     return gradient(this.expr, { doit: true });
   }
+  /**
+   * Formats the expression as LaTeX.
+   *
+   * @param print - Formatter for a child expression.
+   * @returns The formatted LaTeX.
+   */
   override printLatex(print: (e: Expr) => string): string {
     return `\\nabla ${parenMul(this.expr, print)}`;
   }
 }
 
-/** SymPy Divergence(expr): the unevaluated divergence of a vector field. */
+/**
+ * The unevaluated divergence of a vector field.
+ *
+ * @see SymPy `sympy.vector.operators.Divergence`
+ * @example
+ * ```ts
+ * import { CoordSys3D, Divergence } from '@symjs/symjs';
+ *
+ * const R = CoordSys3D('R');
+ * const field = R.i.mul(R.y.mul(R.z)).add(R.j.mul(R.x.mul(R.z))).add(R.k.mul(R.x.mul(R.y)));
+ * Divergence(field); // => Divergence(R.y*R.z*R.i + R.x*R.z*R.j + R.x*R.y*R.k)
+ * ```
+ */
 export class DivergenceNode extends VectorOperator {
+  /**
+   * Constructs an instance of `DivergenceNode`.
+   *
+   * @param expr - Symbolic expression on which to operate.
+   */
   constructor(expr: ExprLike) {
     super('Divergence', [sympify(expr)]);
   }
+  /**
+   * Rebuilds the expression with replacement arguments in their original order.
+   *
+   * @param args - Replacement arguments in the same order as `args` on the original expression.
+   * @returns The rebuilt expression.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new DivergenceNode(at(args, 0));
   }
+  /**
+   * Evaluates this node when expression evaluation reaches it.
+   *
+   * @returns The evaluated expression.
+   */
   override doitSelf(): Expr {
     return divergence(this.expr, { doit: true });
   }
+  /**
+   * Formats the expression as LaTeX.
+   *
+   * @param print - Formatter for a child expression.
+   * @returns The formatted LaTeX.
+   */
   override printLatex(print: (e: Expr) => string): string {
     return `\\nabla\\cdot ${parenMul(this.expr, print)}`;
   }
 }
 
-/** SymPy Curl(expr): the unevaluated curl of a vector field. */
+/**
+ * The unevaluated curl of a vector field.
+ *
+ * @see SymPy `sympy.vector.operators.Curl`
+ * @example
+ * ```ts
+ * import { CoordSys3D, Curl } from '@symjs/symjs';
+ *
+ * const R = CoordSys3D('R');
+ * const field = R.i.mul(R.y.mul(R.z)).add(R.j.mul(R.x.mul(R.z))).add(R.k.mul(R.x.mul(R.y)));
+ * Curl(field); // => Curl(R.y*R.z*R.i + R.x*R.z*R.j + R.x*R.y*R.k)
+ * ```
+ */
 export class CurlNode extends VectorOperator {
+  /**
+   * Constructs an instance of `CurlNode`.
+   *
+   * @param expr - Symbolic expression on which to operate.
+   */
   constructor(expr: ExprLike) {
     super('Curl', [sympify(expr)]);
   }
+  /**
+   * Rebuilds the expression with replacement arguments in their original order.
+   *
+   * @param args - Replacement arguments in the same order as `args` on the original expression.
+   * @returns The rebuilt expression.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new CurlNode(at(args, 0));
   }
-  /** A curl is a vector. */
+  /**
+   * A curl is a vector.
+   *
+   * @returns A curl is a vector.
+   * @see SymPy `sympy.vector.operators.Curl.is_scalar`
+   */
   override get isScalar(): boolean {
     return false;
   }
+  /**
+   * Evaluates this node when expression evaluation reaches it.
+   *
+   * @returns The evaluated expression.
+   */
   override doitSelf(): Expr {
     return curl(this.expr, { doit: true });
   }
+  /**
+   * Formats the expression as LaTeX.
+   *
+   * @param print - Formatter for a child expression.
+   * @returns The formatted LaTeX.
+   */
   override printLatex(print: (e: Expr) => string): string {
     return `\\nabla\\times ${parenMul(this.expr, print)}`;
   }
 }
 
-/** SymPy Laplacian(expr): the unevaluated Laplacian of a field. */
+/**
+ * The unevaluated Laplacian of a field.
+ *
+ * @see SymPy `sympy.vector.operators.Laplacian`
+ * @example
+ * ```ts
+ * import { CoordSys3D, Laplacian } from '@symjs/symjs';
+ *
+ * const R = CoordSys3D('R');
+ * Laplacian(R.x.pow(3).mul(R.y.pow(2)).mul(R.z.pow(3)).mul(3)); // => Laplacian(3*R.x**3*R.y**2*R.z**3)
+ * ```
+ */
 export class LaplacianNode extends VectorOperator {
+  /**
+   * Constructs an instance of `LaplacianNode`.
+   *
+   * @param expr - Symbolic expression on which to operate.
+   */
   constructor(expr: ExprLike) {
     super('Laplacian', [sympify(expr)]);
   }
+  /**
+   * Rebuilds the expression with replacement arguments in their original order.
+   *
+   * @param args - Replacement arguments in the same order as `args` on the original expression.
+   * @returns The rebuilt expression.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new LaplacianNode(at(args, 0));
   }
+  /**
+   * Evaluates this node when expression evaluation reaches it.
+   *
+   * @returns The evaluated expression.
+   */
   override doitSelf(): Expr {
     return defined(vectorHooks.laplacian, 'laplacian')(this.expr);
   }
+  /**
+   * Formats the expression as LaTeX.
+   *
+   * @param print - Formatter for a child expression.
+   * @returns The formatted LaTeX.
+   */
   override printLatex(print: (e: Expr) => string): string {
     return `\\Delta ${parenMul(this.expr, print)}`;
   }
 }
 
-/** SymPy Gradient(expr). */
+/**
+ * An unevaluated gradient of a scalar field.
+ *
+ * @param expr - Symbolic expression on which to operate.
+ * @returns The resulting `Gradient` expression.
+ * @see SymPy `sympy.vector.operators.Gradient`
+ * @example
+ * ```ts
+ * import { CoordSys3D, Gradient } from '@symjs/symjs';
+ *
+ * const R = CoordSys3D('R');
+ * Gradient(R.x.mul(R.y).mul(R.z)); // => Gradient(R.x*R.y*R.z)
+ * ```
+ */
 export const Gradient = /* @__PURE__ */ callableClass(GradientNode, (expr: ExprLike): GradientNode => new GradientNode(expr));
 export type Gradient = GradientNode;
-/** SymPy Divergence(expr). */
+/**
+ * An unevaluated divergence of a vector field.
+ *
+ * @param expr - Symbolic expression on which to operate.
+ * @returns The resulting `Divergence` expression.
+ * @see SymPy `sympy.vector.operators.Divergence`
+ * @example
+ * ```ts
+ * import { CoordSys3D, Divergence } from '@symjs/symjs';
+ *
+ * const R = CoordSys3D('R');
+ * const field = R.i.mul(R.y.mul(R.z)).add(R.j.mul(R.x.mul(R.z))).add(R.k.mul(R.x.mul(R.y)));
+ * Divergence(field); // => Divergence(R.y*R.z*R.i + R.x*R.z*R.j + R.x*R.y*R.k)
+ * ```
+ */
 export const Divergence = /* @__PURE__ */ callableClass(DivergenceNode, (expr: ExprLike): DivergenceNode => new DivergenceNode(expr));
 export type Divergence = DivergenceNode;
-/** SymPy Curl(expr). */
+/**
+ * An unevaluated curl of a vector field.
+ *
+ * @param expr - Symbolic expression on which to operate.
+ * @returns The resulting `Curl` expression.
+ * @see SymPy `sympy.vector.operators.Curl`
+ * @example
+ * ```ts
+ * import { CoordSys3D, Curl } from '@symjs/symjs';
+ *
+ * const R = CoordSys3D('R');
+ * const field = R.i.mul(R.y.mul(R.z)).add(R.j.mul(R.x.mul(R.z))).add(R.k.mul(R.x.mul(R.y)));
+ * Curl(field); // => Curl(R.y*R.z*R.i + R.x*R.z*R.j + R.x*R.y*R.k)
+ * ```
+ */
 export const Curl = /* @__PURE__ */ callableClass(CurlNode, (expr: ExprLike): CurlNode => new CurlNode(expr));
 export type Curl = CurlNode;
-/** SymPy Laplacian(expr). */
+/**
+ * An unevaluated Laplacian of a scalar or vector field.
+ *
+ * @param expr - Symbolic expression on which to operate.
+ * @returns The resulting `Laplacian` expression.
+ * @see SymPy `sympy.vector.operators.Laplacian`
+ * @example
+ * ```ts
+ * import { CoordSys3D, Laplacian } from '@symjs/symjs';
+ *
+ * const R = CoordSys3D('R');
+ * Laplacian(R.x.pow(3).mul(R.y.pow(2)).mul(R.z.pow(3)).mul(3)); // => Laplacian(3*R.x**3*R.y**2*R.z**3)
+ * ```
+ */
 export const Laplacian = /* @__PURE__ */ callableClass(LaplacianNode, (expr: ExprLike): LaplacianNode => new LaplacianNode(expr));
 export type Laplacian = LaplacianNode;
 
@@ -158,8 +356,21 @@ const only = (systems: CoordSysBase[]): CoordSysBase => defined(systems[0], 'coo
 const vectorSum = (terms: readonly Expr[]): Expr => basisAdd(vectorFamily, terms);
 
 /**
- * SymPy curl(vect, doit=True): the curl of a vector field in the base
- * scalars of its coordinate system (with Derivative instances unless doit).
+ * The curl of a vector field in the base scalars of its coordinate system (with Derivative
+ * instances unless doit).
+ *
+ * @param vectIn - Vector field to which the operator is applied.
+ * @param opts - Settings described by {@link OperatorOptions}.
+ * @returns The curl of a vector field in the base scalars of its coordinate system (with Derivative instances unless doit).
+ * @throws RangeError when the operand is unsuitable for the vector differential operator.
+ * @see SymPy `sympy.vector.operators.curl`
+ * @example
+ * ```ts
+ * import { CoordSys3D, curl } from '@symjs/symjs';
+ *
+ * const R = CoordSys3D('R');
+ * curl(R.i.mul(R.x.mul(R.y).mul(R.z))); // => R.x*R.y*R.j + (-R.x*R.z)*R.k
+ * ```
  */
 export function curl(vectIn: ExprLike, opts: OperatorOptions = {}): Expr {
   const vect = sympify(vectIn);
@@ -216,8 +427,20 @@ function diffConditional(expr: Expr, baseScalar: Expr, coeff1: Expr, coeff2: Exp
 }
 
 /**
- * SymPy divergence(vect, doit=True): the divergence of a vector field in
- * the base scalars of its coordinate system.
+ * The divergence of a vector field in the base scalars of its coordinate system.
+ *
+ * @param vectIn - Vector field to which the operator is applied.
+ * @param opts - Settings described by {@link OperatorOptions}.
+ * @returns The divergence of a vector field in the base scalars of its coordinate system.
+ * @throws RangeError when the operand is unsuitable for the vector differential operator.
+ * @see SymPy `sympy.vector.operators.divergence`
+ * @example
+ * ```ts
+ * import { CoordSys3D, divergence } from '@symjs/symjs';
+ *
+ * const R = CoordSys3D('R');
+ * divergence(R.j.mul(R.y.mul(R.z).mul(2))); // => 2*R.z
+ * ```
  */
 export function divergence(vectIn: ExprLike, opts: OperatorOptions = {}): Expr {
   const vect = sympify(vectIn);
@@ -266,8 +489,19 @@ function splitMulArgs(factors: readonly Expr[]): Expr[] {
 }
 
 /**
- * SymPy gradient(scalar_field, doit=True): the gradient of a scalar field
- * in the base scalars of its coordinate system.
+ * The gradient of a scalar field in the base scalars of its coordinate system.
+ *
+ * @param fieldIn - Scalar or vector field on the region.
+ * @param opts - Settings described by {@link OperatorOptions}.
+ * @returns The gradient of a scalar field in the base scalars of its coordinate system.
+ * @see SymPy `sympy.vector.operators.gradient`
+ * @example
+ * ```ts
+ * import { CoordSys3D, gradient } from '@symjs/symjs';
+ *
+ * const R = CoordSys3D('R');
+ * gradient(R.x.mul(R.y).mul(R.z)); // => R.y*R.z*R.i + R.x*R.z*R.j + R.x*R.y*R.k
+ * ```
  */
 export function gradient(fieldIn: ExprLike, opts: OperatorOptions = {}): Expr {
   const field = sympify(fieldIn);

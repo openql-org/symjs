@@ -57,22 +57,52 @@ function integrateOver(f: Expr, variables: readonly Expr[], limits: ExprMap<[Exp
 }
 
 /**
- * SymPy ParametricIntegral(field, parametricregion): the integral of a
- * field over a parametric region (unevaluated when the integral cannot be
+ * The integral of a field over a parametric region (unevaluated when the integral cannot be
  * computed).
+ *
+ * @see SymPy `sympy.vector.integrals.ParametricIntegral`
+ * @example
+ * ```ts
+ * import { ParametricIntegral, ParametricRegion, ex } from '@symjs/symjs';
+ *
+ * const curve = ParametricRegion([ex`3*t - 2`, ex`t + 1`], [ex`t`, 1, 2]);
+ * ParametricIntegral(1, curve); // => sqrt(10)
+ * ```
  */
 export class ParametricIntegralNode extends ExtensionExpr {
+  /**
+   * Constructs an instance of `ParametricIntegralNode`.
+   *
+   * @param field - Field to evaluate or differentiate.
+   * @param region - Region or integration limits.
+   */
   constructor(field: Expr, region: ParametricRegionNode) {
     super('ParametricIntegral', [field, region]);
   }
+  /**
+   * Rebuilds the expression with replacement arguments in their original order.
+   *
+   * @param args - Replacement arguments in the same order as `args` on the original expression.
+   * @returns The rebuilt expression.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return parametricIntegral(at(args, 0), cast(at(args, 1), ParametricRegionNode, 'ParametricRegion'));
   }
-  /** SymPy field. */
+  /**
+   * Field to evaluate or differentiate.
+   *
+   * @returns Field to evaluate or differentiate.
+   * @see SymPy `sympy.vector.integrals.ParametricIntegral.field`
+   */
   get field(): Expr {
     return at(this.args, 0);
   }
-  /** SymPy parametricregion. */
+  /**
+   * The parametric region of integration.
+   *
+   * @returns The parametric region of integration.
+   * @see SymPy `sympy.vector.integrals.ParametricIntegral.parametricregion`
+   */
   get parametricregion(): ParametricRegionNode {
     return cast(at(this.args, 1), ParametricRegionNode, 'ParametricRegion');
   }
@@ -117,7 +147,21 @@ function parametricIntegral(fieldIn: ExprLike, region: ParametricRegionNode): Ex
   return result instanceof Integral ? new ParametricIntegralNode(field, region) : result;
 }
 
-/** SymPy ParametricIntegral(field, parametricregion). */
+/**
+ * The integral of a scalar or vector field over a parametrized region.
+ *
+ * @param field - Field to evaluate or differentiate.
+ * @param region - Region or integration limits.
+ * @returns The value of the integral, or a parametric integral if it cannot be evaluated.
+ * @see SymPy `sympy.vector.integrals.ParametricIntegral`
+ * @example
+ * ```ts
+ * import { ParametricIntegral, ParametricRegion, ex } from '@symjs/symjs';
+ *
+ * const curve = ParametricRegion([ex`3*t - 2`, ex`t + 1`], [ex`t`, 1, 2]);
+ * ParametricIntegral(1, curve); // => sqrt(10)
+ * ```
+ */
 export const ParametricIntegral = /* @__PURE__ */ callableClass(ParametricIntegralNode, (field: ExprLike, region: ParametricRegionNode): Expr => parametricIntegral(field, region));
 export type ParametricIntegral = ParametricIntegralNode;
 
@@ -125,9 +169,21 @@ export type ParametricIntegral = ParametricIntegralNode;
 export type IntegrationLimit = Sym | readonly [Sym, ExprLike, ExprLike] | TupleNode;
 
 /**
- * SymPy vector_integrate(field, *region): the integral of a field over a
- * parametric, implicit or geometric region, or with respect to variables
- * (with their limits).
+ * The integral of a field over a parametric, implicit or geometric region, or with respect to
+ * variables (with their limits).
+ *
+ * @param fieldIn - Scalar or vector field on the region.
+ * @param region - Region or integration limits.
+ * @returns The integral of a field over a parametric, implicit or geometric region, or with respect to variables (with their limits).
+ * @throws TypeError when a limit does not specify a variable and bounds.
+ * @see SymPy `sympy.vector.integrals.vector_integrate`
+ * @example
+ * ```ts
+ * import { CoordSys3D, vectorIntegrate } from '@symjs/symjs';
+ *
+ * const C = CoordSys3D('C');
+ * vectorIntegrate(C.y.pow(3).mul(12), [C.y, 1, 3]); // => 240
+ * ```
  */
 export function vectorIntegrate(fieldIn: ExprLike, ...region: (Expr | IntegrationLimit)[]): Expr {
   const field = sympify(fieldIn);

@@ -27,41 +27,98 @@ import { solveEquations } from './solvehelp';
 const as2D = (e: Expr): Point2DNode => cast(e, Point2DNode, 'Point2DNode');
 const asLine = (e: Expr): Line2DNode => cast(e, Line2DNode, 'Line2DNode');
 
-/** SymPy Parabola: the points at equal distance from a focus and a directrix. */
+/**
+ * The points at equal distance from a focus and a directrix.
+ *
+ * @see SymPy `sympy.geometry.parabola.Parabola`
+ * @example
+ * ```ts
+ * import { Line, Parabola } from '@symjs/symjs';
+ *
+ * const p = Parabola([0, 0], Line([5, 8], [7, 8]));
+ * p.focus; // => Point2D(0, 0)
+ * p.directrix; // => Line2D(Point2D(5, 8), Point2D(7, 8))
+ * ```
+ */
 export class ParabolaNode extends GeometrySet {
+  /**
+   * Constructs an instance of `ParabolaNode`.
+   *
+   * @param focus - Focus of the parabola.
+   * @param directrix - Line equidistant from each point of the parabola and its focus.
+   */
   constructor(focus: Point2DNode, directrix: Line2DNode) {
     super('Parabola', [focus, directrix]);
   }
 
+  /**
+   * Rebuilds the expression with replacement arguments in their original order.
+   *
+   * @param args - Replacement arguments in the same order as `args` on the original expression.
+   * @returns The rebuilt expression.
+   */
   override withArgs(args: readonly Expr[]): Expr {
     return newParabola(at(args, 0), at(args, 1));
   }
 
+  /**
+   * The number of coordinates in the surrounding space.
+   *
+   * @returns The number of coordinates in the surrounding space.
+   * @see SymPy `sympy.geometry.parabola.Parabola.ambient_dimension`
+   */
   get ambientDimension(): number {
     return 2;
   }
 
-  /** The focus (SymPy focus). */
+  /**
+   * The focus.
+   *
+   * @returns The focus.
+   * @see SymPy `sympy.geometry.parabola.Parabola.focus`
+   */
   get focus(): Point2DNode {
     return as2D(at(this.args, 0));
   }
 
-  /** The directrix (SymPy directrix). */
+  /**
+   * The directrix.
+   *
+   * @returns The directrix.
+   * @see SymPy `sympy.geometry.parabola.Parabola.directrix`
+   */
   get directrix(): Line2DNode {
     return asLine(at(this.args, 1));
   }
 
-  /** The line through the focus perpendicular to the directrix (SymPy axis_of_symmetry). */
+  /**
+   * The line through the focus perpendicular to the directrix.
+   *
+   * @returns The line through the focus perpendicular to the directrix.
+   * @see SymPy `sympy.geometry.parabola.Parabola.axis_of_symmetry`
+   */
   get axisOfSymmetry(): Line2DNode {
     return this.directrix.perpendicularLine(this.focus);
   }
 
-  /** The eccentricity: 1 (SymPy eccentricity). */
+  /**
+   * The eccentricity: 1.
+   *
+   * @returns The eccentricity: 1.
+   * @see SymPy `sympy.geometry.parabola.Parabola.eccentricity`
+   */
   get eccentricity(): Expr {
     return S.One;
   }
 
-  /** The equation of the parabola in real symbols x and y (SymPy equation). */
+  /**
+   * The equation of the parabola in real symbols x and y.
+   *
+   * @param x - Symbol for the x coordinate.
+   * @param y - Symbol for the y coordinate.
+   * @returns The equation of the parabola in real symbols x and y.
+   * @see SymPy `sympy.geometry.parabola.Parabola.equation`
+   */
   equation(x: string | Sym = 'x', y: string | Sym = 'y'): Expr {
     const [X, Y] = [realSymbol(x), realSymbol(y)];
     const m = this.directrix.slope;
@@ -81,12 +138,22 @@ export class ParabolaNode extends GeometrySet {
     return add(t1, mul(-1, t2));
   }
 
-  /** Half the distance from the focus to the directrix (SymPy focal_length). */
+  /**
+   * Half the distance from the focus to the directrix.
+   *
+   * @returns The distance between the focus and the vertex.
+   * @see SymPy `sympy.geometry.parabola.Parabola.focal_length`
+   */
   get focalLength(): Expr {
     return mul(this.directrix.distance(this.focus), S.Half);
   }
 
-  /** The signed focal length: positive when the parabola opens right or up (SymPy p_parameter). */
+  /**
+   * The signed focal length: positive when the parabola opens right or up.
+   *
+   * @returns The signed focal length: positive when the parabola opens right or up.
+   * @see SymPy `sympy.geometry.parabola.Parabola.p_parameter`
+   */
   get pParameter(): Expr {
     const m = this.directrix.slope;
     let p: Expr;
@@ -99,7 +166,12 @@ export class ParabolaNode extends GeometrySet {
     return mul(p, this.focalLength);
   }
 
-  /** The vertex (SymPy vertex). */
+  /**
+   * The vertex.
+   *
+   * @returns The vertex.
+   * @see SymPy `sympy.geometry.parabola.Parabola.vertex`
+   */
   get vertex(): Point2DNode {
     const f = this.focus;
     const m = this.directrix.slope;
@@ -108,7 +180,14 @@ export class ParabolaNode extends GeometrySet {
     return as2D(at(this.axisOfSymmetry.intersection(this), 0));
   }
 
-  /** The points or entities common to the parabola and o (SymPy intersection). */
+  /**
+   * The points or entities common to the parabola and o.
+   *
+   * @param o - Entity to intersect with this one.
+   * @returns The points or entities common to the parabola and o.
+   * @throws TypeError when a three-dimensional entity is supplied to a planar operation or the operand is not a supported geometric entity.
+   * @see SymPy `sympy.geometry.parabola.Parabola.intersection`
+   */
   override intersection(o: unknown): GeometryEntity[] {
     const [x, y] = [new Sym('x', { real: true }), new Sym('y', { real: true })];
     const peq = this.equation();
@@ -140,6 +219,23 @@ function newParabola(focusIn: PointInput | undefined, directrixIn: unknown): Par
   return new ParabolaNode(focus, directrix);
 }
 
-/** SymPy Parabola(focus, directrix). */
+/**
+ * The points in a plane equidistant from a focus and a directrix line.
+ *
+ * @param focus - Focus of the parabola.
+ * @param directrix - Line equidistant from each point of the parabola and its focus.
+ * @returns The resulting `Parabola` expression.
+ * @throws RangeError when the focus lies on the directrix.
+ * @throws TypeError when the directrix is not a linear entity.
+ * @see SymPy `sympy.geometry.parabola.Parabola`
+ * @example
+ * ```ts
+ * import { Line, Parabola } from '@symjs/symjs';
+ *
+ * const p = Parabola([0, 0], Line([5, 8], [7, 8]));
+ * p.focus; // => Point2D(0, 0)
+ * p.directrix; // => Line2D(Point2D(5, 8), Point2D(7, 8))
+ * ```
+ */
 export const Parabola = /* @__PURE__ */ callableClass(ParabolaNode, (focus: PointInput | undefined, directrix: LinearEntity): ParabolaNode => newParabola(focus === undefined ? undefined : toInput(focus), directrix));
 export type Parabola = ParabolaNode;

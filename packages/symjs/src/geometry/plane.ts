@@ -34,7 +34,7 @@ import { solveEquations } from './solvehelp';
 
 const [px, py, pz, pt] = [new Dummy('plane_dummy'), new Dummy('plane_dummy'), new Dummy('plane_dummy'), new Dummy('plane_dummy')];
 
-/** Options of Plane (SymPy normal_vector and evaluate). */
+/** Options of Plane. */
 export interface PlaneOptions {
   /** The normal vector (instead of two more points). */
   normalVector?: PointInput;
@@ -44,31 +44,74 @@ export interface PlaneOptions {
 
 const as3D = (e: Expr): Point3DNode => cast(e, Point3DNode, 'Point3D');
 
-/** SymPy Plane: a plane through p1 with a normal vector. */
+/**
+ * A plane through p1 with a normal vector.
+ *
+ * @see SymPy `sympy.geometry.plane.Plane`
+ * @example
+ * ```ts
+ * import { Plane } from '@symjs/symjs';
+ *
+ * Plane([1, 1, 1], { normalVector: [1, 4, 7] }); // => Plane(Point3D(1, 1, 1), (1, 4, 7))
+ * ```
+ */
 export class PlaneNode extends GeometryEntity {
+  /**
+   * Constructs an instance of `PlaneNode`.
+   *
+   * @param p1 - First defining point.
+   * @param normal - Normal vector to the plane.
+   */
   constructor(p1: Point3DNode, normal: TupleNode) {
     super('Plane', [p1, normal]);
   }
 
+  /**
+   * Rebuilds the expression with replacement arguments in their original order.
+   *
+   * @param args - Replacement arguments in the same order as `args` on the original expression.
+   * @returns The rebuilt expression.
+   */
   override withArgs(args: readonly Expr[]): Expr {
     return newPlane(at(args, 0), undefined, undefined, { normalVector: at(args, 1) });
   }
 
-  /** The point defining the plane (SymPy p1). */
+  /**
+   * The point defining the plane.
+   *
+   * @returns The point defining the plane.
+   * @see SymPy `sympy.geometry.plane.Plane.p1`
+   */
   get p1(): Point3DNode {
     return as3D(at(this.args, 0));
   }
 
-  /** The normal vector as a Tuple (SymPy normal_vector). */
+  /**
+   * The normal vector as a Tuple.
+   *
+   * @returns The normal vector as a Tuple.
+   * @see SymPy `sympy.geometry.plane.Plane.normal_vector`
+   */
   get normalVector(): TupleNode {
     return cast(at(this.args, 1), TupleNode, 'normal vector');
   }
 
+  /**
+   * The number of coordinates in the surrounding space.
+   *
+   * @returns The number of coordinates in the surrounding space.
+   * @see SymPy `sympy.geometry.plane.Plane.ambient_dimension`
+   */
   get ambientDimension(): number {
     return this.p1.ambientDimension;
   }
 
-  /** SymPy `o in plane`: the point or linear entity lies in the plane. */
+  /**
+   * The point or linear entity lies in the plane.
+   *
+   * @param o - Point or entity tested for containment.
+   * @returns Whether the operand belongs to the entity.
+   */
   override contains(o: unknown): boolean {
     const k = this.equation(px, py, pz);
     if (o instanceof LinearEntity) {
@@ -96,12 +139,26 @@ export class PlaneNode extends GeometryEntity {
     return exprEquals(d, 0) === true;
   }
 
-  /** The point and normal vector evaluated numerically (SymPy _eval_evalf). */
+  /**
+   * The point and normal vector evaluated numerically.
+   *
+   * @param evalfArg - Function that evaluates an operand numerically.
+   * @param _dps - Decimal digits of numerical precision.
+   * @returns The numerically evaluated expression.
+   * @see SymPy `sympy.geometry.plane.Plane._eval_evalf`
+   */
   override evalfSelf(evalfArg: (e: Expr) => Expr, _dps: number): Expr {
     return newPlane(evalfArg(this.p1), undefined, undefined, { normalVector: this.normalVector.args.map(evalfArg), evaluate: false });
   }
 
-  /** The angle with a 3D linear entity or another plane (SymPy angle_between). */
+  /**
+   * The angle with a 3D linear entity or another plane.
+   *
+   * @param o - Second entity defining the angle.
+   * @returns The angle with a 3D linear entity or another plane.
+   * @throws TypeError when the supplied entity has no defined angle with a plane.
+   * @see SymPy `sympy.geometry.plane.Plane.angle_between`
+   */
   angleBetween(o: GeometryEntity): Expr {
     const nv = this.normalVector.args;
     const norm = (v: readonly Expr[]): Expr => sqrt(add(...v.map((i) => pow(i, 2))));
@@ -118,8 +175,13 @@ export class PlaneNode extends GeometryEntity {
   }
 
   /**
-   * A point of the plane: on the circle of radius 1 about p1 as a function
-   * of the angle u, or p1 + u*a + v*b with two parameters (SymPy arbitrary_point).
+   * A point of the plane: on the circle of radius 1 about p1 as a function of the angle u, or p1 +
+   * u*a + v*b with two parameters.
+   *
+   * @param u - First surface parameter.
+   * @param v - Parameter of the geometric entity.
+   * @returns A point of the plane: on the circle of radius 1 about p1 as a function of the angle u, or p1 + u*a + v*b with two parameters.
+   * @see SymPy `sympy.geometry.plane.Plane.arbitrary_point`
    */
   override arbitraryPoint(u?: string | Sym | null, v?: string | Sym | null): Point3DNode {
     const circle = v === undefined || v === null;
@@ -153,7 +215,14 @@ export class PlaneNode extends GeometryEntity {
     );
   }
 
-  /** The planes have a line in common (SymPy are_concurrent). */
+  /**
+   * The planes have a line in common.
+   *
+   * @param planesIn - Planes to test.
+   * @returns Whether the entities share a point.
+   * @throws RangeError when an input is not a plane.
+   * @see SymPy `sympy.geometry.plane.Plane.are_concurrent`
+   */
   static areConcurrent(...planesIn: PlaneNode[]): boolean {
     const seen = new Set<string>();
     const planes = planesIn.filter((p) => !seen.has(p.key) && Boolean(seen.add(p.key)));
@@ -172,7 +241,13 @@ export class PlaneNode extends GeometryEntity {
     return true;
   }
 
-  /** The shortest distance to a point, linear entity or plane (SymPy distance). */
+  /**
+   * The shortest distance to a point, linear entity or plane.
+   *
+   * @param oIn - Entity to measure the distance to.
+   * @returns The shortest distance to a point, linear entity or plane.
+   * @see SymPy `sympy.geometry.plane.Plane.distance`
+   */
   override distance(oIn: unknown): Expr {
     const o = oIn instanceof GeometryEntity ? oIn : toPoint(toInput(oIn), { dim: 3 });
     if (this.intersection(o).length) return S.Zero;
@@ -189,13 +264,27 @@ export class PlaneNode extends GeometryEntity {
     return abs(d);
   }
 
-  /** The planes are the same (SymPy equals). */
+  /**
+   * The planes are the same.
+   *
+   * @param o - Object to compare with this one.
+   * @returns Whether the operands are equal.
+   * @see SymPy `sympy.geometry.plane.Plane.equals`
+   */
   override equals(o: ExprLike): boolean {
     if (!(o instanceof PlaneNode)) return false;
     return isConstant(cancel(mul(this.equation(), pow(o.equation(), -1))));
   }
 
-  /** The equation of the plane in real symbols x, y and z (SymPy equation). */
+  /**
+   * The equation of the plane in real symbols x, y and z.
+   *
+   * @param x - Symbol for the x coordinate.
+   * @param y - Symbol for the y coordinate.
+   * @param z - Symbol for the z coordinate.
+   * @returns The equation of the plane in real symbols x, y and z.
+   * @see SymPy `sympy.geometry.plane.Plane.equation`
+   */
   equation(x?: Sym | string, y?: Sym | string, z?: Sym | string): Expr {
     const [X, Y, Z] = [x, y, z].map((s, i) => (s === undefined ? new Sym(at('xyz', i), { real: true }) : realSymbol(s)));
     const a = newPoint([defd(X), defd(Y), defd(Z)]);
@@ -203,7 +292,14 @@ export class PlaneNode extends GeometryEntity {
     return add(...b.map((bi, i) => mul(bi, at(this.normalVector.args, i))));
   }
 
-  /** The entities this plane has in common with o (SymPy intersection). */
+  /**
+   * The entities this plane has in common with o.
+   *
+   * @param oIn - Entity to intersect with this one.
+   * @returns The entities this plane has in common with o.
+   * @throws TypeError when the operand type has no supported intersection rule.
+   * @see SymPy `sympy.geometry.plane.Plane.intersection`
+   */
   override intersection(oIn: unknown): GeometryEntity[] {
     const o0 = oIn instanceof GeometryEntity ? oIn : toPoint(toInput(oIn), { dim: 3 });
     if (o0 instanceof PointNode) return this.contains(o0) ? [o0] : [];
@@ -240,7 +336,13 @@ export class PlaneNode extends GeometryEntity {
     throw new TypeError(`intersection of a Plane and ${o0.name} is not defined`);
   }
 
-  /** The entity lies in the plane (SymPy is_coplanar). */
+  /**
+   * The entity lies in the plane.
+   *
+   * @param o - Entity tested for coplanarity.
+   * @returns The entity lies in the plane.
+   * @see SymPy `sympy.geometry.plane.Plane.is_coplanar`
+   */
   isCoplanar(o: GeometryEntity): boolean {
     if (o instanceof PlaneNode) {
       const r = cancel(mul(this.equation(px, py, pz), pow(o.equation(px, py, pz), -1)));
@@ -251,7 +353,13 @@ export class PlaneNode extends GeometryEntity {
     return this.normalVector.args.slice(0, 2).every((i) => i.key === S.Zero.key);
   }
 
-  /** The plane and the 3D linear entity or plane are parallel (SymPy is_parallel). */
+  /**
+   * The plane and the 3D linear entity or plane are parallel.
+   *
+   * @param l - Linear entity to compare.
+   * @returns The plane and the 3D linear entity or plane are parallel.
+   * @see SymPy `sympy.geometry.plane.Plane.is_parallel`
+   */
   isParallel(l: GeometryEntity): boolean {
     if (isLinear3D(l)) {
       const a = directionRatioOf(l);
@@ -265,7 +373,13 @@ export class PlaneNode extends GeometryEntity {
     return false;
   }
 
-  /** The plane and the 3D linear entity or plane are perpendicular (SymPy is_perpendicular). */
+  /**
+   * The plane and the 3D linear entity or plane are perpendicular.
+   *
+   * @param l - Linear entity to compare.
+   * @returns The plane and the 3D linear entity or plane are perpendicular.
+   * @see SymPy `sympy.geometry.plane.Plane.is_perpendicular`
+   */
   isPerpendicular(l: GeometryEntity): boolean {
     if (isLinear3D(l)) {
       const c = cross(Matrix.col(...directionRatioOf(l)), Matrix.col(...this.normalVector.args));
@@ -278,17 +392,36 @@ export class PlaneNode extends GeometryEntity {
     return false;
   }
 
-  /** The parallel plane through pt (SymPy parallel_plane). */
+  /**
+   * The parallel plane through pt.
+   *
+   * @param p - Point used in the geometric construction or comparison.
+   * @returns The parallel plane through pt.
+   * @see SymPy `sympy.geometry.plane.Plane.parallel_plane`
+   */
   parallelPlane(p: PointInput): PlaneNode {
     return newPlane(p, undefined, undefined, { normalVector: this.normalVector });
   }
 
-  /** The line through pt perpendicular to the plane (SymPy perpendicular_line). */
+  /**
+   * The line through pt perpendicular to the plane.
+   *
+   * @param p - Point used in the geometric construction or comparison.
+   * @returns The perpendicular line through the given point.
+   * @see SymPy `sympy.geometry.plane.Plane.perpendicular_line`
+   */
   perpendicularLine(p: PointInput): Line3DNode {
     return Line3D(p, { directionRatio: this.normalVector.args });
   }
 
-  /** A plane through the given points (at most two) perpendicular to this one (SymPy perpendicular_plane). */
+  /**
+   * A plane through the given points (at most two) perpendicular to this one.
+   *
+   * @param ptsIn - Points to compare.
+   * @returns A plane through the given points (at most two) perpendicular to this one.
+   * @throws RangeError when more than two points are supplied.
+   * @see SymPy `sympy.geometry.plane.Plane.perpendicular_plane`
+   */
   perpendicularPlane(...ptsIn: PointInput[]): PlaneNode {
     if (ptsIn.length > 2) throw new RangeError('No more than 2 pts should be provided.');
     const pts: PointInput[] = [...ptsIn];
@@ -307,7 +440,14 @@ export class PlaneNode extends GeometryEntity {
     return newPlane(defd(p1), defd(p2), p3);
   }
 
-  /** The projection of a linear entity onto the plane: a point, or a 3D line, ray or segment (SymPy projection_line). */
+  /**
+   * The projection of a linear entity onto the plane: a point, or a 3D line, ray or segment.
+   *
+   * @param line - Line defining the direction or reflection axis.
+   * @returns The projection of a linear entity onto the plane: a point, or a 3D line, ray or segment.
+   * @throws TypeError when the argument is not a linear entity.
+   * @see SymPy `sympy.geometry.plane.Plane.projection_line`
+   */
   projectionLine(line: GeometryEntity): GeometryEntity {
     if (!(line instanceof LinearEntity)) throw new TypeError('Enter a linear entity only');
     const [a, b] = [this.projection(line.p1), this.projection(line.p2)];
@@ -317,14 +457,26 @@ export class PlaneNode extends GeometryEntity {
     return Segment3D(a, b);
   }
 
-  /** The orthogonal projection of a point onto the plane (SymPy projection). */
+  /**
+   * The orthogonal projection of a point onto the plane.
+   *
+   * @param p - Point used in the geometric construction or comparison.
+   * @returns The orthogonal projection of a point onto the plane.
+   * @see SymPy `sympy.geometry.plane.Plane.projection`
+   */
   projection(p: PointInput): Point3DNode {
     const rv = toPoint(p, { dim: 3 });
     if (this.contains(rv)) return as3D(rv);
     return as3D(at(this.intersection(Line3D(rv, rv.add(this.normalVector.args))), 0));
   }
 
-  /** A random point of the plane; the same for the same integer seed (SymPy random_point). */
+  /**
+   * A random point of the plane; the same for the same integer seed.
+   *
+   * @param seed - Seed for reproducible sampling.
+   * @returns A random point of the plane; the same for the same integer seed.
+   * @see SymPy `sympy.geometry.plane.Plane.random_point`
+   */
   randomPoint(seed?: number | bigint): Point3DNode {
     const rng = seed === undefined ? sharedRandom : new Random(seed);
     const a = add(mul(2, rationalOf(rng.gauss(0, 1))), -1);
@@ -336,8 +488,14 @@ export class PlaneNode extends GeometryEntity {
   }
 
   /**
-   * The parameter values of the arbitrary point at the given point: {u: angle}
-   * for one parameter, {u, v} for two (SymPy parameter_value).
+   * Finds the angular parameter or the two surface coordinates of a point on the plane.
+   *
+   * @param otherIn - Point on the entity for which to find the parameter values.
+   * @param u - First surface parameter.
+   * @param v - Optional second surface parameter.
+   * @returns The point itself when it equals `p1`, otherwise a map from each parameter to its value.
+   * @throws RangeError when the given point is outside the plane or the parametrization does not have one or two symbols or the operand is not a point.
+   * @see SymPy `sympy.geometry.plane.Plane.parameter_value`
    */
   override parameterValue(otherIn: PointInput, u: Expr, v?: ExprLike): ExprMap<Expr> | PointNode {
     const other = otherIn instanceof GeometryEntity ? otherIn : toPoint(otherIn, { dim: this.ambientDimension });
@@ -398,8 +556,19 @@ function newPlane(p1In: PointInput, a: PointInput | undefined, b: PointInput | u
 type PlaneArg = PointInput | PlaneOptions;
 
 /**
- * SymPy Plane(p1, p2, p3) or Plane(p1, {normalVector}): the plane through
- * three points, or through p1 with the given normal vector.
+ * A plane in three-dimensional space defined by three points or by a point and a normal.
+ *
+ * @param args - Three points, or a point and a normal vector.
+ * @returns The resulting `Plane` expression.
+ * @throws TypeError when the defining point is missing.
+ * @throws RangeError when three defining points are collinear or the normal is zero or has the wrong dimension.
+ * @see SymPy `sympy.geometry.plane.Plane`
+ * @example
+ * ```ts
+ * import { Plane } from '@symjs/symjs';
+ *
+ * Plane([1, 1, 1], { normalVector: [1, 4, 7] }); // => Plane(Point3D(1, 1, 1), (1, 4, 7))
+ * ```
  */
 export const Plane = /* @__PURE__ */ callableClass(PlaneNode, (...args: PlaneArg[]): PlaneNode => {
   const last = args[args.length - 1];

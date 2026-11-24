@@ -84,9 +84,20 @@ export function find(x: string | Sym, equation: Expr): Sym {
 }
 
 /**
- * The entities common to all the given entities (SymPy intersection); with
- * `pairwise: true`, those common to any two of them. Floats are converted
- * to Rationals for the computation and back at their least precision.
+ * The entities common to all the given entities (SymPy intersection); with `pairwise: true`,
+ * those common to any two of them. Floats are converted to Rationals for the computation and back
+ * at their least precision.
+ *
+ * @param args - Entities or sets to intersect. The trailing `pairwise` option collects intersections of every pair.
+ * @returns The geometric intersections as a list, or the intersection set when only sets are supplied.
+ * @see SymPy `sympy.geometry.util.intersection`
+ * @example
+ * ```ts
+ * import { Circle, Point, intersection } from '@symjs/symjs';
+ *
+ * const circle = Circle([0, 1], 1);
+ * intersection(circle, Point(0, 1)); // => []
+ * ```
  */
 export function intersection(...args: SetExpr[]): SetExpr;
 export function intersection(...args: (GeometryEntity | PointInput | { pairwise?: boolean })[]): GeometryEntity[];
@@ -132,9 +143,19 @@ function geometryIntersection(args: readonly (GeometryEntity | PointInput | { pa
 }
 
 /**
- * The two entities are similar (SymPy are_similar). Every entity has
- * is_similar, so SymPy's GeometryError for entities without it does not
- * occur; entities that cannot decide raise NotImplementedError.
+ * Tests whether two geometric entities have the same shape up to a similarity transformation.
+ *
+ * @param e1 - First geometric entity.
+ * @param e2 - Second geometric entity.
+ * @returns Whether the two entities are similar.
+ * @see SymPy `sympy.geometry.util.are_similar`
+ * @example
+ * ```ts
+ * import { Triangle, areSimilar } from '@symjs/symjs';
+ *
+ * const t = Triangle([0, 0], [1, 0], [0, 1]);
+ * areSimilar(t, Triangle([0, 0], [2, 0], [0, 2])); // => True
+ * ```
  */
 export function areSimilar(e1: GeometryEntity, e2: GeometryEntity): boolean {
   if (e1.key === e2.key) return true;
@@ -142,8 +163,19 @@ export function areSimilar(e1: GeometryEntity, e2: GeometryEntity): boolean {
 }
 
 /**
- * The centroid of points, segments (weighted by length) or polygons
- * (weighted by area) (SymPy centroid).
+ * The centroid of points, segments (weighted by length) or polygons (weighted by area).
+ *
+ * @param args - Points, segments or polygons of a single kind.
+ * @returns The centroid of points, segments (weighted by length) or polygons (weighted by area).
+ * @throws RangeError when no entities are supplied.
+ * @throws TypeError when the inputs mix entity types or include an entity without a defined centroid.
+ * @see SymPy `sympy.geometry.util.centroid`
+ * @example
+ * ```ts
+ * import { Point, centroid } from '@symjs/symjs';
+ *
+ * centroid(Point(0, 0), Point(2, 0)); // => Point2D(1, 0)
+ * ```
  */
 export function centroid(...args: GeometryEntity[]): PointNode {
   if (args.length === 0) throw new RangeError('centroid of no entities');
@@ -202,7 +234,21 @@ const sameValue = (a: Expr | number, b: Expr | number): boolean => (typeof a ===
 /** The distinct 2D points of the arguments (SymPy [Point2D(i) for i in set(args)]). */
 const distinct2D = (args: readonly PointInput[]): PointNode[] => uniqPoints(args.map((a) => toPoint(a, { dim: 2 })));
 
-/** The pairs of points at the smallest distance, as a set of [p, q] pairs (SymPy closest_points). */
+/**
+ * The pairs of points at the smallest distance, as a set of [p, q] pairs.
+ *
+ * @param args - Points whose pairwise distances are compared.
+ * @returns The pairs of points at the smallest distance, as a set of [p, q] pairs.
+ * @throws RangeError when fewer than two distinct points are supplied.
+ * @see SymPy `sympy.geometry.util.closest_points`
+ * @example
+ * ```ts
+ * import { closestPoints } from '@symjs/symjs';
+ *
+ * const pairs = closestPoints([0, 0], [3, 0], [3, 4]);
+ * [...pairs].map(([a, b]) => a.distance(b)); // => [3]
+ * ```
+ */
 export function closestPoints(...args: PointInput[]): Set<[PointNode, PointNode]> {
   let p = distinct2D(args);
   if (p.length < 2) throw new RangeError('At least 2 distinct points must be given.');
@@ -231,9 +277,20 @@ export function closestPoints(...args: PointInput[]): Set<[PointNode, PointNode]
 }
 
 /**
- * The convex hull of points, segments and polygons: a Polygon, a Segment
- * or a Point (SymPy convex_hull). With `polygon: false`, the upper and
- * lower hulls [U, L] (or [entity, undefined] for fewer than three points).
+ * Finds the smallest convex figure containing all the supplied points, segments and polygons.
+ * With `polygon: false`, returns the upper and lower hull chains for a nondegenerate polygon.
+ *
+ * @param args - Points or entities. Set `polygon` to false to obtain the upper and lower hull chains.
+ * @returns The hull as a point, segment or polygon, or its chains when requested.
+ * @throws NotImplementedError when a supplied entity has no supported hull construction.
+ * @throws RangeError when the input is not planar.
+ * @see SymPy `sympy.geometry.util.convex_hull`
+ * @example
+ * ```ts
+ * import { convexHull } from '@symjs/symjs';
+ *
+ * convexHull([1, 1], [1, 2], [3, 1], [-5, 2], [15, 4]); // => Polygon(Point2D(-5, 2), Point2D(1, 1), Point2D(3, 1), Point2D(15, 4))
+ * ```
  */
 export function convexHull(...args: (GeometryEntity | PointInput | { polygon?: boolean })[]): GeometryEntity | [GeometryEntity | PointNode[], PointNode[] | undefined] {
   const last = args[args.length - 1];
@@ -280,7 +337,21 @@ export function convexHull(...args: (GeometryEntity | PointInput | { polygon?: b
   return [U, L];
 }
 
-/** The pairs of points at the largest distance, as a set of [p, q] pairs (SymPy farthest_points). */
+/**
+ * The pairs of points at the largest distance, as a set of [p, q] pairs.
+ *
+ * @param args - Points whose pairwise distances are compared.
+ * @returns The pairs of points at the largest distance, as a set of [p, q] pairs.
+ * @throws RangeError when fewer than two distinct points are supplied.
+ * @see SymPy `sympy.geometry.util.farthest_points`
+ * @example
+ * ```ts
+ * import { farthestPoints } from '@symjs/symjs';
+ *
+ * const pairs = farthestPoints([0, 0], [3, 0], [3, 4]);
+ * [...pairs].map(([a, b]) => a.distance(b)); // => [5]
+ * ```
+ */
 export function farthestPoints(...args: PointInput[]): Set<[PointNode, PointNode]> {
   const p = distinct2D(args);
   const hypot = hypotFor(p);
@@ -321,7 +392,21 @@ export function farthestPoints(...args: PointInput[]): Set<[PointNode, PointNode
   return new Set(rv.filter(([h, q]) => !seen.has(h.key + q.key) && Boolean(seen.add(h.key + q.key))));
 }
 
-/** The entities lie in one plane (SymPy are_coplanar). */
+/**
+ * The entities lie in one plane.
+ *
+ * @param eIn - Geometric entities tested for a common plane.
+ * @returns Whether one plane contains all the entities.
+ * @see SymPy `sympy.geometry.util.are_coplanar`
+ * @example
+ * ```ts
+ * import { Line3D, areCoplanar } from '@symjs/symjs';
+ *
+ * const a = Line3D([5, 0, 0], [1, -1, 1]);
+ * const b = Line3D([0, -2, 0], [3, 1, 1]);
+ * areCoplanar(a, b, Line3D([0, -1, 0], [5, -1, 9])); // => False
+ * ```
+ */
 export function areCoplanar(...eIn: GeometryEntity[]): boolean {
   const e = uniqPoints(eIn);
   const plane = e.find(isPlane);
@@ -347,9 +432,23 @@ export function areCoplanar(...eIn: GeometryEntity[]): boolean {
 }
 
 /**
- * dy/dx (the n-th derivative) of y given implicitly by eq = 0 (SymPy
- * idiff). y is a symbol, a list of symbols that depend on x (the first one
- * is differentiated), or a function of x.
+ * dy/dx (the n-th derivative) of y given implicitly by eq = 0 (SymPy idiff). y is a symbol, a
+ * list of symbols that depend on x (the first one is differentiated), or a function of x.
+ *
+ * @param eq - Expression assumed equal to zero.
+ * @param yIn - Dependent variable, or dependent variables with the desired one first.
+ * @param x - Independent variable.
+ * @param n - Derivative order.
+ * @returns The requested implicit derivative of the dependent variable.
+ * @throws RangeError when the derivative order is not a positive integer or the dependent variable is not a symbol, a list of symbols or a function of the independent variable.
+ * @see SymPy `sympy.geometry.util.idiff`
+ * @example
+ * ```ts
+ * import { ex, idiff, symbols } from '@symjs/symjs';
+ *
+ * const [x, y] = symbols('x y');
+ * idiff(ex`x**2 + y**2 - 4`, y, x); // => -x/y
+ * ```
  */
 export function idiff(eq: ExprLike, yIn: Sym | readonly Sym[] | UndefFn, x: Sym, n = 1): Expr {
   const e0 = sympify(eq);

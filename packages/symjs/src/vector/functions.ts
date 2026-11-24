@@ -41,10 +41,26 @@ function scalarSubstitution(e: Expr, system: CoordSysBase): [Expr, Expr][] {
 }
 
 /**
- * SymPy express(expr, system, system2=None, variables=False): a vector,
- * dyadic or scalar re-expressed in the coordinate system (a dyadic's
- * second vectors in system2). With `variables`, the base scalars of other
- * systems are also expressed in those of system.
+ * A vector, dyadic or scalar re-expressed in the coordinate system (a dyadic's second vectors in
+ * system2). With `variables`, the base scalars of other systems are also expressed in those of
+ * system.
+ *
+ * @param exprIn - Expression to transform.
+ * @param system - Coordinate system in which to express components.
+ * @param system2 - Coordinate system for the second basis vector of a dyadic.
+ * @param opts - Settings described by {@link ExpressOptions}.
+ * @returns A vector, dyadic or scalar re-expressed in the coordinate system (a dyadic's second vectors in system2).
+ * @throws RangeError when a second coordinate system is supplied for a scalar or vector.
+ * @throws TypeError when a supplied coordinate system is not a `CoordSys3D`.
+ * @see SymPy `sympy.vector.functions.express`
+ * @example
+ * ```ts
+ * import { CoordSys3D, ex, express } from '@symjs/symjs';
+ *
+ * const R = CoordSys3D('R');
+ * const B = R.orientNewAxis('B', ex`q`, R.k);
+ * express(B.i, R); // => (cos(q))*R.i + (sin(q))*R.j
+ * ```
  */
 export function express(exprIn: ExprLike, system: CoordSysBase, system2?: CoordSysBase, opts: ExpressOptions = {}): Expr {
   let expr = sympify(exprIn);
@@ -84,9 +100,21 @@ const asVector = (e: Expr): Vector => cast(e, Vector, 'vector');
 const asSystem = (e: Expr): CoordSysBase => cast(e, CoordSysBase, 'CoordSys3D');
 
 /**
- * SymPy directional_derivative(field, direction_vector): the directional
- * derivative of a scalar or vector field along a vector, in the coordinate
- * system of the field.
+ * The directional derivative of a scalar or vector field along a vector, in the coordinate system
+ * of the field.
+ *
+ * @param fieldIn - Scalar or vector field on the region.
+ * @param directionVector - Vector specifying the differentiation direction.
+ * @returns The directional derivative of a scalar or vector field along a vector, in the coordinate system of the field.
+ * @see SymPy `sympy.vector.functions.directional_derivative`
+ * @example
+ * ```ts
+ * import { CoordSys3D, directionalDerivative } from '@symjs/symjs';
+ *
+ * const R = CoordSys3D('R');
+ * const direction = R.i.mul(3).add(R.j.mul(4)).add(R.k);
+ * directionalDerivative(R.x.mul(R.y).mul(R.z), direction); // => R.x*R.y + 4*R.x*R.z + 3*R.y*R.z
+ * ```
  */
 export function directionalDerivative(fieldIn: ExprLike, directionVector: Expr): Expr {
   let field = sympify(fieldIn);
@@ -105,8 +133,18 @@ export function directionalDerivative(fieldIn: ExprLike, directionVector: Expr):
 }
 
 /**
- * SymPy laplacian(expr): the Laplacian of a scalar or vector field in the
- * base scalars of its coordinate system.
+ * The Laplacian of a scalar or vector field in the base scalars of its coordinate system.
+ *
+ * @param exprIn - Expression to transform.
+ * @returns The Laplacian of a scalar or vector field in the base scalars of its coordinate system.
+ * @see SymPy `sympy.vector.functions.laplacian`
+ * @example
+ * ```ts
+ * import { CoordSys3D, laplacian } from '@symjs/symjs';
+ *
+ * const R = CoordSys3D('R');
+ * laplacian(R.x.pow(2).mul(R.y.pow(5)).mul(R.z)); // => 20*R.x**2*R.y**3*R.z + 2*R.y**5*R.z
+ * ```
  */
 export function laplacian(exprIn: ExprLike): Expr {
   const expr = sympify(exprIn);
@@ -114,14 +152,42 @@ export function laplacian(exprIn: ExprLike): Expr {
   return doit(divergence(gradient(expr, { doit: false }), { doit: false }));
 }
 
-/** SymPy is_conservative(field): the curl of the vector field vanishes. */
+/**
+ * The curl of the vector field vanishes.
+ *
+ * @param field - Field to evaluate or differentiate.
+ * @returns Whether the curl vanishes.
+ * @throws TypeError when a field or vector operand is not a vector.
+ * @see SymPy `sympy.vector.functions.is_conservative`
+ * @example
+ * ```ts
+ * import { CoordSys3D, isConservative } from '@symjs/symjs';
+ *
+ * const R = CoordSys3D('R');
+ * isConservative(R.z.mul(R.j)); // => False
+ * ```
+ */
 export function isConservative(field: Expr): boolean {
   if (!(field instanceof Vector)) throw new TypeError('field should be a Vector');
   if (field instanceof VectorZeroNode) return true;
   return simplify(curl(field)) instanceof VectorZeroNode;
 }
 
-/** SymPy is_solenoidal(field): the divergence of the vector field vanishes. */
+/**
+ * The divergence of the vector field vanishes.
+ *
+ * @param field - Field to evaluate or differentiate.
+ * @returns Whether the divergence vanishes.
+ * @throws TypeError when a field or vector operand is not a vector.
+ * @see SymPy `sympy.vector.functions.is_solenoidal`
+ * @example
+ * ```ts
+ * import { CoordSys3D, isSolenoidal } from '@symjs/symjs';
+ *
+ * const R = CoordSys3D('R');
+ * isSolenoidal(R.y.mul(R.j)); // => False
+ * ```
+ */
 export function isSolenoidal(field: Expr): boolean {
   if (!(field instanceof Vector)) throw new TypeError('field should be a Vector');
   if (field instanceof VectorZeroNode) return true;
@@ -129,8 +195,21 @@ export function isSolenoidal(field: Expr): boolean {
 }
 
 /**
- * SymPy scalar_potential(field, coord_sys): the scalar potential of a
- * conservative field in the coordinate system (without the constant).
+ * The scalar potential of a conservative field in the coordinate system (without the constant).
+ *
+ * @param field - Field to evaluate or differentiate.
+ * @param coordSys - Coordinate system defining the basis.
+ * @returns The scalar potential of a conservative field in the coordinate system (without the constant).
+ * @throws RangeError when the field is not conservative.
+ * @throws TypeError when a supplied coordinate system is not a `CoordSys3D`.
+ * @see SymPy `sympy.vector.functions.scalar_potential`
+ * @example
+ * ```ts
+ * import { CoordSys3D, scalarPotential } from '@symjs/symjs';
+ *
+ * const R = CoordSys3D('R');
+ * scalarPotential(R.k, R); // => R.z
+ * ```
  */
 export function scalarPotential(field: Expr, coordSys: CoordSysBase): Expr {
   if (!isConservative(field)) throw new RangeError('Field is not conservative');
@@ -149,9 +228,25 @@ export function scalarPotential(field: Expr, coordSys: CoordSysBase): Expr {
 }
 
 /**
- * SymPy scalar_potential_difference(field, coord_sys, point1, point2): the
- * potential at point2 minus the potential at point1, of a scalar field or
- * of the scalar potential of a conservative vector field.
+ * The potential at point2 minus the potential at point1, of a scalar field or of the scalar
+ * potential of a conservative vector field.
+ *
+ * @param fieldIn - Scalar or vector field on the region.
+ * @param coordSys - Coordinate system defining the basis.
+ * @param point1 - Starting point for the potential difference.
+ * @param point2 - Ending point for the potential difference.
+ * @returns The potential at point2 minus the potential at point1, of a scalar field or of the scalar potential of a conservative vector field.
+ * @throws TypeError when a supplied coordinate system is not a `CoordSys3D`.
+ * @see SymPy `sympy.vector.functions.scalar_potential_difference`
+ * @example
+ * ```ts
+ * import { CoordSys3D, scalarPotentialDifference } from '@symjs/symjs';
+ *
+ * const R = CoordSys3D('R');
+ * const p = R.origin.locateNew('P', R.i.mul(3).add(R.j).add(R.k.mul(2)));
+ * const field = R.i.mul(R.x.mul(R.y).mul(4)).add(R.j.mul(R.x.pow(2).mul(2)));
+ * scalarPotentialDifference(field, R, R.origin, p); // => 18
+ * ```
  */
 export function scalarPotentialDifference(fieldIn: ExprLike, coordSys: CoordSysBase, point1: VectorPointNode, point2: VectorPointNode): Expr {
   if (!(coordSys instanceof CoordSysBase)) throw new TypeError('coord_sys must be a CoordSys3D');
@@ -168,8 +263,20 @@ export function scalarPotentialDifference(fieldIn: ExprLike, coordSys: CoordSysB
 }
 
 /**
- * SymPy matrix_to_vector(matrix, system): the vector whose measure numbers
- * along the base vectors of system are the entries of the matrix.
+ * The vector whose measure numbers along the base vectors of system are the entries of the
+ * matrix.
+ *
+ * @param matrix - Column of components in basis order.
+ * @param system - Coordinate system in which to express components.
+ * @returns The vector whose measure numbers along the base vectors of system are the entries of the matrix.
+ * @see SymPy `sympy.vector.functions.matrix_to_vector`
+ * @example
+ * ```ts
+ * import { CoordSys3D, Matrix, matrixToVector } from '@symjs/symjs';
+ *
+ * const R = CoordSys3D('R');
+ * matrixToVector(Matrix.of([[1], [2], [3]]), R); // => R.i + 2*R.j + 3*R.k
+ * ```
  */
 export function matrixToVector(matrix: Matrix, system: CoordSysBase): Expr {
   let out: Expr = Vector.zero;
@@ -180,15 +287,28 @@ export function matrixToVector(matrix: Matrix, system: CoordSysBase): Expr {
   return out;
 }
 
-/** The options of orthogonalize (SymPy keyword arguments). */
+/** The options of orthogonalize. */
 export interface OrthogonalizeOptions {
-  /** Normalize the vectors (SymPy orthonormal=True). */
+  /** Normalize the vectors. */
   readonly orthonormal?: boolean;
 }
 
 /**
- * SymPy orthogonalize(*vlist, orthonormal=False): the orthogonal (or
- * orthonormal) vectors of independent vectors by the Gram-Schmidt process.
+ * The orthogonal (or orthonormal) vectors of independent vectors by the Gram-Schmidt process.
+ *
+ * @param args - Linearly independent vectors and optional `orthonormal` flag for unit output vectors.
+ * @returns The orthogonal (or orthonormal) vectors of independent vectors by the Gram-Schmidt process.
+ * @throws RangeError when the vectors are linearly dependent.
+ * @throws TypeError when a field or vector operand is not a vector.
+ * @see SymPy `sympy.vector.functions.orthogonalize`
+ * @example
+ * ```ts
+ * import { CoordSys3D, orthogonalize } from '@symjs/symjs';
+ *
+ * const R = CoordSys3D('R');
+ * const v = R.i.add(R.j.mul(2)), w = R.i.mul(2).add(R.j.mul(3));
+ * orthogonalize(v, w); // => [R.i + 2*R.j, 2/5*R.i + (-1/5)*R.j]
+ * ```
  */
 export function orthogonalize(...args: (Expr | OrthogonalizeOptions)[]): Expr[] {
   const last = args[args.length - 1];

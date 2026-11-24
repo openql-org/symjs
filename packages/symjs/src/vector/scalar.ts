@@ -17,13 +17,33 @@ import { callableClass } from '../core/callable';
 import { at } from '../core/guard';
 import { CoordSysBase } from './basisdependent';
 
-/** SymPy BaseScalar(index, system, pretty_str, latex_str): a coordinate symbol. */
+/**
+ * A coordinate symbol.
+ *
+ * @see SymPy `sympy.vector.scalar.BaseScalar`
+ */
 export class BaseScalarNode extends Sym {
+  /** Zero-based index or indices selecting the desired component. */
   readonly index: number;
+  /**
+   * The coordinate system that supplies the basis.
+   *
+   * @see SymPy `sympy.vector.scalar.BaseScalar.system`
+   */
   readonly system: CoordSysBase;
   readonly #pretty: string;
   readonly #latex: string;
 
+  /**
+   * Constructs an instance of `BaseScalarNode`.
+   *
+   * @param index - Zero-based index or indices selecting the desired component.
+   * @param system - Coordinate system in which to express components.
+   * @param prettyStr - Label for the pretty printer.
+   * @param latexStr - Label for the LaTeX printer.
+   * @throws RangeError when the basis index is outside 0 through 2.
+   * @throws TypeError when a supplied coordinate system is not a `CoordSys3D`.
+   */
   constructor(index: number, system: CoordSysBase, prettyStr?: string | Sym, latexStr?: string | Sym) {
     if (!(system instanceof CoordSysBase)) throw new TypeError('system should be a CoordSys3D');
     if (!Number.isInteger(index) || index < 0 || index > 2) throw new RangeError('Invalid index specified.');
@@ -34,22 +54,38 @@ export class BaseScalarNode extends Sym {
     this.#latex = latexStr === undefined ? `x_${index}` : latexStr instanceof Sym ? latexStr.name : latexStr;
   }
 
-  /** SymPy _pretty_form. */
+  /**
+   * The label used by the pretty printer.
+   *
+   * @returns The label used by the pretty printer.
+   */
   override get prettyForm(): string {
     return this.#pretty;
   }
 
-  /** SymPy _latex_form. */
+  /**
+   * LaTeX representation of this basis element.
+   *
+   * @returns The formatted text.
+   */
   override get latexForm(): string {
     return this.#latex;
   }
 
-  /** SymPy srepr: the printed name (R.x), as SymPy's BaseScalar repr is its str. */
+  /**
+   * The printed name (R.x), as SymPy's BaseScalar repr is its str.
+   *
+   * @returns The constructor representation.
+   */
   printRepr(): string {
     return this.name;
   }
 
-  /** Sorted as SymPy's class BaseScalar (before the symbols). */
+  /**
+   * Sorted as SymPy's class BaseScalar (before the symbols).
+   *
+   * @returns The formatted text.
+   */
   override get sortClass(): string {
     return 'BaseScalar';
   }
@@ -60,7 +96,18 @@ export class BaseScalarNode extends Sym {
   }
 }
 
-/** SymPy BaseScalar(index, system, pretty_str=None, latex_str=None). */
+/**
+ * A coordinate scalar of a three-dimensional coordinate system.
+ *
+ * @param index - Zero-based index or indices selecting the desired component.
+ * @param system - Coordinate system in which to express components.
+ * @param prettyStr - Label for the pretty printer.
+ * @param latexStr - Label for the LaTeX printer.
+ * @returns The resulting `BaseScalar` expression.
+ * @throws RangeError when the basis index is outside 0 through 2.
+ * @throws TypeError when a supplied coordinate system is not a `CoordSys3D`.
+ * @see SymPy `sympy.vector.scalar.BaseScalar`
+ */
 export const BaseScalar = /* @__PURE__ */ callableClass(
   BaseScalarNode,
   (index: number, system: CoordSysBase, prettyStr?: string | Sym, latexStr?: string | Sym): BaseScalarNode => new BaseScalarNode(index, system, prettyStr, latexStr),
