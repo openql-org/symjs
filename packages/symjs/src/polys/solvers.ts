@@ -16,7 +16,25 @@ import { Poly } from './sympoly';
 import { PolynomialRingBase } from './domains/oldpolynomialring';
 import { constructDomain } from './constructor';
 
-/** Augmented matrix of equations sum(coeff[g]*g)+rhs=0, over the given domain. */
+/**
+ * Augmented matrix of equations sum(coeff[g]*g)+rhs=0, over the given domain.
+ *
+ * @param coeffs - Coefficients in generator order.
+ * @param rhs - Constant terms of the equations.
+ * @param gens - Polynomial generators in the desired order.
+ * @param domain - Coefficient domain.
+ * @returns Augmented matrix of equations sum(coeff[g]*g)+rhs=0, over the given domain.
+ * @throws RangeError when the coefficient rows and constant terms have different lengths or an equation contains an unknown generator.
+ * @see SymPy `sympy.polys.solvers.eqs_to_matrix`
+ * @example
+ * ```ts
+ * import { ZZ, eqsToMatrix, ex } from '@symjs/symjs';
+ *
+ * eqsToMatrix([new Map([[ex`x`, 1], [ex`y`, 1]]), new Map([[ex`x`, 1], [ex`y`, -1]])], [0, -1], [ex`x`, ex`y`], ZZ).toMatrix(); // => Matrix([
+ * //   [1,  1, 0],
+ * //   [1, -1, 1]])
+ * ```
+ */
 export function eqsToMatrix(coeffs: readonly ReadonlyMap<Expr, unknown>[], rhs: readonly unknown[], gens: readonly Expr[], domain: Domain): DomainMatrix {
   if (coeffs.length !== rhs.length) throw new RangeError('equation coefficients and right-hand sides must have equal lengths');
   const positions = new Map(gens.map((g,i) => [g.key,i]));
@@ -36,7 +54,21 @@ export function eqsToMatrix(coeffs: readonly ReadonlyMap<Expr, unknown>[], rhs: 
 /**
  * Solve linear polynomial-ring equations. Keys and values are expressions;
  * only solved generators appear, with free generators left as parameters.
- * An inconsistent system returns NoMatch (SymPy returns None).
+ * An inconsistent system returns NoMatch.
+ *
+ * @param eqs - Polynomial equations with right-hand side zero.
+ * @param ringIn - Polynomial ring supplying the generators and coefficient domain.
+ * @returns A map from generators to their solved values, or `NoMatch` for an inconsistent system.
+ * @throws InvariantError when the coefficient domain is not a field.
+ * @throws NonlinearError when an equation is nonlinear in the generators.
+ * @see SymPy `sympy.polys.solvers.solve_lin_sys`
+ * @example
+ * ```ts
+ * import { QQ, ring, solveLinSys } from '@symjs/symjs';
+ *
+ * const [R, x] = ring('x', QQ);
+ * solveLinSys([x.sub(2)], R); // => {x: 2}
+ * ```
  */
 export function solveLinSys(eqs: readonly PolyElement[], ringIn: PolyRing | PolynomialRingBase): Map<Expr,Expr> | NoMatchResult {
   const ring = ringIn instanceof PolyRing ? ringIn : new PolyRing(ringIn.symbols, ringIn.dom, ringIn.order);
@@ -64,7 +96,20 @@ export function solveLinSys(eqs: readonly PolyElement[], ringIn: PolyRing | Poly
   return result;
 }
 
-/** Convert expression equations to a polynomial ring over a coefficient field. */
+/**
+ * Convert expression equations to a polynomial ring over a coefficient field.
+ *
+ * @param eqs - Polynomial equations with right-hand side zero.
+ * @param symbols - Symbols naming the generators, in order.
+ * @returns The equations as ring elements and their common polynomial ring.
+ * @see SymPy `sympy.polys.solvers.sympy_eqs_to_ring`
+ * @example
+ * ```ts
+ * import { ex, sympyEqsToRing } from '@symjs/symjs';
+ *
+ * sympyEqsToRing([ex`x - y`, ex`a*y + x`], [ex`x`, ex`y`])[0].map(p => p.asExpr()); // => [x - y, a*y + x]
+ * ```
+ */
 export function sympyEqsToRing(eqs: readonly Expr[], symbols: readonly Expr[]): [PolyElement[], PolynomialRingBase] {
   const polys = eqs.map((e) => Poly.from(e, symbols));
   const [domain] = constructDomain(polys.flatMap((p) => p.coeffs()), { field: true, extension: true });

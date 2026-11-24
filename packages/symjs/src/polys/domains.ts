@@ -39,7 +39,11 @@ import type { PolynomialRingBase } from './domains/oldpolynomialring';
 import type { QuotientRing } from './domains/quotientring';
 import type { IntLike } from '../ntheory/intutil';
 
-/** A value cannot be converted to an element of a domain (SymPy CoercionFailed). */
+/**
+ * A value cannot be converted to an element of a domain.
+ *
+ * @see SymPy `sympy.polys.polyerrors.CoercionFailed`
+ */
 export class CoercionFailed extends TypeError {}
 
 type Ground = 'ZZ' | 'QQ' | 'RR' | 'EX';
@@ -209,70 +213,175 @@ function isRationalIn(e: Expr, gens: readonly Sym[], ground: Ground, ring: boole
 }
 
 /**
- * A ground domain (SymPy Domain): ZZ, QQ, RR, a polynomial ring K[a, ...] or a
+ * A ground domain: ZZ, QQ, RR, a polynomial ring K[a, ...] or a
  * fraction field K(a, ...) of symbols. Elements are expressions in canonical
  * form, so equal elements have equal keys.
+ *
+ * @see SymPy `sympy.polys.domains.domain.Domain`
+ * @example
+ * ```ts
+ * import { QQ } from '@symjs/symjs';
+ *
+ * QQ.toSympy(QQ.convert(2)); // => 2
+ * ```
  */
 export abstract class Domain {
   /** The numeric ground domain under the symbols. */
   abstract readonly ground: Ground;
   /** The symbols of a polynomial ring or fraction field (empty for ZZ, QQ, RR). */
   readonly symbols: readonly Sym[] = [];
+  /**
+   * Whether every nonzero element is invertible.
+   *
+   * @see SymPy `sympy.polys.domains.domain.Domain.is_Field`
+   */
   abstract readonly isField: boolean;
+  /**
+   * The additive identity.
+   *
+   * @see SymPy `sympy.polys.domains.domain.Domain.zero`
+   */
   readonly zero: Expr = S.Zero;
+  /**
+   * The multiplicative identity.
+   *
+   * @see SymPy `sympy.polys.domains.domain.Domain.one`
+   */
   readonly one: Expr = S.One;
+  /**
+   * The printable representation.
+   *
+   * @returns The formatted text.
+   * @see SymPy `sympy.polys.domains.domain.Domain.__str__`
+   */
   abstract toString(): string;
-  /** The canonical form of a value known to belong to the domain. */
+  /**
+   * The canonical form of a value known to belong to the domain.
+   *
+   * @param e - Expression to convert.
+   * @returns The canonical form of a value known to belong to the domain.
+   */
   abstract canon(e: Expr): Expr;
-  /** Convert an expression to an element (SymPy from_sympy); throws CoercionFailed. */
+  /**
+   * Convert an expression to an element; throws CoercionFailed.
+   *
+   * @param e - Expression to convert.
+   * @returns The corresponding element of this domain.
+   * @see SymPy `sympy.polys.domains.domain.Domain.from_sympy`
+   */
   abstract fromSympy(e: ExprLike): Expr;
-  /** The element as an expression (SymPy to_sympy); ground numbers (bigint, PythonMPQ) become rationals. */
+  /**
+   * The element as an expression; ground numbers (bigint, PythonMPQ) become rationals.
+   *
+   * @param a - First operand.
+   * @returns The symbolic expression.
+   * @throws CoercionFailed when the value cannot be represented in the target domain.
+   * @see SymPy `sympy.polys.domains.domain.Domain.to_sympy`
+   */
   toSympy(a: unknown): Expr {
     const e = groundToSympy(a);
     if (e instanceof Expr) return e;
     throw new CoercionFailed(`${String(a)} is not an element of ${this.toString()}`);
   }
-  /** SymPy K(a) or K(p, q): an element of the domain (SymPy Domain.new / __call__). */
+  /**
+   * Construct a domain element from its native representation.
+   *
+   * @param args - Arguments to the operation.
+   * @returns The constructed domain element.
+   * @see SymPy `sympy.polys.domains.domain.Domain.new`
+   */
   new(...args: unknown[]): unknown {
     return this.convert(first(args));
   }
   /**
-   * Convert a value to an element of the domain (SymPy convert): an
+   * Convert a value to an element of the domain: an
    * expression, a number, or an element of the domain `base`. ZZ elements
    * are bigints and QQ elements PythonMPQ (SymPy's ground types); the
    * other domains keep expressions.
+   *
+   * @param a - First operand.
+   * @param base - The underlying coefficient domain.
+   * @returns The value in the target coefficient domain.
+   * @throws CoercionFailed when the value cannot be represented in the target domain.
+   * @see SymPy `sympy.polys.domains.domain.Domain.convert`
    */
   convert(a: unknown, base?: Domain): unknown {
     const e = base !== undefined && !base.equals(this) ? base.toSympy(a) : groundToSympy(a);
     if (!(e instanceof Expr)) throw new CoercionFailed(`cannot convert ${String(a)} to ${this.toString()}`);
     return this.fromSympy(e);
   }
-  /** Is a a unit, an invertible element (SymPy is_unit)? */
+  /**
+   * Test whether the element is invertible in this domain.
+   *
+   * @param a - First operand.
+   * @returns Whether the element has a multiplicative inverse in the domain.
+   * @throws NotImplementedError when the coefficient domain does not support this operation.
+   */
   isUnit(a: unknown): boolean {
     if (this.isField) return !this.isZero(this.convert(a));
     throw new NotImplementedError(`isUnit is not implemented for ${this.toString()}`);
   }
-  /** The unit u for which u*a is the canonical associate of a (SymPy canonical_unit). */
+  /**
+   * The unit u for which u*a is the canonical associate of a.
+   *
+   * @param a - First operand.
+   * @returns The unit u for which u*a is the canonical associate of a.
+   * @see SymPy `sympy.polys.domains.domain.Domain.canonical_unit`
+   */
   canonicalUnit(a: unknown): unknown {
     return this.convert(this.isNegative(this.convert(a)) ? -1 : 1);
   }
-  /** The square root of a when it is a square in the domain (SymPy exsqrt), NoMatch otherwise. */
+  /**
+   * The square root of a when it is a square in the domain, NoMatch otherwise.
+   *
+   * @param _a - First operand.
+   * @returns The square root of a when it is a square in the domain, NoMatch otherwise.
+   * @throws NotImplementedError when the coefficient domain does not support this operation.
+   * @see SymPy `sympy.polys.domains.domain.Domain.exsqrt`
+   */
   exsqrt(_a: unknown): unknown {
     throw new NotImplementedError(`exsqrt is not implemented for ${this.toString()}`);
   }
-  /** Is a a square in the domain (SymPy is_square)? */
+  /**
+   * Test whether the element is a square in this domain.
+   *
+   * @param a - First operand.
+   * @returns Whether the element is a square in the domain.
+   * @see SymPy `sympy.polys.domains.domain.Domain.is_square`
+   */
   isSquare(a: unknown): boolean {
     return !isNoMatch(this.exsqrt(a));
   }
-  /** Convert an element of the domain `base` to an element of this domain (SymPy convert_from); throws CoercionFailed. */
+  /**
+   * Convert an element of the domain `base` to an element of this domain; throws CoercionFailed.
+   *
+   * @param a - First operand.
+   * @param base - The underlying coefficient domain.
+   * @returns The value expressed in this domain.
+   * @see SymPy `sympy.polys.domains.domain.Domain.convert_from`
+   */
   convertFrom(a: unknown, base: Domain): unknown {
     return this.convert(a, base);
   }
-  /** The element of a polynomial ring K0 as an element of this domain (SymPy from_PolynomialRing), NoMatch when it is not one. */
+  /**
+   * The element of a polynomial ring K0 as an element of this domain, NoMatch when it is not one.
+   *
+   * @param a - First operand.
+   * @param K0 - Source coefficient domain.
+   * @returns The element of a polynomial ring K0 as an element of this domain, NoMatch when it is not one.
+   * @see SymPy `sympy.polys.domains.domain.Domain.from_PolynomialRing`
+   */
   fromPolynomialRing(a: unknown, K0: Domain): unknown {
     return this.convertOrNoMatch(a, K0);
   }
-  /** The element of a fraction field K0 as an element of this domain (SymPy from_FractionField), NoMatch when it is not one. */
+  /**
+   * The element of a fraction field K0 as an element of this domain, NoMatch when it is not one.
+   *
+   * @param a - First operand.
+   * @param K0 - Source coefficient domain.
+   * @returns The element of a fraction field K0 as an element of this domain, NoMatch when it is not one.
+   * @see SymPy `sympy.polys.domains.domain.Domain.from_FractionField`
+   */
   fromFractionField(a: unknown, K0: Domain): unknown {
     return this.convertOrNoMatch(a, K0);
   }
@@ -280,160 +389,410 @@ export abstract class Domain {
     try { return this.convert(a, K0); }
     catch (error) { if (error instanceof CoercionFailed) return NoMatch; throw error; }
   }
-  /** Is a an element of the domain's type (SymPy of_type)? */
+  /**
+   * Test whether the value already has the native type of a domain element.
+   *
+   * @param a - First operand.
+   * @returns Whether the value has the native domain element type.
+   * @see SymPy `sympy.polys.domains.domain.Domain.of_type`
+   */
   ofType(a: unknown): boolean {
     return a instanceof Expr;
   }
-  /** The number of generators of a polynomial ring or fraction field (SymPy ngens). */
+  /**
+   * The number of generators of a polynomial ring or fraction field.
+   *
+   * @returns The number of generators of a polynomial ring or fraction field.
+   */
   get ngens(): number {
     return this.symbols.length;
   }
-  /** The ground domain of a polynomial ring or fraction field, the domain itself otherwise (SymPy dom). */
+  /**
+   * The ground domain of a polynomial ring or fraction field, the domain itself otherwise.
+   *
+   * @returns The ground domain of a polynomial ring or fraction field, the domain itself otherwise.
+   */
   get dom(): Domain {
     return GROUNDS[this.ground];
   }
-  /** The ring of a field (SymPy get_ring): QQ -> ZZ, K(x) -> K[x]; a ring is its own ring. */
+  /**
+   * The ring of a field: QQ -> ZZ, K(x) -> K[x]; a ring is its own ring.
+   *
+   * @returns The ring of a field: QQ -> ZZ, K(x) -> K[x].
+   * @see SymPy `sympy.polys.domains.domain.Domain.get_ring`
+   */
   getRing(): Domain {
     return this;
   }
-  /** Whether this domain provides an associated field (SymPy has_assoc_Field). */
+  /**
+   * Whether this domain provides an associated field.
+   *
+   * @returns Whether this domain provides an associated field.
+   * @see SymPy `sympy.polys.domains.domain.Domain.has_assoc_Field`
+   */
   get hasAssocField(): boolean {
     try { this.getField(); return true; }
     catch (error) { if (error instanceof NotImplementedError) return false; throw error; }
   }
-  /** Whether this domain has an associated ring of which it is the field (SymPy has_assoc_Ring). */
+  /**
+   * Whether this domain has an associated ring of which it is the field.
+   *
+   * @returns Whether this domain has an associated ring of which it is the field.
+   * @see SymPy `sympy.polys.domains.domain.Domain.has_assoc_Ring`
+   */
   get hasAssocRing(): boolean {
     return false;
   }
-  /** a > 0 (SymPy is_positive of a ground element). */
+  /**
+   * a > 0.
+   *
+   * @param a - First operand.
+   * @returns Whether the polynomial is nonzero with positive sign.
+   * @see SymPy `sympy.polys.domains.domain.Domain.is_positive`
+   */
   isPositive(a: unknown): boolean {
     return (groundSign(a) ?? 0) > 0;
   }
-  /** a >= 0 (SymPy is_nonnegative). */
+  /**
+   * a >= 0.
+   *
+   * @param a - First operand.
+   * @returns Whether the polynomial has nonnegative sign.
+   * @see SymPy `sympy.polys.domains.domain.Domain.is_nonnegative`
+   */
   isNonnegative(a: unknown): boolean {
     return (groundSign(a) ?? -1) >= 0;
   }
-  /** a <= 0 (SymPy is_nonpositive). */
+  /**
+   * a <= 0.
+   *
+   * @param a - First operand.
+   * @returns Whether the polynomial has nonpositive sign.
+   * @see SymPy `sympy.polys.domains.domain.Domain.is_nonpositive`
+   */
   isNonpositive(a: unknown): boolean {
     return (groundSign(a) ?? 1) <= 0;
   }
-  /** The greatest common divisor of two elements (SymPy gcd). */
+  /**
+   * The greatest common divisor of two elements.
+   *
+   * @param _a - First operand.
+   * @param _b - Second operand.
+   * @returns The greatest common divisor of two elements.
+   * @throws NotImplementedError when the coefficient domain does not support this operation.
+   * @see SymPy `sympy.polys.domains.domain.Domain.gcd`
+   */
   gcd(_a: unknown, _b: unknown): unknown {
     throw new NotImplementedError(`gcd is not implemented for ${this.toString()}`);
   }
-  /** The least common multiple of two elements (SymPy lcm). */
+  /**
+   * The least common multiple of two elements.
+   *
+   * @param _a - First operand.
+   * @param _b - Second operand.
+   * @returns The least common multiple of two elements.
+   * @throws NotImplementedError when the coefficient domain does not support this operation.
+   * @see SymPy `sympy.polys.domains.domain.Domain.lcm`
+   */
   lcm(_a: unknown, _b: unknown): unknown {
     throw new NotImplementedError(`lcm is not implemented for ${this.toString()}`);
   }
-  /** [quotient, remainder] of two elements (SymPy div). */
+  /**
+   * [quotient, remainder] of two elements.
+   *
+   * @param _a - First operand.
+   * @param _b - Second operand.
+   * @returns [quotient, remainder] of two elements.
+   * @throws NotImplementedError when the coefficient domain does not support this operation.
+   * @see SymPy `sympy.polys.domains.domain.Domain.div`
+   */
   div(_a: unknown, _b: unknown): [unknown, unknown] {
     throw new NotImplementedError(`div is not implemented for ${this.toString()}`);
   }
-  /** The exact quotient of two elements (SymPy exquo); throws ExactQuotientFailed. */
+  /**
+   * The exact quotient of two elements; throws ExactQuotientFailed.
+   *
+   * @param _a - First operand.
+   * @param _b - Second operand.
+   * @returns The exact quotient of two elements.
+   * @throws NotImplementedError when the coefficient domain does not support this operation.
+   * @see SymPy `sympy.polys.domains.domain.Domain.exquo`
+   */
   exquo(_a: unknown, _b: unknown): unknown {
     throw new NotImplementedError(`exquo is not implemented for ${this.toString()}`);
   }
-  /** The remainder of two elements (SymPy rem). */
+  /**
+   * The remainder of two elements.
+   *
+   * @param _a - First operand.
+   * @param _b - Second operand.
+   * @returns The remainder of two elements.
+   * @throws NotImplementedError when the coefficient domain does not support this operation.
+   * @see SymPy `sympy.polys.domains.domain.Domain.rem`
+   */
   rem(_a: unknown, _b: unknown): unknown {
     throw new NotImplementedError(`rem is not implemented for ${this.toString()}`);
   }
-  /** The terms {monomial: coefficient} of a polynomial-ring element (SymPy PolyElement.to_dict). */
+  /**
+   * The terms {monomial: coefficient} of a polynomial-ring element.
+   *
+   * @param a - First operand.
+   * @returns The terms {monomial: coefficient} of a polynomial-ring element.
+   * @throws NotImplementedError when the input is not an element of this polynomial ring.
+   */
   toDict(a: unknown): Map<number[], unknown> {
     throw new NotImplementedError(`${String(a)} is not a polynomial-ring element of ${this.toString()}`);
   }
-  /** The algebraic number field QQ<a, ...> over this domain (SymPy algebraic_field). */
+  /**
+   * The algebraic number field QQ<a, ...> over this domain.
+   *
+   * @param exts - Algebraic generators to adjoin.
+   * @returns The algebraic number field QQ<a, ...> over this domain.
+   * @see SymPy `sympy.polys.domains.domain.Domain.algebraic_field`
+   */
   algebraicField(...exts: ExprLike[]): Domain {
     return defined(domainHooks.algebraicField, 'algebraic field module')(this, exts);
   }
+  /**
+   * The sum of the operands.
+   *
+   * @param a - First operand.
+   * @param b - Second operand.
+   * @returns The sum of the operands.
+   * @see SymPy `sympy.polys.domains.domain.Domain.add`
+   */
   add(a: Expr, b: Expr): Expr {
     return this.canon(add(a, b));
   }
+  /**
+   * The difference of the operands.
+   *
+   * @param a - First operand.
+   * @param b - Second operand.
+   * @returns The difference of the operands.
+   * @see SymPy `sympy.polys.domains.domain.Domain.sub`
+   */
   sub(a: Expr, b: Expr): Expr {
     return this.canon(add(a, neg(b)));
   }
+  /**
+   * The product of the operands.
+   *
+   * @param a - First operand.
+   * @param b - Second operand.
+   * @returns The product of the operands.
+   * @see SymPy `sympy.polys.domains.domain.Domain.mul`
+   */
   mul(a: Expr, b: Expr): Expr {
     return this.canon(mul(a, b));
   }
+  /**
+   * The additive inverse.
+   *
+   * @param a - First operand.
+   * @returns The additive inverse.
+   * @see SymPy `sympy.polys.domains.domain.Domain.neg`
+   */
   neg(a: Expr): Expr {
     return this.canon(neg(a));
   }
-  /** a/b in the fraction field of the domain. */
+  /**
+   * a/b in the fraction field of the domain.
+   *
+   * @param a - First operand.
+   * @param b - Second operand.
+   * @returns The quotient in the coefficient domain.
+   * @see SymPy `sympy.polys.domains.domain.Domain.quo`
+   */
   quo(a: Expr, b: Expr): Expr {
     return this.getField().canon(mul(a, pow(b, -1)));
   }
+  /**
+   * Whether the element is zero.
+   *
+   * @param a - First operand.
+   * @returns Whether the element is zero.
+   * @see SymPy `sympy.polys.domains.domain.Domain.is_zero`
+   */
   isZero(a: unknown): boolean {
     return groundSign(a) === 0;
   }
+  /**
+   * Whether the element is the multiplicative identity.
+   *
+   * @param a - First operand.
+   * @returns Whether the element is the multiplicative identity.
+   * @see SymPy `sympy.polys.domains.domain.Domain.is_one`
+   */
   isOne(a: unknown): boolean {
     const e = groundToSympy(a);
     return e instanceof Rational && e.isOne;
   }
-  /** a < 0 for a number (SymPy is_negative of the leading ground coefficient). */
+  /**
+   * a < 0 for a number.
+   *
+   * @param a - First operand.
+   * @returns Whether the leading coefficient is negative.
+   * @see SymPy `sympy.polys.domains.domain.Domain.is_negative`
+   */
   isNegative(a: unknown): boolean {
     return (groundSign(a) ?? 0) < 0;
   }
+  /**
+   * Whether the operand represents the same value.
+   *
+   * @param o - Operand to combine or compare with this value.
+   * @returns Whether the comparison holds.
+   * @see SymPy `sympy.polys.domains.domain.Domain.__eq__`
+   */
   equals(o: Domain): boolean {
     return this.toString() === o.toString();
   }
-  /** The fraction field (SymPy get_field). */
+  /**
+   * The fraction field.
+   *
+   * @returns The fraction field.
+   * @see SymPy `sympy.polys.domains.domain.Domain.get_field`
+   */
   abstract getField(): Domain;
-  /** SymPy K[gens] (K.poly_ring): the polynomial ring in gens over this domain. */
+  /**
+   * The polynomial ring in gens over this domain.
+   *
+   * @param gens - Polynomial generators in the desired order.
+   * @returns The polynomial ring in gens over this domain.
+   * @see SymPy `sympy.polys.domains.domain.Domain.poly_ring`
+   */
   polyRing(...gens: Sym[]): Domain {
     if (isGroundDomain(this) || this instanceof PolynomialRing) return new PolynomialRing(this, gens);
     return defined(domainHooks.compositeRing, 'composite domains')(this, gens);
   }
-  /** SymPy K.frac_field(*gens): the field of rational functions in gens over this domain. */
+  /**
+   * The field of rational functions in gens over this domain.
+   *
+   * @param gens - Polynomial generators in the desired order.
+   * @returns The field of rational functions in gens over this domain.
+   * @see SymPy `sympy.polys.domains.domain.Domain.frac_field`
+   */
   fracField(...gens: Sym[]): Domain {
     if (isGroundDomain(this) || this instanceof SymbolicDomain) return new FractionField(this, gens);
     return defined(domainHooks.compositeField, 'composite domains')(this, gens);
   }
-  /** SymPy K.inject(*symbols): the polynomial ring over this domain, or this composite domain with more generators. */
+  /**
+   * The polynomial ring over this domain, or this composite domain with more generators.
+   *
+   * @param symbols - Symbols naming the generators, in order.
+   * @returns The polynomial with coefficient-domain generators made explicit.
+   * @see SymPy `sympy.polys.domains.domain.Domain.inject`
+   */
   inject(...symbols: Sym[]): Domain {
     return this.polyRing(...symbols);
   }
-  /** SymPy K.drop(*symbols): a simple domain has no generators to drop. */
+  /**
+   * a simple domain has no generators to drop.
+   *
+   * @param _symbols - Symbols naming the generators, in order.
+   * @returns The resulting coefficient domain.
+   * @see SymPy `sympy.polys.domains.domain.Domain.drop`
+   */
   drop(..._symbols: Expr[]): Domain {
     return this;
   }
-  /** SymPy `a in K`: whether a converts to an element of the domain. */
+  /**
+   * Whether a converts to an element of the domain.
+   *
+   * @param a - First operand.
+   * @returns Whether a converts to an element of the domain.
+   * @see SymPy `sympy.polys.domains.domain.Domain.__contains__`
+   */
   contains(a: unknown): boolean {
     if (notACoefficient(a)) return false;
     try { this.convert(a); return true; }
     catch (error) { if (error instanceof CoercionFailed) return false; throw error; }
   }
-  /** Whether the elements are exact (SymPy is_Exact): false for the floating-point domains. */
+  /**
+   * Whether the elements are exact: false for the floating-point domains.
+   *
+   * @returns Whether the elements are exact: false for the floating-point domains.
+   * @see SymPy `sympy.polys.domains.domain.Domain.is_Exact`
+   */
   get isExact(): boolean {
     return true;
   }
-  /** The exact domain closest to this one (SymPy get_exact). */
+  /**
+   * The exact domain closest to this one.
+   *
+   * @returns The exact domain closest to this one.
+   * @see SymPy `sympy.polys.domains.domain.Domain.get_exact`
+   */
   getExact(): Domain {
     return this;
   }
-  /** Whether the domain has characteristic zero (SymPy has_CharacteristicZero). */
+  /**
+   * Whether the domain has characteristic zero.
+   *
+   * @returns Whether the domain has characteristic zero.
+   * @see SymPy `sympy.polys.domains.domain.Domain.has_CharacteristicZero`
+   */
   get hasCharacteristicZero(): boolean {
     return false;
   }
-  /** The characteristic of the domain (SymPy characteristic): 0 for a domain of characteristic zero. */
+  /**
+   * The characteristic of the domain: 0 for a domain of characteristic zero.
+   *
+   * @returns The characteristic of the domain: 0 for a domain of characteristic zero.
+   * @throws NotImplementedError when the domain does not implement characteristic.
+   * @see SymPy `sympy.polys.domains.domain.Domain.characteristic`
+   */
   characteristic(): bigint {
     if (this.hasCharacteristicZero) return 0n;
     throw new NotImplementedError('characteristic()');
   }
-  /** SymPy K.old_poly_ring(x): the univariate polynomial ring over this domain. */
+  /**
+   * The univariate polynomial ring over this domain.
+   *
+   * @param gen - Generator or its index.
+   * @returns The univariate polynomial ring over this domain.
+   * @throws NotImplementedError when no generators are supplied.
+   * @see SymPy `sympy.polys.domains.domain.Domain.old_poly_ring`
+   */
   oldPolyRing(gen: Sym): GlobalPolynomialRing;
+  /**
+   * The univariate polynomial ring over this domain.
+   *
+   * @param gens - Polynomial generators in the desired order.
+   * @returns The univariate polynomial ring over this domain.
+   * @throws NotImplementedError when no generators are supplied.
+   * @see SymPy `sympy.polys.domains.domain.Domain.old_poly_ring`
+   */
   oldPolyRing(...gens: Sym[]): GlobalPolynomialRing | PolynomialRingBase;
   oldPolyRing(...gens: Sym[]): GlobalPolynomialRing | PolynomialRingBase {
     if (gens.length === 0) throw new NotImplementedError('oldPolyRing requires generators');
     return gens.length === 1 ? new GlobalPolynomialRing(this, first(gens)) : defined(domainHooks.polynomialRing, 'polynomial ring module')(this, gens);
   }
-  /** A finite free module over this ring (SymPy free_module). */
+  /**
+   * A finite free module over this ring.
+   *
+   * @param rank - Number of free-module generators.
+   * @returns A finite free module over this ring.
+   */
   freeModule(rank: IntLike): FreeModule {
     return defined(domainHooks.freeModule, 'AGCA modules')(this, rank);
   }
-  /** The ideal generated by the given elements. */
+  /**
+   * The ideal generated by the given elements.
+   *
+   * @param gens - Polynomial generators in the desired order.
+   * @returns The ideal generated by the given elements.
+   */
   ideal(...gens: ExprLike[]): ModuleImplementedIdeal {
     return defined(domainHooks.ideal, 'AGCA ideals')(this, gens);
   }
-  /** The quotient by an ideal or its generators. */
+  /**
+   * The quotient by an ideal or its generators.
+   *
+   * @param ideal - Ideal defining the quotient.
+   * @returns The quotient by an ideal or its generators.
+   */
   quotientRing(ideal: ModuleImplementedIdeal | readonly ExprLike[]): QuotientRing {
     return defined(domainHooks.quotientRing, 'quotient rings')(this, ideal);
   }
@@ -457,10 +816,22 @@ export abstract class Domain {
   protected recompose(_K: Domain, _gens: readonly Sym[]): Domain {
     throw new NotImplementedError(`${this.toString()} is not a composite domain`);
   }
-  /** Whether elements are represented modulo a finite extension's defining polynomial. */
+  /**
+   * Whether elements are represented modulo a finite extension's defining polynomial.
+   *
+   * @returns Whether elements are represented modulo a finite extension's defining polynomial.
+   * @see SymPy `sympy.polys.domains.domain.Domain.is_FiniteExtension`
+   */
   get isFiniteExtension(): boolean { return false; }
 
-  /** The smallest domain containing this one and K1 (SymPy unify). */
+  /**
+   * The smallest domain containing this one and K1.
+   *
+   * @param K1In - Target coefficient domain.
+   * @returns The smallest domain containing this one and K1.
+   * @throws UnificationFailed when the input domains cannot be unified.
+   * @see SymPy `sympy.polys.domains.domain.Domain.unify`
+   */
   unify(K1In: Domain): Domain {
     let [K0, K1]: [Domain, Domain] = [this, K1In];
     if (K0.equals(K1)) return K0;
@@ -515,7 +886,15 @@ export abstract class Domain {
     const cls = p0 !== false && (p1 === false || this.isField || !K1.isField) ? this : K1;
     return cls.recompose(domain, symbols.map((g) => expectType(g, isSym, 'generator')));
   }
-  /** The unified domain, failing when a composite domain has one of the symbols as a generator (SymPy unify_with_symbols). */
+  /**
+   * The unified domain, failing when a composite domain has one of the symbols as a generator.
+   *
+   * @param K1 - Domain to unify with this domain.
+   * @param symbols - Symbols naming the generators, in order.
+   * @returns The unified domain, failing when a composite domain has one of the symbols as a generator.
+   * @throws UnificationFailed when the input domains cannot be unified.
+   * @see SymPy `sympy.polys.domains.domain.Domain.unify_with_symbols`
+   */
   unifyWithSymbols(K1: Domain, symbols: readonly Expr[]): Domain {
     const shares = (K: Domain): boolean => {
       const parts = K.compositeParts;
@@ -526,25 +905,67 @@ export abstract class Domain {
   }
 }
 
-/** SymPy ZZ: the integers (SymPy IntegerRing). */
+/**
+ * The integers.
+ *
+ * @see SymPy `sympy.polys.domains.integerring.IntegerRing`
+ */
 export class IntegerRing extends Domain {
+  /** The name of the ground domain. */
   readonly ground = 'ZZ' as const;
+  /**
+   * Whether every nonzero element is invertible.
+   *
+   * @see SymPy `sympy.polys.domains.integerring.IntegerRing.is_Field`
+   */
   readonly isField = false;
+  /**
+   * The printable representation.
+   *
+   * @returns The formatted text.
+   * @see SymPy `sympy.polys.domains.integerring.IntegerRing.__str__`
+   */
   toString(): string {
     return 'ZZ';
   }
   protected override get unificationKind(): UnificationKind {
     return 'ZZ';
   }
+  /**
+   * Whether the domain has an associated ring.
+   *
+   * @returns Whether the domain has an associated ring.
+   * @see SymPy `sympy.polys.domains.integerring.IntegerRing.has_assoc_Ring`
+   */
   override get hasAssocRing(): boolean {
     return true;
   }
+  /**
+   * Whether the characteristic is zero.
+   *
+   * @returns Whether the characteristic is zero.
+   * @see SymPy `sympy.polys.domains.integerring.IntegerRing.has_CharacteristicZero`
+   */
   override get hasCharacteristicZero(): boolean {
     return true;
   }
+  /**
+   * The expression in canonical form for this domain.
+   *
+   * @param e - Expression to convert.
+   * @returns The expression in canonical form for this domain.
+   */
   canon(e: Expr): Expr {
     return e;
   }
+  /**
+   * Convert a symbolic expression to a domain element.
+   *
+   * @param eIn - Expression to convert.
+   * @returns The corresponding element of this domain.
+   * @throws CoercionFailed when the value is not an integer.
+   * @see SymPy `sympy.polys.domains.integerring.IntegerRing.from_sympy`
+   */
   fromSympy(eIn: ExprLike): Expr {
     const e = sympify(eIn);
     if (e instanceof Rational && e.isInteger) return e;
@@ -554,119 +975,318 @@ export class IntegerRing extends Domain {
     }
     throw new CoercionFailed(`expected an integer, got ${str(e)}`);
   }
+  /**
+   * The associated field of fractions.
+   *
+   * @returns The associated field of fractions.
+   * @see SymPy `sympy.polys.domains.integerring.IntegerRing.get_field`
+   */
   getField(): Domain {
     return QQ;
   }
-  /** An integer element as a bigint (SymPy ZZ.convert); throws CoercionFailed. */
+  /**
+   * An integer element as a bigint; throws CoercionFailed.
+   *
+   * @param a - First operand.
+   * @param base - The underlying coefficient domain.
+   * @returns The value in the target coefficient domain.
+   * @throws CoercionFailed when the value is not an integer.
+   * @see SymPy `sympy.polys.domains.integerring.IntegerRing.convert`
+   */
   override convert(a: unknown, base?: Domain): bigint {
     const r = groundRational(base !== undefined && !base.equals(this) ? base.toSympy(a) : a);
     if (r !== undefined && r[0] % r[1] === 0n) return r[0] / r[1];
     throw new CoercionFailed(`expected an integer, got ${String(a)}`);
   }
+  /**
+   * Whether the value has the native element type of this domain.
+   *
+   * @param a - First operand.
+   * @returns Whether the value has the native domain element type.
+   * @see SymPy `sympy.polys.domains.integerring.IntegerRing.of_type`
+   */
   override ofType(a: unknown): boolean {
     return typeof a === 'bigint';
   }
+  /**
+   * The greatest common divisor.
+   *
+   * @param a - First operand.
+   * @param b - Second operand.
+   * @returns The greatest common divisor.
+   * @see SymPy `sympy.polys.domains.integerring.IntegerRing.gcd`
+   */
   override gcd(a: unknown, b: unknown): bigint {
     return igcd(this.convert(a), this.convert(b));
   }
+  /**
+   * The least common multiple.
+   *
+   * @param a - First operand.
+   * @param b - Second operand.
+   * @returns The least common multiple.
+   * @see SymPy `sympy.polys.domains.integerring.IntegerRing.lcm`
+   */
   override lcm(a: unknown, b: unknown): bigint {
     return ilcm(this.convert(a), this.convert(b));
   }
-  /** Python divmod (the quotient rounds toward -infinity). */
+  /**
+   * Python divmod (the quotient rounds toward -infinity).
+   *
+   * @param a - First operand.
+   * @param b - Second operand.
+   * @returns Python divmod (the quotient rounds toward -infinity).
+   * @see SymPy `sympy.polys.domains.integerring.IntegerRing.div`
+   */
   override div(a: unknown, b: unknown): [bigint, bigint] {
     return floorDivmod(this.convert(a), this.convert(b));
   }
+  /**
+   * The exact quotient, requiring divisibility.
+   *
+   * @param a - First operand.
+   * @param b - Second operand.
+   * @returns The exact quotient, requiring divisibility.
+   * @throws ExactQuotientFailed when the divisor does not divide the dividend exactly.
+   * @see SymPy `sympy.polys.domains.integerring.IntegerRing.exquo`
+   */
   override exquo(a: unknown, b: unknown): bigint {
     const [q, r] = floorDivmod(this.convert(a), this.convert(b));
     if (r !== 0n) throw new ExactQuotientFailed(`${String(a)} does not divide ${String(b)} in ZZ`);
     return q;
   }
+  /**
+   * The remainder after division.
+   *
+   * @param a - First operand.
+   * @param b - Second operand.
+   * @returns The remainder after division.
+   * @see SymPy `sympy.polys.domains.integerring.IntegerRing.rem`
+   */
   override rem(a: unknown, b: unknown): bigint {
     return floorDivmod(this.convert(a), this.convert(b))[1];
   }
-  /** 1 and -1 are the units of ZZ. */
+  /**
+   * 1 and -1 are the units of ZZ.
+   *
+   * @param a - First operand.
+   * @returns Whether the element has a multiplicative inverse in the domain.
+   * @see SymPy `sympy.polys.domains.integerring.IntegerRing.is_unit`
+   */
   override isUnit(a: unknown): boolean {
     const n = this.convert(a);
     return n === 1n || n === -1n;
   }
-  /** The nonnegative square root of a square (SymPy ZZ.exsqrt), NoMatch otherwise. */
+  /**
+   * The nonnegative square root of a square, NoMatch otherwise.
+   *
+   * @param aIn - First operand.
+   * @returns The nonnegative square root of a square, NoMatch otherwise.
+   * @see SymPy `sympy.polys.domains.integerring.IntegerRing.exsqrt`
+   */
   override exsqrt(aIn: unknown): bigint | NoMatchResult {
     const a = this.convert(aIn);
     if (a < 0n) return NoMatch;
     const [root, rem] = sqrtrem(a);
     return rem === 0n ? root : NoMatch;
   }
-  /** floor(log(a, b)) computed in floating point like SymPy's math.log (SymPy ZZ.log). */
+  /**
+   * Floor(log(a, b)) computed in floating point like SymPy's math.log.
+   *
+   * @param a - First operand.
+   * @param b - Second operand.
+   * @returns Floor(log(a, b)) computed in floating point like SymPy's math.log.
+   * @see SymPy `sympy.polys.domains.integerring.IntegerRing.log`
+   */
   log(a: unknown, b: unknown): bigint {
     return BigInt(Math.trunc(Math.log(Number(this.convert(a))) / Math.log(Number(this.convert(b)))));
   }
 }
 
-/** SymPy QQ: the rationals. */
+/**
+ * The rationals.
+ *
+ * @see SymPy `sympy.polys.domains.rationalfield.RationalField`
+ */
 export class RationalField extends Domain {
+  /** The name of the ground domain. */
   readonly ground = 'QQ' as const;
+  /**
+   * Whether every nonzero element is invertible.
+   *
+   * @see SymPy `sympy.polys.domains.rationalfield.RationalField.is_Field`
+   */
   readonly isField = true;
+  /**
+   * The printable representation.
+   *
+   * @returns The formatted text.
+   * @see SymPy `sympy.polys.domains.rationalfield.RationalField.__str__`
+   */
   toString(): string {
     return 'QQ';
   }
   protected override get unificationKind(): UnificationKind {
     return 'QQ';
   }
+  /**
+   * Whether the domain has an associated ring.
+   *
+   * @returns Whether the domain has an associated ring.
+   * @see SymPy `sympy.polys.domains.rationalfield.RationalField.has_assoc_Ring`
+   */
   override get hasAssocRing(): boolean {
     return true;
   }
+  /**
+   * Whether the characteristic is zero.
+   *
+   * @returns Whether the characteristic is zero.
+   * @see SymPy `sympy.polys.domains.rationalfield.RationalField.has_CharacteristicZero`
+   */
   override get hasCharacteristicZero(): boolean {
     return true;
   }
+  /**
+   * The expression in canonical form for this domain.
+   *
+   * @param e - Expression to convert.
+   * @returns The expression in canonical form for this domain.
+   */
   canon(e: Expr): Expr {
     return e;
   }
+  /**
+   * Convert a symbolic expression to a domain element.
+   *
+   * @param eIn - Expression to convert.
+   * @returns The corresponding element of this domain.
+   * @throws CoercionFailed when the value is not rational.
+   * @see SymPy `sympy.polys.domains.rationalfield.RationalField.from_sympy`
+   */
   fromSympy(eIn: ExprLike): Expr {
     const e = sympify(eIn);
     if (e instanceof Rational) return e;
     if (e instanceof Float) return floatToRational(e);
     throw new CoercionFailed(`expected a rational number, got ${str(e)}`);
   }
+  /**
+   * The associated field of fractions.
+   *
+   * @returns The associated field of fractions.
+   * @see SymPy `sympy.polys.domains.rationalfield.RationalField.get_field`
+   */
   getField(): Domain {
     return this;
   }
+  /**
+   * The associated ring.
+   *
+   * @returns The associated ring.
+   * @see SymPy `sympy.polys.domains.rationalfield.RationalField.get_ring`
+   */
   override getRing(): Domain {
     return ZZ;
   }
-  /** SymPy QQ(p, q): the PythonMPQ p/q. */
+  /**
+   * The PythonMPQ p/q.
+   *
+   * @param args - Arguments to the operation.
+   * @returns The normalized fraction.
+   * @see SymPy `sympy.polys.domains.rationalfield.RationalField.new`
+   */
   override new(...args: unknown[]): PythonMPQ {
     const [p, q] = [this.convert(first(args)), args.length > 1 ? this.convert(args[1]) : new PythonMPQ(1n)];
     return p.div(q);
   }
-  /** A rational element as a PythonMPQ (SymPy QQ.convert); throws CoercionFailed. */
+  /**
+   * A rational element as a PythonMPQ; throws CoercionFailed.
+   *
+   * @param a - First operand.
+   * @param base - The underlying coefficient domain.
+   * @returns The value in the target coefficient domain.
+   * @throws CoercionFailed when the value is not rational.
+   * @see SymPy `sympy.polys.domains.rationalfield.RationalField.convert`
+   */
   override convert(a: unknown, base?: Domain): PythonMPQ {
     const r = groundRational(base !== undefined && !base.equals(this) ? base.toSympy(a) : a);
     if (r === undefined) throw new CoercionFailed(`expected a rational number, got ${String(a)}`);
     return new PythonMPQ(r[0], r[1]);
   }
+  /**
+   * Whether the value has the native element type of this domain.
+   *
+   * @param a - First operand.
+   * @returns Whether the value has the native domain element type.
+   * @see SymPy `sympy.polys.domains.rationalfield.RationalField.of_type`
+   */
   override ofType(a: unknown): boolean {
     return a instanceof PythonMPQ;
   }
-  /** gcd of the numerators over the lcm of the denominators (SymPy Field.gcd). */
+  /**
+   * Gcd of the numerators over the lcm of the denominators.
+   *
+   * @param a - First operand.
+   * @param b - Second operand.
+   * @returns The greatest common divisor.
+   * @see SymPy `sympy.polys.domains.rationalfield.RationalField.gcd`
+   */
   override gcd(a: unknown, b: unknown): PythonMPQ {
     const [x, y] = [this.convert(a), this.convert(b)];
     return new PythonMPQ(igcd(x.numerator, y.numerator), ilcm(x.denominator, y.denominator));
   }
-  /** lcm of the numerators over the gcd of the denominators (SymPy Field.lcm). */
+  /**
+   * Lcm of the numerators over the gcd of the denominators.
+   *
+   * @param a - First operand.
+   * @param b - Second operand.
+   * @returns The least common multiple.
+   * @see SymPy `sympy.polys.domains.rationalfield.RationalField.lcm`
+   */
   override lcm(a: unknown, b: unknown): PythonMPQ {
     const [x, y] = [this.convert(a), this.convert(b)];
     return new PythonMPQ(ilcm(x.numerator, y.numerator), igcd(x.denominator, y.denominator));
   }
+  /**
+   * The quotient and remainder in the rational field.
+   *
+   * @param a - First operand.
+   * @param b - Second operand.
+   * @returns The quotient and remainder in the rational field.
+   * @see SymPy `sympy.polys.domains.rationalfield.RationalField.div`
+   */
   override div(a: unknown, b: unknown): [PythonMPQ, PythonMPQ] {
     return [this.exquo(a, b), new PythonMPQ(0n)];
   }
+  /**
+   * The exact quotient, requiring divisibility.
+   *
+   * @param a - First operand.
+   * @param b - Second operand.
+   * @returns The exact quotient, requiring divisibility.
+   * @see SymPy `sympy.polys.domains.rationalfield.RationalField.exquo`
+   */
   override exquo(a: unknown, b: unknown): PythonMPQ {
     return this.convert(a).div(this.convert(b));
   }
+  /**
+   * The remainder after division.
+   *
+   * @param _a - First operand.
+   * @param _b - Second operand.
+   * @returns The remainder after division.
+   * @see SymPy `sympy.polys.domains.rationalfield.RationalField.rem`
+   */
   override rem(_a: unknown, _b: unknown): PythonMPQ {
     return new PythonMPQ(0n);
   }
-  /** The nonnegative square root of a square (SymPy QQ.exsqrt), NoMatch otherwise. */
+  /**
+   * The nonnegative square root of a square, NoMatch otherwise.
+   *
+   * @param aIn - First operand.
+   * @returns The nonnegative square root of a square, NoMatch otherwise.
+   * @see SymPy `sympy.polys.domains.rationalfield.RationalField.exsqrt`
+   */
   override exsqrt(aIn: unknown): PythonMPQ | NoMatchResult {
     const a = this.convert(aIn);
     const [p, q] = [ZZ.exsqrt(a.numerator), ZZ.exsqrt(a.denominator)];
@@ -674,40 +1294,133 @@ export class RationalField extends Domain {
   }
 }
 
-/** SymPy RR: floating-point numbers with 53 bits. */
+/**
+ * Floating-point numbers with 53 bits.
+ *
+ * @see SymPy `sympy.polys.domains.realfield.RealField`
+ */
 export class RealField extends Domain {
+  /** The context governing floating-point arithmetic. */
   readonly context: MPContext;
+  /**
+   * Construct a real field at the requested precision.
+   *
+   * @param prec - Precision of the real field in bits.
+   */
   constructor(prec = 53) {
     super();
     this.context = new MPContext(prec, { real: true, parent: this });
   }
+  /**
+   * The working precision in bits.
+   *
+   * @returns The working precision in bits.
+   * @see SymPy `sympy.polys.domains.realfield.RealField.precision`
+   */
   get precision(): number { return this.context.prec; }
+  /**
+   * The working precision in decimal digits.
+   *
+   * @returns The working precision in decimal digits.
+   * @see SymPy `sympy.polys.domains.realfield.RealField.dps`
+   */
   get dps(): number { return this.context.dps; }
+  /**
+   * The constructor for elements of this domain.
+   *
+   * @param value - Value to convert.
+   * @returns The constructor for elements of this domain.
+   * @see SymPy `sympy.polys.domains.realfield.RealField.dtype`
+   */
   dtype(value: unknown = 0): RealElement { return this.context.mpf(value); }
+  /** The name of the ground domain. */
   readonly ground = 'RR' as const;
+  /**
+   * Whether every nonzero element is invertible.
+   *
+   * @see SymPy `sympy.polys.domains.realfield.RealField.is_Field`
+   */
   readonly isField = true;
+  /**
+   * The printable representation.
+   *
+   * @returns The formatted text.
+   * @see SymPy `sympy.polys.domains.realfield.RealField.__str__`
+   */
   toString(): string {
     return this.precision === 53 ? 'RR' : `RR_${this.precision}`;
   }
+  /**
+   * Whether the operand represents the same value.
+   *
+   * @param other - Operand to combine or compare with this value.
+   * @returns Whether the comparison holds.
+   * @see SymPy `sympy.polys.domains.realfield.RealField.__eq__`
+   */
   override equals(other: Domain): boolean { return other instanceof RealField && other.precision === this.precision; }
+  /**
+   * Whether arithmetic in this domain is exact.
+   *
+   * @returns Whether arithmetic in this domain is exact.
+   * @see SymPy `sympy.polys.domains.realfield.RealField.is_Exact`
+   */
   override get isExact(): boolean { return false; }
-  /** The exact counterpart QQ (SymPy get_exact). */
+  /**
+   * The exact counterpart QQ.
+   *
+   * @returns The exact counterpart QQ.
+   * @see SymPy `sympy.polys.domains.realfield.RealField.get_exact`
+   */
   override getExact(): Domain { return QQ; }
+  /**
+   * Whether the characteristic is zero.
+   *
+   * @returns Whether the characteristic is zero.
+   * @see SymPy `sympy.polys.domains.realfield.RealField.has_CharacteristicZero`
+   */
   override get hasCharacteristicZero(): boolean { return true; }
   protected override get unificationKind(): UnificationKind { return 'RR'; }
   protected override get floatPrecision(): number { return this.precision; }
-  /** The nonnegative square root of a >= 0 (SymPy RR.exsqrt), NoMatch for a < 0. */
+  /**
+   * The nonnegative square root of a >= 0, NoMatch for a < 0.
+   *
+   * @param aIn - First operand.
+   * @returns The nonnegative square root of a >= 0, NoMatch for a < 0.
+   * @see SymPy `sympy.polys.domains.realfield.RealField.exsqrt`
+   */
   override exsqrt(aIn: unknown): Expr | NoMatchResult {
     const a = this.convert(aIn);
     return a instanceof Float && a.isNegative ? NoMatch : this.fromSympy(pow(this.toSympy(a), S.Half));
   }
+  /**
+   * The expression in canonical form for this domain.
+   *
+   * @param e - Expression to convert.
+   * @returns The expression in canonical form for this domain.
+   */
   canon(e: Expr): Expr {
     return e instanceof Rational ? new Float(mpfFromRational(e.p, e.q, this.precision), this.precision) : e;
   }
+  /**
+   * The quotient in the coefficient domain.
+   *
+   * @param a - First operand.
+   * @param b - Second operand.
+   * @returns The quotient in the coefficient domain.
+   * @see SymPy `sympy.polys.domains.realfield.RealField.quo`
+   */
   override quo(a: Expr, b: Expr): Expr {
     const [fa, fb] = [this.canon(a), this.canon(b)];
     return new Float(mpfDiv(expectType(fa, isFloat, 'RR element').mpf, expectType(fb, isFloat, 'RR element').mpf, this.precision), this.precision);
   }
+  /**
+   * Convert a symbolic expression to a domain element.
+   *
+   * @param eIn - Expression to convert.
+   * @returns The corresponding element of this domain.
+   * @throws CoercionFailed when the value cannot be converted to a real number.
+   * @see SymPy `sympy.polys.domains.realfield.RealField.from_sympy`
+   */
   fromSympy(eIn: ExprLike): Expr {
     const e = sympify(eIn);
     if (e instanceof Float) return e.prec === this.precision ? e : new Float(e.mpf, this.precision);
@@ -718,90 +1431,242 @@ export class RealField extends Domain {
     }
     throw new CoercionFailed(`expected a real number, got ${str(e)}`);
   }
+  /**
+   * The associated field of fractions.
+   *
+   * @returns The associated field of fractions.
+   * @see SymPy `sympy.polys.domains.realfield.RealField.get_field`
+   */
   getField(): Domain {
     return this;
   }
 }
 
-/** An element of EX (SymPy ExpressionDomain.Expression): a simplified expression, printed `EX(sqrt(2))`. */
+/**
+ * An element of EX: a simplified expression, printed `EX(sqrt(2))`.
+ *
+ * @see SymPy `sympy.polys.domains.expressiondomain.ExpressionDomain.Expression`
+ */
 export class Expression {
+  /**
+   * The underlying symbolic expression.
+   *
+   * @see SymPy `sympy.polys.domains.expressiondomain.ExpressionDomain.Expression.ex`
+   */
   readonly ex: Expr;
+  /**
+   * Construct a symbolic coefficient.
+   *
+   * @param ex - Expression to convert or manipulate.
+   */
   constructor(ex: ExprLike) {
     this.ex = EX.canon(sympify(ex));
   }
   private static of(o: unknown): Expr {
     return o instanceof Expression ? o.ex : EX.toSympy(o);
   }
+  /**
+   * Whether the element is zero.
+   *
+   * @returns Whether the element is zero.
+   */
   get isZero(): boolean {
     return this.ex instanceof Rational && this.ex.isZero;
   }
+  /**
+   * The sum of the operands.
+   *
+   * @param o - Operand to combine or compare with this value.
+   * @returns The sum of the operands.
+   * @see SymPy `sympy.polys.domains.expressiondomain.ExpressionDomain.Expression.__add__`
+   */
   add(o: unknown): Expression {
     return new Expression(add(this.ex, Expression.of(o)));
   }
+  /**
+   * The difference of the operands.
+   *
+   * @param o - Operand to combine or compare with this value.
+   * @returns The difference of the operands.
+   * @see SymPy `sympy.polys.domains.expressiondomain.ExpressionDomain.Expression.__sub__`
+   */
   sub(o: unknown): Expression {
     return new Expression(add(this.ex, neg(Expression.of(o))));
   }
+  /**
+   * The product of the operands.
+   *
+   * @param o - Operand to combine or compare with this value.
+   * @returns The product of the operands.
+   * @see SymPy `sympy.polys.domains.expressiondomain.ExpressionDomain.Expression.__mul__`
+   */
   mul(o: unknown): Expression {
     return new Expression(mul(this.ex, Expression.of(o)));
   }
+  /**
+   * The quotient of the operands.
+   *
+   * @param o - Operand to combine or compare with this value.
+   * @returns The quotient of the operands.
+   * @see SymPy `sympy.polys.domains.expressiondomain.ExpressionDomain.Expression.__truediv__`
+   */
   div(o: unknown): Expression {
     return new Expression(mul(this.ex, pow(Expression.of(o), -1)));
   }
+  /**
+   * The additive inverse.
+   *
+   * @returns The additive inverse.
+   * @see SymPy `sympy.polys.domains.expressiondomain.ExpressionDomain.Expression.__neg__`
+   */
   neg(): Expression {
     return new Expression(neg(this.ex));
   }
+  /**
+   * The element raised to the specified exponent.
+   *
+   * @param n - Exponent or degree.
+   * @returns The element raised to the specified exponent.
+   * @see SymPy `sympy.polys.domains.expressiondomain.ExpressionDomain.Expression.__pow__`
+   */
   pow(n: ExprLike): Expression {
     return new Expression(pow(this.ex, n));
   }
+  /**
+   * Whether the operand represents the same value.
+   *
+   * @param o - Operand to combine or compare with this value.
+   * @returns Whether the comparison holds.
+   * @see SymPy `sympy.polys.domains.expressiondomain.ExpressionDomain.Expression.__eq__`
+   */
   equals(o: unknown): boolean {
     return this.ex.key === Expression.of(o).key;
   }
-  /** SymPy str and repr: `EX(sqrt(2))`. */
+  /**
+   * `EX(sqrt(2))`.
+   *
+   * @returns The formatted text.
+   * @see SymPy `sympy.polys.domains.expressiondomain.ExpressionDomain.Expression.__str__`
+   */
   toString(): string {
     return `EX(${str(this.ex)})`;
   }
+  /**
+   * The representation of the element with its construction data.
+   *
+   * @returns The representation of the element with its construction data.
+   * @see SymPy `sympy.polys.domains.expressiondomain.ExpressionDomain.Expression.__repr__`
+   */
   repr(): string {
     return this.toString();
   }
 }
 
 /**
- * SymPy EX: arbitrary expressions (for algebraic or symbolic coefficients
+ * Arbitrary expressions (for algebraic or symbolic coefficients
  * such as sqrt(2)*I). Elements are canonicalized as SymPy does
  * (cancel, then expand), so a zero is recognized when it cancels.
+ *
+ * @see SymPy `sympy.polys.domains.expressiondomain.ExpressionDomain`
  */
 export class ExpressionDomain extends Domain {
+  /** The name of the ground domain. */
   readonly ground = 'EX' as const;
+  /**
+   * Whether every nonzero element is invertible.
+   *
+   * @see SymPy `sympy.polys.domains.expressiondomain.ExpressionDomain.is_Field`
+   */
   readonly isField = true;
+  /**
+   * The printable representation.
+   *
+   * @returns The formatted text.
+   * @see SymPy `sympy.polys.domains.expressiondomain.ExpressionDomain.__str__`
+   */
   toString(): string {
     return 'EX';
   }
   protected override get unificationKind(): UnificationKind {
     return 'EX';
   }
+  /**
+   * Whether the characteristic is zero.
+   *
+   * @returns Whether the characteristic is zero.
+   * @see SymPy `sympy.polys.domains.expressiondomain.ExpressionDomain.has_CharacteristicZero`
+   */
   override get hasCharacteristicZero(): boolean {
     return true;
   }
+  /**
+   * The expression in canonical form for this domain.
+   *
+   * @param e - Expression to convert.
+   * @returns The expression in canonical form for this domain.
+   */
   canon(e: Expr): Expr {
     return e instanceof Rational ? e : expand(cancel(e));
   }
+  /**
+   * Convert a symbolic expression to a domain element.
+   *
+   * @param eIn - Expression to convert.
+   * @returns The corresponding element of this domain.
+   * @see SymPy `sympy.polys.domains.expressiondomain.ExpressionDomain.from_sympy`
+   */
   fromSympy(eIn: ExprLike): Expr {
     return this.canon(sympify(eIn));
   }
+  /**
+   * The associated field of fractions.
+   *
+   * @returns The associated field of fractions.
+   * @see SymPy `sympy.polys.domains.expressiondomain.ExpressionDomain.get_field`
+   */
   getField(): Domain {
     return this;
   }
+  /**
+   * The symbolic expression represented by the domain element.
+   *
+   * @param a - First operand.
+   * @returns The symbolic expression.
+   * @see SymPy `sympy.polys.domains.expressiondomain.ExpressionDomain.to_sympy`
+   */
   override toSympy(a: unknown): Expr {
     return a instanceof Expression ? a.ex : super.toSympy(a);
   }
-  /** An element (SymPy EX.convert): the expression wrapped as an Expression; nan and the infinities are not elements. */
+  /**
+   * An element: the expression wrapped as an Expression; nan and the infinities are not elements.
+   *
+   * @param a - First operand.
+   * @param base - The underlying coefficient domain.
+   * @returns The value in the target coefficient domain.
+   * @throws CoercionFailed when the value cannot be represented in the target domain.
+   * @see SymPy `sympy.polys.domains.expressiondomain.ExpressionDomain.convert`
+   */
   override convert(a: unknown, base?: Domain): Expression {
     if (notACoefficient(a)) throw new CoercionFailed(`${String(a)} is not in any domain`);
     return new Expression(a instanceof Expression ? a.ex : (base ?? this).toSympy(a));
   }
+  /**
+   * Whether the value has the native element type of this domain.
+   *
+   * @param a - First operand.
+   * @returns Whether the value has the native domain element type.
+   * @see SymPy `sympy.polys.domains.expressiondomain.ExpressionDomain.of_type`
+   */
   override ofType(a: unknown): boolean {
     return a instanceof Expression;
   }
+  /**
+   * Whether the element is zero.
+   *
+   * @param a - First operand.
+   * @returns Whether the element is zero.
+   * @see SymPy `sympy.polys.domains.expressiondomain.ExpressionDomain.is_zero`
+   */
   override isZero(a: unknown): boolean {
     return a instanceof Expression ? a.isZero : super.isZero(a);
   }
@@ -890,18 +1755,45 @@ abstract class SymbolicDomain extends Domain {
 
 const isTermMap = (x: unknown): x is ReadonlyMap<unknown, unknown> => x instanceof Map;
 
-/** SymPy K[a, ...]: polynomials in symbols (elements are expanded). */
+/**
+ * Polynomials in symbols (elements are expanded).
+ *
+ * @see SymPy `sympy.polys.domains.polynomialring.PolynomialRing`
+ */
 export class PolynomialRing extends SymbolicDomain {
+  /**
+   * Whether every nonzero element is invertible.
+   *
+   * @see SymPy `sympy.polys.domains.polynomialring.PolynomialRing.is_Field`
+   */
   readonly isField = false;
   protected readonly ring = true;
+  /**
+   * The expression in canonical form for this domain.
+   *
+   * @param e - Expression to convert.
+   * @returns The expression in canonical form for this domain.
+   */
   canon(e: Expr): Expr {
     return expandMul(e);
   }
-  /** SymPy K[x](a): an element from an expression, a number or a dict {monomial: coefficient}. */
+  /**
+   * An element from an expression, a number or a dict {monomial: coefficient}.
+   *
+   * @param args - Arguments to the operation.
+   * @returns The corresponding polynomial-ring element.
+   * @see SymPy `sympy.polys.domains.polynomialring.PolynomialRing.new`
+   */
   override new(...args: unknown[]): unknown {
     return this.convert(first(args));
   }
-  /** The element as an expression; a dict {monomial: coefficient} (SymPy's PolyElement is a dict) is summed. */
+  /**
+   * The element as an expression; a dict {monomial: coefficient} (SymPy's PolyElement is a dict) is summed.
+   *
+   * @param a - First operand.
+   * @returns The symbolic expression.
+   * @see SymPy `sympy.polys.domains.polynomialring.PolynomialRing.to_sympy`
+   */
   override toSympy(a: unknown): Expr {
     if (!isTermMap(a)) return super.toSympy(a);
     const terms = [...a].map(([m, c]) => {
@@ -910,10 +1802,23 @@ export class PolynomialRing extends SymbolicDomain {
     });
     return this.canon(add(...terms));
   }
+  /**
+   * Coerce a value into the polynomial ring.
+   *
+   * @param a - First operand.
+   * @param base - The underlying coefficient domain.
+   * @returns The value in the target coefficient domain.
+   * @see SymPy `sympy.polys.domains.polynomialring.PolynomialRing.convert`
+   */
   override convert(a: unknown, base?: Domain): unknown {
     return isTermMap(a) ? this.toSympy(a) : super.convert(a, base);
   }
-  /** The terms {monomial: coefficient} of an element; coefficients are elements of the ground domain. */
+  /**
+   * The terms {monomial: coefficient} of an element; coefficients are elements of the ground domain.
+   *
+   * @param aIn - First operand.
+   * @returns The terms {monomial: coefficient} of an element.
+   */
   override toDict(aIn: unknown): Map<number[], unknown> {
     const a = this.canon(this.toSympy(aIn));
     const out = new Map<string, [number[], Expr]>();
@@ -931,19 +1836,44 @@ export class PolynomialRing extends SymbolicDomain {
     }
     return new Map([...out.values()].filter(([, c]) => !(c instanceof Rational && c.isZero)).map(([m, c]) => [m, this.dom.convert(c)]));
   }
+  /**
+   * The associated field of fractions.
+   *
+   * @returns The associated field of fractions.
+   * @see SymPy `sympy.polys.domains.polynomialring.PolynomialRing.get_field`
+   */
   getField(): Domain {
     return this.domain.fracField(...this.gens);
   }
+  /**
+   * The corresponding object over the specified coefficient domain.
+   *
+   * @param K - Coefficient domain for the polynomial arithmetic.
+   * @returns The corresponding object over the specified coefficient domain.
+   * @see SymPy `sympy.polys.domains.polynomialring.PolynomialRing.set_domain`
+   */
   setDomain(K: Domain): Domain {
     return K.polyRing(...this.gens);
   }
-  /** The units are the units of the ground domain (SymPy PolynomialRing.is_unit). */
+  /**
+   * The units are the units of the ground domain.
+   *
+   * @param a - First operand.
+   * @returns Whether the element has a multiplicative inverse in the domain.
+   * @see SymPy `sympy.polys.domains.polynomialring.PolynomialRing.is_unit`
+   */
   override isUnit(a: unknown): boolean {
     const e = this.toSympy(this.convert(a));
     const free = [...freeSymbols(e)];
     return !this.symbols.some((s) => free.some((f) => f.key === s.key)) && GROUNDS[this.ground].isUnit(e);
   }
-  /** The canonical unit of the leading coefficient (SymPy PolynomialRing.canonical_unit). */
+  /**
+   * The canonical unit of the leading coefficient.
+   *
+   * @param a - First operand.
+   * @returns The canonical unit of the leading coefficient.
+   * @see SymPy `sympy.polys.domains.polynomialring.PolynomialRing.canonical_unit`
+   */
   override canonicalUnit(a: unknown): unknown {
     const terms = [...this.toDict(this.convert(a))];
     if (!terms.length) return this.convert(1);
@@ -968,19 +1898,53 @@ export class PolynomialRing extends SymbolicDomain {
   }
 }
 
-/** SymPy K(a, ...): rational functions of symbols (elements are cancelled). */
+/**
+ * Rational functions of symbols (elements are cancelled).
+ *
+ * @see SymPy `sympy.polys.domains.fractionfield.FractionField`
+ */
 export class FractionField extends SymbolicDomain {
+  /**
+   * Whether every nonzero element is invertible.
+   *
+   * @see SymPy `sympy.polys.domains.fractionfield.FractionField.is_Field`
+   */
   readonly isField = true;
   protected readonly ring = false;
+  /**
+   * The expression in canonical form for this domain.
+   *
+   * @param e - Expression to convert.
+   * @returns The expression in canonical form for this domain.
+   */
   canon(e: Expr): Expr {
     return e instanceof Rational || e instanceof Float || e instanceof Sym ? e : cancel(e);
   }
+  /**
+   * The associated field of fractions.
+   *
+   * @returns The associated field of fractions.
+   * @see SymPy `sympy.polys.domains.fractionfield.FractionField.get_field`
+   */
   getField(): Domain {
     return this;
   }
+  /**
+   * The associated ring.
+   *
+   * @returns The associated ring.
+   * @see SymPy `sympy.polys.domains.fractionfield.FractionField.get_ring`
+   */
   override getRing(): Domain {
     return this.domain.polyRing(...this.gens);
   }
+  /**
+   * The corresponding object over the specified coefficient domain.
+   *
+   * @param K - Coefficient domain for the polynomial arithmetic.
+   * @returns The corresponding object over the specified coefficient domain.
+   * @see SymPy `sympy.polys.domains.fractionfield.FractionField.set_domain`
+   */
   setDomain(K: Domain): Domain {
     return K.fracField(...this.gens);
   }
@@ -989,13 +1953,53 @@ export class FractionField extends SymbolicDomain {
   }
 }
 
-/** SymPy ZZ. */
+/**
+ * The domain of integer coefficients.
+ *
+ * @see SymPy `sympy.polys.domains.integerring.ZZ`
+ * @example
+ * ```ts
+ * import { ZZ } from '@symjs/symjs';
+ *
+ * ZZ.convert(42); // => 42
+ * ```
+ */
 export const ZZ: IntegerRing = new IntegerRing();
-/** SymPy QQ. */
+/**
+ * The field of rational coefficients.
+ *
+ * @see SymPy `sympy.polys.domains.rationalfield.QQ`
+ * @example
+ * ```ts
+ * import { QQ, ex } from '@symjs/symjs';
+ *
+ * QQ.toSympy(QQ.convert(ex`3/4`)); // => 3/4
+ * ```
+ */
 export const QQ: RationalField = new RationalField();
-/** SymPy RR (53-bit floats). */
+/**
+ * The real floating-point coefficient field.
+ *
+ * @see SymPy `sympy.polys.domains.realfield.RR`
+ * @example
+ * ```ts
+ * import { RR } from '@symjs/symjs';
+ *
+ * RR.toString(); // => RR
+ * ```
+ */
 export const RR: Domain = new RealField();
-/** SymPy EX (expressions). */
+/**
+ * The domain of symbolic expression coefficients.
+ *
+ * @see SymPy `sympy.polys.domains.expressiondomain.EX`
+ * @example
+ * ```ts
+ * import { EX, ex } from '@symjs/symjs';
+ *
+ * EX.toSympy(EX.convert(ex`sin(x)`)); // => sin(x)
+ * ```
+ */
 export const EX: ExpressionDomain = new ExpressionDomain();
 
 const GROUNDS: Record<Ground, Domain> = { ZZ, QQ, RR, EX };
@@ -1247,36 +2251,90 @@ function repToExpr(f: Rep, x: Expr): Expr {
   return add(...f.map((c, i) => mul(c, pow(x, n - i))));
 }
 
-/** SymPy GlobalPolynomialRing (K.old_poly_ring(x)): univariate polynomials over a ground domain. */
+/**
+ * Univariate polynomials over a ground domain.
+ *
+ * @see SymPy `sympy.polys.domains.old_polynomialring.GlobalPolynomialRing`
+ */
 export class GlobalPolynomialRing {
+  /**
+   * Construct a `GlobalPolynomialRing` instance.
+   *
+   * @param dom - Ground coefficient domain.
+   * @param gen - Generator or its index.
+   */
   constructor(
+    /** The ground coefficient domain. @see SymPy `sympy.polys.domains.old_polynomialring.GlobalPolynomialRing.dom` */
     readonly dom: Domain,
+    /** The principal generator. */
     readonly gen: Sym,
   ) {}
-  /** The generators (SymPy gens). */
+  /**
+   * The generators.
+   *
+   * @returns The generators.
+   * @see SymPy `sympy.polys.domains.old_polynomialring.GlobalPolynomialRing.gens`
+   */
   get gens(): Sym[] {
     return [this.gen];
   }
+  /**
+   * The additive identity.
+   *
+   * @returns The additive identity.
+   * @see SymPy `sympy.polys.domains.old_polynomialring.GlobalPolynomialRing.zero`
+   */
   get zero(): DMP {
     return new DMP([], this);
   }
+  /**
+   * The multiplicative identity.
+   *
+   * @returns The multiplicative identity.
+   * @see SymPy `sympy.polys.domains.old_polynomialring.GlobalPolynomialRing.one`
+   */
   get one(): DMP {
     return new DMP([this.dom.one], this);
   }
+  /**
+   * The printable representation.
+   *
+   * @returns The formatted text.
+   * @see SymPy `sympy.polys.domains.old_polynomialring.GlobalPolynomialRing.__str__`
+   */
   toString(): string {
     return `${this.dom.toString()}[${str(this.gen)}]`;
   }
+  /**
+   * Whether the operand represents the same value.
+   *
+   * @param o - Operand to combine or compare with this value.
+   * @returns Whether the comparison holds.
+   * @see SymPy `sympy.polys.domains.old_polynomialring.GlobalPolynomialRing.__eq__`
+   */
   equals(o: GlobalPolynomialRing): boolean {
     return this.dom.equals(o.dom) && this.gen.key === o.gen.key;
   }
-  /** The polynomial with these coefficients (highest degree first; SymPy R(list)). */
+  /**
+   * The polynomial with these coefficients (highest degree first; SymPy R(list)).
+   *
+   * @param rep - Dense coefficients in descending order.
+   * @returns The polynomial with these coefficients (highest degree first.
+   */
   fromList(rep: readonly ExprLike[]): DMP {
     return new DMP(
       rep.map((c) => this.dom.fromSympy(c)),
       this,
     );
   }
-  /** Convert a polynomial expression (SymPy from_sympy); throws CoercionFailed. */
+  /**
+   * Convert a polynomial expression; throws CoercionFailed.
+   *
+   * @param eIn - Expression to convert.
+   * @returns The corresponding element of this domain.
+   * @throws CoercionFailed when the expression is not polynomial in the ring generator.
+   * @see SymPy `sympy.polys.domains.old_polynomialring.GlobalPolynomialRing.from_sympy`
+   */
   fromSympy(eIn: ExprLike): DMP {
     const e = sympify(eIn);
     const cs = polyCoefficients(e, this.gen);
@@ -1286,34 +2344,87 @@ export class GlobalPolynomialRing {
     for (let k = deg; k >= 0; k--) rep.push(this.dom.fromSympy(cs.get(k) ?? S.Zero));
     return new DMP(rep, this);
   }
+  /**
+   * The symbolic expression represented by the domain element.
+   *
+   * @param p - Polynomial to operate on.
+   * @returns The symbolic expression.
+   * @see SymPy `sympy.polys.domains.old_polynomialring.GlobalPolynomialRing.to_sympy`
+   */
   toSympy(p: DMP): Expr {
     return repToExpr(p.rep.map((c) => this.dom.toSympy(c)), this.gen);
   }
-  /** The fraction field (SymPy get_field). */
+  /**
+   * The fraction field.
+   *
+   * @returns The fraction field.
+   * @see SymPy `sympy.polys.domains.old_polynomialring.GlobalPolynomialRing.get_field`
+   */
   getField(): OldFractionField {
     return new OldFractionField(this);
   }
-  /** Free modules use the multivariate polynomial presentation of this ring. */
+  /**
+   * Free modules use the multivariate polynomial presentation of this ring.
+   *
+   * @param rank - Number of free-module generators.
+   * @returns Free modules use the multivariate polynomial presentation of this ring.
+   * @see SymPy `sympy.polys.domains.old_polynomialring.GlobalPolynomialRing.free_module`
+   */
   freeModule(rank: IntLike): FreeModule {
     return defined(domainHooks.polynomialRing, 'polynomial ring module')(this.dom, this.gens).freeModule(rank);
   }
+  /**
+   * Generate an ideal of this polynomial ring.
+   *
+   * @param gens - Polynomial generators in the desired order.
+   * @returns Generate an ideal of this polynomial ring.
+   * @see SymPy `sympy.polys.domains.old_polynomialring.GlobalPolynomialRing.ideal`
+   */
   ideal(...gens: ExprLike[]): ModuleImplementedIdeal {
     return defined(domainHooks.polynomialRing, 'polynomial ring module')(this.dom, this.gens).ideal(...gens);
   }
+  /**
+   * Form the quotient of this polynomial ring by an ideal.
+   *
+   * @param ideal - Ideal defining the quotient.
+   * @returns Form the quotient of this polynomial ring by an ideal.
+   * @see SymPy `sympy.polys.domains.old_polynomialring.GlobalPolynomialRing.quotient_ring`
+   */
   quotientRing(ideal: ModuleImplementedIdeal | readonly ExprLike[]): QuotientRing {
     return defined(domainHooks.polynomialRing, 'polynomial ring module')(this.dom, this.gens).quotientRing(ideal);
   }
 }
 
-/** A dense univariate polynomial over a ground domain (SymPy DMP); the coefficients are listed from the highest degree. */
+/**
+ * A dense univariate polynomial over a ground domain; the coefficients are listed from the highest degree.
+ *
+ * @see SymPy `sympy.polys.polyclasses.DMP`
+ */
 export class DMP {
+  /**
+   * The dense coefficient representation, leading coefficient first.
+   *
+   * @see SymPy `sympy.polys.polyclasses.DMP.rep`
+   */
   readonly rep: readonly Expr[];
+  /**
+   * Construct a dense polynomial over the given ring.
+   *
+   * @param rep - Dense coefficients in descending order.
+   * @param ring - Polynomial ring supplying the generators and coefficient domain.
+   */
   constructor(
     rep: readonly Expr[],
+    /** The polynomial ring to which the elements belong. */
     readonly ring: GlobalPolynomialRing,
   ) {
     this.rep = strip(ring.dom, rep);
   }
+  /**
+   * The ground coefficient domain.
+   *
+   * @returns The ground coefficient domain.
+   */
   get dom(): Domain {
     return this.ring.dom;
   }
@@ -1323,64 +2434,160 @@ export class DMP {
   private repOf(o: DMP | ExprLike): Rep {
     return o instanceof DMP ? o.rep : this.ring.fromSympy(o).rep;
   }
-  /** The coefficients from the highest degree (SymPy to_list). */
+  /**
+   * The coefficients from the highest degree.
+   *
+   * @returns The coefficients from the highest degree.
+   * @see SymPy `sympy.polys.polyclasses.DMP.to_list`
+   */
   toList(): Expr[] {
     return [...this.rep];
   }
-  /** All coefficients ([0] for the zero polynomial; SymPy all_coeffs). */
+  /**
+   * All coefficients ([0] for the zero polynomial; SymPy all_coeffs).
+   *
+   * @returns All coefficients ([0] for the zero polynomial; SymPy all_coeffs).
+   * @see SymPy `sympy.polys.polyclasses.DMP.all_coeffs`
+   */
   allCoeffs(): Expr[] {
     return this.rep.length ? [...this.rep] : [this.dom.zero];
   }
+  /**
+   * Whether the element is zero.
+   *
+   * @returns Whether the element is zero.
+   * @see SymPy `sympy.polys.polyclasses.DMP.is_zero`
+   */
   get isZero(): boolean {
     return this.rep.length === 0;
   }
-  /** The degree (-Infinity for the zero polynomial). */
+  /**
+   * The degree (-Infinity for the zero polynomial).
+   *
+   * @returns The degree in the selected generator, or `-Infinity` for zero.
+   * @see SymPy `sympy.polys.polyclasses.DMP.degree`
+   */
   degree(): number {
     return this.rep.length ? this.rep.length - 1 : -Infinity;
   }
-  /** The leading coefficient. */
+  /**
+   * The leading coefficient.
+   *
+   * @returns The leading coefficient.
+   * @see SymPy `sympy.polys.polyclasses.DMP.LC`
+   */
   LC(): Expr {
     return this.rep[0] ?? this.dom.zero;
   }
+  /**
+   * The sum of the operands.
+   *
+   * @param o - Operand to combine or compare with this value.
+   * @returns The sum of the operands.
+   * @see SymPy `sympy.polys.polyclasses.DMP.add`
+   */
   add(o: DMP | ExprLike): DMP {
     return this.per(repAdd(this.dom, this.rep, this.repOf(o)));
   }
+  /**
+   * The difference of the operands.
+   *
+   * @param o - Operand to combine or compare with this value.
+   * @returns The difference of the operands.
+   * @see SymPy `sympy.polys.polyclasses.DMP.sub`
+   */
   sub(o: DMP | ExprLike): DMP {
     return this.per(repAdd(this.dom, this.rep, repNeg(this.dom, this.repOf(o))));
   }
+  /**
+   * The product of the operands.
+   *
+   * @param o - Operand to combine or compare with this value.
+   * @returns The product of the operands.
+   * @see SymPy `sympy.polys.polyclasses.DMP.mul`
+   */
   mul(o: DMP | ExprLike): DMP {
     return this.per(repMul(this.dom, this.rep, this.repOf(o)));
   }
+  /**
+   * The additive inverse.
+   *
+   * @returns The additive inverse.
+   * @see SymPy `sympy.polys.polyclasses.DMP.neg`
+   */
   neg(): DMP {
     return this.per(repNeg(this.dom, this.rep));
   }
+  /**
+   * Multiply `f` by an element of the ground domain.
+   *
+   * @param c - Coefficient of the term.
+   * @returns The polynomial scaled by the ground coefficient.
+   * @see SymPy `sympy.polys.polyclasses.DMP.mul_ground`
+   */
   mulGround(c: ExprLike): DMP {
     return this.per(repMulGround(this.dom, this.rep, this.dom.fromSympy(c)));
   }
-  /** The derivative (SymPy DMP.diff). */
+  /**
+   * The derivative.
+   *
+   * @returns The derivative.
+   * @see SymPy `sympy.polys.polyclasses.DMP.diff`
+   */
   diff(): DMP {
     const n = this.rep.length - 1;
     return this.per(this.rep.slice(0, -1).map((c, i) => this.dom.mul(c, Rational.of(BigInt(n - i)))));
   }
-  /** p(x + a) (SymPy shift). */
+  /**
+   * p(x + a).
+   *
+   * @param a - First operand.
+   * @returns The translated polynomial.
+   * @see SymPy `sympy.polys.polyclasses.DMP.shift`
+   */
   shift(a: ExprLike): DMP {
     const lin = this.per([this.dom.one, this.dom.fromSympy(a)]);
     let r = this.ring.zero;
     for (const c of this.rep) r = r.mul(lin).add(this.per([c]));
     return r;
   }
-  /** SymPy gcd (monic over a field). */
+  /**
+   * The greatest common divisor.
+   *
+   * @param o - Operand to combine or compare with this value.
+   * @returns The greatest common divisor.
+   * @see SymPy `sympy.polys.polyclasses.DMP.gcd`
+   */
   gcd(o: DMP): DMP {
     return this.per(repGcd(this.dom, this.rep, o.rep));
   }
-  /** SymPy lcm (monic over a field). */
+  /**
+   * The least common multiple.
+   *
+   * @param o - Operand to combine or compare with this value.
+   * @returns The least common multiple.
+   * @see SymPy `sympy.polys.polyclasses.DMP.lcm`
+   */
   lcm(o: DMP): DMP {
     return this.per(repLcm(this.dom, this.rep, o.rep));
   }
-  /** The exact quotient (SymPy exquo); throws ExactQuotientFailed. */
+  /**
+   * The exact quotient; throws ExactQuotientFailed.
+   *
+   * @param o - Operand to combine or compare with this value.
+   * @returns The exact quotient.
+   * @see SymPy `sympy.polys.polyclasses.DMP.exquo`
+   */
   exquo(o: DMP): DMP {
     return this.per(repExquo(this.dom, this.rep, o.rep));
   }
+  /**
+   * Whether the operand represents the same value.
+   *
+   * @param o - Operand to combine or compare with this value.
+   * @returns Whether the comparison holds.
+   * @see SymPy `sympy.polys.polyclasses.DMP.__eq__`
+   */
   equals(o: DMP | ExprLike): boolean {
     let r: Rep;
     try {
@@ -1390,37 +2597,93 @@ export class DMP {
     }
     return r.length === this.rep.length && r.every((c, i) => c.key === at(this.rep, i).key);
   }
+  /**
+   * The symbolic expression represented by the domain element.
+   *
+   * @returns The symbolic expression.
+   */
   toSympy(): Expr {
     return this.ring.toSympy(this);
   }
+  /**
+   * The printable representation.
+   *
+   * @returns The formatted text.
+   */
   toString(): string {
     return `DMP(${str(this.toSympy())}, ${this.dom.toString()})`;
   }
 }
 
-/** SymPy FractionField of an old polynomial ring (K(x)): fractions of DMPs. */
+/**
+ * Fractions of DMPs.
+ *
+ * @see SymPy `sympy.polys.domains.old_fractionfield.FractionField`
+ */
 export class OldFractionField {
-  constructor(readonly ring: GlobalPolynomialRing) {}
+  /**
+   * Construct a `OldFractionField` instance.
+   *
+   * @param ring - Polynomial ring supplying the generators and coefficient domain.
+   */
+  constructor(
+    /** The polynomial ring to which the elements belong. */
+    readonly ring: GlobalPolynomialRing) {}
+  /**
+   * The ground coefficient domain.
+   *
+   * @returns The ground coefficient domain.
+   * @see SymPy `sympy.polys.domains.old_fractionfield.FractionField.dom`
+   */
   get dom(): Domain {
     return this.ring.dom;
   }
+  /**
+   * The additive identity.
+   *
+   * @returns The additive identity.
+   * @see SymPy `sympy.polys.domains.old_fractionfield.FractionField.zero`
+   */
   get zero(): DMF {
     return this.frac(this.ring.zero, this.ring.one);
   }
+  /**
+   * The multiplicative identity.
+   *
+   * @returns The multiplicative identity.
+   * @see SymPy `sympy.polys.domains.old_fractionfield.FractionField.one`
+   */
   get one(): DMF {
     return this.frac(this.ring.one, this.ring.one);
   }
+  /**
+   * The printable representation.
+   *
+   * @returns The formatted text.
+   * @see SymPy `sympy.polys.domains.old_fractionfield.FractionField.__str__`
+   */
   toString(): string {
     return `${this.dom.toString()}(${str(this.ring.gen)})`;
   }
-  /** The fraction p/1 of a polynomial or coefficient list (SymPy K.new). */
+  /**
+   * Embed a polynomial as a fraction with denominator one.
+   *
+   * @param p - Polynomial to operate on.
+   * @returns The polynomial as an element of this fraction field.
+   * @see SymPy `sympy.polys.domains.old_fractionfield.FractionField.new`
+   */
   new(p: DMP | readonly Expr[]): DMF {
     return this.frac(p instanceof DMP ? p : new DMP(p, this.ring), this.ring.one);
   }
   /**
-   * The fraction num/den with common factors cancelled (SymPy dmp_cancel): over QQ the
+   * The fraction num/den with common factors cancelled: over QQ the
    * denominators are cleared and the gcd is taken over ZZ, over RR over the exact rationals of the
    * coefficients; the denominator gets a positive leading coefficient.
+   *
+   * @param num - Numerator.
+   * @param den - Denominator.
+   * @returns The fraction num/den with common factors cancelled: over QQ the denominators are cleared and the gcd is taken over ZZ, over RR over the exact rationals of the coefficients; the denominator gets a positive leading coefficient.
+   * @throws RangeError when the divisor is zero.
    */
   frac(num: DMP, den: DMP): DMF {
     if (den.isZero) throw new RangeError('division by zero in a fraction field');
@@ -1445,22 +2708,49 @@ export class OldFractionField {
     if (dom.isNegative(first(q))) [p, q] = [repNeg(dom, p), repNeg(dom, q)];
     return new DMF(new DMP(p, this.ring), new DMP(q, this.ring), this);
   }
-  /** Convert a rational function of the generator (SymPy from_sympy); throws CoercionFailed. */
+  /**
+   * Convert a rational function of the generator; throws CoercionFailed.
+   *
+   * @param eIn - Expression to convert.
+   * @returns The corresponding element of this domain.
+   * @see SymPy `sympy.polys.domains.old_fractionfield.FractionField.from_sympy`
+   */
   fromSympy(eIn: ExprLike): DMF {
     const e = sympify(eIn);
     const [n, d] = fraction(together(e));
     return this.frac(this.ring.fromSympy(n), this.ring.fromSympy(d));
   }
+  /**
+   * The symbolic expression represented by the domain element.
+   *
+   * @param f - Polynomial to operate on.
+   * @returns The symbolic expression.
+   * @see SymPy `sympy.polys.domains.old_fractionfield.FractionField.to_sympy`
+   */
   toSympy(f: DMF): Expr {
     return mul(this.ring.toSympy(f.num), pow(this.ring.toSympy(f.den), -1));
   }
 }
 
-/** A fraction of univariate polynomials (SymPy DMF), kept with common factors cancelled. */
+/**
+ * A fraction of univariate polynomials, kept with common factors cancelled.
+ *
+ * @see SymPy `sympy.polys.polyclasses.DMF`
+ */
 export class DMF {
+  /**
+   * Construct a fraction of dense polynomials.
+   *
+   * @param num - Numerator.
+   * @param den - Denominator.
+   * @param field - The target coefficient field.
+   */
   constructor(
+    /** The numerator in dense form. @see SymPy `sympy.polys.polyclasses.DMF.num` */
     readonly num: DMP,
+    /** The denominator in dense form. @see SymPy `sympy.polys.polyclasses.DMF.den` */
     readonly den: DMP,
+    /** The fraction field containing the element. */
     readonly field: OldFractionField,
   ) {}
   private of(o: DMF | DMP | ExprLike): DMF {
@@ -1468,45 +2758,117 @@ export class DMF {
     if (o instanceof DMP) return this.field.new(o);
     return this.field.fromSympy(o);
   }
+  /**
+   * The numerator polynomial.
+   *
+   * @returns The numerator polynomial.
+   * @see SymPy `sympy.polys.polyclasses.DMF.numer`
+   */
   numer(): DMP {
     return this.num;
   }
+  /**
+   * The denominator polynomial.
+   *
+   * @returns The denominator polynomial.
+   * @see SymPy `sympy.polys.polyclasses.DMF.denom`
+   */
   denom(): DMP {
     return this.den;
   }
+  /**
+   * Whether the element is zero.
+   *
+   * @returns Whether the element is zero.
+   * @see SymPy `sympy.polys.polyclasses.DMF.is_zero`
+   */
   get isZero(): boolean {
     return this.num.isZero;
   }
+  /**
+   * The sum of the operands.
+   *
+   * @param oIn - Operand to combine or compare with this value.
+   * @returns The sum of the operands.
+   * @see SymPy `sympy.polys.polyclasses.DMF.add`
+   */
   add(oIn: DMF | DMP | ExprLike): DMF {
     const o = this.of(oIn);
     if (this.den.equals(o.den)) return this.field.frac(this.num.add(o.num), this.den);
     return this.field.frac(this.num.mul(o.den).add(o.num.mul(this.den)), this.den.mul(o.den));
   }
+  /**
+   * The difference of the operands.
+   *
+   * @param o - Operand to combine or compare with this value.
+   * @returns The difference of the operands.
+   * @see SymPy `sympy.polys.polyclasses.DMF.sub`
+   */
   sub(o: DMF | DMP | ExprLike): DMF {
     return this.add(this.of(o).neg());
   }
+  /**
+   * The product of the operands.
+   *
+   * @param oIn - Operand to combine or compare with this value.
+   * @returns The product of the operands.
+   * @see SymPy `sympy.polys.polyclasses.DMF.mul`
+   */
   mul(oIn: DMF | DMP | ExprLike): DMF {
     const o = this.of(oIn);
     return this.field.frac(this.num.mul(o.num), this.den.mul(o.den));
   }
+  /**
+   * The quotient of the operands.
+   *
+   * @param oIn - Operand to combine or compare with this value.
+   * @returns The quotient of the operands.
+   */
   div(oIn: DMF | DMP | ExprLike): DMF {
     const o = this.of(oIn);
     return this.field.frac(this.num.mul(o.den), this.den.mul(o.num));
   }
+  /**
+   * The additive inverse.
+   *
+   * @returns The additive inverse.
+   * @see SymPy `sympy.polys.polyclasses.DMF.neg`
+   */
   neg(): DMF {
     return new DMF(this.num.neg(), this.den, this.field);
   }
-  /** The derivative (p/q)' = (p'q - pq')/q**2 (SymPy DMFdiff of the holonomic module). */
+  /**
+   * The derivative (p/q)' = (p'q - pq')/q**2.
+   *
+   * @returns The derivative (p/q)' = (p'q - pq')/q**2.
+   */
   diff(): DMF {
     return this.field.frac(this.den.mul(this.num.diff()).sub(this.num.mul(this.den.diff())), this.den.mul(this.den));
   }
+  /**
+   * Whether the operand represents the same value.
+   *
+   * @param oIn - Operand to combine or compare with this value.
+   * @returns Whether the comparison holds.
+   * @see SymPy `sympy.polys.polyclasses.DMF.__eq__`
+   */
   equals(oIn: DMF | DMP | ExprLike): boolean {
     const o = this.of(oIn);
     return this.num.equals(o.num) && this.den.equals(o.den);
   }
+  /**
+   * The symbolic expression represented by the domain element.
+   *
+   * @returns The symbolic expression.
+   */
   toSympy(): Expr {
     return this.field.toSympy(this);
   }
+  /**
+   * The printable representation.
+   *
+   * @returns The formatted text.
+   */
   toString(): string {
     return `DMF(${str(this.toSympy())}, ${this.field.dom.toString()})`;
   }

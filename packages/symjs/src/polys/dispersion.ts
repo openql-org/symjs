@@ -9,7 +9,23 @@ import { add, mul, pow } from '../core/ops';
 import { cancel } from '../simplify/rational';
 import { Poly } from './sympoly';
 
-/** Nonnegative integer shifts a for which gcd(p(x),q(x+a)) has positive degree. */
+/**
+ * Nonnegative integer shifts a for which gcd(p(x),q(x+a)) has positive degree.
+ *
+ * @param p - Polynomial to operate on.
+ * @param q - Polynomial to shift. Defaults to the first polynomial.
+ * @param x - Polynomial generator.
+ * @returns Nonnegative integer shifts a for which gcd(p(x),q(x+a)) has positive degree.
+ * @throws RangeError when the polynomial is not univariate or the generators differ.
+ * @see SymPy `sympy.polys.dispersion.dispersionset`
+ * @example
+ * ```ts
+ * import { dispersionset, ex } from '@symjs/symjs';
+ *
+ * dispersionset(ex`x**2 - 9`); // => {0, 6}
+ * dispersionset(ex`x**4 - 3*x**2 + 1`, ex`x**4 - 12*x**3 + 51*x**2 - 90*x + 55`); // => {2, 3, 4}
+ * ```
+ */
 export function dispersionset(p: Poly | ExprLike, q: Poly | ExprLike = p, x?: Expr): Set<bigint> {
   const f = p instanceof Poly ? p : Poly.from(p, x === undefined ? undefined : [x]);
   const g = q instanceof Poly ? q : Poly.from(q, x === undefined ? undefined : [x]);
@@ -29,7 +45,22 @@ export function dispersionset(p: Poly | ExprLike, q: Poly | ExprLike = p, x?: Ex
   return shifts;
 }
 
-/** Largest dispersion shift; negative infinity when the dispersion set is empty. */
+/**
+ * Largest dispersion shift; negative infinity when the dispersion set is empty.
+ *
+ * @param p - Polynomial to operate on.
+ * @param q - Polynomial to shift. Defaults to the first polynomial.
+ * @param x - Polynomial generator.
+ * @returns The greatest shift in the dispersion set, or negative infinity for an empty set.
+ * @see SymPy `sympy.polys.dispersion.dispersion`
+ * @example
+ * ```ts
+ * import { dispersion, ex } from '@symjs/symjs';
+ *
+ * dispersion(ex`x**2 - 9`); // => 6
+ * dispersion(ex`x**4 - 3*x**2 + 1`, ex`x**4 - 12*x**3 + 51*x**2 - 90*x + 55`); // => 4
+ * ```
+ */
 export function dispersion(p: Poly | ExprLike, q: Poly | ExprLike = p, x?: Expr): Expr {
   const shifts = dispersionset(p,q,x);
   let largest = -1n;

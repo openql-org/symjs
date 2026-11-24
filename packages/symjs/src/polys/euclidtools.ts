@@ -22,7 +22,21 @@ import { gcd as igcd, iroot } from '../core/numbers';
 import type { ZPoly, ZTerm } from './wang';
 import type { PolyElement } from './rings';
 
-/** Euclidean remainder sequence over a coefficient field. */
+/**
+ * Euclidean remainder sequence over a coefficient field.
+ *
+ * @param fIn - Polynomial to operate on.
+ * @param gIn - Second polynomial operand.
+ * @returns Euclidean remainder sequence over a coefficient field.
+ * @see SymPy `sympy.polys.euclidtools.dup_euclidean_prs`
+ * @example
+ * ```ts
+ * import { QQ, dupEuclideanPrs, ring } from '@symjs/symjs';
+ *
+ * const [R, x] = ring('x', QQ);
+ * dupEuclideanPrs(x.pow(3).sub(1), x.pow(2).sub(1)).map(p => p.asExpr()); // => [x**3 - 1, x**2 - 1, x - 1]
+ * ```
+ */
 export function dupEuclideanPrs(fIn: PolyElement, gIn: PolyElement): PolyElement[] {
   let f = fIn, g = gIn;
   const sequence = [f, g];
@@ -35,7 +49,21 @@ export function dupEuclideanPrs(fIn: PolyElement, gIn: PolyElement): PolyElement
   return sequence;
 }
 
-/** Primitive pseudo-remainder sequence over a coefficient ring. */
+/**
+ * Primitive pseudo-remainder sequence over a coefficient ring.
+ *
+ * @param fIn - Polynomial to operate on.
+ * @param gIn - Second polynomial operand.
+ * @returns Primitive pseudo-remainder sequence over a coefficient ring.
+ * @see SymPy `sympy.polys.euclidtools.dup_primitive_prs`
+ * @example
+ * ```ts
+ * import { QQ, dupPrimitivePrs, ring } from '@symjs/symjs';
+ *
+ * const [R, x] = ring('x', QQ);
+ * dupPrimitivePrs(x.pow(3).sub(1), x.pow(2).sub(1)).map(p => p.asExpr()); // => [x**3 - 1, x**2 - 1, x - 1]
+ * ```
+ */
 export function dupPrimitivePrs(fIn: PolyElement, gIn: PolyElement): PolyElement[] {
   let f = fIn, g = gIn;
   const sequence = [f, g];

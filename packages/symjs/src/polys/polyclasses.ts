@@ -76,13 +76,35 @@ function polyInvert(f: QP, m: QP): QP {
   return s0.map((a) => a.div(c));
 }
 
-/** An element of an algebraic number field: a polynomial in the primitive element modulo its minimal polynomial (SymPy ANP). */
+/**
+ * An element of an algebraic number field: a polynomial in the primitive element modulo its minimal polynomial.
+ *
+ * @see SymPy `sympy.polys.polyclasses.ANP`
+ */
 export class ANP {
+  /**
+   * The dense coefficient representation, leading coefficient first.
+   *
+   * @see SymPy `sympy.polys.polyclasses.ANP.rep`
+   */
   readonly rep: QP;
+  /**
+   * The modulus defining the algebraic extension.
+   *
+   * @see SymPy `sympy.polys.polyclasses.ANP.mod`
+   */
   readonly mod: QP;
+  /**
+   * Construct an element of an algebraic extension.
+   *
+   * @param rep - Dense coefficients in descending order.
+   * @param mod - Polynomial modulus defining the extension.
+   * @param dom - Ground coefficient domain.
+   */
   constructor(
     rep: unknown,
     mod: readonly unknown[],
+    /** The ground coefficient domain. @see SymPy `sympy.polys.polyclasses.ANP.dom` */
     readonly dom: Domain = QQ,
   ) {
     const conv = (a: unknown): PythonMPQ => QQ.convert(a);
@@ -99,60 +121,151 @@ export class ANP {
     }
     return strip([QQ.convert(o)]);
   }
+  /**
+   * Whether the element is the multiplicative identity.
+   *
+   * @returns Whether the element is the multiplicative identity.
+   * @see SymPy `sympy.polys.polyclasses.ANP.is_one`
+   */
   get isOne(): boolean {
     return this.rep.length === 1 && this.LC().equals(1);
   }
+  /**
+   * Whether the element is zero.
+   *
+   * @returns Whether the element is zero.
+   * @see SymPy `sympy.polys.polyclasses.ANP.is_zero`
+   */
   get isZero(): boolean {
     return this.rep.length === 0;
   }
-  /** The coefficients, highest first (SymPy to_list). */
+  /**
+   * The coefficients, highest first.
+   *
+   * @returns The coefficients, highest first.
+   * @see SymPy `sympy.polys.polyclasses.ANP.to_list`
+   */
   toList(): PythonMPQ[] {
     return [...this.rep];
   }
-  /** The defining polynomial coefficients (SymPy mod_to_list). */
+  /**
+   * The defining polynomial coefficients.
+   *
+   * @returns The defining polynomial coefficients.
+   * @see SymPy `sympy.polys.polyclasses.ANP.mod_to_list`
+   */
   modToList(): PythonMPQ[] {
     return [...this.mod];
   }
-  /** Representations over a common ground domain (SymPy unify). */
+  /**
+   * Representations over a common ground domain.
+   *
+   * @param o - Operand to combine or compare with this value.
+   * @returns Representations over a common ground domain.
+   * @throws UnificationFailed when the input domains cannot be unified.
+   * @see SymPy `sympy.polys.polyclasses.ANP.unify`
+   */
   unify(o: ANP): [Domain, (rep: QP) => ANP, QP, QP, QP] {
     if (this.mod.length !== o.mod.length || this.mod.some((c, i) => !c.equals(o.mod[i]))) throw new UnificationFailed('cannot unify algebraic numbers of different fields');
     const dom = this.dom.unify(o.dom);
     return [dom, (rep) => new ANP(rep, this.mod, dom), [...this.rep], [...o.rep], [...this.mod]];
   }
-  /** The leading coefficient (SymPy LC). */
+  /**
+   * The leading coefficient.
+   *
+   * @returns The leading coefficient.
+   * @see SymPy `sympy.polys.polyclasses.ANP.LC`
+   */
   LC(): PythonMPQ {
     return this.rep[0] ?? ZERO;
   }
+  /**
+   * The sum of the operands.
+   *
+   * @param o - Operand to combine or compare with this value.
+   * @returns The sum of the operands.
+   * @see SymPy `sympy.polys.polyclasses.ANP.add`
+   */
   add(o: unknown): ANP {
     return this.per(polyAdd(this.rep, this.repOf(o)));
   }
+  /**
+   * The difference of the operands.
+   *
+   * @param o - Operand to combine or compare with this value.
+   * @returns The difference of the operands.
+   * @see SymPy `sympy.polys.polyclasses.ANP.sub`
+   */
   sub(o: unknown): ANP {
     return this.per(polyAdd(this.rep, this.repOf(o).map((c) => c.neg())));
   }
+  /**
+   * The product of the operands.
+   *
+   * @param o - Operand to combine or compare with this value.
+   * @returns The product of the operands.
+   * @see SymPy `sympy.polys.polyclasses.ANP.mul`
+   */
   mul(o: unknown): ANP {
     return this.per(polyMul(this.rep, this.repOf(o)));
   }
+  /**
+   * The additive inverse.
+   *
+   * @returns The additive inverse.
+   * @see SymPy `sympy.polys.polyclasses.ANP.neg`
+   */
   neg(): ANP {
     return this.per(this.rep.map((c) => c.neg()));
   }
-  /** this/o; throws NotInvertible for o = 0. */
+  /**
+   * This/o; throws NotInvertible for o = 0.
+   *
+   * @param o - Operand to combine or compare with this value.
+   * @returns This/o; throws NotInvertible for o = 0.
+   * @see SymPy `sympy.polys.polyclasses.ANP.div`
+   */
   div(o: unknown): ANP {
     return this.per(polyMul(this.rep, polyInvert(this.repOf(o), this.mod)));
   }
-  /** The field quotient (SymPy quo). */
+  /**
+   * The field quotient.
+   *
+   * @param o - Operand to combine or compare with this value.
+   * @returns The field quotient.
+   * @see SymPy `sympy.polys.polyclasses.ANP.quo`
+   */
   quo(o: unknown): ANP {
     return this.div(o);
   }
-  /** The field remainder; division by a zero divisor is undefined. */
+  /**
+   * The field remainder; division by a zero divisor is undefined.
+   *
+   * @param o - Operand to combine or compare with this value.
+   * @returns The field remainder.
+   * @see SymPy `sympy.polys.polyclasses.ANP.rem`
+   */
   rem(o: unknown): ANP {
     this.div(o);
     return this.per([]);
   }
-  /** The field quotient and zero remainder (SymPy div). */
+  /**
+   * The field quotient and zero remainder.
+   *
+   * @param o - Operand to combine or compare with this value.
+   * @returns The field quotient and zero remainder.
+   * @see SymPy `sympy.polys.polyclasses.ANP.__divmod__`
+   */
   divmod(o: unknown): [ANP, ANP] {
     return [this.div(o), this.per([])];
   }
-  /** this**n (a negative n inverts). */
+  /**
+   * This**n (a negative n inverts).
+   *
+   * @param n - Exponent or degree.
+   * @returns The element raised to the specified exponent.
+   * @see SymPy `sympy.polys.polyclasses.ANP.pow`
+   */
   pow(n: number): ANP {
     let [r, b] = [this.per([ONE]), n < 0 ? this.per(polyInvert(this.rep, this.mod)) : this];
     for (let k = Math.abs(n); k; k >>= 1) {
@@ -161,25 +274,66 @@ export class ANP {
     }
     return r;
   }
+  /**
+   * Whether the operand represents the same value.
+   *
+   * @param o - Operand to combine or compare with this value.
+   * @returns Whether the comparison holds.
+   * @see SymPy `sympy.polys.polyclasses.ANP.__eq__`
+   */
   equals(o: unknown): boolean {
     if (!(o instanceof ANP)) return this.rep.length <= 1 && groundRational(o) !== undefined && this.LC().equals(QQ.convert(o));
     return o.rep.length === this.rep.length && o.rep.every((c, i) => c.equals(this.rep[i])) && o.mod.length === this.mod.length && o.mod.every((c, i) => c.equals(this.mod[i]));
   }
-  /** SymPy repr(a), which is also its str. */
+  /**
+   * The printable representation.
+   *
+   * @returns The formatted text.
+   */
   toString(): string {
     const list = (f: QP): string => `[${f.map((c) => c.repr()).join(', ')}]`;
     return `ANP(${list(this.rep)}, ${list(this.mod)}, ${this.dom.toString()})`;
   }
+  /**
+   * The representation of the element with its construction data.
+   *
+   * @returns The representation of the element with its construction data.
+   * @see SymPy `sympy.polys.polyclasses.ANP.__repr__`
+   */
   repr(): string {
     return this.toString();
   }
 }
 
-/** Dense recursive polynomials over a ground domain (SymPy DMP_Python). */
+/**
+ * Dense recursive polynomials over a ground domain.
+ *
+ * @see SymPy `sympy.polys.polyclasses.DMP_Python`
+ */
 export class DMPJs {
+  /**
+   * The dense coefficient representation, leading coefficient first.
+   *
+   * @see SymPy `sympy.polys.polyclasses.DMP_Python.rep`
+   */
   readonly rep: unknown[];
+  /**
+   * The number of polynomial variables minus one.
+   *
+   * @see SymPy `sympy.polys.polyclasses.DMP_Python.lev`
+   */
   readonly lev: number;
-  constructor(rep: DensePoly, readonly dom: Domain, lev?: number) {
+  /**
+   * Construct a dense recursive polynomial.
+   *
+   * @param rep - Dense coefficients in descending order.
+   * @param dom - Ground coefficient domain.
+   * @param lev - Number of variables minus one.
+   * @throws RangeError when the nesting depth and specified polynomial level disagree.
+   */
+  constructor(rep: DensePoly,
+    /** The ground coefficient domain. @see SymPy `sympy.polys.polyclasses.DMP_Python.dom` */
+    readonly dom: Domain, lev?: number) {
     const [normal, level] = dmpValidate(rep);
     this.lev = lev ?? level;
     if (this.lev !== level) throw new RangeError('inconsistent polynomial level');
@@ -193,64 +347,353 @@ export class DMPJs {
     }
     return this.per(denseList(dmpGround(this.dom.convert(other), this.lev)));
   }
+  /**
+   * Convert `f` to a list representation with native coefficients.
+   *
+   * @returns The dense coefficient list, leading coefficient first.
+   * @see SymPy `sympy.polys.polyclasses.DMP_Python.to_list`
+   */
   toList(): unknown[] { return dmpCopy(this.rep, this.lev); }
+  /**
+   * The map from exponent vectors to native domain coefficients.
+   *
+   * @returns The map from exponent vectors to native domain coefficients.
+   * @see SymPy `sympy.polys.polyclasses.DMP_Python.to_dict`
+   */
   toDict(): Map<number[], unknown> { return dmpToDict(this.rep, this.lev); }
+  /**
+   * The map from exponent vectors to symbolic coefficients.
+   *
+   * @returns The map from exponent vectors to symbolic coefficients.
+   * @see SymPy `sympy.polys.polyclasses.DMP_Python.to_sympy_dict`
+   */
   toSympyDict(): Map<number[], unknown> { return new Map([...this.toDict()].map(([m, c]) => [m, this.dom.toSympy(c)])); }
+  /**
+   * Whether the element is zero.
+   *
+   * @returns Whether the element is zero.
+   * @see SymPy `sympy.polys.polyclasses.DMP_Python.is_zero`
+   */
   get isZero(): boolean { return dmpZeroP(this.rep, this.lev); }
+  /**
+   * Whether the element is the multiplicative identity.
+   *
+   * @returns Whether the element is the multiplicative identity.
+   * @see SymPy `sympy.polys.polyclasses.DMP_Python.is_one`
+   */
   get isOne(): boolean { return dmpOneP(this.rep, this.lev, this.dom); }
+  /**
+   * Whether the polynomial is constant in its generators.
+   *
+   * @returns Whether the polynomial is constant in its generators.
+   * @see SymPy `sympy.polys.polyclasses.DMP_Python.is_ground`
+   */
   get isGround(): boolean { return this.toDict().size === 0 || [...this.toDict().keys()].every((m) => m.every((e) => e === 0)); }
+  /**
+   * Whether the leading coefficient is one.
+   *
+   * @returns Whether the leading coefficient is one.
+   * @see SymPy `sympy.polys.polyclasses.DMP_Python.is_monic`
+   */
   get isMonic(): boolean { return this.dom.isOne(this.LC()); }
+  /**
+   * Whether the coefficients have unit content.
+   *
+   * @returns Whether the coefficients have unit content.
+   * @see SymPy `sympy.polys.polyclasses.DMP_Python.is_primitive`
+   */
   get isPrimitive(): boolean { return this.dom.isOne(this.content()); }
+  /**
+   * Whether the polynomial is square-free.
+   *
+   * @returns Whether the polynomial is square-free.
+   * @see SymPy `sympy.polys.polyclasses.DMP_Python.is_sqf`
+   */
   get isSqf(): boolean {
     let g: DMPJs = this;
     for (let j = 0; j <= this.lev; j++) g = g.gcd(this.diff(1, j));
     return !this.isZero && g.isGround;
   }
+  /**
+   * Returns the leading degree of the polynomial in `x_j`.
+   *
+   * @param j - Index of the polynomial variable.
+   * @returns The degree in the selected generator, or `-Infinity` for zero.
+   * @see SymPy `sympy.polys.polyclasses.DMP_Python.degree`
+   */
   degree(j = 0): number { return dmpDegreeIn(this.rep, j, this.lev); }
+  /**
+   * Returns a list of degrees of the polynomial.
+   *
+   * @returns A list of degrees of the polynomial.
+   * @see SymPy `sympy.polys.polyclasses.DMP_Python.degree_list`
+   */
   degreeList(): number[] { return dmpDegreeList(this.rep, this.lev); }
+  /**
+   * Returns the total degree of the polynomial.
+   *
+   * @returns The total degree of the polynomial.
+   * @see SymPy `sympy.polys.polyclasses.DMP_Python.total_degree`
+   */
   totalDegree(): number { return Math.max(0, ...[...this.toDict().keys()].map((m) => m.reduce((a, b) => a + b, 0))); }
+  /**
+   * Returns the leading coefficient of the polynomial.
+   *
+   * @returns The leading coefficient of the polynomial.
+   * @see SymPy `sympy.polys.polyclasses.DMP_Python.LC`
+   */
   LC(): unknown { return dmpGroundLC(this.rep, this.lev, this.dom); }
+  /**
+   * Returns the trailing coefficient of the polynomial.
+   *
+   * @returns The trailing coefficient.
+   * @see SymPy `sympy.polys.polyclasses.DMP_Python.TC`
+   */
   TC(): unknown { return dmpGroundTC(this.rep, this.lev, this.dom); }
+  /**
+   * Returns the `n`-th coefficient of the polynomial.
+   *
+   * @param N - Exponent vector of the requested coefficient.
+   * @returns The coefficient at the specified exponents.
+   * @see SymPy `sympy.polys.polyclasses.DMP_Python.nth`
+   */
   nth(...N: number[]): unknown { return dmpGroundNth(this.rep, N, this.lev, this.dom); }
+  /**
+   * Returns maximum norm of the polynomial.
+   *
+   * @returns Maximum norm of the polynomial.
+   * @see SymPy `sympy.polys.polyclasses.DMP_Python.max_norm`
+   */
   maxNorm(): unknown { return dmpMaxNorm(this.rep, this.lev, this.dom); }
+  /**
+   * Returns l1 norm of the polynomial.
+   *
+   * @returns L1 norm of the polynomial.
+   * @see SymPy `sympy.polys.polyclasses.DMP_Python.l1_norm`
+   */
   l1Norm(): unknown { return dmpL1Norm(this.rep, this.lev, this.dom); }
+  /**
+   * Make all coefficients in `f` positive.
+   *
+   * @returns The polynomial with its coefficients replaced by their absolute values.
+   * @see SymPy `sympy.polys.polyclasses.DMP_Python.abs`
+   */
   abs(): DMPJs { return this.per(dmpAbs(this.rep, this.lev, this.dom)); }
+  /**
+   * The additive inverse.
+   *
+   * @returns The additive inverse.
+   * @see SymPy `sympy.polys.polyclasses.DMP_Python.neg`
+   */
   neg(): DMPJs { return this.per(dmpNeg(this.rep, this.lev, this.dom)); }
+  /**
+   * The sum of the operands.
+   *
+   * @param other - Operand to combine or compare with this value.
+   * @returns The sum of the operands.
+   * @see SymPy `sympy.polys.polyclasses.DMP_Python.add`
+   */
   add(other: unknown): DMPJs { return this.per(dmpAdd(this.rep, this.operand(other).rep, this.lev, this.dom)); }
+  /**
+   * The difference of the operands.
+   *
+   * @param other - Operand to combine or compare with this value.
+   * @returns The difference of the operands.
+   * @see SymPy `sympy.polys.polyclasses.DMP_Python.sub`
+   */
   sub(other: unknown): DMPJs { return this.per(dmpSub(this.rep, this.operand(other).rep, this.lev, this.dom)); }
+  /**
+   * The product of the operands.
+   *
+   * @param other - Operand to combine or compare with this value.
+   * @returns The product of the operands.
+   * @see SymPy `sympy.polys.polyclasses.DMP_Python.mul`
+   */
   mul(other: unknown): DMPJs { return this.per(dmpMul(this.rep, this.operand(other).rep, this.lev, this.dom)); }
+  /**
+   * The square of the polynomial.
+   *
+   * @returns The square of the polynomial.
+   * @see SymPy `sympy.polys.polyclasses.DMP_Python.sqr`
+   */
   sqr(): DMPJs { return this.per(dmpSqr(this.rep, this.lev, this.dom)); }
+  /**
+   * The element raised to the specified exponent.
+   *
+   * @param n - Exponent or degree.
+   * @returns The element raised to the specified exponent.
+   * @throws TypeError when the exponent is not an integer.
+   * @see SymPy `sympy.polys.polyclasses.DMP_Python.pow`
+   */
   pow(n: number): DMPJs {
     if (!Number.isInteger(n)) throw new TypeError('polynomial exponent must be an integer');
     return this.per(dmpPow(this.rep, n, this.lev, this.dom));
   }
+  /**
+   * Multiply `f` by an element of the ground domain.
+   *
+   * @param c - Coefficient of the term.
+   * @returns The polynomial scaled by the ground coefficient.
+   * @see SymPy `sympy.polys.polyclasses.DMP_Python.mul_ground`
+   */
   mulGround(c: unknown): DMPJs { return this.per(dmpMulGround(this.rep, this.dom.convert(c), this.lev, this.dom)); }
+  /**
+   * Quotient of the polynomial by an element of the ground domain.
+   *
+   * @param c - Coefficient of the term.
+   * @returns The polynomial obtained by dividing its coefficients by the ground element.
+   * @see SymPy `sympy.polys.polyclasses.DMP_Python.quo_ground`
+   */
   quoGround(c: unknown): DMPJs { return this.per(dmpQuoGround(this.rep, this.dom.convert(c), this.lev, this.dom)); }
+  /**
+   * Exact quotient of the polynomial by an element of the ground domain.
+   *
+   * @param c - Coefficient of the term.
+   * @returns The exact coefficientwise quotient.
+   * @see SymPy `sympy.polys.polyclasses.DMP_Python.exquo_ground`
+   */
   exquoGround(c: unknown): DMPJs { return this.per(dmpExquoGround(this.rep, this.dom.convert(c), this.lev, this.dom)); }
+  /**
+   * The quotient and remainder of polynomial division.
+   *
+   * @param other - Operand to combine or compare with this value.
+   * @returns The quotient and remainder of polynomial division.
+   * @see SymPy `sympy.polys.polyclasses.DMP_Python.div`
+   */
   div(other: unknown): [DMPJs, DMPJs] { const [q, r] = dmpDiv(this.rep, this.operand(other).rep, this.lev, this.dom); return [this.per(q), this.per(r)]; }
+  /**
+   * The quotient in the coefficient domain.
+   *
+   * @param other - Operand to combine or compare with this value.
+   * @returns The quotient in the coefficient domain.
+   * @see SymPy `sympy.polys.polyclasses.DMP_Python.quo`
+   */
   quo(other: unknown): DMPJs { return this.div(other)[0]; }
+  /**
+   * The remainder after division.
+   *
+   * @param other - Operand to combine or compare with this value.
+   * @returns The remainder after division.
+   * @see SymPy `sympy.polys.polyclasses.DMP_Python.rem`
+   */
   rem(other: unknown): DMPJs { return this.div(other)[1]; }
+  /**
+   * The exact quotient, requiring divisibility.
+   *
+   * @param other - Operand to combine or compare with this value.
+   * @returns The exact quotient, requiring divisibility.
+   * @see SymPy `sympy.polys.polyclasses.DMP_Python.exquo`
+   */
   exquo(other: unknown): DMPJs { return this.per(dmpExquo(this.rep, this.operand(other).rep, this.lev, this.dom)); }
+  /**
+   * Polynomial pseudo-division of the polynomial and `g`.
+   *
+   * @param other - Operand to combine or compare with this value.
+   * @returns The quotient and remainder.
+   * @see SymPy `sympy.polys.polyclasses.DMP_Python.pdiv`
+   */
   pdiv(other: unknown): [DMPJs, DMPJs] { const [q, r] = dmpPdiv(this.rep, this.operand(other).rep, this.lev, this.dom); return [this.per(q), this.per(r)]; }
+  /**
+   * Polynomial pseudo-quotient of the polynomial and `g`.
+   *
+   * @param other - Operand to combine or compare with this value.
+   * @returns The pseudo-quotient.
+   * @see SymPy `sympy.polys.polyclasses.DMP_Python.pquo`
+   */
   pquo(other: unknown): DMPJs { return this.pdiv(other)[0]; }
+  /**
+   * Polynomial pseudo-remainder of the polynomial and `g`.
+   *
+   * @param other - Operand to combine or compare with this value.
+   * @returns The pseudo-remainder.
+   * @see SymPy `sympy.polys.polyclasses.DMP_Python.prem`
+   */
   prem(other: unknown): DMPJs { return this.pdiv(other)[1]; }
+  /**
+   * Polynomial exact pseudo-quotient of the polynomial and `g`.
+   *
+   * @param other - Operand to combine or compare with this value.
+   * @returns The exact pseudo-quotient.
+   * @see SymPy `sympy.polys.polyclasses.DMP_Python.pexquo`
+   */
   pexquo(other: unknown): DMPJs { return this.per(dmpPexquo(this.rep, this.operand(other).rep, this.lev, this.dom)); }
+  /**
+   * Computes the `m`-th order derivative of the polynomial in `x_j`.
+   *
+   * @param m - Order of the derivative.
+   * @param j - Index of the polynomial variable.
+   * @returns The `m`-th order derivative of the polynomial in `x_j`.
+   * @throws TypeError when the derivative order or generator index is not an integer.
+   * @see SymPy `sympy.polys.polyclasses.DMP_Python.diff`
+   */
   diff(m = 1, j = 0): DMPJs {
     if (!Number.isInteger(m) || !Number.isInteger(j)) throw new TypeError('derivative order and generator index must be integers');
     return this.per(defined(dmpTools.dmpDiffIn, 'dense polynomial tools')(this.rep, m, j, this.lev, this.dom));
   }
+  /**
+   * Evaluates `f` at the given point `a` in `x_j`.
+   *
+   * @param a - Value substituted for the generator.
+   * @param j - Index of the polynomial variable.
+   * @returns Evaluates `f` at the given point `a` in `x_j`.
+   * @see SymPy `sympy.polys.polyclasses.DMP_Python.eval`
+   */
   eval(a: unknown, j = 0): unknown {
     const r = defined(dmpTools.dmpEvalIn, 'dense polynomial tools')(this.rep, this.dom.convert(a), j, this.lev, this.dom);
     return this.lev === 0 ? r : new DMPJs(denseList(r), this.dom, this.lev - 1);
   }
+  /**
+   * Divides all coefficients by `LC(f)`.
+   *
+   * @returns The polynomial normalized to have leading coefficient one.
+   * @see SymPy `sympy.polys.polyclasses.DMP_Python.monic`
+   */
   monic(): DMPJs { return this.per(defined(dmpTools.dmpGroundMonic, 'dense polynomial tools')(this.rep, this.lev, this.dom)); }
+  /**
+   * Returns GCD of polynomial coefficients.
+   *
+   * @returns GCD of polynomial coefficients.
+   * @see SymPy `sympy.polys.polyclasses.DMP_Python.content`
+   */
   content(): unknown { return defined(dmpTools.dmpGroundContent, 'dense polynomial tools')(this.rep, this.lev, this.dom); }
+  /**
+   * Returns content and a primitive form of the polynomial.
+   *
+   * @returns Content and a primitive form of the polynomial.
+   * @see SymPy `sympy.polys.polyclasses.DMP_Python.primitive`
+   */
   primitive(): [unknown, DMPJs] { const [c, p] = defined(dmpTools.dmpGroundPrimitive, 'dense polynomial tools')(this.rep, this.lev, this.dom); return [c, this.per(p)]; }
+  /**
+   * Reduce `f` modulo a constant `p`.
+   *
+   * @param p - Modulus for reducing coefficients.
+   * @returns The polynomial with coefficients reduced modulo the supplied modulus.
+   * @see SymPy `sympy.polys.polyclasses.DMP_Python.trunc`
+   */
   trunc(p: unknown): DMPJs { return this.per(defined(dmpTools.dmpGroundTrunc, 'dense polynomial tools')(this.rep, this.dom.convert(p), this.lev, this.dom)); }
+  /**
+   * Computes functional composition of the polynomial and `g`.
+   *
+   * @param g - Second polynomial operand.
+   * @returns Functional composition of the polynomial and `g`.
+   * @see SymPy `sympy.polys.polyclasses.DMP_Python.compose`
+   */
   compose(g: DMPJs): DMPJs { return this.per(defined(dmpTools.dmpCompose, 'dense polynomial tools')(this.rep, this.operand(g).rep, this.lev, this.dom)); }
+  /**
+   * Computes functional decomposition of the polynomial.
+   *
+   * @returns Functional decomposition of the polynomial.
+   * @see SymPy `sympy.polys.polyclasses.DMP_Python.decompose`
+   */
   decompose(): DMPJs[] { this.univariate(); return defined(dmpTools.dupDecompose, 'dense polynomial tools')(this.rep, this.dom).map((p) => this.per(p)); }
   private univariate(): void { if (this.lev !== 0) throw new RangeError('univariate polynomial expected'); }
-  /** Primitive polynomial remainder sequence over recursively polynomial coefficients. */
+  /**
+   * Primitive polynomial remainder sequence over recursively polynomial coefficients.
+   *
+   * @param other - Operand to combine or compare with this value.
+   * @returns The greatest common divisor.
+   * @see SymPy `sympy.polys.polyclasses.DMP_Python.gcd`
+   */
   gcd(other: unknown): DMPJs {
     let [a, b]: [DMPJs, DMPJs] = [this, this.operand(other)];
     if (a.isZero) return b.normalized();
@@ -279,16 +722,39 @@ export class DMPJs {
     return this.dom.isField ? h.monic() : h.normalized();
   }
   private normalized(): DMPJs { return this.dom.isNegative(this.LC()) ? this.neg() : this; }
+  /**
+   * The least common multiple.
+   *
+   * @param other - Operand to combine or compare with this value.
+   * @returns The least common multiple.
+   * @see SymPy `sympy.polys.polyclasses.DMP_Python.lcm`
+   */
   lcm(other: unknown): DMPJs {
     const b = this.operand(other);
     if (this.isZero || b.isZero) return this.per(dmpZero(this.lev));
     const h = this.mul(b).exquo(this.gcd(b));
     return this.dom.isField ? h.monic() : h.normalized();
   }
+  /**
+   * Returns GCD of the polynomial and `g` and their cofactors.
+   *
+   * @param other - Operand to combine or compare with this value.
+   * @returns GCD of the polynomial and `g` and their cofactors.
+   * @see SymPy `sympy.polys.polyclasses.DMP_Python.cofactors`
+   */
   cofactors(other: unknown): [DMPJs, DMPJs, DMPJs] {
     const b = this.operand(other), h = this.gcd(b);
     return h.isZero ? [h, h, h] : [h, this.exquo(h), b.exquo(h)];
   }
+  /**
+   * Extended Euclidean algorithm, if univariate.
+   *
+   * @param other - Operand to combine or compare with this value.
+   * @param auto - Allow promotion to a field for division.
+   * @returns Extended Euclidean algorithm, if univariate.
+   * @throws DomainError when the coefficient domain is not a field.
+   * @see SymPy `sympy.polys.polyclasses.DMP_Python.gcdex`
+   */
   gcdex(other: unknown, auto = true): [DMPJs, DMPJs, DMPJs] {
     this.univariate();
     if (!auto && !this.dom.isField) throw new DomainError('Cannot compute extended GCD over a ring');
@@ -303,12 +769,35 @@ export class DMPJs {
     const c = a.LC();
     return [s0.quoGround(c), t0.quoGround(c), a.monic()];
   }
+  /**
+   * Half extended Euclidean algorithm, if univariate.
+   *
+   * @param other - Operand to combine or compare with this value.
+   * @param auto - Allow promotion to a field for division.
+   * @returns A Bézout coefficient and the greatest common divisor.
+   * @see SymPy `sympy.polys.polyclasses.DMP_Python.half_gcdex`
+   */
   halfGcdex(other: unknown, auto = true): [DMPJs, DMPJs] { const [s, , h] = this.gcdex(other, auto); return [s, h]; }
+  /**
+   * Invert `f` modulo `g`, if possible.
+   *
+   * @param other - Operand to combine or compare with this value.
+   * @param auto - Allow promotion to a field for division.
+   * @returns The multiplicative inverse modulo the second polynomial.
+   * @throws NotInvertible when the element has no multiplicative inverse modulo the given modulus.
+   * @see SymPy `sympy.polys.polyclasses.DMP_Python.invert`
+   */
   invert(other: unknown, auto = true): DMPJs {
     const [s, h] = this.halfGcdex(other, auto);
     if (!h.isOne) throw new NotInvertible('zero divisor');
     return s.rem(other);
   }
+  /**
+   * Computes the Sturm sequence of the polynomial.
+   *
+   * @returns The Sturm sequence of the polynomial.
+   * @see SymPy `sympy.polys.polyclasses.DMP_Python.sturm`
+   */
   sturm(): DMPJs[] {
     this.univariate();
     const K = this.dom.getField();
@@ -317,6 +806,12 @@ export class DMPJs {
     while (!at(out, out.length - 1).isZero) out.push(at(out, out.length - 2).rem(at(out, out.length - 1)).neg());
     return out.slice(0, -1);
   }
+  /**
+   * Computes square-free part of the polynomial.
+   *
+   * @returns The square-free part of the polynomial.
+   * @see SymPy `sympy.polys.polyclasses.DMP_Python.sqf_part`
+   */
   sqfPart(): DMPJs {
     if (this.isZero) return this;
     let h: DMPJs = this;
@@ -324,6 +819,12 @@ export class DMPJs {
     const p = this.exquo(h);
     return this.dom.isField ? p.monic() : p.normalized().primitive()[1];
   }
+  /**
+   * Returns a list of square-free factors of the polynomial.
+   *
+   * @returns A list of square-free factors of the polynomial.
+   * @see SymPy `sympy.polys.polyclasses.DMP_Python.sqf_list`
+   */
   sqfList(): [unknown, [DMPJs, number][]] {
     if (this.isZero) return [this.dom.zero, []];
     const c = this.dom.isField ? this.LC() : this.dom.isNegative(this.LC()) ? domainNeg(this.dom, this.content()) : this.content();
@@ -368,7 +869,21 @@ export class DMPJs {
     }
     return [R, S];
   }
+  /**
+   * Computes subresultant PRS sequence of the polynomial and `g`.
+   *
+   * @param other - Operand to combine or compare with this value.
+   * @returns Subresultant PRS sequence of the polynomial and `g`.
+   * @see SymPy `sympy.polys.polyclasses.DMP_Python.subresultants`
+   */
   subresultants(other: unknown): DMPJs[] { return this.innerSubresultants(other)[0]; }
+  /**
+   * Computes resultant of the polynomial and `g` via PRS.
+   *
+   * @param other - Operand to combine or compare with this value.
+   * @returns The resultant with respect to the elimination variable.
+   * @see SymPy `sympy.polys.polyclasses.DMP_Python.resultant`
+   */
   resultant(other: unknown): unknown {
     const [R, S] = this.innerSubresultants(other);
     const r = R.length === 0 || at(R, R.length - 1).degree() > 0 ? new DMPJs(dmpZero(Math.max(0, this.lev - 1)), this.dom) : at(S, S.length - 1);
@@ -376,6 +891,12 @@ export class DMPJs {
     const value = r.mulGround(sign);
     return this.lev === 0 ? value.LC() : value;
   }
+  /**
+   * Computes discriminant of the polynomial.
+   *
+   * @returns Discriminant of the polynomial.
+   * @see SymPy `sympy.polys.polyclasses.DMP_Python.discriminant`
+   */
   discriminant(): unknown {
     const n = this.degree();
     if (n <= 0) return this.lev === 0 ? this.dom.zero : new DMPJs(dmpZero(this.lev - 1), this.dom);
@@ -383,11 +904,33 @@ export class DMPJs {
     const sign = (-1) ** (n * (n - 1) / 2);
     return r instanceof DMPJs ? r.mulGround(sign).exquo(new DMPJs(denseList(first(this.rep)), this.dom)) : domainArith(this.dom, 'quo', domainArith(this.dom, 'mul', r, this.dom.convert(sign)), this.LC());
   }
+  /**
+   * Cancel the common factors of a numerator and denominator.
+   *
+   * @param other - Operand to combine or compare with this value.
+   * @returns Cancel the common factors of a numerator and denominator.
+   */
   cancelFraction(other: unknown): [unknown, DMPJs, DMPJs] {
     const [a, b, p, q] = this.cancel(other, false);
     return [domainArith(this.dom.getField(), 'quo', a, b), p, q];
   }
+  /**
+   * Cancel common factors in a rational function `f/g`.
+   *
+   * @param other - Operand to combine or compare with this value.
+   * @param include - Incorporate the scalar factors in the reduced numerator and denominator. If false, return the scalars separately.
+   * @returns Cancel common factors in a rational function `f/g`.
+   * @see SymPy `sympy.polys.polyclasses.DMP_Python.cancel`
+   */
   cancel(other: unknown, include: false): [unknown, unknown, DMPJs, DMPJs];
+  /**
+   * Cancel common factors in a rational function `f/g`.
+   *
+   * @param other - Operand to combine or compare with this value.
+   * @param include - Incorporate the scalar factors in the reduced numerator and denominator. If false, return the scalars separately.
+   * @returns Cancel common factors in a rational function `f/g`.
+   * @see SymPy `sympy.polys.polyclasses.DMP_Python.cancel`
+   */
   cancel(other: unknown, include?: true): [DMPJs, DMPJs];
   cancel(other: unknown, include = true): [DMPJs, DMPJs] | [unknown, unknown, DMPJs, DMPJs] {
     const b = this.operand(other);
@@ -406,12 +949,30 @@ export class DMPJs {
     if (this.dom.isNegative(q.LC())) { q = q.neg(); a = domainNeg(this.dom, a); }
     return include ? [p.mulGround(a), q.mulGround(c)] : [a, c, p, q];
   }
+  /**
+   * Remove useless generators from `f`.
+   *
+   * @returns The polynomial with unused generators removed.
+   * @see SymPy `sympy.polys.polyclasses.DMP_Python.exclude`
+   */
   exclude(): [number[], DMPJs] { const [J, f, u] = dmpExclude(this.rep, this.lev, this.dom); return [J, new DMPJs(f, this.dom, u)]; }
+  /**
+   * Whether the operand represents the same value.
+   *
+   * @param other - Operand to combine or compare with this value.
+   * @returns Whether the comparison holds.
+   * @see SymPy `sympy.polys.polyclasses.DMP_Python.__eq__`
+   */
   equals(other: unknown): boolean {
     if (!(other instanceof DMPJs) || this.lev !== other.lev) return false;
     const same = (a: unknown, b: unknown): boolean => Array.isArray(a) && Array.isArray(b) ? a.length === b.length && a.every((c, i) => same(c, b[i])) : groundEquals(a, b);
     return same(this.rep, other.rep);
   }
+  /**
+   * The printable representation.
+   *
+   * @returns The formatted text.
+   */
   toString(): string {
     const format = (c: unknown): string => Array.isArray(c) ? `[${c.map(format).join(', ')}]` : c instanceof PythonMPQ ? c.repr() : String(c);
     return `DMP_Python(${format(this.rep)}, ${String(this.dom)})`;

@@ -50,7 +50,15 @@ export function sortExtensionFactors<P extends { listterms(): [readonly number[]
   return dense.map(({ factor }) => factor);
 }
 
-/** Determine factor multiplicities by repeated exact polynomial division. */
+/**
+ * Determine factor multiplicities by repeated exact polynomial division.
+ *
+ * @param fIn - Dividend polynomial.
+ * @param factors - Polynomial factors.
+ * @returns Determine factor multiplicities by repeated exact polynomial division.
+ * @throws PolynomialError when the dividend is zero or a candidate factor is constant or a candidate factor does not divide the polynomial.
+ * @see SymPy `sympy.polys.factortools.dup_trial_division`
+ */
 export function dupTrialDivision(fIn: PolyElement, factors: readonly PolyElement[]): [PolyElement, number][] {
   let f = fIn;
   const result: [PolyElement, number][] = [];
@@ -69,7 +77,16 @@ export function dupTrialDivision(fIn: PolyElement, factors: readonly PolyElement
   return result.sort(([a, k], [b, l]) => a.degree() - b.degree() || k - l || a.toString().localeCompare(b.toString()));
 }
 
-/** Factor a primitive square-free integer polynomial by Wang's algorithm. */
+/**
+ * Factor a primitive square-free integer polynomial by Wang's algorithm.
+ *
+ * @param f - Polynomial to operate on.
+ * @param modulus - Initial bound on the evaluation points.
+ * @param seed - Seed for choosing evaluation points.
+ * @returns Factor a primitive square-free integer polynomial by Wang's algorithm.
+ * @throws RangeError when all supplied evaluation points have been exhausted.
+ * @see SymPy `sympy.polys.factortools.dmp_zz_wang`
+ */
 export function dmpZzWang(f: PolyElement, modulus?: number, seed?: readonly number[]): PolyElement[] {
   const encode = (p: PolyElement): ZPoly => zpoly(p.terms().map(([m, c]) => [m, asInt(c)]));
   const decode = (p: ZPoly): PolyElement => f.ring.fromDict([...p.values()].map(({ e, c }) => [e, c]));
@@ -88,7 +105,13 @@ export function dmpZzWang(f: PolyElement, modulus?: number, seed?: readonly numb
   return wangFactor(encode(f), f.ring.ngens, leadingFactors, random, modulus).map(decode);
 }
 
-/** Mignotte's multivariate factor coefficient bound over the integers. */
+/**
+ * Mignotte's multivariate factor coefficient bound over the integers.
+ *
+ * @param f - Polynomial to operate on.
+ * @returns An upper bound on the absolute coefficients of the integer factors.
+ * @see SymPy `sympy.polys.factortools.dmp_zz_mignotte_bound`
+ */
 export function dmpZzMignotteBound(f: PolyElement): Expr {
   if (f.isZero) return Rational.of(0);
   const n = f.degrees().reduce((sum, degree) => sum + degree, 0);
@@ -98,7 +121,18 @@ export function dmpZzMignotteBound(f: PolyElement): Expr {
   return Rational.of(iroot(BigInt(n + 1), 2n) * 2n ** BigInt(n) * a * (b < 0n ? -b : b));
 }
 
-/** Lift a factorization and its Bezout relation from modulus m to m squared. */
+/**
+ * Lift a factorization and its Bezout relation from modulus m to m squared.
+ *
+ * @param m - Current lifting modulus.
+ * @param f - Polynomial to operate on.
+ * @param g - First factor modulo the lifting modulus.
+ * @param h - Complementary factor modulo the lifting modulus.
+ * @param s - Bézout coefficient of the first factor.
+ * @param t - Bézout coefficient of the complementary factor.
+ * @returns Lift a factorization and its Bezout relation from modulus m to m squared.
+ * @see SymPy `sympy.polys.factortools.dup_zz_hensel_step`
+ */
 export function dupZzHenselStep(m: bigint, f: PolyElement, g: PolyElement, h: PolyElement, s: PolyElement, t: PolyElement): [PolyElement, PolyElement, PolyElement, PolyElement] {
   const M = m * m;
   const e = f.sub(g.mul(h)).truncGround(M);
@@ -112,7 +146,17 @@ export function dupZzHenselStep(m: bigint, f: PolyElement, g: PolyElement, h: Po
   return [G, H, s.sub(d).truncGround(M), t.sub(t.mul(b).add(c.mul(G))).truncGround(M)];
 }
 
-/** Multifactor Hensel lifting to the prime power p to the exponent l. */
+/**
+ * Multifactor Hensel lifting to the prime power p to the exponent l.
+ *
+ * @param p - Prime used for lifting.
+ * @param f - Polynomial to operate on.
+ * @param factors - Polynomial factors.
+ * @param l - Target lifting exponent.
+ * @returns Multifactor Hensel lifting to the prime power p to the exponent l.
+ * @throws RangeError when the lifting precision is nonpositive or the factor list is empty.
+ * @see SymPy `sympy.polys.factortools.dup_zz_hensel_lift`
+ */
 export function dupZzHenselLift(p: bigint, f: PolyElement, factors: readonly PolyElement[], l: number): PolyElement[] {
   if (factors.length === 0 || !Number.isSafeInteger(l) || l < 1) throw new RangeError('positive precision and at least one factor required');
   const R = f.ring, modulus = p ** BigInt(l);
@@ -131,7 +175,15 @@ export function dupZzHenselLift(p: bigint, f: PolyElement, factors: readonly Pol
   return [...dupZzHenselLift(p, g, factors.slice(0, k), l), ...dupZzHenselLift(p, h, factors.slice(k), l)];
 }
 
-/** Remove common divisors of successive evaluated leading-coefficient factors. */
+/**
+ * Remove common divisors of successive evaluated leading-coefficient factors.
+ *
+ * @param E - Evaluations of the leading-coefficient factors.
+ * @param cs - Content of the specialized polynomial.
+ * @param ct - Content of the leading coefficient.
+ * @returns The matching value, or `NoMatch` when the requested form is unavailable.
+ * @see SymPy `sympy.polys.factortools.dmp_zz_wang_non_divisors`
+ */
 export function dmpZzWangNonDivisors(E: readonly bigint[], cs: bigint, ct: bigint): bigint[] | NoMatchResult {
   const result = [cs * ct];
   for (const value of E) {

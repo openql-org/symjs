@@ -12,7 +12,16 @@ import { Poly } from './sympoly';
 
 const pair = (f: ExprLike, g: ExprLike, x: Expr): [Poly, Poly] => [Poly.from(f, [x]), Poly.from(g, [x])];
 
-/** Sylvester's coefficient matrix of 1840 (method 1) or 1853 (method 2). */
+/**
+ * Sylvester's coefficient matrix of 1840 (method 1) or 1853 (method 2).
+ *
+ * @param f - Polynomial to operate on.
+ * @param g - Second polynomial operand.
+ * @param x - Polynomial generator.
+ * @param method - Algorithm to use.
+ * @returns The Sylvester matrix for the selected convention.
+ * @see SymPy `sympy.polys.subresultants_qq_zz.sylvester`
+ */
 export function sylvester(f: ExprLike, g: ExprLike, x: Expr, method = 1): Matrix {
   const [p, q] = pair(f, g, x);
   const m = p.degree(), n = q.degree();
@@ -36,7 +45,16 @@ export function sylvester(f: ExprLike, g: ExprLike, x: Expr, method = 1): Matrix
   return Matrix.of(rows);
 }
 
-/** The Bezout matrix of (f(x)g(y)-f(y)g(x))/(x-y), in ascending or PRS order. */
+/**
+ * The Bezout matrix of (f(x)g(y)-f(y)g(x))/(x-y), in ascending or PRS order.
+ *
+ * @param f - Polynomial to operate on.
+ * @param g - Second polynomial operand.
+ * @param x - Polynomial generator.
+ * @param method - Algorithm to use.
+ * @returns The Bezout matrix of (f(x)g(y)-f(y)g(x))/(x-y), in ascending or PRS order.
+ * @see SymPy `sympy.polys.subresultants_qq_zz.bezout`
+ */
 export function bezout(f: ExprLike, g: ExprLike, x: Expr, method = 'bz'): Matrix {
   const [p, q] = pair(f, g, x);
   const degree = Math.max(p.degree(), q.degree());
@@ -55,20 +73,60 @@ export function bezout(f: ExprLike, g: ExprLike, x: Expr, method = 'bz'): Matrix
   return Matrix.of(rows);
 }
 
-/** The anti-diagonal identity matrix. */
+/**
+ * The anti-diagonal identity matrix.
+ *
+ * @param n - Size of the square matrix.
+ * @returns The anti-diagonal identity matrix.
+ * @see SymPy `sympy.polys.subresultants_qq_zz.backward_eye`
+ */
 export function backwardEye(n: number): Matrix {
   return Matrix.of(Array.from({ length: n }, (_, i) => Array.from({ length: n }, (_, j) => i + j === n - 1 ? 1 : 0)));
 }
 
-/** The resultant over rational or integer coefficients. */
+/**
+ * The resultant over rational or integer coefficients.
+ *
+ * @param f - Polynomial to operate on.
+ * @param g - Second polynomial operand.
+ * @param x - Polynomial generator.
+ * @returns The resultant over rational or integer coefficients.
+ * @see SymPy `sympy.polys.subresultants_qq_zz.res`
+ */
 export function res(f: ExprLike, g: ExprLike, x: Expr): Expr {
   const [p, q] = pair(f, g, x);
   return p.resultant(q);
 }
+/**
+ * The resultant of the two polynomials.
+ *
+ * @param f - Polynomial to operate on.
+ * @param g - Second polynomial operand.
+ * @param x - Polynomial generator.
+ * @returns The resultant of the two polynomials.
+ * @see SymPy `sympy.polys.subresultants_qq_zz.res_q`
+ */
 export const resQ = res;
+/**
+ * The resultant of the two polynomials.
+ *
+ * @param f - Polynomial to operate on.
+ * @param g - Second polynomial operand.
+ * @param x - Polynomial generator.
+ * @returns The resultant of the two polynomials.
+ * @see SymPy `sympy.polys.subresultants_qq_zz.res_z`
+ */
 export const resZ = res;
 
-/** Subresultant PRS, with the initial pair retained for zero and constant inputs. */
+/**
+ * Subresultant PRS, with the initial pair retained for zero and constant inputs.
+ *
+ * @param f - Polynomial to operate on.
+ * @param g - Second polynomial operand.
+ * @param x - Polynomial generator.
+ * @returns Subresultant PRS, with the initial pair retained for zero and constant inputs.
+ * @see SymPy `sympy.polys.subresultants_qq_zz.subresultants_sylv`
+ */
 export function subresultantsSylv(f: ExprLike, g: ExprLike, x: Expr): Expr[] {
   let [p, q] = pair(f, g, x);
   if (p.isZero || q.isZero) return [p.asExpr(), q.asExpr()];
@@ -76,15 +134,86 @@ export function subresultantsSylv(f: ExprLike, g: ExprLike, x: Expr): Expr[] {
   if (q.degree() === 0) return [p.asExpr(), q.asExpr()];
   return p.subresultants(q).map((v) => v.asExpr());
 }
+/**
+ * The subresultant polynomial remainder sequence.
+ *
+ * @param f - Polynomial to operate on.
+ * @param g - Second polynomial operand.
+ * @param x - Polynomial generator.
+ * @returns The subresultant polynomial remainder sequence.
+ * @see SymPy `sympy.polys.subresultants_qq_zz.subresultants_bezout`
+ */
 export const subresultantsBezout = subresultantsSylv;
+/**
+ * The subresultant polynomial remainder sequence.
+ *
+ * @param f - Polynomial to operate on.
+ * @param g - Second polynomial operand.
+ * @param x - Polynomial generator.
+ * @returns The subresultant polynomial remainder sequence.
+ * @see SymPy `sympy.polys.subresultants_qq_zz.subresultants_pg`
+ */
 export const subresultantsPg = subresultantsSylv;
+/**
+ * The subresultant polynomial remainder sequence.
+ *
+ * @param f - Polynomial to operate on.
+ * @param g - Second polynomial operand.
+ * @param x - Polynomial generator.
+ * @returns The subresultant polynomial remainder sequence.
+ * @see SymPy `sympy.polys.subresultants_qq_zz.subresultants_amv`
+ */
 export const subresultantsAmv = subresultantsSylv;
+/**
+ * The subresultant polynomial remainder sequence.
+ *
+ * @param f - Polynomial to operate on.
+ * @param g - Second polynomial operand.
+ * @param x - Polynomial generator.
+ * @returns The subresultant polynomial remainder sequence.
+ * @see SymPy `sympy.polys.subresultants_qq_zz.subresultants_amv_q`
+ */
 export const subresultantsAmvQ = subresultantsSylv;
+/**
+ * The subresultant polynomial remainder sequence.
+ *
+ * @param f - Dividend polynomial.
+ * @param g - Divisor polynomial.
+ * @param x - Polynomial generator.
+ * @returns The subresultant polynomial remainder sequence.
+ * @see SymPy `sympy.polys.subresultants_qq_zz.subresultants_rem`
+ */
 export const subresultantsRem = subresultantsSylv;
+/**
+ * The subresultant polynomial remainder sequence.
+ *
+ * @param f - Polynomial to operate on.
+ * @param g - Second polynomial operand.
+ * @param x - Polynomial generator.
+ * @returns The subresultant polynomial remainder sequence.
+ * @see SymPy `sympy.polys.subresultants_qq_zz.subresultants_vv`
+ */
 export const subresultantsVv = subresultantsSylv;
+/**
+ * The subresultant polynomial remainder sequence.
+ *
+ * @param f - Polynomial to operate on.
+ * @param g - Second polynomial operand.
+ * @param x - Polynomial generator.
+ * @returns The subresultant polynomial remainder sequence.
+ * @see SymPy `sympy.polys.subresultants_qq_zz.subresultants_vv_2`
+ */
 export const subresultantsVv2 = subresultantsSylv;
 
-/** Modified subresultants: the signed minors of the 1853 Sylvester matrix. */
+/**
+ * Modified subresultants: the signed minors of the 1853 Sylvester matrix.
+ *
+ * @param f - Polynomial to operate on.
+ * @param g - Second polynomial operand.
+ * @param x - Polynomial generator.
+ * @returns Modified subresultants: the signed minors of the 1853 Sylvester matrix.
+ * @see SymPy `sympy.polys.subresultants_qq_zz.modified_subresultants_sylv`
+ */
 export function modifiedSubresultantsSylv(f: ExprLike, g: ExprLike, x: Expr): Expr[] {
   const seq = subresultantsSylv(f, g, x).map((p) => Poly.from(p, [x]));
   if (seq.length === 2) return seq.map((p) => p.asExpr());
@@ -96,8 +225,35 @@ export function modifiedSubresultantsSylv(f: ExprLike, g: ExprLike, x: Expr): Ex
     return p.mul(mul((-1) ** (j * (j - 1) / 2), factor)).asExpr();
   });
 }
+/**
+ * The modified subresultant polynomial remainder sequence.
+ *
+ * @param f - Polynomial to operate on.
+ * @param g - Second polynomial operand.
+ * @param x - Polynomial generator.
+ * @returns The modified subresultant polynomial remainder sequence.
+ * @see SymPy `sympy.polys.subresultants_qq_zz.modified_subresultants_bezout`
+ */
 export const modifiedSubresultantsBezout = modifiedSubresultantsSylv;
+/**
+ * The modified subresultant polynomial remainder sequence.
+ *
+ * @param f - Polynomial to operate on.
+ * @param g - Second polynomial operand.
+ * @param x - Polynomial generator.
+ * @returns The modified subresultant polynomial remainder sequence.
+ * @see SymPy `sympy.polys.subresultants_qq_zz.modified_subresultants_pg`
+ */
 export const modifiedSubresultantsPg = modifiedSubresultantsSylv;
+/**
+ * The modified subresultant polynomial remainder sequence.
+ *
+ * @param f - Polynomial to operate on.
+ * @param g - Second polynomial operand.
+ * @param x - Polynomial generator.
+ * @returns The modified subresultant polynomial remainder sequence.
+ * @see SymPy `sympy.polys.subresultants_qq_zz.modified_subresultants_amv`
+ */
 export const modifiedSubresultantsAmv = modifiedSubresultantsSylv;
 
 function rationalPrs(f: ExprLike, g: ExprLike, x: Expr, negative: boolean): Expr[] {
@@ -112,25 +268,65 @@ function rationalPrs(f: ExprLike, g: ExprLike, x: Expr, negative: boolean): Expr
   }
   return seq;
 }
-/** The Euclidean PRS over QQ. */
+/**
+ * The Euclidean PRS over QQ.
+ *
+ * @param f - Polynomial to operate on.
+ * @param g - Second polynomial operand.
+ * @param x - Polynomial generator.
+ * @returns The Euclidean PRS over QQ.
+ * @see SymPy `sympy.polys.subresultants_qq_zz.euclid_q`
+ */
 export function euclidQ(f: ExprLike, g: ExprLike, x: Expr): Expr[] { return rationalPrs(f, g, x, false); }
-/** The signed Euclidean (Sturm) PRS over QQ. */
+/**
+ * The signed Euclidean (Sturm) PRS over QQ.
+ *
+ * @param f - Polynomial to operate on.
+ * @param g - Second polynomial operand.
+ * @param x - Polynomial generator.
+ * @returns The signed Euclidean (Sturm) PRS over QQ.
+ * @see SymPy `sympy.polys.subresultants_qq_zz.sturm_q`
+ */
 export function sturmQ(f: ExprLike, g: ExprLike, x: Expr): Expr[] { return rationalPrs(f, g, x, true); }
 
-/** The pseudo-quotient using the absolute leading coefficient of the divisor. */
+/**
+ * The pseudo-quotient using the absolute leading coefficient of the divisor.
+ *
+ * @param f - Dividend polynomial.
+ * @param g - Divisor polynomial.
+ * @param x - Polynomial generator.
+ * @returns The pseudo-quotient using the absolute leading coefficient of the divisor.
+ * @see SymPy `sympy.polys.subresultants_qq_zz.quo_z`
+ */
 export function quoZ(f: ExprLike, g: ExprLike, x: Expr): Expr {
   const [p, q] = pair(f, g, x);
   if (![...p.allCoeffs(), ...q.allCoeffs()].every((c) => c instanceof Rational)) return p.pquo(q).asExpr();
   return p.mul(pow(abs(q.LC()), p.degree() - q.degree() + 1)).quo(q).asExpr();
 }
-/** The pseudo-remainder using the absolute leading coefficient of the divisor. */
+/**
+ * The pseudo-remainder using the absolute leading coefficient of the divisor.
+ *
+ * @param f - Dividend polynomial.
+ * @param g - Divisor polynomial.
+ * @param x - Polynomial generator.
+ * @returns The pseudo-remainder using the absolute leading coefficient of the divisor.
+ * @see SymPy `sympy.polys.subresultants_qq_zz.rem_z`
+ */
 export function remZ(f: ExprLike, g: ExprLike, x: Expr): Expr {
   const [p, q] = pair(f, g, x);
   if (![...p.allCoeffs(), ...q.allCoeffs()].every((c) => c instanceof Rational)) return p.prem(q).asExpr();
   return p.mul(pow(abs(q.LC()), p.degree() - q.degree() + 1)).rem(q).asExpr();
 }
 
-/** An integer-scaled Euclidean PRS, with positive scaling of each rational remainder. */
+/**
+ * An integer-scaled Euclidean PRS, with positive scaling of each rational remainder.
+ *
+ * @param f - Polynomial to operate on.
+ * @param g - Second polynomial operand.
+ * @param x - Polynomial generator.
+ * @returns An integer-scaled Euclidean PRS, with positive scaling of each rational remainder.
+ * @see SymPy `sympy.polys.subresultants_qq_zz.euclid_amv`
+ */
 export function euclidAmv(f: ExprLike, g: ExprLike, x: Expr): Expr[] {
   const rational = euclidQ(f, g, x);
   const subres = subresultantsSylv(f, g, x);
@@ -141,13 +337,41 @@ export function euclidAmv(f: ExprLike, g: ExprLike, x: Expr): Expr[] {
     return b.mul(abs(scale)).asExpr();
   });
 }
+/**
+ * The integer-scaled Euclidean remainder sequence.
+ *
+ * @param f - Polynomial to operate on.
+ * @param g - Second polynomial operand.
+ * @param x - Polynomial generator.
+ * @returns The integer-scaled Euclidean remainder sequence.
+ * @see SymPy `sympy.polys.subresultants_qq_zz.euclid_pg`
+ */
 export const euclidPg = euclidAmv;
 
-/** Integer-scaled Sturm PRS; method 0 uses the modified-subresultant scale. */
+/**
+ * Integer-scaled Sturm PRS; method 0 uses the modified-subresultant scale.
+ *
+ * @param f - Polynomial to operate on.
+ * @param g - Second polynomial operand.
+ * @param x - Polynomial generator.
+ * @param method - Algorithm to use.
+ * @returns Integer-scaled Sturm PRS; method 0 uses the modified-subresultant scale.
+ * @see SymPy `sympy.polys.subresultants_qq_zz.sturm_amv`
+ */
 export function sturmAmv(f: ExprLike, g: ExprLike, x: Expr, method = 0): Expr[] {
   const seq = euclidAmv(f, g, x);
   const p = Poly.from(at(seq, 0), [x]), q = Poly.from(at(seq, 1), [x]);
   const scale = method === 0 && seq.length > 2 ? abs(pow(p.LC(), p.degree() - q.degree())) : S.One;
   return seq.map((v, i) => i < 2 ? v : Poly.from(v, [x]).mul(mul(Math.floor(i / 2) % 2 ? -1 : 1, scale)).asExpr());
 }
+/**
+ * The integer-scaled Sturm sequence.
+ *
+ * @param f - Polynomial to operate on.
+ * @param g - Second polynomial operand.
+ * @param x - Polynomial generator.
+ * @param method - Algorithm to use.
+ * @returns The integer-scaled Sturm sequence.
+ * @see SymPy `sympy.polys.subresultants_qq_zz.sturm_pg`
+ */
 export const sturmPg = sturmAmv;

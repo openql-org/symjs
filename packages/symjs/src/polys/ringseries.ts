@@ -23,7 +23,16 @@ import { PolyRing } from './rings';
 import type { PuiseuxTerm } from './puiseux';
 import { PuiseuxPoly, PuiseuxRing, addExponents as plus, multiplyExponents as times, compareExponents as cmp, rationalExponent as rat } from './puiseux';
 
+/** An ordinary or Puiseux polynomial used in truncated series arithmetic. */
 export type SeriesPoly = PolyElement | PuiseuxPoly;
+/**
+ * An operation on a polynomial series truncated in a specified generator.
+ *
+ * @param p - Input polynomial series.
+ * @param x - Expansion variable.
+ * @param prec - Exclusive exponent bound.
+ * @returns The series truncated to the requested order.
+ */
 export type SeriesFunction = (p: SeriesPoly, x: SeriesPoly, prec: ExprLike) => SeriesPoly;
 const zero = Rational.of(0), one = Rational.of(1), minusOne = Rational.of(-1);
 const minus = (a: Rational, b: Rational): Rational => plus(a, times(minusOne, b));
@@ -74,25 +83,131 @@ function factorial(n: number): bigint {
   return r;
 }
 
-/** Remove all terms of degree at least prec in x (SymPy rs_trunc). */
+/**
+ * Remove all terms of degree at least prec in x.
+ *
+ * @param p - Input series.
+ * @param x - Generator with respect to which the series is expanded.
+ * @param prec - Truncation order in the series variable.
+ * @returns The resulting truncated series.
+ * @see SymPy `sympy.polys.ring_series.rs_trunc`
+ * @example
+ * ```ts
+ * import { QQ, ex, ring, rsTrunc } from '@symjs/symjs';
+ *
+ * const [R, x] = ring('x', QQ);
+ * rsTrunc(R.fromExpr(ex`x**10 + x**5 + x + 1`), x, 12); // => x**10 + x**5 + x + 1
+ * rsTrunc(R.fromExpr(ex`x**10 + x**5 + x + 1`), x, 10); // => x**5 + x + 1
+ * ```
+ */
 export function rsTrunc(p: SeriesPoly, x: SeriesPoly, prec: ExprLike): SeriesPoly { return restore(p, trunc(lift(p), index(p, x), rat(prec))); }
-/** Multiply with truncation before accumulating terms (SymPy rs_mul). */
+/**
+ * Multiply with truncation before accumulating terms.
+ *
+ * @param p - Input series.
+ * @param q - Second input series.
+ * @param x - Generator with respect to which the series is expanded.
+ * @param prec - Truncation order in the series variable.
+ * @returns The resulting truncated series.
+ * @see SymPy `sympy.polys.ring_series.rs_mul`
+ * @example
+ * ```ts
+ * import { QQ, ex, ring, rsMul } from '@symjs/symjs';
+ *
+ * const [R, x] = ring('x', QQ);
+ * rsMul(R.fromExpr(ex`x**2 + 2*x + 1`), R.fromExpr(ex`x + 1`), x, 3); // => 3*x**2 + 3*x + 1
+ * ```
+ */
 export function rsMul(p: SeriesPoly, q: SeriesPoly, x: SeriesPoly, prec: ExprLike): SeriesPoly { return restore(p, product(lift(p), lift(q), index(p, x), rat(prec))); }
-/** Square modulo O(x**prec) (SymPy rs_square). */
+/**
+ * Square modulo O(x**prec).
+ *
+ * @param p - Input series.
+ * @param x - Generator with respect to which the series is expanded.
+ * @param prec - Truncation order in the series variable.
+ * @returns The resulting truncated series.
+ * @see SymPy `sympy.polys.ring_series.rs_square`
+ * @example
+ * ```ts
+ * import { QQ, ex, ring, rsSquare } from '@symjs/symjs';
+ *
+ * const [R, x] = ring('x', QQ);
+ * rsSquare(R.fromExpr(ex`x**2 + 2*x + 1`), x, 3); // => 6*x**2 + 4*x + 1
+ * ```
+ */
 export function rsSquare(p: SeriesPoly, x: SeriesPoly, prec: ExprLike): SeriesPoly { return rsMul(p, p, x, prec); }
-/** Differentiate a finite series (SymPy rs_diff). */
+/**
+ * Differentiate a finite series.
+ *
+ * @param p - Input series.
+ * @param x - Generator with respect to which the series is expanded.
+ * @returns The resulting truncated series.
+ * @see SymPy `sympy.polys.ring_series.rs_diff`
+ * @example
+ * ```ts
+ * import { QQ, ex, ring, rsDiff } from '@symjs/symjs';
+ *
+ * const [R, x] = ring('x, y', QQ);
+ * rsDiff(R.fromExpr(ex`x**2*y**3 + x`), x); // => 2*x*y**3 + 1
+ * ```
+ */
 export function rsDiff(p: SeriesPoly, x: SeriesPoly): SeriesPoly { const q = lift(p); return restore(p, q.diff(at(q.ring.gens, index(p, x)))); }
-/** Integrate a finite series when no logarithmic term is needed (SymPy rs_integrate). */
+/**
+ * Integrate a finite series when no logarithmic term is needed.
+ *
+ * @param p - Input series.
+ * @param x - Generator with respect to which the series is expanded.
+ * @returns The resulting truncated series.
+ * @see SymPy `sympy.polys.ring_series.rs_integrate`
+ * @example
+ * ```ts
+ * import { QQ, ex, ring, rsIntegrate } from '@symjs/symjs';
+ *
+ * const [R, x] = ring('x, y', QQ);
+ * rsIntegrate(R.fromExpr(ex`x**2*y**3 + x`), x); // => 1/3*x**3*y**3 + 1/2*x**2
+ * ```
+ */
 export function rsIntegrate(p: SeriesPoly, x: SeriesPoly): SeriesPoly { return restore(p, integral(lift(p), index(p, x))); }
 
-/** Substitute x_i -> x_i**n in the exponent lattice (SymPy pow_xin). */
+/**
+ * Substitute x_i -> x_i**n in the exponent lattice.
+ *
+ * @param p - Input series.
+ * @param iIn - Index of the generator whose exponents change.
+ * @param n - Exponent.
+ * @returns The resulting truncated series.
+ * @throws RangeError when a generator index is outside the allowed range.
+ * @see SymPy `sympy.polys.ring_series.pow_xin`
+ * @example
+ * ```ts
+ * import { QQ, ex, powXin, puiseuxRing } from '@symjs/symjs';
+ *
+ * const [R] = puiseuxRing('x, y', QQ);
+ * powXin(R.fromExpr(ex`x**(2/5) + x**(2/3) + x`), 0, 15); // => x**6 + x**10 + x**15
+ * ```
+ */
 export function powXin(p: SeriesPoly, iIn: IntLike, n: ExprLike): SeriesPoly {
   const i = intArg(iIn);
   if (!Number.isInteger(i) || i < 0 || i >= p.ring.ngens) throw new RangeError('invalid generator index');
   const q = lift(p), exponent = rat(n);
   return restore(p, q.ring.fromDict(q.terms().map(([m, c]) => [m.map((e, j) => j === i ? times(e, exponent) : e), c])));
 }
-/** A nonintegral exponent in x; negative integer powers are not regular (SymPy rs_is_puiseux). */
+/**
+ * A nonintegral exponent in x; negative integer powers are not regular.
+ *
+ * @param p - Input series.
+ * @param x - Generator with respect to which the series is expanded.
+ * @returns A nonintegral exponent in x.
+ * @throws RangeError when the series is not regular in the expansion variable.
+ * @see SymPy `sympy.polys.ring_series.rs_is_puiseux`
+ * @example
+ * ```ts
+ * import { QQ, ex, puiseuxRing, rsIsPuiseux } from '@symjs/symjs';
+ *
+ * const [R, x] = puiseuxRing('x', QQ);
+ * rsIsPuiseux(R.fromExpr(ex`x**(2/5) + x**(2/3) + x`), x); // => True
+ * ```
+ */
 export function rsIsPuiseux(p: SeriesPoly, x: SeriesPoly): boolean {
   const i = index(p, x);
   for (const m of lift(p).monoms()) {
@@ -153,14 +268,63 @@ function integerPower(p: PuiseuxPoly, n: bigint, i: number, prec: Rational): Pui
   }
   return shift(result, i, offset);
 }
-/** Integer or rational power, retaining the requested final precision (SymPy rs_pow). */
+/**
+ * Integer or rational power, retaining the requested final precision.
+ *
+ * @param p - Input series.
+ * @param n - Exponent.
+ * @param x - Generator with respect to which the series is expanded.
+ * @param prec - Truncation order in the series variable.
+ * @returns The resulting truncated series.
+ * @see SymPy `sympy.polys.ring_series.rs_pow`
+ * @example
+ * ```ts
+ * import { QQ, ex, ring, rsPow } from '@symjs/symjs';
+ *
+ * const [R, x] = ring('x', QQ);
+ * rsPow(R.fromExpr(ex`x + 1`), 4, x, 3); // => 6*x**2 + 4*x + 1
+ * ```
+ */
 export function rsPow(p: SeriesPoly, n: ExprLike, x: SeriesPoly, prec: ExprLike): SeriesPoly {
   const e = rat(n), q = lift(p), i = index(p, x), order = rat(prec);
   return restore(p, e.isInteger && !e.isNegative ? integerPower(q, e.p, i, order) : rationalPower(q, e, i, order));
 }
-/** Laurent/Puiseux reciprocal with a scalar leading coefficient (SymPy rs_series_inversion). */
+/**
+ * Laurent/Puiseux reciprocal with a scalar leading coefficient.
+ *
+ * @param p - Input series.
+ * @param x - Generator with respect to which the series is expanded.
+ * @param prec - Truncation order in the series variable.
+ * @returns The resulting truncated series.
+ * @see SymPy `sympy.polys.ring_series.rs_series_inversion`
+ * @example
+ * ```ts
+ * import { QQ, ex, ring, rsSeriesInversion } from '@symjs/symjs';
+ *
+ * const [R, x] = ring('x, y', QQ);
+ * rsSeriesInversion(R.fromExpr(ex`x*y**2 + 1`), x, 4); // => -x**3*y**6 + x**2*y**4 - x*y**2 + 1
+ * rsSeriesInversion(R.fromExpr(ex`x*y**2 + 1`), R.fromExpr(ex`y`), 4); // => -x*y**2 + 1
+ * ```
+ */
 export function rsSeriesInversion(p: SeriesPoly, x: SeriesPoly, prec: ExprLike): SeriesPoly { return rsPow(p, -1, x, prec); }
-/** Expand the nth root, or its reciprocal for negative n (SymPy rs_nth_root). */
+/**
+ * Expand the nth root, or its reciprocal for negative n.
+ *
+ * @param p - Input series.
+ * @param nIn - Integer root index.
+ * @param x - Generator with respect to which the series is expanded.
+ * @param prec - Truncation order in the series variable.
+ * @returns The resulting truncated series.
+ * @throws RangeError when the requested root index is not an integer or both base and exponent are zero.
+ * @see SymPy `sympy.polys.ring_series.rs_nth_root`
+ * @example
+ * ```ts
+ * import { QQ, ex, ring, rsNthRoot } from '@symjs/symjs';
+ *
+ * const [R, x] = ring('x, y', QQ);
+ * rsNthRoot(R.fromExpr(ex`x*y + x + 1`), -3, x, 3); // => 2/9*x**2*y**2 + 4/9*x**2*y + 2/9*x**2 - 1/3*x*y - 1/3*x + 1
+ * ```
+ */
 export function rsNthRoot(p: SeriesPoly, nIn: IntLike, x: SeriesPoly, prec: ExprLike): SeriesPoly {
   const n = intArg(nIn);
   if (!Number.isSafeInteger(n)) throw new RangeError('root order must be an integer');
@@ -195,29 +359,210 @@ function analytic(p: SeriesPoly, x: SeriesPoly, prec: ExprLike, name: AnalyticNa
     return q.ring.domainNew(derivative.subs([[t, q.ring.domain.toSympy(c)]]).div(Rational.of(factorial(k))));
   }));
 }
-/** Exponential series (SymPy rs_exp). */
+/**
+ * Exponential series.
+ *
+ * @param p - Input series.
+ * @param x - Generator with respect to which the series is expanded.
+ * @param prec - Truncation order in the series variable.
+ * @returns The resulting truncated series.
+ * @see SymPy `sympy.polys.ring_series.rs_exp`
+ * @example
+ * ```ts
+ * import { QQ, ex, ring, rsExp } from '@symjs/symjs';
+ *
+ * const [R, x] = ring('x', QQ);
+ * rsExp(R.fromExpr(ex`x**2`), x, 7); // => 1/6*x**6 + 1/2*x**4 + x**2 + 1
+ * ```
+ */
 export function rsExp(p: SeriesPoly, x: SeriesPoly, prec: ExprLike): SeriesPoly { return analytic(p, x, prec, 'exp'); }
-/** Sine series (SymPy rs_sin). */
+/**
+ * Sine series.
+ *
+ * @param p - Input series.
+ * @param x - Generator with respect to which the series is expanded.
+ * @param prec - Truncation order in the series variable.
+ * @returns The resulting truncated series.
+ * @see SymPy `sympy.polys.ring_series.rs_sin`
+ * @example
+ * ```ts
+ * import { QQ, ex, puiseuxRing, rsSin } from '@symjs/symjs';
+ *
+ * const [R, x] = puiseuxRing('x, y', QQ);
+ * rsSin(R.fromExpr(ex`x*y + x`), x, 4); // => x + x*y + -1/6*x**3 + -1/2*x**3*y + -1/2*x**3*y**2 + -1/6*x**3*y**3
+ * rsSin(R.fromExpr(ex`x**(3/2) + x*y**(7/5)`), x, 4); // => x*y**(7/5) + x**(3/2) + -1/6*x**3*y**(21/5) + -1/2*x**(7/2)*y**(14/5)
+ * ```
+ */
 export function rsSin(p: SeriesPoly, x: SeriesPoly, prec: ExprLike): SeriesPoly { return analytic(p, x, prec, 'sin'); }
-/** Cosine series (SymPy rs_cos). */
+/**
+ * Cosine series.
+ *
+ * @param p - Input series.
+ * @param x - Generator with respect to which the series is expanded.
+ * @param prec - Truncation order in the series variable.
+ * @returns The resulting truncated series.
+ * @see SymPy `sympy.polys.ring_series.rs_cos`
+ * @example
+ * ```ts
+ * import { QQ, ex, puiseuxRing, rsCos } from '@symjs/symjs';
+ *
+ * const [R, x] = puiseuxRing('x, y', QQ);
+ * rsCos(R.fromExpr(ex`x*y + x`), x, 4); // => 1 + -1/2*x**2 + -1*x**2*y + -1/2*x**2*y**2
+ * ```
+ */
 export function rsCos(p: SeriesPoly, x: SeriesPoly, prec: ExprLike): SeriesPoly { return analytic(p, x, prec, 'cos'); }
-/** Hyperbolic sine series (SymPy rs_sinh). */
+/**
+ * Hyperbolic sine series.
+ *
+ * @param p - Input series.
+ * @param x - Generator with respect to which the series is expanded.
+ * @param prec - Truncation order in the series variable.
+ * @returns The resulting truncated series.
+ * @see SymPy `sympy.polys.ring_series.rs_sinh`
+ * @example
+ * ```ts
+ * import { QQ, ex, ring, rsSinh } from '@symjs/symjs';
+ *
+ * const [R, x] = ring('x, y', QQ);
+ * rsSinh(R.fromExpr(ex`x*y + x`), x, 4); // => 1/6*x**3*y**3 + 1/2*x**3*y**2 + 1/2*x**3*y + 1/6*x**3 + x*y + x
+ * ```
+ */
 export function rsSinh(p: SeriesPoly, x: SeriesPoly, prec: ExprLike): SeriesPoly { return analytic(p, x, prec, 'sinh'); }
-/** Hyperbolic cosine series (SymPy rs_cosh). */
+/**
+ * Hyperbolic cosine series.
+ *
+ * @param p - Input series.
+ * @param x - Generator with respect to which the series is expanded.
+ * @param prec - Truncation order in the series variable.
+ * @returns The resulting truncated series.
+ * @see SymPy `sympy.polys.ring_series.rs_cosh`
+ * @example
+ * ```ts
+ * import { QQ, ex, ring, rsCosh } from '@symjs/symjs';
+ *
+ * const [R, x] = ring('x, y', QQ);
+ * rsCosh(R.fromExpr(ex`x*y + x`), x, 4); // => 1/2*x**2*y**2 + x**2*y + 1/2*x**2 + 1
+ * ```
+ */
 export function rsCosh(p: SeriesPoly, x: SeriesPoly, prec: ExprLike): SeriesPoly { return analytic(p, x, prec, 'cosh'); }
-/** Arcsine series (SymPy rs_asin). */
+/**
+ * Arcsine series.
+ *
+ * @param p - Input series.
+ * @param x - Generator with respect to which the series is expanded.
+ * @param prec - Truncation order in the series variable.
+ * @returns The resulting truncated series.
+ * @see SymPy `sympy.polys.ring_series.rs_asin`
+ * @example
+ * ```ts
+ * import { QQ, ring, rsAsin } from '@symjs/symjs';
+ *
+ * const [, x] = ring('x, y', QQ);
+ * rsAsin(x, x, 8); // => 5/112*x**7 + 3/40*x**5 + 1/6*x**3 + x
+ * ```
+ */
 export function rsAsin(p: SeriesPoly, x: SeriesPoly, prec: ExprLike): SeriesPoly { return analytic(p, x, prec, 'asin'); }
-/** Inverse hyperbolic sine series (SymPy rs_asinh). */
+/**
+ * Inverse hyperbolic sine series.
+ *
+ * @param p - Input series.
+ * @param x - Generator with respect to which the series is expanded.
+ * @param prec - Truncation order in the series variable.
+ * @returns The resulting truncated series.
+ * @see SymPy `sympy.polys.ring_series.rs_asinh`
+ * @example
+ * ```ts
+ * import { QQ, ring, rsAsinh } from '@symjs/symjs';
+ *
+ * const [, x] = ring('x', QQ);
+ * rsAsinh(x, x, 9); // => -5/112*x**7 + 3/40*x**5 - 1/6*x**3 + x
+ * ```
+ */
 export function rsAsinh(p: SeriesPoly, x: SeriesPoly, prec: ExprLike): SeriesPoly { return analytic(p, x, prec, 'asinh'); }
-/** Arctangent series (SymPy rs_atan). */
+/**
+ * Arctangent series.
+ *
+ * @param p - Input series.
+ * @param x - Generator with respect to which the series is expanded.
+ * @param prec - Truncation order in the series variable.
+ * @returns The resulting truncated series.
+ * @see SymPy `sympy.polys.ring_series.rs_atan`
+ * @example
+ * ```ts
+ * import { QQ, ex, ring, rsAtan } from '@symjs/symjs';
+ *
+ * const [R, x] = ring('x, y', QQ);
+ * rsAtan(R.fromExpr(ex`x*y + x`), x, 4); // => -1/3*x**3*y**3 - x**3*y**2 - x**3*y - 1/3*x**3 + x*y + x
+ * ```
+ */
 export function rsAtan(p: SeriesPoly, x: SeriesPoly, prec: ExprLike): SeriesPoly { return analytic(p, x, prec, 'atan'); }
-/** Inverse hyperbolic tangent series (SymPy rs_atanh). */
+/**
+ * Inverse hyperbolic tangent series.
+ *
+ * @param p - Input series.
+ * @param x - Generator with respect to which the series is expanded.
+ * @param prec - Truncation order in the series variable.
+ * @returns The resulting truncated series.
+ * @see SymPy `sympy.polys.ring_series.rs_atanh`
+ * @example
+ * ```ts
+ * import { QQ, ex, ring, rsAtanh } from '@symjs/symjs';
+ *
+ * const [R, x] = ring('x, y', QQ);
+ * rsAtanh(R.fromExpr(ex`x*y + x`), x, 4); // => 1/3*x**3*y**3 + x**3*y**2 + x**3*y + 1/3*x**3 + x*y + x
+ * ```
+ */
 export function rsAtanh(p: SeriesPoly, x: SeriesPoly, prec: ExprLike): SeriesPoly { return analytic(p, x, prec, 'atanh'); }
-/** Principal Lambert W series at zero (SymPy rs_LambertW). */
+/**
+ * Principal Lambert W series at zero.
+ *
+ * @param p - Input series.
+ * @param x - Generator with respect to which the series is expanded.
+ * @param prec - Truncation order in the series variable.
+ * @returns The resulting truncated series.
+ * @see SymPy `sympy.polys.ring_series.rs_LambertW`
+ * @example
+ * ```ts
+ * import { QQ, ex, ring, rsLambertW } from '@symjs/symjs';
+ *
+ * const [R, x] = ring('x, y', QQ);
+ * rsLambertW(R.fromExpr(ex`x*y + x`), x, 3); // => -x**2*y**2 - 2*x**2*y - x**2 + x*y + x
+ * ```
+ */
 export function rsLambertW(p: SeriesPoly, x: SeriesPoly, prec: ExprLike): SeriesPoly { return analytic(p, x, prec, 'LambertW'); }
-/** Tangent series (SymPy rs_tan). */
+/**
+ * Tangent series.
+ *
+ * @param p - Input series.
+ * @param x - Generator with respect to which the series is expanded.
+ * @param prec - Truncation order in the series variable.
+ * @returns The resulting truncated series.
+ * @see SymPy `sympy.polys.ring_series.rs_tan`
+ * @example
+ * ```ts
+ * import { QQ, ex, ring, rsTan } from '@symjs/symjs';
+ *
+ * const [R, x] = ring('x, y', QQ);
+ * rsTan(R.fromExpr(ex`x*y + x`), x, 4); // => 1/3*x**3*y**3 + x**3*y**2 + x**3*y + 1/3*x**3 + x*y + x
+ * ```
+ */
 export function rsTan(p: SeriesPoly, x: SeriesPoly, prec: ExprLike): SeriesPoly { return tangent(p, x, prec, false); }
-/** Hyperbolic tangent series (SymPy rs_tanh). */
+/**
+ * Hyperbolic tangent series.
+ *
+ * @param p - Input series.
+ * @param x - Generator with respect to which the series is expanded.
+ * @param prec - Truncation order in the series variable.
+ * @returns The resulting truncated series.
+ * @see SymPy `sympy.polys.ring_series.rs_tanh`
+ * @example
+ * ```ts
+ * import { QQ, ex, ring, rsTanh } from '@symjs/symjs';
+ *
+ * const [R, x] = ring('x, y', QQ);
+ * rsTanh(R.fromExpr(ex`x*y + x`), x, 4); // => -1/3*x**3*y**3 - x**3*y**2 - x**3*y - 1/3*x**3 + x*y + x
+ * ```
+ */
 export function rsTanh(p: SeriesPoly, x: SeriesPoly, prec: ExprLike): SeriesPoly { return tangent(p, x, prec, true); }
 
 /** Split off all terms independent of the series generator. */
@@ -256,13 +601,45 @@ function tangent(p: SeriesPoly, x: SeriesPoly, prec: ExprLike, hyperbolic: boole
   const denominator = hyperbolic ? tail.ring.one.add(ct) : tail.ring.one.sub(ct);
   return restore(template, product(c.add(t), rationalPower(denominator, minusOne, i, order), i, order));
 }
-/** Cotangent Laurent series, computing enough terms before inversion (SymPy rs_cot). */
+/**
+ * Cotangent Laurent series, computing enough terms before inversion.
+ *
+ * @param p - Input series.
+ * @param x - Generator with respect to which the series is expanded.
+ * @param prec - Truncation order in the series variable.
+ * @returns The resulting truncated series.
+ * @see SymPy `sympy.polys.ring_series.rs_cot`
+ * @example
+ * ```ts
+ * import { QQ, ring, rsCot } from '@symjs/symjs';
+ *
+ * const [, x] = ring('x, y', QQ);
+ * rsCot(x, x, 6); // => -2/945*x**5 - 1/45*x**3 - 1/3*x + x**(-1)
+ * ```
+ */
 export function rsCot(p: SeriesPoly, x: SeriesPoly, prec: ExprLike): SeriesPoly {
   const v = valuation(lift(p), index(p, x));
   const order = plus(rat(prec), times(Rational.of(2), v));
   return rsSeriesInversion(rsTan(p, x, order), x, prec);
 }
-/** Logarithmic series for a nonzero ground constant (SymPy rs_log). */
+/**
+ * Logarithmic series for a nonzero ground constant.
+ *
+ * @param p - Input series.
+ * @param x - Generator with respect to which the series is expanded.
+ * @param prec - Truncation order in the series variable.
+ * @returns The resulting truncated series.
+ * @throws NotImplementedError when the expansion would contain a logarithmic term.
+ * @see SymPy `sympy.polys.ring_series.rs_log`
+ * @example
+ * ```ts
+ * import { QQ, ex, puiseuxRing, rsLog } from '@symjs/symjs';
+ *
+ * const [R, x] = puiseuxRing('x', QQ);
+ * rsLog(R.fromExpr(ex`x + 1`), x, 8); // => x + -1/2*x**2 + 1/3*x**3 + -1/4*x**4 + 1/5*x**5 + -1/6*x**6 + 1/7*x**7
+ * rsLog(R.fromExpr(ex`x**(3/2) + 1`), x, 5); // => x**(3/2) + -1/2*x**3 + 1/3*x**(9/2)
+ * ```
+ */
 export function rsLog(p: SeriesPoly, x: SeriesPoly, prec: ExprLike): SeriesPoly {
   const q = lift(p), i = index(p, x), [v, c, tail] = normalize(q, i);
   if (!v.isZero) throw new NotImplementedError('the logarithm contains log(x)');
@@ -270,14 +647,48 @@ export function rsLog(p: SeriesPoly, x: SeriesPoly, prec: ExprLike): SeriesPoly 
   return restore(p, result);
 }
 
-/** Finite composition sum(c[k]*p**k) with truncation (SymPy rs_series_from_list). */
+/**
+ * Finite composition sum(c[k]*p**k) with truncation.
+ *
+ * @param p - Input series.
+ * @param c - Coefficients in ascending powers of the input series.
+ * @param x - Generator with respect to which the series is expanded.
+ * @param prec - Truncation order in the series variable.
+ * @returns The resulting truncated series.
+ * @see SymPy `sympy.polys.ring_series.rs_series_from_list`
+ * @example
+ * ```ts
+ * import { QQ, ex, ring, rsSeriesFromList } from '@symjs/symjs';
+ *
+ * const [R, x] = ring('x', QQ);
+ * rsSeriesFromList(R.fromExpr(ex`x**2 + x + 1`), [1, 2, 3], x, 4); // => 6*x**3 + 11*x**2 + 8*x + 6
+ * ```
+ */
 export function rsSeriesFromList(p: SeriesPoly, c: readonly ExprLike[], x: SeriesPoly, prec: ExprLike): SeriesPoly {
   const q = lift(p), i = index(p, x), order = rat(prec);
   let result = q.ring.zero;
   c.forEach((coefficient, k) => { result = result.add(integerPower(q, BigInt(k), i, order).mul(coefficient)); });
   return restore(p, result);
 }
-/** Simultaneous substitution; replacements are not substituted into one another (SymPy rs_subs). */
+/**
+ * Simultaneous substitution; replacements are not substituted into one another.
+ *
+ * @param p - Input series.
+ * @param rules - Generator and replacement series pairs.
+ * @param x - Generator with respect to which the series is expanded.
+ * @param prec - Truncation order in the series variable.
+ * @returns The resulting truncated series.
+ * @throws RangeError when a substitution divides by the zero series.
+ * @see SymPy `sympy.polys.ring_series.rs_subs`
+ * @example
+ * ```ts
+ * import { QQ, ex, ring, rsSubs } from '@symjs/symjs';
+ *
+ * const [R, x, y] = ring('x, y', QQ);
+ * rsSubs(R.fromExpr(ex`x**2 + y**2`), new Map([[x, R.fromExpr(ex`x + y`)], [y, R.fromExpr(ex`x + 2*y`)]]), x, 3); // => 2*x**2 + 6*x*y + 5*y**2
+ * rsSubs(R.fromExpr(ex`x**2 + y**2`), new Map([[x, R.fromExpr(ex`x + y`)]]), x, 3); // => x**2 + 2*x*y + 2*y**2
+ * ```
+ */
 export function rsSubs(p: SeriesPoly, rules: ReadonlyMap<SeriesPoly, SeriesPoly>, x: SeriesPoly, prec: ExprLike): SeriesPoly {
   const q = lift(p), i = index(p, x), order = rat(prec), replacements = new Map<number, PuiseuxPoly>();
   for (const [a, b] of rules) replacements.set(index(p, a), q.ring.ringNew(lift(b)));
@@ -304,7 +715,25 @@ export function rsSubs(p: SeriesPoly, rules: ReadonlyMap<SeriesPoly, SeriesPoly>
   }
   return restore(p, result);
 }
-/** Revert p(x)=y with a scalar nonzero coefficient of x (SymPy rs_series_reversion). */
+/**
+ * Revert p(x)=y with a scalar nonzero coefficient of x.
+ *
+ * @param p - Input series.
+ * @param x - Generator with respect to which the series is expanded.
+ * @param nIn - Truncation order of the inverse series.
+ * @param y - Generator in which to express the inverse.
+ * @returns The resulting truncated series.
+ * @throws RangeError when the requested series order is not positive or the constant term is nonzero.
+ * @throws NotImplementedError when the exponents for reversion are not integers or the linear coefficient is zero or is not a scalar.
+ * @see SymPy `sympy.polys.ring_series.rs_series_reversion`
+ * @example
+ * ```ts
+ * import { QQ, ex, ring, rsSeriesReversion } from '@symjs/symjs';
+ *
+ * const [R, x, y] = ring('x, y, a, b', QQ);
+ * rsSeriesReversion(R.fromExpr(ex`2*a*b*x**2 - 2*b*x**2 - x**2 + x`), x, 3, y); // => -2*y**2*a*b + 2*y**2*b + y**2 + y
+ * ```
+ */
 export function rsSeriesReversion(p: SeriesPoly, x: SeriesPoly, nIn: IntLike, y: SeriesPoly): SeriesPoly {
   const n = intArg(nIn);
   const q = lift(p), i = index(p, x), j = index(p, y);
@@ -321,13 +750,46 @@ export function rsSeriesReversion(p: SeriesPoly, x: SeriesPoly, nIn: IntLike, y:
   }
   return restore(p, trunc(result, j, Rational.of(n)));
 }
-/** Transfer an ordinary-series algorithm to a fractional exponent lattice (SymPy rs_puiseux). */
+/**
+ * Transfer an ordinary-series algorithm to a fractional exponent lattice.
+ *
+ * @param f - Series function to apply.
+ * @param p - Input series.
+ * @param x - Generator with respect to which the series is expanded.
+ * @param prec - Truncation order in the series variable.
+ * @returns The resulting truncated series.
+ * @see SymPy `sympy.polys.ring_series.rs_puiseux`
+ * @example
+ * ```ts
+ * import { QQ, ex, puiseuxRing, rsExp, rsPuiseux } from '@symjs/symjs';
+ *
+ * const [R, x] = puiseuxRing('x', QQ);
+ * rsPuiseux(rsExp, R.fromExpr(ex`x**(2/5) + x**(2/3) + x`), x, 1); // => 1 + x**(2/5) + x**(2/3) + 1/2*x**(4/5)
+ * ```
+ */
 export function rsPuiseux(f: SeriesFunction, p: SeriesPoly, x: SeriesPoly, prec: ExprLike): SeriesPoly {
   const i = index(p, x), denominator = lift(p).monoms().reduce((n, m) => lcm(n, at(m, i).q), 1n);
   const scaled = powXin(p, i, Rational.of(denominator));
   return powXin(f(scaled, x, times(rat(prec), Rational.of(denominator))), i, Rational.of(1, denominator));
 }
-/** Compose a univariate series algorithm with a multivariate input (SymPy rs_fun). */
+/**
+ * Compose a univariate series algorithm with a multivariate input.
+ *
+ * @param p - Input series.
+ * @param f - Function whose univariate series is to be composed with the input.
+ * @param x - Generator with respect to which the series is expanded.
+ * @param prec - Truncation order in the series variable.
+ * @returns The resulting truncated series.
+ * @throws NotImplementedError when the substituted tail has nonpositive valuation.
+ * @see SymPy `sympy.polys.ring_series.rs_fun`
+ * @example
+ * ```ts
+ * import { QQ, ring, rsFun, rsTan } from '@symjs/symjs';
+ *
+ * const [R, x] = ring('x', QQ);
+ * rsFun(x, rsTan, x, 4).asExpr(); // => x**3/3 + x
+ * ```
+ */
 export function rsFun(p: SeriesPoly, f: SeriesFunction, x: SeriesPoly, prec: ExprLike): SeriesPoly {
   const q = lift(p), i = index(p, x), constant = q.get(q.ring.zeroMonom), tail = q.sub(constant);
   const r = new PuiseuxRing([new Dummy('t')], q.ring.domain), t = first(r.gens);
@@ -338,7 +800,23 @@ export function rsFun(p: SeriesPoly, f: SeriesFunction, x: SeriesPoly, prec: Exp
   const expansion = lift(f(t.add(constant), t, Math.max(1, count)));
   return restore(p, lift(rsSeriesFromList(tail, Array.from({ length: Math.max(1, count) }, (_, k) => expansion.get([k])), at(q.ring.gens, i), prec)));
 }
-/** Coefficientwise division/multiplication by factorials (SymPy rs_hadamard_exp). */
+/**
+ * Coefficientwise division/multiplication by factorials.
+ *
+ * @param p - Input series.
+ * @param inverse - Multiply by factorials instead of dividing by them.
+ * @returns The resulting truncated series.
+ * @throws NotImplementedError when the coefficient domain is not the rational field.
+ * @throws RangeError when an exponent is negative or nonintegral.
+ * @see SymPy `sympy.polys.ring_series.rs_hadamard_exp`
+ * @example
+ * ```ts
+ * import { QQ, ex, ring, rsHadamardExp } from '@symjs/symjs';
+ *
+ * const [R] = ring('x', QQ);
+ * rsHadamardExp(R.fromExpr(ex`x**3 + x**2 + x + 1`)); // => 1/6*x**3 + 1/2*x**2 + x + 1
+ * ```
+ */
 export function rsHadamardExp(p: SeriesPoly, inverse = false): SeriesPoly {
   const q = lift(p);
   if (q.ring.domain !== QQ) throw new NotImplementedError('Hadamard exponential requires QQ');
@@ -349,14 +827,45 @@ export function rsHadamardExp(p: SeriesPoly, inverse = false): SeriesPoly {
     return [m, inverse ? c.mul(Rational.of(f)) : c.div(Rational.of(f))];
   })));
 }
-/** Newton power-sum generating series of a univariate polynomial (SymPy rs_newton). */
+/**
+ * Newton power-sum generating series of a univariate polynomial.
+ *
+ * @param p - Input series.
+ * @param x - Generator with respect to which the series is expanded.
+ * @param prec - Truncation order in the series variable.
+ * @returns The resulting truncated series.
+ * @throws RangeError when the polynomial is zero or multivariate.
+ * @see SymPy `sympy.polys.ring_series.rs_newton`
+ * @example
+ * ```ts
+ * import { QQ, ex, ring, rsNewton } from '@symjs/symjs';
+ *
+ * const [R, x] = ring('x', QQ);
+ * rsNewton(R.fromExpr(ex`x**2 - 2`), x, 5); // => 8*x**4 + 4*x**2 + 2
+ * ```
+ */
 export function rsNewton(p: PolyElement, x: PolyElement, prec: ExprLike): SeriesPoly {
   if (p.ring.ngens !== 1 || p.isZero) throw new RangeError('Newton sums require a nonzero univariate polynomial');
   const degree = p.degree(), reversed = p.ring.fromTerms(p.listterms().map(([m, c]) => [[degree - first(m)], c]));
   const q = lift(p);
   return restore(p, q.ring.groundNew(degree).sub(lift(rsMul(rsDiff(reversed, x), rsSeriesInversion(reversed, x, prec), x, prec)).mul(lift(x))));
 }
-/** Polynomial whose roots are all pairwise sums of roots (SymPy rs_compose_add). */
+/**
+ * Polynomial whose roots are all pairwise sums of roots.
+ *
+ * @param p - Input series.
+ * @param q - Second input series.
+ * @returns The resulting ring element.
+ * @throws RangeError when the polynomials are zero or are not in the same univariate ring.
+ * @see SymPy `sympy.polys.ring_series.rs_compose_add`
+ * @example
+ * ```ts
+ * import { QQ, ex, ring, rsComposeAdd } from '@symjs/symjs';
+ *
+ * const [R] = ring('x', QQ);
+ * rsComposeAdd(R.fromExpr(ex`x**2 - 2`), R.fromExpr(ex`x**2 - 3`)); // => x**4 - 10*x**2 + 1
+ * ```
+ */
 export function rsComposeAdd(p: PolyElement, q: PolyElement): PolyElement {
   if (!p.ring.equals(q.ring) || p.ring.ngens !== 1 || p.isZero || q.isZero) throw new RangeError('expected nonzero polynomials in the same univariate ring');
   const x = first(p.ring.gens), degree = p.degree() * q.degree(), prec = degree + 1;
@@ -365,7 +874,23 @@ export function rsComposeAdd(p: PolyElement, q: PolyElement): PolyElement {
   const exponential = lift(rsExp(restore(p, integral(integrand, 0)), x, prec));
   return p.ring.fromTerms(exponential.terms().map(([m, c]) => [[degree - Number(first(m).p)], c])).primitive()[1];
 }
-/** Expand an expression at zero and return its finite polynomial/Puiseux part (SymPy rs_series). */
+/**
+ * Expand an expression at zero and return its finite polynomial/Puiseux part.
+ *
+ * @param expr - Expression to convert.
+ * @param x - Generator with respect to which the series is expanded.
+ * @param prec - Truncation order in the series variable.
+ * @returns The resulting truncated series.
+ * @throws NotImplementedError when the expansion does not give a finite Puiseux series.
+ * @see SymPy `sympy.polys.ring_series.rs_series`
+ * @example
+ * ```ts
+ * import { ex, rsSeries, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * rsSeries(ex`sin(x) + exp(x)`, x, 5).asExpr(); // => x**4/24 + x**2/2 + 2*x + 1
+ * ```
+ */
 export function rsSeries(expr: ExprLike, x: Sym, prec: IntLike): SeriesPoly {
   const expanded = expand(removeO(series(sympify(expr), x, 0, intArg(prec))));
   const generators = new Map<string, Expr>([[x.key, x]]);
@@ -381,11 +906,43 @@ export function rsSeries(expr: ExprLike, x: Sym, prec: IntLike): SeriesPoly {
   return restore(new PolyRing(symbols, QQ).zero, p);
 }
 
-/** Cosine and sine series to the same precision (SymPy rs_cos_sin). */
+/**
+ * Cosine and sine series to the same precision.
+ *
+ * @param p - Input series.
+ * @param x - Generator with respect to which the series is expanded.
+ * @param prec - Truncation order in the series variable.
+ * @returns Cosine and sine series to the same precision.
+ * @see SymPy `sympy.polys.ring_series.rs_cos_sin`
+ * @remarks SymPy returns `(-1/2*x**2*y**2 - x**2*y - 1/2*x**2 + 1, -1/6*x**3*y**3 - 1/2*x**3*y**2 - 1/2*x**3*y - 1/6*x**3 + x*y + x)` with tuples for the fixed-length groups.
+ * @example
+ * ```ts
+ * import { QQ, ex, ring, rsCosSin } from '@symjs/symjs';
+ *
+ * const [R, x] = ring('x, y', QQ);
+ * rsCosSin(R.fromExpr(ex`x*y + x`), x, 4); // => [-1/2*x**2*y**2 - x**2*y - 1/2*x**2 + 1, -1/6*x**3*y**3 - 1/2*x**3*y**2 - 1/2*x**3*y - 1/6*x**3 + x*y + x]
+ * ```
+ */
 export function rsCosSin(p: SeriesPoly, x: SeriesPoly, prec: ExprLike): [SeriesPoly, SeriesPoly] {
   return cosineSine(p, x, prec, false);
 }
-/** Hyperbolic cosine and sine series (SymPy rs_cosh_sinh). */
+/**
+ * Hyperbolic cosine and sine series.
+ *
+ * @param p - Input series.
+ * @param x - Generator with respect to which the series is expanded.
+ * @param prec - Truncation order in the series variable.
+ * @returns Hyperbolic cosine and sine series.
+ * @see SymPy `sympy.polys.ring_series.rs_cosh_sinh`
+ * @remarks SymPy returns `(1/2*x**2*y**2 + x**2*y + 1/2*x**2 + 1, 1/6*x**3*y**3 + 1/2*x**3*y**2 + 1/2*x**3*y + 1/6*x**3 + x*y + x)` with tuples for the fixed-length groups.
+ * @example
+ * ```ts
+ * import { QQ, ex, ring, rsCoshSinh } from '@symjs/symjs';
+ *
+ * const [R, x] = ring('x, y', QQ);
+ * rsCoshSinh(R.fromExpr(ex`x*y + x`), x, 4); // => [1/2*x**2*y**2 + x**2*y + 1/2*x**2 + 1, 1/6*x**3*y**3 + 1/2*x**3*y**2 + 1/2*x**3*y + 1/6*x**3 + x*y + x]
+ * ```
+ */
 export function rsCoshSinh(p: SeriesPoly, x: SeriesPoly, prec: ExprLike): [SeriesPoly, SeriesPoly] {
   return cosineSine(p, x, prec, true);
 }

@@ -245,7 +245,17 @@ function outerRefine(f0: P, s: Q, t: Q, opts: RefineOptions): [Q, Q] {
   return mobiusToInterval(innerRefine(f, m, opts)[1]);
 }
 
-/** Refine an isolating interval (s, t) of a root of f (SymPy dup_refine_real_root over ZZ). */
+/**
+ * Refine an isolating interval (s, t) of a root of f.
+ *
+ * @param f0 - Polynomial coefficients, leading coefficient first.
+ * @param s0 - Left endpoint of the isolating interval.
+ * @param t0 - Right endpoint of the isolating interval.
+ * @param opts - Use `eps` for a width bound, `steps` for an iteration bound, `disjoint` for a point to exclude and `fast` for accelerated refinement.
+ * @returns Refine an isolating interval (s, t) of a root of f.
+ * @throws RangeError when the interval does not isolate a refinable real root.
+ * @see SymPy `sympy.polys.rootisolation.dup_refine_real_root`
+ */
 export function refineRealRoot(f0: P, s0: Q, t0: Q, opts: RefineOptions = {}): [Q, Q] {
   let f = f0;
   let [s, t] = qle(s0, t0) ? [s0, t0] : [t0, s0];
@@ -434,8 +444,14 @@ const zeroInside = (inf: Q | undefined, sup: Q | undefined) => (inf === undefine
 
 /**
  * Isolating intervals of the real roots of an integer polynomial given by
- * its square-free factors [(f, multiplicity)] (SymPy dup_isolate_real_roots).
+ * its square-free factors [(f, multiplicity)].
  * Returns [[s, t], multiplicity] sorted by the intervals.
+ *
+ * @param factors - Polynomial factors.
+ * @param eps - Maximum width of the isolating interval.
+ * @param opts - Use `inf` and `sup` to restrict the search, `eps` to limit interval width and `fast` for accelerated refinement.
+ * @returns Isolating intervals of the real roots of an integer polynomial given by its square-free factors [(f, multiplicity)].
+ * @see SymPy `sympy.polys.rootisolation.dup_isolate_real_roots`
  */
 export function isolateRealRoots(factors: [P, number][], eps?: Q, opts: IsolateOptions = {}): [[Q, Q], number][] {
   let zeroMult = 0;
@@ -451,7 +467,14 @@ export function isolateRealRoots(factors: [P, number][], eps?: Q, opts: IsolateO
   return sortIntervals(out);
 }
 
-/** Isolating intervals of the real roots of a square-free integer polynomial (SymPy dup_isolate_real_roots_sqf). */
+/**
+ * Isolating intervals of the real roots of a square-free integer polynomial.
+ *
+ * @param f0 - Polynomial coefficients, leading coefficient first.
+ * @param opts - Use `inf` and `sup` to restrict the search, `eps` to limit interval width and `fast` for accelerated refinement.
+ * @returns Isolating intervals of the real roots of a square-free integer polynomial.
+ * @see SymPy `sympy.polys.rootisolation.dup_isolate_real_roots_sqf`
+ */
 export function isolateRealRootsSqf(f0: P, opts: IsolateOptions = {}): [Q, Q][] {
   return isolateRealRoots([[f0, 1]], opts.eps, opts).map(([iv]) => iv);
 }
@@ -507,7 +530,12 @@ type Edge = Iso<Indices>;
 /**
  * Isolating intervals in [inf, sup] of the real roots of a list of
  * polynomials over QQ, with the indices of the polynomials each root belongs
- * to (SymPy dup_isolate_real_roots_list with basis=True).
+ * to.
+ *
+ * @param polys - Input polynomials.
+ * @param opts - Use `inf` and `sup` to restrict the search, `eps` to limit interval width and `fast` for accelerated refinement.
+ * @returns Isolating intervals in [inf, sup] of the real roots of a list of polynomials over QQ, with the indices of the polynomials each root belongs to.
+ * @see SymPy `sympy.polys.rootisolation.dup_isolate_real_roots_list`
  */
 export function isolateRealRootsList(polys: QP[], opts: IsolateOptions & { strict?: boolean }): Edge[] {
   const zeros = zeroInside(opts.inf, opts.sup);
@@ -861,7 +889,14 @@ function rootBound(f: QP): Q {
 
 /**
  * The number of roots of f in the rectangle [inf, sup] (corners as
- * [re, im]); roots on the boundary count (SymPy dup_count_complex_roots).
+ * [re, im]); roots on the boundary count.
+ *
+ * @param f0 - Polynomial coefficients, leading coefficient first.
+ * @param inf - Lower bound.
+ * @param sup - Upper bound.
+ * @param exclude - Rectangle edges or vertices to omit from the count.
+ * @returns The number of roots of f in the rectangle [inf, sup] (corners as [re, im]).
+ * @see SymPy `sympy.polys.rootisolation.dup_count_complex_roots`
  */
 export function countComplexRoots(f0: readonly (bigint | Q)[], inf?: [Q, Q], sup?: [Q, Q], exclude: boolean | readonly string[] = false): number {
   const f = toQQ(f0);
@@ -870,10 +905,35 @@ export function countComplexRoots(f0: readonly (bigint | Q)[], inf?: [Q, Q], sup
   return edgeRect(f1, f2, inf ?? [qneg(B), qneg(B)], sup ?? [B, B], exclude).N;
 }
 
-/** An isolating rectangle of a non-real root (SymPy ComplexInterval); conj selects the conjugate root below the real axis. */
+/**
+ * An isolating rectangle of a non-real root; conj selects the conjugate root below the real axis.
+ *
+ * @see SymPy `sympy.polys.rootisolation.ComplexInterval`
+ * @example
+ * ```ts
+ * import { isolateComplexRootsSqf } from '@symjs/symjs';
+ *
+ * isolateComplexRootsSqf([1n, 0n, 1n]).length; // => 2
+ * ```
+ */
 export class ComplexInterval {
+  /**
+   * Construct an isolating rectangle from its corners and edge-polynomial data.
+   *
+   * @param a - Lower-left corner of the isolating rectangle.
+   * @param b - Upper-right corner of the isolating rectangle.
+   * @param I - Isolating intervals of the edge polynomials.
+   * @param Q - Sequences of extended quadrants traversed along the four edges.
+   * @param F1 - Real-part polynomials on the four rectangle edges.
+   * @param F2 - Imaginary-part polynomials on the four rectangle edges.
+   * @param f1 - Real part of the polynomial in Cartesian coordinates.
+   * @param f2 - Imaginary part of the polynomial in Cartesian coordinates.
+   * @param conj - Use the conjugate rectangle in the lower half-plane.
+   */
   constructor(
+    /** The lower-left corner before conjugation. @see SymPy `sympy.polys.rootisolation.ComplexInterval.a` */
     readonly a: [Q, Q],
+    /** The upper-right corner before conjugation. @see SymPy `sympy.polys.rootisolation.ComplexInterval.b` */
     readonly b: [Q, Q],
     private readonly I: Four<Edge[]>,
     private readonly Q: Four<string[]>,
@@ -881,6 +941,7 @@ export class ComplexInterval {
     private readonly F2: Four<QP>,
     private readonly f1: Biv,
     private readonly f2: Biv,
+    /** Whether this rectangle represents the conjugate root. @see SymPy `sympy.polys.rootisolation.ComplexInterval.conj` */
     readonly conj = false,
   ) {}
   /**
@@ -889,6 +950,13 @@ export class ComplexInterval {
    * dense coefficients f (highest degree first), or of its conjugate when
    * conj is true; its edge data is computed as SymPy's isolation does.
    * RangeError when the rectangle does not hold exactly one root.
+   *
+   * @param f - Polynomial to operate on.
+   * @param a - Lower-left corner of the isolating rectangle.
+   * @param b - Upper-right corner of the isolating rectangle.
+   * @param conj - Use the conjugate rectangle in the lower half-plane.
+   * @returns The isolating rectangle with the specified corners.
+   * @throws RangeError when the rectangle does not isolate exactly one root.
    */
   static fromRectangle(f: readonly (bigint | Q)[], a: [Q, Q], b: [Q, Q], conj = false): ComplexInterval {
     const [f1, f2] = realImag(toQQ(f));
@@ -896,40 +964,102 @@ export class ComplexInterval {
     if (r.N !== 1) throw new RangeError(`the rectangle holds ${r.N} roots, not one`);
     return new ComplexInterval(r.a, r.b, r.I, r.Q, r.F1, r.F2, f1, f2, conj);
   }
+  /**
+   * The left real coordinate.
+   *
+   * @returns The left real coordinate.
+   * @see SymPy `sympy.polys.rootisolation.ComplexInterval.ax`
+   */
   get ax(): Q {
     return this.a[0];
   }
+  /**
+   * The lower imaginary coordinate.
+   *
+   * @returns The lower imaginary coordinate.
+   * @see SymPy `sympy.polys.rootisolation.ComplexInterval.ay`
+   */
   get ay(): Q {
     return this.conj ? qneg(this.b[1]) : this.a[1];
   }
+  /**
+   * The right real coordinate.
+   *
+   * @returns The right real coordinate.
+   * @see SymPy `sympy.polys.rootisolation.ComplexInterval.bx`
+   */
   get bx(): Q {
     return this.b[0];
   }
+  /**
+   * The upper imaginary coordinate.
+   *
+   * @returns The upper imaginary coordinate.
+   * @see SymPy `sympy.polys.rootisolation.ComplexInterval.by`
+   */
   get by(): Q {
     return this.conj ? qneg(this.a[1]) : this.b[1];
   }
+  /**
+   * The width of the rectangle.
+   *
+   * @returns The width of the rectangle.
+   * @see SymPy `sympy.polys.rootisolation.ComplexInterval.dx`
+   */
   get dx(): Q {
     return qsub(this.b[0], this.a[0]);
   }
+  /**
+   * The height of the rectangle.
+   *
+   * @returns The height of the rectangle.
+   * @see SymPy `sympy.polys.rootisolation.ComplexInterval.dy`
+   */
   get dy(): Q {
     return qsub(this.b[1], this.a[1]);
   }
-  /** The center [re, im]. */
+  /**
+   * The center [re, im].
+   *
+   * @returns The center [re, im].
+   * @see SymPy `sympy.polys.rootisolation.ComplexInterval.center`
+   */
   get center(): [Q, Q] {
     return [qhalf(qadd(this.ax, this.bx)), qhalf(qadd(this.ay, this.by))];
   }
-  /** The corners [[ax, ay], [bx, by]]. */
+  /**
+   * The corners [[ax, ay], [bx, by]].
+   *
+   * @returns The corners [[ax, ay], [bx, by]].
+   * @see SymPy `sympy.polys.rootisolation.ComplexInterval.as_tuple`
+   */
   asTuple(): [[Q, Q], [Q, Q]] {
     return [[this.ax, this.ay], [this.bx, this.by]];
   }
+  /**
+   * The printable representation.
+   *
+   * @returns The formatted text.
+   */
   toString(): string {
     return `(${this.ax.toString()}, ${this.bx.toString()}) x (${this.ay.toString()}, ${this.by.toString()})`;
   }
-  /** The rectangle of the conjugate root. */
+  /**
+   * The rectangle of the conjugate root.
+   *
+   * @returns The rectangle of the conjugate root.
+   * @see SymPy `sympy.polys.rootisolation.ComplexInterval.conjugate`
+   */
   conjugate(): ComplexInterval {
     return new ComplexInterval(this.a, this.b, this.I, this.Q, this.F1, this.F2, this.f1, this.f2, true);
   }
-  /** Do the rectangles not intersect? */
+  /**
+   * Do the rectangles not intersect?
+   *
+   * @param other - Operand to combine or compare with this value.
+   * @returns Whether the isolating rectangles are disjoint.
+   * @see SymPy `sympy.polys.rootisolation.ComplexInterval.is_disjoint`
+   */
   isDisjoint(other: ComplexInterval): boolean {
     if (this.conj !== other.conj) return true;
     if (qlt(this.bx, other.ax) || qlt(other.bx, this.ax)) return true;
@@ -941,26 +1071,50 @@ export class ComplexInterval {
     const { a, b, I, Q, F1, F2 } = lo.N === 1 ? lo : hi;
     return new ComplexInterval(a, b, I, Q, F1, F2, this.f1, this.f2, this.conj);
   }
-  /** Refine both rectangles until they are disjoint. */
+  /**
+   * Refine both rectangles until they are disjoint.
+   *
+   * @param other0 - Isolating interval to separate from this one.
+   * @returns Refine both rectangles until they are disjoint.
+   * @see SymPy `sympy.polys.rootisolation.ComplexInterval.refine_disjoint`
+   */
   refineDisjoint(other0: ComplexInterval): [ComplexInterval, ComplexInterval] {
     let expr: ComplexInterval = this;
     let other = other0;
     while (!expr.isDisjoint(other)) [expr, other] = [expr.innerRefine(), other.innerRefine()];
     return [expr, other];
   }
-  /** Refine until the sides are shorter than dx and dy. */
+  /**
+   * Refine until the sides are shorter than dx and dy.
+   *
+   * @param dx - Horizontal refinement tolerance.
+   * @param dy - Vertical refinement tolerance.
+   * @returns Refine until the sides are shorter than dx and dy.
+   * @see SymPy `sympy.polys.rootisolation.ComplexInterval.refine_size`
+   */
   refineSize(dx: Q, dy: Q = dx): ComplexInterval {
     let expr: ComplexInterval = this;
     while (!(qlt(expr.dx, dx) && qlt(expr.dy, dy))) expr = expr.innerRefine();
     return expr;
   }
-  /** Refine the given number of bisection steps. */
+  /**
+   * Refine the given number of bisection steps.
+   *
+   * @param steps - Number of refinement steps.
+   * @returns Refine the given number of bisection steps.
+   * @see SymPy `sympy.polys.rootisolation.ComplexInterval.refine_step`
+   */
   refineStep(steps = 1): ComplexInterval {
     let expr: ComplexInterval = this;
     for (let i = 0; i < steps; i++) expr = expr.innerRefine();
     return expr;
   }
-  /** One bisection step. */
+  /**
+   * One bisection step.
+   *
+   * @returns One bisection step.
+   * @see SymPy `sympy.polys.rootisolation.ComplexInterval.refine`
+   */
   refine(): ComplexInterval {
     return this.innerRefine();
   }
@@ -969,7 +1123,13 @@ export class ComplexInterval {
 /**
  * Isolating rectangles of the non-real roots of a square-free polynomial,
  * each conjugate (below the real axis) before its root, by increasing
- * lower-left corner (SymPy dup_isolate_complex_roots_sqf with blackbox=True).
+ * lower-left corner.
+ *
+ * @param f0 - Polynomial coefficients, leading coefficient first.
+ * @param options - Use `eps` for the target width and `inf` and `sup` for coordinate bounds.
+ * @returns Isolating rectangles of the non-real roots of a square-free polynomial, each conjugate (below the real axis) before its root, by increasing lower-left corner.
+ * @throws RangeError when the rectangle is not a valid complex isolation rectangle.
+ * @see SymPy `sympy.polys.rootisolation.dup_isolate_complex_roots_sqf`
  */
 export function isolateComplexRootsSqf(f0: readonly (bigint | Q)[], { eps, inf, sup }: { eps?: Q | undefined; inf?: Q | undefined; sup?: Q | undefined } = {}): ComplexInterval[] {
   const f = toQQ(f0);

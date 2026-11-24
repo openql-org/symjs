@@ -23,23 +23,63 @@ import { Poly, PolificationFailed, factor, factorListExpr, preprocessRoots } fro
 import { NotImplementedError, NotInvertible } from '../core/errors';
 import { NoMatch, isNoMatch, type NoMatchResult } from '../core/truth';
 
-/** RootSum(poly, Lambda): args are [poly expression, Lambda, polynomial variable]. */
+/**
+ * A symbolic sum of a function evaluated at each root of a polynomial.
+ *
+ * @see SymPy `sympy.polys.rootoftools.RootSum`
+ */
 export class RootSumNode extends ExtensionExpr {
-  constructor(args: readonly Expr[], readonly auto = false) {
+  /**
+   * Construct a symbolic sum over polynomial roots.
+   *
+   * @param args - Polynomial expression, function and bound polynomial variable, in that order.
+   * @param auto - Enable automatic simplification when rebuilding or differentiating the sum.
+   */
+  constructor(args: readonly Expr[],
+    /** Whether automatic root-sum simplification is enabled. @see SymPy `sympy.polys.rootoftools.RootSum.auto` */
+    readonly auto = false) {
     super('RootSum', args);
   }
+  /**
+   * The underlying polynomial.
+   *
+   * @returns The underlying polynomial.
+   * @see SymPy `sympy.polys.rootoftools.RootSum.poly`
+   */
   get poly(): Expr {
     return at(this.args, 0);
   }
+  /**
+   * The function applied to each root.
+   *
+   * @returns The function applied to each root.
+   * @see SymPy `sympy.polys.rootoftools.RootSum.fun`
+   */
   get fun(): LambdaNode {
     return cast(at(this.args, 1), LambdaNode, 'RootSum function');
   }
+  /**
+   * The polynomial variable bound by the root sum.
+   *
+   * @returns The polynomial variable bound by the root sum.
+   */
   get variable(): Expr {
     return at(this.args, 2);
   }
+  /**
+   * Rebuild the root sum with replacement arguments.
+   *
+   * @param args - Polynomial expression, function and bound polynomial variable, in that order.
+   * @returns A root sum with the new arguments and the same simplification setting.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new RootSumNode(args, this.auto);
   }
+  /**
+   * The variables bound in the root sum and their scopes.
+   *
+   * @returns The variables bound in the root sum and their scopes.
+   */
   override bindings(): { variables: readonly number[]; scope: readonly number[] } {
     return { variables: [2], scope: [0] };
   }
@@ -48,13 +88,29 @@ export class RootSumNode extends ExtensionExpr {
     const f = this.fun;
     return f.expr.key === first(f.variables).key ? print(this.poly) : `${print(this.poly)}, ${print(f)}`;
   }
+  /**
+   * Format the root sum as a string.
+   *
+   * @param print - Printer for the expression's arguments.
+   * @returns The printed root sum.
+   */
   override printStr(print: (e: Expr) => string): string {
     return `RootSum(${this.printArgs(print)})`;
   }
+  /**
+   * Format the root sum in LaTeX.
+   *
+   * @param print - Printer for the expression's arguments.
+   * @returns The LaTeX representation of the root sum.
+   */
   override printLatex(print: (e: Expr) => string): string {
     return `\\operatorname{RootSum} {\\left(${this.printArgs(print)}\\right)}`;
   }
-  /** The sum over the roots (in radicals). */
+  /**
+   * The sum over the roots (in radicals).
+   *
+   * @returns The sum over the roots (in radicals).
+   */
   override doitSelf(): Expr {
     try {
       return add(...roots(this.poly, cast(this.variable, Sym, 'RootSum variable')).map((r) => this.fun.call(r)));
@@ -63,12 +119,37 @@ export class RootSumNode extends ExtensionExpr {
       throw error;
     }
   }
+  /**
+   * Differentiate the sum over the polynomial roots.
+   *
+   * @param x - Variable of differentiation.
+   * @param d - Function for differentiating a subexpression with respect to a variable.
+   * @returns Differentiate the sum over the polynomial roots.
+   * @see SymPy `sympy.polys.rootoftools.RootSum._eval_derivative`
+   */
   override diffSelf(x: Expr, d: (e: Expr, x: Expr) => Expr): Expr | undefined {
     if (this.poly.has(x) && this.variable.key !== x.key) return undefined;
     const fun = this.fun;
     return RootSum(this.poly, cast(this.variable, Sym), Lambda(first(fun.variables), d(fun.expr, x)), { auto: this.auto });
   }
+  /**
+   * Apply the indicated substitutions to the root sum.
+   *
+   * @param s - Substitutions to apply to the root sum.
+   * @returns The expression after substitution.
+   * @throws TypeError when the replacement expression is absent.
+   * @see SymPy `sympy.polys.rootoftools.RootSum.subs`
+   */
   override subs(s: Substitution): Expr;
+  /**
+   * Apply the indicated substitutions to the root sum.
+   *
+   * @param from - Expression to replace.
+   * @param to - Replacement expression.
+   * @returns The expression after substitution.
+   * @throws TypeError when the replacement expression is absent.
+   * @see SymPy `sympy.polys.rootoftools.RootSum.subs`
+   */
   override subs(from: Expr | string, to: ExprLike): Expr;
   override subs(from: Substitution | Expr | string, to?: ExprLike): Expr {
     if (typeof from === 'string') return this.subs(new Sym(from), defined(to, 'subs replacement'));
@@ -84,8 +165,15 @@ export class RootSumNode extends ExtensionExpr {
 
 
 /**
- * SymPy RootSum(poly, func, auto=False): linear factors of the polynomial are
+ * Linear factors of the polynomial are
  * evaluated, constant parts of the function are taken out.
+ *
+ * @param polyIn - Polynomial to represent or transform.
+ * @param x - Polynomial generator.
+ * @param fun - Function to evaluate at each root.
+ * @param opts - Controls `auto` (automatic simplification), `quadratic` (evaluation of quadratic root sums).
+ * @returns The sum of the function values over the roots, simplified when possible.
+ * @see SymPy `sympy.polys.rootoftools.RootSum`
  */
 export function RootSum(polyIn: ExprLike, x: Sym, fun: LambdaNode, opts: { auto?: boolean; quadratic?: boolean } = {}): Expr {
   const poly = sympify(polyIn);
@@ -169,7 +257,21 @@ function clearedFraction(c: Expr): Expr {
 /** One term of apart_list: [D(w) or the explicit roots, numerator Lambda, denominator Lambda, exponent]. */
 export type PartfracTerm = [Expr | Expr[], LambdaNode, LambdaNode, number];
 
-/** SymPy apart_list(f, x): [common factor, polynomial part, rational terms] (Bronstein). */
+/**
+ * [common factor, polynomial part, rational terms] (Bronstein).
+ *
+ * @param fIn - Polynomial to operate on.
+ * @param x - Polynomial generator.
+ * @returns [common factor, polynomial part, rational terms] (Bronstein).
+ * @see SymPy `sympy.polys.partfrac.apart_list`
+ * @example
+ * ```ts
+ * import { apartList, ex, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * apartList(ex`(2*x**3 - 2*x)/(x - 1)**2`, x)[1].asExpr(); // => 2*x + 4
+ * ```
+ */
 export function apartList(fIn: ExprLike, x: Sym): [Expr, Poly, PartfracTerm[], Sym] {
   const f = cancel(together(sympify(fIn)));
   const [num, den] = fraction(f);
@@ -213,7 +315,20 @@ export function apartList(fIn: ExprLike, x: Sym): [Expr, Poly, PartfracTerm[], S
   return [common, polyPart, out, w];
 }
 
-/** SymPy assemble_partfrac_list: the expression from an apart_list result. */
+/**
+ * The expression from an apart_list result.
+ *
+ * @param list - Partial fraction decomposition from `apartList`.
+ * @returns The expression from an apart_list result.
+ * @see SymPy `sympy.polys.partfrac.assemble_partfrac_list`
+ * @example
+ * ```ts
+ * import { apartList, assemblePartfracList, ex, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * assemblePartfracList(apartList(ex`(2*x**3 - 2*x)/(x - 1)**2`, x)); // => 2*x + 4 + 4/(x - 1)
+ * ```
+ */
 export function assemblePartfracList(list: [Expr, Poly, PartfracTerm[], Sym]): Expr {
   const [common, polyPart, terms, w] = list;
   const parts: Expr[] = [polyPart.asExpr()];

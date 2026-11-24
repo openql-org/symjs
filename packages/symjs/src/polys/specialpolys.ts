@@ -27,7 +27,16 @@ function finish(e: (v: Expr) => Expr, x: ExprLike | undefined, opts: NamedPolyOp
   return opts.polys ? Poly.from(p, [v], { pure: x === undefined }) : p;
 }
 
-/** SymPy swinnerton_dyer_poly(n, x): the minimal polynomial of sqrt(2) + sqrt(3) + ... + sqrt(p_n). */
+/**
+ * The minimal polynomial of sqrt(2) + sqrt(3) + ... + sqrt(p_n).
+ *
+ * @param n - Nonnegative index of the polynomial family.
+ * @param x - Variable or evaluation point of the polynomial.
+ * @param opts - Set `polys` to return a polynomial object.
+ * @returns The polynomial as an expression, or a `Poly` with `polys: true`.
+ * @throws RangeError when the order is not a positive integer.
+ * @see SymPy `sympy.polys.specialpolys.swinnerton_dyer_poly`
+ */
 export function swinnertonDyerPoly<O extends NamedPolyOptions = Record<never, never>>(n: number, x?: ExprLike, opts?: O): NamedPolyResult<O>;
 export function swinnertonDyerPoly(n: number, x?: ExprLike, opts: NamedPolyOptions = {}): Expr | Poly {
   if (!Number.isInteger(n) || n <= 0) throw new RangeError(`Cannot generate Swinnerton-Dyer polynomial of order ${n}`);
@@ -50,7 +59,16 @@ export function swinnertonDyerPoly(n: number, x?: ExprLike, opts: NamedPolyOptio
   );
 }
 
-/** SymPy cyclotomic_poly(n, x): the n-th cyclotomic polynomial. */
+/**
+ * The n-th cyclotomic polynomial.
+ *
+ * @param n - Nonnegative index of the polynomial family.
+ * @param x - Variable or evaluation point of the polynomial.
+ * @param opts - Set `polys` to return a polynomial object.
+ * @returns The polynomial as an expression, or a `Poly` with `polys: true`.
+ * @throws RangeError when the order is not a positive integer.
+ * @see SymPy `sympy.polys.specialpolys.cyclotomic_poly`
+ */
 export function cyclotomicPoly<O extends NamedPolyOptions = Record<never, never>>(n: number, x?: ExprLike, opts?: O): NamedPolyResult<O>;
 export function cyclotomicPoly(n: number, x?: ExprLike, opts: NamedPolyOptions = {}): Expr | Poly {
   if (!Number.isInteger(n) || n <= 0) throw new RangeError(`Cannot generate cyclotomic polynomial of order ${n}`);
@@ -63,7 +81,15 @@ const isExprLike = (a: unknown): a is ExprLike => a instanceof Expr || typeof a 
 /** The trailing options object of symmetricPoly (the other arguments are generators or one list of them). */
 const isOptions = (a: unknown): a is NamedPolyOptions => !isExprLike(a) && !Array.isArray(a);
 
-/** SymPy symmetric_poly(n, *gens): the n-th elementary symmetric polynomial of the generators. */
+/**
+ * The n-th elementary symmetric polynomial of the generators.
+ *
+ * @param n - Order of the elementary symmetric polynomial.
+ * @param args - Variables and an optional polynomial-output setting.
+ * @returns The n-th elementary symmetric polynomial of the generators.
+ * @throws RangeError when the requested order is outside the range allowed by the number of generators.
+ * @see SymPy `sympy.polys.specialpolys.symmetric_poly`
+ */
 export function symmetricPoly(n: number, ...args: (ExprLike | readonly ExprLike[] | NamedPolyOptions)[]): Expr | Poly {
   const last = args[args.length - 1];
   const opts = isOptions(last) ? last : {};
@@ -94,7 +120,18 @@ export interface RandomPolyOptions extends NamedPolyOptions {
   random?: () => number;
 }
 
-/** SymPy random_poly(x, n, inf, sup): a polynomial of degree n with random integer coefficients in [inf, sup]. */
+/**
+ * a polynomial of degree n with random integer coefficients in [inf, sup].
+ *
+ * @param x - Variable or evaluation point of the polynomial.
+ * @param n - Nonnegative index of the polynomial family.
+ * @param inf - Inclusive lower bound on the coefficients.
+ * @param sup - Inclusive upper bound on the coefficients.
+ * @param opts - Set `random` to supply a sampler and `polys` to return a polynomial object.
+ * @returns The polynomial as an expression, or a `Poly` with `polys: true`.
+ * @throws RangeError when the degree is not a nonnegative integer or the bounds admit no nonzero integer coefficient.
+ * @see SymPy `sympy.polys.specialpolys.random_poly`
+ */
 export function randomPoly<O extends RandomPolyOptions = Record<never, never>>(x: ExprLike, n: number, inf: number, sup: number, opts?: O): NamedPolyResult<O>;
 export function randomPoly(x: ExprLike, n: number, inf: number, sup: number, opts: RandomPolyOptions = {}): Expr | Poly {
   if (!Number.isInteger(n) || n < 0) throw new RangeError(`random_poly: the degree must be a nonnegative integer (got ${n})`);
@@ -111,9 +148,17 @@ export function randomPoly(x: ExprLike, n: number, inf: number, sup: number, opt
 }
 
 /**
- * SymPy interpolating_poly(n, x, X, Y): the Lagrange polynomial of degree
+ * The Lagrange polynomial of degree
  * n - 1 through the points (X[i], Y[i]); X and Y given as strings are the
  * symbols X0, ..., X(n-1) and Y0, ..., Y(n-1).
+ *
+ * @param n - Number of interpolation nodes.
+ * @param xIn - Variable or evaluation point of the polynomial.
+ * @param XIn - Interpolation nodes.
+ * @param YIn - Values at the interpolation nodes.
+ * @returns The Lagrange polynomial of degree n - 1 through the points (X[i], Y[i]).
+ * @throws RangeError when the interpolation variable occurs in the input data or is not a symbol.
+ * @see SymPy `sympy.polys.specialpolys.interpolating_poly`
  */
 export function interpolatingPoly(n: number, xIn: ExprLike, XIn: string | readonly ExprLike[] = 'x', YIn: string | readonly ExprLike[] = 'y'): Expr {
   const x = sympify(xIn);

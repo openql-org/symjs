@@ -15,19 +15,36 @@ import { Poly, PolificationFailed, inferDomain } from './sympoly';
 
 /** The options SymPy returns with a polynomial: generators and domain. */
 export interface PolyOptions {
+  /** The ordered generators. */
   gens: Expr[];
+  /** The coefficient domain. */
   domain: string;
 }
 
-/** SymPy poly_from_expr(expr, *gens): [Poly, { gens, domain }]. */
+/**
+ * [Poly, { gens, domain }].
+ *
+ * @param expr - Expression to convert.
+ * @param gens - Polynomial generators in the desired order.
+ * @param opts - Controls `domain` (the coefficient domain).
+ * @returns [Poly, { gens, domain }].
+ * @see SymPy `sympy.polys.polytools.poly_from_expr`
+ */
 export function polyFromExpr(expr: ExprLike, gens: readonly Expr[] = [], opts: { domain?: string } = {}): [Poly, PolyOptions] {
   const p = Poly.from(expr, gens.length ? gens : undefined, opts);
   return [p, { gens: [...p.gens], domain: p.domain }];
 }
 
 /**
- * SymPy parallel_poly_from_expr(exprs, *gens): polynomials over common
+ * Polynomials over common
  * generators and a common domain.
+ *
+ * @param exprs - Expressions to convert, with a common generator order.
+ * @param gens - Polynomial generators in the desired order.
+ * @param opts - Controls `domain` (the coefficient domain).
+ * @returns Polynomials over common generators and a common domain.
+ * @throws PolificationFailed when the input cannot be converted to polynomial form.
+ * @see SymPy `sympy.polys.polytools.parallel_poly_from_expr`
  */
 export function parallelPolyFromExpr(exprs: readonly ExprLike[], gens: readonly Expr[] = [], opts: { domain?: string } = {}): [Poly[], PolyOptions] {
   const es = exprs.map((e) => sympify(e));
@@ -41,8 +58,12 @@ export function parallelPolyFromExpr(exprs: readonly ExprLike[], gens: readonly 
 }
 
 /**
- * SymPy gff(f): the symbolic greatest factorial factorization is not
+ * The symbolic greatest factorial factorization is not
  * implemented in SymPy either (use Poly.gffList).
+ *
+ * @param _f - Polynomial to operate on.
+ * @throws NotImplementedError when the falling factorial cannot be evaluated symbolically.
+ * @see SymPy `sympy.polys.polytools.gff`
  */
 export function gff(_f: ExprLike): never {
   throw new NotImplementedError('symbolic falling factorial');

@@ -155,7 +155,7 @@ function constructComposite(coeffs: readonly Expr[], opt: Options): Construction
   return [domain, coeffs.map((c) => domain.convert(c))];
 }
 
-/** Options of constructDomain (SymPy construct_domain keywords). */
+/** Options of constructDomain. */
 export interface ConstructDomainOptions {
   /** Prefer a field: QQ over ZZ, K(x) over K[x]. */
   field?: boolean;
@@ -169,8 +169,19 @@ const isList = (o: unknown): o is readonly ExprLike[] => Array.isArray(o);
 
 /**
  * The smallest domain of coefficients and the coefficients as its elements
- * (SymPy construct_domain): a list gives a list, a single coefficient one
+ * : a list gives a list, a single coefficient one
  * element.
+ *
+ * @param obj - An expression or array of coefficients from which to infer a common domain.
+ * @param options - Use `field` to prefer a field, `extension` to adjoin algebraic coefficients and `composite` to allow composite domains.
+ * @returns The smallest domain of coefficients and the coefficients as its elements : a list gives a list, a single coefficient one element.
+ * @see SymPy `sympy.polys.constructor.construct_domain`
+ * @example
+ * ```ts
+ * import { constructDomain } from '@symjs/symjs';
+ *
+ * constructDomain([2, 3, 4])[0].toString(); // => ZZ
+ * ```
  */
 export function constructDomain(obj: ExprLike | readonly ExprLike[], options: ConstructDomainOptions = {}): [Domain, unknown] {
   const opt = buildOptions([], new Map(Object.entries(options)));

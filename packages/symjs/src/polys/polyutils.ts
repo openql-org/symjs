@@ -15,14 +15,27 @@ import { Poly, sortGens } from './sympoly';
 
 /** Options controlling generator discovery, as in SymPy dict_from_expr. */
 export interface DictFromExprOptions {
+  /** The ordered generators. */
   gens?: readonly Expr[];
+  /** The coefficient domain. */
   domain?: Domain;
+  /** Whether to treat additional expressions as generators. */
   greedy?: boolean;
+  /** The algebraic extensions to include in the coefficient domain. */
   extension?: boolean | null;
+  /** Whether to expand expressions before collecting their terms. */
   expand?: boolean;
 }
 
-/** Convert expressions to dictionaries over one common sequence of generators. */
+/**
+ * Convert expressions to dictionaries over one common sequence of generators.
+ *
+ * @param inputs - Expressions to expand over a shared generator list.
+ * @param options - Choose the generator order, coefficient domain, algebraic extensions and whether to expand the input.
+ * @returns The term dictionaries and their shared ordered generators.
+ * @throws PolynomialError when the expression is not a commutative polynomial.
+ * @see SymPy `sympy.polys.polyutils.parallel_dict_from_expr`
+ */
 export function parallelDictFromExpr(inputs: readonly ExprLike[], options: DictFromExprOptions = {}): [Map<number[], Expr>[], Expr[]] {
   const exprs = inputs.map((input) => {
     const e = sympify(input);
@@ -69,7 +82,14 @@ export function parallelDictFromExpr(inputs: readonly ExprLike[], options: DictF
   return [polys, gens];
 }
 
-/** Convert one expression to its multinomial dictionary and generators. */
+/**
+ * Convert one expression to its multinomial dictionary and generators.
+ *
+ * @param input - Expression to collect as a polynomial.
+ * @param options - Choose the generator order, coefficient domain, algebraic extensions and whether to expand the input.
+ * @returns The term dictionary and ordered generators.
+ * @see SymPy `sympy.polys.polyutils.dict_from_expr`
+ */
 export function dictFromExpr(input: ExprLike, options: DictFromExprOptions = {}): [Map<number[], Expr>, Expr[]] {
   const [polys, gens] = parallelDictFromExpr([input], options);
   return [first(polys), gens];

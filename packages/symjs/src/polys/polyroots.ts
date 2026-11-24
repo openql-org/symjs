@@ -21,8 +21,34 @@ import { Poly } from './sympoly';
 import { PolyQuintic } from './polyquinticconst';
 import { cyclotomicPoly } from './specialpolys';
 
-/** Linear root factors, with a residual factor when explicit roots are incomplete. */
+/**
+ * Linear root factors, with a residual factor when explicit roots are incomplete.
+ *
+ * @param f - Polynomial to operate on.
+ * @param x - Polynomial generator.
+ * @param filter - Domain restriction on the roots.
+ * @returns Linear root factors, with a residual factor when explicit roots are incomplete.
+ * @throws RangeError when the polynomial is not univariate.
+ * @see SymPy `sympy.polys.polyroots.root_factors`
+ * @example
+ * ```ts
+ * import { ex, rootFactors, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * rootFactors(ex`x**2 - y`, x); // => [x - sqrt(y), x + sqrt(y)]
+ * ```
+ */
 export function rootFactors(f: Poly, x?: Sym, filter?: RootOptions['filter']): Poly[];
+/**
+ * Linear root factors, with a residual factor when explicit roots are incomplete.
+ *
+ * @param f - Polynomial to operate on.
+ * @param x - Polynomial generator.
+ * @param filter - Domain restriction on the roots.
+ * @returns Linear root factors, with a residual factor when explicit roots are incomplete.
+ * @throws RangeError when the polynomial is not univariate.
+ * @see SymPy `sympy.polys.polyroots.root_factors`
+ */
 export function rootFactors(f: ExprLike, x?: Sym, filter?: RootOptions['filter']): Expr[];
 export function rootFactors(f: Poly | ExprLike, x?: Sym, filter?: RootOptions['filter']): Poly[] | Expr[] {
   const p = f instanceof Poly ? f : Poly.from(f, x === undefined ? undefined : [x]);
@@ -39,7 +65,14 @@ const quinticSimplify = (e: Expr): Expr => together(cancel(powsimp(e)));
 const numeric = (e: Expr): ComplexValue => toComplex(evalf(e, 40));
 const difference = (a: ComplexValue, b: ComplexValue): number => cabs(cadd(a, cneg(b)));
 
-/** Exact radical roots of a solvable irreducible rational quintic; otherwise an empty list. */
+/**
+ * Exact radical roots of a solvable irreducible rational quintic; otherwise an empty list.
+ *
+ * @param poly - Polynomial to represent or transform.
+ * @returns Exact radical roots of a solvable irreducible rational quintic; otherwise an empty list.
+ * @throws RangeError when the input is not a univariate quintic.
+ * @see SymPy `sympy.polys.polyroots.roots_quintic`
+ */
 export function rootsQuintic(poly: Poly): Expr[] {
   if (poly.degree() !== 5 || !poly.isUnivariate) throw new RangeError('rootsQuintic requires a univariate quintic');
   if (!poly.allCoeffs().every(c => c instanceof Rational)) return [];
@@ -128,7 +161,14 @@ export function rootsQuintic(poly: Poly): Expr[] {
 
 polyHooks.quintic = (e, x) => rootsQuintic(Poly.from(e, [x]));
 
-/** Roots of a binomial, repeated by multiplicity in canonical root order. */
+/**
+ * Roots of a binomial, repeated by multiplicity in canonical root order.
+ *
+ * @param f - Polynomial to operate on.
+ * @returns Roots of a binomial, repeated by multiplicity in canonical root order.
+ * @throws PolynomialError when the polynomial has no roots.
+ * @see SymPy `sympy.polys.polyroots.roots_binomial`
+ */
 export function rootsBinomial(f: Poly): Expr[] {
   const n = f.degree();
   if (n < 1) throw new PolynomialError('Polynomial has no roots.');
@@ -148,12 +188,26 @@ export function rootsBinomial(f: Poly): Expr[] {
   });
 }
 
-/** Roots of a quadratic, including repeated and zero roots. */
+/**
+ * Roots of a quadratic, including repeated and zero roots.
+ *
+ * @param f - Polynomial to operate on.
+ * @returns Roots of a quadratic, including repeated and zero roots.
+ * @see SymPy `sympy.polys.polyroots.roots_quadratic`
+ */
 export function rootsQuadratic(f: Poly): Expr[] {
   return roots(fraction(together(f.asExpr()))[0], cast(f.gen, Sym)).map(r => cancel(r));
 }
 
-/** Roots of a cubic, including repeated roots. */
+/**
+ * Roots of a cubic, including repeated roots.
+ *
+ * @param f - Polynomial to operate on.
+ * @param trig - Use trigonometric forms for real roots when available.
+ * @returns Roots of a cubic, including repeated roots.
+ * @throws PolynomialError when the polynomial is not cubic.
+ * @see SymPy `sympy.polys.polyroots.roots_cubic`
+ */
 export function rootsCubic(f: Poly, trig = false): Expr[] {
   if (f.degree() !== 3) throw new PolynomialError('a cubic polynomial is required');
   return rootsCubicFormula(f.nth(3), f.nth(2), f.nth(1), f.nth(0), trig);
@@ -168,7 +222,15 @@ polyHooks.cyclotomic = (e, x) => {
 const rootDomainFacts = { Z: 'integer', Q: 'rational', I: 'imaginary' } as const;
 polyHooks.matchRootDomain = (root, filter) => fact(root, rootDomainFacts[filter]) === true;
 
-/** Roots of a cyclotomic polynomial, real parts followed by imaginary parts. */
+/**
+ * Roots of a cyclotomic polynomial, real parts followed by imaginary parts.
+ *
+ * @param f - Polynomial to operate on.
+ * @param factor - Return one factor per root.
+ * @returns Roots of a cyclotomic polynomial, real parts followed by imaginary parts.
+ * @throws RangeError when the polynomial is not cyclotomic.
+ * @see SymPy `sympy.polys.polyroots.roots_cyclotomic`
+ */
 export function rootsCyclotomic(f: Poly, factor = false): Expr[] {
   const degree = f.degree();
   // phi(n) >= sqrt(n/2), so n <= 2*degree**2 bounds the inverse search.

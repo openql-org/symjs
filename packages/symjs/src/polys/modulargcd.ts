@@ -138,10 +138,40 @@ function integerModgcd(f: PolyElement, g: PolyElement): Cofactors {
   }
 }
 
-/** GCD and cofactors in ZZ[x] (SymPy modgcd_univariate). */
+/**
+ * GCD and cofactors in ZZ[x].
+ *
+ * @param f - Polynomial to operate on.
+ * @param g - Second polynomial operand.
+ * @returns GCD and cofactors in ZZ[x].
+ * @see SymPy `sympy.polys.modulargcd.modgcd_univariate`
+ * @remarks SymPy returns `(x - 1, x**4 + x**3 + x**2 + x + 1, 1)` with tuples for the fixed-length groups.
+ * @example
+ * ```ts
+ * import { ZZ, ex, modgcdUnivariate, ring } from '@symjs/symjs';
+ *
+ * const [R] = ring('x', ZZ);
+ * modgcdUnivariate(R.fromExpr(ex`x**5 - 1`), R.fromExpr(ex`x - 1`)); // => [x - 1, x**4 + x**3 + x**2 + x + 1, 1]
+ * ```
+ */
 export function modgcdUnivariate(f: PolyElement, g: PolyElement): Cofactors { return integerModgcd(f, g); }
 
-/** GCD and cofactors in ZZ[x, y] (SymPy modgcd_bivariate). */
+/**
+ * GCD and cofactors in ZZ[x, y].
+ *
+ * @param f - Polynomial to operate on.
+ * @param g - Second polynomial operand.
+ * @returns GCD and cofactors in ZZ[x, y].
+ * @see SymPy `sympy.polys.modulargcd.modgcd_bivariate`
+ * @remarks SymPy returns `(x + y, x - y, x + y)` with tuples for the fixed-length groups.
+ * @example
+ * ```ts
+ * import { ZZ, ex, modgcdBivariate, ring } from '@symjs/symjs';
+ *
+ * const [R] = ring('x, y', ZZ);
+ * modgcdBivariate(R.fromExpr(ex`x**2 - y**2`), R.fromExpr(ex`x**2 + 2*x*y + y**2`)); // => [x + y, x - y, x + y]
+ * ```
+ */
 export function modgcdBivariate(f: PolyElement, g: PolyElement): Cofactors { return integerModgcd(f, g); }
 
 /** A degree-preserving coprime image in every variable excludes a common factor. */
@@ -170,7 +200,23 @@ function coprimeImages(f: ZPoly, g: ZPoly, n: number): boolean {
   return true;
 }
 
-/** GCD and cofactors in ZZ[x_1, ..., x_n] (SymPy modgcd_multivariate). */
+/**
+ * GCD and cofactors in ZZ[x_1, ..., x_n].
+ *
+ * @param f - Polynomial to operate on.
+ * @param g - Second polynomial operand.
+ * @returns GCD and cofactors in ZZ[x_1, ..., x_n].
+ * @throws DomainError when the coefficient domain is not the integers.
+ * @see SymPy `sympy.polys.modulargcd.modgcd_multivariate`
+ * @remarks SymPy returns `(x + y, x - y, x + y)` with tuples for the fixed-length groups.
+ * @example
+ * ```ts
+ * import { ZZ, ex, modgcdMultivariate, ring } from '@symjs/symjs';
+ *
+ * const [R] = ring('x, y', ZZ);
+ * modgcdMultivariate(R.fromExpr(ex`x**2 - y**2`), R.fromExpr(ex`x**2 + 2*x*y + y**2`)); // => [x + y, x - y, x + y]
+ * ```
+ */
 export function modgcdMultivariate(f: PolyElement, g: PolyElement): Cofactors {
   checkRing(f, g);
   const R = f.ring;
@@ -187,8 +233,21 @@ export function modgcdMultivariate(f: PolyElement, g: PolyElement): Cofactors {
 }
 
 /**
- * Monic GCD and cofactors over an algebraic number field (SymPy func_field_modgcd).
+ * Monic GCD and cofactors over an algebraic number field.
  * Exact arithmetic in the defining number field certifies every PRS step.
+ *
+ * @param f - Polynomial to operate on.
+ * @param g - Second polynomial operand.
+ * @returns Monic GCD and cofactors over an algebraic number field.
+ * @throws DomainError when the coefficient domain is not algebraic.
+ * @see SymPy `sympy.polys.modulargcd.func_field_modgcd`
+ * @example
+ * ```ts
+ * import { QQ, ex, funcFieldModgcd, ring } from '@symjs/symjs';
+ *
+ * const [R, x] = ring('x', QQ.algebraicField(ex`sqrt(2)`));
+ * funcFieldModgcd(x.pow(2).sub(2), x.sub(ex`sqrt(2)`))[0].asExpr(); // => x - sqrt(2)
+ * ```
  */
 export function funcFieldModgcd(f: PolyElement, g: PolyElement): Cofactors {
   checkRing(f, g);
