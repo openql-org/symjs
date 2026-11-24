@@ -29,15 +29,35 @@ import { greekUnicode, splitSuperSub } from './pretty/symbology';
 
 /** An XML element of the MathML output; text children are written as they are (SymPy's raw text nodes). */
 export class MathMLElement {
+  /** The XML attributes of this MathML element. */
   readonly attributes: [string, string][] = [];
+  /** The child nodes in document order. */
   readonly children: (MathMLElement | string)[] = [];
-  constructor(readonly tag: string) {}
-  /** Appends a child element or text and returns this element. */
+  /**
+   * Creates a MathMLElement instance.
+   *
+   * @param tag - The XML element name.
+   */
+  constructor(
+    /** The MathML element name. */
+    readonly tag: string) {}
+  /**
+   * Appends a child element or text and returns this element.
+   *
+   * @param children - The child nodes to append in order.
+   * @returns This instance.
+   */
   append(...children: (MathMLElement | string)[]): this {
     this.children.push(...children);
     return this;
   }
-  /** Sets an attribute and returns this element. */
+  /**
+   * Sets an attribute and returns this element.
+   *
+   * @param name - The XML attribute name.
+   * @param value - The attribute value.
+   * @returns This instance.
+   */
   set(name: string, value: string): this {
     this.attributes.push([name, value]);
     return this;
@@ -45,12 +65,21 @@ export class MathMLElement {
   private open(): string {
     return `<${this.tag}${this.attributes.map(([k, v]) => ` ${k}="${v}"`).join('')}`;
   }
-  /** minidom `toxml()`: the element on one line. */
+  /**
+   * Minidom `toxml()`: the element on one line.
+   *
+   * @returns The formatted text.
+   */
   toxml(): string {
     if (this.children.length === 0) return `${this.open()}/>`;
     return `${this.open()}>${this.children.map((c) => (typeof c === 'string' ? c : c.toxml())).join('')}</${this.tag}>`;
   }
-  /** minidom `toprettyxml()`: one element per line, indented with tabs. */
+  /**
+   * Minidom `toprettyxml()`: one element per line, indented with tabs.
+   *
+   * @param indent - The indentation added for each nested element.
+   * @returns The formatted text.
+   */
   toprettyxml(indent = ''): string {
     if (this.children.length === 0) return `${indent}${this.open()}/>\n`;
     const only = this.children[0];
@@ -87,7 +116,7 @@ export interface MathMLOptions {
   readonly mulSymbolMathmlNumbers?: string;
   /** Roots as roots (default true); false prints fractional powers. */
   readonly rootNotation?: boolean;
-  /** Print symbol names as they are, without sub- and superscripts. */
+  /** Prints symbol names as they are, without sub- and superscripts. */
   readonly disableSplitSuperSub?: boolean;
 }
 
@@ -889,38 +918,88 @@ function element(expr: MathMLPrintable, options: MathMLPrintOptions): MathMLElem
 }
 
 /**
- * SymPy `mathml(expr, printer='content', **settings)`: the MathML of an
+ * The MathML of an
  * expression, matrix or list on one line, characters beyond ASCII as
  * character references (`mathml(add(x, 1))` is
  * `<apply><plus/><ci>x</ci><cn>1</cn></apply>`).
+ *
+ * @param expr - The value to format.
+ * @param options - The math mlprint settings.
+ * @returns The MathML representation.
+ * @see SymPy `sympy.printing.mathml.mathml`
  */
 export function mathml(expr: MathMLPrintable, options: MathMLPrintOptions = {}): string {
   return asciiRefs(element(expr, options).toxml());
 }
 
 /**
- * SymPy `print_mathml(expr, printer='content', **settings)`: the MathML
- * indented, one element per line. SymPy prints it; symjs has no console
- * output, so this returns the text that would be printed (followed by a
- * newline).
+ * Formats the MathML of an expression as indented XML.
+ *
+ * @param expr - The value to format.
+ * @param options - The math mlprint settings.
+ * @returns The MathML representation.
+ * @see SymPy `sympy.printing.mathml.print_mathml`
+ * @example
+ * ```ts
+ * import { ex, printMathml } from '@symjs/symjs';
+ * printMathml(ex`x + 1`).trimEnd(); // => <apply>
+ * //   	<plus/>
+ * //   	<ci>x</ci>
+ * //   	<cn>1</cn>
+ * //   </apply>
+ * ```
  */
 export function printMathml(expr: MathMLPrintable, options: MathMLPrintOptions = {}): string {
   return `${element(expr, options).toprettyxml()}\n`;
 }
 
-/** SymPy `MathMLContentPrinter(settings).doprint(expr)`. */
+/**
+ * Prints an expression to the Content MathML markup language.
+ *
+ * @see SymPy `sympy.printing.mathml.MathMLContentPrinter`
+ */
 export class MathMLContentPrinter {
-  constructor(readonly settings: MathMLOptions = {}) {}
-  /** The content MathML of the expression (SymPy `doprint`). */
+  /**
+   * Creates a MathMLContentPrinter instance.
+   *
+   * @param settings - The math mloptions settings.
+   */
+  constructor(
+    /** The formatting settings for this printer. */
+    readonly settings: MathMLOptions = {}) {}
+  /**
+   * The content MathML of the expression.
+   *
+   * @param expr - The value to format.
+   * @returns The formatted text.
+   * @see SymPy `sympy.printing.mathml.MathMLContentPrinter.doprint`
+   */
   doprint(expr: MathMLPrintable): string {
     return mathml(expr, { ...this.settings, printer: 'content' });
   }
 }
 
-/** SymPy `MathMLPresentationPrinter(settings).doprint(expr)`. */
+/**
+ * Prints an expression to the Presentation MathML markup language.
+ *
+ * @see SymPy `sympy.printing.mathml.MathMLPresentationPrinter`
+ */
 export class MathMLPresentationPrinter {
-  constructor(readonly settings: MathMLOptions = {}) {}
-  /** The presentation MathML of the expression (SymPy `doprint`). */
+  /**
+   * Creates a MathMLPresentationPrinter instance.
+   *
+   * @param settings - The math mloptions settings.
+   */
+  constructor(
+    /** The formatting settings for this printer. */
+    readonly settings: MathMLOptions = {}) {}
+  /**
+   * The presentation MathML of the expression.
+   *
+   * @param expr - The value to format.
+   * @returns The formatted text.
+   * @see SymPy `sympy.printing.mathml.MathMLPresentationPrinter.doprint`
+   */
   doprint(expr: MathMLPrintable): string {
     return mathml(expr, { ...this.settings, printer: 'presentation' });
   }

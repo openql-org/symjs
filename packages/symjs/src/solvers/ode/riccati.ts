@@ -12,7 +12,15 @@ import { cancel } from '../../simplify/rational';
 import { Poly } from '../../polys/sympoly';
 import { sign } from '../../functions/special/special';
 
-/** Match w' = b0 + b1*w + b2*w² with rational coefficients. */
+/**
+ * Matches w' = b0 + b1*w + b2*w² with rational coefficients.
+ *
+ * @param eq - The equation, or an expression equal to zero.
+ * @param f - The unknown function applied to the independent variable.
+ * @param x - The independent variable.
+ * @returns A match flag and the three coefficient functions on success.
+ * @see SymPy `sympy.solvers.ode.riccati.match_riccati`
+ */
 export function matchRiccati(eq: Expr, f: UndefFn, x: Sym): [boolean, Expr[]] {
   let e = expand(eq instanceof Rel ? sub(eq.lhs, eq.rhs) : eq);
   const derivative = new Derivative([f, x, S.One]);
@@ -29,18 +37,41 @@ export function matchRiccati(eq: Expr, f: UndefFn, x: Sym): [boolean, Expr[]] {
   return [true, values];
 }
 
-/** Valuation of num/den at infinity. */
+/**
+ * Valuation of num/den at infinity.
+ *
+ * @param num - The numerator polynomial.
+ * @param den - The denominator polynomial.
+ * @param x - The independent variable.
+ * @returns The denominator degree minus the numerator degree.
+ * @see SymPy `sympy.solvers.ode.riccati.val_at_inf`
+ */
 export function valAtInf(num: Poly, den: Poly, x: Sym): number {
   return den.degree(x) - num.degree(x);
 }
 
-/** Necessary pole multiplicities for a rational Riccati solution. */
+/**
+ * Necessary pole multiplicities for a rational Riccati solution.
+ *
+ * @param valInf - The order at infinity.
+ * @param muls - The multiplicities of the poles.
+ * @returns Whether the pole orders meet the necessary conditions.
+ * @see SymPy `sympy.solvers.ode.riccati.check_necessary_conds`
+ */
 export function checkNecessaryConds(valInf: number, muls: readonly number[]): boolean {
   return (valInf >= 2 || (valInf <= 0 && valInf % 2 === 0))
     && muls.every((m) => m === 1 || (m >= 2 && m % 2 === 0));
 }
 
-/** Limit of a rational function at positive infinity. */
+/**
+ * Limit of a rational function at positive infinity.
+ *
+ * @param num - The numerator polynomial.
+ * @param den - The denominator polynomial.
+ * @param x - The independent variable.
+ * @returns The limiting value at positive infinity.
+ * @see SymPy `sympy.solvers.ode.riccati.limit_at_inf`
+ */
 export function limitAtInf(num: Poly, den: Poly, x: Sym): Expr {
   const valuation = valAtInf(num, den, x);
   const ratio = mul(num.LC(), pow(den.LC(), -1));
@@ -48,7 +79,15 @@ export function limitAtInf(num: Poly, den: Poly, x: Sym): Expr {
   return valuation === 0 ? ratio : S.Zero;
 }
 
-/** Coefficients after the substitution x -> 1/x. */
+/**
+ * Coefficients after the substitution x -> 1/x.
+ *
+ * @param num - The numerator polynomial.
+ * @param den - The denominator polynomial.
+ * @param x - The independent variable.
+ * @returns The numerator and denominator after inversion of the variable.
+ * @see SymPy `sympy.solvers.ode.riccati.inverse_transform_poly`
+ */
 export function inverseTransformPoly(num: Poly, den: Poly, x: Sym): [Poly, Poly] {
   const degree = Math.max(num.degree(x), den.degree(x));
   const transform = (p: Poly): Poly => Poly.from(expand(mul(pow(x, degree), subs(p.asExpr(), [[x, pow(x, -1)]]))), [x]);
@@ -57,7 +96,18 @@ export function inverseTransformPoly(num: Poly, den: Poly, x: Sym): [Poly, Poly]
   return [n.exquo(gcd), d.exquo(gcd)];
 }
 
-/** Laurent coefficients indexed by descending powers of the local reciprocal variable. */
+/**
+ * Laurent coefficients indexed by descending powers of the local reciprocal variable.
+ *
+ * @param numIn - The numerator polynomial.
+ * @param denIn - The denominator polynomial.
+ * @param x - The independent variable.
+ * @param rIn - The expansion point, possibly infinity.
+ * @param m - The order of the pole.
+ * @param n - The number of Laurent coefficients requested.
+ * @returns The Laurent coefficients keyed by power.
+ * @see SymPy `sympy.solvers.ode.riccati.rational_laurent_series`
+ */
 export function rationalLaurentSeries(numIn: Poly, denIn: Poly, x: Sym, rIn: Expr, m: number, n: number): Map<number, Expr> {
   let num = numIn, den = denIn, r = rIn;
   if (r.equals(S.Infinity)) {
@@ -86,12 +136,31 @@ const quadraticChoices = (r: Expr): Expr[][] => {
   return root.equals(S.Zero) ? [[plus]] : [[plus], [mul(sub(1, root), S.Half)]];
 };
 
-/** Residues at a double pole. */
+/**
+ * Residues at a double pole.
+ *
+ * @param num - The numerator polynomial.
+ * @param den - The denominator polynomial.
+ * @param x - The independent variable.
+ * @param pole - The pole at which to expand the rational function.
+ * @returns The possible principal parts at this pole.
+ * @see SymPy `sympy.solvers.ode.riccati.construct_c_case_1`
+ */
 export function constructCCase1(num: Poly, den: Poly, x: Sym, pole: Expr): Expr[][] {
   return quadraticChoices(coefficient(rationalLaurentSeries(num, den, x, pole, 2, 1), 2));
 }
 
-/** Principal parts at a pole of even multiplicity greater than two. */
+/**
+ * Principal parts at a pole of even multiplicity greater than two.
+ *
+ * @param num - The numerator polynomial.
+ * @param den - The denominator polynomial.
+ * @param x - The independent variable.
+ * @param pole - The pole at which to expand the rational function.
+ * @param multiplicity - The order of the pole.
+ * @returns The possible principal parts at this pole.
+ * @see SymPy `sympy.solvers.ode.riccati.construct_c_case_2`
+ */
 export function constructCCase2(num: Poly, den: Poly, x: Sym, pole: Expr, multiplicity: number): Expr[][] {
   const ri = Math.floor(multiplicity / 2);
   const series = rationalLaurentSeries(num, den, x, pole, multiplicity, 6);
@@ -112,10 +181,25 @@ export function constructCCase2(num: Poly, den: Poly, x: Sym, pole: Expr, multip
   return [plus, minus];
 }
 
-/** A simple pole has residue one. */
+/**
+ * A simple pole has residue one.
+ *
+ * @returns The possible principal parts at this pole.
+ * @see SymPy `sympy.solvers.ode.riccati.construct_c_case_3`
+ */
 export function constructCCase3(): Expr[][] { return [[S.One]]; }
 
-/** All principal-part choices, one entry per finite pole. */
+/**
+ * All principal-part choices, one entry per finite pole.
+ *
+ * @param num - The numerator polynomial.
+ * @param den - The denominator polynomial.
+ * @param x - The independent variable.
+ * @param poles - The finite poles of the rational function.
+ * @param muls - The multiplicities of the poles.
+ * @returns The choices of principal part grouped by finite pole.
+ * @see SymPy `sympy.solvers.ode.riccati.construct_c`
+ */
 export function constructC(num: Poly, den: Poly, x: Sym, poles: readonly Expr[], muls: readonly number[]): Expr[][][] {
   return poles.map((pole, i) => {
     const m = at(muls, i);
@@ -123,7 +207,14 @@ export function constructC(num: Poly, den: Poly, x: Sym, poles: readonly Expr[],
   });
 }
 
-/** Polynomial parts for a pole at infinity of order 2*N. */
+/**
+ * Polynomial parts for a pole at infinity of order 2*N.
+ *
+ * @param series - The Laurent coefficients at infinity.
+ * @param N - Half the order of the pole at infinity.
+ * @returns The possible polynomial parts and residues at infinity.
+ * @see SymPy `sympy.solvers.ode.riccati.construct_d_case_4`
+ */
 export function constructDCase4(series: ReadonlyMap<number, Expr>, N: number): Expr[][] {
   const plus: Expr[] = Array.from({ length: N + 2 }, () => S.Zero);
   const root = sqrt(coefficient(series, 2 * N));
@@ -142,19 +233,42 @@ export function constructDCase4(series: ReadonlyMap<number, Expr>, N: number): E
   return [plus, minus];
 }
 
-/** Constant polynomial parts and their residues at infinity. */
+/**
+ * Constant polynomial parts and their residues at infinity.
+ *
+ * @param series - The Laurent coefficients at infinity.
+ * @returns The possible polynomial parts and residues at infinity.
+ * @see SymPy `sympy.solvers.ode.riccati.construct_d_case_5`
+ */
 export function constructDCase5(series: ReadonlyMap<number, Expr>): Expr[][] {
   const root = sqrt(coefficient(series, 0));
   const plus = [root, divideTwice(coefficient(series, -1), root)];
   return [plus, plus.map(neg)];
 }
 
-/** Residues when the rational function vanishes at infinity. */
+/**
+ * Residues when the rational function vanishes at infinity.
+ *
+ * @param num - The numerator polynomial.
+ * @param den - The denominator polynomial.
+ * @param x - The independent variable.
+ * @returns The possible polynomial parts and residues at infinity.
+ * @see SymPy `sympy.solvers.ode.riccati.construct_d_case_6`
+ */
 export function constructDCase6(num: Poly, den: Poly, x: Sym): Expr[][] {
   return quadraticChoices(limitAtInf(Poly.from(mul(pow(x, 2), num.asExpr()), [x]), den, x));
 }
 
-/** Polynomial-part choices at infinity. */
+/**
+ * Polynomial-part choices at infinity.
+ *
+ * @param num - The numerator polynomial.
+ * @param den - The denominator polynomial.
+ * @param x - The independent variable.
+ * @param valInf - The order at infinity.
+ * @returns The possible polynomial parts and residues at infinity.
+ * @see SymPy `sympy.solvers.ode.riccati.construct_d`
+ */
 export function constructD(num: Poly, den: Poly, x: Sym, valInf: number): Expr[][] {
   if (valInf > 0) return constructDCase6(num, den, x);
   const series = rationalLaurentSeries(num, den, x, S.Infinity, Math.max(0, -valInf), 1);

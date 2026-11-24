@@ -70,8 +70,13 @@ export function fill(text: string, width = 70): string {
 }
 
 /**
- * SymPy filldedent(s, w=70): s dedented, stripped of leading and trailing
+ * S dedented, stripped of leading and trailing
  * newlines and refilled to width w, after a leading newline.
+ *
+ * @param s - The input text.
+ * @param w - The maximum line width.
+ * @returns The formatted text.
+ * @see SymPy `sympy.utilities.misc.filldedent`
  */
 export function filldedent(s: string, w = 70): string {
   return `\n${fill(dedent(s).replace(/^\n+|\n+$/g, ''), w)}`;
@@ -93,11 +98,22 @@ function pyStrRepr(s: string): string {
 }
 
 /**
- * SymPy `rawlines(s)`: source text that, when printed, gives the string `s`
+ * Source text that, when printed, gives the string `s`
  * of several lines: a call of `dedent` on a triple-quoted string, or a
  * parenthesized concatenation of string literals when a line ends with a
  * space, the text has a backslash, or has both kinds of triple quotes. A
  * single line is its repr.
+ *
+ * @param s - The input text.
+ * @returns The formatted text.
+ * @see SymPy `sympy.utilities.misc.rawlines`
+ * @example
+ * ```ts
+ * import { rawlines } from '@symjs/symjs';
+ * rawlines('this\nthat'); // => dedent('''\
+ * //       this
+ * //       that''')
+ * ```
  */
 export function rawlines(s: string): string {
   const lines = s.split('\n');
@@ -115,11 +131,25 @@ export function rawlines(s: string): string {
 }
 
 /**
- * SymPy `strlines(s, c=64, short=False)`: source text of a long string as
+ * Source text of a long string as
  * a parenthesized concatenation of literals of at most `c` characters
  * (raw literals when it has a backslash); with `short`, a string that fits
  * on one line is a single literal. A string of several lines is
  * {@link rawlines}.
+ *
+ * @param s - The input text.
+ * @param c - The maximum line width.
+ * @param short - Whether to retain a short single-line representation.
+ * @returns The formatted text.
+ * @see SymPy `sympy.utilities.misc.strlines`
+ * @example
+ * ```ts
+ * import { strlines } from '@symjs/symjs';
+ * strlines('this is a long string that should be broken into shorter lines', 40); // => (
+ * //   'this is a long string that should be b'
+ * //   'roken into shorter lines'
+ * //   )
+ * ```
  */
 export function strlines(s: string, c = 64, short = false): string {
   if (s.includes('\n')) return rawlines(s);
@@ -146,12 +176,17 @@ function replaceAll(s: string, reps: ReadonlyMap<string, string>): string {
 const isPair = (r: ReadonlyMap<string, string> | readonly [string, string]): r is readonly [string, string] => Array.isArray(r);
 
 /**
- * SymPy `replace(string, *reps)` of `sympy.utilities.misc`: the string
- * with every key of the replacements replaced by its value in one pass
- * (earlier keys win at the same position). The replacements are a map,
- * or `[old, new]` pairs.
+ * Returns ``string`` with all keys in ``reps`` replaced with their corresponding values, longer strings first, irrespective of the order they are given.  ``reps`` may be passed as tuples or a single mapping.
  *
- * `replaceString('foo', new Map([['oo', 'ar'], ['f', 'b']]))` is `'bar'`.
+ * @param s - The input text.
+ * @param reps - The patterns and replacement strings.
+ * @returns The formatted text.
+ * @see SymPy `sympy.utilities.misc.replace`
+ * @example
+ * ```ts
+ * import { replaceString } from '@symjs/symjs';
+ * replaceString('foo', new Map([['oo', 'ar'], ['f', 'b']])); // => bar
+ * ```
  */
 export function replaceString(s: string, ...reps: readonly (ReadonlyMap<string, string> | readonly [string, string])[]): string {
   return replaceAll(s, new Map(reps.flatMap((r): (readonly [string, string])[] => (isPair(r) ? [r] : [...r]))));
@@ -161,12 +196,25 @@ export function replaceString(s: string, ...reps: readonly (ReadonlyMap<string, 
 const isCharPair = ([k, v]: readonly [string, string]): boolean => codePoints(k).length === 1 && codePoints(v).length === 1;
 
 /**
- * SymPy `translate(s, a, b=None, c=None)`: the characters of `a` replaced
+ * The characters of `a` replaced
  * by those of `b` and the characters of `c` deleted (deletion first). With
  * `a` null, the characters of `b` are deleted. `a` may be a map: its
  * one-character keys with one-character values are translated, the other
  * keys are replaced as substrings (in the map's order), and `b` is then the
  * characters to delete.
+ *
+ * @param s - The input text.
+ * @param a - The first operand.
+ * @param b - The second operand.
+ * @param c - The constant coefficient.
+ * @returns The characters of `a` replaced by those of `b` and the characters of `c` deleted (deletion first).
+ * @throws RangeError when oldchars and newchars have different lengths.
+ * @see SymPy `sympy.utilities.misc.translate`
+ * @example
+ * ```ts
+ * import { translate } from '@symjs/symjs';
+ * translate('alphahatdotprime'); // => {\dot{\hat{\alpha}}}'
+ * ```
  */
 export function translate(s: string, a?: string | ReadonlyMap<string, string> | null, b: string | null = null, c: string | null = null): string {
   if (a === undefined) return translateSymbol(s);
@@ -204,11 +252,18 @@ function floatInteger(f: Float): bigint | undefined {
 }
 
 /**
- * SymPy `as_int(n, strict=True)`: the integer value of `n` as a bigint.
- * Strictly, only integers are accepted (a bigint, an integer number or an
- * Integer); with `strict` false, also a value equal to an integer (a Float
- * such as 2.0, a boolean). Throws a TypeError otherwise (SymPy raises a
- * ValueError).
+ * Converts an integral value to a bigint. Strict mode accepts integer inputs directly. With strict mode disabled, conversion also accepts values that compare equal to their integer representation.
+ *
+ * @param n - The value to convert.
+ * @param strict - Whether the input must already represent an integer.
+ * @returns The exact integer as a bigint.
+ * @throws TypeError when the value cannot be converted to an integer in the requested mode.
+ * @see SymPy `sympy.utilities.misc.as_int`
+ * @example
+ * ```ts
+ * import { asInt } from '@symjs/symjs';
+ * asInt(3); // => 3
+ * ```
  */
 export function asInt(n: unknown, strict = true): bigint {
   if (typeof n === 'bigint') return n;
@@ -221,9 +276,13 @@ export function asInt(n: unknown, strict = true): bigint {
 }
 
 /**
- * SymPy `ordinal(num)`: the integer with its English ordinal suffix
+ * The integer with its English ordinal suffix
  * (`ordinal(1)` is `'1st'`, `ordinal(12)` is `'12th'`, `ordinal(-1)` is
  * `'-1st'`).
+ *
+ * @param num - The integer to format with an ordinal suffix.
+ * @returns The integer with its English ordinal suffix.
+ * @see SymPy `sympy.utilities.misc.ordinal`
  */
 export function ordinal(num: unknown): string {
   const n = asInt(num);
@@ -259,9 +318,20 @@ function typeName(x: unknown): string {
 }
 
 /**
- * SymPy `func_name(x, short=False)`: the name of the class (or function)
+ * The name of the class (or function)
  * of `x`: `Add`, `sin`, `StrictLessThan`, `Integer`, `MutableDenseMatrix`,
  * `int`, ...; with `short`, a relation by its short name (`Lt`).
+ *
+ * @param x - The value to examine.
+ * @param short - Whether to omit the qualification from the displayed name.
+ * @returns The name of the class (or function) of `x`: `Add`, `sin`, `StrictLessThan`, `Integer`, `MutableDenseMatrix`, `int`,.
+ * @see SymPy `sympy.utilities.misc.func_name`
+ * @example
+ * ```ts
+ * import { ex } from '@symjs/symjs';
+ * import { funcName } from '@symjs/symjs/utilities';
+ * funcName(ex`x < 1`); // => StrictLessThan
+ * ```
  */
 export function funcName(x: unknown, short = false): string {
   const rv = x instanceof Expr ? nodeClassName(x) : typeName(x);

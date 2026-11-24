@@ -9,9 +9,24 @@ import { str } from '../printing/str';
 
 /** Nested argument lists are unpacked by an outer lambda, as in SymPy lambdastr. */
 export type LambdaArgs = string | Sym | readonly LambdaArgs[];
+/** An expression or nested collection of expressions forming the body of a lambda. */
 export type LambdaBody = ExprLike | readonly LambdaBody[];
 
-/** SymPy lambdastr(args, expr): Python lambda source, including nested tuple arguments. */
+/**
+ * Python lambda source, including nested tuple arguments.
+ *
+ * @param args - The operands in their defining order.
+ * @param expr - The expression to evaluate.
+ * @returns The formatted text.
+ * @see SymPy `sympy.utilities.lambdify.lambdastr`
+ * @example
+ * ```ts
+ * import { ex, lambdastr, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * lambdastr(x, ex`x**2`); // => lambda x: (x**2)
+ * ```
+ */
 export function lambdastr(args: LambdaArgs, expr: LambdaBody): string {
   const top = typeof args === 'string' || args instanceof Sym ? [args] : args;
   const names: string[] = [], paths: string[] = [];

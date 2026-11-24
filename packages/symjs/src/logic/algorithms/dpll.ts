@@ -26,13 +26,36 @@ import { literalSymbol, plTrue, satisfiable } from '../inference';
 export type IntModel = Map<number, boolean>;
 
 /**
- * SymPy dpll_satisfiable (of both sympy.logic.algorithms.dpll and dpll2): a
- * model of the propositional sentence (a Map from its atoms to true/false),
- * or false when it is unsatisfiable. With `allModels` an iterator over every
- * model, as satisfiable gives it.
+ * Searches for a satisfying assignment using the Davis–Putnam–Logemann–Loveland algorithm.
+ *
+ * @param expr - The Boolean expression to examine.
+ * @param opts - `allModels` requests all models.
+ * @returns A satisfying assignment, or `false` for an unsatisfiable formula.
+ * @see SymPy `sympy.logic.algorithms.dpll.dpll_satisfiable`
+ * @example
+ * ```ts
+ * import { dpllSatisfiable, ex } from '@symjs/symjs';
+ * dpllSatisfiable(ex`A & ~B`); // => {A: True, B: False}
+ * ```
  */
 export function dpllSatisfiable(expr: BoolLike, opts?: { allModels?: false }): ExprMap<boolean> | false;
+/**
+ * Searches for a satisfying assignment using the Davis–Putnam–Logemann–Loveland algorithm.
+ *
+ * @param expr - The Boolean expression to examine.
+ * @param opts - `allModels` requests all models.
+ * @returns An iterator over satisfying assignments.
+ * @see SymPy `sympy.logic.algorithms.dpll.dpll_satisfiable`
+ */
 export function dpllSatisfiable(expr: BoolLike, opts: { allModels: true }): Generator<ExprMap<boolean> | false, void, unknown>;
+/**
+ * Searches for a satisfying assignment using the Davis–Putnam–Logemann–Loveland algorithm.
+ *
+ * @param expr - The Boolean expression to examine.
+ * @param opts - `allModels` requests all models.
+ * @returns An iterator over satisfying assignments.
+ * @see SymPy `sympy.logic.algorithms.dpll.dpll_satisfiable`
+ */
 export function dpllSatisfiable(expr: BoolLike, opts: { allModels?: boolean } = {}): ExprMap<boolean> | false | Generator<ExprMap<boolean> | false, void, unknown> {
   const e = toBool(expr);
   if (opts.allModels === true) return satisfiable(e, { allModels: true });
@@ -53,8 +76,18 @@ export function dpllSatisfiable(expr: BoolLike, opts: { allModels?: boolean } = 
 const negate = (p: Expr): Expr => notFn(p);
 
 /**
- * SymPy dpll: the satisfiability of the clauses (an array of conjuncts) in the
- * partial model; a completed model, or false.
+ * Searches for a satisfying assignment extending the partial model of the clauses.
+ *
+ * @param clausesIn - The clauses whose conjunction is being tested.
+ * @param symbolsIn - The variables still available for branching.
+ * @param modelIn - The partial assignment of truth values.
+ * @returns A satisfying assignment, or `false` for an unsatisfiable formula.
+ * @see SymPy `sympy.logic.algorithms.dpll.dpll`
+ * @example
+ * ```ts
+ * import { dpll, ex } from '@symjs/symjs';
+ * dpll([ex`A`, ex`B`, ex`D`], [ex`A`, ex`B`], new Map([[ex`D`, false]])); // => False
+ * ```
  */
 export function dpll(clausesIn: readonly BoolLike[], symbolsIn: readonly BoolLike[], modelIn: ReadonlyMap<BoolLike, boolean>): ExprMap<boolean> | false {
   const model = new ExprMap<boolean>([...modelIn].map(([k, v]) => [toBool(k), v] as const));
@@ -100,8 +133,19 @@ function remove(symbols: Expr[], p: Expr): void {
 }
 
 /**
- * SymPy dpll_int_repr: dpll on clauses in integer representation (sets of
- * signed variable numbers); a completed model, or false.
+ * Solves a Boolean clause system encoded as signed integer literals.
+ *
+ * @param clausesIn - The clauses whose conjunction is being tested.
+ * @param symbolsIn - The variables still available for branching.
+ * @param modelIn - The partial assignment of truth values.
+ * @returns A satisfying assignment, or `false` for an unsatisfiable formula.
+ * @throws RangeError when an undecided clause has a variable outside the set of symbols.
+ * @see SymPy `sympy.logic.algorithms.dpll.dpll_int_repr`
+ * @example
+ * ```ts
+ * import { dpllIntRepr } from '@symjs/symjs';
+ * dpllIntRepr([new Set([1]), new Set([2]), new Set([3])], new Set([1, 2]), new Map([[3, false]])); // => False
+ * ```
  */
 export function dpllIntRepr(clausesIn: readonly ReadonlySet<number>[], symbolsIn: ReadonlySet<number>, modelIn: ReadonlyMap<number, boolean>): IntModel | false {
   let clauses = [...clausesIn];
@@ -138,8 +182,18 @@ export function dpllIntRepr(clausesIn: readonly ReadonlySet<number>[], symbolsIn
 }
 
 /**
- * SymPy pl_true_int_repr: the value of a clause (the set of literals of an
- * Or) in the model; 'unknown' (SymPy None) when it is not decided.
+ * The value of a clause (the set of literals of an
+ * Or) in the model; 'unknown' when it is not decided.
+ *
+ * @param clause - The disjunction of signed literals.
+ * @param model - The partial assignment of truth values.
+ * @returns The truth value under the assignment, or `'unknown'` if undetermined.
+ * @see SymPy `sympy.logic.algorithms.dpll.pl_true_int_repr`
+ * @example
+ * ```ts
+ * import { plTrueIntRepr } from '@symjs/symjs';
+ * plTrueIntRepr(new Set([1, 2]), new Map([[1, false], [2, false]])); // => False
+ * ```
  */
 export function plTrueIntRepr(clause: ReadonlySet<number>, model: ReadonlyMap<number, boolean> = new Map()): Truth {
   let result: Truth = false;
@@ -153,8 +207,18 @@ export function plTrueIntRepr(clause: ReadonlySet<number>, model: ReadonlyMap<nu
 }
 
 /**
- * SymPy unit_propagate: the clauses simplified by the unit clause `symbol`
+ * The clauses simplified by the unit clause `symbol`
  * (clauses containing it are dropped, its negation is deleted from the others).
+ *
+ * @param clauses - The clauses whose conjunction is being tested.
+ * @param symbolIn - The literal assumed true.
+ * @returns The clauses remaining after propagation.
+ * @see SymPy `sympy.logic.algorithms.dpll.unit_propagate`
+ * @example
+ * ```ts
+ * import { ex, unitPropagate } from '@symjs/symjs';
+ * unitPropagate([ex`A | B`, ex`D | ~B`, ex`B`], ex`B`); // => [D, B]
+ * ```
  */
 export function unitPropagate(clauses: readonly BoolLike[], symbolIn: BoolLike): Expr[] {
   const symbol = toBool(symbolIn);
@@ -174,15 +238,39 @@ export function unitPropagate(clauses: readonly BoolLike[], symbolIn: BoolLike):
   return out;
 }
 
-/** SymPy unit_propagate_int_repr: unit_propagate on the integer representation. */
+/**
+ * Simplifies integer clauses under the assumption that a signed literal is true.
+ *
+ * @param clauses - The clauses whose conjunction is being tested.
+ * @param s - The signed integer literal assumed true.
+ * @returns The remaining unsatisfied clauses with the negated literal removed.
+ * @see SymPy `sympy.logic.algorithms.dpll.unit_propagate_int_repr`
+ * @example
+ * ```ts
+ * import { unitPropagateIntRepr } from '@symjs/symjs';
+ * unitPropagateIntRepr([new Set([1, 2]), new Set([3, -2]), new Set([2])], 2); // => [{3}]
+ * ```
+ */
 export function unitPropagateIntRepr(clauses: readonly ReadonlySet<number>[], s: number): Set<number>[] {
   return clauses.filter((c) => !c.has(s)).map((c) => new Set([...c].filter((l) => l !== -s)));
 }
 
 /**
- * SymPy find_pure_symbol: a symbol that occurs only positively (or only
+ * A symbol that occurs only positively (or only
  * negatively) in the clauses, with the value that makes it true; NoMatch
  * (SymPy (None, None)) when there is none.
+ *
+ * @remarks SymPy returns `(A, True)`.
+ *
+ * @param symbols - The variables to test for a single polarity.
+ * @param unknownClauses - The clauses still undecided by the assignment.
+ * @returns A pure literal’s variable and polarity, or `NoMatch`.
+ * @see SymPy `sympy.logic.algorithms.dpll.find_pure_symbol`
+ * @example
+ * ```ts
+ * import { ex, findPureSymbol } from '@symjs/symjs';
+ * findPureSymbol([ex`A`, ex`B`, ex`D`], [ex`A | ~B`, ex`~B | ~D`, ex`A | D`]); // => [A, True]
+ * ```
  */
 export function findPureSymbol(symbols: readonly BoolLike[], unknownClauses: readonly BoolLike[]): [Expr, boolean] | NoMatchResult {
   const ds = unknownClauses.map((c) => new Set(disjuncts(c).map((d) => d.key)));
@@ -195,7 +283,21 @@ export function findPureSymbol(symbols: readonly BoolLike[], unknownClauses: rea
   return NoMatch;
 }
 
-/** SymPy find_pure_symbol_int_repr: find_pure_symbol on the integer representation. */
+/**
+ * Searches integer clauses for a variable appearing with only one sign.
+ *
+ * @remarks SymPy returns `(1, True)`.
+ *
+ * @param symbols - The variables to test for a single polarity.
+ * @param unknownClauses - The clauses still undecided by the assignment.
+ * @returns A pure literal’s variable and polarity, or `NoMatch`.
+ * @see SymPy `sympy.logic.algorithms.dpll.find_pure_symbol_int_repr`
+ * @example
+ * ```ts
+ * import { findPureSymbolIntRepr } from '@symjs/symjs';
+ * findPureSymbolIntRepr(new Set([1, 2, 3]), [new Set([1, -2]), new Set([-3, -2]), new Set([1, 3])]); // => [1, True]
+ * ```
+ */
 export function findPureSymbolIntRepr(symbols: ReadonlySet<number>, unknownClauses: readonly ReadonlySet<number>[]): [number, boolean] | NoMatchResult {
   const all = new Set(unknownClauses.flatMap((c) => [...c]));
   const pos = [...symbols].filter((s) => all.has(s)).sort((a, b) => a - b);
@@ -206,9 +308,21 @@ export function findPureSymbolIntRepr(symbols: ReadonlySet<number>, unknownClaus
 }
 
 /**
- * SymPy find_unit_clause: a clause with exactly one symbol not bound in the
+ * A clause with exactly one symbol not bound in the
  * model, as that symbol and the value making its literal true; NoMatch
  * (SymPy (None, None)) when there is none.
+ *
+ * @remarks SymPy returns `(B, False)`.
+ *
+ * @param clauses - The clauses whose conjunction is being tested.
+ * @param model - The partial assignment of truth values.
+ * @returns The remaining variable and required truth value, or `NoMatch`.
+ * @see SymPy `sympy.logic.algorithms.dpll.find_unit_clause`
+ * @example
+ * ```ts
+ * import { ex, findUnitClause } from '@symjs/symjs';
+ * findUnitClause([ex`A | B | D`, ex`B | ~D`, ex`A | ~B`], new Map([[ex`A`, true]])); // => [B, False]
+ * ```
  */
 export function findUnitClause(clauses: readonly BoolLike[], model: ReadonlyMap<BoolLike, boolean>): [Expr, boolean] | NoMatchResult {
   const bound = new Set([...model.keys()].map((k) => toBool(k).key));
@@ -220,7 +334,21 @@ export function findUnitClause(clauses: readonly BoolLike[], model: ReadonlyMap<
   return NoMatch;
 }
 
-/** SymPy find_unit_clause_int_repr: find_unit_clause on the integer representation. */
+/**
+ * Finds the literal forced by a clause with one unassigned variable.
+ *
+ * @remarks SymPy returns `(2, False)`.
+ *
+ * @param clauses - The clauses whose conjunction is being tested.
+ * @param model - The partial assignment of truth values.
+ * @returns The remaining variable and required truth value, or `NoMatch`.
+ * @see SymPy `sympy.logic.algorithms.dpll.find_unit_clause_int_repr`
+ * @example
+ * ```ts
+ * import { findUnitClauseIntRepr } from '@symjs/symjs';
+ * findUnitClauseIntRepr([new Set([1, 2, 3]), new Set([2, -3]), new Set([1, -2])], new Map([[1, true]])); // => [2, False]
+ * ```
+ */
 export function findUnitClauseIntRepr(clauses: readonly ReadonlySet<number>[], model: ReadonlyMap<number, boolean>): [number, boolean] | NoMatchResult {
   for (const c of clauses) {
     const unbound = [...c].filter((l) => !model.has(Math.abs(l)));

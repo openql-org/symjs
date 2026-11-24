@@ -99,7 +99,14 @@ export const sup: ReadonlyMap<string, string> = /* @__PURE__ */ new Map([
   ['=', '⁼'], ['(', '⁽'], [')', '⁾'],
 ]);
 
-/** SymPy `center_accent`: insert a combining accent after the middle character. */
+/**
+ * Insert a combining accent after the middle character.
+ *
+ * @param s - The input text.
+ * @param accent - The combining accent to insert.
+ * @returns The formatted text.
+ * @see SymPy `sympy.printing.pretty.pretty_symbology.center_accent`
+ */
 export function centerAccent(s: string, accent: string): string {
   const cs = Array.from(s);
   const mid = Math.floor(cs.length / 2) + 1;
@@ -412,7 +419,18 @@ export function prettySymbol(symbName: string, boldName = false): string {
   return name + prettySups.join(' ') + prettySubs.join(' ');
 }
 
-/** SymPy `is_subscriptable_in_unicode`. */
+/**
+ * Tests whether every character can be written as a Unicode subscript.
+ *
+ * @param subscript - The text to render below the baseline.
+ * @returns Whether each character has a Unicode subscript.
+ * @see SymPy `sympy.printing.pretty.pretty_symbology.is_subscriptable_in_unicode`
+ * @example
+ * ```ts
+ * import { isSubscriptableInUnicode } from '@symjs/symjs';
+ * isSubscriptableInUnicode('abc'); // => False
+ * ```
+ */
 export function isSubscriptableInUnicode(subscript: string): boolean {
   return Array.from(subscript).every((c) => sub.has(c));
 }
@@ -442,7 +460,15 @@ export function centerPad(wstring: number, wtarget: number, fillchar = ' '): [st
   return [fillchar.repeat(wleft), fillchar.repeat(wdelta - wleft)];
 }
 
-/** SymPy `center`: the string centered in the given width. */
+/**
+ * Returns the string centered in the given width.
+ *
+ * @param s - The text to center.
+ * @param width - The target line width.
+ * @param fillchar - The padding character.
+ * @returns The string centered in the given width.
+ * @see SymPy `sympy.printing.pretty.pretty_symbology.center`
+ */
 export function center(s: string, width: number, fillchar = ' '): string {
   const [l, r] = centerPad(lineWidth(s), width, fillchar);
   return l + s + r;

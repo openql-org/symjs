@@ -25,7 +25,21 @@ import { logcombine, powsimp } from '../simplify/powsimp';
 import { simplify } from '../simplify/simplify';
 import { linearEqToMatrix, linsolve, solve } from './solve';
 
-/** Rank ODE solutions: explicit (-2), solvable (-1), string length, or infinity for integrals. */
+/**
+ * Ranks ODE solutions: explicit (-2), solvable (-1), string length, or infinity for integrals.
+ *
+ * @param sol - The proposed solution.
+ * @param func - The dependent function applied to its arguments.
+ * @param trysolving - Whether to attempt solving explicitly for the dependent function.
+ * @returns The simplicity rank, with smaller values preferred.
+ * @throws TypeError when the equation is missing.
+ * @see SymPy `sympy.solvers.ode.ode.ode_sol_simplicity`
+ * @example
+ * ```ts
+ * import { ex, odeSolSimplicity } from '@symjs/symjs';
+ * odeSolSimplicity(ex`Eq(f(x), C1*x**2)`, ex`f(x)`); // => -2
+ * ```
+ */
 export function odeSolSimplicity(sol: Expr | readonly Expr[], func: Expr, trysolving = true): number | Expr {
   if (!(sol instanceof Expr)) {
     return sol.some((s) => odeSolSimplicity(s, func, trysolving) === S.Infinity) ? S.Infinity : `[${sol.map(String).join(', ')}]`.length;
@@ -43,7 +57,25 @@ export function odeSolSimplicity(sol: Expr | readonly Expr[], func: Expr, trysol
   return String(sol).length;
 }
 
-/** Determine integration constants from function and derivative initial conditions. */
+/**
+ * Determines integration constants from function and derivative initial conditions.
+ *
+ * @param sols - The candidate solutions.
+ * @param funcs - The dependent functions in system order.
+ * @param constants - The arbitrary constants in the general solution.
+ * @param ics - The initial conditions.
+ * @returns The integration constants and their values.
+ * @throws TypeError when an initial condition does not specify a function or derivative value.
+ * @throws RangeError when an initial condition refers to a function outside the system.
+ * @see SymPy `sympy.solvers.ode.ode.solve_ics`
+ * @example
+ * ```ts
+ * import { ex, solveIcs, symbols } from '@symjs/symjs';
+ *
+ * const [C1] = symbols('C1');
+ * solveIcs([ex`Eq(f(x), C1*exp(x))`], [ex`f(x)`], [C1], new Map([[ex`f(0)`, 2]])); // => {C1: 2}
+ * ```
+ */
 export function solveIcs(sols: readonly Expr[], funcs: readonly Expr[], constants: readonly Sym[], ics: ReadonlyMap<Expr, ExprLike>): Map<Sym, Expr> {
   const equations: Expr[] = [];
   for (const [condition, value] of ics) {
@@ -208,7 +240,21 @@ function constantCse(expr: Expr, Cs: readonly Sym[]): Expr {
   return rexpr;
 }
 
-/** Absorb constant subexpressions into the constants (SymPy constantsimp). */
+/**
+ * Absorbs constant subexpressions into the constants.
+ *
+ * @param exprIn - The expression to evaluate.
+ * @param Cs - The arbitrary constants in the general solution.
+ * @returns The solution with redundant arbitrary constants absorbed.
+ * @see SymPy `sympy.solvers.ode.ode.constantsimp`
+ * @example
+ * ```ts
+ * import { constantsimp, ex, symbols } from '@symjs/symjs';
+ *
+ * const [C1] = symbols('C1');
+ * constantsimp(ex`2*C1*x`, [C1]); // => C1*x
+ * ```
+ */
 export function constantsimp(exprIn: Expr, Cs: readonly Sym[]): Expr {
   let expr = exprIn;
   for (let round = 0; round < 10; round++) {
@@ -226,7 +272,20 @@ export function constantsimp(exprIn: Expr, Cs: readonly Sym[]): Expr {
   return expr;
 }
 
-/** Renumber the constants C1, C2, ... in order of appearance (SymPy constant_renumber). */
+/**
+ * Renumbers the constants C1, C2, ... in order of appearance.
+ *
+ * @param expr - The expression to evaluate.
+ * @param variables - The variables in the requested order.
+ * @param newconstants - Replacement constants in the desired order.
+ * @returns The expression with integration constants renamed in order.
+ * @see SymPy `sympy.solvers.ode.ode.constant_renumber`
+ * @example
+ * ```ts
+ * import { constantRenumber, ex } from '@symjs/symjs';
+ * constantRenumber(ex`C1*x**2 + C2*x + C3`); // => C1 + C2*x + C3*x**2
+ * ```
+ */
 export function constantRenumber(expr: Expr, variables?: readonly Expr[], newconstants?: readonly Sym[]): Expr {
   const vars = new Set(variables?.map((v) => v.key));
   const consts = [...freeSymbols(expr)].filter((s) => s instanceof Sym).filter((s) => !vars.has(s.key) && (variables !== undefined || /^C\d+$/.test(s.name)));

@@ -387,15 +387,33 @@ function finish(F: Expr, simplify: boolean): Expr {
 /**
  * Base class of the Fourier-type transforms a*Integral(f*exp(b*I*x*k), (x, -oo, oo))
  * (SymPy FourierTypeTransform).
+ *
+ * @see SymPy `sympy.integrals.transforms.FourierTypeTransform`
  */
 export abstract class FourierTypeTransform extends GenericIntegralTransform {
-  /** The constant factor a. */
+  /**
+   * Returns the constant factor a.
+   *
+   * @returns The constant factor a.
+   * @see SymPy `sympy.integrals.transforms.FourierTypeTransform.a`
+   */
   abstract a(): Expr;
-  /** The frequency factor b. */
+  /**
+   * Returns the frequency factor b.
+   *
+   * @returns The frequency factor b.
+   * @see SymPy `sympy.integrals.transforms.FourierTypeTransform.b`
+   */
   abstract b(): Expr;
   protected override get defaultNoconds(): boolean {
     return true;
   }
+  /**
+   * Expresses the transform as a symbolic integral.
+   *
+   * @returns The defining integral expression.
+   * @see SymPy `sympy.integrals.transforms.FourierTypeTransform._as_integral`
+   */
   get asIntegral(): Expr {
     const x = this.functionVariable;
     return new Integral([mul(this.a(), this.function, exp(mul(this.b(), S.I, x, this.transformVariable))), x, S.NegativeInfinity, S.Infinity]);
@@ -409,25 +427,64 @@ export abstract class FourierTypeTransform extends GenericIntegralTransform {
   }
 }
 
-/** The unevaluated Fourier transform (SymPy FourierTransform). */
+/**
+ * The unevaluated Fourier transform.
+ *
+ * @see SymPy `sympy.integrals.transforms.FourierTransform`
+ */
 export class FourierTransform extends FourierTypeTransform {
+  /**
+   * Creates a FourierTransform instance.
+   *
+   * @param f - The function to transform.
+   * @param x - The original-domain variable.
+   * @param k - The frequency variable.
+   */
   constructor(f: ExprLike, x: ExprLike, k: ExprLike) {
     super('FourierTransform', [sympify(f), sympify(x), sympify(k)]);
   }
-  /** SymPy FourierTransform._name. */
+  /**
+   * The name of the integral transform.
+   *
+   * @see SymPy `sympy.integrals.transforms.FourierTransform._name`
+   */
   static readonly transformName = 'Fourier';
+  /**
+   * Represents the name of the integral transform.
+   *
+   * @returns The name of the integral transform.
+   * @see SymPy `sympy.integrals.transforms.FourierTransform._name`
+   */
   get transformName(): string {
     return 'Fourier';
   }
   protected get latexName(): string {
     return '\\mathcal{F}';
   }
+  /**
+   * Returns the normalization factor.
+   *
+   * @returns The normalization factor.
+   * @see SymPy `sympy.integrals.transforms.FourierTransform.a`
+   */
   a(): Expr {
     return S.One;
   }
+  /**
+   * Returns the coefficient in the exponential kernel.
+   *
+   * @returns The coefficient in the exponential kernel.
+   * @see SymPy `sympy.integrals.transforms.FourierTransform.b`
+   */
   b(): Expr {
     return mul(-2, S.Pi);
   }
+  /**
+   * Rebuilds the expression with replacement arguments.
+   *
+   * @param args - The operands in their defining order.
+   * @returns The expression with the replacement operands.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new FourierTransform(...transformArgs(args));
   }
@@ -436,25 +493,64 @@ export class FourierTransform extends FourierTypeTransform {
   }
 }
 
-/** The unevaluated inverse Fourier transform (SymPy InverseFourierTransform). */
+/**
+ * The unevaluated inverse Fourier transform.
+ *
+ * @see SymPy `sympy.integrals.transforms.InverseFourierTransform`
+ */
 export class InverseFourierTransform extends FourierTypeTransform {
+  /**
+   * Creates an InverseFourierTransform instance.
+   *
+   * @param F - The transformed function.
+   * @param k - The frequency variable.
+   * @param x - The original-domain variable.
+   */
   constructor(F: ExprLike, k: ExprLike, x: ExprLike) {
     super('InverseFourierTransform', [sympify(F), sympify(k), sympify(x)]);
   }
-  /** SymPy InverseFourierTransform._name. */
+  /**
+   * The name of the integral transform.
+   *
+   * @see SymPy `sympy.integrals.transforms.InverseFourierTransform._name`
+   */
   static readonly transformName = 'Inverse Fourier';
+  /**
+   * Represents the name of the integral transform.
+   *
+   * @returns The name of the integral transform.
+   * @see SymPy `sympy.integrals.transforms.InverseFourierTransform._name`
+   */
   get transformName(): string {
     return 'Inverse Fourier';
   }
   protected get latexName(): string {
     return '\\mathcal{F}^{-1}';
   }
+  /**
+   * Returns the normalization factor.
+   *
+   * @returns The normalization factor.
+   * @see SymPy `sympy.integrals.transforms.InverseFourierTransform.a`
+   */
   a(): Expr {
     return S.One;
   }
+  /**
+   * Returns the coefficient in the exponential kernel.
+   *
+   * @returns The coefficient in the exponential kernel.
+   * @see SymPy `sympy.integrals.transforms.InverseFourierTransform.b`
+   */
   b(): Expr {
     return mul(2, S.Pi);
   }
+  /**
+   * Rebuilds the expression with replacement arguments.
+   *
+   * @param args - The operands in their defining order.
+   * @returns The expression with the replacement operands.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new InverseFourierTransform(...transformArgs(args));
   }
@@ -465,10 +561,16 @@ export class InverseFourierTransform extends FourierTypeTransform {
 
 /**
  * The unitary, ordinary-frequency Fourier transform of f, the integral of
- * f(x)*exp(-2*pi*I*x*k) over the real line (SymPy fourier_transform).
+ * f(x)*exp(-2*pi*I*x*k) over the real line.
  * Returns F, [F, cond] with `noconds: false`, or an unevaluated
  * FourierTransform.
  *
+ * @param f - The function to transform.
+ * @param x - The original-domain variable.
+ * @param k - The frequency variable.
+ * @param hints - The transform hints settings.
+ * @returns The transformed expression with convergence data when requested.
+ * @see SymPy `sympy.integrals.transforms.fourier_transform`
  * @example
  * ```ts
  * import { ex, fourierTransform, symbols } from '@symjs/symjs';
@@ -485,6 +587,20 @@ export function fourierTransform(f: ExprLike, x: Sym, k: ExprLike, hints: Transf
  * The unitary, ordinary-frequency inverse Fourier transform of F, the
  * integral of F(k)*exp(2*pi*I*x*k) over the real line (SymPy
  * inverse_fourier_transform).
+ *
+ * @param F - The transformed function.
+ * @param k - The frequency variable.
+ * @param x - The original-domain variable.
+ * @param hints - The transform hints settings.
+ * @returns The transformed expression with convergence data when requested.
+ * @see SymPy `sympy.integrals.transforms.inverse_fourier_transform`
+ * @example
+ * ```ts
+ * import { ex, inverseFourierTransform, symbols } from '@symjs/symjs';
+ *
+ * const [k] = symbols('k');
+ * inverseFourierTransform(ex`sqrt(pi)*exp(-pi**2*k**2)`, k, ex`x`); // => exp(-x**2)
+ * ```
  */
 export function inverseFourierTransform(F: ExprLike, k: Sym, x: ExprLike, hints: TransformHints = {}): TransformResult {
   return new InverseFourierTransform(F, k, x).doit(hints);
@@ -496,22 +612,44 @@ export function inverseFourierTransform(F: ExprLike, k: Sym, x: ExprLike, hints:
 
 /**
  * Base class of the sine and cosine transforms
- * a*Integral(f*K(b*x*k), (x, 0, oo)) (SymPy SineCosineTypeTransform).
+ * a*Integral(f*K(b*x*k), (x, 0, oo)).
+ *
+ * @see SymPy `sympy.integrals.transforms.SineCosineTypeTransform`
  */
 export abstract class SineCosineTypeTransform extends GenericIntegralTransform {
-  /** The kernel sin or cos. */
+  /**
+   * Represents the kernel sin or cos.
+   *
+   * @returns The kernel sin or cos.
+   */
   abstract get kernel(): 'sin' | 'cos';
-  /** The constant factor a. */
+  /**
+   * Returns the constant factor a.
+   *
+   * @returns The constant factor a.
+   * @see SymPy `sympy.integrals.transforms.SineCosineTypeTransform.a`
+   */
   a(): Expr {
     return mul(sqrt(2), pow(sqrt(S.Pi), -1));
   }
-  /** The frequency factor b. */
+  /**
+   * Returns the frequency factor b.
+   *
+   * @returns The frequency factor b.
+   * @see SymPy `sympy.integrals.transforms.SineCosineTypeTransform.b`
+   */
   b(): Expr {
     return S.One;
   }
   protected override get defaultNoconds(): boolean {
     return true;
   }
+  /**
+   * Expresses the transform as a symbolic integral.
+   *
+   * @returns The defining integral expression.
+   * @see SymPy `sympy.integrals.transforms.SineCosineTypeTransform._as_integral`
+   */
   get asIntegral(): Expr {
     const x = this.functionVariable;
     const arg = mul(this.b(), x, this.transformVariable);
@@ -525,22 +663,54 @@ export abstract class SineCosineTypeTransform extends GenericIntegralTransform {
   }
 }
 
-/** The unevaluated sine transform (SymPy SineTransform). */
+/**
+ * The unevaluated sine transform.
+ *
+ * @see SymPy `sympy.integrals.transforms.SineTransform`
+ */
 export class SineTransform extends SineCosineTypeTransform {
+  /**
+   * Creates a SineTransform instance.
+   *
+   * @param f - The function to transform.
+   * @param x - The original-domain variable.
+   * @param k - The frequency variable.
+   */
   constructor(f: ExprLike, x: ExprLike, k: ExprLike) {
     super('SineTransform', [sympify(f), sympify(x), sympify(k)]);
   }
-  /** SymPy SineTransform._name. */
+  /**
+   * The name of the integral transform.
+   *
+   * @see SymPy `sympy.integrals.transforms.SineTransform._name`
+   */
   static readonly transformName = 'Sine';
+  /**
+   * Represents the name of the integral transform.
+   *
+   * @returns The name of the integral transform.
+   * @see SymPy `sympy.integrals.transforms.SineTransform._name`
+   */
   get transformName(): string {
     return 'Sine';
   }
   protected get latexName(): string {
     return '\\mathcal{SIN}';
   }
+  /**
+   * Represents the kernel of the integral transform.
+   *
+   * @returns The kernel of the integral transform.
+   */
   get kernel(): 'sin' {
     return 'sin';
   }
+  /**
+   * Rebuilds the expression with replacement arguments.
+   *
+   * @param args - The operands in their defining order.
+   * @returns The expression with the replacement operands.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new SineTransform(...transformArgs(args));
   }
@@ -549,22 +719,54 @@ export class SineTransform extends SineCosineTypeTransform {
   }
 }
 
-/** The unevaluated inverse sine transform (SymPy InverseSineTransform). */
+/**
+ * The unevaluated inverse sine transform.
+ *
+ * @see SymPy `sympy.integrals.transforms.InverseSineTransform`
+ */
 export class InverseSineTransform extends SineCosineTypeTransform {
+  /**
+   * Creates an InverseSineTransform instance.
+   *
+   * @param F - The transformed function.
+   * @param k - The frequency variable.
+   * @param x - The original-domain variable.
+   */
   constructor(F: ExprLike, k: ExprLike, x: ExprLike) {
     super('InverseSineTransform', [sympify(F), sympify(k), sympify(x)]);
   }
-  /** SymPy InverseSineTransform._name. */
+  /**
+   * The name of the integral transform.
+   *
+   * @see SymPy `sympy.integrals.transforms.InverseSineTransform._name`
+   */
   static readonly transformName = 'Inverse Sine';
+  /**
+   * Represents the name of the integral transform.
+   *
+   * @returns The name of the integral transform.
+   * @see SymPy `sympy.integrals.transforms.InverseSineTransform._name`
+   */
   get transformName(): string {
     return 'Inverse Sine';
   }
   protected get latexName(): string {
     return '\\mathcal{SIN}^{-1}';
   }
+  /**
+   * Represents the kernel of the integral transform.
+   *
+   * @returns The kernel of the integral transform.
+   */
   get kernel(): 'sin' {
     return 'sin';
   }
+  /**
+   * Rebuilds the expression with replacement arguments.
+   *
+   * @param args - The operands in their defining order.
+   * @returns The expression with the replacement operands.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new InverseSineTransform(...transformArgs(args));
   }
@@ -573,22 +775,54 @@ export class InverseSineTransform extends SineCosineTypeTransform {
   }
 }
 
-/** The unevaluated cosine transform (SymPy CosineTransform). */
+/**
+ * The unevaluated cosine transform.
+ *
+ * @see SymPy `sympy.integrals.transforms.CosineTransform`
+ */
 export class CosineTransform extends SineCosineTypeTransform {
+  /**
+   * Creates a CosineTransform instance.
+   *
+   * @param f - The function to transform.
+   * @param x - The original-domain variable.
+   * @param k - The frequency variable.
+   */
   constructor(f: ExprLike, x: ExprLike, k: ExprLike) {
     super('CosineTransform', [sympify(f), sympify(x), sympify(k)]);
   }
-  /** SymPy CosineTransform._name. */
+  /**
+   * The name of the integral transform.
+   *
+   * @see SymPy `sympy.integrals.transforms.CosineTransform._name`
+   */
   static readonly transformName = 'Cosine';
+  /**
+   * Represents the name of the integral transform.
+   *
+   * @returns The name of the integral transform.
+   * @see SymPy `sympy.integrals.transforms.CosineTransform._name`
+   */
   get transformName(): string {
     return 'Cosine';
   }
   protected get latexName(): string {
     return '\\mathcal{COS}';
   }
+  /**
+   * Represents the kernel of the integral transform.
+   *
+   * @returns The kernel of the integral transform.
+   */
   get kernel(): 'cos' {
     return 'cos';
   }
+  /**
+   * Rebuilds the expression with replacement arguments.
+   *
+   * @param args - The operands in their defining order.
+   * @returns The expression with the replacement operands.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new CosineTransform(...transformArgs(args));
   }
@@ -597,22 +831,54 @@ export class CosineTransform extends SineCosineTypeTransform {
   }
 }
 
-/** The unevaluated inverse cosine transform (SymPy InverseCosineTransform). */
+/**
+ * The unevaluated inverse cosine transform.
+ *
+ * @see SymPy `sympy.integrals.transforms.InverseCosineTransform`
+ */
 export class InverseCosineTransform extends SineCosineTypeTransform {
+  /**
+   * Creates an InverseCosineTransform instance.
+   *
+   * @param F - The transformed function.
+   * @param k - The frequency variable.
+   * @param x - The original-domain variable.
+   */
   constructor(F: ExprLike, k: ExprLike, x: ExprLike) {
     super('InverseCosineTransform', [sympify(F), sympify(k), sympify(x)]);
   }
-  /** SymPy InverseCosineTransform._name. */
+  /**
+   * The name of the integral transform.
+   *
+   * @see SymPy `sympy.integrals.transforms.InverseCosineTransform._name`
+   */
   static readonly transformName = 'Inverse Cosine';
+  /**
+   * Represents the name of the integral transform.
+   *
+   * @returns The name of the integral transform.
+   * @see SymPy `sympy.integrals.transforms.InverseCosineTransform._name`
+   */
   get transformName(): string {
     return 'Inverse Cosine';
   }
   protected get latexName(): string {
     return '\\mathcal{COS}^{-1}';
   }
+  /**
+   * Represents the kernel of the integral transform.
+   *
+   * @returns The kernel of the integral transform.
+   */
   get kernel(): 'cos' {
     return 'cos';
   }
+  /**
+   * Rebuilds the expression with replacement arguments.
+   *
+   * @param args - The operands in their defining order.
+   * @returns The expression with the replacement operands.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new InverseCosineTransform(...transformArgs(args));
   }
@@ -625,6 +891,12 @@ export class InverseCosineTransform extends SineCosineTypeTransform {
  * The unitary sine transform sqrt(2/pi)*Integral(f(x)*sin(x*k), (x, 0, oo))
  * (SymPy sine_transform).
  *
+ * @param f - The function to transform.
+ * @param x - The original-domain variable.
+ * @param k - The frequency variable.
+ * @param hints - The transform hints settings.
+ * @returns The transformed expression with convergence data when requested.
+ * @see SymPy `sympy.integrals.transforms.sine_transform`
  * @example
  * ```ts
  * import { ex, sineTransform, symbols } from '@symjs/symjs';
@@ -637,7 +909,23 @@ export function sineTransform(f: ExprLike, x: Sym, k: ExprLike, hints: Transform
   return new SineTransform(f, x, k).doit(hints);
 }
 
-/** The inverse sine transform sqrt(2/pi)*Integral(F(k)*sin(x*k), (k, 0, oo)) (SymPy inverse_sine_transform). */
+/**
+ * The inverse sine transform sqrt(2/pi)*Integral(F(k)*sin(x*k), (k, 0, oo)).
+ *
+ * @param F - The transformed function.
+ * @param k - The frequency variable.
+ * @param x - The original-domain variable.
+ * @param hints - The transform hints settings.
+ * @returns The transformed expression with convergence data when requested.
+ * @see SymPy `sympy.integrals.transforms.inverse_sine_transform`
+ * @example
+ * ```ts
+ * import { ex, inverseSineTransform, symbols } from '@symjs/symjs';
+ *
+ * const [k] = symbols('k');
+ * inverseSineTransform(ex`sqrt(2)*k*exp(-k**2/(4*a))/(4*a**(3/2))`, k, ex`x`); // => x*exp(-a*x**2)
+ * ```
+ */
 export function inverseSineTransform(F: ExprLike, k: Sym, x: ExprLike, hints: TransformHints = {}): TransformResult {
   return new InverseSineTransform(F, k, x).doit(hints);
 }
@@ -646,6 +934,12 @@ export function inverseSineTransform(F: ExprLike, k: Sym, x: ExprLike, hints: Tr
  * The unitary cosine transform sqrt(2/pi)*Integral(f(x)*cos(x*k), (x, 0, oo))
  * (SymPy cosine_transform).
  *
+ * @param f - The function to transform.
+ * @param x - The original-domain variable.
+ * @param k - The frequency variable.
+ * @param hints - The transform hints settings.
+ * @returns The transformed expression with convergence data when requested.
+ * @see SymPy `sympy.integrals.transforms.cosine_transform`
  * @example
  * ```ts
  * import { cosineTransform, ex, symbols } from '@symjs/symjs';
@@ -658,7 +952,23 @@ export function cosineTransform(f: ExprLike, x: Sym, k: ExprLike, hints: Transfo
   return new CosineTransform(f, x, k).doit(hints);
 }
 
-/** The inverse cosine transform sqrt(2/pi)*Integral(F(k)*cos(x*k), (k, 0, oo)) (SymPy inverse_cosine_transform). */
+/**
+ * The inverse cosine transform sqrt(2/pi)*Integral(F(k)*cos(x*k), (k, 0, oo)).
+ *
+ * @param F - The transformed function.
+ * @param k - The frequency variable.
+ * @param x - The original-domain variable.
+ * @param hints - The transform hints settings.
+ * @returns The transformed expression with convergence data when requested.
+ * @see SymPy `sympy.integrals.transforms.inverse_cosine_transform`
+ * @example
+ * ```ts
+ * import { ex, inverseCosineTransform, symbols } from '@symjs/symjs';
+ *
+ * const [k] = symbols('k');
+ * inverseCosineTransform(ex`1/sqrt(k)`, k, ex`x`); // => 1/sqrt(x)
+ * ```
+ */
 export function inverseCosineTransform(F: ExprLike, k: Sym, x: ExprLike, hints: TransformHints = {}): TransformResult {
   return new InverseCosineTransform(F, k, x).doit(hints);
 }
@@ -671,17 +981,36 @@ export function inverseCosineTransform(F: ExprLike, k: Sym, x: ExprLike, hints: 
  * Base class of the Hankel transforms Integral(f(r)*besselj(nu, k*r)*r, (r, 0, oo))
  * (SymPy HankelTypeTransform). Unlike the other transforms, SymPy raises
  * IntegralTransformError when the integral cannot be computed.
+ *
+ * @see SymPy `sympy.integrals.transforms.HankelTypeTransform`
  */
 export abstract class HankelTypeTransform extends IntegralTransform {
-  /** The order nu of the Bessel function. */
+  /**
+   * Represents the order nu of the Bessel function.
+   *
+   * @returns The order nu of the Bessel function.
+   */
   get nu(): Expr {
     return at(this.args, 3);
   }
+  /**
+   * Expresses the transform as a symbolic integral.
+   *
+   * @returns The defining integral expression.
+   * @see SymPy `sympy.integrals.transforms.HankelTypeTransform._as_integral`
+   */
   get asIntegral(): Expr {
     const r = this.functionVariable;
     return new Integral([mul(this.function, besselj(this.nu, mul(this.transformVariable, r)), r), r, S.Zero, S.Infinity]);
   }
-  /** Evaluate (SymPy doit); throws IntegralTransformError when the integral is not known. */
+  /**
+   * Evaluate; throws IntegralTransformError when the integral is not known.
+   *
+   * @param hints - The transform hints settings.
+   * @returns The transformed expression with convergence data when requested.
+   * @throws IntegralTransformError when evaluation is required and the transform cannot be computed.
+   * @see SymPy `sympy.integrals.transforms.HankelTypeTransform.doit`
+   */
   doit(hints: TransformHints = {}): TransformResult {
     const f = this.function;
     const r = this.functionVariable;
@@ -696,31 +1025,87 @@ export abstract class HankelTypeTransform extends IntegralTransform {
   }
 }
 
-/** The unevaluated Hankel transform (SymPy HankelTransform). */
+/**
+ * The unevaluated Hankel transform.
+ *
+ * @see SymPy `sympy.integrals.transforms.HankelTransform`
+ */
 export class HankelTransform extends HankelTypeTransform {
+  /**
+   * Creates a HankelTransform instance.
+   *
+   * @param f - The function to transform.
+   * @param r - The radial variable.
+   * @param k - The frequency variable.
+   * @param nu - The order of the Bessel kernel.
+   */
   constructor(f: ExprLike, r: ExprLike, k: ExprLike, nu: ExprLike) {
     super('HankelTransform', [sympify(f), sympify(r), sympify(k), sympify(nu)]);
   }
-  /** SymPy HankelTransform._name. */
+  /**
+   * The name of the integral transform.
+   *
+   * @see SymPy `sympy.integrals.transforms.HankelTransform._name`
+   */
   static readonly transformName = 'Hankel';
+  /**
+   * Represents the name of the integral transform.
+   *
+   * @returns The name of the integral transform.
+   * @see SymPy `sympy.integrals.transforms.HankelTransform._name`
+   */
   get transformName(): string {
     return 'Hankel';
   }
+  /**
+   * Rebuilds the expression with replacement arguments.
+   *
+   * @param args - The operands in their defining order.
+   * @returns The expression with the replacement operands.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new HankelTransform(...transformArgs(args), at(args, 3));
   }
 }
 
-/** The unevaluated inverse Hankel transform (SymPy InverseHankelTransform). */
+/**
+ * The unevaluated inverse Hankel transform.
+ *
+ * @see SymPy `sympy.integrals.transforms.InverseHankelTransform`
+ */
 export class InverseHankelTransform extends HankelTypeTransform {
+  /**
+   * Creates an InverseHankelTransform instance.
+   *
+   * @param F - The transformed function.
+   * @param k - The frequency variable.
+   * @param r - The radial variable.
+   * @param nu - The order of the Bessel kernel.
+   */
   constructor(F: ExprLike, k: ExprLike, r: ExprLike, nu: ExprLike) {
     super('InverseHankelTransform', [sympify(F), sympify(k), sympify(r), sympify(nu)]);
   }
-  /** SymPy InverseHankelTransform._name. */
+  /**
+   * The name of the integral transform.
+   *
+   * @see SymPy `sympy.integrals.transforms.InverseHankelTransform._name`
+   */
   static readonly transformName = 'Inverse Hankel';
+  /**
+   * Represents the name of the integral transform.
+   *
+   * @returns The name of the integral transform.
+   * @see SymPy `sympy.integrals.transforms.InverseHankelTransform._name`
+   */
   get transformName(): string {
     return 'Inverse Hankel';
   }
+  /**
+   * Rebuilds the expression with replacement arguments.
+   *
+   * @param args - The operands in their defining order.
+   * @returns The expression with the replacement operands.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new InverseHankelTransform(...transformArgs(args), at(args, 3));
   }
@@ -731,6 +1116,13 @@ export class InverseHankelTransform extends HankelTypeTransform {
  * (SymPy hankel_transform). Throws IntegralTransformError when the integral
  * is not known, as SymPy does.
  *
+ * @param f - The function to transform.
+ * @param r - The radial variable.
+ * @param k - The frequency variable.
+ * @param nu - The order of the Bessel kernel.
+ * @param hints - The transform hints settings.
+ * @returns The transformed expression with convergence data when requested.
+ * @see SymPy `sympy.integrals.transforms.hankel_transform`
  * @example
  * ```ts
  * import { ex, hankelTransform, symbols } from '@symjs/symjs';
@@ -743,7 +1135,24 @@ export function hankelTransform(f: ExprLike, r: Sym, k: ExprLike, nu: ExprLike, 
   return new HankelTransform(f, r, k, nu).doit(hints);
 }
 
-/** The inverse Hankel transform Integral(F(k)*besselj(nu, k*r)*k, (k, 0, oo)) (SymPy inverse_hankel_transform). */
+/**
+ * The inverse Hankel transform Integral(F(k)*besselj(nu, k*r)*k, (k, 0, oo)).
+ *
+ * @param F - The transformed function.
+ * @param k - The frequency variable.
+ * @param r - The radial variable.
+ * @param nu - The order of the Bessel kernel.
+ * @param hints - The transform hints settings.
+ * @returns The transformed expression with convergence data when requested.
+ * @see SymPy `sympy.integrals.transforms.inverse_hankel_transform`
+ * @example
+ * ```ts
+ * import { ex, inverseHankelTransform, symbols } from '@symjs/symjs';
+ *
+ * const [k] = symbols('k');
+ * inverseHankelTransform(ex`a/(k**3*(a**2/k**2 + 1)**(3/2))`, k, ex`r`, 0); // => exp(-a*r)
+ * ```
+ */
 export function inverseHankelTransform(F: ExprLike, k: Sym, r: ExprLike, nu: ExprLike, hints: TransformHints = {}): TransformResult {
   return new InverseHankelTransform(F, k, r, nu).doit(hints);
 }

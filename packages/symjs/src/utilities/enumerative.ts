@@ -10,15 +10,36 @@
 
 import { at, defined, last } from '../core/guard';
 
-/** One component of one part of the current partition (SymPy PartComponent). */
+/**
+ * One component of one part of the current partition.
+ *
+ * @see SymPy `sympy.utilities.enumerative.PartComponent`
+ */
 export class PartComponent {
-  /** Component number. */
+  /**
+   * Component number.
+   *
+   * @see SymPy `sympy.utilities.enumerative.PartComponent.c`
+   */
   c = 0;
-  /** The as yet unpartitioned amount in component c before this triple. */
+  /**
+   * The as yet unpartitioned amount in component c before this triple.
+   *
+   * @see SymPy `sympy.utilities.enumerative.PartComponent.u`
+   */
   u = 0;
-  /** Amount of the c component in the current part (v <= u). */
+  /**
+   * Amount of the c component in the current part (v <= u).
+   *
+   * @see SymPy `sympy.utilities.enumerative.PartComponent.v`
+   */
   v = 0;
 
+  /**
+   * Formats this value as a string.
+   *
+   * @returns The formatted text.
+   */
   toString(): string {
     return `c:${this.c} u:${this.u} v:${this.v}`;
   }
@@ -28,9 +49,18 @@ export class PartComponent {
 export type PartitionState = readonly [f: number[], lpart: number, pstack: PartComponent[]];
 
 /**
- * SymPy `multiset_partitions_taocp(multiplicities)`: enumerate the
+ * Enumerate the
  * partitions of a multiset with the given multiplicities (the state is
  * reused between steps; decode it with {@link listVisitor}).
+ *
+ * @param multiplicities - The elements and their repetition counts.
+ * @returns An iterator over successive partition states.
+ * @see SymPy `sympy.utilities.enumerative.multiset_partitions_taocp`
+ * @example
+ * ```ts
+ * import { multisetPartitionsTaocp } from '@symjs/symjs';
+ * [...multisetPartitionsTaocp([1, 2])].length; // => 4
+ * ```
  */
 export function* multisetPartitionsTaocp(multiplicities: readonly number[]): Generator<PartitionState, void, undefined> {
   const m = multiplicities.length;
@@ -101,7 +131,19 @@ export function* multisetPartitionsTaocp(multiplicities: readonly number[]): Gen
   }
 }
 
-/** SymPy `list_visitor(state, components)`: the partition as a list of lists. */
+/**
+ * Returns the partition as a list of lists.
+ *
+ * @param state - The current state of the partition traversal.
+ * @param components - The multiset elements indexed by the state.
+ * @returns The partition as a list of lists.
+ * @see SymPy `sympy.utilities.enumerative.list_visitor`
+ * @example
+ * ```ts
+ * import { listVisitor, multisetPartitionsTaocp } from '@symjs/symjs';
+ * Array.from(multisetPartitionsTaocp([1, 1]), state => listVisitor(state, ['a', 'b'])); // => [[[a, b]], [[a], [b]]]
+ * ```
+ */
 export function listVisitor<T>(state: PartitionState, components: readonly T[]): T[][] {
   const [f, lpart, pstack] = state;
   const partition: T[][] = [];
@@ -116,11 +158,24 @@ export function listVisitor<T>(state: PartitionState, components: readonly T[]):
   return partition;
 }
 
-/** SymPy `MultisetPartitionTraverser` (the enumeration with a range of part counts). */
+/**
+ * Has methods to ``enumerate`` and ``count`` the partitions of a multiset.
+ *
+ * @see SymPy `sympy.utilities.enumerative.MultisetPartitionTraverser`
+ * @example
+ * ```ts
+ * import { MultisetPartitionTraverser } from '@symjs/symjs';
+ * new MultisetPartitionTraverser().countPartitions([1, 2]); // => 4
+ * ```
+ */
 export class MultisetPartitionTraverser {
+  /** The component records of the current partition arranged by part. */
   pstack: PartComponent[] = [];
+  /** The offsets of the parts in the component stack. */
   f: number[] = [];
+  /** The index of the last part of the current partition. */
   lpart = 0;
+  /** The number of candidates discarded by the traversal. */
   discarded = 0;
 
   private initializeEnumeration(multiplicities: readonly number[]): void {
@@ -139,7 +194,13 @@ export class MultisetPartitionTraverser {
     this.lpart = 0;
   }
 
-  /** Decrement the part like a multi-digit number whose leading digit stays positive. */
+  /**
+   * Decrement the part like a multi-digit number whose leading digit stays positive.
+   *
+   * @param part - The partition component to adjust.
+   * @returns Whether a smaller admissible part was found.
+   * @see SymPy `sympy.utilities.enumerative.MultisetPartitionTraverser.decrement_part`
+   */
   decrementPart(part: readonly PartComponent[]): boolean {
     const plen = part.length;
     for (let j = plen - 1; j >= 0; j--) {
@@ -153,7 +214,14 @@ export class MultisetPartitionTraverser {
     return false;
   }
 
-  /** Decrement, failing when the part can only have children with more than ub parts. */
+  /**
+   * Decrement, failing when the part can only have children with more than ub parts.
+   *
+   * @param part - The partition component to adjust.
+   * @param ub - The bound on the number of parts.
+   * @returns Whether a smaller admissible part was found.
+   * @see SymPy `sympy.utilities.enumerative.MultisetPartitionTraverser.decrement_part_small`
+   */
   decrementPartSmall(part: readonly PartComponent[], ub: number): boolean {
     if (this.lpart >= ub - 1) return false;
     const plen = part.length;
@@ -169,7 +237,15 @@ export class MultisetPartitionTraverser {
     return decrement(0);
   }
 
-  /** Decrement (when amt is 1) and enforce that more than lb parts remain reachable. */
+  /**
+   * Decrement (when amt is 1) and enforce that more than lb parts remain reachable.
+   *
+   * @param part - The partition component to adjust.
+   * @param amt - The amount by which to reduce the part.
+   * @param lb - The bound on the number of parts.
+   * @returns Whether a smaller admissible part was found.
+   * @see SymPy `sympy.utilities.enumerative.MultisetPartitionTraverser.decrement_part_large`
+   */
   decrementPartLarge(part: readonly PartComponent[], amt: number, lb: number): boolean {
     if (amt === 1 && !this.decrementPart(part)) return false;
     const minUnalloc = lb - this.lpart;
@@ -198,12 +274,25 @@ export class MultisetPartitionTraverser {
     return true;
   }
 
-  /** Combination of the small and large decrements. */
+  /**
+   * Combination of the small and large decrements.
+   *
+   * @param part - The partition component to adjust.
+   * @param lb - The bound on the number of parts.
+   * @param ub - The bound on the number of parts.
+   * @returns Whether a smaller admissible part was found.
+   * @see SymPy `sympy.utilities.enumerative.MultisetPartitionTraverser.decrement_part_range`
+   */
   decrementPartRange(part: readonly PartComponent[], lb: number, ub: number): boolean {
     return this.decrementPartSmall(part, ub) && this.decrementPartLarge(part, 0, lb);
   }
 
-  /** Spread the unallocated multiplicity of the top part into a new part. */
+  /**
+   * Spread the unallocated multiplicity of the top part into a new part.
+   *
+   * @returns Whether there is multiplicity left to distribute.
+   * @see SymPy `sympy.utilities.enumerative.MultisetPartitionTraverser.spread_part_multiplicity`
+   */
   spreadPartMultiplicity(): boolean {
     let k = at(this.f, this.lpart + 1);
     const base = k;
@@ -239,9 +328,13 @@ export class MultisetPartitionTraverser {
   private readonly dpMap = new Map<string, bigint>();
 
   /**
-   * SymPy count_partitions(multiplicities): the number of partitions of the
+   * The number of partitions of the
    * multiset, counted by the enumeration with the counts of repeated
    * subtrees memoized (by the key of the part at their root).
+   *
+   * @param multiplicities - The elements and their repetition counts.
+   * @returns The number of distinct multiset partitions.
+   * @see SymPy `sympy.utilities.enumerative.MultisetPartitionTraverser.count_partitions`
    */
   countPartitions(multiplicities: readonly number[]): bigint {
     const partKey = (part: readonly PartComponent[]): string => part.map((ps) => `${ps.u},${ps.v}`).join(';');
@@ -273,12 +366,25 @@ export class MultisetPartitionTraverser {
     }
   }
 
-  /** The current top part on the stack. */
+  /**
+   * Returns the current top part on the stack.
+   *
+   * @returns The current top part on the stack.
+   * @see SymPy `sympy.utilities.enumerative.MultisetPartitionTraverser.top_part`
+   */
   topPart(): PartComponent[] {
     return this.pstack.slice(this.f[this.lpart], this.f[this.lpart + 1]);
   }
 
-  /** Enumerate the partitions of a multiset with lb < (number of parts) <= ub. */
+  /**
+   * Enumerate the partitions of a multiset with lb < (number of parts) <= ub.
+   *
+   * @param multiplicities - The elements and their repetition counts.
+   * @param lb - The bound on the number of parts.
+   * @param ub - The bound on the number of parts.
+   * @returns An iterator over partition states in the requested size range.
+   * @see SymPy `sympy.utilities.enumerative.MultisetPartitionTraverser.enum_range`
+   */
   *enumRange(multiplicities: readonly number[], lb: number, ub: number): Generator<PartitionState, void, undefined> {
     this.discarded = 0;
     // no number of parts k with lb < k <= ub (SymPy raises IndexError for ub = 1 <= lb; symjs looped forever)

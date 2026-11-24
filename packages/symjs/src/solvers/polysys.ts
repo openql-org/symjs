@@ -31,18 +31,40 @@ import { and, or } from '../core/boolalg';
 type Factor = { expr: Expr; ground: boolean };
 
 /**
- * Split each equation into irreducible factors and return the minimal
+ * Splits each equation into irreducible factors and return the minimal
  * systems (one factor from every equation) whose common zeros give all
  * solutions of the original system, like SymPy factor_system_cond. Systems
  * may contain conditions that involve only the parameters.
+ *
+ * @param eqs - List of expressions to be factored.
+ * @param gens - Generator(s) of the polynomial ring.
+ * @param opts - The poly construction settings.
+ * @returns The simultaneous factor systems, one list per alternative.
+ * @see SymPy `sympy.solvers.polysys.factor_system_cond`
+ * @example
+ * ```ts
+ * import { ex, factorSystemCond } from '@symjs/symjs';
+ * factorSystemCond([ex`x**2 - 4`, ex`a*y`, ex`b`], [ex`x`, ex`y`]); // => [[x + 2, y, b], [x - 2, y, b], [x + 2, a, b], [x - 2, a, b]]
+ * ```
  */
 export function factorSystemCond(eqs: readonly ExprLike[], gens: readonly Expr[] = [], opts: PolyConstructionOptions = {}): Expr[][] {
   return factorSystemRaw(eqs, gens, opts).map((s) => s.map((f) => f.expr));
 }
 
 /**
- * SymPy factor_system: like factorSystemCond but generic systems only (those
+ * Like factorSystemCond but generic systems only (those
  * that need a condition on the parameters alone are dropped).
+ *
+ * @param eqs - List of expressions to be factored.
+ * @param gens - Generator(s) of the polynomial ring.
+ * @param opts - The poly construction settings.
+ * @returns The simultaneous factor systems, one list per alternative.
+ * @see SymPy `sympy.solvers.polysys.factor_system`
+ * @example
+ * ```ts
+ * import { ex, factorSystem } from '@symjs/symjs';
+ * factorSystem([ex`x`, 1]); // => []
+ * ```
  */
 export function factorSystem(eqs: readonly ExprLike[], gens: readonly Expr[] = [], opts: PolyConstructionOptions = {}): Expr[][] {
   return factorSystemRaw(eqs, gens, opts)
@@ -50,12 +72,38 @@ export function factorSystem(eqs: readonly ExprLike[], gens: readonly Expr[] = [
     .map((s) => s.map((f) => f.expr));
 }
 
-/** Boolean description of every branch of a factored polynomial system. */
+/**
+ * Boolean description of every branch of a factored polynomial system.
+ *
+ * @param eqs - List of expressions to be factored.
+ * @param gens - Generator(s) of the polynomial ring.
+ * @returns A Boolean formula describing the union of the factored systems.
+ * @see SymPy `sympy.solvers.polysys.factor_system_bool`
+ * @example
+ * ```ts
+ * import { ex, factorSystemBool } from '@symjs/symjs';
+ * factorSystemBool([ex`x**2 - 1`]); // => Eq(x - 1, 0) | Eq(x + 1, 0)
+ * ```
+ */
 export function factorSystemBool(eqs: readonly ExprLike[], gens: readonly Expr[] = []): Expr {
   return or(...factorSystemCond(eqs, gens).map((system) => and(...system.map((e) => Eq(e, 0)))));
 }
 
-/** Factor a polynomial system while preserving its generators and coefficient domain. */
+/**
+ * Factor a polynomial system while preserving its generators and coefficient domain.
+ *
+ * @param polys - A list of Poly instances to be factored.
+ * @returns The simultaneous factor systems, one list per alternative.
+ * @throws TypeError when the polynomials have different generators or coefficient domains.
+ * @see SymPy `sympy.solvers.polysys.factor_system_poly`
+ * @example
+ * ```ts
+ * import { Poly, ex, factorSystemPoly, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * factorSystemPoly([Poly.from(ex`x**2 - 1`, [x])]).map(system => system.map(poly => poly.asExpr())); // => [[x + 1], [x - 1]]
+ * ```
+ */
 export function factorSystemPoly(polys: readonly Poly[]): Poly[][] {
   if (!polys.length) return [[]];
   const p = first(polys);
@@ -63,12 +111,42 @@ export function factorSystemPoly(polys: readonly Poly[]): Poly[][] {
   return factorSystemCond(polys.map((q) => q.asExpr()), p.gens, { domain: p.domain }).map((s) => s.map((e) => Poly.from(e, p.gens, { domain: p.domain })));
 }
 
-/** Solve polynomial objects in the specified generator order. */
+/**
+ * Solves polynomial objects in the specified generator order.
+ *
+ * @param polys - Listing all the polynomial equations that are needed to be solved.
+ * @param gens - The ordered polynomial generators.
+ * @returns The solution tuples in generator order.
+ * @see SymPy `sympy.solvers.polysys.solve_generic`
+ * @example
+ * ```ts
+ * import { Poly, ex, solveGeneric, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * solveGeneric([Poly.from(ex`x**2 - 1`, [x])], [x]); // => [[-1], [1]]
+ * ```
+ */
 export function solveGeneric(polys: readonly Poly[], gens: readonly Sym[]): Expr[][] {
   return solvePolySystem(polys.map((p) => p.asExpr()), gens);
 }
 
-/** Solve two polynomials of degree at most two in each of two generators. */
+/**
+ * Solves two polynomials of degree at most two in each of two generators.
+ *
+ * @param f - The first polynomial of the system.
+ * @param g - The second polynomial of the system.
+ * @param gens - The ordered polynomial generators.
+ * @returns The solution tuples in generator order.
+ * @throws RangeError when the input does not consist of two biquadratics in two generators.
+ * @see SymPy `sympy.solvers.polysys.solve_biquadratic`
+ * @example
+ * ```ts
+ * import { Poly, ex, solveBiquadratic, symbols } from '@symjs/symjs';
+ *
+ * const [x, y] = symbols('x y');
+ * solveBiquadratic(Poly.from(ex`x**2 - 1`, [x, y]), Poly.from(ex`y**2 - 1`, [x, y]), [x, y]); // => [[-1, -1], [-1, 1], [1, -1], [1, 1]]
+ * ```
+ */
 export function solveBiquadratic(f: Poly, g: Poly, gens: readonly Sym[]): Expr[][] {
   if (gens.length !== 2 || [f, g].some((p) => gens.some((x) => Poly.from(p.asExpr(), gens).degree(x) > 2))) throw new RangeError('solveBiquadratic: two generators and biquadratic polynomials required');
   // SymPy 1.14's low-level routine can mix Poly.gens with opt.gens and return
@@ -219,13 +297,52 @@ const cmpSysKey = (a: Key[], b: Key[], params: readonly Expr[]): number =>
   cmpSeq(a, b, (u, v) => cmpNums(u[0], v[0])) || cmpSeq(a, b, (u, v) => cmpDense(u[1], v[1], params));
 
 /**
- * Solve a zero-dimensional polynomial system with a lexicographic Gröbner
- * basis (SymPy solve_poly_system / solve_generic). Solutions are tuples in
+ * Solves a zero-dimensional polynomial system with a lexicographic Gröbner
+ * basis. Solutions are tuples in
  * the order of `gens`, sorted like SymPy (default_sort_key). Throws for
  * systems that are not zero-dimensional.
+ *
+ * @remarks SymPy returns `[(0, 0), (2, -sqrt(2)), (2, sqrt(2))]`.
+ *
+ * @param eqs - The equations to solve simultaneously.
+ * @param gens - Generators of the equations in seq for which we want the solutions.
+ * @param opts - `distinguishInconsistent` distinguishes inconsistency, `rationalOnly` restricts roots to rationals, `strict` controls strict.
+ * @returns The polynomial solution tuples, with inconsistency distinguished when requested.
+ * @see SymPy `sympy.solvers.polysys.solve_poly_system`
+ * @example
+ * ```ts
+ * import { ex, solvePolySystem, symbols } from '@symjs/symjs';
+ *
+ * const [x, y] = symbols('x y');
+ * solvePolySystem([ex`x*y - 2*y`, ex`-x**2 + 2*y**2`], [x, y]); // => [[0, 0], [2, -sqrt(2)], [2, sqrt(2)]]
+ * ```
  */
 export function solvePolySystem(eqs: readonly ExprLike[], gens: readonly Sym[], opts: { distinguishInconsistent: true; rationalOnly?: boolean; strict?: boolean }): Expr[][] | NoMatchResult;
+/**
+ * Solves a zero-dimensional polynomial system with a lexicographic Gröbner
+ * basis. Solutions are tuples in
+ * the order of `gens`, sorted like SymPy (default_sort_key). Throws for
+ * systems that are not zero-dimensional.
+ *
+ * @param eqs - The equations to solve simultaneously.
+ * @param gens - Generators of the equations in seq for which we want the solutions.
+ * @param opts - `rationalOnly` restricts roots to rationals, `strict` controls strict.
+ * @returns The polynomial solution tuples, with inconsistency distinguished when requested.
+ * @see SymPy `sympy.solvers.polysys.solve_poly_system`
+ */
 export function solvePolySystem(eqs: readonly ExprLike[], gens: readonly Sym[], opts?: { rationalOnly?: boolean; strict?: boolean }): Expr[][];
+/**
+ * Solves a zero-dimensional polynomial system with a lexicographic Gröbner
+ * basis. Solutions are tuples in
+ * the order of `gens`, sorted like SymPy (default_sort_key). Throws for
+ * systems that are not zero-dimensional.
+ *
+ * @param eqs - The equations to solve simultaneously.
+ * @param gens - Generators of the equations in seq for which we want the solutions.
+ * @param opts - `distinguishInconsistent` distinguishes inconsistency, `rationalOnly` restricts roots to rationals, `strict` controls strict.
+ * @returns The polynomial solution tuples, with inconsistency distinguished when requested.
+ * @see SymPy `sympy.solvers.polysys.solve_poly_system`
+ */
 export function solvePolySystem(eqs: readonly ExprLike[], gens: readonly Sym[], opts: { distinguishInconsistent?: boolean; rationalOnly?: boolean; strict?: boolean } = {}): Expr[][] | NoMatchResult {
   const system = eqs.map((e) => expand(sympify(e))).filter((e) => !(e instanceof Rational && e.isZero));
   const sols = solveReduced(system, gens, opts.rationalOnly ?? false, opts.strict ?? false, true);
@@ -364,12 +481,26 @@ function backSubstitute(system: Expr[], gens: readonly Sym[], rationalOnly: bool
 }
 
 /**
- * SymPy solve_triangulated(polys, *gens): the solutions of a zero-dimensional
+ * The solutions of a zero-dimensional
  * polynomial system with coefficients in the rationals, from its
  * lexicographic Groebner basis (Gianni-Kalkbrenner): the rational roots of
  * the univariate polynomial in the last generator, extended one generator at
  * a time. Solutions are tuples in the order of gens, sorted like SymPy's
  * default_sort_key.
+ *
+ * @remarks SymPy returns `[(0, 0, 1), (0, 1, 0), (1, 0, 0)]`.
+ *
+ * @param polys - Listing all the equations that are needed to be solved.
+ * @param gens - Generators of the equations in polys for which we want the solutions.
+ * @returns The solution tuples in generator order.
+ * @see SymPy `sympy.solvers.polysys.solve_triangulated`
+ * @example
+ * ```ts
+ * import { ex, solveTriangulated, symbols } from '@symjs/symjs';
+ *
+ * const [x, y, z] = symbols('x y z');
+ * solveTriangulated([ex`x**2 + y + z - 1`, ex`x + y**2 + z - 1`, ex`x + y + z**2 - 1`], [x, y, z]); // => [[0, 0, 1], [0, 1, 0], [1, 0, 0]]
+ * ```
  */
 export function solveTriangulated(polys: readonly ExprLike[], gens: readonly Sym[]): Expr[][] {
   const G = [...groebner(polys, gens).exprs].reverse();

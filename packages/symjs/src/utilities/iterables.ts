@@ -50,8 +50,10 @@ function checkInt(n: number, what: string): number {
 // type tests
 
 /**
- * Mixin marker (SymPy `NotIterable`): instances of classes extending it are
+ * Mixin marker: instances of classes extending it are
  * not iterable for {@link iterable}.
+ *
+ * @see SymPy `sympy.utilities.iterables.NotIterable`
  */
 export class NotIterable {}
 
@@ -83,10 +85,20 @@ export const GeneratorType: TypeSpec = {
 };
 
 /**
- * SymPy `iterable(i, exclude=(str, dict, NotIterable))`: whether `i` can be
+ * Determines whether `i` can be
  * iterated (and the iteration is finite). Strings, `Map`s (Python dicts)
  * and {@link NotIterable} instances are excluded by default; pass `null` to
  * exclude nothing. An `_iterable` property on the object overrides the test.
+ *
+ * @param i - The value to test for iteration.
+ * @param exclude - The types to exclude from iteration.
+ * @returns Whether the value supports iteration and passes the exclusion filter.
+ * @see SymPy `sympy.utilities.iterables.iterable`
+ * @example
+ * ```ts
+ * import { iterable } from '@symjs/symjs';
+ * iterable([1, 2]); // => True
+ * ```
  */
 export function iterable(i: unknown, exclude: TypeSpec | readonly TypeSpec[] | null = [String, Map, NotIterable]): boolean {
   if (typeof i === 'object' && i !== null && '_iterable' in i) return Boolean(i._iterable);
@@ -98,9 +110,19 @@ export function iterable(i: unknown, exclude: TypeSpec | readonly TypeSpec[] | n
 }
 
 /**
- * SymPy `is_sequence(i, include=None)`: whether `i` is an indexable
+ * Determines whether `i` is an indexable
  * iterable (an array or a typed array) that {@link iterable} accepts, or an
  * instance of one of the `include` types.
+ *
+ * @param i - The value to test for iteration.
+ * @param include - Additional types to treat as sequences.
+ * @returns Whether the value qualifies as an indexable sequence.
+ * @see SymPy `sympy.utilities.iterables.is_sequence`
+ * @example
+ * ```ts
+ * import { isSequence } from '@symjs/symjs';
+ * isSequence([]); // => True
+ * ```
  */
 export function isSequence(i: unknown, include?: TypeSpec | readonly TypeSpec[] | null): boolean {
   const indexable = Array.isArray(i) || ArrayBuffer.isView(i) || typeof i === 'string';
@@ -130,13 +152,39 @@ function intArg(n: IntArg): bigint {
 }
 
 /**
- * SymPy `is_palindromic`: an integer `n` whose digits in base `b` (default
- * 10) read the same in both directions (sympy.ntheory.digits), or a
- * sequence `s` (or the Python slice `s[i:j]`) that does
- * (sympy.utilities.iterables).
+ * Tests whether a sequence reads the same backward, or whether an integer’s digits form a palindrome in the specified base.
+ *
+ * @param n - The integer whose digits are tested.
+ * @param b - The numeral base.
+ * @returns Whether reversing the sequence or integer digits preserves it.
+ * @see SymPy `sympy.utilities.iterables.is_palindromic`
+ * @example
+ * ```ts
+ * import { isPalindromic } from '@symjs/symjs';
+ * isPalindromic('abcbb'); // => False
+ * ```
  */
 export function isPalindromic(n: IntArg, b?: IntArg): boolean;
+/**
+ * Tests whether a sequence reads the same backward, or whether an integer’s digits form a palindrome in the specified base.
+ *
+ * @param s - The sequence to test.
+ * @param i - The inclusive starting index.
+ * @param j - The exclusive ending index.
+ * @returns Whether reversing the sequence or integer digits preserves it.
+ * @see SymPy `sympy.utilities.iterables.is_palindromic`
+ */
 export function isPalindromic<T>(s: Sequence<T>, i?: number, j?: number): boolean;
+/**
+ * Tests whether a sequence reads the same backward, or whether an integer’s digits form a palindrome in the specified base.
+ *
+ * @param s - The sequence to test.
+ * @param i - The inclusive starting index.
+ * @param j - The exclusive ending index.
+ * @returns Whether reversing the sequence or integer digits preserves it.
+ * @throws RangeError when the base is at most one.
+ * @see SymPy `sympy.utilities.iterables.is_palindromic`
+ */
 export function isPalindromic<T>(s: IntArg | Sequence<T>, i?: IntArg, j?: number): boolean {
   if (!isPalindromeSequence(s)) {
     const base = intArg(i ?? 10);
@@ -162,7 +210,7 @@ function isPalindromeSequence<T>(s: IntArg | Sequence<T>): s is Sequence<T> {
 }
 
 /**
- * SymPy `flatten(iterable, levels=None, cls=None)`: recursively denest
+ * Recursively denest
  * arrays and sets (or, with `cls`, expressions of that class through their
  * arguments), at most `levels` levels deep.
  *
@@ -170,9 +218,51 @@ function isPalindromeSequence<T>(s: IntArg | Sequence<T>): s is Sequence<T> {
  * new=new)`: the arguments of the same class as `expr` are spliced in
  * (`T(a, T(b, c), U(d)) -> T(a, b, c, U(d))`), and the node is rebuilt with
  * `newFn` (without evaluation by default).
+ *
+ * @param expr - The expression to evaluate.
+ * @param newFn - The function that rebuilds a node from its operator and arguments.
+ * @returns The flattened expression or sequence.
+ * @see SymPy `sympy.utilities.iterables.flatten`
+ * @example
+ * ```ts
+ * import { ex } from '@symjs/symjs';
+ * import { flatten } from '@symjs/symjs/utilities';
+ * flatten([ex`1`, ex`2`, ex`3`]); // => [1, 2, 3]
+ * ```
  */
 export function flatten(expr: Expr, newFn?: (op: Expr, args: readonly Expr[]) => Expr): Expr;
+/**
+ * Recursively denest
+ * arrays and sets (or, with `cls`, expressions of that class through their
+ * arguments), at most `levels` levels deep.
+ *
+ * Given an expression, it is SymPy `sympy.strategies.rl.flatten(expr,
+ * new=new)`: the arguments of the same class as `expr` are spliced in
+ * (`T(a, T(b, c), U(d)) -> T(a, b, c, U(d))`), and the node is rebuilt with
+ * `newFn` (without evaluation by default).
+ *
+ * @param iter - The iterable inputs in traversal order.
+ * @param opts - `levels` limits nesting depth, `cls` selects the class.
+ * @returns The flattened expression or sequence.
+ * @see SymPy `sympy.utilities.iterables.flatten`
+ */
 export function flatten(iter: Iterable<unknown>, opts?: { levels?: number | null; cls?: TypeSpec | null }): unknown[];
+/**
+ * Recursively denest
+ * arrays and sets (or, with `cls`, expressions of that class through their
+ * arguments), at most `levels` levels deep.
+ *
+ * Given an expression, it is SymPy `sympy.strategies.rl.flatten(expr,
+ * new=new)`: the arguments of the same class as `expr` are spliced in
+ * (`T(a, T(b, c), U(d)) -> T(a, b, c, U(d))`), and the node is rebuilt with
+ * `newFn` (without evaluation by default).
+ *
+ * @param iter - The iterable inputs in traversal order.
+ * @param optsIn - `levels` limits nesting depth, `cls` selects the class, `op` controls op, `args` controls args.
+ * @returns The flattened expression or sequence.
+ * @throws TypeError when a node constructor is supplied for a sequence.
+ * @see SymPy `sympy.utilities.iterables.flatten`
+ */
 export function flatten(
   iter: Expr | Iterable<unknown>,
   optsIn: { levels?: number | null; cls?: TypeSpec | null } | ((op: Expr, args: readonly Expr[]) => Expr) = {},
@@ -205,8 +295,14 @@ export function flatten(
 }
 
 /**
- * SymPy `unflatten(iter, n=2)`: group `iter` into tuples of length `n`.
+ * Group `iter` into tuples of length `n`.
  * Throws a RangeError when the length is not a multiple of `n`.
+ *
+ * @param iter - The iterable inputs in traversal order.
+ * @param n - The number of elements per group.
+ * @returns Consecutive groups of the requested length.
+ * @throws RangeError when the group size is zero or does not divide the sequence length.
+ * @see SymPy `sympy.utilities.iterables.unflatten`
  */
 export function unflatten<T>(iter: readonly T[], n = 2): T[][] {
   if (n < 1 || iter.length % n) throw new RangeError(`iter length is not a multiple of ${n}`);
@@ -226,9 +322,20 @@ function templateSum(how: ReshapeTemplate | number): number {
 }
 
 /**
- * SymPy `reshape(seq, how)`: reshape `seq` according to the template
+ * Reshape `seq` according to the template
  * `how`, made of counts, arrays and sets. Python distinguishes lists and
  * tuples in the template; both are arrays here.
+ *
+ * @param seq - The input sequence or sequences, in order.
+ * @param how - The nested shape into which successive elements are grouped.
+ * @returns The elements arranged according to the nesting template.
+ * @throws RangeError when the template size is nonpositive or does not divide the sequence length.
+ * @see SymPy `sympy.utilities.iterables.reshape`
+ * @example
+ * ```ts
+ * import { reshape } from '@symjs/symjs';
+ * reshape([1, 2, 3, 4, 5, 6, 7, 8], [4]); // => [[1, 2, 3, 4], [5, 6, 7, 8]]
+ * ```
  */
 export function reshape<T>(seq: readonly T[], how: ReshapeTemplate): unknown[] {
   const m = templateSum(how);
@@ -256,12 +363,42 @@ export function reshape<T>(seq: readonly T[], how: ReshapeTemplate): unknown[] {
 }
 
 /**
- * SymPy `group(seq, multiple=True)`: split `seq` into lists of equal
+ * Splits `seq` into lists of equal
  * adjacent elements, or (with `multiple: false`) into `[element, count]`
  * pairs.
+ *
+ * @param seq - The input sequence or sequences, in order.
+ * @param opts - `multiple` selects runs or element-count pairs.
+ * @returns Runs of equal elements or pairs of representatives and counts.
+ * @see SymPy `sympy.utilities.iterables.group`
+ * @example
+ * ```ts
+ * import { group } from '@symjs/symjs';
+ * group([1, 1, 1, 2, 2, 3]); // => [[1, 1, 1], [2, 2], [3]]
+ * ```
  */
 export function group<T>(seq: Iterable<T>, opts?: { multiple?: true }): T[][];
+/**
+ * Splits `seq` into lists of equal
+ * adjacent elements, or (with `multiple: false`) into `[element, count]`
+ * pairs.
+ *
+ * @param seq - The input sequence or sequences, in order.
+ * @param opts - `multiple` selects runs or element-count pairs.
+ * @returns Runs of equal elements or pairs of representatives and counts.
+ * @see SymPy `sympy.utilities.iterables.group`
+ */
 export function group<T>(seq: Iterable<T>, opts: { multiple: false }): [T, number][];
+/**
+ * Splits `seq` into lists of equal
+ * adjacent elements, or (with `multiple: false`) into `[element, count]`
+ * pairs.
+ *
+ * @param seq - The input sequence or sequences, in order.
+ * @param opts - `multiple` selects runs or element-count pairs.
+ * @returns Runs of equal elements or pairs of representatives and counts.
+ * @see SymPy `sympy.utilities.iterables.group`
+ */
 export function group<T>(seq: Iterable<T>, opts: { multiple?: boolean } = {}): T[][] | [T, number][] {
   const runs: T[][] = [];
   for (const x of seq) {
@@ -294,8 +431,17 @@ const iproduct2 = function* <A, B>(iterable1: Iterable<A>, iterable2: Iterable<B
 };
 
 /**
- * SymPy `iproduct(*iterables)`: the Cartesian product of possibly infinite
+ * The Cartesian product of possibly infinite
  * iterables; every tuple of the product is reached eventually.
+ *
+ * @param iterables - The iterable inputs in traversal order.
+ * @returns An iterator over tuples of elements from the factors.
+ * @see SymPy `sympy.utilities.iterables.iproduct`
+ * @example
+ * ```ts
+ * import { iproduct } from '@symjs/symjs';
+ * [...iproduct([1, 2], [3, 4])]; // => [[1, 3], [2, 3], [1, 4], [2, 4]]
+ * ```
  */
 export function* iproduct<T>(...iterables: Iterable<T>[]): Generator<T[], void, undefined> {
   const [it0, it1, ...rest] = iterables;
@@ -315,8 +461,17 @@ export function* iproduct<T>(...iterables: Iterable<T>[]): Generator<T[], void, 
 }
 
 /**
- * SymPy `multiset(seq)`: the multiplicity of each element of `seq`, in
+ * The multiplicity of each element of `seq`, in
  * order of first appearance.
+ *
+ * @param seq - The input sequence or sequences, in order.
+ * @returns A map from distinct elements to their multiplicities.
+ * @see SymPy `sympy.utilities.iterables.multiset`
+ * @example
+ * ```ts
+ * import { multiset } from '@symjs/symjs';
+ * multiset('mississippi').get('s'); // => 4
+ * ```
  */
 export function multiset<T>(seq: Iterable<T>): ValueMap<T, number> {
   const m = new ValueMap<T, number>();
@@ -329,15 +484,75 @@ function bitString(n: bigint): string {
 }
 
 /**
- * SymPy `ibin(n, bits=None, str=False)`: the binary digits of `n` (most
+ * The binary digits of `n` (most
  * significant first), padded to `bits` digits. With a non-integer `bits`
  * (e.g. `'all'`), a generator of all `n`-digit bit lists (or strings with
  * `str: true`) from all zeros to all ones.
+ *
+ * @param n - The integer to encode, or the word length when enumerating bit patterns.
+ * @param bits - The digit width, or a string to request every bit pattern of length n.
+ * @param opts - `str` requests a string.
+ * @returns Binary digits in the requested representation.
+ * @see SymPy `sympy.utilities.iterables.ibin`
+ * @example
+ * ```ts
+ * import { ibin } from '@symjs/symjs';
+ * ibin(2); // => [1, 0]
+ * ```
  */
 export function ibin(n: number | bigint, bits?: number | null, opts?: { str?: false }): number[];
+/**
+ * The binary digits of `n` (most
+ * significant first), padded to `bits` digits. With a non-integer `bits`
+ * (e.g. `'all'`), a generator of all `n`-digit bit lists (or strings with
+ * `str: true`) from all zeros to all ones.
+ *
+ * @param n - The integer to encode, or the word length when enumerating bit patterns.
+ * @param bits - The digit width, or a string to request every bit pattern of length n.
+ * @param opts - `str` requests a string.
+ * @returns Binary digits in the requested representation.
+ * @see SymPy `sympy.utilities.iterables.ibin`
+ */
 export function ibin(n: number | bigint, bits: number | null | undefined, opts: { str: true }): string;
+/**
+ * The binary digits of `n` (most
+ * significant first), padded to `bits` digits. With a non-integer `bits`
+ * (e.g. `'all'`), a generator of all `n`-digit bit lists (or strings with
+ * `str: true`) from all zeros to all ones.
+ *
+ * @param n - The integer to encode, or the word length when enumerating bit patterns.
+ * @param bits - The digit width, or a string to request every bit pattern of length n.
+ * @param opts - `str` requests a string.
+ * @returns Binary digits in the requested representation.
+ * @see SymPy `sympy.utilities.iterables.ibin`
+ */
 export function ibin(n: number | bigint, bits: string, opts?: { str?: false }): Generator<number[], void, undefined>;
+/**
+ * The binary digits of `n` (most
+ * significant first), padded to `bits` digits. With a non-integer `bits`
+ * (e.g. `'all'`), a generator of all `n`-digit bit lists (or strings with
+ * `str: true`) from all zeros to all ones.
+ *
+ * @param n - The integer to encode, or the word length when enumerating bit patterns.
+ * @param bits - The digit width, or a string to request every bit pattern of length n.
+ * @param opts - `str` requests a string.
+ * @returns Binary digits in the requested representation.
+ * @see SymPy `sympy.utilities.iterables.ibin`
+ */
 export function ibin(n: number | bigint, bits: string, opts: { str: true }): Generator<string, void, undefined>;
+/**
+ * The binary digits of `n` (most
+ * significant first), padded to `bits` digits. With a non-integer `bits`
+ * (e.g. `'all'`), a generator of all `n`-digit bit lists (or strings with
+ * `str: true`) from all zeros to all ones.
+ *
+ * @param n - The integer to encode, or the word length when enumerating bit patterns.
+ * @param bits - The digit width, or a string to request every bit pattern of length n.
+ * @param opts - `str` requests a string.
+ * @returns Binary digits in the requested representation.
+ * @throws RangeError when the integer is negative.
+ * @see SymPy `sympy.utilities.iterables.ibin`
+ */
 export function ibin(
   n: number | bigint,
   bits?: number | string | null,
@@ -367,9 +582,20 @@ export function ibin(
 }
 
 /**
- * SymPy `variations(seq, n, repetition=False)`: the `n`-sized ordered
+ * The `n`-sized ordered
  * selections of `seq`, without (permutations) or with (Cartesian power)
  * repetition.
+ *
+ * @param seq - The input sequence or sequences, in order.
+ * @param n - The number of elements per group.
+ * @param opts - `repetition` allows repeated selections.
+ * @returns An iterator over ordered selections.
+ * @see SymPy `sympy.utilities.iterables.variations`
+ * @example
+ * ```ts
+ * import { variations } from '@symjs/symjs';
+ * [...variations([1, 2, 3], 2)]; // => [[1, 2], [1, 3], [2, 1], [2, 3], [3, 1], [3, 2]]
+ * ```
  */
 export function* variations<T>(seq: Iterable<T>, n: number, opts: { repetition?: boolean } = {}): Generator<T[], void, undefined> {
   const items = [...seq];
@@ -386,9 +612,20 @@ export function* variations<T>(seq: Iterable<T>, n: number, opts: { repetition?:
 }
 
 /**
- * SymPy `subsets(seq, k=None, repetition=False)`: the `k`-subsets
+ * The `k`-subsets
  * (combinations) of `seq`, or all subsets from shortest to longest when `k`
  * is omitted; with `repetition`, combinations with replacement.
+ *
+ * @param seq - The input sequence or sequences, in order.
+ * @param k - The subset size. Omit to enumerate every size.
+ * @param opts - `repetition` allows repeated selections.
+ * @returns An iterator over subsets of the requested size.
+ * @see SymPy `sympy.utilities.iterables.subsets`
+ * @example
+ * ```ts
+ * import { subsets } from '@symjs/symjs';
+ * [...subsets([1, 2], 1)]; // => [[1], [2]]
+ * ```
  */
 export function* subsets<T>(seq: Iterable<T>, k?: number | null, opts: { repetition?: boolean } = {}): Generator<T[], void, undefined> {
   const items = [...seq];
@@ -400,7 +637,14 @@ export function* subsets<T>(seq: Iterable<T>, k?: number | null, opts: { repetit
   }
 }
 
-/** SymPy `filter_symbols(iterator, exclude)`: the elements of `iterator` not in `exclude`. */
+/**
+ * The elements of `iterator` not in `exclude`.
+ *
+ * @param iterator - Iterator to take elements from.
+ * @param exclude - Elements to exclude.
+ * @returns An iterator over values outside the exclusion set.
+ * @see SymPy `sympy.utilities.iterables.filter_symbols`
+ */
 export function* filterSymbols<T>(iterator: Iterable<T>, exclude: Iterable<T>): Generator<T, void, undefined> {
   const ex = new Set<string>();
   for (const e of exclude) ex.add(valueKey(e));
@@ -411,9 +655,13 @@ export function* filterSymbols<T>(iterator: Iterable<T>, exclude: Iterable<T>): 
 export type SymbolClass<S extends Sym> = new (name: string, assumptions?: Assumptions) => S;
 
 /**
- * SymPy `numbered_symbols(prefix='x', cls=None, start=0, exclude=(), **assumptions)`:
- * an infinite stream of symbols `x0, x1, ...` skipping those in `exclude`.
+ * An infinite stream of symbols `x0, x1, ...` skipping those in `exclude`.
  * The remaining options are assumptions passed to the class.
+ *
+ * @param prefix - The prefix to use.
+ * @param opts - `cls` selects the class, `start` sets the initial index, `exclude` omits specified values.
+ * @returns An iterator over numbered symbols.
+ * @see SymPy `sympy.utilities.iterables.numbered_symbols`
  */
 export function numberedSymbols<S extends Sym = Sym>(
   prefix = 'x',
@@ -436,10 +684,19 @@ export function numberedSymbols<S extends Sym = Sym>(
 export type PrintFunction = (...values: unknown[]) => void;
 
 /**
- * SymPy `capture(func)`: the text that `func` prints. JavaScript has no
+ * The text that `func` prints. JavaScript has no
  * standard output to redirect, so `func` receives a `print` function that
  * behaves like Python's (values converted with `String`, separated by a
  * space, followed by a newline) and `capture` returns what was printed.
+ *
+ * @param func - The dependent function applied to its arguments.
+ * @returns The text that `func` prints.
+ * @see SymPy `sympy.utilities.iterables.capture`
+ * @example
+ * ```ts
+ * import { capture } from '@symjs/symjs';
+ * capture(print => print('hello')).trimEnd(); // => hello
+ * ```
  */
 export function capture(func: (print: PrintFunction) => void): string {
   let out = '';
@@ -453,13 +710,49 @@ export function capture(func: (print: PrintFunction) => void): string {
 type BinaryKey = boolean | number | 'unknown' | Expr;
 
 /**
- * SymPy `sift(seq, keyfunc, binary=False)`: the elements of `seq` grouped by
+ * The elements of `seq` grouped by
  * the value of `keyfunc` (a {@link ValueMap} from key to elements), or with
  * `binary: true` the pair `[elements giving true, elements giving false]`;
  * a key other than true/false (or 1/0) then throws a RangeError.
+ *
+ * @param seq - The input sequence or sequences, in order.
+ * @param keyfunc - The function or functions producing comparison or grouping keys.
+ * @param opts - `binary` splits into two groups.
+ * @returns Elements grouped by key, or the two groups of a binary partition.
+ * @see SymPy `sympy.utilities.iterables.sift`
+ * @example
+ * ```ts
+ * import { sift } from '@symjs/symjs';
+ * sift([0, 1, 2, 3], value => value % 2).get(0); // => [0, 2]
+ * ```
  */
 export function sift<T, K>(seq: Iterable<T>, keyfunc: (x: T) => K, opts?: { binary?: false }): ValueMap<K, T[]>;
+/**
+ * The elements of `seq` grouped by
+ * the value of `keyfunc` (a {@link ValueMap} from key to elements), or with
+ * `binary: true` the pair `[elements giving true, elements giving false]`;
+ * a key other than true/false (or 1/0) then throws a RangeError.
+ *
+ * @param seq - The input sequence or sequences, in order.
+ * @param keyfunc - The function or functions producing comparison or grouping keys.
+ * @param opts - `binary` splits into two groups.
+ * @returns Elements grouped by key, or the two groups of a binary partition.
+ * @see SymPy `sympy.utilities.iterables.sift`
+ */
 export function sift<T>(seq: Iterable<T>, keyfunc: (x: T) => BinaryKey, opts: { binary: true }): [T[], T[]];
+/**
+ * The elements of `seq` grouped by
+ * the value of `keyfunc` (a {@link ValueMap} from key to elements), or with
+ * `binary: true` the pair `[elements giving true, elements giving false]`;
+ * a key other than true/false (or 1/0) then throws a RangeError.
+ *
+ * @param seq - The input sequence or sequences, in order.
+ * @param keyfunc - The function or functions producing comparison or grouping keys.
+ * @param opts - `binary` splits into two groups.
+ * @returns Elements grouped by key, or the two groups of a binary partition.
+ * @throws RangeError when a binary grouping key is neither zero nor one.
+ * @see SymPy `sympy.utilities.iterables.sift`
+ */
 export function sift<T, K>(seq: Iterable<T>, keyfunc: (x: T) => K, opts: { binary?: boolean } = {}): ValueMap<K, T[]> | [T[], T[]] {
   if (opts.binary !== true) {
     const m = new ValueMap<K, T[]>();
@@ -485,7 +778,14 @@ export function sift<T, K>(seq: Iterable<T>, keyfunc: (x: T) => K, opts: { binar
   return [T, F];
 }
 
-/** SymPy `take(iter, n)`: the first `n` items of `iter`. */
+/**
+ * Returns the first `n` items of `iter`.
+ *
+ * @param iter - The iterable inputs in traversal order.
+ * @param n - The requested count.
+ * @returns The first `n` items of `iter`.
+ * @see SymPy `sympy.utilities.iterables.take`
+ */
 export function take<T>(iter: Iterable<T>, n: number): T[] {
   const out: T[] = [];
   if (n <= 0) return out;
@@ -496,14 +796,31 @@ export function take<T>(iter: Iterable<T>, n: number): T[] {
   return out;
 }
 
-/** SymPy `dict_merge(*dicts)`: merge maps; later maps override earlier ones. */
+/**
+ * Merge maps; later maps override earlier ones.
+ *
+ * @param dicts - The mappings to merge in order.
+ * @returns The merged map with later values taking priority.
+ * @see SymPy `sympy.utilities.iterables.dict_merge`
+ */
 export function dictMerge<K, V>(...dicts: ReadonlyMap<K, V>[]): ValueMap<K, V> {
   const merged = new ValueMap<K, V>();
   for (const d of dicts) for (const [k, v] of d) merged.set(k, v);
   return merged;
 }
 
-/** SymPy `common_prefix(*seqs)`: the longest common start of the sequences. */
+/**
+ * Returns the longest common start of the sequences.
+ *
+ * @param seqs - The input sequence or sequences, in order.
+ * @returns The longest common start of the sequences.
+ * @see SymPy `sympy.utilities.iterables.common_prefix`
+ * @example
+ * ```ts
+ * import { commonPrefix } from '@symjs/symjs';
+ * commonPrefix([0, 1, 2]); // => [0, 1, 2]
+ * ```
+ */
 export function commonPrefix<T>(...seqs: readonly (readonly T[])[]): T[] {
   if (seqs.length === 0 || seqs.some((s) => s.length === 0)) return [];
   const s0 = first(seqs);
@@ -514,7 +831,18 @@ export function commonPrefix<T>(...seqs: readonly (readonly T[])[]): T[] {
   return s0.slice(0, i);
 }
 
-/** SymPy `common_suffix(*seqs)`: the longest common ending of the sequences. */
+/**
+ * Returns the longest common ending of the sequences.
+ *
+ * @param seqs - The input sequence or sequences, in order.
+ * @returns The longest common ending of the sequences.
+ * @see SymPy `sympy.utilities.iterables.common_suffix`
+ * @example
+ * ```ts
+ * import { commonSuffix } from '@symjs/symjs';
+ * commonSuffix([0, 1, 2]); // => [0, 1, 2]
+ * ```
+ */
 export function commonSuffix<T>(...seqs: readonly (readonly T[])[]): T[] {
   if (seqs.length === 0 || seqs.some((s) => s.length === 0)) return [];
   const s0 = first(seqs);
@@ -525,12 +853,34 @@ export function commonSuffix<T>(...seqs: readonly (readonly T[])[]): T[] {
   return s0.slice(s0.length - i);
 }
 
-/** SymPy `prefixes(seq)`: the prefixes of `seq`, shortest first. */
+/**
+ * The prefixes of `seq`, shortest first.
+ *
+ * @param seq - The input sequence or sequences, in order.
+ * @returns An iterator over successively longer prefixes.
+ * @see SymPy `sympy.utilities.iterables.prefixes`
+ * @example
+ * ```ts
+ * import { prefixes } from '@symjs/symjs';
+ * [...prefixes([1, 2, 3])]; // => [[1], [1, 2], [1, 2, 3]]
+ * ```
+ */
 export function* prefixes<T>(seq: readonly T[]): Generator<T[], void, undefined> {
   for (let i = 0; i < seq.length; i++) yield seq.slice(0, i + 1);
 }
 
-/** SymPy `postfixes(seq)`: the suffixes of `seq`, shortest first. */
+/**
+ * The suffixes of `seq`, shortest first.
+ *
+ * @param seq - The input sequence or sequences, in order.
+ * @returns An iterator over successively longer suffixes.
+ * @see SymPy `sympy.utilities.iterables.postfixes`
+ * @example
+ * ```ts
+ * import { postfixes } from '@symjs/symjs';
+ * [...postfixes([1, 2, 3])]; // => [[3], [2, 3], [1, 2, 3]]
+ * ```
+ */
 export function* postfixes<T>(seq: readonly T[]): Generator<T[], void, undefined> {
   const n = seq.length;
   for (let i = 0; i < n; i++) yield seq.slice(n - i - 1);
@@ -540,10 +890,21 @@ export function* postfixes<T>(seq: readonly T[]): Generator<T[], void, undefined
 // graphs
 
 /**
- * SymPy `topological_sort(graph, key=None)`: the vertices of the acyclic
+ * The vertices of the acyclic
  * graph `[V, E]` in topological order, ties broken by the natural order of
  * `key(v)` (the vertices themselves by default). Throws a RangeError
  * ("cycle detected") for a graph with a cycle.
+ *
+ * @param graph - A tuple consisting of a list of vertices and a list of edges of a graph to be sorted topologically.
+ * @param key - Ordering key for vertices on the same level.
+ * @returns The vertices of the acyclic graph `[V, E]` in topological order, ties broken by the natural order of `key(v)` (the vertices themselves by default).
+ * @throws RangeError when the graph contains a cycle.
+ * @see SymPy `sympy.utilities.iterables.topological_sort`
+ * @example
+ * ```ts
+ * import { topologicalSort } from '@symjs/symjs';
+ * topologicalSort([[2, 3, 5, 7, 8, 9, 10, 11], [[7, 11], [7, 8], [5, 11], [3, 8], [3, 10], [11, 2], [11, 9], [11, 10], [8, 9]]]); // => [3, 5, 7, 8, 11, 2, 9, 10]
+ * ```
  */
 export function topologicalSort<T>(graph: Graph<T>, key?: (v: T) => unknown): T[] {
   const [V, E0] = graph;
@@ -641,14 +1002,45 @@ const isGraph = <T>(g: Graph<T> | AdjacencyMatrix): g is Graph<T> => Array.isArr
 const isExactZero = (e: Expr): boolean => e instanceof Rational && e.isZero;
 
 /**
- * SymPy `strongly_connected_components(G)`: the strongly connected
+ * The strongly connected
  * components of the directed graph `[V, E]` in reverse topological order
  * (Tarjan's algorithm); for an adjacency matrix (SymPy
  * `Matrix.strongly_connected_components`), the components of its vertex
  * indices.
+ *
+ * @param m - The number of parts.
+ * @returns The strongly connected components of the directed graph `[V, E]` in reverse topological order (Tarjan's algorithm).
+ * @see SymPy `sympy.utilities.iterables.strongly_connected_components`
+ * @example
+ * ```ts
+ * import { stronglyConnectedComponents } from '@symjs/symjs';
+ * stronglyConnectedComponents([[1, 2, 3], [[1, 2], [2, 1], [2, 3]]]); // => [[3], [1, 2]]
+ * ```
  */
 export function stronglyConnectedComponents(m: AdjacencyMatrix): number[][];
+/**
+ * The strongly connected
+ * components of the directed graph `[V, E]` in reverse topological order
+ * (Tarjan's algorithm); for an adjacency matrix (SymPy
+ * `Matrix.strongly_connected_components`), the components of its vertex
+ * indices.
+ *
+ * @param G - The vertices and directed edges of the graph.
+ * @returns The strongly connected components of the directed graph `[V, E]` in reverse topological order (Tarjan's algorithm).
+ * @see SymPy `sympy.utilities.iterables.strongly_connected_components`
+ */
 export function stronglyConnectedComponents<T>(G: Graph<T>): T[][];
+/**
+ * The strongly connected
+ * components of the directed graph `[V, E]` in reverse topological order
+ * (Tarjan's algorithm); for an adjacency matrix (SymPy
+ * `Matrix.strongly_connected_components`), the components of its vertex
+ * indices.
+ *
+ * @param G - The vertices and directed edges of the graph.
+ * @returns The strongly connected components of the directed graph `[V, E]` in reverse topological order (Tarjan's algorithm).
+ * @see SymPy `sympy.utilities.iterables.strongly_connected_components`
+ */
 export function stronglyConnectedComponents<T>(G: Graph<T> | AdjacencyMatrix): T[][] | number[][] {
   if (!isGraph(G)) return matrixStronglyConnectedComponents(G);
   const [V, E] = G;
@@ -665,14 +1057,45 @@ export function stronglyConnectedComponents<T>(G: Graph<T> | AdjacencyMatrix): T
 }
 
 /**
- * SymPy `connected_components(G)`: the connected components of an
+ * The connected components of an
  * undirected graph (each edge given in one or both directions), or the
  * weakly connected components of a directed graph; for an adjacency matrix
  * (SymPy `Matrix.connected_components`), the components of its vertex
  * indices.
+ *
+ * @param m - The number of parts.
+ * @returns The connected components of an undirected graph (each edge given in one or both directions), or the weakly connected components of a directed graph.
+ * @see SymPy `sympy.utilities.iterables.connected_components`
+ * @example
+ * ```ts
+ * import { connectedComponents } from '@symjs/symjs';
+ * connectedComponents([[1, 2, 3], [[1, 2], [2, 1]]]); // => [[1, 2], [3]]
+ * ```
  */
 export function connectedComponents(m: AdjacencyMatrix): number[][];
+/**
+ * The connected components of an
+ * undirected graph (each edge given in one or both directions), or the
+ * weakly connected components of a directed graph; for an adjacency matrix
+ * (SymPy `Matrix.connected_components`), the components of its vertex
+ * indices.
+ *
+ * @param G - The vertices and edges of the undirected graph.
+ * @returns The connected components of an undirected graph (each edge given in one or both directions), or the weakly connected components of a directed graph.
+ * @see SymPy `sympy.utilities.iterables.connected_components`
+ */
 export function connectedComponents<T>(G: Graph<T>): T[][];
+/**
+ * The connected components of an
+ * undirected graph (each edge given in one or both directions), or the
+ * weakly connected components of a directed graph; for an adjacency matrix
+ * (SymPy `Matrix.connected_components`), the components of its vertex
+ * indices.
+ *
+ * @param G - The vertices and edges of the undirected graph.
+ * @returns The connected components of an undirected graph (each edge given in one or both directions), or the weakly connected components of a directed graph.
+ * @see SymPy `sympy.utilities.iterables.connected_components`
+ */
 export function connectedComponents<T>(G: Graph<T> | AdjacencyMatrix): T[][] | number[][] {
   if (!isGraph(G)) return matrixConnectedComponents(G);
   const [V, E] = G;
@@ -744,18 +1167,74 @@ function matrixStronglyConnectedComponents(m: AdjacencyMatrix): number[][] {
 // ---------------------------------------------------------------------------
 // rotations
 
-/** SymPy `rotate_left(x, y)`: rotate `x` left by `y` steps. */
+/**
+ * Rotate `x` left by `y` steps.
+ *
+ * @param x - The sequence or string to rotate.
+ * @param y - The number of positions to rotate.
+ * @returns The cyclically shifted sequence.
+ * @see SymPy `sympy.utilities.iterables.rotate_left`
+ * @example
+ * ```ts
+ * import { rotateLeft } from '@symjs/symjs';
+ * rotateLeft([0, 1, 2], 1); // => [1, 2, 0]
+ * ```
+ */
 export function rotateLeft(x: string, y: number): string;
+/**
+ * Rotate `x` left by `y` steps.
+ *
+ * @param x - The sequence or string to rotate.
+ * @param y - The number of positions to rotate.
+ * @returns The cyclically shifted sequence.
+ * @see SymPy `sympy.utilities.iterables.rotate_left`
+ */
 export function rotateLeft<T>(x: readonly T[], y: number): T[];
+/**
+ * Rotate `x` left by `y` steps.
+ *
+ * @param x - The sequence or string to rotate.
+ * @param y - The number of positions to rotate.
+ * @returns The cyclically shifted sequence.
+ * @see SymPy `sympy.utilities.iterables.rotate_left`
+ */
 export function rotateLeft<T>(x: readonly T[] | string, y: number): T[] | string {
   if (x.length === 0) return typeof x === 'string' ? '' : [];
   const k = ((y % x.length) + x.length) % x.length;
   return typeof x === 'string' ? x.slice(k) + x.slice(0, k) : [...x.slice(k), ...x.slice(0, k)];
 }
 
-/** SymPy `rotate_right(x, y)`: rotate `x` right by `y` steps. */
+/**
+ * Rotate `x` right by `y` steps.
+ *
+ * @param x - The sequence or string to rotate.
+ * @param y - The number of positions to rotate.
+ * @returns The cyclically shifted sequence.
+ * @see SymPy `sympy.utilities.iterables.rotate_right`
+ * @example
+ * ```ts
+ * import { rotateRight } from '@symjs/symjs';
+ * rotateRight([0, 1, 2], 1); // => [2, 0, 1]
+ * ```
+ */
 export function rotateRight(x: string, y: number): string;
+/**
+ * Rotate `x` right by `y` steps.
+ *
+ * @param x - The sequence or string to rotate.
+ * @param y - The number of positions to rotate.
+ * @returns The cyclically shifted sequence.
+ * @see SymPy `sympy.utilities.iterables.rotate_right`
+ */
 export function rotateRight<T>(x: readonly T[], y: number): T[];
+/**
+ * Rotate `x` right by `y` steps.
+ *
+ * @param x - The sequence or string to rotate.
+ * @param y - The number of positions to rotate.
+ * @returns The cyclically shifted sequence.
+ * @see SymPy `sympy.utilities.iterables.rotate_right`
+ */
 export function rotateRight<T>(x: readonly T[] | string, y: number): T[] | string {
   if (x.length === 0) return typeof x === 'string' ? '' : [];
   const k = x.length - (((y % x.length) + x.length) % x.length);
@@ -763,9 +1242,19 @@ export function rotateRight<T>(x: readonly T[] | string, y: number): T[] | strin
 }
 
 /**
- * SymPy `least_rotation(x, key=None)`: the number of left rotations giving
+ * The number of left rotations giving
  * the lexicographically smallest rotation of `x` (Booth's algorithm),
  * elements compared by `key`.
+ *
+ * @param x - The value to examine.
+ * @param key - The function or functions producing comparison or grouping keys.
+ * @returns The starting index of the lexicographically least rotation.
+ * @see SymPy `sympy.utilities.iterables.least_rotation`
+ * @example
+ * ```ts
+ * import { leastRotation } from '@symjs/symjs';
+ * leastRotation([3, 1, 5, 1, 2]); // => 3
+ * ```
  */
 export function leastRotation<T>(x: Sequence<T>, key?: (e: T) => unknown): number {
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- for a string the key receives its characters, which the public type (key over T) cannot express
@@ -791,12 +1280,44 @@ export function leastRotation<T>(x: Sequence<T>, key?: (e: T) => unknown): numbe
 }
 
 /**
- * SymPy `minlex(seq, directed=True, key=None)`: the rotation of `seq` that
+ * The rotation of `seq` that
  * is lexicographically smallest (also considering the reversed sequence when
  * `directed` is false). A string gives a string, other sequences an array.
+ *
+ * @remarks SymPy returns `(0, 1, 2)`.
+ *
+ * @param seq - The input sequence or sequences, in order.
+ * @param opts - `directed` distinguishes reversed sequences, `key` supplies a comparison key, `e` controls e.
+ * @returns The rotation of `seq` that is lexicographically smallest (also considering the reversed sequence when `directed` is false).
+ * @see SymPy `sympy.utilities.iterables.minlex`
+ * @example
+ * ```ts
+ * import { minlex } from '@symjs/symjs';
+ * minlex([1, 2, 0]); // => [0, 1, 2]
+ * ```
  */
 export function minlex(seq: string, opts?: { directed?: boolean; key?: (e: string) => unknown }): string;
+/**
+ * The rotation of `seq` that
+ * is lexicographically smallest (also considering the reversed sequence when
+ * `directed` is false). A string gives a string, other sequences an array.
+ *
+ * @param seq - The input sequence or sequences, in order.
+ * @param opts - `directed` distinguishes reversed sequences, `key` supplies a comparison key, `e` controls e.
+ * @returns The rotation of `seq` that is lexicographically smallest (also considering the reversed sequence when `directed` is false).
+ * @see SymPy `sympy.utilities.iterables.minlex`
+ */
 export function minlex<T>(seq: readonly T[], opts?: { directed?: boolean; key?: (e: T) => unknown }): T[];
+/**
+ * The rotation of `seq` that
+ * is lexicographically smallest (also considering the reversed sequence when
+ * `directed` is false). A string gives a string, other sequences an array.
+ *
+ * @param seq - The input sequence or sequences, in order.
+ * @param opts - `directed` distinguishes reversed sequences, `key` supplies a comparison key, `e` controls e.
+ * @returns The rotation of `seq` that is lexicographically smallest (also considering the reversed sequence when `directed` is false).
+ * @see SymPy `sympy.utilities.iterables.minlex`
+ */
 export function minlex<T>(seq: readonly T[] | string, opts: { directed?: boolean; key?: (e: T) => unknown } = {}): T[] | string {
   const key = opts.key;
   const rot = (s: readonly T[] | string): readonly T[] | string => {
@@ -816,8 +1337,18 @@ export function minlex<T>(seq: readonly T[] | string, opts: { directed?: boolean
 }
 
 /**
- * SymPy `runs(seq, op=gt)`: split `seq` into runs in which each element
+ * Splits `seq` into runs in which each element
  * relates to the previous one by `op(next, previous)` (by default `>`).
+ *
+ * @param seq - The input sequence or sequences, in order.
+ * @param op - The operator of the term.
+ * @returns The consecutive subsequences satisfying the ordering relation.
+ * @see SymPy `sympy.utilities.iterables.runs`
+ * @example
+ * ```ts
+ * import { runs } from '@symjs/symjs';
+ * runs([0, 1, 2, 2, 1, 4, 3, 2, 2]); // => [[0, 1, 2], [2], [1, 4], [3], [2], [2]]
+ * ```
  */
 export function runs<T>(seq: Iterable<T>, op: (a: T, b: T) => boolean = (a, b) => compareValues(a, b) > 0): T[][] {
   const cycles: T[][] = [];
@@ -835,8 +1366,18 @@ export function runs<T>(seq: Iterable<T>, op: (a: T, b: T) => boolean = (a, b) =
 }
 
 /**
- * SymPy `rotations(s, dir=1)`: the rotations of `s`, each rotated left
+ * The rotations of `s`, each rotated left
  * (or right with `dir = -1`) relative to the previous one.
+ *
+ * @param s - The input sequence.
+ * @param dir - The direction of successive rotations.
+ * @returns An iterator over cyclic rotations.
+ * @see SymPy `sympy.utilities.iterables.rotations`
+ * @example
+ * ```ts
+ * import { rotations } from '@symjs/symjs';
+ * [...rotations([1, 2, 3])]; // => [[1, 2, 3], [2, 3, 1], [3, 1, 2]]
+ * ```
  */
 export function* rotations<T>(s: Iterable<T>, dir = 1): Generator<T[], void, undefined> {
   let seq = [...s];
@@ -847,7 +1388,13 @@ export function* rotations<T>(s: Iterable<T>, dir = 1): Generator<T[], void, und
   }
 }
 
-/** SymPy `roundrobin(*iterables)`: items taken from each iterable in turn. */
+/**
+ * Items taken from each iterable in turn.
+ *
+ * @param iterables - The iterable inputs in traversal order.
+ * @returns An iterator taking one item from each remaining input in turn.
+ * @see SymPy `sympy.utilities.iterables.roundrobin`
+ */
 export function* roundrobin<T>(...iterables: Iterable<T>[]): Generator<T, void, undefined> {
   let its = iterables.map((it) => it[Symbol.iterator]());
   while (its.length) {
@@ -902,9 +1449,19 @@ function checkCounts(m: ReadonlyMap<unknown, number>): void {
 }
 
 /**
- * SymPy `multiset_combinations(m, n)`: the unique combinations of size `n`
+ * The unique combinations of size `n`
  * of the multiset `m` (a sequence, a string or a map from element to
  * multiplicity).
+ *
+ * @param m - The number of parts.
+ * @param n - The number of elements per group.
+ * @returns An iterator over distinct combinations.
+ * @see SymPy `sympy.utilities.iterables.multiset_combinations`
+ * @example
+ * ```ts
+ * import { multisetCombinations } from '@symjs/symjs';
+ * [...multisetCombinations([1, 1, 2], 2)]; // => [[1, 1], [1, 2]]
+ * ```
  */
 export function* multisetCombinations<T>(m: Iterable<T> | ReadonlyMap<T, number>, n: number): Generator<T[], void, undefined> {
   let g: MultisetEntry<T>[];
@@ -953,9 +1510,19 @@ const multisetPermutationsG = function* <T>(size: number | null, g: MultisetEntr
 };
 
 /**
- * SymPy `multiset_permutations(m, size=None)`: the unique permutations of
+ * The unique permutations of
  * the multiset `m` (a sequence, a string or a map from element to
  * multiplicity), optionally of the given size.
+ *
+ * @param m - The number of parts.
+ * @param size - The number of elements in each permutation.
+ * @returns An iterator over distinct permutations.
+ * @see SymPy `sympy.utilities.iterables.multiset_permutations`
+ * @example
+ * ```ts
+ * import { multisetPermutations } from '@symjs/symjs';
+ * [...multisetPermutations([1, 1, 2])]; // => [[1, 1, 2], [1, 2, 1], [2, 1, 1]]
+ * ```
  */
 export function* multisetPermutations<T>(m: Iterable<T> | ReadonlyMap<T, number>, size?: number | null): Generator<T[], void, undefined> {
   let g: MultisetEntry<T>[];
@@ -998,16 +1565,65 @@ const setPartitions = function* (n: number): Generator<[number, number[]], void,
 };
 
 /**
- * SymPy `multiset_partitions(multiset, m=None)`: the unique partitions of
+ * The unique partitions of
  * the multiset (a sequence or string; an integer `n` stands for
  * `[0, 1, ..., n - 1]`), only those with `m` parts when `m` is given.
  * A string is the multiset of its characters (SymPy partitions a string of
  * one repeated character into strings, e.g. `['a', 'aa']`; symjs gives
  * `[['a'], ['a', 'a']]`).
+ *
+ * @param multiset - The elements and their repetition counts.
+ * @param m - The number of parts.
+ * @returns An iterator over distinct partitions of the multiset.
+ * @see SymPy `sympy.utilities.iterables.multiset_partitions`
+ * @example
+ * ```ts
+ * import { multisetPartitions } from '@symjs/symjs';
+ * [...multisetPartitions([1, 1, 2], 2)]; // => [[[1, 1], [2]], [[1, 2], [1]]]
+ * ```
  */
 export function multisetPartitions(multiset: number, m?: number | null): Generator<number[][], void, undefined>;
+/**
+ * The unique partitions of
+ * the multiset (a sequence or string; an integer `n` stands for
+ * `[0, 1, ..., n - 1]`), only those with `m` parts when `m` is given.
+ * A string is the multiset of its characters (SymPy partitions a string of
+ * one repeated character into strings, e.g. `['a', 'aa']`; symjs gives
+ * `[['a'], ['a', 'a']]`).
+ *
+ * @param multiset - The elements and their repetition counts.
+ * @param m - The number of parts.
+ * @returns An iterator over distinct partitions of the multiset.
+ * @see SymPy `sympy.utilities.iterables.multiset_partitions`
+ */
 export function multisetPartitions(multiset: string, m?: number | null): Generator<string[][], void, undefined>;
+/**
+ * The unique partitions of
+ * the multiset (a sequence or string; an integer `n` stands for
+ * `[0, 1, ..., n - 1]`), only those with `m` parts when `m` is given.
+ * A string is the multiset of its characters (SymPy partitions a string of
+ * one repeated character into strings, e.g. `['a', 'aa']`; symjs gives
+ * `[['a'], ['a', 'a']]`).
+ *
+ * @param multiset - The elements and their repetition counts.
+ * @param m - The number of parts.
+ * @returns An iterator over distinct partitions of the multiset.
+ * @see SymPy `sympy.utilities.iterables.multiset_partitions`
+ */
 export function multisetPartitions<T>(multiset: Iterable<T>, m?: number | null): Generator<T[][], void, undefined>;
+/**
+ * The unique partitions of
+ * the multiset (a sequence or string; an integer `n` stands for
+ * `[0, 1, ..., n - 1]`), only those with `m` parts when `m` is given.
+ * A string is the multiset of its characters (SymPy partitions a string of
+ * one repeated character into strings, e.g. `['a', 'aa']`; symjs gives
+ * `[['a'], ['a', 'a']]`).
+ *
+ * @param multiset - The elements and their repetition counts.
+ * @param m - The number of parts.
+ * @returns An iterator over distinct partitions of the multiset.
+ * @see SymPy `sympy.utilities.iterables.multiset_partitions`
+ */
 export function* multisetPartitions<T>(multiset: Iterable<T> | number, m?: number | null): Generator<unknown[][], void, undefined> {
   const mm = m ?? null;
   if (typeof multiset === 'number') {
@@ -1081,13 +1697,45 @@ export function* multisetPartitions<T>(multiset: Iterable<T> | number, m?: numbe
 }
 
 /**
- * SymPy `partitions(n, m=None, k=None, size=False)`: the partitions of the
+ * The partitions of the
  * positive integer `n` as maps from part to multiplicity, with at most `m`
  * parts and parts at most `k`; with `size: true`, `[number of parts, map]`
  * pairs. Invalid input gives the single empty partition, as in SymPy.
+ *
+ * @param n - The integer to partition.
+ * @param opts - `m` limits the number of parts, `k` limits the largest part, `size` includes the number of parts.
+ * @returns Part multiplicities, optionally paired with each partition’s size.
+ * @see SymPy `sympy.utilities.iterables.partitions`
+ * @example
+ * ```ts
+ * import { partitions } from '@symjs/symjs';
+ * [...partitions(3)]; // => [{3: 1}, {2: 1, 1: 1}, {1: 3}]
+ * ```
  */
 export function partitions(n: number, opts?: { m?: number | null; k?: number | null; size?: false }): Generator<Map<number, number>, void, undefined>;
+/**
+ * The partitions of the
+ * positive integer `n` as maps from part to multiplicity, with at most `m`
+ * parts and parts at most `k`; with `size: true`, `[number of parts, map]`
+ * pairs. Invalid input gives the single empty partition, as in SymPy.
+ *
+ * @param n - The integer to partition.
+ * @param opts - `m` limits the number of parts, `k` limits the largest part, `size` includes the number of parts.
+ * @returns Part multiplicities, optionally paired with each partition’s size.
+ * @see SymPy `sympy.utilities.iterables.partitions`
+ */
 export function partitions(n: number, opts: { m?: number | null; k?: number | null; size: true }): Generator<[number, Map<number, number>], void, undefined>;
+/**
+ * The partitions of the
+ * positive integer `n` as maps from part to multiplicity, with at most `m`
+ * parts and parts at most `k`; with `size: true`, `[number of parts, map]`
+ * pairs. Invalid input gives the single empty partition, as in SymPy.
+ *
+ * @param n - The integer to partition.
+ * @param opts - `m` limits the number of parts, `k` limits the largest part, `size` includes the number of parts.
+ * @returns Part multiplicities, optionally paired with each partition’s size.
+ * @see SymPy `sympy.utilities.iterables.partitions`
+ */
 export function* partitions(
   n: number,
   opts: { m?: number | null; k?: number | null; size?: boolean } = {},
@@ -1162,11 +1810,22 @@ export function* partitions(
 }
 
 /**
- * SymPy `ordered_partitions(n, m=None, sort=True)`: the partitions of `n`
+ * The partitions of `n`
  * as ascending lists in lexicographic order, only those with `m` parts when
  * `m` is given (unordered among themselves when `sort` is false and m
  * divides n). SymPy reuses one list for the partitions when `m` is given;
  * symjs yields a fresh array each time.
+ *
+ * @param n - The integer to partition.
+ * @param m - The exact number of parts when specified.
+ * @param opts - `sort` orders partitions by size.
+ * @returns An iterator over ascending lists of positive parts.
+ * @see SymPy `sympy.utilities.iterables.ordered_partitions`
+ * @example
+ * ```ts
+ * import { orderedPartitions } from '@symjs/symjs';
+ * [...orderedPartitions(3)].map(part => [...part]); // => [[1, 1, 1], [1, 2], [3]]
+ * ```
  */
 export function* orderedPartitions(n: number, m?: number | null, opts: { sort?: boolean } = {}): Generator<number[], void, undefined> {
   for (const p of orderedPartitionsInPlace(n, m ?? null, opts.sort ?? true)) yield [...p];
@@ -1233,9 +1892,18 @@ const orderedPartitionsInPlace = function* (n: number, m: number | null, sort: b
 };
 
 /**
- * SymPy `binary_partitions(n)`: the partitions of `n` into powers of two,
+ * The partitions of `n` into powers of two,
  * in decreasing order (TAOCP 7.2.1.5, problem 64). SymPy reuses one list;
  * symjs yields a fresh array each time.
+ *
+ * @param n - The integer to partition.
+ * @returns An iterator over partitions into powers of two.
+ * @see SymPy `sympy.utilities.iterables.binary_partitions`
+ * @example
+ * ```ts
+ * import { binaryPartitions } from '@symjs/symjs';
+ * [...binaryPartitions(4)].map(part => [...part]); // => [[4], [2, 2], [2, 1, 1], [1, 1, 1, 1]]
+ * ```
  */
 export function* binaryPartitions(n: number): Generator<number[], void, undefined> {
   checkInt(n, 'n');
@@ -1277,8 +1945,17 @@ export function* binaryPartitions(n: number): Generator<number[], void, undefine
 }
 
 /**
- * SymPy `has_dups(seq)`: whether `seq` has duplicate elements (always
+ * Determines whether `seq` has duplicate elements (always
  * false for a `Set` or `Map`).
+ *
+ * @param seq - The input sequence or sequences, in order.
+ * @returns Whether any element occurs more than once.
+ * @see SymPy `sympy.utilities.iterables.has_dups`
+ * @example
+ * ```ts
+ * import { hasDups } from '@symjs/symjs';
+ * hasDups([1, 2, 1]); // => True
+ * ```
  */
 export function hasDups(seq: Iterable<unknown>): boolean {
   if (seq instanceof Set || seq instanceof Map) return false;
@@ -1291,7 +1968,18 @@ export function hasDups(seq: Iterable<unknown>): boolean {
   return false;
 }
 
-/** SymPy `has_variety(seq)`: whether `seq` has two different elements. */
+/**
+ * Determines whether `seq` has two different elements.
+ *
+ * @param seq - The input sequence or sequences, in order.
+ * @returns Whether the sequence contains at least two distinct values.
+ * @see SymPy `sympy.utilities.iterables.has_variety`
+ * @example
+ * ```ts
+ * import { hasVariety } from '@symjs/symjs';
+ * hasVariety([1, 2, 1]); // => True
+ * ```
+ */
 export function hasVariety(seq: Iterable<unknown>): boolean {
   let first = true;
   let sentinel: unknown;
@@ -1307,9 +1995,19 @@ export function hasVariety(seq: Iterable<unknown>): boolean {
 }
 
 /**
- * SymPy `uniq(seq)`: the unique elements of `seq` in order of first
+ * The unique elements of `seq` in order of first
  * appearance (arrays and other unhashable values included). Throws a
  * RangeError when an array changes size during the iteration.
+ *
+ * @param seq - The input sequence or sequences, in order.
+ * @returns An iterator over distinct elements in first-occurrence order.
+ * @throws RangeError when sequence changed size during iteration.
+ * @see SymPy `sympy.utilities.iterables.uniq`
+ * @example
+ * ```ts
+ * import { uniq } from '@symjs/symjs';
+ * [...uniq([1, 2, 1, 3])]; // => [1, 2, 3]
+ * ```
  */
 export function* uniq<T>(seq: Iterable<T>): Generator<T, void, undefined> {
   const arr: readonly unknown[] | null = Array.isArray(seq) ? seq : null;
@@ -1325,9 +2023,19 @@ export function* uniq<T>(seq: Iterable<T>): Generator<T, void, undefined> {
 }
 
 /**
- * SymPy `generate_bell(n)`: the permutations of `[0, ..., n - 1]` in which
+ * The permutations of `[0, ..., n - 1]` in which
  * each differs from the previous one by swapping two neighbours
  * (Steinhaus-Johnson-Trotter order).
+ *
+ * @param n - The number of positions to permute.
+ * @returns An iterator over permutations in adjacent-transposition order.
+ * @throws RangeError when the requested count is not a positive integer.
+ * @see SymPy `sympy.utilities.iterables.generate_bell`
+ * @example
+ * ```ts
+ * import { generateBell } from '@symjs/symjs';
+ * [...generateBell(2)]; // => [[0, 1], [1, 0]]
+ * ```
  */
 export function* generateBell(n: number): Generator<number[], void, undefined> {
   checkInt(n, 'n');
@@ -1380,7 +2088,18 @@ export function* generateBell(n: number): Generator<number[], void, undefined> {
   }
 }
 
-/** SymPy `generate_involutions(n)`: the permutations of `[0, ..., n - 1]` that are their own inverse. */
+/**
+ * The permutations of `[0, ..., n - 1]` that are their own inverse.
+ *
+ * @param n - The number of positions to permute.
+ * @returns An iterator over self-inverse permutations.
+ * @see SymPy `sympy.utilities.iterables.generate_involutions`
+ * @example
+ * ```ts
+ * import { generateInvolutions } from '@symjs/symjs';
+ * [...generateInvolutions(2)]; // => [[0, 1], [1, 0]]
+ * ```
+ */
 export function* generateInvolutions(n: number): Generator<number[], void, undefined> {
   const idx = Array.from({ length: n }, (_, i) => i);
   for (const p of permutations(idx)) {
@@ -1408,9 +2127,18 @@ const setDerangements = function* <T>(s: readonly T[]): Generator<T[], void, und
 };
 
 /**
- * SymPy `multiset_derangements(s)`: the derangements of the multiset `s`
+ * The derangements of the multiset `s`
  * (arrangements with no element in its original position). SymPy fills
  * one list in place; symjs yields a fresh array each time.
+ *
+ * @param s - The input sequence.
+ * @returns An iterator over distinct arrangements with no fixed positions.
+ * @see SymPy `sympy.utilities.iterables.multiset_derangements`
+ * @example
+ * ```ts
+ * import { multisetDerangements } from '@symjs/symjs';
+ * [...multisetDerangements([1, 2, 3])]; // => [[2, 3, 1], [3, 1, 2]]
+ * ```
  */
 export function* multisetDerangements<T>(s: Iterable<T>): Generator<T[], void, undefined> {
   const seq = [...s];
@@ -1530,7 +2258,7 @@ const defaultChoice = <T>(xs: readonly T[]): T => at(xs, Math.floor(Math.random(
 export type Choice = <T>(xs: readonly T[]) => T;
 
 /**
- * SymPy `random_derangement(t, choice=None, strict=True)`: a random
+ * A random
  * arrangement of `t` with no element in its original position. `choice`
  * picks an element of an array; pass a number instead to seed a
  * reproducible generator. When an element fills more than half of the
@@ -1538,6 +2266,17 @@ export type Choice = <T>(xs: readonly T[]) => T;
  * `strict: false` some of those elements stay in place. The result is an
  * array (of characters for a string; SymPy returns a string in the
  * non-strict case only).
+ *
+ * @param t - The parameter of the construction.
+ * @param choice - The random selection function or numeric seed.
+ * @param opts - `strict` controls strict.
+ * @returns A random arrangement of `t` with no element in its original position. `choice` picks an element of an array.
+ * @see SymPy `sympy.utilities.iterables.random_derangement`
+ * @example
+ * ```ts
+ * import { randomDerangement } from '@symjs/symjs';
+ * randomDerangement([1, 2]); // => [2, 1]
+ * ```
  */
 export function randomDerangement<T>(t: Iterable<T>, choice?: Choice | number | null, opts: { strict?: boolean } = {}): T[] {
   const pick1: Choice = typeof choice === 'number' ? seededChoice(choice) : (choice ?? defaultChoice);
@@ -1603,8 +2342,17 @@ function derange<T>(t: readonly T[], choice: Choice, strict: boolean): T[] {
 }
 
 /**
- * SymPy `generate_derangements(s)`: the unique derangements of the
+ * The unique derangements of the
  * elements of `s`.
+ *
+ * @param s - The input sequence.
+ * @returns An iterator over distinct arrangements with no fixed positions.
+ * @see SymPy `sympy.utilities.iterables.generate_derangements`
+ * @example
+ * ```ts
+ * import { generateDerangements } from '@symjs/symjs';
+ * [...generateDerangements([1, 2, 3])]; // => [[2, 3, 1], [3, 1, 2]]
+ * ```
  */
 export function* generateDerangements<T>(s: Iterable<T>): Generator<T[], void, undefined> {
   const seq = [...s];
@@ -1613,9 +2361,20 @@ export function* generateDerangements<T>(s: Iterable<T>): Generator<T[], void, u
 }
 
 /**
- * SymPy `necklaces(n, k, free=False)`: the necklaces of `n` beads with `k`
+ * The necklaces of `n` beads with `k`
  * colours (sequences equal up to rotation), or bracelets (also up to
  * reflection) with `free: true` (FKM algorithm).
+ *
+ * @param n - The number of beads.
+ * @param k - The number of available colors.
+ * @param opts - `free` identifies reflections.
+ * @returns The inequivalent circular arrangements.
+ * @see SymPy `sympy.utilities.iterables.necklaces`
+ * @example
+ * ```ts
+ * import { necklaces } from '@symjs/symjs';
+ * [...necklaces(3, 2)]; // => [[0, 0, 0], [0, 0, 1], [0, 1, 1], [1, 1, 1]]
+ * ```
  */
 export function* necklaces(n: number, k: number, opts: { free?: boolean } = {}): Generator<number[], void, undefined> {
   const free = opts.free === true;
@@ -1645,14 +2404,30 @@ export function* necklaces(n: number, k: number, opts: { free?: boolean } = {}):
   }
 }
 
-/** SymPy `bracelets(n, k)`: the free necklaces (`necklaces(n, k, { free: true })`). */
+/**
+ * The free necklaces (`necklaces(n, k, { free: true })`).
+ *
+ * @param n - The number of beads.
+ * @param k - The number of available colors.
+ * @returns The inequivalent circular arrangements.
+ * @see SymPy `sympy.utilities.iterables.bracelets`
+ */
 export function bracelets(n: number, k: number): Generator<number[], void, undefined> {
   return necklaces(n, k, { free: true });
 }
 
 /**
- * SymPy `generate_oriented_forest(n)`: the oriented forests on `n` nodes as
+ * The oriented forests on `n` nodes as
  * parent-pointer lists (Beyer and Hedetniemi).
+ *
+ * @param n - The number of vertices in the forest.
+ * @returns An iterator over rooted forests encoded by parent indices.
+ * @see SymPy `sympy.utilities.iterables.generate_oriented_forest`
+ * @example
+ * ```ts
+ * import { generateOrientedForest } from '@symjs/symjs';
+ * [...generateOrientedForest(3)]; // => [[0, 1, 2], [0, 1, 1], [0, 1, 0], [0, 0, 0]]
+ * ```
  */
 export function* generateOrientedForest(n: number): Generator<number[], void, undefined> {
   const P = Array.from({ length: n + 1 }, (_, i) => i - 1);
@@ -1680,11 +2455,39 @@ export function* generateOrientedForest(n: number): Generator<number[], void, un
 }
 
 /**
- * SymPy `sequence_partitions(l, n)`: the ways to split the nonempty
+ * The ways to split the nonempty
  * sequence `l` into `n` nonempty consecutive pieces.
+ *
+ * @param l - The sequence to split.
+ * @param n - The number of consecutive parts.
+ * @returns An iterator over splits into consecutive parts.
+ * @see SymPy `sympy.utilities.iterables.sequence_partitions`
+ * @example
+ * ```ts
+ * import { sequencePartitions } from '@symjs/symjs';
+ * [...sequencePartitions([1, 2, 3], 2)]; // => [[[1], [2, 3]], [[1, 2], [3]]]
+ * ```
  */
 export function sequencePartitions(l: string, n: number): Generator<string[], void, undefined>;
+/**
+ * The ways to split the nonempty
+ * sequence `l` into `n` nonempty consecutive pieces.
+ *
+ * @param l - The sequence to split.
+ * @param n - The number of consecutive parts.
+ * @returns An iterator over splits into consecutive parts.
+ * @see SymPy `sympy.utilities.iterables.sequence_partitions`
+ */
 export function sequencePartitions<T>(l: readonly T[], n: number): Generator<T[][], void, undefined>;
+/**
+ * The ways to split the nonempty
+ * sequence `l` into `n` nonempty consecutive pieces.
+ *
+ * @param l - The sequence to split.
+ * @param n - The number of consecutive parts.
+ * @returns An iterator over splits into consecutive parts.
+ * @see SymPy `sympy.utilities.iterables.sequence_partitions`
+ */
 export function* sequencePartitions<T>(l: readonly T[] | string, n: number): Generator<(T[] | string)[], void, undefined> {
   if (n === 1 && l.length) {
     yield [typeof l === 'string' ? l : [...l]];
@@ -1698,11 +2501,39 @@ export function* sequencePartitions<T>(l: readonly T[] | string, n: number): Gen
 }
 
 /**
- * SymPy `sequence_partitions_empty(l, n)`: the ways to split the sequence
+ * The ways to split the sequence
  * `l` into `n` consecutive (possibly empty) pieces.
+ *
+ * @param l - The sequence to split.
+ * @param n - The number of consecutive parts.
+ * @returns An iterator over splits into consecutive parts.
+ * @see SymPy `sympy.utilities.iterables.sequence_partitions_empty`
+ * @example
+ * ```ts
+ * import { sequencePartitionsEmpty } from '@symjs/symjs';
+ * [...sequencePartitionsEmpty([1, 2], 2)]; // => [[[], [1, 2]], [[1], [2]], [[1, 2], []]]
+ * ```
  */
 export function sequencePartitionsEmpty(l: string, n: number): Generator<string[], void, undefined>;
+/**
+ * The ways to split the sequence
+ * `l` into `n` consecutive (possibly empty) pieces.
+ *
+ * @param l - The sequence to split.
+ * @param n - The number of consecutive parts.
+ * @returns An iterator over splits into consecutive parts.
+ * @see SymPy `sympy.utilities.iterables.sequence_partitions_empty`
+ */
 export function sequencePartitionsEmpty<T>(l: readonly T[], n: number): Generator<T[][], void, undefined>;
+/**
+ * The ways to split the sequence
+ * `l` into `n` consecutive (possibly empty) pieces.
+ *
+ * @param l - The sequence to split.
+ * @param n - The number of consecutive parts.
+ * @returns An iterator over splits into consecutive parts.
+ * @see SymPy `sympy.utilities.iterables.sequence_partitions_empty`
+ */
 export function* sequencePartitionsEmpty<T>(l: readonly T[] | string, n: number): Generator<(T[] | string)[], void, undefined> {
   if (n < 1) return;
   if (n === 1) {
@@ -1717,10 +2548,18 @@ export function* sequencePartitionsEmpty<T>(l: readonly T[] | string, n: number)
 }
 
 /**
- * SymPy `kbins(l, k, ordered=None)`: `l` partitioned into `k` bins.
- * `ordered` is `null` (consecutive pieces, no reordering) or one of
- * `0` (`00`), `1` (`01`), `10` and `11`: whether the order of the bins
- * (first digit) and of the items in the bins (second digit) matters.
+ * Partitions a sequence into a fixed number of nonempty bins. A null ordering selects consecutive pieces. The tens digit of `ordered` selects bin order and the units digit selects order within each bin.
+ *
+ * @param l - The input sequence.
+ * @param k - The number of nonempty bins.
+ * @param ordered - The ordering convention for bins and their contents.
+ * @returns An iterator over partitions into the requested number of bins.
+ * @see SymPy `sympy.utilities.iterables.kbins`
+ * @example
+ * ```ts
+ * import { kbins } from '@symjs/symjs';
+ * [...kbins([1, 2, 3], 2)]; // => [[[1], [2, 3]], [[1, 2], [3]]]
+ * ```
  */
 export function* kbins<T>(l: readonly T[], k: number, ordered: number | null = null): Generator<T[][], void, undefined> {
   if (ordered === null) {
@@ -1759,8 +2598,16 @@ const isZeroValue = (x: Signed): boolean => (x instanceof Expr ? isNum(x) && x.i
 const negate = (x: Signed): Signed => (typeof x === 'number' ? -x : typeof x === 'bigint' ? -x : neg(x));
 
 /**
- * SymPy `permute_signs(t)`: `t` with every combination of signs of its
- * nonzero elements.
+ * Enumerates every assignment of signs to the nonzero elements of a sequence.
+ *
+ * @param t - The parameter of the construction.
+ * @returns An iterator over the permitted signed arrangements.
+ * @see SymPy `sympy.utilities.iterables.permute_signs`
+ * @example
+ * ```ts
+ * import { permuteSigns } from '@symjs/symjs';
+ * [...permuteSigns([1, 2])]; // => [[1, 2], [-1, 2], [1, -2], [-1, -2]]
+ * ```
  */
 export function* permuteSigns<S extends Signed>(t: readonly S[]): Generator<S[], void, undefined> {
   const nz = t.filter((x) => !isZeroValue(x)).length;
@@ -1772,18 +2619,32 @@ export function* permuteSigns<S extends Signed>(t: readonly S[]): Generator<S[],
 }
 
 /**
- * SymPy `signed_permutations(t)`: the unique permutations of `t` with every
+ * The unique permutations of `t` with every
  * combination of signs of the nonzero elements.
+ *
+ * @param t - The parameter of the construction.
+ * @returns An iterator over the permitted signed arrangements.
+ * @see SymPy `sympy.utilities.iterables.signed_permutations`
+ * @example
+ * ```ts
+ * import { signedPermutations } from '@symjs/symjs';
+ * [...signedPermutations([1, 2])]; // => [[1, 2], [-1, 2], [1, -2], [-1, -2], [2, 1], [-2, 1], [2, -1], [-2, -1]]
+ * ```
  */
 export function* signedPermutations<S extends Signed>(t: readonly S[]): Generator<S[], void, undefined> {
   for (const j of multisetPermutations(t)) yield* permuteSigns(j);
 }
 
 /**
- * SymPy `postorder_traversal(node, keys=None)`: the subtrees of `node`
+ * The subtrees of `node`
  * (an expression, or an iterable of expressions and iterables) in
  * post-order. With `keys`, the arguments of each node are visited in the
  * order given by `ordered` (`true` for the default keys).
+ *
+ * @param node - The root whose descendants are visited before their parent.
+ * @param keys - The function or functions producing comparison or grouping keys.
+ * @returns An iterator visiting children before their parent.
+ * @see SymPy `sympy.utilities.iterables.postorder_traversal`
  */
 export function* postorderTraversal(node: unknown, keys?: boolean | KeyFunction<Expr> | readonly KeyFunction<Expr>[] | null): Generator<unknown, void, undefined> {
   if (node instanceof Expr) {

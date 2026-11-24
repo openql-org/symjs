@@ -72,7 +72,7 @@ function expectExpr(v: unknown): Expr {
 }
 
 /**
- * SymPy `@threaded`: the function applied to the entries of a matrix, the
+ * The function applied to the entries of a matrix, the
  * items of an array or set, the sides of a relation and the terms of a sum
  * (the sum and relation rebuilt), else to the expression itself.
  *
@@ -80,21 +80,29 @@ function expectExpr(v: unknown): Expr {
  * const expandThreaded = threaded((e: Expr) => expand(e));
  * expandThreaded(Eq(pow(add(x, 1), 2), y)) // Eq(x**2 + 2*x + 1, y)
  * ```
+ *
+ * @param func - The dependent function applied to its arguments.
+ * @returns A function that maps over supported container arguments.
+ * @see SymPy `sympy.utilities.decorator.threaded`
  */
 export function threaded<R, A extends unknown[]>(func: (expr: Expr, ...args: A) => R): ThreadedFunction<R, A> {
   return threadedFactory(func, true);
 }
 
 /**
- * SymPy `@xthreaded`: like {@link threaded}, but a sum is passed whole to the
+ * Like {@link threaded}, but a sum is passed whole to the
  * function (not term by term).
+ *
+ * @param func - The dependent function applied to its arguments.
+ * @returns A function that maps over supported container arguments.
+ * @see SymPy `sympy.utilities.decorator.xthreaded`
  */
 export function xthreaded<R, A extends unknown[]>(func: (expr: Expr, ...args: A) => R): ThreadedFunction<R, A> {
   return threadedFactory(func, false);
 }
 
 /**
- * SymPy `@memoize_property`: the getter of a property computed on its first
+ * The getter of a property computed on its first
  * use for each object and then remembered (SymPy stores it in an attribute
  * `_name`).
  *
@@ -102,6 +110,10 @@ export function xthreaded<R, A extends unknown[]>(func: (expr: Expr, ...args: A)
  * const areaOf = memoizeProperty((s: Shape) => expensiveArea(s));
  * class Shape { get area() { return areaOf(this); } }
  * ```
+ *
+ * @param propfunc - The getter whose value is cached on each object.
+ * @returns A getter that caches its first result on each object.
+ * @see SymPy `sympy.utilities.decorator.memoize_property`
  */
 export function memoizeProperty<T extends object, V>(propfunc: (self: T) => V): (self: T) => V {
   const cache = new WeakMap<T, { readonly value: V }>();
@@ -118,19 +130,17 @@ export function memoizeProperty<T extends object, V>(propfunc: (self: T) => V): 
 export type PublicDefinition = ((...args: never[]) => unknown) | (abstract new (...args: never[]) => unknown);
 
 /**
- * SymPy `@public`: appends the name of a function or a class to the list of
- * the public names of its module and returns it unchanged. SymPy appends to
- * the `__all__` of the module that defines it; a JavaScript module's exports
- * are static, so the list the name goes to is passed (`all`).
+ * Adds the name of a function or class to a module’s list of public names.
  *
- * Exported as `public` (a reserved word, which is valid as an export name):
- * `import { public as markPublic } from '@symjs/symjs/utilities'` or
- * `sj.public`.
- *
- * ```
- * const all: string[] = [];
- * const someFunction = markPublic(function someFunction() {}, all);
- * all; // ['someFunction']
+ * @param obj - The named function or class to register.
+ * @param all - The list of public names to update.
+ * @returns The supplied definition.
+ * @throws TypeError when an anonymous function or class has no name to make public.
+ * @see SymPy `sympy.utilities.decorator.public`
+ * @example
+ * ```ts
+ * import { public as publicDefinition } from '@symjs/symjs/utilities';
+ * publicDefinition(function square() {}, []).name; // => square
  * ```
  */
 export function markPublic<T extends PublicDefinition>(obj: T, all: string[]): T {

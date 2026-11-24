@@ -19,7 +19,13 @@ import { chain as bchain, multiplex, yieldify } from './branch/core';
 
 /** A Python tuple in a strategic tree: a sequence of chained operations (`(f, g)` in SymPy). */
 export class TreeTuple<T = unknown> implements Iterable<T> {
+  /** The values in the tuple, in order. */
   readonly items: readonly T[];
+  /**
+   * Creates a TreeTuple instance.
+   *
+   * @param items - The child strategies in tuple order.
+   */
   constructor(...items: T[]) {
     this.items = items;
   }
@@ -40,10 +46,16 @@ export type TreeContainer = abstract new (...args: never[]) => unknown;
 const isIterable = (x: unknown): x is Iterable<unknown> => typeof x === 'object' && x !== null && Symbol.iterator in x && typeof x[Symbol.iterator] === 'function';
 
 /**
- * SymPy `treeapply(tree, join, leaf=identity)`: apply functions onto a
+ * Applies functions onto a
  * recursive container. `join` maps container types to functions of the
  * results of their elements (`new Map([[Array, max], [TreeTuple, min]])`);
  * anything else is a leaf, mapped by `leaf`.
+ *
+ * @param tree - The tree of rules to combine.
+ * @param join - The combining functions associated with tree container types.
+ * @param leaf - The transformation applied at a leaf.
+ * @returns The value obtained by combining the transformed leaves.
+ * @see SymPy `sympy.strategies.tree.treeapply`
  */
 export function treeapply(tree: unknown, join: ReadonlyMap<TreeContainer, TreeFunction>, leaf: TreeFunction = identity): unknown {
   for (const [typ, fn] of join) {
@@ -58,9 +70,14 @@ export function treeapply(tree: unknown, join: ReadonlyMap<TreeContainer, TreeFu
 const isList = <R>(t: StrategyTree<R>): t is readonly StrategyTree<R>[] => Array.isArray(t);
 
 /**
- * SymPy `greedy(tree, objective=identity)`: execute a strategic tree,
+ * Execute a strategic tree,
  * choosing among the alternatives of a list the result that minimizes the
  * objective (greedily, without foresight of what follows).
+ *
+ * @param tree - The tree of rules to combine.
+ * @param objective - The function that scores candidate results.
+ * @returns A rewrite rule applying this strategy.
+ * @see SymPy `sympy.strategies.tree.greedy`
  */
 export function greedy<T>(tree: StrategyTree<Rule<T>>, objective: (x: T) => unknown = identity): Rule<T> {
   if (tree instanceof TreeTuple) return chain(...tree.items.map((t) => greedy(t, objective)));
@@ -69,8 +86,13 @@ export function greedy<T>(tree: StrategyTree<Rule<T>>, objective: (x: T) => unkn
 }
 
 /**
- * SymPy `allresults(tree, leaf=yieldify)`: execute a strategic tree,
+ * Execute a strategic tree,
  * yielding every possible result (lists multiplex, tuples chain).
+ *
+ * @param tree - The tree of rules to combine.
+ * @param leaf - The transformation applied at a leaf.
+ * @returns A branching rule yielding each result permitted by the tree.
+ * @see SymPy `sympy.strategies.tree.allresults`
  */
 export function allresults<T>(tree: StrategyTree<Rule<T>>, leaf: (rl: Rule<T>) => BranchRule<T> = yieldify): BranchRule<T> {
   if (tree instanceof TreeTuple) return bchain(...tree.items.map((t) => allresults(t, leaf)));
@@ -78,7 +100,15 @@ export function allresults<T>(tree: StrategyTree<Rule<T>>, leaf: (rl: Rule<T>) =
   return leaf(tree);
 }
 
-/** SymPy `brute(tree, objective=identity)`: the result of all of {@link allresults} that minimizes the objective. */
+/**
+ * The result of all of {@link allresults} that minimizes the objective.
+ *
+ * @param tree - The tree of rules to combine.
+ * @param objective - The function that scores candidate results.
+ * @param leaf - The transformation applied at a leaf.
+ * @returns A rewrite rule applying this strategy.
+ * @see SymPy `sympy.strategies.tree.brute`
+ */
 export function brute<T>(tree: StrategyTree<Rule<T>>, objective: (x: T) => unknown = identity, leaf: (rl: Rule<T>) => BranchRule<T> = yieldify): Rule<T> {
   return (expr: T): T => minBy([...allresults(tree, leaf)(expr)], objective);
 }

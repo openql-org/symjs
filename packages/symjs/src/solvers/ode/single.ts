@@ -27,8 +27,17 @@ import { simplify } from '../../simplify/simplify';
 import { numberedSymbols } from '../../utilities/iterables';
 import { solve } from '../solve';
 
-/** SymPy ODEMatchError: the solver does not match the equation. */
+/**
+ * The solver does not match the equation.
+ *
+ * @see SymPy `sympy.solvers.ode.single.ODEMatchError`
+ */
 export class ODEMatchError extends NotImplementedError {
+  /**
+   * Creates an ODEMatchError instance.
+   *
+   * @param message - The reason for the error.
+   */
   constructor(message: string) {
     super(message);
     this.name = 'ODEMatchError';
@@ -55,7 +64,17 @@ function iterNumberedConstants(equations: readonly Expr[], start: number, prefix
   return numberedSymbols(prefix, { start, exclude: [...exclude, ...[...names].map((n) => new Sym(n))] });
 }
 
-/** Allocate integration constants distinct from symbols and functions in the input. */
+/**
+ * Allocates integration constants distinct from symbols and functions in the input.
+ *
+ * @param eq - The equation, or an expression equal to zero.
+ * @param num - The number of fresh constants.
+ * @param start - The first subscript to try.
+ * @param prefix - The base name for the constants.
+ * @returns Fresh integration constants that do not collide with names in the equation.
+ * @throws RangeError when the input is neither an expression nor a sequence of expressions.
+ * @see SymPy `sympy.solvers.ode.ode.get_numbered_constants`
+ */
 export function getNumberedConstants(eq: Expr | readonly Expr[], num = 1, start = 1, prefix = 'C'): Sym[] {
   const equations = eq instanceof Expr ? [eq] : eq;
   if (!Array.isArray(equations)) throw new RangeError('expected an expression or sequence');
@@ -64,27 +83,61 @@ export function getNumberedConstants(eq: Expr | readonly Expr[], num = 1, start 
 }
 
 /**
- * SymPy SingleODEProblem: an ODE eq in the unknown function func of the
+ * An ODE eq in the unknown function func of the
  * independent variable sym, with the properties the solvers share.
+ *
+ * @see SymPy `sympy.solvers.ode.single.SingleODEProblem`
+ * @example
+ * ```ts
+ * import { AppliedUndef, SingleODEProblem, ex, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * new SingleODEProblem(ex`Derivative(f(x), x) - f(x)`, new AppliedUndef('f', [x]), x).order; // => 1
+ * ```
  */
 export class SingleODEProblem {
+  /**
+   * Creates a SingleODEProblem instance.
+   *
+   * @param eq - The equation, or an expression equal to zero.
+   * @param func - The dependent function applied to its arguments.
+   * @param sym - The independent variable.
+   */
   constructor(
+    /** The differential equation expressed with zero right-hand side. */
     readonly eq: Expr,
+    /** The unknown function applied to its independent variable. */
     readonly func: UndefFn,
+    /** The independent variable of the equation. */
     readonly sym: Sym,
   ) {}
 
-  /** SymPy order: the order of the highest derivative of func. */
+  /**
+   * Represents the order of the highest derivative of func.
+   *
+   * @returns The order of the highest derivative of func.
+   * @see SymPy `sympy.solvers.ode.single.SingleODEProblem.order`
+   */
   get order(): number {
     return orderIn(this.eq, this.func);
   }
 
-  /** SymPy eq_expanded: the expanded equation. */
+  /**
+   * Represents the expanded equation.
+   *
+   * @returns The expanded equation.
+   * @see SymPy `sympy.solvers.ode.single.SingleODEProblem.eq_expanded`
+   */
   get eqExpanded(): Expr {
     return expand(this.eq);
   }
 
-  /** SymPy is_autonomous: the equation does not depend on sym except through func. */
+  /**
+   * The equation does not depend on sym except through func.
+   *
+   * @returns Whether the equation is independent of the variable except through the unknown function.
+   * @see SymPy `sympy.solvers.ode.single.SingleODEProblem.is_autonomous`
+   */
   get isAutonomous(): boolean {
     // (func and its derivatives replaced by a symbol u)
     const dependsOnSym = (e: Expr): boolean =>
@@ -92,21 +145,42 @@ export class SingleODEProblem {
     return !dependsOnSym(this.eq);
   }
 
-  /** SymPy iter_numbered_constants: C1, C2, ... skipping the symbols and function names of the equation. */
+  /**
+   * C1, C2, ... skipping the symbols and function names of the equation.
+   *
+   * @param start - The first subscript to try.
+   * @param prefix - The base name for the constants.
+   * @returns An iterator over fresh integration constants.
+   * @see SymPy `sympy.solvers.ode.single.SingleODEProblem.iter_numbered_constants`
+   */
   iterNumberedConstants(start = 1, prefix = 'C'): Generator<Sym, never, undefined> {
     return iterNumberedConstants([this.eq], start, prefix);
   }
 
-  /** SymPy get_numbered_constants: the first num constants of iterNumberedConstants. */
+  /**
+   * The first num constants of iterNumberedConstants.
+   *
+   * @param num - The number of fresh constants.
+   * @param start - The first subscript to try.
+   * @param prefix - The base name for the constants.
+   * @returns Fresh integration constants that do not collide with names in the equation.
+   * @see SymPy `sympy.solvers.ode.single.SingleODEProblem.get_numbered_constants`
+   */
   getNumberedConstants(num = 1, start = 1, prefix = 'C'): Sym[] {
     const it = this.iterNumberedConstants(start, prefix);
     return Array.from({ length: num }, () => it.next().value);
   }
 
   /**
-   * SymPy get_linear_coefficients: the coefficients a_k(x) of
+   * The coefficients a_k(x) of
    * a_n(x) y^(n) + ... + a_0(x) y + B(x) = 0 by order k, with B(x) at -1,
    * or NoMatch when eq is not linear in func and its derivatives.
+   *
+   * @param eq - The equation, or an expression equal to zero.
+   * @param func - The dependent function applied to its arguments.
+   * @param order - The highest derivative order to include.
+   * @returns The coefficients by derivative order, with the constant term at −1, or `NoMatch`.
+   * @see SymPy `sympy.solvers.ode.single.SingleODEProblem.get_linear_coefficients`
    */
   getLinearCoefficients(eq: Expr, func: UndefFn, order: number): Map<number, Expr> | NoMatchResult {
     const x = cast(first(func.args), Sym, 'independent variable');
@@ -124,23 +198,54 @@ export class SingleODEProblem {
   }
 }
 
-/** SymPy SingleODESolver: the base class of the solvers of one ODE. */
+/**
+ * The base class of the solvers of one ODE.
+ *
+ * @see SymPy `sympy.solvers.ode.single.SingleODESolver`
+ * @example
+ * ```ts
+ * import { AppliedUndef, FirstLinear, SingleODEProblem, SingleODESolver, ex, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * const problem = new SingleODEProblem(ex`Derivative(f(x), x) - f(x)`, new AppliedUndef('f', [x]), x);
+ * new FirstLinear(problem) instanceof SingleODESolver; // => True
+ * ```
+ */
 export class SingleODESolver {
   /** The hint name (the argument of dsolve). */
   readonly hint: string = '';
-  /** Whether the solver has an _Integral hint. */
+  /** Determines whether the solver has an _Integral hint. */
   readonly hasIntegral: boolean = false;
   #matched: boolean | undefined;
 
-  constructor(readonly odeProblem: SingleODEProblem) {}
+  /**
+   * Creates a SingleODESolver instance.
+   *
+   * @param odeProblem - The differential equation and dependent function to solve for.
+   */
+  constructor(
+    /** The differential equation and its dependent and independent variables. */
+    readonly odeProblem: SingleODEProblem) {}
 
-  /** SymPy matches: whether the solver applies to the equation. */
+  /**
+   * Determines whether the solver applies to the equation.
+   *
+   * @returns Whether the equation belongs to this class.
+   * @see SymPy `sympy.solvers.ode.single.SingleODESolver.matches`
+   */
   matches(): boolean {
     this.#matched ??= this.matchesImpl();
     return this.#matched;
   }
 
-  /** SymPy get_general_solution: the general solutions; throws ODEMatchError when the solver does not match. */
+  /**
+   * The general solutions; throws ODEMatchError when the solver does not match.
+   *
+   * @param opts - `simplify` simplifies the result.
+   * @returns The general solutions.
+   * @throws ODEMatchError when the equation does not match the solver.
+   * @see SymPy `sympy.solvers.ode.single.SingleODESolver.get_general_solution`
+   */
   getGeneralSolution(opts: { simplify?: boolean } = {}): Expr[] {
     if (!this.matches()) throw new ODEMatchError(`${this.hint} solver cannot solve:\n${String(this.odeProblem.eq)}`);
     return this.generalSolution(opts.simplify ?? true);
@@ -150,9 +255,31 @@ export class SingleODESolver {
   protected generalSolution(_simplifyFlag: boolean): Expr[] { throw new NotImplementedError('general solution is not implemented'); }
 }
 
-/** The integrating-factor solution of y' + P(x)*y = Q(x). */
+/**
+ * The integrating-factor solution of y' + P(x)*y = Q(x).
+ *
+ * @see SymPy `sympy.solvers.ode.single.FirstLinear`
+ * @example
+ * ```ts
+ * import { AppliedUndef, FirstLinear, SingleODEProblem, ex, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * const problem = new SingleODEProblem(ex`Derivative(f(x), x) - f(x)`, new AppliedUndef('f', [x]), x);
+ * new FirstLinear(problem).matches(); // => True
+ * ```
+ */
 export class FirstLinear extends SingleODESolver {
+  /**
+   * The classification hint selecting this solver.
+   *
+   * @see SymPy `sympy.solvers.ode.single.FirstLinear.hint`
+   */
   override readonly hint = '1st_linear';
+  /**
+   * Indicates whether an unevaluated integral hint is available.
+   *
+   * @see SymPy `sympy.solvers.ode.single.FirstLinear.has_integral`
+   */
   override readonly hasIntegral = true;
   protected override matchesImpl(): boolean {
     const { eqExpanded, func, order } = this.odeProblem;
@@ -205,13 +332,33 @@ function solveDifferentiationAlgebraically(eq: Expr, func: UndefFn, x: Sym): Exp
 }
 
 /**
- * SymPy NthAlgebraic: an equation that can be solved algebraically for
+ * An equation that can be solved algebraically for
  * func when differentiation is treated as an invertible function, such as
  * f(x)*(f'(x)**2 - 1) = 0 (f = 0 or f' = 1 or f' = -1). The constants of
  * the general solution are Dummy('C') symbols.
+ *
+ * @see SymPy `sympy.solvers.ode.single.NthAlgebraic`
+ * @example
+ * ```ts
+ * import { AppliedUndef, NthAlgebraic, SingleODEProblem, ex, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * const problem = new SingleODEProblem(ex`Derivative(f(x), (x, 2))`, new AppliedUndef('f', [x]), x);
+ * new NthAlgebraic(problem).matches(); // => True
+ * ```
  */
 export class NthAlgebraic extends SingleODESolver {
+  /**
+   * The classification hint selecting this solver.
+   *
+   * @see SymPy `sympy.solvers.ode.single.NthAlgebraic.hint`
+   */
   override readonly hint = 'nth_algebraic';
+  /**
+   * Indicates whether an unevaluated integral hint is available.
+   *
+   * @see SymPy `sympy.solvers.ode.single.NthAlgebraic.has_integral`
+   */
   override readonly hasIntegral = true;
   #solutions: Expr[] = [];
 

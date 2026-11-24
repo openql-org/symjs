@@ -144,7 +144,18 @@ export function decrementLevel<T>(DE: DiffExtension, fn: () => T): T {
 /** Raised when an integral is proven nonelementary (SymPy NonElementaryIntegralException). */
 export class NonElementaryIntegralException extends RangeError {}
 
-/** An integral proven to be nonelementary by the Risch algorithm (printed as Integral). */
+/**
+ * An integral proven to be nonelementary by the Risch algorithm (printed as Integral).
+ *
+ * @see SymPy `sympy.integrals.risch.NonElementaryIntegral`
+ * @example
+ * ```ts
+ * import { NonElementaryIntegral, ex, rischIntegrate, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * rischIntegrate(ex`exp(-x**2)`, x) instanceof NonElementaryIntegral; // => True
+ * ```
+ */
 export class NonElementaryIntegral extends Integral {}
 
 /** The case of the monomial t with derivation d (SymPy get_case). */

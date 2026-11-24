@@ -26,9 +26,9 @@ import { parserHooks } from '../parsing/parser';
 /** An argument of the boolean constructors: an expression or a JavaScript boolean. */
 export type BoolLike = ExprLike | boolean;
 
-/** Options of the boolean constructors (SymPy evaluate=...). */
+/** Options of the boolean constructors. */
 export interface LogicEvalOptions {
-  /** Evaluate to a simpler form when possible (default true). */
+  /** Evaluates to a simpler form when possible (default true). */
   evaluate?: boolean;
 }
 
@@ -41,13 +41,16 @@ const isFalseAtom = (e: Expr): boolean => e instanceof BoolAtom && !e.value;
 /** Names of the boolean functions printed as Name(args) with the precedence of Xor. */
 export type LogicOpName = 'Implies' | 'Equivalent';
 
-/**
- * SymPy Implies and Equivalent nodes. They are BoolOp nodes so that the core
- * printers parenthesize them inside And, Or, Xor and Not exactly like SymPy
- * (`z & (Implies(x, y))`, `~(Implies(x, y))`).
- */
+/** Represents a symbolic implication or equivalence. */
 export class LogicOp extends BoolOp {
+  /**
+   * Creates a LogicOp instance.
+   *
+   * @param name - The Boolean connective.
+   * @param args - The propositions joined by the connective.
+   */
   constructor(
+    /** The name of the Boolean connective. */
     readonly name: LogicOpName,
     args: readonly Expr[],
   ) {
@@ -55,40 +58,68 @@ export class LogicOp extends BoolOp {
     // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- core BoolOp.op is typed BoolOpName; LogicOp stores its own class name there (dispatch uses instanceof LogicOp)
     super(name as unknown as BoolOpName, args);
   }
+  /**
+   * Represents the symbolic class name used by printers.
+   *
+   * @returns The symbolic class name used by printers.
+   */
   override get className(): string {
     return this.name;
   }
-  /** Implies or Equivalent of new arguments (re-evaluated). */
+  /**
+   * Implies or Equivalent of new arguments (re-evaluated).
+   *
+   * @param args - The operands in their defining order.
+   * @returns The expression with the replacement operands.
+   */
   override withArgs(args: readonly Expr[]): Expr {
     return this.name === 'Implies' ? Implies(...args) : Equivalent(...args);
   }
-  /** SymPy StrPrinter: Implies(a, b), Equivalent(a, b, ...). */
+  /**
+   * Implies(a, b), Equivalent(a, b, ...).
+   *
+   * @param p - The callback for printing child expressions.
+   * @returns The formatted text.
+   */
   override printStr(p: (e: Expr) => string): string {
     return `${this.name}(${this.args.map(p).join(', ')})`;
   }
-  /** SymPy LatexPrinter: a \Rightarrow b, a \Leftrightarrow b \Leftrightarrow c. */
+  /**
+   * A \Rightarrow b, a \Leftrightarrow b \Leftrightarrow c.
+   *
+   * @param p - The callback for printing child expressions.
+   * @returns The formatted LaTeX source.
+   */
   override printLatex(p: (e: Expr) => string): string {
     const sep = this.name === 'Implies' ? ' \\Rightarrow ' : ' \\Leftrightarrow ';
     return this.args.map((a) => (a instanceof BoolOp && a.op !== 'Not' ? `\\left(${p(a)}\\right)` : p(a))).join(sep);
   }
 }
 
-/** Names of the unevaluated gates (SymPy Nand(..., evaluate=False), ...). */
+/** Names of the unevaluated gates. */
 export type LogicGateName = 'Nand' | 'Nor' | 'Xnor' | 'ITE';
 
-/**
- * An unevaluated Nand, Nor or Xnor gate or an ITE, printed Nand(a, b) and
- * ITE(a, b, c) like SymPy (function precedence: no parentheses inside And,
- * Or, Xor and Not).
- */
+/** Represents an unevaluated Boolean gate with its operands. */
 export class LogicGate extends ExtensionExpr {
+  /**
+   * Creates a LogicGate instance.
+   *
+   * @param gate - The gate applied to the operands.
+   * @param args - The Boolean operands in gate order.
+   */
   constructor(
+    /** The Boolean gate represented by the node. */
     readonly gate: LogicGateName,
     args: readonly Expr[],
   ) {
     super(gate, args);
   }
-  /** Rebuilding evaluates, like SymPy's func(*args). */
+  /**
+   * Rebuilding evaluates, like SymPy's func(*args).
+   *
+   * @param args - The operands in their defining order.
+   * @returns The expression with the replacement operands.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return GATES[this.gate](args, true);
   }
@@ -110,9 +141,17 @@ export const isITE = (e: Expr): boolean => isOp(e, 'ITE') || (e instanceof Logic
 export const isLogicOp = (e: Expr, name: LogicOpName): e is LogicOp => e instanceof LogicOp && e.name === name;
 
 /**
- * SymPy as_Boolean: 1 and true give true, 0 and false give false, a symbol
- * known to be zero or nonzero gives false or true, a Boolean is returned
- * unchanged; anything else is a TypeError.
+ * Converts Boolean expressions, zero, one and symbols with known truth values into symbolic Boolean values.
+ *
+ * @param x - The proposition, symbol or truth value to convert.
+ * @returns A symbolic Boolean value or proposition.
+ * @throws TypeError when the value has no Boolean interpretation.
+ * @see SymPy `sympy.logic.boolalg.as_Boolean`
+ * @example
+ * ```ts
+ * import { asBoolean } from '@symjs/symjs';
+ * asBoolean(1); // => True
+ * ```
  */
 export function asBoolean(x: BoolLike): Expr {
   const e = toBool(x);
@@ -232,8 +271,16 @@ export function xorFn(xs: readonly BoolLike[], removeTrue = true): Expr {
 // Implies, Equivalent, gates, ITE, Exclusive
 
 /**
- * SymPy Implies(a, b): logical implication, printed Implies(a, b). With a
- * boolean constant argument it is ~a | b; Implies(a, a) is true.
+ * Forms the implication from its first operand to its second operand.
+ *
+ * @param args - The Boolean operands, optionally followed by evaluation settings.
+ * @returns The implication from the first argument to the second.
+ * @see SymPy `sympy.logic.boolalg.Implies`
+ * @example
+ * ```ts
+ * import { Implies } from '@symjs/symjs';
+ * Implies(true, true); // => True
+ * ```
  */
 export function Implies(...args: readonly BoolLike[]): Expr {
   if (args.length !== 2) throw new RangeError(`${args.length} operand(s) used for an Implies (pairs are required)`);
@@ -250,8 +297,16 @@ export function Implies(...args: readonly BoolLike[]): Expr {
 }
 
 /**
- * SymPy Equivalent(*args): true when all arguments have the same truth
- * value, printed Equivalent(a, b, ...) with the arguments ordered.
+ * Tests whether all operands agree in truth value.
+ *
+ * @param args - The Boolean operands, optionally followed by evaluation settings.
+ * @returns The proposition that all arguments have the same truth value.
+ * @see SymPy `sympy.logic.boolalg.Equivalent`
+ * @example
+ * ```ts
+ * import { Equivalent, ex } from '@symjs/symjs';
+ * Equivalent(ex`x`, ex`x`); // => True
+ * ```
  */
 export function Equivalent(...args: readonly BoolLike[]): Expr {
   const argset = new Map<string, Expr>();
@@ -305,25 +360,69 @@ const splitOptions = (args: readonly (BoolLike | LogicEvalOptions)[]): [Expr[], 
   return [args.map(toArg), true];
 };
 
-/** SymPy Nand(*args): Not(And(*args)); with `{ evaluate: false }` the unevaluated Nand(a, b). */
+/**
+ * Negates the conjunction of its operands.
+ *
+ * @param args - The Boolean operands, optionally followed by evaluation settings.
+ * @returns The negation of the conjunction.
+ * @see SymPy `sympy.logic.boolalg.Nand`
+ * @example
+ * ```ts
+ * import { Nand } from '@symjs/symjs';
+ * Nand(true, true); // => False
+ * ```
+ */
 export function Nand(...args: readonly (BoolLike | LogicEvalOptions)[]): Expr {
   const [xs, ev] = splitOptions(args);
   return GATES.Nand(xs, ev);
 }
 
-/** SymPy Nor(*args): Not(Or(*args)); with `{ evaluate: false }` the unevaluated Nor(a, b). */
+/**
+ * Negates the disjunction of its operands.
+ *
+ * @param args - The Boolean operands, optionally followed by evaluation settings.
+ * @returns The negation of the disjunction.
+ * @see SymPy `sympy.logic.boolalg.Nor`
+ * @example
+ * ```ts
+ * import { Nor } from '@symjs/symjs';
+ * Nor(true, true); // => False
+ * ```
+ */
 export function Nor(...args: readonly (BoolLike | LogicEvalOptions)[]): Expr {
   const [xs, ev] = splitOptions(args);
   return GATES.Nor(xs, ev);
 }
 
-/** SymPy Xnor(*args): Not(Xor(*args)); with `{ evaluate: false }` the unevaluated Xnor(a, b). */
+/**
+ * Negates the exclusive disjunction of its operands.
+ *
+ * @param args - The Boolean operands, optionally followed by evaluation settings.
+ * @returns The negation of the exclusive disjunction.
+ * @see SymPy `sympy.logic.boolalg.Xnor`
+ * @example
+ * ```ts
+ * import { Xnor } from '@symjs/symjs';
+ * Xnor(true, true); // => True
+ * ```
+ */
 export function Xnor(...args: readonly (BoolLike | LogicEvalOptions)[]): Expr {
   const [xs, ev] = splitOptions(args);
   return GATES.Xnor(xs, ev);
 }
 
-/** SymPy Exclusive(*args): true when at most one argument is true. */
+/**
+ * Forms a proposition that is true when at most one operand is true.
+ *
+ * @param args - The Boolean operands, optionally followed by evaluation settings.
+ * @returns A proposition that is true when at most one operand is true.
+ * @see SymPy `sympy.logic.boolalg.Exclusive`
+ * @example
+ * ```ts
+ * import { Exclusive } from '@symjs/symjs';
+ * Exclusive(false, true, true); // => False
+ * ```
+ */
 export function Exclusive(...args: readonly BoolLike[]): Expr {
   const xs = args.map(toBool);
   const out: Expr[] = [];
@@ -364,7 +463,13 @@ export function booleanAsSet<T extends Expr>(
   return solveSet(visit(e));
 }
 
-/** SymPy binary_symbols: the symbols used as booleans. */
+/**
+ * The symbols used as booleans.
+ *
+ * @param e - The Boolean expression to examine.
+ * @returns The symbols used in Boolean positions, indexed by structural key.
+ * @see SymPy `sympy.logic.boolalg.Boolean.binary_symbols`
+ */
 export function binarySymbols(e: Expr): Map<string, Expr> {
   const out = new Map<string, Expr>();
   if (e instanceof Sym) out.set(e.key, e);
@@ -417,9 +522,20 @@ function iteEval(a0: Expr, b: Expr, c: Expr): Expr | undefined {
 }
 
 /**
- * SymPy ITE(a, b, c): if a then b else c. Constant conditions and equal
- * branches evaluate; Eq/Ne of a binary symbol with true/false is read as
- * the symbol or its negation.
+ * Chooses between two Boolean branches according to a Boolean condition.
+ *
+ * @param a0 - The Boolean condition.
+ * @param b0 - The branch selected when the condition holds.
+ * @param c0 - The branch selected when the condition is false.
+ * @param opts - The logic eval settings.
+ * @returns The second or third operand selected by the first, or a symbolic conditional.
+ * @throws RangeError when the conditional has a different number of operands than three.
+ * @see SymPy `sympy.logic.boolalg.ITE`
+ * @example
+ * ```ts
+ * import { ITE } from '@symjs/symjs';
+ * ITE(true, false, true); // => False
+ * ```
  */
 export function ITE(a0: BoolLike, b0: BoolLike, c0: BoolLike, opts: LogicEvalOptions = {}): Expr {
   if (arguments.length > 4 || opts instanceof Expr) throw new RangeError('ITE requires three operands');
@@ -454,8 +570,17 @@ export function ITE(a0: BoolLike, b0: BoolLike, c0: BoolLike, opts: LogicEvalOpt
 // Structure
 
 /**
- * SymPy is_literal: a symbol or other atom, a negated literal, or a
+ * A symbol or other atom, a negated literal, or a
  * non-boolean expression whose arguments are atoms (x + y).
+ *
+ * @param e - The Boolean expression to examine.
+ * @returns Whether the expression is an atom or a negated atom.
+ * @see SymPy `sympy.logic.boolalg.is_literal`
+ * @example
+ * ```ts
+ * import { ex, isLiteral } from '@symjs/symjs';
+ * isLiteral(ex`A`); // => True
+ * ```
  */
 export function isLiteral(e: Expr): boolean {
   if (isOp(e, 'Not')) return isLiteral(at(e.args, 0));
@@ -463,13 +588,35 @@ export function isLiteral(e: Expr): boolean {
   return !isBooleanFunction(e) && e.args.every((a) => a.args.length === 0);
 }
 
-/** SymPy conjuncts: the arguments of an And, or the expression itself (ordered). */
+/**
+ * Returns the arguments of an And, or the expression itself (ordered).
+ *
+ * @param expr - The Boolean expression to examine.
+ * @returns The arguments of an And, or the expression itself (ordered).
+ * @see SymPy `sympy.logic.boolalg.conjuncts`
+ * @example
+ * ```ts
+ * import { conjuncts, ex } from '@symjs/symjs';
+ * conjuncts(ex`A & B`); // => [A, B]
+ * ```
+ */
 export function conjuncts(expr: BoolLike): Expr[] {
   const e = toBool(expr);
   return isOp(e, 'And') ? [...e.args] : [e];
 }
 
-/** SymPy disjuncts: the arguments of an Or, or the expression itself (ordered). */
+/**
+ * Returns the arguments of an Or, or the expression itself (ordered).
+ *
+ * @param expr - The Boolean expression to examine.
+ * @returns The arguments of an Or, or the expression itself (ordered).
+ * @see SymPy `sympy.logic.boolalg.disjuncts`
+ * @example
+ * ```ts
+ * import { disjuncts, ex } from '@symjs/symjs';
+ * disjuncts(ex`A | B`); // => [A, B]
+ * ```
+ */
 export function disjuncts(expr: BoolLike): Expr[] {
   const e = toBool(expr);
   return isOp(e, 'Or') ? [...e.args] : [e];

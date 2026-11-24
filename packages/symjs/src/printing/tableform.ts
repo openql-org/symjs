@@ -31,7 +31,7 @@ export interface TableFormOptions {
   readonly alignments?: string;
   /** The LaTeX format of each column (`asLatex`). */
   readonly formats?: readonly TableColumnFormat[];
-  /** Print zeros as blanks (default true). */
+  /** Prints zeros as blanks (default true). */
   readonly wipeZeros?: boolean;
   /** The entry that fills short rows and replaces null entries (default: short rows are filled with blanks and null prints as None). */
   readonly pad?: string;
@@ -76,14 +76,14 @@ const cellText = (x: Expr | null): string => (x === null ? 'None' : str(x));
 const label = (x: ExprLike | string): string => (typeof x === 'string' ? x : typeof x === 'number' || typeof x === 'bigint' ? String(x) : str(sympify(x)));
 
 /**
- * SymPy `TableForm(data, headings=..., alignments=..., formats=..., wipe_zeros=..., pad=...)`:
- * a table that prints as aligned columns.
+ * A table that prints as aligned columns.
  *
- * ```
- * String(new TableForm([[5, 7], [4, 2], [10, 3]]))
- * // 5  7
- * // 4  2
- * // 10 3
+ * @see SymPy `sympy.printing.tableform.TableForm`
+ * @example
+ * ```ts
+ * import { TableForm } from '@symjs/symjs';
+ * new TableForm([[5, 7], [4, 2]]).asStr(); // => 5 7
+ * //   4 2
  * ```
  */
 export class TableForm {
@@ -97,6 +97,12 @@ export class TableForm {
   private readonly formats: readonly TableColumnFormat[];
   private readonly wipeZeros: boolean;
 
+  /**
+   * Creates a TableForm instance.
+   *
+   * @param data - The matrix or rows of entries to format.
+   * @param options - The table form settings.
+   */
   constructor(data: TableData, options: TableFormOptions = {}) {
     const rows: (readonly TableEntry[])[] = isRows(data) ? [...data] : matrixRows(data);
     this.h = rows.length;
@@ -138,7 +144,13 @@ export class TableForm {
     this.wipeZeros = options.wipeZeros ?? true;
   }
 
-  /** SymPy `as_matrix`: the entries as a matrix. */
+  /**
+   * Returns the entries as a matrix.
+   *
+   * @returns The entries as a matrix.
+   * @throws TypeError when matrix construction has not been registered by the matrices entry point.
+   * @see SymPy `sympy.printing.tableform.TableForm.as_matrix`
+   */
   asMatrix(): Matrix {
     if (matrixOf === undefined) throw new TypeError('TableForm.asMatrix needs the matrices: import @symjs/symjs/matrices');
     const entry = (x: Expr | null): Expr => {
@@ -148,12 +160,28 @@ export class TableForm {
     return matrixOf(this.lines.map((line) => line.map(entry)));
   }
 
-  /** SymPy `as_str`: the aligned text. */
+  /**
+   * The aligned text.
+   *
+   * @returns The formatted text.
+   * @see SymPy `sympy.printing.tableform.TableForm.as_str`
+   * @example
+   * ```ts
+   * import { TableForm } from '@symjs/symjs';
+   * new TableForm([[1, 2], [3, 4]]).asStr(); // => 1 2
+   * //   3 4
+   * ```
+   */
   asStr(): string {
     return this.toString();
   }
 
-  /** SymPy `as_latex`: a LaTeX tabular. */
+  /**
+   * A LaTeX tabular.
+   *
+   * @returns The formatted LaTeX source.
+   * @see SymPy `sympy.printing.tableform.TableForm.as_latex`
+   */
   asLatex(): string {
     const alignments = [...(this.rowHeadings ? [this.headAlign] : []), ...this.alignments];
     let s = `\\begin{tabular}{${alignments.join(' ')}}\n`;
@@ -170,7 +198,12 @@ export class TableForm {
     return `${s}\\end{tabular}`;
   }
 
-  /** SymPy `_sympystr`: the columns padded to their widths, the headings separated by `|` and a rule. */
+  /**
+   * The columns padded to their widths, the headings separated by `|` and a rule.
+   *
+   * @returns The formatted text.
+   * @see SymPy `sympy.printing.tableform.TableForm._sympystr`
+   */
   toString(): string {
     const widths = Array<number>(this.w).fill(0);
     const lines = this.lines.map((line) =>

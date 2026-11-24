@@ -9,7 +9,18 @@ import { getFreeSymbols } from './utils';
 import { LineOver1DRangeSeries, discretize } from './series';
 function rounded(v: number): number { const f = Math.floor(v), remainder = v - f; return remainder === 0.5 ? f % 2 === 0 ? f : f + 1 : Math.round(v); }
 function general(v: number): string { if (v === 0) return '0'; return Number(v.toPrecision(6)).toString(); }
-/** Lines of SymPy's plain-text plot; consumes no display or terminal backend. */
+/**
+ * Lines of SymPy's plain-text plot; consumes no display or terminal backend.
+ *
+ * @param expr - The real function to draw.
+ * @param a - The left endpoint of the horizontal range.
+ * @param b - The right endpoint of the horizontal range.
+ * @param W - The width in character columns.
+ * @param H - The height in character rows.
+ * @returns An iterator over rows of the text plot.
+ * @throws RangeError when the character grid has a noninteger dimension or fewer than two rows or columns.
+ * @see SymPy `sympy.plotting.textplot.textplot_str`
+ */
 export function* textplotStr(expr: ExprLike, a: number, b: number, W = 55, H = 21): IterableIterator<string> {
   if (!Number.isInteger(W) || !Number.isInteger(H) || W < 2 || H < 2) throw new RangeError('Text plot dimensions must be integers of at least two.');
   const free = getFreeSymbols([expr]); if (free.length > 1) throw new RangeError('Text plots require at most one variable.');
@@ -30,5 +41,21 @@ export function* textplotStr(expr: ExprLike, a: number, b: number, W = 55, H = 2
   }
   yield ' '.repeat(9) + general(first(x)).padEnd(Math.floor(W / 2)) + general(at(x, Math.floor(W / 2))).padEnd(Math.floor(W / 2) - (W % 2 ? 0 : 1)) + general(last(x));
 }
-/** Return the text that SymPy prints, including its final newline. */
+/**
+ * Returns the text that SymPy prints, including its final newline.
+ *
+ * @param expr - The real function to draw.
+ * @param a - The left endpoint of the horizontal range.
+ * @param b - The right endpoint of the horizontal range.
+ * @param W - The width in character columns.
+ * @param H - The height in character rows.
+ * @returns The text that SymPy prints, including its final newline.
+ * @see SymPy `sympy.plotting.textplot.textplot`
+ * @example
+ * ```ts
+ * import { ex } from '@symjs/symjs';
+ * import { textplot } from '@symjs/symjs/plotting';
+ * textplot(ex`x`, -1, 1, 20, 5).split('\n').length; // => 7
+ * ```
+ */
 export function textplot(expr: ExprLike, a: number, b: number, W = 55, H = 21): string { return [...textplotStr(expr, a, b, W, H)].join('\n') + '\n'; }

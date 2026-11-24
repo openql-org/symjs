@@ -25,12 +25,23 @@ import { cancel } from '../simplify/rational';
 import { simplify } from '../simplify/simplify';
 
 /**
- * Substitute x = g(u) in the integral (SymPy Integral.transform(x, (g, u))).
- * Passing only a symbol u performs the plain renaming x = u; without u the
- * new variable is the only free symbol of g. Limits are mapped through the
- * inverse u = G(x), solved like SymPy with u and x taken positive (the root
- * of x = u**2 is sqrt(x)); a limit where G is infinite or undefined is
- * reached by a limit. Reversed limits are swapped and the integrand negated.
+ * Changes the variable of integration, transforming the integrand and bounds. A replacement symbol alone renames the integration variable.
+ *
+ * @param integral - The integral to transform or evaluate.
+ * @param x - The old variable or expression defining the change of variables.
+ * @param gIn - The new expression or replacement variable.
+ * @param uIn - The integration symbol in the replacement expression.
+ * @returns The integral in the new variable, including its Jacobian.
+ * @throws RangeError when the substitution does not specify its new variable.
+ * @throws TypeError when x is not the integration variable.
+ * @see SymPy `sympy.integrals.integrals.Integral.transform`
+ * @example
+ * ```ts
+ * import { Integral, ex, symbols, transformIntegral } from '@symjs/symjs';
+ *
+ * const [u, x] = symbols('u x');
+ * transformIntegral(new Integral([ex`x`, x]), x, ex`2*u`, u); // => Integral(4*u, u)
+ * ```
  */
 export function transformIntegral(integral: Integral, x: Expr, gIn: ExprLike, uIn?: Sym): Integral {
   const g = sympify(gIn);
@@ -84,7 +95,22 @@ export function transformIntegral(integral: Integral, x: Expr, gIn: ExprLike, uI
   return new Integral([f, u, a, b]);
 }
 
-/** Cauchy principal value of a definite integral (SymPy Integral.principal_value). */
+/**
+ * Cauchy principal value of a definite integral.
+ *
+ * @param integral - The integral to transform or evaluate.
+ * @returns The Cauchy principal value.
+ * @throws TypeError when the integral has no definite bounds.
+ * @throws RangeError when an integration endpoint is singular.
+ * @see SymPy `sympy.integrals.integrals.Integral.principal_value`
+ * @example
+ * ```ts
+ * import { Integral, ex, principalValue, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * principalValue(new Integral([ex`1/x`, x, ex`-1`, ex`1`])); // => 0
+ * ```
+ */
 export function principalValue(integral: Integral): Expr {
   const lim = integral.limits;
   const x = integral.variable;
@@ -116,9 +142,26 @@ export function principalValue(integral: Integral): Expr {
 }
 
 /**
- * SymPy Integral.as_sum(n, method): the Riemann sum approximating a definite
+ * The Riemann sum approximating a definite
  * integral with n intervals ('left', 'right', 'midpoint' or 'trapezoid').
  * With a symbolic n, or with `evaluate: false`, the result keeps a Sum.
+ *
+ * @param integral - The integral to transform or evaluate.
+ * @param n - The number of subintervals.
+ * @param method - The point or trapezoidal rule used on each subinterval.
+ * @param opts - `evaluate` enables evaluation.
+ * @returns The selected Riemann sum.
+ * @throws NotImplementedError when the integral has more than one integration variable.
+ * @throws TypeError when the integral has no definite bounds.
+ * @throws RangeError when either integration limit is infinite.
+ * @see SymPy `sympy.integrals.integrals.Integral.as_sum`
+ * @example
+ * ```ts
+ * import { Integral, asSum, ex, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * asSum(new Integral([ex`x`, x, ex`0`, ex`1`]), 2, 'left'); // => 1/4
+ * ```
  */
 export function asSum(integral: Integral, n: ExprLike, method: 'left' | 'right' | 'midpoint' | 'trapezoid' = 'midpoint', opts: { evaluate?: boolean } = {}): Expr {
   if (integral.integrand instanceof Integral) throw new NotImplementedError('as_sum: multidimensional integrals are not supported');
@@ -159,14 +202,30 @@ export function asSum(integral: Integral, n: ExprLike, method: 'left' | 'right' 
 
 /**
  * A parametric curve as line_integrate takes it: the coordinate functions
- * and the limits (t, a, b) (SymPy Curve, see '@symjs/symjs/geometry').
+ * and the limits (t, a, b).
  */
 export interface ParametricCurve {
   readonly functions: Iterable<Expr>;
   readonly limits: Iterable<Expr>;
 }
 
-/** SymPy line_integrate(field, curve, vars): the integral of field along the curve with respect to arc length. */
+/**
+ * The integral of field along the curve with respect to arc length.
+ *
+ * @param field - The scalar field to integrate along the curve.
+ * @param curve - The coordinate functions and parameter interval of the curve.
+ * @param vars - The coordinate symbols of the scalar field.
+ * @returns The integral with respect to arc length.
+ * @throws RangeError when the curve and the variables differ in dimension.
+ * @see SymPy `sympy.integrals.integrals.line_integrate`
+ * @example
+ * ```ts
+ * import { ex, lineIntegrate, symbols } from '@symjs/symjs';
+ *
+ * const [t, x, y] = symbols('t x y');
+ * lineIntegrate(ex`x + y`, { functions: [t, t], limits: [t, ex`0`, ex`1`] }, [x, y]); // => sqrt(2)
+ * ```
+ */
 export function lineIntegrate(field: ExprLike, curve: ParametricCurve, vars: readonly Sym[]): Expr {
   const limits = [...curve.limits];
   const functions = [...curve.functions];

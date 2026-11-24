@@ -441,7 +441,24 @@ function inequalityAsRelational(set: SetExpr, x: Sym): Expr {
   return and(lower, upper, Ne(x, a.end));
 }
 
-/** SymPy solve_univariate_inequality. */
+/**
+ * Solves a real univariate inequality.
+ *
+ * @param relIn - The inequality to solve.
+ * @param x - The unknown of the inequality.
+ * @param opts - `relational` selects relational output, `domain` restricts the domain.
+ * @returns The solution as a relation or a set, according to the requested representation.
+ * @throws TypeError when the expression is not a relation.
+ * @throws NotImplementedError when the sign of a constant endpoint is undecidable.
+ * @see SymPy `sympy.solvers.inequalities.solve_univariate_inequality`
+ * @example
+ * ```ts
+ * import { ex, solveUnivariateInequality, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * solveUnivariateInequality(ex`x**2 >= 4`, x); // => ((2 <= x) & (x < oo)) | ((-oo < x) & (x <= -2))
+ * ```
+ */
 export function solveUnivariateInequality(
   relIn: ExprLike,
   x: Sym,
@@ -479,7 +496,22 @@ export function solveUnivariateInequality(
   return opts.relational === false ? s : inequalityAsRelational(s, x);
 }
 
-/** SymPy solve_poly_inequality: a list of intervals. */
+/**
+ * Returns a list of intervals.
+ *
+ * @param poly - The polynomial compared with zero.
+ * @param rel - The comparison operator defining the inequality.
+ * @returns A list of intervals.
+ * @throws NotImplementedError when a coefficient cannot be treated as real.
+ * @see SymPy `sympy.solvers.inequalities.solve_poly_inequality`
+ * @example
+ * ```ts
+ * import { Poly, ex, solvePolyInequality, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * solvePolyInequality(Poly.from(ex`x`, [x]), '=='); // => [{0}]
+ * ```
+ */
 export function solvePolyInequality(poly: Poly, rel: string): SetExpr[] {
   if (poly.isGround) {
     const v = realValue(poly.asExpr());
@@ -533,7 +565,20 @@ export function solvePolyInequality(poly: Poly, rel: string): SetExpr[] {
   return out;
 }
 
-/** SymPy solve_rational_inequalities: OR over AND-lists of ((numer, denom), rel). */
+/**
+ * OR over AND-lists of ((numer, denom), rel).
+ *
+ * @param eqs - The equations to solve simultaneously.
+ * @returns The solution set of the inequalities.
+ * @see SymPy `sympy.solvers.inequalities.solve_rational_inequalities`
+ * @example
+ * ```ts
+ * import { Poly, ex, solveRationalInequalities, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * solveRationalInequalities([[[[Poly.from(ex`x`, [x]), Poly.from(ex`1`, [x])], '!='], [[Poly.from(ex`1 - x`, [x]), Poly.from(ex`1`, [x])], '>=']]]); // => Union(Interval.open(-oo, 0), Interval.Lopen(0, 1))
+ * ```
+ */
 export function solveRationalInequalities(eqs: readonly (readonly [[Poly, Poly], string][])[]): SetExpr {
   let result: SetExpr = EmptySet;
   for (const group of eqs) {
@@ -561,12 +606,40 @@ export function solveRationalInequalities(eqs: readonly (readonly [[Poly, Poly],
   return result;
 }
 
-/** Union of the solution sets of polynomial inequalities. */
+/**
+ * Union of the solution sets of polynomial inequalities.
+ *
+ * @param polys - The polynomials defining the system.
+ * @returns The solution set of the inequalities.
+ * @see SymPy `sympy.solvers.inequalities.solve_poly_inequalities`
+ * @example
+ * ```ts
+ * import { Poly, ex, solvePolyInequalities, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * solvePolyInequalities([[Poly.from(ex`x**2 - 3`, [x]), '>'], [Poly.from(ex`1 - x**2`, [x]), '>']]); // => Union(Interval.open(-oo, -sqrt(3)), Interval.open(-1, 1), Interval.open(sqrt(3), oo))
+ * ```
+ */
 export function solvePolyInequalities(polys: readonly (readonly [Poly, string])[]): SetExpr {
   return union(...polys.flatMap(([p, r]) => solvePolyInequality(p, r)));
 }
 
-/** OR of AND groups of rational inequalities, optionally as a set. */
+/**
+ * OR of AND groups of rational inequalities, optionally as a set.
+ *
+ * @param exprs - The groups of rational constraints to reduce.
+ * @param gen - The independent variable.
+ * @param relational - Whether to express the solution as a relation.
+ * @returns The solution as a relation or a set, according to the requested representation.
+ * @see SymPy `sympy.solvers.inequalities.reduce_rational_inequalities`
+ * @example
+ * ```ts
+ * import { ex, reduceRationalInequalities, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x', { real: true });
+ * reduceRationalInequalities([[ex`${x} + 2`]], x); // => Eq(x, -2)
+ * ```
+ */
 export function reduceRationalInequalities(exprs: readonly (readonly (ExprLike | readonly [ExprLike, string])[])[], gen: Sym, relational = true): Expr {
   const relation = (e: ExprLike | readonly [ExprLike, string]): Expr => {
     const isPair = (a: ExprLike | readonly [ExprLike, string]): a is readonly [ExprLike, string] => Array.isArray(a);
@@ -581,7 +654,20 @@ export function reduceRationalInequalities(exprs: readonly (readonly (ExprLike |
   return relational ? result : asSet(result);
 }
 
-/** SymPy reduce_inequalities: a relational description of the solutions. */
+/**
+ * Returns a relational description of the solutions.
+ *
+ * @param ineqsIn - The inequalities that must all hold.
+ * @param symbols - The unknowns in the desired order.
+ * @returns A relational description of the solutions.
+ * @throws NotImplementedError when the inequality depends on several unknowns.
+ * @see SymPy `sympy.solvers.inequalities.reduce_inequalities`
+ * @example
+ * ```ts
+ * import { ex, reduceInequalities } from '@symjs/symjs';
+ * reduceInequalities([ex`x**2 - 4`]); // => Eq(x, -2) | Eq(x, 2)
+ * ```
+ */
 export function reduceInequalities(ineqsIn: readonly ExprLike[] | ExprLike, symbols: readonly Sym[] = []): Expr {
   const ineqs = (isExprList(ineqsIn) ? ineqsIn : [ineqsIn]).map((e) => sympify(e));
   const rels: Expr[] = ineqs.map((e) => (e instanceof Rel || e instanceof BoolAtom || e instanceof BoolOp ? e : Eq(e, 0)));
@@ -1351,7 +1437,23 @@ function complexExpSolutions(g: Expr, x: Sym, n: Dummy = new Dummy('n')): SetExp
 // calculus utilities
 // ---------------------------------------------------------------------------
 
-/** Points where the expression is singular (SymPy singularities). */
+/**
+ * Points where the expression is singular.
+ *
+ * @param eIn - The expression to evaluate.
+ * @param x - The independent variable.
+ * @param domain - The domain on which to compute the result.
+ * @returns The singular points in the domain.
+ * @throws NotImplementedError when singularities of infinite powers are not supported.
+ * @see SymPy `sympy.calculus.singularities.singularities`
+ * @example
+ * ```ts
+ * import { ex, singularities, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x', { real: true });
+ * singularities(ex`log(${x})`, x); // => {0}
+ * ```
+ */
 export function singularities(eIn: ExprLike, x: Sym, domain?: SetExpr): SetExpr {
   const e = sympify(eIn);
   if (some(e, (node) => node instanceof Pow && (node.exp === S.NegativeInfinity || node.exp === S.Infinity))) throw new NotImplementedError('Singularities of infinite powers are not supported');
@@ -1372,7 +1474,22 @@ export function singularities(eIn: ExprLike, x: Sym, domain?: SetExpr): SetExpr 
 const cosOf = (a: Expr) => impl.sympify(new Fn('cos', [a]));
 const sinOf = (a: Expr) => new Fn('sin', [a]);
 
-/** Zeros of the derivative in the domain (SymPy stationary_points). */
+/**
+ * Zeros of the derivative in the domain.
+ *
+ * @param fIn - The function or expression to analyze.
+ * @param x - The independent variable.
+ * @param domain - The domain over which the stationary points have to be checked.
+ * @returns The points at which the derivative vanishes.
+ * @see SymPy `sympy.calculus.util.stationary_points`
+ * @example
+ * ```ts
+ * import { Interval, ex, stationaryPoints, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * stationaryPoints(ex`sin(x)`, x, Interval.of(0, ex`4*pi`)); // => {pi/2, 3*pi/2, 5*pi/2, 7*pi/2}
+ * ```
+ */
 export function stationaryPoints(fIn: ExprLike, x: Sym, domain: SetExpr = Reals): SetExpr {
   const f = sympify(fIn);
   return solveset(diff(f, x), x, domain);
@@ -1431,9 +1548,43 @@ export function isMonotonic(f: ExprLike, iv: SetExpr = Reals, x?: Sym): boolean 
   return diff(fe, v).has(v) ? undefined : true;
 }
 
-/** Convexity on a domain (second derivative nonnegative, no singularities). */
+/**
+ * Convexity on a domain (second derivative nonnegative, no singularities).
+ *
+ * @param fIn - The function or expression to analyze.
+ * @param x - The independent variable.
+ * @param domain - The domain over which the convexity of the function has to be checked.
+ * @returns The convexity test on the given domain.
+ * @see SymPy `sympy.calculus.util.is_convex`
+ * @example
+ * ```ts
+ * import { ex, isConvex, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * isConvex(ex`exp(x)`, x); // => True
+ * ```
+ */
 export function isConvex(fIn: ExprLike, x: Sym, domain?: SetExpr): boolean;
+/**
+ * Convexity on a domain (second derivative nonnegative, no singularities).
+ *
+ * @param fIn - The function or expression to analyze.
+ * @param x - The independent variable.
+ * @param others - Additional variables for the multivariate convexity test.
+ * @returns The convexity test on the given domain.
+ * @see SymPy `sympy.calculus.util.is_convex`
+ */
 export function isConvex(fIn: ExprLike, x: Sym, ...others: Sym[]): Truth;
+/**
+ * Convexity on a domain (second derivative nonnegative, no singularities).
+ *
+ * @param fIn - The function or expression to analyze.
+ * @param x - The independent variable.
+ * @param domainOrVariable - The domain of the univariate test or a further variable.
+ * @param others - Additional variables for the multivariate convexity test.
+ * @returns The convexity test on the given domain.
+ * @see SymPy `sympy.calculus.util.is_convex`
+ */
 export function isConvex(fIn: ExprLike, x: Sym, domainOrVariable: SetExpr | Sym = Reals, ...others: Sym[]): Truth {
   if (domainOrVariable instanceof Sym) return isPositiveSemidefinite(hessian(fIn, [x, domainOrVariable, ...others]));
   const domain = domainOrVariable;
@@ -1515,9 +1666,41 @@ function extremum(vals: readonly Expr[], sign: 1 | -1): Expr {
   return kept.length === 1 ? first(kept) : sign === 1 ? Max(...kept) : Min(...kept);
 }
 
+/**
+ * Returns the maximum value of a function in the given domain.
+ *
+ * @param fIn - The function or expression to analyze.
+ * @param x - The independent variable.
+ * @param domain - The domain over which the maximum have to be checked.
+ * @returns The extremal function value on the domain.
+ * @see SymPy `sympy.calculus.util.maximum`
+ * @example
+ * ```ts
+ * import { ex, maximum, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * maximum(ex`sin(x)*cos(x)`, x); // => 1/2
+ * ```
+ */
 export function maximum(fIn: ExprLike, x: Sym, domain: SetExpr = Reals): Expr {
   return extremum(extremeValues(sympify(fIn), x, domain), 1);
 }
+/**
+ * Returns the minimum value of a function in the given domain.
+ *
+ * @param fIn - The function or expression to analyze.
+ * @param x - The independent variable.
+ * @param domain - The domain over which the minimum have to be checked.
+ * @returns The extremal function value on the domain.
+ * @see SymPy `sympy.calculus.util.minimum`
+ * @example
+ * ```ts
+ * import { ex, minimum, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * minimum(ex`sin(x)*cos(x)`, x); // => -1/2
+ * ```
+ */
 export function minimum(fIn: ExprLike, x: Sym, domain: SetExpr = Reals): Expr {
   return extremum(extremeValues(sympify(fIn), x, domain), -1);
 }
@@ -1529,7 +1712,22 @@ function minus(a: SetExpr, b: SetExpr): SetExpr {
   return b.className === 'Union' ? b.args.reduce<SetExpr>((acc, m) => minus(acc, cast(m, SetExpr, 'Union member')), a) : complement(a, b);
 }
 
-/** SymPy Piecewise.as_expr_set_pairs: disjoint real sets for each piece. */
+/**
+ * Disjoint real sets for each piece.
+ *
+ * @param p - The polynomial to inspect.
+ * @param domain - The domain on which to compute the result.
+ * @returns Branch expressions paired with their domains of validity.
+ * @throws NotImplementedError when a condition involves more than one variable.
+ * @see SymPy `sympy.functions.elementary.piecewise.Piecewise.as_expr_set_pairs`
+ * @example
+ * ```ts
+ * import { Lt, Piecewise, asExprSetPairs, ex, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * asExprSetPairs(Piecewise([x, Lt(x, 0)], [ex`1`, true])); // => [[x, Interval.open(-oo, 0)], [1, Interval(0, oo)]]
+ * ```
+ */
 export function asExprSetPairs(p: Expr, domain: SetExpr = Reals): [Expr, SetExpr][] {
   const pairs = cast(p, Piecewise, 'Piecewise').pairs;
   const syms = new Map<string, Sym>();
@@ -1575,7 +1773,21 @@ function setToCondition(st: SetExpr, x: Sym): Expr {
   return orB(...expectType(st, isUnion, 'set of a condition').args.map((a) => setToCondition(cast(a, SetExpr, 'Union member'), x)).reverse());
 }
 
-/** SymPy piecewise_exclusive: make the conditions of a Piecewise mutually exclusive. */
+/**
+ * Make the conditions of a Piecewise mutually exclusive.
+ *
+ * @param p - The polynomial to inspect.
+ * @param opts - `skipNan` omits the undefined branch, `deep` processes nested expressions.
+ * @returns A piecewise expression with mutually exclusive conditions.
+ * @see SymPy `sympy.functions.elementary.piecewise.piecewise_exclusive`
+ * @example
+ * ```ts
+ * import { Lt, Piecewise, ex, piecewiseExclusive, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * piecewiseExclusive(Piecewise([x, Lt(x, 0)], [ex`1`, true])); // => Piecewise((x, x < 0), (1, x >= 0))
+ * ```
+ */
 export function piecewiseExclusive(p: Expr, opts: { skipNan?: boolean; deep?: boolean } = {}): Expr {
   // SymPy: every Piecewise of the expression (deep, the default), or the expression itself when it is one
   if (opts.deep !== false) return mapBottomUp(p, (t) => (t instanceof Piecewise ? exclusivePieces(t, opts) : t));
@@ -1639,8 +1851,23 @@ function piecewiseExclusiveLogic(pairs: readonly (readonly [Expr, Expr])[], skip
 }
 
 /**
- * SymPy not_empty_in: the values of x for which the intersection of a
+ * The values of x for which the intersection of a
  * FiniteSet of expressions with an Interval is not empty (over the reals).
+ *
+ * @param setIn - The variable-dependent set required to be nonempty.
+ * @param x - The variable whose admissible values are sought.
+ * @param otherSymbols - Additional variables on which the set depends.
+ * @returns The permissible values of the parameter.
+ * @throws NotImplementedError when more than one unknown is supplied.
+ * @throws RangeError when the variable is omitted and cannot be inferred.
+ * @see SymPy `sympy.calculus.util.not_empty_in`
+ * @example
+ * ```ts
+ * import { FiniteSet, Intersection, Interval, ex, notEmptyIn, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * notEmptyIn(Intersection(Interval.of(0, 1), FiniteSet.of(ex`x/2`)), x); // => Interval(0, 2)
+ * ```
  */
 export function notEmptyIn(setIn: SetExpr, x: Sym, ...otherSymbols: Sym[]): SetExpr {
   if (otherSymbols.length) throw new NotImplementedError('not_empty_in supports one variable');
@@ -1696,9 +1923,23 @@ export function asSet(eIn: ExprLike | boolean): SetExpr {
 const REL_OPS: Readonly<Record<string, RelOp>> = { '<': 'Lt', '<=': 'Le', '>': 'Gt', '>=': 'Ge', '==': 'Eq', '!=': 'Ne' };
 
 /**
- * SymPy reduce_abs_inequality(expr, rel, gen): the solution of
+ * The solution of
  * `expr rel 0` (rel one of '<', '<=', '>', '>=', '==', '!=') where expr
  * contains absolute values, by cases on the signs of their arguments.
+ *
+ * @param exprIn - The expression to evaluate.
+ * @param rel - The comparison operator defining the inequality.
+ * @param gen - The independent variable.
+ * @returns An equivalent condition on the generator.
+ * @throws RangeError when an absolute value is raised to a noninteger power.
+ * @see SymPy `sympy.solvers.inequalities.reduce_abs_inequality`
+ * @example
+ * ```ts
+ * import { ex, reduceAbsInequality, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x', { real: true });
+ * reduceAbsInequality(ex`Abs(${x} - 5) - 3`, '<', x); // => (2 < x) & (x < 8)
+ * ```
  */
 export function reduceAbsInequality(exprIn: ExprLike, rel: string, gen: Sym): Expr {
   const op = REL_OPS[rel];
@@ -1733,7 +1974,21 @@ export function reduceAbsInequality(exprIn: ExprLike, rel: string, gen: Sym): Ex
   return asRelational(set, gen);
 }
 
-/** SymPy reduce_abs_inequalities(exprs, gen): the conjunction of reduce_abs_inequality over [expr, rel] pairs. */
+/**
+ * Returns the conjunction of reduce_abs_inequality over [expr, rel] pairs.
+ *
+ * @param exprs - The absolute-value constraints to reduce.
+ * @param gen - The independent variable.
+ * @returns The conjunction of reduce_abs_inequality over [expr, rel] pairs.
+ * @see SymPy `sympy.solvers.inequalities.reduce_abs_inequalities`
+ * @example
+ * ```ts
+ * import { ex, reduceAbsInequalities, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x', { extendedReal: true });
+ * reduceAbsInequalities([[ex`Abs(${x} - 4) + Abs(3*${x} - 5) - 7`, '<']], x); // => (1/2 < x) & (x < 4)
+ * ```
+ */
 export function reduceAbsInequalities(exprs: readonly (readonly [ExprLike, string])[], gen: Sym): Expr {
   return and(...exprs.map(([e, rel]) => reduceAbsInequality(e, rel, gen)));
 }

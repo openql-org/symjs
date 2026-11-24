@@ -15,7 +15,7 @@ import { ValueMap, compareValues, valueEquals } from '../utilities/values';
 /** A rule: a function that transforms one value into another. */
 export type Rule<T> = (x: T) => T;
 
-/** A destination of debugging output (a Python file: anything with `write`). */
+/** Accepts diagnostic text from a rewriting strategy. */
 export interface Writer {
   write(text: string): void;
 }
@@ -33,7 +33,13 @@ export function identity<T>(x: T): T {
   return x;
 }
 
-/** SymPy `exhaust(rule)`: apply a rule repeatedly until it has no effect. */
+/**
+ * Applies a rule repeatedly until it has no effect.
+ *
+ * @param rule - The transformation to apply.
+ * @returns A rewrite rule applying this strategy.
+ * @see SymPy `sympy.strategies.core.exhaust`
+ */
 export function exhaust<T>(rule: Rule<T>): Rule<T> {
   return function exhaustiveRl(expr: T): T {
     let old = expr;
@@ -46,7 +52,13 @@ export function exhaust<T>(rule: Rule<T>): Rule<T> {
   };
 }
 
-/** SymPy `memoize(rule)`: a rule that remembers its results (the cache is not bounded). */
+/**
+ * Returns a rule that remembers its results (the cache is not bounded).
+ *
+ * @param rule - The transformation to apply.
+ * @returns A rule that remembers its results (the cache is not bounded).
+ * @see SymPy `sympy.strategies.core.memoize`
+ */
 export function memoize<S, T>(rule: (x: S) => T): (x: S) => T {
   const cache = new ValueMap<S, { value: T }>();
   return function memoizedRl(expr: S): T {
@@ -58,14 +70,27 @@ export function memoize<S, T>(rule: (x: S) => T): (x: S) => T {
   };
 }
 
-/** SymPy `condition(cond, rule)`: only apply the rule if the condition is true. */
+/**
+ * Builds a rule that applies a transformation only when the input satisfies a predicate.
+ *
+ * @param cond - The predicate controlling application of the rule.
+ * @param rule - The transformation to apply.
+ * @returns A rewrite rule applying this strategy.
+ * @see SymPy `sympy.strategies.core.condition`
+ */
 export function condition<T>(cond: (x: T) => boolean, rule: Rule<T>): Rule<T> {
   return function conditionedRl(expr: T): T {
     return cond(expr) ? rule(expr) : expr;
   };
 }
 
-/** SymPy `chain(*rules)`: compose rules so that they apply to the input one after the other. */
+/**
+ * Composes rules so that they apply to the input one after the other.
+ *
+ * @param rules - The rewrite rules in application order.
+ * @returns A rewrite rule applying this strategy.
+ * @see SymPy `sympy.strategies.core.chain`
+ */
 export function chain<T>(...rules: Rule<T>[]): Rule<T> {
   return function chainRl(expr: T): T {
     let e = expr;
@@ -74,7 +99,14 @@ export function chain<T>(...rules: Rule<T>[]): Rule<T> {
   };
 }
 
-/** SymPy `debug(rule, file=None)`: write the input and output each time the rule changes something. */
+/**
+ * Writes the input and output each time the rule changes something.
+ *
+ * @param rule - The transformation to apply.
+ * @param file - The writer receiving diagnostics for changes made by the rule.
+ * @returns A rewrite rule applying this strategy.
+ * @see SymPy `sympy.strategies.core.debug`
+ */
 export function debug<T>(rule: Rule<T>, file: Writer = stdout()): Rule<T> {
   return function debugRl(expr: T): T {
     const result = rule(expr);
@@ -87,8 +119,12 @@ export function debug<T>(rule: Rule<T>, file: Writer = stdout()): Rule<T> {
 }
 
 /**
- * SymPy `null_safe(rule)`: the original input when the rule returns
+ * The original input when the rule returns
  * nothing (`None` in SymPy; `undefined` or `null` here).
+ *
+ * @param rule - The transformation to apply.
+ * @returns A rewrite rule applying this strategy.
+ * @see SymPy `sympy.strategies.core.null_safe`
  */
 export function nullSafe<T>(rule: (x: T) => T | undefined | null): Rule<T> {
   return function nullSafeRl(expr: T): T {
@@ -96,10 +132,17 @@ export function nullSafe<T>(rule: (x: T) => T | undefined | null): Rule<T> {
   };
 }
 
-/** An error class to catch (a Python exception class). */
+/** Identifies the class of exceptions a strategy should catch. */
 export type ErrorClass = abstract new (...args: never[]) => unknown;
 
-/** SymPy `tryit(rule, exception)`: the original input when the rule throws an error of that class. */
+/**
+ * The original input when the rule throws an error of that class.
+ *
+ * @param rule - The transformation to apply.
+ * @param exception - The class of errors for which the original input is returned.
+ * @returns A rewrite rule applying this strategy.
+ * @see SymPy `sympy.strategies.core.tryit`
+ */
 export function tryit<T>(rule: Rule<T>, exception: ErrorClass): Rule<T> {
   return function tryRl(expr: T): T {
     try {
@@ -111,7 +154,13 @@ export function tryit<T>(rule: Rule<T>, exception: ErrorClass): Rule<T> {
   };
 }
 
-/** SymPy `do_one(*rules)`: try each rule until one changes the input, then stop. */
+/**
+ * Tries each rule until one changes the input, then stop.
+ *
+ * @param rules - The rewrite rules in application order.
+ * @returns A rewrite rule applying this strategy.
+ * @see SymPy `sympy.strategies.core.do_one`
+ */
 export function doOne<T>(...rules: Rule<T>[]): Rule<T> {
   return function doOneRl(expr: T): T {
     for (const rl of rules) {
@@ -123,9 +172,14 @@ export function doOne<T>(...rules: Rule<T>[]): Rule<T> {
 }
 
 /**
- * SymPy `switch(key, ruledict)`: select a rule by the value of `key` on the
+ * Selects a rule by the value of `key` on the
  * input (no rule for that value leaves the input unchanged). `ruledict` is a
  * `Map` (keys compare by value) or an object keyed by strings.
+ *
+ * @param key - The function or functions producing comparison or grouping keys.
+ * @param ruledict - The rules indexed by the dispatch key.
+ * @returns A rewrite rule applying this strategy.
+ * @see SymPy `sympy.strategies.core.switch`
  */
 function switchRule<S, K>(key: (x: S) => K, ruledict: ReadonlyMap<K, Rule<S>> | Readonly<Record<string, Rule<S>>>): Rule<S> {
   const rules = ruledict instanceof Map ? new ValueMap<unknown, Rule<S>>(ruledict) : new ValueMap<unknown, Rule<S>>(Object.entries(ruledict));
@@ -137,9 +191,18 @@ function switchRule<S, K>(key: (x: S) => K, ruledict: ReadonlyMap<K, Rule<S>> | 
 export { switchRule as switch };
 
 /**
- * SymPy `minimize(*rules, objective=identity)`: the result of the rule that
+ * The result of the rule that
  * minimizes the objective (the first such result on ties). Pass the
  * objective as `{ objective }` after the rules.
+ *
+ * @param rulesAndOpts - The rewrite rules followed by their optional settings.
+ * @returns The result of the rule that minimizes the objective (the first such result on ties).
+ * @see SymPy `sympy.strategies.core.minimize`
+ * @example
+ * ```ts
+ * import { minimize } from '@symjs/symjs/strategies';
+ * minimize(Math.floor, Math.ceil)(2.5); // => 2
+ * ```
  */
 export function minimize<S, T>(...rulesAndOpts: (((x: S) => T) | { readonly objective: (x: T) => unknown })[]): (x: S) => T {
   const rules: ((x: S) => T)[] = [];

@@ -12,4 +12,9 @@ export { unify } from './usympy';
 export { rewriterule } from './rewrite';
 export type { RewriteRule } from './rewrite';
 export { Compound, CondVariable, Variable, index } from './core';
+/**
+ * Structural unification and reconstruction of symbolic expressions.
+ *
+ * @see SymPy `sympy.unify.usympy`
+ */
 export * as usympy from './usympy';

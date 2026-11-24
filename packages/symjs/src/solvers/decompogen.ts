@@ -19,9 +19,20 @@ const isE = (e: Expr): boolean => e instanceof Constant && e.name === 'E';
 const hasFree = (e: Expr, x: Expr): boolean => [...freeSymbols(e)].some((s) => s.key === x.key);
 
 /**
- * SymPy decompogen: the general functional decomposition [f_1, ..., f_n] of
+ * The general functional decomposition [f_1, ..., f_n] of
  * f in symbol, f = f_1(f_2(... f_n(symbol))); polynomials are decomposed
  * like SymPy decompose.
+ *
+ * @param fIn - The function or expression to analyze.
+ * @param symbolIn - The independent variable.
+ * @returns The general functional decomposition [f_1, ..., f_n] of f in symbol, f = f_1(f_2(... f_n(symbol))).
+ * @throws TypeError when the input cannot be treated as an expression.
+ * @see SymPy `sympy.solvers.decompogen.decompogen`
+ * @example
+ * ```ts
+ * import { decompogen, ex } from '@symjs/symjs';
+ * decompogen(ex`sin(cos(x))`, ex`x`); // => [sin(x), cos(x)]
+ * ```
  */
 export function decompogen(fIn: ExprLike, symbolIn: ExprLike): Expr[] {
   const f = sympify(fIn);
@@ -77,8 +88,18 @@ function rebuildFn(f: Fn, args: readonly Expr[]): Expr {
 }
 
 /**
- * SymPy compogen: the composition g_1(g_2(... g_n)) of the functions g_s of
+ * The composition g_1(g_2(... g_n)) of the functions g_s of
  * symbol.
+ *
+ * @param gs - The component functions in outermost-to-innermost order.
+ * @param symbolIn - The independent variable.
+ * @returns The nested composition.
+ * @see SymPy `sympy.solvers.decompogen.compogen`
+ * @example
+ * ```ts
+ * import { compogen, ex } from '@symjs/symjs';
+ * compogen([ex`sin(x)`, ex`cos(x)`], ex`x`); // => sin(cos(x))
+ * ```
  */
 export function compogen(gs: readonly ExprLike[], symbolIn: ExprLike): Expr {
   const symbol = sympify(symbolIn);

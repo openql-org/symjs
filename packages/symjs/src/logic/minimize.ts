@@ -246,9 +246,20 @@ function posForm(vars: readonly Expr[], minterms: readonly Term[], dontcares: re
 }
 
 /**
- * SymPy SOPform: the smallest sum-of-products form (an Or of Ands) that is
+ * The smallest sum-of-products form (an Or of Ands) that is
  * true on the minterms, using the Quine-McCluskey algorithm. Terms are
  * integers, bit lists or partial assignments (Maps); false without minterms.
+ *
+ * @param variables - The variables in the requested order.
+ * @param minterms - The assignments on which the function is true.
+ * @param dontcares - The assignments on which the output is immaterial.
+ * @returns The smallest sum-of-products form (an Or of Ands) that is true on the minterms, using the Quine-McCluskey algorithm.
+ * @see SymPy `sympy.logic.boolalg.SOPform`
+ * @example
+ * ```ts
+ * import { SOPform, ex } from '@symjs/symjs';
+ * SOPform([ex`w`, ex`x`, ex`y`, ex`z`], [1, 3, 7, 11, 15], [0, 2, 5]); // => (y & z) | (~w & ~x)
+ * ```
  */
 export function SOPform(variables: readonly BoolLike[], minterms: readonly TermSpec[], dontcares: readonly TermSpec[] = []): Expr {
   if (!minterms.length) return S.false;
@@ -257,8 +268,19 @@ export function SOPform(variables: readonly BoolLike[], minterms: readonly TermS
 }
 
 /**
- * SymPy POSform: the smallest product-of-sums form (an And of Ors) that is
+ * The smallest product-of-sums form (an And of Ors) that is
  * true on the minterms, using the Quine-McCluskey algorithm.
+ *
+ * @param variables - The variables in the requested order.
+ * @param minterms - The assignments on which the function is true.
+ * @param dontcares - The assignments on which the output is immaterial.
+ * @returns A minimized product of sums.
+ * @see SymPy `sympy.logic.boolalg.POSform`
+ * @example
+ * ```ts
+ * import { POSform, ex } from '@symjs/symjs';
+ * POSform([ex`w`, ex`x`, ex`y`, ex`z`], [1, 3, 7, 11, 15], [0, 2, 5]); // => z & (y | ~w)
+ * ```
  */
 export function POSform(variables: readonly BoolLike[], minterms: readonly TermSpec[], dontcares: readonly TermSpec[] = []): Expr {
   if (!minterms.length) return S.false;
@@ -266,7 +288,18 @@ export function POSform(variables: readonly BoolLike[], minterms: readonly TermS
   return posForm(vars, mins, dcs);
 }
 
-/** SymPy anf_coeffs: the coefficients of the Zhegalkin polynomial of a truth table. */
+/**
+ * The coefficients of the Zhegalkin polynomial of a truth table.
+ *
+ * @param truthvalues - The truth table in binary input order.
+ * @returns The coefficients of the algebraic normal form.
+ * @see SymPy `sympy.logic.boolalg.anf_coeffs`
+ * @example
+ * ```ts
+ * import { anfCoeffs } from '@symjs/symjs';
+ * anfCoeffs([0, 1, 1, 0, 0, 1, 0, 1]); // => [0, 1, 1, 0, 0, 0, 1, 0]
+ * ```
+ */
 export function anfCoeffs(truthvalues: readonly number[]): number[] {
   const n = truthvalues.length.toString(2).length - 1;
   if (truthvalues.length !== 2 ** n) throw new RangeError(`The number of truth values must be a power of two, got ${truthvalues.length}`);
@@ -283,7 +316,19 @@ export function anfCoeffs(truthvalues: readonly number[]): number[] {
   return at(coeffs, 0);
 }
 
-/** SymPy ANFform: the algebraic normal form (Zhegalkin polynomial) of a truth table. */
+/**
+ * Returns the algebraic normal form (Zhegalkin polynomial) of a truth table.
+ *
+ * @param variables - The variables in the requested order.
+ * @param truthvalues - The truth table in binary input order.
+ * @returns The algebraic normal form (Zhegalkin polynomial) of a truth table.
+ * @see SymPy `sympy.logic.boolalg.ANFform`
+ * @example
+ * ```ts
+ * import { ANFform, ex } from '@symjs/symjs';
+ * ANFform([ex`x`], [1, 0]); // => x ^ True
+ * ```
+ */
 export function ANFform(variables: readonly BoolLike[], truthvalues: readonly number[]): Expr {
   const n = variables.length;
   if (truthvalues.length !== 2 ** n) throw new RangeError(`The number of truth values must be equal to 2^${n}, got ${truthvalues.length}`);
@@ -298,22 +343,58 @@ export function ANFform(variables: readonly BoolLike[], truthvalues: readonly nu
 
 const termOf = (k: number | readonly number[], n: number): Term => (typeof k === 'number' ? integerToTerm(k, n) : [...k]);
 
-/** SymPy bool_minterm: the k-th minterm (1 = the variable, 0 = its negation). */
+/**
+ * The k-th minterm (1 = the variable, 0 = its negation).
+ *
+ * @param k - The index or bit pattern selecting the literals.
+ * @param variables - The variables in the requested order.
+ * @returns The conjunction selecting one truth assignment.
+ * @see SymPy `sympy.logic.boolalg.bool_minterm`
+ * @example
+ * ```ts
+ * import { boolMinterm, ex } from '@symjs/symjs';
+ * boolMinterm(6, [ex`x`, ex`y`, ex`z`]); // => x & y & ~z
+ * ```
+ */
 export function boolMinterm(k: number | readonly number[], variables: readonly BoolLike[]): Expr {
   return toVarsSOP(termOf(k, variables.length), variables.map(toBool));
 }
 
-/** SymPy bool_maxterm: the k-th maxterm (0 = the variable, 1 = its negation). */
+/**
+ * The k-th maxterm (0 = the variable, 1 = its negation).
+ *
+ * @param k - The index or bit pattern selecting the literals.
+ * @param variables - The variables in the requested order.
+ * @returns The disjunction false on one truth assignment.
+ * @see SymPy `sympy.logic.boolalg.bool_maxterm`
+ * @example
+ * ```ts
+ * import { boolMaxterm, ex } from '@symjs/symjs';
+ * boolMaxterm(6, [ex`x`, ex`y`, ex`z`]); // => z | ~x | ~y
+ * ```
+ */
 export function boolMaxterm(k: number | readonly number[], variables: readonly BoolLike[]): Expr {
   return toVarsPOS(termOf(k, variables.length), variables.map(toBool));
 }
 
-/** SymPy bool_monomial: the k-th Zhegalkin monomial (the conjunction of the variables with bit 1). */
+/**
+ * The k-th Zhegalkin monomial (the conjunction of the variables with bit 1).
+ *
+ * @param k - The index or bit pattern selecting the literals.
+ * @param variables - The variables in the requested order.
+ * @returns The product of variables selected by the bit pattern.
+ * @see SymPy `sympy.logic.boolalg.bool_monomial`
+ * @example
+ * ```ts
+ * import { boolMonomial, ex } from '@symjs/symjs';
+ * boolMonomial(6, [ex`x`, ex`y`, ex`z`]); // => x & y
+ * ```
+ */
 export function boolMonomial(k: number | readonly number[], variables: readonly BoolLike[]): Expr {
   return toVarsANF(termOf(k, variables.length), variables.map(toBool));
 }
 
-/** Options of simplifyLogic (SymPy keyword arguments). */
+/** Options of simplifyLogic. */
 export interface SimplifyLogicOptions {
   /** 'cnf' or 'dnf' for the simplest form of that kind; otherwise the form with fewer arguments. */
   form?: 'cnf' | 'dnf' | null;
@@ -326,10 +407,24 @@ export interface SimplifyLogicOptions {
 }
 
 /**
- * SymPy simplify_logic: the simplest SOP (DNF) or POS (CNF) form by the
+ * The simplest SOP (DNF) or POS (CNF) form by the
  * Quine-McCluskey algorithm. Relations are treated as variables (a relation
  * and its negation as one variable). With more than 8 variables nothing is
  * minimized unless `force` is set.
+ *
+ * @param expr - The Boolean expression to examine.
+ * @param form - The desired normal form for the result.
+ * @param deep - Indicates whether to recursively simplify any non-boolean functions contained within the input.
+ * @param force - As the simplifications require exponential time in the number of variables, there is by default a limit on expressions with 8 variables.
+ * @param dontcare - Optimize expression under the assumption that inputs where this expression is true are don't care.
+ * @returns The simplest SOP (DNF) or POS (CNF) form by the Quine-McCluskey algorithm.
+ * @throws RangeError when the requested form is neither CNF nor DNF.
+ * @see SymPy `sympy.logic.boolalg.simplify_logic`
+ * @example
+ * ```ts
+ * import { ex, simplifyLogic } from '@symjs/symjs';
+ * simplifyLogic(ex`x | y`, { dontcare: ex`y` }); // => x
+ * ```
  */
 export function simplifyLogic(
   expr: BoolLike,
@@ -417,7 +512,7 @@ function truthRows(vars: readonly Expr[], e: Expr, c: readonly number[]): Term[]
 
 /** Options of toCnf and toDnf. */
 export interface NormalFormOptions {
-  /** Return the simplest form (Quine-McCluskey). */
+  /** Returns the simplest form (Quine-McCluskey). */
   simplify?: boolean;
   /** Simplify also with more than 8 variables. */
   force?: boolean;
@@ -439,16 +534,38 @@ function toForm(expr: BoolLike, form: 'cnf' | 'dnf', simplify: boolean | NormalF
 }
 
 /**
- * SymPy to_cnf: conjunctive normal form. With `simplify` the simplest CNF
+ * Conjunctive normal form. With `simplify` the simplest CNF
  * (Quine-McCluskey); more than 8 variables then require `force`.
+ *
+ * @param expr - The Boolean expression to examine.
+ * @param simplify - Whether to simplify the Boolean normal form.
+ * @param force - Whether to allow minimization beyond the default variable limit.
+ * @returns An equivalent conjunction of clauses.
+ * @see SymPy `sympy.logic.boolalg.to_cnf`
+ * @example
+ * ```ts
+ * import { ex, toCnf } from '@symjs/symjs';
+ * toCnf(ex`D | ~(A | B)`); // => (D | ~A) & (D | ~B)
+ * ```
  */
 export function toCnf(expr: BoolLike, simplify: boolean | NormalFormOptions = false, force = false): Expr {
   return toForm(expr, 'cnf', simplify, force);
 }
 
 /**
- * SymPy to_dnf: disjunctive normal form. With `simplify` the simplest DNF
+ * Disjunctive normal form. With `simplify` the simplest DNF
  * (Quine-McCluskey); more than 8 variables then require `force`.
+ *
+ * @param expr - The Boolean expression to examine.
+ * @param simplify - Whether to simplify the Boolean normal form.
+ * @param force - Whether to allow minimization beyond the default variable limit.
+ * @returns An equivalent disjunction of conjunctions.
+ * @see SymPy `sympy.logic.boolalg.to_dnf`
+ * @example
+ * ```ts
+ * import { ex, toDnf } from '@symjs/symjs';
+ * toDnf(ex`B & (A | C)`); // => (A & B) | (B & C)
+ * ```
  */
 export function toDnf(expr: BoolLike, simplify: boolean | NormalFormOptions = false, force = false): Expr {
   return toForm(expr, 'dnf', simplify, force);
@@ -602,9 +719,21 @@ function matchBool(f1: Expr, f2: Expr): ExprMap<Expr> | false | undefined {
 }
 
 /**
- * SymPy bool_map: the simplified form of bool1 and a mapping of its
+ * The simplified form of bool1 and a mapping of its
  * variables to those of bool2 under which both have the same truth table;
  * false for incompatible fingerprints, NoMatch for incompatible shapes.
+ *
+ * @remarks SymPy returns `(y & ~z, {y: a, z: b})`.
+ *
+ * @param bool1 - The source formula.
+ * @param bool2 - The formula to match by renaming variables.
+ * @returns An equivalent formula and a variable mapping when they exist.
+ * @see SymPy `sympy.logic.boolalg.bool_map`
+ * @example
+ * ```ts
+ * import { boolMap, ex } from '@symjs/symjs';
+ * boolMap(ex`y & ~z`, ex`a & ~b`); // => [y & ~z, {y: a, z: b}]
+ * ```
  */
 export function boolMap(bool1: BoolLike, bool2: BoolLike): [Expr, ExprMap<Expr>] | false | NoMatchResult {
   const a = simplifyLogic(bool1);

@@ -133,8 +133,11 @@ function symbols(name: string, n: number): Dummy[] {
 
 /** Options of heurisch: rewrite sin, cos, cot (sinh, cosh, coth) with tan (tanh); the number of retries; the degree offset. */
 export interface HeurischOptions {
+  /** Whether to rewrite trigonometric functions before integration. */
   rewrite?: boolean;
+  /** The number of further heuristic integration attempts. */
   retries?: number;
+  /** The additional degree allowed in the polynomial ansatz. */
   degreeOffset?: number;
   /** Extra antiderivative components; an empty list enables automatic hints. */
   hints?: readonly Expr[];

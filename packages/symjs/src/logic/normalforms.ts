@@ -137,8 +137,18 @@ function notToNnf(e: BoolOp, simplify: boolean): Expr {
 }
 
 /**
- * SymPy is_nnf: only And, Or and Not, with Not applied to literals; with
+ * Only And, Or and Not, with Not applied to literals; with
  * `simplified` (default) no argument appears together with its negation.
+ *
+ * @param expr - The Boolean expression to examine.
+ * @param simplified - Whether to simplify the Boolean normal form.
+ * @returns Whether negations appear only on atoms and the requested simplifications hold.
+ * @see SymPy `sympy.logic.boolalg.is_nnf`
+ * @example
+ * ```ts
+ * import { ex, isNnf } from '@symjs/symjs';
+ * isNnf(ex`~C | (A & B)`); // => True
+ * ```
  */
 export function isNnf(expr: BoolLike, simplified = true): boolean {
   const e0 = toBool(expr);
@@ -157,8 +167,18 @@ export function isNnf(expr: BoolLike, simplified = true): boolean {
 }
 
 /**
- * SymPy to_nnf: negation normal form (only And, Or and Not of literals).
+ * Negation normal form (only And, Or and Not of literals).
  * With `simplify` (default) clauses with complementary literals are removed.
+ *
+ * @param expr - The Boolean expression to examine.
+ * @param simplify - Whether to simplify the Boolean normal form.
+ * @returns An equivalent formula with negations applied only to literals.
+ * @see SymPy `sympy.logic.boolalg.to_nnf`
+ * @example
+ * ```ts
+ * import { ex, toNnf } from '@symjs/symjs';
+ * toNnf(ex`~((C & D) | (~A & ~B))`); // => (A | B) & (~C | ~D)
+ * ```
  */
 export function toNnf(expr: BoolLike, simplify = true): Expr {
   const e = toBool(expr);
@@ -166,7 +186,18 @@ export function toNnf(expr: BoolLike, simplify = true): Expr {
   return nnf(e, simplify);
 }
 
-/** SymPy eliminate_implications: Implies and Equivalent rewritten with And, Or and Not. */
+/**
+ * Rewrites implications and equivalences using conjunction, disjunction and negation.
+ *
+ * @param expr - The Boolean expression to examine.
+ * @returns An equivalent formula using conjunction, disjunction and negation.
+ * @see SymPy `sympy.logic.boolalg.eliminate_implications`
+ * @example
+ * ```ts
+ * import { eliminateImplications, ex } from '@symjs/symjs';
+ * eliminateImplications(ex`Implies(A, B)`); // => B | ~A
+ * ```
+ */
 export function eliminateImplications(expr: BoolLike): Expr {
   return toNnf(expr, false);
 }
@@ -182,12 +213,34 @@ function isForm(expr: BoolLike, f1: Lattice, f2: Lattice): boolean {
   return true;
 }
 
-/** SymPy is_cnf: a conjunction of disjunctions of literals. */
+/**
+ * Tests whether a formula is a conjunction of clauses of literals.
+ *
+ * @param expr - The Boolean expression to examine.
+ * @returns Whether the expression is in conjunctive normal form.
+ * @see SymPy `sympy.logic.boolalg.is_cnf`
+ * @example
+ * ```ts
+ * import { ex, isCnf } from '@symjs/symjs';
+ * isCnf(ex`A | B | C`); // => True
+ * ```
+ */
 export function isCnf(expr: BoolLike): boolean {
   return isForm(expr, 'And', 'Or');
 }
 
-/** SymPy is_dnf: a disjunction of conjunctions of literals. */
+/**
+ * Tests whether a formula is a disjunction of conjunctions of literals.
+ *
+ * @param expr - The Boolean expression to examine.
+ * @returns Whether the expression is in disjunctive normal form.
+ * @see SymPy `sympy.logic.boolalg.is_dnf`
+ * @example
+ * ```ts
+ * import { ex, isDnf } from '@symjs/symjs';
+ * isDnf(ex`A | B | C`); // => True
+ * ```
+ */
 export function isDnf(expr: BoolLike): boolean {
   return isForm(expr, 'Or', 'And');
 }
@@ -212,17 +265,50 @@ function distribute(e: Expr, outer: DistOp, inner: DistOp): Expr {
   return e;
 }
 
-/** SymPy distribute_and_over_or: a sentence of And/Or of literals in CNF. */
+/**
+ * Returns a sentence of And/Or of literals in CNF.
+ *
+ * @param expr - The Boolean expression to examine.
+ * @returns A sentence of And/Or of literals in CNF.
+ * @see SymPy `sympy.logic.boolalg.distribute_and_over_or`
+ * @example
+ * ```ts
+ * import { distributeAndOverOr, ex } from '@symjs/symjs';
+ * distributeAndOverOr(ex`A | (~B & ~C)`); // => (A | ~B) & (A | ~C)
+ * ```
+ */
 export function distributeAndOverOr(expr: BoolLike): Expr {
   return distribute(toBool(expr), 'And', 'Or');
 }
 
-/** SymPy distribute_or_over_and: a sentence of And/Or of literals in DNF (not simplified). */
+/**
+ * Returns a sentence of And/Or of literals in DNF (not simplified).
+ *
+ * @param expr - The Boolean expression to examine.
+ * @returns A sentence of And/Or of literals in DNF (not simplified).
+ * @see SymPy `sympy.logic.boolalg.distribute_or_over_and`
+ * @example
+ * ```ts
+ * import { distributeOrOverAnd, ex } from '@symjs/symjs';
+ * distributeOrOverAnd(ex`C & (B | ~A)`); // => (B & C) | (C & ~A)
+ * ```
+ */
 export function distributeOrOverAnd(expr: BoolLike): Expr {
   return distribute(toBool(expr), 'Or', 'And');
 }
 
-/** SymPy distribute_xor_over_and: a sentence of And/Xor of literals as an exclusive disjunction. */
+/**
+ * Returns a sentence of And/Xor of literals as an exclusive disjunction.
+ *
+ * @param expr - The Boolean expression to examine.
+ * @returns A sentence of And/Xor of literals as an exclusive disjunction.
+ * @see SymPy `sympy.logic.boolalg.distribute_xor_over_and`
+ * @example
+ * ```ts
+ * import { And, Xor, distributeXorOverAnd, ex } from '@symjs/symjs';
+ * distributeXorOverAnd(And(Xor(ex`A`, ex`B`), ex`C`)); // => (A & C) ^ (B & C)
+ * ```
+ */
 export function distributeXorOverAnd(expr: BoolLike): Expr {
   return distribute(toBool(expr), 'Xor', 'And');
 }
@@ -230,8 +316,17 @@ export function distributeXorOverAnd(expr: BoolLike): Expr {
 const isSymbolLike = (e: Expr): boolean => e instanceof Sym;
 
 /**
- * SymPy is_anf: true, false, a symbol, a conjunction of symbols, or an
+ * True, false, a symbol, a conjunction of symbols, or an
  * exclusive disjunction of those (without negations).
+ *
+ * @param expr - The Boolean expression to examine.
+ * @returns Whether the formula is in algebraic normal form.
+ * @see SymPy `sympy.logic.boolalg.is_anf`
+ * @example
+ * ```ts
+ * import { isAnf } from '@symjs/symjs';
+ * isAnf(true); // => True
+ * ```
  */
 export function isAnf(expr: BoolLike): boolean {
   const e = toBool(expr);
@@ -294,9 +389,19 @@ function anf(e: Expr, deep: boolean): Expr {
 }
 
 /**
- * SymPy to_anf: algebraic normal form (Zhegalkin polynomial), an exclusive
+ * Algebraic normal form (Zhegalkin polynomial), an exclusive
  * disjunction of true and conjunctions of variables. With `deep` false only
  * the top level is converted.
+ *
+ * @param expr - The Boolean expression to examine.
+ * @param deep - Whether to process nested expressions.
+ * @returns An exclusive disjunction of square-free monomials.
+ * @see SymPy `sympy.logic.boolalg.to_anf`
+ * @example
+ * ```ts
+ * import { ex, toAnf } from '@symjs/symjs';
+ * toAnf(ex`~A`); // => A ^ True
+ * ```
  */
 export function toAnf(expr: BoolLike, deep = true): Expr {
   const e = toBool(expr);
@@ -304,7 +409,19 @@ export function toAnf(expr: BoolLike, deep = true): Expr {
   return anf(e, deep);
 }
 
-/** SymPy to_int_repr: CNF clauses as sets of signed variable indices (1-based). */
+/**
+ * CNF clauses as sets of signed variable indices (1-based).
+ *
+ * @param clauses - The clauses whose conjunction is being tested.
+ * @param symbols - The unknowns in the desired order.
+ * @returns One set of signed integer literals per clause.
+ * @see SymPy `sympy.logic.boolalg.to_int_repr`
+ * @example
+ * ```ts
+ * import { ex, toIntRepr } from '@symjs/symjs';
+ * toIntRepr([ex`A | B`, ex`~A`], [ex`A`, ex`B`]); // => [{1, 2}, {-1}]
+ * ```
+ */
 export function toIntRepr(clauses: readonly BoolLike[], symbols: readonly BoolLike[]): Set<number>[] {
   const index = new Map(symbols.map((s, i) => [toBool(s).key, i + 1] as const));
   const lookup = (e: Expr): number => {
@@ -318,13 +435,36 @@ export function toIntRepr(clauses: readonly BoolLike[], symbols: readonly BoolLi
   });
 }
 
-/** SymPy term_to_integer: the integer with the given base-2 digits. */
+/**
+ * Returns the integer with the given base-2 digits.
+ *
+ * @param term - The binary digits in most-significant-first order.
+ * @returns The integer with the given base-2 digits.
+ * @see SymPy `sympy.logic.boolalg.term_to_integer`
+ * @example
+ * ```ts
+ * import { termToInteger } from '@symjs/symjs';
+ * termToInteger('100'); // => 4
+ * ```
+ */
 export function termToInteger(term: string | readonly number[]): number {
   const s = typeof term === 'string' ? term : term.join('');
   return parseInt(s, 2);
 }
 
-/** SymPy ibin (integer_to_term): the binary digits of n, padded to `bits` digits. */
+/**
+ * Returns a list of length ``bits`` corresponding to the binary value of ``n`` with small bits to the right (last). If bits is omitted, the length will be the number required to represent ``n``. If the bits are desired in reversed order, use the ``[::-1]`` slice of the returned list.
+ *
+ * @param n - The nonnegative truth-table row index.
+ * @param bits - The width of the binary term.
+ * @returns A list of length ``bits`` corresponding to the binary value of ``n`` with small bits to the right (last).
+ * @see SymPy `sympy.logic.boolalg.integer_to_term`
+ * @example
+ * ```ts
+ * import { integerToTerm } from '@symjs/symjs';
+ * integerToTerm(2, 4); // => [0, 0, 1, 0]
+ * ```
+ */
 export function integerToTerm(n: number, bits?: number): number[] {
   if (n < 0 || !Number.isInteger(n)) throw new RangeError(`expecting a non-negative integer, not ${n}`);
   const s = n.toString(2);
@@ -333,12 +473,39 @@ export function integerToTerm(n: number, bits?: number): number[] {
 }
 
 /**
- * SymPy truth_table: [inputs, value] for every assignment of 0/1 to the
- * variables in counting order, or only the values when `input` is false.
- * Empty when expr is neither a boolean function nor a literal.
+ * Evaluates a Boolean formula at each binary assignment in counting order. Pass `false` for `input` to obtain just the output values.
+ *
+ * @param expr - The Boolean expression to examine.
+ * @param variables - The variables in the requested order.
+ * @param input - Indicates whether to return the input combinations.
+ * @returns The truth-table rows in binary input order.
+ * @see SymPy `sympy.logic.boolalg.truth_table`
+ * @example
+ * ```ts
+ * import { ex, truthTable } from '@symjs/symjs';
+ * truthTable(ex`A & B`, [ex`A`, ex`B`]); // => [[[0, 0], False], [[0, 1], False], [[1, 0], False], [[1, 1], True]]
+ * ```
  */
 export function truthTable(expr: BoolLike, variables: readonly BoolLike[], input?: true): [number[], Expr][];
+/**
+ * Evaluates a Boolean formula at each binary assignment in counting order. Pass `false` for `input` to obtain just the output values.
+ *
+ * @param expr - The Boolean expression to examine.
+ * @param variables - The variables in the requested order.
+ * @param input - Indicates whether to return the input combinations.
+ * @returns The truth-table rows in binary input order.
+ * @see SymPy `sympy.logic.boolalg.truth_table`
+ */
 export function truthTable(expr: BoolLike, variables: readonly BoolLike[], input: false): Expr[];
+/**
+ * Evaluates a Boolean formula at each binary assignment in counting order. Pass `false` for `input` to obtain just the output values.
+ *
+ * @param expr - The Boolean expression to examine.
+ * @param variables - The variables in the requested order.
+ * @param input - Indicates whether to return the input combinations.
+ * @returns The truth-table rows in binary input order.
+ * @see SymPy `sympy.logic.boolalg.truth_table`
+ */
 export function truthTable(expr: BoolLike, variables: readonly BoolLike[], input = true): [number[], Expr][] | Expr[] {
   const vars = variables.map(toBool);
   const e = toBool(expr);
@@ -355,8 +522,18 @@ export function truthTable(expr: BoolLike, variables: readonly BoolLike[], input
 const GATE_OPS = new Set(['And', 'Or', 'Xor', 'Not', 'ITE']);
 
 /**
- * SymPy gateinputcount: the total number of inputs of the gates (And, Or,
+ * The total number of inputs of the gates (And, Or,
  * Xor, Not, ITE, unevaluated Nand, Nor and Xnor) realizing the expression.
+ *
+ * @param expr - The Boolean expression to examine.
+ * @returns The total number of gate inputs in the expression.
+ * @throws TypeError when the expression is not Boolean.
+ * @see SymPy `sympy.logic.boolalg.gateinputcount`
+ * @example
+ * ```ts
+ * import { ex, gateinputcount } from '@symjs/symjs';
+ * gateinputcount(ex`x`); // => 0
+ * ```
  */
 export function gateinputcount(expr: BoolLike): number {
   const e = toBool(expr);

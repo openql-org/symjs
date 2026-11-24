@@ -21,12 +21,26 @@ export type RewriteRule = (expr: ExprLike, assumptions?: Assumption) => Generato
 const holds = (r: Truth | Expr): boolean => r === true || (r instanceof ExprClass && r.equals(S.true));
 
 /**
- * SymPy `rewriterule(source, target, variables=(), condition=None,
- * assume=None)`: a rule that rewrites the expressions matching `source`
+ * A rule that rewrites the expressions matching `source`
  * into `target`, the `variables` being wild. `condition` receives the
  * values of the variables (in the order of `variables`) and must hold
  * (`true`); `assume` is a proposition (`Q.integer(x)`) that must follow
  * from the assumptions given when the rule is applied.
+ *
+ * @param sourceIn - The pattern to match.
+ * @param targetIn - The target form or replacement expression.
+ * @param variables - The pattern variables that may bind to subexpressions.
+ * @param condition - The predicate controlling application of the rule.
+ * @param assume - An assumption that the instantiated rule must satisfy.
+ * @returns A rule yielding each admissible rewrite.
+ * @see SymPy `sympy.unify.rewrite.rewriterule`
+ * @example
+ * ```ts
+ * import { ex, rewriterule, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * [...rewriterule(ex`sin(x)`, ex`cos(x)`, [x])(ex`sin(y)`)]; // => [cos(y)]
+ * ```
  */
 export function rewriterule(
   sourceIn: ExprLike,

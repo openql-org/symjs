@@ -63,12 +63,48 @@ export function asEquation(e: ExprLike): Expr {
 }
 
 /**
- * Check candidates by substitution and simplification, combining equation lists
+ * Checks candidates by substitution and simplification, combining equation lists
  * with three-valued conjunction. Exact residuals stay exact; floating residuals
  * use the numeric tolerance of SymPy checksol.
+ *
+ * @param equation - The equation, or an expression equal to zero.
+ * @param assignments - The candidate substitutions to check in the equation.
+ * @param opts - `numerical` enables numerical checking.
+ * @returns Whether substitution satisfies the equation, or `'unknown'` when inconclusive.
+ * @see SymPy `sympy.solvers.solvers.checksol`
+ * @example
+ * ```ts
+ * import { checksol, ex } from '@symjs/symjs';
+ * checksol(ex`x**4 - 1`, ex`x`, 1); // => True
+ * ```
  */
 export function checksol(equation: ExprLike | readonly ExprLike[], assignments: ReadonlyMap<Expr, ExprLike>, opts?: { numerical?: boolean }): Truth;
+/**
+ * Checks candidates by substitution and simplification, combining equation lists
+ * with three-valued conjunction. Exact residuals stay exact; floating residuals
+ * use the numeric tolerance of SymPy checksol.
+ *
+ * @param equation - The equation, or an expression equal to zero.
+ * @param symbol - The independent variable.
+ * @param value - The value to assign or convert.
+ * @param opts - `numerical` enables numerical checking.
+ * @returns Whether substitution satisfies the equation, or `'unknown'` when inconclusive.
+ * @see SymPy `sympy.solvers.solvers.checksol`
+ */
 export function checksol(equation: ExprLike | readonly ExprLike[], symbol: Expr, value: ExprLike, opts?: { numerical?: boolean }): Truth;
+/**
+ * Checks candidates by substitution and simplification, combining equation lists
+ * with three-valued conjunction. Exact residuals stay exact; floating residuals
+ * use the numeric tolerance of SymPy checksol.
+ *
+ * @param equation - The equation, or an expression equal to zero.
+ * @param assignments - The candidate substitutions to check in the equation.
+ * @param value - The value to assign or convert.
+ * @param opts - `numerical` enables numerical checking.
+ * @returns Whether substitution satisfies the equation, or `'unknown'` when inconclusive.
+ * @throws RangeError when the equation list is empty.
+ * @see SymPy `sympy.solvers.solvers.checksol`
+ */
 export function checksol(equation: ExprLike | readonly ExprLike[], assignments: ReadonlyMap<Expr, ExprLike> | Expr, value?: ExprLike | { numerical?: boolean }, opts: { numerical?: boolean } = {}): Truth {
   const options = typeof value === 'object' && !(value instanceof Expr) ? value : opts;
   const reps: [Expr, Expr][] = assignments instanceof Expr
@@ -142,7 +178,19 @@ function positiveExpression(e: Expr): boolean {
   return e instanceof Pow && positiveExpression(e.base) && ask(Q.real(e.exp)) === true;
 }
 
-/** SymPy denoms: unique denominator bases, optionally restricted to symbols. */
+/**
+ * Unique denominator bases, optionally restricted to symbols.
+ *
+ * @param expr - The expression to evaluate.
+ * @param symbols - The unknowns in the desired order.
+ * @returns The distinct denominators involving the selected symbols.
+ * @see SymPy `sympy.solvers.solvers.denoms`
+ * @example
+ * ```ts
+ * import { denoms, ex } from '@symjs/symjs';
+ * denoms(ex`x/y`); // => {y}
+ * ```
+ */
 export function denoms(expr: ExprLike, ...symbols: Sym[]): Set<Expr> {
   const found = new Map<string, Expr>();
   const visit = (e: Expr): void => {
@@ -159,9 +207,20 @@ export function denoms(expr: ExprLike, ...symbols: Sym[]): Set<Expr> {
 }
 
 /**
- * Remove rational powers from an equation. The resulting equation can have
- * extraneous roots: candidates must be checked in the original expression.
- * Common-base radicals use a new variable and return its defining equation.
+ * Eliminates radicals from an equation and records any change of variable needed to recover candidates.
+ *
+ * @remarks SymPy returns `(x**5 - 64, [])`.
+ *
+ * @param expr - The expression to evaluate.
+ * @param symbols - The unknowns in the desired order.
+ * @returns The radical-free equation and its change of variable, or `NoMatch`.
+ * @throws NotImplementedError when the coupled radicals cannot be eliminated.
+ * @see SymPy `sympy.solvers.solvers.unrad`
+ * @example
+ * ```ts
+ * import { ex, unrad } from '@symjs/symjs';
+ * unrad(ex`x**(5/6) + 2`); // => [x**5 - 64, []]
+ * ```
  */
 export function unrad(expr: ExprLike, ...symbols: Sym[]): [Expr, Expr[]] | NoMatchResult {
   const e = expandMul(asNumerDenom(powdenest(factorTerms(asEquation(expr), { radical: true, clear: true })))[0]);
@@ -1055,7 +1114,7 @@ const uniqueKeys = (xs: Expr[]): Expr[] => [...new Map(xs.map((r) => [r.key, r])
 
 /** Options of {@link solve} (SymPy's flags of `solve`). */
 export interface SolveOptions {
-  /** Remove the solutions that violate the assumptions on the unknown or make a denominator vanish (default `true`). */
+  /** Removes the solutions that violate the assumptions on the unknown or make a denominator vanish (default `true`). */
   check?: boolean;
   /** `false` keeps the roots of cubics and quartics as `CRootOf` instead of radicals. */
   cubics?: boolean;
@@ -1171,7 +1230,13 @@ export function solve(e: ExprLike, x?: Expr, opts: SolveOptions = {}): Expr[] {
   return raw.some((r) => r.kind === 'Extension') ? checked : sortExprs(checked);
 }
 
-/** Solve a univariate relation when a sign or a single excluded value decides it. */
+/**
+ * Solves a univariate relation when a sign or a single excluded value decides it.
+ *
+ * @param relation - The equality or inequality to solve.
+ * @param symbol - The independent variable.
+ * @returns The condition on the symbol, or `NoMatch` if it cannot be isolated.
+ */
 export function solveRelation(relation: Rel, symbol?: Sym): Expr | NoMatchResult {
   const variables = [...freeSymbols(relation)].filter((s) => s instanceof Sym);
   const x = symbol ?? (variables.length === 1 ? first(variables) : undefined);
@@ -1189,7 +1254,14 @@ export function solveRelation(relation: Rel, symbol?: Sym): Expr | NoMatchResult
   return positiveExpression(ordered) ? and(lower, upper) : NoMatch;
 }
 
-/** Solve each independent factor for one of the available variables. */
+/**
+ * Solves each independent factor for one of the available variables.
+ *
+ * @param equation - The equation, or an expression equal to zero.
+ * @param symbols - The unknowns in the desired order.
+ * @param opts - The solve settings.
+ * @returns The solution assignments for the requested unknowns.
+ */
 export function solveForSymbols(equation: ExprLike, symbols: readonly Expr[], opts: SolveOptions = {}): Map<Expr, Expr>[] {
   const f = asEquation(equation);
   if (symbols.every((v) => v instanceof Sym) && symbols.every((v) => v.assumptions.real === true || v.assumptions.imaginary === true) && f.has(S.I)) {
@@ -1269,7 +1341,12 @@ function simplifySolution(r: Expr): Expr {
 
 export { linearEqToMatrix, linsolve, solveAugmented } from '../matrices/linsys';
 
-/** Determine the unknowns when solving a system without an explicit variable list. */
+/**
+ * Determines the unknowns when solving a system without an explicit variable list.
+ *
+ * @param equations - The equations to solve simultaneously.
+ * @returns The inferred unknowns in solver order.
+ */
 export function solveVariables(equations: readonly Expr[]): Expr[] {
   const variables: Expr[] = sortExprs(equations.flatMap((eq) => [...freeSymbols(eq)].filter((symbol) => symbol instanceof Sym)));
   if (variables.length >= equations.length) return variables;
@@ -1283,7 +1360,13 @@ export function solveVariables(equations: readonly Expr[]): Expr[] {
   return [...variables, ...sortExprs(functions)];
 }
 
-/** Test linearity after treating expression-valued targets as independent unknowns. */
+/**
+ * Tests linearity after treating expression-valued targets as independent unknowns.
+ *
+ * @param equations - The equations to solve simultaneously.
+ * @param targets - The unknowns in the desired order.
+ * @returns Whether every equation is linear in the requested targets.
+ */
 export function isLinearSolveSystem(equations: readonly Expr[], targets: readonly Expr[]): boolean {
   const dummies = targets.map(() => new Dummy('linear'));
   const prepared = equations.map((e) => targets.reduce((f, target, i) => replaceTarget(f, target, at(dummies, i)), e));
@@ -1292,7 +1375,14 @@ export function isLinearSolveSystem(equations: readonly Expr[], targets: readonl
   return rewritten.some((e, i) => !e.equals(at(prepared, i))) && linearEqToMatrix(rewritten.map(numerOf), dummies) !== undefined;
 }
 
-/** Solve for the real and imaginary components of a complex unknown. */
+/**
+ * Solves for the real and imaginary components of a complex unknown.
+ *
+ * @param equations - The equations to solve simultaneously.
+ * @param target - The target form or replacement expression.
+ * @param opts - The solve settings.
+ * @returns The solution assignments for the requested unknowns.
+ */
 export function solveComplexComponents(equations: readonly ExprLike[], target: Sym, opts: SolveOptions = {}): Map<Expr, Expr>[] | NoMatchResult {
   const re = fn('re', [target]), im = fn('im', [target]);
   const original = equations.map(asEquation);
@@ -1366,9 +1456,15 @@ function linearPivot(equations: readonly Expr[], unknowns: readonly Sym[], prefe
 }
 
 /**
- * Solve a polynomial system by successive elimination: equations that are
+ * Solves a polynomial system by successive elimination: equations that are
  * univariate (after substitution) are solved and their solutions substituted.
  * Returns the list of solution tuples.
+ *
+ * @param eqs - The equations to solve simultaneously.
+ * @param syms - The unknowns in the desired order.
+ * @param opts - `check` verifies candidates, `checkAssumptions` checks symbol assumptions, `manual` uses successive elimination, `rational` rationalizes floats.
+ * @returns Solution tuples in variable order.
+ * @throws NotImplementedError when the system lies outside the supported equation classes.
  */
 export function nonlinsolve(eqs: readonly ExprLike[], syms: readonly Expr[], opts: { check?: boolean; checkAssumptions?: boolean; manual?: boolean; rational?: boolean } = {}): Expr[][] {
   if (opts.rational && eqs.some((e) => some(sympify(e), (atom) => atom instanceof Float))) {
@@ -1613,7 +1709,21 @@ const simplifyBack = (e: Expr): Expr => {
   return simplify(expandMul(radsimp(c)));
 };
 
-/** SymPy solve_linear: (symbol, value) for an equation linear in one symbol, else (numer, denom). */
+/**
+ * Isolates one symbol in an equation linear in that symbol. When isolation fails, the pair describes the remaining numerator and denominator or a constant case.
+ *
+ * @remarks SymPy returns `(x, 0)`.
+ *
+ * @param e - The expression to evaluate.
+ * @param opts - `symbols` selects candidate unknowns, `exclude` omits specified values.
+ * @returns A solved variable and value, or a numerator and denominator.
+ * @see SymPy `sympy.solvers.solvers.solve_linear`
+ * @example
+ * ```ts
+ * import { ex, solveLinear } from '@symjs/symjs';
+ * solveLinear(ex`x`); // => [x, 0]
+ * ```
+ */
 export function solveLinear(e: ExprLike, opts: { symbols?: Sym[]; exclude?: Sym[] } = {}): [Expr, Expr] {
   // port of SymPy solve_linear
   const original = asEquation(e);
@@ -1657,9 +1767,44 @@ export function solveLinear(e: ExprLike, opts: { symbols?: Sym[]; exclude?: Sym[
   return [n, d];
 }
 
-/** Solve for the undetermined coefficients so that eq vanishes identically in the given symbols. */
+/**
+ * Solves for the undetermined coefficients so that eq vanishes identically in the given symbols.
+ *
+ * @remarks SymPy returns `{a: 2}`.
+ *
+ * @param e - The expression to evaluate.
+ * @param coeffs - The coefficients in the order of the corresponding unknowns.
+ * @param symsIn - The unknowns in the desired order.
+ * @returns Assignments in coefficient order.
+ * @see SymPy `sympy.solvers.solvers.solve_undetermined_coeffs`
+ * @example
+ * ```ts
+ * import { ex, solveUndeterminedCoeffs } from '@symjs/symjs';
+ * solveUndeterminedCoeffs(ex`a - 2`, [ex`a`]); // => [[2]]
+ * ```
+ */
 export function solveUndeterminedCoeffs(e: ExprLike, coeffs: readonly Expr[], symsIn?: readonly Sym[]): Expr[][];
+/**
+ * Solves for the undetermined coefficients so that eq vanishes identically in the given symbols.
+ *
+ * @param e - The expression to evaluate.
+ * @param coeffs - The coefficients in the order of the corresponding unknowns.
+ * @param symsIn - The unknowns in the desired order.
+ * @param options - `strict` controls strict.
+ * @returns Assignments in coefficient order.
+ * @see SymPy `sympy.solvers.solvers.solve_undetermined_coeffs`
+ */
 export function solveUndeterminedCoeffs(e: ExprLike, coeffs: readonly Expr[], symsIn: readonly Sym[], options: { strict: true }): Expr[][] | NoMatchResult;
+/**
+ * Solves for the undetermined coefficients so that eq vanishes identically in the given symbols.
+ *
+ * @param e - The expression to evaluate.
+ * @param coeffs - The coefficients in the order of the corresponding unknowns.
+ * @param symsIn - The unknowns in the desired order.
+ * @param options - `strict` controls strict.
+ * @returns Assignments in coefficient order.
+ * @see SymPy `sympy.solvers.solvers.solve_undetermined_coeffs`
+ */
 export function solveUndeterminedCoeffs(e: ExprLike, coeffs: readonly Expr[], symsIn: readonly Sym[] = [], options?: { strict: true }): Expr[][] | NoMatchResult {
   if (!coeffs.every((v) => v instanceof Sym)) {
     const targets = coeffs.map((v, i): [Expr, Sym] => [v, new Dummy(`c${i}`)]);
@@ -1713,9 +1858,47 @@ export function solveUndeterminedCoeffs(e: ExprLike, coeffs: readonly Expr[], sy
 
 const isBracket = (v: ExprLike | readonly [ExprLike, ExprLike]): v is readonly [ExprLike, ExprLike] => Array.isArray(v);
 
-/** Numeric root of f near x0 by Newton's method (complex arithmetic). */
+/**
+ * Finds a numerical zero of an equation or system near the supplied starting point.
+ *
+ * @param e - The equation or equations to solve numerically.
+ * @param x - The unknown or ordered unknowns.
+ * @param x0 - The starting approximation or bracketing endpoints.
+ * @param opts - `prec` sets working precision, `solver` selects Newton iteration or bisection.
+ * @returns The numerical root, or a column of root coordinates for a system.
+ * @see SymPy `sympy.solvers.solvers.nsolve`
+ * @example
+ * ```ts
+ * import { ex, nsolve, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * nsolve(ex`x**2 - 4`, x, 3); // => 2.00000000000000
+ * ```
+ */
 export function nsolve(e: readonly ExprLike[], x: readonly Sym[], x0: readonly ExprLike[], opts?: { prec?: number; solver?: 'newton' | 'bisect' }): Matrix;
+/**
+ * Finds a numerical zero of an equation or system near the supplied starting point.
+ *
+ * @param e - The equation or equations to solve numerically.
+ * @param x - The unknown or ordered unknowns.
+ * @param x0 - The starting approximation or bracketing endpoints.
+ * @param opts - `prec` sets working precision, `solver` selects Newton iteration or bisection.
+ * @returns The numerical root, or a column of root coordinates for a system.
+ * @see SymPy `sympy.solvers.solvers.nsolve`
+ */
 export function nsolve(e: ExprLike, x: Sym, x0: ExprLike | readonly [ExprLike, ExprLike], opts?: { prec?: number; solver?: 'newton' | 'bisect' }): Expr;
+/**
+ * Finds a numerical zero of an equation or system near the supplied starting point.
+ *
+ * @param e - The equation or equations to solve numerically.
+ * @param x - The unknown or ordered unknowns.
+ * @param x0 - The starting approximation or bracketing endpoints.
+ * @param opts - `prec` sets working precision, `solver` selects Newton iteration or bisection.
+ * @returns The numerical root, or a column of root coordinates for a system.
+ * @throws TypeError when the options are not an object.
+ * @throws RangeError when the system is not square or the initial values do not match the variables.
+ * @see SymPy `sympy.solvers.solvers.nsolve`
+ */
 export function nsolve(e: ExprLike | readonly ExprLike[], x: Sym | readonly Sym[], x0: ExprLike | readonly ExprLike[], opts: { prec?: number; solver?: 'newton' | 'bisect' } = {}): Expr | Matrix {
   const isOptions = (v: unknown): boolean => typeof v === 'object' && v !== null && !(v instanceof Expr);
   if (!isOptions(opts)) throw new TypeError('nsolve: options must be an object');
@@ -1861,8 +2044,11 @@ export function invertEquation(eqIn: ExprLike, symbols: readonly Sym[] = [], opt
 // ---------------------------------------------------------------------------
 
 /**
- * SymPy det_perm: the determinant as the sum over the permutations (in the
- * adjacent-transposition order of generate_bell, so the signs alternate).
+ * Computes a determinant as a signed sum of products over permutations.
+ *
+ * @param M - The square matrix.
+ * @returns The determinant of the square matrix.
+ * @see SymPy `sympy.solvers.solvers.det_perm`
  */
 export function detPerm(M: Matrix): Expr {
   const n = M.rows;
@@ -1879,9 +2065,11 @@ export function detPerm(M: Matrix): Expr {
 }
 
 /**
- * SymPy det_minor: Laplace expansion along the first row, each product
- * distributed over the terms of the minor's determinant. (SymPy's version
- * gives 0 for a 1 x 1 matrix; here it is the entry.)
+ * Computes a determinant by cofactor expansion along the first row.
+ *
+ * @param M - The square matrix.
+ * @returns The determinant of the square matrix.
+ * @see SymPy `sympy.solvers.solvers.det_minor`
  */
 export function detMinor(M: Matrix): Expr {
   const n = M.rows;
@@ -1900,9 +2088,11 @@ export function detMinor(M: Matrix): Expr {
 const hasSymbol = (e: Expr): boolean => freeSymbols(e).size > 0;
 
 /**
- * SymPy det_quick(M, method=None): the determinant of a matrix with
- * symbolic entries by permutations (fewer than 8 rows, every entry symbolic)
- * or by minors; a numeric matrix uses det.
+ * Computes the determinant of a symbolic matrix.
+ *
+ * @param M - The square matrix.
+ * @returns The determinant of the square matrix.
+ * @see SymPy `sympy.solvers.solvers.det_quick`
  */
 export function detQuick(M: Matrix): Expr {
   const entries = M.flat();
@@ -1911,11 +2101,12 @@ export function detQuick(M: Matrix): Expr {
 }
 
 /**
- * SymPy inv_quick(M): the inverse as cofactors over the determinant (by
- * permutations when no entry is a number, else by minors); a numeric matrix
- * uses inv. SymPy's minors of a 2 x 2 matrix are 0 (its det_minor of a 1 x 1
- * matrix), so it returns the zero matrix for Matrix([[x, 1], [0, x]]); symjs
- * returns the inverse.
+ * Computes the inverse of a matrix using its determinant and cofactors where applicable.
+ *
+ * @param M - The square matrix.
+ * @returns The inverse of a matrix using its determinant and cofactors where applicable.
+ * @throws NonInvertibleMatrixError when the matrix is singular.
+ * @see SymPy `sympy.solvers.solvers.inv_quick`
  */
 export function invQuick(M: Matrix): Matrix {
   const entries = M.flat();
@@ -1929,9 +2120,22 @@ export function invQuick(M: Matrix): Matrix {
 }
 
 /**
- * SymPy solve_linear_system_LU(matrix, syms): the solution of the system
+ * The solution of the system
  * with augmented matrix `matrix` (n rows, n + 1 columns) by LU
  * decomposition, as a map from the symbols to their values.
+ *
+ * @param matrix - The augmented coefficient matrix with the right-hand side in its last column.
+ * @param syms - The unknowns in the desired order.
+ * @returns The solution keyed by variable.
+ * @throws RangeError when the augmented matrix does not represent a square system.
+ * @see SymPy `sympy.solvers.solvers.solve_linear_system_LU`
+ * @example
+ * ```ts
+ * import { Matrix, solveLinearSystemLU, symbols } from '@symjs/symjs';
+ *
+ * const [x, y] = symbols('x y');
+ * solveLinearSystemLU(Matrix.of([[1, 4, 2], [-2, 1, 14]]), [x, y]); // => {x: -6, y: 2}
+ * ```
  */
 export function solveLinearSystemLU(matrix: Matrix, syms: readonly Expr[]): ExprMap<Expr> {
   if (matrix.rows !== matrix.cols - 1) throw new RangeError('Rows should be equal to columns - 1');

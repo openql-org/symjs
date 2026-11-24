@@ -82,7 +82,13 @@ const REL_CLASS: Record<RelOp, string> = { Eq: 'Equality', Ne: 'Unequality', Lt:
 // a WildFunction is a Function in SymPy (class key (4, 0, 'WildFunction'))
 const symClass = (e: Sym): Key => (e instanceof WildFunction ? [4, 0, 'WildFunction'] : [e.sortPriority, 0, e instanceof Wild ? 'Wild' : e instanceof Dummy ? 'Dummy' : e.sortClass]);
 
-/** SymPy class_key: (priority, sub-priority, class name) used to order expressions. */
+/**
+ * Orders expression classes by priority, subpriority and class name.
+ *
+ * @param e - The value to format.
+ * @returns The class priority, subpriority and name.
+ * @see SymPy `sympy.core.basic.Basic.class_key`
+ */
 export function classKey(e: Expr): Key {
   if (isNum(e) || e instanceof Special) return [1, 0, 'Number'];
   if (e instanceof BoolAtom) return [5, 0, e.value ? 'BooleanTrue' : 'BooleanFalse'];
@@ -130,7 +136,20 @@ function coeffMul(e: Expr): [number, Expr] {
   return [c.value, rest];
 }
 
-/** SymPy `Basic.sort_key()` / `default_sort_key`. */
+/**
+ * Builds the canonical ordering key for an expression.
+ *
+ * @param e - The value to format.
+ * @returns A key suitable for canonical ordering.
+ * @see SymPy `sympy.core.basic.Basic.sort_key`
+ * @example
+ * ```ts
+ * import { ex, sortKey } from '@symjs/symjs';
+ *
+ * const key = sortKey(ex`x`);
+ * Array.isArray(key) ? key[0] : key; // => [2, 0, Symbol]
+ * ```
+ */
 
 export function sortKey(e: Expr): Key {
   if (isNum(e)) return [[1, 0, 'Number'], [0, []], [], e.value];
@@ -165,7 +184,18 @@ export function sortKey(e: Expr): Key {
   return [ck, [args.length, args], sortKey(exp), coeff];
 }
 
-/** SymPy `Mul.as_ordered_factors()` (all factors are commutative here). */
+/**
+ * Returns list of ordered factors (if Mul) else [self].
+ *
+ * @param e - The value to format.
+ * @returns List of ordered factors (if Mul) else [self].
+ * @see SymPy `sympy.core.mul.Mul.as_ordered_factors`
+ * @example
+ * ```ts
+ * import { asOrderedFactors, ex } from '@symjs/symjs';
+ * asOrderedFactors(ex`2*x*y`); // => [2, x, y]
+ * ```
+ */
 export function asOrderedFactors(e: Expr): Expr[] {
   // a MatMul splits into its factors like a Mul (SymPy MatMul derives from Mul)
   const fs = isMulLike(e) ? [...e.args] : [e];
@@ -228,9 +258,19 @@ function monomialKey(order: string, m: number[]): NumKey {
 }
 
 /**
- * SymPy `Expr.as_ordered_terms(order)`: without an order the printers'
+ * Without an order the printers'
  * default (lex, with SymPy's special case 1 - x**2); with a monomial
  * ordering the terms sorted by it (reversed for a 'rev-' prefix).
+ *
+ * @param e - The value to format.
+ * @param order - The monomial ordering used to sort the terms.
+ * @returns The additive terms in the selected monomial order.
+ * @see SymPy `sympy.core.expr.Expr.as_ordered_terms`
+ * @example
+ * ```ts
+ * import { asOrderedTerms, ex } from '@symjs/symjs';
+ * asOrderedTerms(ex`x**2 + x + 1`); // => [x**2, x, 1]
+ * ```
  */
 export function asOrderedTerms(e: Expr, order?: TermOrder): Expr[] {
   if (order !== undefined) {

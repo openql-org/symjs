@@ -17,10 +17,14 @@ import { str } from './str';
 
 /** The classes a style applies to: every node ('Basic'), the expressions ('Expr'), or the nodes a predicate selects. */
 export type DotClass = 'Basic' | 'Expr' | ((e: Expr) => boolean);
-/** Graphviz attributes of the nodes of the classes (SymPy `styles`: (class, attributes) pairs, later ones override). */
+/** Graphviz attributes of the nodes of the classes. */
 export type DotStyles = readonly (readonly [DotClass, Readonly<Record<string, string>> | ReadonlyMap<string, string>])[];
 
-/** SymPy `default_styles`: blue ellipses, black for expressions. */
+/**
+ * Blue ellipses, black for expressions.
+ *
+ * @see SymPy `sympy.printing.dot.default_styles`
+ */
 export const defaultStyles: DotStyles = [
   ['Basic', { color: 'blue', shape: 'ellipse' }],
   ['Expr', { color: 'black' }],
@@ -36,17 +40,60 @@ function viewPurestr(v: BasicView): string {
 }
 
 /**
- * SymPy `purestr(x)`: a string that rebuilds the expression like srepr,
- * with the arguments in SymPy's order (`Add(Integer(2), Sym('x'))`).
+ * Formats a value using structural names for use as a graph node identifier.
+ *
+ * @param x - The value to format.
+ * @returns The structural node identifier, with operand identifiers if requested.
+ * @see SymPy `sympy.printing.dot.purestr`
+ * @example
+ * ```ts
+ * import { ex, purestr } from '@symjs/symjs';
+ * purestr(ex`x`); // => Symbol('x')
+ * ```
  */
 export function purestr(x: Expr): string;
+/**
+ * Formats a value using structural names for use as a graph node identifier.
+ *
+ * @param x - The value to format.
+ * @param options - `withArgs` includes operand labels.
+ * @returns The structural node identifier, with operand identifiers if requested.
+ * @see SymPy `sympy.printing.dot.purestr`
+ */
 export function purestr(x: Expr, options: { readonly withArgs: true }): [string, string[]];
+/**
+ * Formats a value using structural names for use as a graph node identifier.
+ *
+ * @param x - The value to format.
+ * @param options - `withArgs` includes operand labels.
+ * @returns The structural node identifier, with operand identifiers if requested.
+ * @see SymPy `sympy.printing.dot.purestr`
+ */
 export function purestr(x: Expr, options: { readonly withArgs?: boolean }): string | [string, string[]];
+/**
+ * Formats a value using structural names for use as a graph node identifier.
+ *
+ * @param x - The value to format.
+ * @param options - `withArgs` includes operand labels.
+ * @returns The structural node identifier, with operand identifiers if requested.
+ * @see SymPy `sympy.printing.dot.purestr`
+ */
 export function purestr(x: Expr, options: { readonly withArgs?: boolean } = {}): string | [string, string[]] {
   return options.withArgs ? purestrWithArgs(x) : viewPurestr(basicView(x));
 }
 
-/** SymPy `purestr(x, with_args=True)`: the purestr of the expression and those of its arguments. */
+/**
+ * Returns the purestr of the expression and those of its arguments.
+ *
+ * @param x - The expression whose operator and operands identify the DOT node.
+ * @returns The purestr of the expression and those of its arguments.
+ * @see SymPy `sympy.printing.dot.purestr`
+ * @example
+ * ```ts
+ * import { ex, purestrWithArgs } from '@symjs/symjs';
+ * purestrWithArgs(ex`x + 1`); // => [Add(Integer(1), Symbol('x')), [Integer(1), Symbol('x')]]
+ * ```
+ */
 export function purestrWithArgs(x: Expr): [string, string[]] {
   const v = basicView(x);
   return [viewPurestr(v), v.args.map(viewPurestr)];
@@ -64,12 +111,36 @@ function viewStyle(v: BasicView, styles: DotStyles): Record<string, string> {
   return style;
 }
 
-/** SymPy `styleof(expr, styles)`: the merged attributes of the styles whose class the expression has. */
+/**
+ * Returns the merged attributes of the styles whose class the expression has.
+ *
+ * @param expr - The value to format.
+ * @param styles - The mapping of expression types to DOT attributes.
+ * @returns The merged attributes of the styles whose class the expression has.
+ * @see SymPy `sympy.printing.dot.styleof`
+ * @example
+ * ```ts
+ * import { defaultStyles, ex, styleof } from '@symjs/symjs';
+ * styleof(ex`x`, defaultStyles).get('color'); // => black
+ * ```
+ */
 export function styleof(expr: Expr, styles: DotStyles = defaultStyles): Map<string, string> {
   return new Map(Object.entries(viewStyle(basicView(expr), styles)));
 }
 
-/** SymPy `attrprint(d, delimiter=', ')`: `"key"="value"` pairs sorted by key. */
+/**
+ * Formats DOT attributes as quoted key-value pairs sorted by key.
+ *
+ * @param d - The attribute names and values to format.
+ * @param delimiter - The text inserted between adjacent entries.
+ * @returns The formatted text.
+ * @see SymPy `sympy.printing.dot.attrprint`
+ * @example
+ * ```ts
+ * import { attrprint } from '@symjs/symjs';
+ * attrprint(new Map([['color', 'blue'], ['shape', 'ellipse']])); // => "color"="blue", "shape"="ellipse"
+ * ```
+ */
 export function attrprint(d: Readonly<Record<string, string>> | ReadonlyMap<string, string>, delimiter = ', '): string {
   return (d instanceof Map ? [...d] : Object.entries(d))
     .sort(([a], [b]) => Number(a > b) - Number(a < b))
@@ -99,7 +170,19 @@ function viewNode(v: BasicView, options: DotNodeOptions): string {
   return `"${s}" [${attrprint(style)}];`;
 }
 
-/** SymPy `dotnode(expr, styles, labelfunc, pos, repeat)`: the DOT line of one node. */
+/**
+ * Returns the DOT line of one node.
+ *
+ * @param expr - The value to format.
+ * @param options - The dot node settings.
+ * @returns The DOT line of one node.
+ * @see SymPy `sympy.printing.dot.dotnode`
+ * @example
+ * ```ts
+ * import { dotnode, ex } from '@symjs/symjs';
+ * dotnode(ex`x`); // => "Symbol('x')_()" ["color"="black", "label"="x", "shape"="ellipse"];
+ * ```
+ */
 export function dotnode(expr: Expr, options: DotNodeOptions = {}): string {
   return viewNode(basicView(expr), options);
 }
@@ -124,7 +207,19 @@ function viewEdges(v: BasicView, options: DotEdgesOptions): string[] {
   return v.args.map((a, i) => `"${self}" -> "${viewPurestr(a)}${repeat ? `_${posStr([...pos, i])}` : ''}";`);
 }
 
-/** SymPy `dotedges(expr, atom, pos, repeat)`: the DOT lines of the edges from the node to its arguments. */
+/**
+ * Returns the DOT lines of the edges from the node to its arguments.
+ *
+ * @param expr - The value to format.
+ * @param options - The dot edges settings.
+ * @returns The DOT lines of the edges from the node to its arguments.
+ * @see SymPy `sympy.printing.dot.dotedges`
+ * @example
+ * ```ts
+ * import { dotedges, ex } from '@symjs/symjs';
+ * dotedges(ex`x + 1`).length; // => 2
+ * ```
+ */
 export function dotedges(expr: Expr, options: DotEdgesOptions = {}): string[] {
   return viewEdges(basicView(expr), options);
 }
@@ -146,8 +241,18 @@ export interface DotprintOptions {
 }
 
 /**
- * SymPy `dotprint(expr, ...)`: the DOT description of the expression tree,
+ * The DOT description of the expression tree,
  * for Graphviz (`dot -Tpng`).
+ *
+ * @param expr - The value to format.
+ * @param options - The dotprint settings.
+ * @returns The graph in DOT syntax.
+ * @see SymPy `sympy.printing.dot.dotprint`
+ * @example
+ * ```ts
+ * import { dotprint, ex } from '@symjs/symjs';
+ * dotprint(ex`x + 1`).includes('digraph'); // => True
+ * ```
  */
 export function dotprint(expr: Expr, options: DotprintOptions = {}): string {
   const graphstyle = { rankdir: 'TD', ordering: 'out', ...options.graphAttributes };

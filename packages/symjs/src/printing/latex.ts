@@ -35,7 +35,7 @@ import type { FunctionClassLike } from '../core/undef';
 export interface LatexOptions {
   /** 'plain' (default), 'inline' (`$...$`), 'equation' or 'equation*' (a LaTeX environment). */
   readonly mode?: 'plain' | 'inline' | 'equation' | 'equation*';
-  /** itex syntax: `$$...$$` for the equation modes, `\root{n}{x}`, `\gt` and `\lt`. */
+  /** Itex syntax: `$$...$$` for the equation modes, `\root{n}{x}`, `\gt` and `\lt`. */
   readonly itex?: boolean;
   /** Rational powers as `x^{p/q}` instead of `x^{\frac{p}{q}}`. */
   readonly foldFracPowers?: boolean;
@@ -55,7 +55,7 @@ export interface LatexOptions {
   readonly matStr?: string;
   /** The multiplication symbol: none (a space, default), 'ldot', 'dot', 'times' or any LaTeX string. */
   readonly mulSymbol?: 'ldot' | 'dot' | 'times' | (string & Record<never, never>);
-  /** The LaTeX of chosen symbols (SymPy `symbol_names`). */
+  /** The LaTeX of chosen symbols. */
   readonly symbolNames?: ReadonlyMap<Expr, string>;
   /** Roots as `\sqrt` (default true); false prints fractional powers. */
   readonly rootNotation?: boolean;
@@ -69,11 +69,11 @@ export interface LatexOptions {
   readonly parenthesizeSuper?: boolean;
   /** The differential operator: 'd' (default), 'rd', 'td' or any LaTeX string. */
   readonly diffOperator?: string;
-  /** Print symbol names as they are, without sub- and superscripts. */
+  /** Prints symbol names as they are, without sub- and superscripts. */
   readonly disableSplitSuperSub?: boolean;
   /** Floats with all their digits (default false: trailing zeros dropped). */
   readonly fullPrec?: boolean;
-  /** Permutations in cycle notation (default true) or as a two-line matrix (SymPy perm_cyclic). */
+  /** Permutations in cycle notation (default true) or as a two-line matrix. */
   readonly permCyclic?: boolean;
   /** The superscript of an adjoint matrix: 'dagger' (default), 'star' or 'hermitian'. */
   readonly adjointStyle?: 'dagger' | 'star' | 'hermitian';
@@ -81,9 +81,9 @@ export interface LatexOptions {
   readonly matSymbolStyle?: 'plain' | 'bold';
   /** The order of the terms of sums: 'lex' (default), another monomial order ('grlex', 'rev-lex', ...) or 'none' (as stored, also the factors of products). */
   readonly order?: TermOrder | 'none' | 'old';
-  /** Floats with an exponent below this are printed in scientific notation (SymPy min). */
+  /** Floats with an exponent below this are printed in scientific notation. */
   readonly min?: number;
-  /** Floats with an exponent from this on are printed in scientific notation (SymPy max). */
+  /** Floats with an exponent from this on are printed in scientific notation. */
   readonly max?: number;
 }
 
@@ -1232,21 +1232,48 @@ function printValue(v: LatexPrintable): string {
   throw new TypeError(`latex: cannot print ${Object.prototype.toString.call(v)}`);
 }
 
-/** SymPy's LatexPrinter, with instance options layered on the current global defaults. */
+/**
+ * SymPy's LatexPrinter, with instance options layered on the current global defaults.
+ *
+ * @see SymPy `sympy.printing.latex.LatexPrinter`
+ */
 export class LatexPrinter {
   private readonly options: LatexOptions;
   private readonly settings: Settings;
 
+  /**
+   * Creates a LatexPrinter instance.
+   *
+   * @param options - The latex settings.
+   */
   constructor(options: LatexOptions = {}) {
     this.options = { ...globalOptions, ...options };
     this.settings = resolveSettings(this.options);
   }
+  /**
+   * Represents the default settings shared by newly created printers.
+   *
+   * @returns The default settings shared by newly created printers.
+   */
   static get globalSettings(): LatexOptions { return globalOptions; }
+  /**
+   * Sets the default formatting preferences for new printers.
+   *
+   * @param options - The latex settings.
+   * @see SymPy `sympy.printing.latex.LatexPrinter.set_global_settings`
+   */
   static setGlobalSettings(options: LatexOptions): void {
     const next = { ...globalOptions, ...options };
     defaultSettings = resolveSettings(next);
     globalOptions = Object.freeze(next);
   }
+  /**
+   * Formats the supplied value using the printer settings.
+   *
+   * @param expr - The value to format.
+   * @returns The formatted text.
+   * @see SymPy `sympy.printing.latex.LatexPrinter.doprint`
+   */
   doprint(expr: LatexPrintable): string {
     return renderLatex(expr, this.settings, this.options.permCyclic);
   }

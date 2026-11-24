@@ -480,10 +480,20 @@ function infinitesimalsOf(m: LieMatch, hint: LieHeuristic | 'default' | 'all'): 
 }
 
 /**
- * SymPy infinitesimals(eq, func, order, hint): the infinitesimals
+ * The infinitesimals
  * {xi(x, f(x)): ..., eta(x, f(x)): ...} of the Lie point symmetries of a
  * first-order ODE, found by the heuristics (hint: one of LIE_HEURISTICS,
  * 'default' for the first heuristic that succeeds, or 'all').
+ *
+ * @param eq - The equation, or an expression equal to zero.
+ * @param opts - `func` selects the dependent function, `hint` selects the solution method.
+ * @returns The infinitesimal generators that satisfy the determining equation.
+ * @see SymPy `sympy.solvers.ode.lie_group.infinitesimals`
+ * @example
+ * ```ts
+ * import { ex, infinitesimals } from '@symjs/symjs';
+ * infinitesimals(ex`-x**2*f(x) + Derivative(f(x), x)`); // => [{xi(x, f(x)): 0, eta(x, f(x)): exp(x**3/3)}]
+ * ```
  */
 export function infinitesimals(eq: ExprLike, opts: { func?: Expr; hint?: string } = {}): Map<Expr, Expr>[] {
   const [e, func, x] = prepare(eq, opts.func);
@@ -495,9 +505,15 @@ export function infinitesimals(eq: ExprLike, opts: { func?: Expr; hint?: string 
 }
 
 /**
- * SymPy checkinfsol(eq, infinitesimals, func, order): for each pair of
+ * For each pair of
  * infinitesimals, [true, 0] when it satisfies the determining PDE, otherwise
  * [false, the PDE's residual].
+ *
+ * @param eq - The equation, or an expression equal to zero.
+ * @param infs - The proposed infinitesimal generators.
+ * @param opts - `func` selects the dependent function.
+ * @returns A verification flag and residual for each proposed generator.
+ * @see SymPy `sympy.solvers.ode.ode.checkinfsol`
  */
 export function checkinfsol(eq: ExprLike, infs: readonly ReadonlyMap<Expr, Expr>[], opts: { func?: Expr } = {}): [boolean, Expr][] {
   const [e, func, x] = prepare(eq, opts.func);

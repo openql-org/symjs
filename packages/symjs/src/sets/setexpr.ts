@@ -88,24 +88,79 @@ function pointwise(op: Operation, a: SetExpr, b: SetExpr): SetExpr {
   return new ImageSet(Tuple(x, y), operation(op, x, y), productSet(a, b));
 }
 
-/** SymPy SetExpr: a scalar expression ranging over a set, with pointwise arithmetic. */
+/**
+ * A scalar expression ranging over a set, with pointwise arithmetic.
+ *
+ * @see SymPy `sympy.sets.setexpr.SetExpr`
+ * @example
+ * ```ts
+ * import { Interval, SetExpressionNode } from '@symjs/symjs';
+ * new SetExpressionNode(Interval.of(1, 2)).add(3); // => SetExpr(Interval(4, 5))
+ * ```
+ */
 export class SetExpressionNode extends ExtensionExpr {
-  constructor(readonly set: SetExpr) { super('SetExpr', [set]); }
+  /**
+   * Creates a SetExpressionNode instance.
+   *
+   * @param set - The set to use for pointwise operations.
+   */
+  constructor(
+    /**
+     * The set on which arithmetic acts pointwise.
+     *
+     * @see SymPy `sympy.sets.setexpr.SetExpr.set`
+     */
+    readonly set: SetExpr) { super('SetExpr', [set]); }
+  /**
+   * Formats the expression using a plain-text printer for its operands.
+   *
+   * @param p - The callback for printing child expressions.
+   * @returns The formatted text.
+   */
   printStr(p: (e: Expr) => string): string {
     return `SetExpr(${p(this.set === Reals ? new Interval(S.NegativeInfinity, S.Infinity, true, true) : this.set)})`;
   }
+  /**
+   * Rebuilds the expression with replacement arguments.
+   *
+   * @param args - The operands in their defining order.
+   * @returns The expression with the replacement operands.
+   */
   withArgs(args: readonly Expr[]): SetExpressionNode { return new SetExpressionNode(cast(first(args), SetExpr)); }
-  /** Canonicalize the bound parameters in the underlying image. */
+  /**
+   * Canonicalize the bound parameters in the underlying image.
+   *
+   * @returns The expression with fresh bound symbols.
+   */
   asDummy(): SetExpressionNode {
     return this.set instanceof ImageSet ? new SetExpressionNode(this.set.asDummy()) : this;
   }
-  /** Map a function over all possible values. */
+  /**
+   * Map a function over all possible values.
+   *
+   * @param fn - The function to apply to each member of the set.
+   * @returns The image of the wrapped set under the function.
+   * @see SymPy `sympy.sets.setexpr.SetExpr._eval_func`
+   */
   applyfunc(fn: (e: Expr) => Expr): SetExpressionNode {
     const x = new Dummy('x');
     return new SetExpressionNode(imageSet(x, fn(x), this.set));
   }
 }
+/**
+ * Wraps a set for pointwise arithmetic and function application.
+ *
+ * @param set - The set to wrap for pointwise operations.
+ * @returns The set wrapped for pointwise arithmetic.
+ * @see SymPy `sympy.sets.setexpr.SetExpr`
+ * @example
+ * ```ts
+ * import { Interval, SetExpression } from '@symjs/symjs';
+ * SetExpression(Interval.of(1, 2)).add(3); // => SetExpr(Interval(4, 5))
+ * ```
+ */
 export const SetExpression = callableClass(SetExpressionNode, (set: SetExpr): SetExpressionNode => new SetExpressionNode(set));
+/** The instance type returned by `SetExpression`. */
 export type SetExpression = SetExpressionNode;
 
 registerArithmetic((op, args) => {

@@ -14,12 +14,21 @@ import { impl } from '../core/nodes';
 import { isIntegerQ } from '../core/assumptions';
 
 /**
- * SymPy `split_super_sub(text)`: the name, the superscripts and the
+ * The name, the superscripts and the
  * subscripts of a symbol name. A superscript starts with `^` or `__`, a
  * subscript with `_`; a name that ends with digits has them as its first
  * subscript (`x2` is `x` with subscript `2`).
  *
  * `splitSuperSub('a_x^1')` is `['a', ['1'], ['x']]`.
+ *
+ * @param text - The symbol name containing the decorations.
+ * @returns The name, the superscripts and the subscripts of a symbol name.
+ * @see SymPy `sympy.printing.conventions.split_super_sub`
+ * @example
+ * ```ts
+ * import { splitSuperSub } from '@symjs/symjs';
+ * splitSuperSub('a_x^1'); // => [a, [1], [x]]
+ * ```
  */
 export function splitSuperSub(text: string): [string, string[], string[]] {
   if (text.length === 0) return [text, [], []];
@@ -56,11 +65,15 @@ export function splitSuperSub(text: string): [string, string[], string[]] {
 }
 
 /**
- * SymPy `requires_partial(expr)`: whether a derivative is printed with the
+ * Determines whether a derivative is printed with the
  * partial-derivative symbol, that is whether more than one free symbol of
  * the expression may be a non-integer.
  *
  * `requiresPartial(Derivative(f(x, y), x))` is true.
+ *
+ * @param expr - The value to format.
+ * @returns Whether the expression requires a partial derivative symbol.
+ * @see SymPy `sympy.printing.conventions.requires_partial`
  */
 export function requiresPartial(expr: Expr): boolean {
   let n = 0;

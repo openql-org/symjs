@@ -24,10 +24,14 @@ import { SingularityFunction, isSingularityFunction } from './transforms/delta';
 const hasSingularity = (e: Expr): boolean => isSingularityFunction(e) || e.args.some(hasSingularity);
 
 /**
- * SymPy singularityintegrate: the indefinite integral in x of a singularity
+ * The indefinite integral in x of a singularity
  * function, or of a product or power containing one, as singularity
- * functions; NoMatch (SymPy None) when the method does not apply.
+ * functions; NoMatch when the method does not apply.
  *
+ * @param f - The integrand.
+ * @param x - The integration variable.
+ * @returns The antiderivative, or `NoMatch` when the method does not apply.
+ * @see SymPy `sympy.integrals.singularityfunctions.singularityintegrate`
  * @example
  * ```ts
  * import { SingularityFunction, singularityintegrate, symbols } from '@symjs/symjs';

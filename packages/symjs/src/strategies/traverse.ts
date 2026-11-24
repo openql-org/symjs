@@ -15,27 +15,62 @@ import { chain, doOne } from './core';
 import type { TreeFns } from './util';
 import { basicFns } from './util';
 
-/** SymPy `top_down(rule, fns=basic_fns)`: apply a rule down a tree, on the top nodes first. */
+/**
+ * Applies a rule down a tree, on the top nodes first.
+ *
+ * @param rule - The transformation to apply.
+ * @param fns - The operations for inspecting and rebuilding tree nodes.
+ * @returns A rewrite rule applying this strategy.
+ * @see SymPy `sympy.strategies.traverse.top_down`
+ */
 export function topDown(rule: Rule<Expr>, fns: TreeFns = basicFns): Rule<Expr> {
   return chain(rule, (expr) => sall(topDown(rule, fns), fns)(expr));
 }
 
-/** SymPy `bottom_up(rule, fns=basic_fns)`: apply a rule down a tree, on the bottom nodes first. */
+/**
+ * Applies a rule down a tree, on the bottom nodes first.
+ *
+ * @param rule - The transformation to apply.
+ * @param fns - The operations for inspecting and rebuilding tree nodes.
+ * @returns A rewrite rule applying this strategy.
+ * @see SymPy `sympy.strategies.traverse.bottom_up`
+ */
 export function bottomUp(rule: Rule<Expr>, fns: TreeFns = basicFns): Rule<Expr> {
   return chain((expr) => sall(bottomUp(rule, fns), fns)(expr), rule);
 }
 
-/** SymPy `top_down_once(rule, fns=basic_fns)`: apply a rule down a tree, stopping on success. */
+/**
+ * Applies a rule down a tree, stopping on success.
+ *
+ * @param rule - The transformation to apply.
+ * @param fns - The operations for inspecting and rebuilding tree nodes.
+ * @returns A rewrite rule applying this strategy.
+ * @see SymPy `sympy.strategies.traverse.top_down_once`
+ */
 export function topDownOnce(rule: Rule<Expr>, fns: TreeFns = basicFns): Rule<Expr> {
   return doOne(rule, (expr) => sall(topDown(rule, fns), fns)(expr));
 }
 
-/** SymPy `bottom_up_once(rule, fns=basic_fns)`: apply a rule up a tree, stopping on success. */
+/**
+ * Applies a rule up a tree, stopping on success.
+ *
+ * @param rule - The transformation to apply.
+ * @param fns - The operations for inspecting and rebuilding tree nodes.
+ * @returns A rewrite rule applying this strategy.
+ * @see SymPy `sympy.strategies.traverse.bottom_up_once`
+ */
 export function bottomUpOnce(rule: Rule<Expr>, fns: TreeFns = basicFns): Rule<Expr> {
   return doOne((expr) => sall(bottomUp(rule, fns), fns)(expr), rule);
 }
 
-/** SymPy `sall(rule, fns=basic_fns)`: strategic all, apply a rule to the arguments of a node. */
+/**
+ * Strategic all, apply a rule to the arguments of a node.
+ *
+ * @param rule - The transformation to apply.
+ * @param fns - The operations for inspecting and rebuilding tree nodes.
+ * @returns A rewrite rule applying this strategy.
+ * @see SymPy `sympy.strategies.traverse.sall`
+ */
 export function sall(rule: Rule<Expr>, fns: TreeFns = basicFns): Rule<Expr> {
   return function allRl(expr: Expr): Expr {
     if (fns.leaf(expr)) return expr;

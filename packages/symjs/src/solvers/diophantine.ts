@@ -159,21 +159,43 @@ function contradictsAssumptions(val: Expr, s: Sym): boolean {
 // ---------------------------------------------------------------------------
 
 /**
- * SymPy `DiophantineSolutionSet`: a set of solution tuples of a Diophantine
+ * A set of solution tuples of a Diophantine
  * equation, with the symbols of the equation and the parameters of the
  * solutions. Tuples are compared structurally.
+ *
+ * @see SymPy `sympy.solvers.diophantine.diophantine.DiophantineSolutionSet`
+ * @example
+ * ```ts
+ * import { DiophantineSolutionSet, symbols } from '@symjs/symjs';
+ *
+ * const [t, x, y] = symbols('t x y');
+ * new DiophantineSolutionSet([x, y], [t]).size; // => 0
+ * ```
  */
 export class DiophantineSolutionSet implements Iterable<Expr[]> {
+  /** The unknowns in solution-tuple order. */
   readonly symbols: readonly Expr[];
+  /** The symbols that parameterize integer solutions. */
   readonly parameters: readonly Expr[];
   readonly #items = new TupleSet();
 
+  /**
+   * Creates a DiophantineSolutionSet instance.
+   *
+   * @param symbolsSeq - The unknowns in the desired order.
+   * @param parameters - The free parameters used in solution tuples.
+   */
   constructor(symbolsSeq: readonly Expr[], parameters: readonly Expr[]) {
     this.symbols = [...symbolsSeq];
     this.parameters = [...parameters];
   }
 
-  /** Adds a solution, made canonical with respect to sign (no -x unless x is also present). */
+  /**
+   * Adds a solution, made canonical with respect to sign (no -x unless x is also present).
+   *
+   * @param solutionIn - The proposed solution.
+   * @see SymPy `sympy.solvers.diophantine.diophantine.DiophantineSolutionSet.add`
+   */
   add(solutionIn: readonly ExprLike[]): void {
     if (solutionIn.length !== this.symbols.length) {
       throw new RangeError(`Solution should have a length of ${this.symbols.length}, not ${solutionIn.length}`);
@@ -188,17 +210,34 @@ export class DiophantineSolutionSet implements Iterable<Expr[]> {
     this.#items.add(solution);
   }
 
-  /** Adds several solutions. */
+  /**
+   * Adds several solutions.
+   *
+   * @param solutions - The candidate solutions.
+   * @see SymPy `sympy.solvers.diophantine.diophantine.DiophantineSolutionSet.update`
+   */
   update(...solutions: readonly (readonly ExprLike[])[]): void {
     for (const s of solutions) this.add(s);
   }
 
-  /** The solutions as Maps from the symbols to their values, in sorted order. */
+  /**
+   * The solutions as Maps from the symbols to their values, in sorted order.
+   *
+   * @returns An iterator over assignments keyed by the unknowns.
+   * @see SymPy `sympy.solvers.diophantine.diophantine.DiophantineSolutionSet.dict_iterator`
+   */
   *dictIterator(): Generator<ExprMap<Expr>, void, undefined> {
     for (const sol of this.#items.sorted()) yield new ExprMap(this.symbols.map((s, i) => [s, at(sol, i)] as const));
   }
 
-  /** The solutions with a substitution applied (`subs(old, new)` or `subs(mapping)`). */
+  /**
+   * Returns the solutions with a substitution applied (`subs(old, new)` or `subs(mapping)`).
+   *
+   * @param s - The parameter to replace.
+   * @param v - Its replacement value.
+   * @returns The solutions with a substitution applied (`subs(old, new)` or `subs(mapping)`).
+   * @see SymPy `sympy.solvers.diophantine.diophantine.DiophantineSolutionSet.subs`
+   */
   subs(s: Substitution | Expr, v?: ExprLike): DiophantineSolutionSet {
     const rep: Substitution = s instanceof Expr ? [[s, defined(v, 'the new value')]] : s;
     const result = new DiophantineSolutionSet(this.symbols, this.parameters);
@@ -206,7 +245,13 @@ export class DiophantineSolutionSet implements Iterable<Expr[]> {
     return result;
   }
 
-  /** The solutions evaluated at values of the parameters, in order; `null` keeps a parameter (SymPy `__call__`). */
+  /**
+   * The solutions evaluated at values of the parameters, in order; `null` keeps a parameter.
+   *
+   * @param args - Values to substitute for the solution parameters in order.
+   * @returns The solutions evaluated at values of the parameters, in order.
+   * @see SymPy `sympy.solvers.diophantine.diophantine.DiophantineSolutionSet.__call__`
+   */
   call(...args: (ExprLike | null)[]): DiophantineSolutionSet {
     if (args.length > this.parameters.length) {
       throw new RangeError(`Evaluation should have at most ${this.parameters.length} values, not ${args.length}`);
@@ -218,10 +263,21 @@ export class DiophantineSolutionSet implements Iterable<Expr[]> {
     return this.subs(rep);
   }
 
+  /**
+   * Represents the number of distinct solution tuples.
+   *
+   * @returns The number of distinct solution tuples.
+   */
   get size(): number {
     return this.#items.items.size;
   }
 
+  /**
+   * Tests whether a solution tuple belongs to the set.
+   *
+   * @param solution - The proposed solution.
+   * @returns Whether the solution tuple is present.
+   */
   has(solution: readonly ExprLike[]): boolean {
     return this.#items.has(solution.map((v) => sympify(v)));
   }
@@ -230,7 +286,11 @@ export class DiophantineSolutionSet implements Iterable<Expr[]> {
     for (const t of this.#items.values()) yield [...t];
   }
 
-  /** Python's repr of the set: `DiophantineSolutionSet({(2, 3)})`. */
+  /**
+   * Python's repr of the set: `DiophantineSolutionSet({(2, 3)})`.
+   *
+   * @returns The formatted text.
+   */
   toString(): string {
     if (!this.size) return 'DiophantineSolutionSet()';
     const tup = (t: readonly Expr[]) => (t.length === 1 ? `(${str(first(t))},)` : `(${t.map(str).join(', ')})`);
@@ -280,12 +340,17 @@ export interface DiophantineSolveOptions {
 }
 
 /**
- * SymPy `DiophantineEquationType`: the internal representation of a
+ * The internal representation of a
  * Diophantine equation of a particular type.
+ *
+ * @see SymPy `sympy.solvers.diophantine.diophantine.DiophantineEquationType`
  */
 export class DiophantineEquationType {
+  /** The name identifying the equation class. */
   readonly name: string = 'diophantine';
+  /** The polynomial whose integer zeros are sought. */
   readonly equation: Expr;
+  /** The symbols that occur free in this expression. */
   readonly freeSymbols: readonly Sym[];
   /** Coefficients keyed by monomial (the constant term by 1). */
   readonly coeff: ExprMap<Expr>;
@@ -300,6 +365,14 @@ export class DiophantineEquationType {
   protected c: Coeffs;
   protected params: readonly Expr[] | null = null;
 
+  /**
+   * Creates a DiophantineEquationType instance.
+   *
+   * @param equation - The equation, or an expression equal to zero.
+   * @param freeSymbolsIn - The unknowns in the requested order.
+   * @throws RangeError when the equation contains no free symbols.
+   * @throws TypeError when a polynomial coefficient is not an integer.
+   */
   constructor(equation: ExprLike, freeSymbolsIn?: readonly Sym[]) {
     this.equation = expand(sympify(equation), { force: true });
     this.freeSymbols = freeSymbolsIn ? [...freeSymbolsIn] : sortedSymbols(this.equation);
@@ -317,21 +390,44 @@ export class DiophantineEquationType {
     this.dimension = this.freeSymbols.length;
   }
 
-  /** The equation is of this type. */
+  /**
+   * The equation is of this type.
+   *
+   * @returns Whether the equation belongs to this class.
+   * @see SymPy `sympy.solvers.diophantine.diophantine.DiophantineEquationType.matches`
+   */
   matches(): boolean {
     return false;
   }
 
+  /**
+   * Represents the number of independent parameters used in a general solution.
+   *
+   * @returns The number of independent parameters used in a general solution.
+   * @see SymPy `sympy.solvers.diophantine.diophantine.DiophantineEquationType.n_parameters`
+   */
   get nParameters(): number {
     return this.dimension;
   }
 
+  /**
+   * Represents the symbols that parameterize integer solutions.
+   *
+   * @returns The symbols that parameterize integer solutions.
+   * @see SymPy `sympy.solvers.diophantine.diophantine.DiophantineEquationType.parameters`
+   */
   get parameters(): readonly Expr[] {
     this.params ??= symbolsRange('t_', 0, this.nParameters);
     return this.params;
   }
 
-  /** The solutions of the equation. */
+  /**
+   * Returns the solutions of the equation.
+   *
+   * @param opts - The diophantine solve settings.
+   * @returns The solutions of the equation.
+   * @see SymPy `sympy.solvers.diophantine.diophantine.DiophantineEquationType.solve`
+   */
   solve(opts: DiophantineSolveOptions = {}): DiophantineSolutionSet {
     void opts;
     throw new NotImplementedError(`No solver has been written for ${this.name}.`);
@@ -351,14 +447,41 @@ export class DiophantineEquationType {
   }
 }
 
-/** SymPy `Univariate`: a polynomial equation in one integer variable. */
+/**
+ * Represents a polynomial Diophantine equation in one unknown.
+ *
+ * @see SymPy `sympy.solvers.diophantine.diophantine.Univariate`
+ * @example
+ * ```ts
+ * import { Univariate, ex } from '@symjs/symjs';
+ * new Univariate(ex`x**2 - 4`).matches(); // => True
+ * ```
+ */
 export class Univariate extends DiophantineEquationType {
+  /**
+   * The name identifying the equation class.
+   *
+   * @see SymPy `sympy.solvers.diophantine.diophantine.Univariate.name`
+   */
   override readonly name: string = 'univariate';
 
+  /**
+   * Tests whether the equation belongs to this equation class.
+   *
+   * @returns Whether the equation belongs to this class.
+   * @see SymPy `sympy.solvers.diophantine.diophantine.Univariate.matches`
+   */
   override matches(): boolean {
     return this.dimension === 1;
   }
 
+  /**
+   * Finds the integer solutions of this equation.
+   *
+   * @param opts - The diophantine solve settings.
+   * @returns The integer solutions of this equation.
+   * @see SymPy `sympy.solvers.diophantine.diophantine.Univariate.solve`
+   */
   override solve(opts: DiophantineSolveOptions = {}): DiophantineSolutionSet {
     this.preSolve(opts.parameters);
     const result = new DiophantineSolutionSet(this.freeSymbols, this.parameters);
@@ -380,14 +503,41 @@ function integerRoots(eq: Expr, x: Sym): bigint[] {
   return [...out].sort((p, q) => (p < q ? -1 : 1));
 }
 
-/** SymPy `Linear`: `a_1*x_1 + ... + a_n*x_n + c = 0`. */
+/**
+ * Represents a linear equation with integer coefficients and integer unknowns.
+ *
+ * @see SymPy `sympy.solvers.diophantine.diophantine.Linear`
+ * @example
+ * ```ts
+ * import { Linear, ex } from '@symjs/symjs';
+ * new Linear(ex`2*x - 3*y - 5`).matches(); // => True
+ * ```
+ */
 export class Linear extends DiophantineEquationType {
+  /**
+   * The name identifying the equation class.
+   *
+   * @see SymPy `sympy.solvers.diophantine.diophantine.Linear.name`
+   */
   override readonly name: string = 'linear';
 
+  /**
+   * Tests whether the equation belongs to this equation class.
+   *
+   * @returns Whether the equation belongs to this class.
+   * @see SymPy `sympy.solvers.diophantine.diophantine.Linear.matches`
+   */
   override matches(): boolean {
     return this.totalDegree === 1;
   }
 
+  /**
+   * Finds the integer solutions of this equation.
+   *
+   * @param opts - The diophantine solve settings.
+   * @returns The integer solutions of this equation.
+   * @see SymPy `sympy.solvers.diophantine.diophantine.Linear.solve`
+   */
   override solve(opts: DiophantineSolveOptions = {}): DiophantineSolutionSet {
     this.preSolve(opts.parameters);
     const coeff = this.c;
@@ -456,14 +606,41 @@ export class Linear extends DiophantineEquationType {
   }
 }
 
-/** SymPy `BinaryQuadratic`: `A*x**2 + B*x*y + C*y**2 + D*x + E*y + F = 0`. */
+/**
+ * Represents a quadratic Diophantine equation in two unknowns, including mixed and linear terms.
+ *
+ * @see SymPy `sympy.solvers.diophantine.diophantine.BinaryQuadratic`
+ * @example
+ * ```ts
+ * import { BinaryQuadratic, ex } from '@symjs/symjs';
+ * new BinaryQuadratic(ex`x**2 + y**2 + 2*x + 2*y + 2`).matches(); // => True
+ * ```
+ */
 export class BinaryQuadratic extends DiophantineEquationType {
+  /**
+   * The name identifying the equation class.
+   *
+   * @see SymPy `sympy.solvers.diophantine.diophantine.BinaryQuadratic.name`
+   */
   override readonly name: string = 'binary_quadratic';
 
+  /**
+   * Tests whether the equation belongs to this equation class.
+   *
+   * @returns Whether the equation belongs to this class.
+   * @see SymPy `sympy.solvers.diophantine.diophantine.BinaryQuadratic.matches`
+   */
   override matches(): boolean {
     return this.totalDegree === 2 && this.dimension === 2;
   }
 
+  /**
+   * Finds the integer solutions of this equation.
+   *
+   * @param opts - The diophantine solve settings.
+   * @returns The integer solutions of this equation.
+   * @see SymPy `sympy.solvers.diophantine.diophantine.BinaryQuadratic.solve`
+   */
   override solve(opts: DiophantineSolveOptions = {}): DiophantineSolutionSet {
     const parameters = opts.parameters;
     this.preSolve(parameters);
@@ -616,10 +793,25 @@ export class BinaryQuadratic extends DiophantineEquationType {
   }
 }
 
-/** SymPy `InhomogeneousTernaryQuadratic` (no solver is implemented for this type). */
+/**
+ * Representation of an inhomogeneous ternary quadratic.
+ *
+ * @see SymPy `sympy.solvers.diophantine.diophantine.InhomogeneousTernaryQuadratic`
+ */
 export class InhomogeneousTernaryQuadratic extends DiophantineEquationType {
+  /**
+   * The name identifying the equation class.
+   *
+   * @see SymPy `sympy.solvers.diophantine.diophantine.InhomogeneousTernaryQuadratic.name`
+   */
   override readonly name: string = 'inhomogeneous_ternary_quadratic';
 
+  /**
+   * Tests whether the equation belongs to this equation class.
+   *
+   * @returns Whether the equation belongs to this class.
+   * @see SymPy `sympy.solvers.diophantine.diophantine.InhomogeneousTernaryQuadratic.matches`
+   */
   override matches(): boolean {
     if (!(this.totalDegree === 2 && this.dimension === 3)) return false;
     if (!this.homogeneous) return false;
@@ -633,10 +825,30 @@ function isNormalTernary(t: DiophantineEquationType, keys: readonly Expr[], coef
   return nonzero.size === 3 && t.freeSymbols.every((i) => nonzero.has(pow(i, 2).key));
 }
 
-/** SymPy `HomogeneousTernaryQuadraticNormal`: `a*x**2 + b*y**2 + c*z**2 = 0`. */
+/**
+ * Represents a homogeneous quadratic equation in three integer unknowns with no mixed terms.
+ *
+ * @see SymPy `sympy.solvers.diophantine.diophantine.HomogeneousTernaryQuadraticNormal`
+ * @example
+ * ```ts
+ * import { HomogeneousTernaryQuadraticNormal, ex } from '@symjs/symjs';
+ * new HomogeneousTernaryQuadraticNormal(ex`x**2 + y**2 - z**2`).matches(); // => True
+ * ```
+ */
 export class HomogeneousTernaryQuadraticNormal extends DiophantineEquationType {
+  /**
+   * The name identifying the equation class.
+   *
+   * @see SymPy `sympy.solvers.diophantine.diophantine.HomogeneousTernaryQuadraticNormal.name`
+   */
   override readonly name: string = 'homogeneous_ternary_quadratic_normal';
 
+  /**
+   * Tests whether the equation belongs to this equation class.
+   *
+   * @returns Whether the equation belongs to this class.
+   * @see SymPy `sympy.solvers.diophantine.diophantine.HomogeneousTernaryQuadraticNormal.matches`
+   */
   override matches(): boolean {
     if (!(this.totalDegree === 2 && this.dimension === 3)) return false;
     if (!this.homogeneous) return false;
@@ -644,6 +856,13 @@ export class HomogeneousTernaryQuadraticNormal extends DiophantineEquationType {
     return isNormalTernary(this, this.keys, this.c);
   }
 
+  /**
+   * Finds the integer solutions of this equation.
+   *
+   * @param opts - The diophantine solve settings.
+   * @returns The integer solutions of this equation.
+   * @see SymPy `sympy.solvers.diophantine.diophantine.HomogeneousTernaryQuadraticNormal.solve`
+   */
   override solve(opts: DiophantineSolveOptions = {}): DiophantineSolutionSet {
     this.preSolve(opts.parameters);
     const v = this.freeSymbols;
@@ -680,10 +899,30 @@ export class HomogeneousTernaryQuadraticNormal extends DiophantineEquationType {
   }
 }
 
-/** SymPy `HomogeneousTernaryQuadratic`: `a*x**2 + b*y**2 + c*z**2 + d*x*y + e*y*z + f*x*z = 0`. */
+/**
+ * Represents a homogeneous quadratic equation in three integer unknowns, allowing mixed terms.
+ *
+ * @see SymPy `sympy.solvers.diophantine.diophantine.HomogeneousTernaryQuadratic`
+ * @example
+ * ```ts
+ * import { HomogeneousTernaryQuadratic, ex } from '@symjs/symjs';
+ * new HomogeneousTernaryQuadratic(ex`x*y - z**2`).matches(); // => True
+ * ```
+ */
 export class HomogeneousTernaryQuadratic extends DiophantineEquationType {
+  /**
+   * The name identifying the equation class.
+   *
+   * @see SymPy `sympy.solvers.diophantine.diophantine.HomogeneousTernaryQuadratic.name`
+   */
   override readonly name: string = 'homogeneous_ternary_quadratic';
 
+  /**
+   * Tests whether the equation belongs to this equation class.
+   *
+   * @returns Whether the equation belongs to this class.
+   * @see SymPy `sympy.solvers.diophantine.diophantine.HomogeneousTernaryQuadratic.matches`
+   */
   override matches(): boolean {
     if (!(this.totalDegree === 2 && this.dimension === 3)) return false;
     if (!this.homogeneous) return false;
@@ -691,6 +930,13 @@ export class HomogeneousTernaryQuadratic extends DiophantineEquationType {
     return !isNormalTernary(this, this.keys, this.c);
   }
 
+  /**
+   * Finds the integer solutions of this equation.
+   *
+   * @param opts - The diophantine solve settings.
+   * @returns The integer solutions of this equation.
+   * @see SymPy `sympy.solvers.diophantine.diophantine.HomogeneousTernaryQuadratic.solve`
+   */
   override solve(opts: DiophantineSolveOptions = {}): DiophantineSolutionSet {
     this.preSolve(opts.parameters);
     const vIn = this.freeSymbols;
@@ -773,10 +1019,25 @@ export class HomogeneousTernaryQuadratic extends DiophantineEquationType {
   }
 }
 
-/** SymPy `InhomogeneousGeneralQuadratic` (no solver is implemented for this type). */
+/**
+ * Representation of an inhomogeneous general quadratic.
+ *
+ * @see SymPy `sympy.solvers.diophantine.diophantine.InhomogeneousGeneralQuadratic`
+ */
 export class InhomogeneousGeneralQuadratic extends DiophantineEquationType {
+  /**
+   * The name identifying the equation class.
+   *
+   * @see SymPy `sympy.solvers.diophantine.diophantine.InhomogeneousGeneralQuadratic.name`
+   */
   override readonly name: string = 'inhomogeneous_general_quadratic';
 
+  /**
+   * Tests whether the equation belongs to this equation class.
+   *
+   * @returns Whether the equation belongs to this class.
+   * @see SymPy `sympy.solvers.diophantine.diophantine.InhomogeneousGeneralQuadratic.matches`
+   */
   override matches(): boolean {
     if (!(this.totalDegree === 2 && this.dimension >= 3)) return false;
     if (!this.homogeneousOrder) return true;
@@ -784,10 +1045,25 @@ export class InhomogeneousGeneralQuadratic extends DiophantineEquationType {
   }
 }
 
-/** SymPy `HomogeneousGeneralQuadratic` (no solver is implemented for this type). */
+/**
+ * Representation of a homogeneous general quadratic.
+ *
+ * @see SymPy `sympy.solvers.diophantine.diophantine.HomogeneousGeneralQuadratic`
+ */
 export class HomogeneousGeneralQuadratic extends DiophantineEquationType {
+  /**
+   * The name identifying the equation class.
+   *
+   * @see SymPy `sympy.solvers.diophantine.diophantine.HomogeneousGeneralQuadratic.name`
+   */
   override readonly name: string = 'homogeneous_general_quadratic';
 
+  /**
+   * Tests whether the equation belongs to this equation class.
+   *
+   * @returns Whether the equation belongs to this class.
+   * @see SymPy `sympy.solvers.diophantine.diophantine.HomogeneousGeneralQuadratic.matches`
+   */
   override matches(): boolean {
     if (!(this.totalDegree === 2 && this.dimension >= 3)) return false;
     if (!this.homogeneousOrder) return false;
@@ -798,10 +1074,30 @@ export class HomogeneousGeneralQuadratic extends DiophantineEquationType {
 /** The signs of the variables: -1 for those assumed nonpositive. */
 const varSigns = (v: readonly Sym[]): bigint[] => v.map((s) => (s.assumptions.nonpositive === true ? -1n : 1n));
 
-/** SymPy `GeneralSumOfSquares`: `x_1**2 + ... + x_n**2 - k = 0`. */
+/**
+ * Represents an integer as a sum of squares of unknown integers.
+ *
+ * @see SymPy `sympy.solvers.diophantine.diophantine.GeneralSumOfSquares`
+ * @example
+ * ```ts
+ * import { GeneralSumOfSquares, ex } from '@symjs/symjs';
+ * new GeneralSumOfSquares(ex`x**2 + y**2 + z**2 - 6`).matches(); // => True
+ * ```
+ */
 export class GeneralSumOfSquares extends DiophantineEquationType {
+  /**
+   * The name identifying the equation class.
+   *
+   * @see SymPy `sympy.solvers.diophantine.diophantine.GeneralSumOfSquares.name`
+   */
   override readonly name: string = 'general_sum_of_squares';
 
+  /**
+   * Tests whether the equation belongs to this equation class.
+   *
+   * @returns Whether the equation belongs to this class.
+   * @see SymPy `sympy.solvers.diophantine.diophantine.GeneralSumOfSquares.matches`
+   */
   override matches(): boolean {
     if (!(this.totalDegree === 2 && this.dimension >= 3)) return false;
     if (!this.homogeneousOrder) return false;
@@ -809,6 +1105,13 @@ export class GeneralSumOfSquares extends DiophantineEquationType {
     return this.keys.every((k) => k.key === S.One.key || this.c.get(k) === 1n);
   }
 
+  /**
+   * Finds the integer solutions of this equation.
+   *
+   * @param opts - The diophantine solve settings.
+   * @returns The integer solutions of this equation.
+   * @see SymPy `sympy.solvers.diophantine.diophantine.GeneralSumOfSquares.solve`
+   */
   override solve(opts: DiophantineSolveOptions = {}): DiophantineSolutionSet {
     this.preSolve(opts.parameters);
     const limit = opts.limit ?? 1;
@@ -827,10 +1130,30 @@ export class GeneralSumOfSquares extends DiophantineEquationType {
   }
 }
 
-/** SymPy `GeneralPythagorean`: `a_1**2*x_1**2 + ... + a_n**2*x_n**2 - a_{n+1}**2*x_{n+1}**2 = 0`. */
+/**
+ * Represents a Pythagorean equation equating a sum of weighted squares to one weighted square.
+ *
+ * @see SymPy `sympy.solvers.diophantine.diophantine.GeneralPythagorean`
+ * @example
+ * ```ts
+ * import { GeneralPythagorean, ex } from '@symjs/symjs';
+ * new GeneralPythagorean(ex`x**2 + y**2 + z**2 - w**2`).matches(); // => True
+ * ```
+ */
 export class GeneralPythagorean extends DiophantineEquationType {
+  /**
+   * The name identifying the equation class.
+   *
+   * @see SymPy `sympy.solvers.diophantine.diophantine.GeneralPythagorean.name`
+   */
   override readonly name: string = 'general_pythagorean';
 
+  /**
+   * Tests whether the equation belongs to this equation class.
+   *
+   * @returns Whether the equation belongs to this class.
+   * @see SymPy `sympy.solvers.diophantine.diophantine.GeneralPythagorean.matches`
+   */
   override matches(): boolean {
     if (!(this.totalDegree === 2 && this.dimension >= 3)) return false;
     if (!this.homogeneousOrder) return false;
@@ -843,10 +1166,23 @@ export class GeneralPythagorean extends DiophantineEquationType {
     return babs(total) === BigInt(this.dimension - 2);
   }
 
+  /**
+   * Represents the number of independent parameters used in a general solution.
+   *
+   * @returns The number of independent parameters used in a general solution.
+   * @see SymPy `sympy.solvers.diophantine.diophantine.GeneralPythagorean.n_parameters`
+   */
   override get nParameters(): number {
     return this.dimension - 1;
   }
 
+  /**
+   * Finds the integer solutions of this equation.
+   *
+   * @param opts - The diophantine solve settings.
+   * @returns The integer solutions of this equation.
+   * @see SymPy `sympy.solvers.diophantine.diophantine.GeneralPythagorean.solve`
+   */
   override solve(opts: DiophantineSolveOptions = {}): DiophantineSolutionSet {
     this.preSolve(opts.parameters);
     const v = this.freeSymbols;
@@ -874,19 +1210,59 @@ export class GeneralPythagorean extends DiophantineEquationType {
   }
 }
 
-/** SymPy `CubicThue`: `f(x, y) = r` of degree 3 (no solver is implemented for this type). */
+/**
+ * Classifies cubic Diophantine equations in two unknowns.
+ *
+ * @see SymPy `sympy.solvers.diophantine.diophantine.CubicThue`
+ * @example
+ * ```ts
+ * import { CubicThue, ex } from '@symjs/symjs';
+ * new CubicThue(ex`x**3 + y**2 + 1`).matches(); // => True
+ * ```
+ */
 export class CubicThue extends DiophantineEquationType {
+  /**
+   * The name identifying the equation class.
+   *
+   * @see SymPy `sympy.solvers.diophantine.diophantine.CubicThue.name`
+   */
   override readonly name: string = 'cubic_thue';
 
+  /**
+   * Tests whether the equation belongs to this equation class.
+   *
+   * @returns Whether the equation belongs to this class.
+   * @see SymPy `sympy.solvers.diophantine.diophantine.CubicThue.matches`
+   */
   override matches(): boolean {
     return this.totalDegree === 3 && this.dimension === 2;
   }
 }
 
-/** SymPy `GeneralSumOfEvenPowers`: `x_1**e + ... + x_n**e - k = 0` for an even `e`. */
+/**
+ * Represents an integer as a sum of powers with a common positive even exponent.
+ *
+ * @see SymPy `sympy.solvers.diophantine.diophantine.GeneralSumOfEvenPowers`
+ * @example
+ * ```ts
+ * import { GeneralSumOfEvenPowers, ex } from '@symjs/symjs';
+ * new GeneralSumOfEvenPowers(ex`x**4 + y**4 - 17`).matches(); // => True
+ * ```
+ */
 export class GeneralSumOfEvenPowers extends DiophantineEquationType {
+  /**
+   * The name identifying the equation class.
+   *
+   * @see SymPy `sympy.solvers.diophantine.diophantine.GeneralSumOfEvenPowers.name`
+   */
   override readonly name: string = 'general_sum_of_even_powers';
 
+  /**
+   * Tests whether the equation belongs to this equation class.
+   *
+   * @returns Whether the equation belongs to this class.
+   * @see SymPy `sympy.solvers.diophantine.diophantine.GeneralSumOfEvenPowers.matches`
+   */
   override matches(): boolean {
     if (!(this.totalDegree > 3)) return false;
     if (this.totalDegree % 2 !== 0) return false;
@@ -895,6 +1271,13 @@ export class GeneralSumOfEvenPowers extends DiophantineEquationType {
     return keys.every((k) => this.c.get(k) === 1n);
   }
 
+  /**
+   * Finds the integer solutions of this equation.
+   *
+   * @param opts - The diophantine solve settings.
+   * @returns The integer solutions of this equation.
+   * @see SymPy `sympy.solvers.diophantine.diophantine.GeneralSumOfEvenPowers.solve`
+   */
   override solve(opts: DiophantineSolveOptions = {}): DiophantineSolutionSet {
     this.preSolve(opts.parameters);
     const limit = opts.limit ?? 1;
@@ -943,8 +1326,12 @@ function classify(eq: ExprLike): DiophantineEquationType {
 }
 
 /**
- * SymPy `classify_diop(eq)`: the variables, the coefficients (keyed by
+ * The variables, the coefficients (keyed by
  * monomial, the constant term by 1) and the type of the Diophantine equation.
+ *
+ * @param eq - The equation, or an expression equal to zero.
+ * @returns The ordered variables, monomial coefficients and equation type.
+ * @see SymPy `sympy.solvers.diophantine.diophantine.classify_diop`
  */
 export function classifyDiop(eq: ExprLike): [Sym[], ExprMap<Expr>, string] {
   const t = classify(eq);
@@ -968,10 +1355,22 @@ export interface DiophantineOptions {
 }
 
 /**
- * SymPy `diophantine(eq)`: the integer solutions of a polynomial equation
+ * The integer solutions of a polynomial equation
  * (an expression assumed to be zero, or an equation), found by factoring it
  * and solving each factor with {@link diopSolve}. The result is the list of
  * solution tuples (a set in SymPy), in the alphabetic order of the variables.
+ *
+ * @remarks SymPy returns `{(t_0, t_0), (t_0, -t_0)}`.
+ *
+ * @param eqIn - The equation, or an expression equal to zero.
+ * @param opts - The diophantine settings.
+ * @returns Solution tuples in variable order.
+ * @see SymPy `sympy.solvers.diophantine.diophantine.diophantine`
+ * @example
+ * ```ts
+ * import { diophantine, ex } from '@symjs/symjs';
+ * diophantine(ex`x**2 - y**2`); // => [[t_0, -t_0], [t_0, t_0]]
+ * ```
  */
 export function diophantine(eqIn: ExprLike, opts: DiophantineOptions = {}): Expr[][] {
   const param = opts.param ?? DEFAULT_PARAM;
@@ -1135,10 +1534,22 @@ const asSolutionList = (s: DiopResult): Expr[][] => ('list' in s ? s.list : [s.t
 const tupleOrEmpty = (s: readonly (Expr | null)[]): Expr[] | typeof EmptySet => (s.some((e) => e === null) ? EmptySet : s.map((e) => defined(e)));
 
 /**
- * SymPy `diop_solve(eq, param)`: the solutions of a Diophantine equation
+ * The solutions of a Diophantine equation
  * without factoring it. Linear, ternary quadratic and Pythagorean equations
  * give one parametric tuple (EmptySet when there is no solution); the other
  * types give the list of solution tuples.
+ *
+ * @remarks SymPy returns `(3*t_0 - 5, 5 - 2*t_0)`.
+ *
+ * @param eq - The equation, or an expression equal to zero.
+ * @param param - The parameter used to express integer solutions.
+ * @returns The solutions of a Diophantine equation without factoring it.
+ * @see SymPy `sympy.solvers.diophantine.diophantine.diop_solve`
+ * @example
+ * ```ts
+ * import { diopSolve, ex } from '@symjs/symjs';
+ * diopSolve(ex`2*x + 3*y - 5`); // => [3*t_0 - 5, 5 - 2*t_0]
+ * ```
  */
 export function diopSolve(eq: ExprLike, param: Sym = DEFAULT_PARAM): Expr[] | Expr[][] | typeof EmptySet {
   const e = sympify(eq);
@@ -1156,10 +1567,22 @@ function diopLinearImpl(eq: Expr, param: Expr | null): (Expr | null)[] {
 }
 
 /**
- * SymPy `diop_linear(eq, param)`: the parametric solution of a linear
+ * The parametric solution of a linear
  * Diophantine equation, in the sorted order of the variables; with `param`
  * null, the solution at parameters 0. EmptySet when there is no solution,
  * NoMatch when the equation is not linear.
+ *
+ * @remarks SymPy returns `(3*t_0 - 5, 2*t_0 - 5)`.
+ *
+ * @param eq - The equation, or an expression equal to zero.
+ * @param param - The parameter used to express integer solutions.
+ * @returns The parametric solution of a linear Diophantine equation, in the sorted order of the variables.
+ * @see SymPy `sympy.solvers.diophantine.diophantine.diop_linear`
+ * @example
+ * ```ts
+ * import { diopLinear, ex } from '@symjs/symjs';
+ * diopLinear(ex`2*x - 3*y - 5`); // => [3*t_0 - 5, 2*t_0 - 5]
+ * ```
  */
 export function diopLinear(eq: ExprLike, param: Sym | null = DEFAULT_PARAM): Expr[] | typeof EmptySet | NoMatchResult {
   const e = sympify(eq);
@@ -1185,14 +1608,41 @@ function baseSolutionLinearImpl(cIn: bigint, aIn: bigint, bIn: bigint, tIn: Expr
 }
 
 /**
- * SymPy `base_solution_linear(c, a, b, t)`: the base solution of
+ * The base solution of
  * `a*x + b*y = c`, parametrized by `t` when given; EmptySet when there is none.
+ *
+ * @remarks SymPy returns `(-5, 5)`.
+ *
+ * @param c - The right-hand side of the linear equation.
+ * @param a - The coefficient of the first variable.
+ * @param b - The coefficient of the second variable.
+ * @param t - An optional free integer parameter for the solution family.
+ * @returns The base solution of `a*x + b*y = c`, parametrized by `t` when given.
+ * @see SymPy `sympy.solvers.diophantine.diophantine.base_solution_linear`
+ * @example
+ * ```ts
+ * import { baseSolutionLinear } from '@symjs/symjs';
+ * baseSolutionLinear(5, 2, 3); // => [-5, 5]
+ * ```
  */
 export function baseSolutionLinear(c: ExprLike | bigint, a: ExprLike | bigint, b: ExprLike | bigint, t?: Expr): [Expr, Expr] | typeof EmptySet {
   return baseSolutionLinearImpl(asBig(c), asBig(a), asBig(b), t ?? null) ?? EmptySet;
 }
 
-/** SymPy `diop_univariate(eq)`: the integer roots of a univariate polynomial, as 1-tuples. */
+/**
+ * Returns the integer roots of a univariate polynomial, as 1-tuples.
+ *
+ * @remarks SymPy returns `{(2,), (3,)}`.
+ *
+ * @param eq - The equation, or an expression equal to zero.
+ * @returns The integer roots of a univariate polynomial, as 1-tuples.
+ * @see SymPy `sympy.solvers.diophantine.diophantine.diop_univariate`
+ * @example
+ * ```ts
+ * import { diopUnivariate, ex } from '@symjs/symjs';
+ * diopUnivariate(ex`(x - 3)**2*(x - 2)`); // => [[2], [3]]
+ * ```
+ */
 export function diopUnivariate(eq: ExprLike): Expr[][] | NoMatchResult {
   const e = sympify(eq);
   const t = classify(e);
@@ -1205,7 +1655,23 @@ function diopQuadraticImpl(eq: Expr, param: Expr | null): Expr[][] {
   return [...new BinaryQuadratic(eq).solve({ parameters })].sort(compareTuples);
 }
 
-/** SymPy `diop_quadratic(eq, param)`: the solutions of a binary quadratic Diophantine equation. */
+/**
+ * Returns the solutions of a binary quadratic Diophantine equation.
+ *
+ * @remarks SymPy returns `{(-1, -1)}`.
+ *
+ * @param eq - The equation, or an expression equal to zero.
+ * @param param - The parameter used to express integer solutions.
+ * @returns The solutions of a binary quadratic Diophantine equation.
+ * @see SymPy `sympy.solvers.diophantine.diophantine.diop_quadratic`
+ * @example
+ * ```ts
+ * import { diopQuadratic, ex, symbols } from '@symjs/symjs';
+ *
+ * const [t] = symbols('t');
+ * diopQuadratic(ex`x**2 + 2*x + y**2 + 2*y + 2`, t); // => [[-1, -1]]
+ * ```
+ */
 export function diopQuadratic(eq: ExprLike, param: Sym | null = DEFAULT_PARAM): Expr[][] | NoMatchResult {
   const e = sympify(eq);
   if (classify(e).name !== 'binary_quadratic') return NoMatch;
@@ -1295,9 +1761,22 @@ function diopDNInt(D: bigint, N: bigint): [bigint, bigint][] {
 }
 
 /**
- * SymPy `diop_DN(D, N, t)`: one solution `(x, y)` of `x**2 - D*y**2 = N` for
+ * One solution `(x, y)` of `x**2 - D*y**2 = N` for
  * each class of solutions (the LMM algorithm). When `D` is zero or a perfect
  * square with `N = 0` the solutions are parametrized by `t`.
+ *
+ * @remarks SymPy returns `[(3, 1), (393, 109), (36, 10)]`.
+ *
+ * @param DIn - The coefficient of the squared second unknown in the Pell equation.
+ * @param NIn - The right-hand side of the Pell equation.
+ * @param t - The parameter for degenerate solution families.
+ * @returns One integer pair for each solution class.
+ * @see SymPy `sympy.solvers.diophantine.diophantine.diop_DN`
+ * @example
+ * ```ts
+ * import { diopDN } from '@symjs/symjs';
+ * diopDN(13, -4); // => [[3, 1], [393, 109], [36, 10]]
+ * ```
  */
 export function diopDN(DIn: ExprLike | bigint, NIn: ExprLike | bigint, t: Expr = DEFAULT_PARAM): Expr[][] {
   const D = asBig(DIn);
@@ -1387,22 +1866,59 @@ function cornacchiaImpl(a: bigint, b: bigint, m: bigint): [bigint, bigint][] {
 }
 
 /**
- * SymPy `cornacchia(a, b, m)`: the primitive solutions of
+ * The primitive solutions of
  * `a*x**2 + b*y**2 = m` for `gcd(a, b) = gcd(a, m) = 1` and `a, b > 0`
  * (Cornacchia's algorithm); when `a = b` only those with `x >= y`.
+ *
+ * @remarks SymPy returns `{(2, 3), (4, 1)}`.
+ *
+ * @param a - The coefficient `a` of the integer equation.
+ * @param b - The coefficient `b` of the integer equation.
+ * @param m - The integer represented by the binary quadratic form.
+ * @returns The primitive solutions of `a*x**2 + b*y**2 = m` for `gcd(a, b) = gcd(a, m) = 1` and `a, b > 0` (Cornacchia's algorithm).
+ * @see SymPy `sympy.solvers.diophantine.diophantine.cornacchia`
+ * @example
+ * ```ts
+ * import { cornacchia } from '@symjs/symjs';
+ * cornacchia(2, 3, 35); // => [[4, 1], [2, 3]]
+ * ```
  */
 export function cornacchia(a: ExprLike | bigint, b: ExprLike | bigint, m: ExprLike | bigint): [bigint, bigint][] {
   return cornacchiaImpl(asBig(a), asBig(b), asBig(m));
 }
 
-/** Length of the aperiodic part plus one period of (P + sqrt(D))/Q. */
+/**
+ * Length of the aperiodic part plus one period of (P + sqrt(D))/Q.
+ *
+ * @param P - The rational numerator offset in the quadratic irrational.
+ * @param Q - The denominator of the quadratic irrational.
+ * @param D - The radicand of the quadratic irrational.
+ * @returns The total length of the preperiod and period.
+ * @see SymPy `sympy.solvers.diophantine.diophantine.length`
+ * @example
+ * ```ts
+ * import { length } from '@symjs/symjs/solvers';
+ * length(-2, 4, 5); // => 3
+ * ```
+ */
 export function length(P: ExprLike | bigint, Q: ExprLike | bigint, D: ExprLike | bigint): number {
   return continuedFractionPeriodic(asBig(P), asBig(Q), asBig(D)).reduce<number>((n, a) => n + (Array.isArray(a) ? a.length : 1), 0);
 }
 
 /**
- * SymPy `PQa(P_0, Q_0, D)`: the sequences (P_i, Q_i, a_i, A_i, B_i, G_i) of
+ * The sequences (P_i, Q_i, a_i, A_i, B_i, G_i) of
  * the continued fraction of `(P_0 + sqrt(D))/Q_0`.
+ *
+ * @param P0 - The initial numerator offset.
+ * @param Q0 - The initial denominator.
+ * @param D - The positive nonsquare radicand.
+ * @returns An iterator over continued-fraction recurrence tuples.
+ * @see SymPy `sympy.solvers.diophantine.diophantine.PQa`
+ * @example
+ * ```ts
+ * import { PQa } from '@symjs/symjs';
+ * PQa(0n, 1n, 2n).next().value; // => [0, 1, 1, 1, 1, 1]
+ * ```
  */
 export function* PQa(P0: bigint, Q0: bigint, D: bigint): Generator<[bigint, bigint, bigint, bigint, bigint, bigint], never, undefined> {
   const sqD = isqrt(D);
@@ -1424,8 +1940,21 @@ export function* PQa(P0: bigint, Q0: bigint, D: bigint): Generator<[bigint, bigi
 }
 
 /**
- * SymPy `diop_bf_DN(D, N, t)`: the solutions of `x**2 - D*y**2 = N` by
+ * The solutions of `x**2 - D*y**2 = N` by
  * brute force (for small `sqrt(|N|*(t +- 1)/(2*D))`).
+ *
+ * @remarks SymPy returns `[(3, 1), (-3, 1), (36, 10)]`.
+ *
+ * @param DIn - The coefficient of the squared second unknown in the Pell equation.
+ * @param NIn - The right-hand side of the Pell equation.
+ * @param t - The parameter for degenerate solution families.
+ * @returns One integer pair for each solution class.
+ * @see SymPy `sympy.solvers.diophantine.diophantine.diop_bf_DN`
+ * @example
+ * ```ts
+ * import { diopBfDN } from '@symjs/symjs';
+ * diopBfDN(13, -4); // => [[3, 1], [-3, 1], [36, 10]]
+ * ```
  */
 export function diopBfDN(DIn: ExprLike | bigint, NIn: ExprLike | bigint, t: Expr = DEFAULT_PARAM): Expr[][] {
   const D = asBig(DIn);
@@ -1464,7 +1993,24 @@ export function diopBfDN(DIn: ExprLike | bigint, NIn: ExprLike | bigint, t: Expr
   return sol;
 }
 
-/** Whether two solutions of x**2 - D*y**2 = N belong to the same Pell class. */
+/**
+ * Determines whether two solutions of x**2 - D*y**2 = N belong to the same Pell class.
+ *
+ * @param u - The first coordinate of the first solution.
+ * @param v - The second coordinate of the first solution.
+ * @param r - The first coordinate of the second solution.
+ * @param s - The second coordinate of the second solution.
+ * @param D - The coefficient of the squared second unknown in the Pell equation.
+ * @param N - The right-hand side of the Pell equation.
+ * @returns Whether the two solutions belong to the same Pell solution class.
+ * @throws RangeError when the group size is zero.
+ * @see SymPy `sympy.solvers.diophantine.diophantine.equivalent`
+ * @example
+ * ```ts
+ * import { equivalent } from '@symjs/symjs';
+ * equivalent(18, 5, -18, -5, 13, -1); // => True
+ * ```
+ */
 export function equivalent(u: ExprLike | bigint, v: ExprLike | bigint, r: ExprLike | bigint, s: ExprLike | bigint, D: ExprLike | bigint, N: ExprLike | bigint): boolean {
   const [a, b, c, d, disc, norm] = [asBig(u), asBig(v), asBig(r), asBig(s), asBig(D), asBig(N)];
   if (norm === 0n) throw new RangeError('equivalent: N must be nonzero');
@@ -1536,9 +2082,24 @@ function binaryQuadraticCoeffs(eq: ExprLike): [BinaryQuadratic, Int6] | NoMatchR
 }
 
 /**
- * SymPy `transformation_to_DN(eq)`: matrices `A` (2x2) and `B` (2x1) such
+ * Matrices `A` (2x2) and `B` (2x1) such
  * that `(x, y) = A*(X, Y) + B` transforms the binary quadratic `eq` into
  * `X**2 - D*Y**2 = N`; NoMatch when `eq` is not a binary quadratic.
+ *
+ * @remarks SymPy returns `Matrix([[1/26, 3/26], [0, 1/13]])`.
+ *
+ * @param eq - The equation, or an expression equal to zero.
+ * @returns The matrix and offset of the affine change of variables, or `NoMatch`.
+ * @see SymPy `sympy.solvers.diophantine.diophantine.transformation_to_DN`
+ * @example
+ * ```ts
+ * import { ex, transformationToDN } from '@symjs/symjs';
+ *
+ * const transform = transformationToDN(ex`x**2 - 3*x*y - y**2 - 2*y + 1`);
+ * Array.isArray(transform) ? transform[0] : transform; // => Matrix([
+ * //   [1/26, 3/26],
+ * //   [   0, 1/13]])
+ * ```
  */
 export function transformationToDN(eq: ExprLike): [Matrix, Matrix] | NoMatchResult {
   const bq = binaryQuadraticCoeffs(eq);
@@ -1570,8 +2131,18 @@ function findDNImpl(v: readonly Sym[], coeff: Coeffs): [bigint, bigint] {
 }
 
 /**
- * SymPy `find_DN(eq)`: `(D, N)` of the equation `X**2 - D*Y**2 = N` the
- * binary quadratic `eq` is transformed into by {@link transformationToDN}.
+ * Determines the coefficients of the generalized Pell equation associated with a binary quadratic.
+ *
+ * @remarks SymPy returns `(13, -884)`.
+ *
+ * @param eq - The equation, or an expression equal to zero.
+ * @returns The coefficients of the generalized Pell equation, or `NoMatch`.
+ * @see SymPy `sympy.solvers.diophantine.diophantine.find_DN`
+ * @example
+ * ```ts
+ * import { ex, findDN } from '@symjs/symjs';
+ * findDN(ex`x**2 - 3*x*y - y**2 - 2*y + 1`); // => [13, -884]
+ * ```
  */
 export function findDN(eq: ExprLike): [Rational, Rational] | NoMatchResult {
   const bq = binaryQuadraticCoeffs(eq);
@@ -1581,8 +2152,15 @@ export function findDN(eq: ExprLike): [Rational, Rational] | NoMatchResult {
 }
 
 /**
- * The parametric solutions x, y in t made integral (SymPy check_param):
+ * The parametric solutions x, y in t made integral:
  * empty when no residue of t modulo a makes both integers.
+ *
+ * @param x - The first parametric coordinate.
+ * @param y - The second parametric coordinate.
+ * @param modulus - The modulus for the integrality conditions.
+ * @param params - The symbols parameterizing the candidate solutions.
+ * @returns The solutions whose coordinates are integral.
+ * @see SymPy `sympy.solvers.diophantine.diophantine.check_param`
  */
 export function checkParam(x: Expr, y: Expr, modulus: ExprLike | bigint, params: readonly Expr[] | null): DiophantineSolutionSet {
   if ((isConst(x) && !isInt(x)) || (isConst(y) && !isInt(y))) return new DiophantineSolutionSet([x, y], params ?? []);
@@ -1642,10 +2220,22 @@ function ternaryType(eq: ExprLike, normalOnly = false): DiophantineEquationType 
 }
 
 /**
- * SymPy `diop_ternary_quadratic(eq, parameterize)`: a base solution
+ * A base solution
  * `(x, y, z)` of `a*x**2 + b*y**2 + c*z**2 + d*x*y + e*y*z + f*x*z = 0`
  * (EmptySet when there is none); with `parameterize`, the parametrized
  * solution.
+ *
+ * @remarks SymPy returns `(1, 0, 1)`.
+ *
+ * @param eq - The equation, or an expression equal to zero.
+ * @param parameterize - Whether to construct a parametric solution.
+ * @returns A base solution `(x, y, z)` of `a*x**2 + b*y**2 + c*z**2 + d*x*y + e*y*z + f*x*z = 0` (EmptySet when there is none).
+ * @see SymPy `sympy.solvers.diophantine.diophantine.diop_ternary_quadratic`
+ * @example
+ * ```ts
+ * import { diopTernaryQuadratic, ex } from '@symjs/symjs';
+ * diopTernaryQuadratic(ex`x**2 + 3*y**2 - z**2`); // => [1, 0, 1]
+ * ```
  */
 export function diopTernaryQuadratic(eq: ExprLike, parameterize = false): Expr[] | typeof EmptySet | NoMatchResult {
   const t = ternaryType(eq);
@@ -1655,9 +2245,20 @@ export function diopTernaryQuadratic(eq: ExprLike, parameterize = false): Expr[]
 }
 
 /**
- * SymPy `parametrize_ternary_quadratic(eq)`: the parametrized general
+ * The parametrized general
  * solution (in the integer parameters p, q, r) of a homogeneous ternary
  * quadratic equation; EmptySet when it has only the trivial solution.
+ *
+ * @remarks SymPy returns `(p**2 - 2*q**2, -2*p**2 + 4*p*q - 4*p*r - 4*q**2, p**2 - 4*p*q + 2*q**2 - 4*q*r)`.
+ *
+ * @param eq - The equation, or an expression equal to zero.
+ * @returns The parametrized general solution (in the integer parameters p, q, r) of a homogeneous ternary quadratic equation.
+ * @see SymPy `sympy.solvers.diophantine.diophantine.parametrize_ternary_quadratic`
+ * @example
+ * ```ts
+ * import { ex, parametrizeTernaryQuadratic } from '@symjs/symjs';
+ * parametrizeTernaryQuadratic(ex`2*x**2 + y**2 - 2*z**2`); // => [p**2 - 2*q**2, -2*p**2 + 4*p*q - 4*p*r - 4*q**2, p**2 - 4*p*q + 2*q**2 - 4*q*r]
+ * ```
  */
 export function parametrizeTernaryQuadratic(eq: ExprLike): Expr[] | typeof EmptySet | NoMatchResult {
   const t = ternaryType(eq);
@@ -1701,8 +2302,20 @@ function parametrizeTernary(solution: readonly (Expr | null)[], vIn: readonly Sy
 }
 
 /**
- * SymPy `diop_ternary_quadratic_normal(eq, parameterize)`: a solution of
+ * A solution of
  * `a*x**2 + b*y**2 + c*z**2 = 0` (EmptySet when there is none).
+ *
+ * @remarks SymPy returns `(1, 0, 1)`.
+ *
+ * @param eq - The equation, or an expression equal to zero.
+ * @param parameterize - Whether to construct a parametric solution.
+ * @returns The solution coordinates, `EmptySet` for no solution, or `NoMatch` for another form.
+ * @see SymPy `sympy.solvers.diophantine.diophantine.diop_ternary_quadratic_normal`
+ * @example
+ * ```ts
+ * import { diopTernaryQuadraticNormal, ex } from '@symjs/symjs';
+ * diopTernaryQuadraticNormal(ex`x**2 + 3*y**2 - z**2`); // => [1, 0, 1]
+ * ```
  */
 export function diopTernaryQuadraticNormal(eq: ExprLike, parameterize = false): Expr[] | typeof EmptySet | NoMatchResult {
   const t = ternaryType(eq, true);
@@ -1732,9 +2345,23 @@ function sqfNormalSteps(a: bigint, b: bigint, c: bigint): [Int3, Int3, Int3] {
 }
 
 /**
- * SymPy `sqf_normal(a, b, c, steps)`: the pairwise prime square-free
+ * The pairwise prime square-free
  * coefficients of the normal form of `a*x**2 + b*y**2 + c*z**2 = 0`; with
  * `steps`, also the square factors and the square-free parts.
+ *
+ * @remarks SymPy returns `(11, 1, 5)`.
+ *
+ * @param a - The coefficient `a` of the integer equation.
+ * @param b - The coefficient `b` of the integer equation.
+ * @param c - The coefficient `c` of the integer equation.
+ * @param steps - Whether to include the intermediate coefficient triples.
+ * @returns The pairwise prime square-free coefficients of the normal form of `a*x**2 + b*y**2 + c*z**2 = 0`.
+ * @see SymPy `sympy.solvers.diophantine.diophantine.sqf_normal`
+ * @example
+ * ```ts
+ * import { sqfNormal } from '@symjs/symjs';
+ * sqfNormal(90, 110, 1078); // => [11, 1, 5]
+ * ```
  */
 export function sqfNormal(a: ExprLike | bigint, b: ExprLike | bigint, c: ExprLike | bigint, steps = false): Int3 | [Int3, Int3, Int3] {
   const r = sqfNormalSteps(asBig(a), asBig(b), asBig(c));
@@ -1750,8 +2377,17 @@ function squareFactorInt(a: bigint): bigint {
 }
 
 /**
- * SymPy `square_factor(a)`: the integer `c` with `a = c**2*k` for a
+ * The integer `c` with `a = c**2*k` for a
  * square-free `k`; `a` may be given by its factorization.
+ *
+ * @param a - The coefficient `a` of the integer equation.
+ * @returns The integer `c` with `a = c**2*k` for a square-free `k`.
+ * @see SymPy `sympy.solvers.diophantine.diophantine.square_factor`
+ * @example
+ * ```ts
+ * import { squareFactor } from '@symjs/symjs';
+ * squareFactor(1); // => 1
+ * ```
  */
 export function squareFactor(a: ExprLike | bigint | ReadonlyMap<bigint | number, bigint | number>): bigint {
   if (isFactorMap(a)) {
@@ -1762,7 +2398,16 @@ export function squareFactor(a: ExprLike | bigint | ReadonlyMap<bigint | number,
   return squareFactorInt(asBig(a));
 }
 
-/** SymPy reconstruct(A, B, z): z multiplied by the primes of gcd(A, B), which must be square-free. */
+/**
+ * Z multiplied by the primes of gcd(A, B), which must be square-free.
+ *
+ * @param A - The coefficient `A` of the integer equation.
+ * @param B - The coefficient `B` of the integer equation.
+ * @param zIn - The reduced coordinate to rescale.
+ * @returns The coordinate with the removed square factors restored.
+ * @throws RangeError when either coefficient is not square-free.
+ * @see SymPy `sympy.solvers.diophantine.diophantine.reconstruct`
+ */
 export function reconstruct(A: ExprLike | bigint, B: ExprLike | bigint, zIn: ExprLike | bigint): bigint {
   let z = asBig(zIn);
   for (const [prime, exponent] of factorint(igcd(asBig(A), asBig(B)))) {
@@ -1800,8 +2445,20 @@ function ldescentImpl(A: bigint, B: bigint): [bigint, bigint, bigint] | null {
 }
 
 /**
- * SymPy `ldescent(A, B)`: a non-trivial solution `(w, x, y)` of
+ * A non-trivial solution `(w, x, y)` of
  * `w**2 = A*x**2 + B*y**2` by Lagrange's method; EmptySet when there is none.
+ *
+ * @remarks SymPy returns `(1, 1, 0)`.
+ *
+ * @param A - The coefficient `A` of the integer equation.
+ * @param B - The coefficient `B` of the integer equation.
+ * @returns A non-trivial solution `(w, x, y)` of `w**2 = A*x**2 + B*y**2` by Lagrange's method.
+ * @see SymPy `sympy.solvers.diophantine.diophantine.ldescent`
+ * @example
+ * ```ts
+ * import { ldescent } from '@symjs/symjs';
+ * ldescent(1, 1); // => [1, 1, 0]
+ * ```
  */
 export function ldescent(A: ExprLike | bigint, B: ExprLike | bigint): [bigint, bigint, bigint] | typeof EmptySet {
   return ldescentImpl(asBig(A), asBig(B)) ?? EmptySet;
@@ -1830,9 +2487,21 @@ function descentImpl(A: bigint, B: bigint): [bigint, bigint, bigint] {
 }
 
 /**
- * SymPy `descent(A, B)`: a non-trivial solution `(x, y, z)` of
+ * A non-trivial solution `(x, y, z)` of
  * `x**2 = A*y**2 + B*z**2` by Lagrange's descent with lattice reduction
  * (`A` and `B` must admit a solution).
+ *
+ * @remarks SymPy returns `(1, 0, 1)`.
+ *
+ * @param A - The coefficient `A` of the integer equation.
+ * @param B - The coefficient `B` of the integer equation.
+ * @returns An integer solution triple.
+ * @see SymPy `sympy.solvers.diophantine.diophantine.descent`
+ * @example
+ * ```ts
+ * import { descent } from '@symjs/symjs';
+ * descent(3, 1); // => [1, 0, 1]
+ * ```
  */
 export function descent(A: ExprLike | bigint, B: ExprLike | bigint): [bigint, bigint, bigint] {
   return descentImpl(asBig(A), asBig(B));
@@ -1855,9 +2524,22 @@ function gaussianReduceImpl(w: bigint, aIn: bigint, b: bigint): [bigint, bigint]
 }
 
 /**
- * SymPy `gaussian_reduce(w, a, b)`: a reduced solution `(x, z)` of
+ * A reduced solution `(x, z)` of
  * `X**2 - a*Z**2 = 0 (mod b)` with `x**2 + |a|*z**2` small, where
  * `w**2 = a (mod b)`.
+ *
+ * @remarks SymPy returns `(1, -4)`.
+ *
+ * @param w - A square root of the first coefficient modulo the second.
+ * @param a - The coefficient `a` of the integer equation.
+ * @param b - The coefficient `b` of the integer equation.
+ * @returns The coordinates of a reduced lattice vector.
+ * @see SymPy `sympy.solvers.diophantine.diophantine.gaussian_reduce`
+ * @example
+ * ```ts
+ * import { gaussianReduce } from '@symjs/symjs';
+ * gaussianReduce(25, 19, 101); // => [1, -4]
+ * ```
  */
 export function gaussianReduce(w: ExprLike | bigint, a: ExprLike | bigint, b: ExprLike | bigint): [bigint, bigint] {
   return gaussianReduceImpl(asBig(w), asBig(a), asBig(b));
@@ -1896,9 +2578,18 @@ function holzerImpl(xIn: bigint, yIn: bigint, zIn: bigint, a: bigint, b: bigint,
 }
 
 /**
- * SymPy `holzer(x, y, z, a, b, c)`: the solution `(x, y, z)` of
+ * The solution `(x, y, z)` of
  * `a*x**2 + b*y**2 = c*z**2` (`a, b, c > 0`) reduced to one with
  * `z**2 <= |a*b|` (Mordell's reduction).
+ *
+ * @param x - The first coordinate of the starting solution.
+ * @param y - The second coordinate of the starting solution.
+ * @param z - The third coordinate of the starting solution.
+ * @param a - The coefficient `a` of the integer equation.
+ * @param b - The coefficient `b` of the integer equation.
+ * @param c - The coefficient `c` of the integer equation.
+ * @returns The reduced solution triple.
+ * @see SymPy `sympy.solvers.diophantine.diophantine.holzer`
  */
 export function holzer(
   x: ExprLike | bigint,
@@ -1922,9 +2613,21 @@ function diopGeneralPythagoreanImpl(eq: Expr, param: Expr | null): Expr[] {
 }
 
 /**
- * SymPy `diop_general_pythagorean(eq, param)`: a parametrized solution of
+ * A parametrized solution of
  * `a_1**2*x_1**2 + ... + a_n**2*x_n**2 - a_{n+1}**2*x_{n+1}**2 = 0` in the
  * parameters `m1, m2, ...`.
+ *
+ * @remarks SymPy returns `(m1**2 + m2**2 - m3**2, 2*m1*m3, 2*m2*m3, m1**2 + m2**2 + m3**2)`.
+ *
+ * @param eq - The equation, or an expression equal to zero.
+ * @param param - The parameter used to express integer solutions.
+ * @returns The parametrized family, or `NoMatch` for another form.
+ * @see SymPy `sympy.solvers.diophantine.diophantine.diop_general_pythagorean`
+ * @example
+ * ```ts
+ * import { diopGeneralPythagorean, ex } from '@symjs/symjs';
+ * diopGeneralPythagorean(ex`a**2 + b**2 + c**2 - d**2`); // => [m1**2 + m2**2 - m3**2, 2*m1*m3, 2*m2*m3, m1**2 + m2**2 + m3**2]
+ * ```
  */
 export function diopGeneralPythagorean(eq: ExprLike, param: Sym | null = new Sym('m', { integer: true })): Expr[] | NoMatchResult {
   const e = sympify(eq);
@@ -1932,21 +2635,62 @@ export function diopGeneralPythagorean(eq: ExprLike, param: Sym | null = new Sym
   return diopGeneralPythagoreanImpl(e, param);
 }
 
-/** SymPy `diop_general_sum_of_squares(eq, limit)`: at most `limit` solutions of `x_1**2 + ... + x_n**2 - k = 0`. */
+/**
+ * At most `limit` solutions of `x_1**2 + ... + x_n**2 - k = 0`.
+ *
+ * @remarks SymPy returns `{(15, 22, 22, 24, 24)}`.
+ *
+ * @param eq - The equation, or an expression equal to zero.
+ * @param limit - The maximum number of solutions to return.
+ * @returns Tuples representing the target integer, or `NoMatch` for another equation type.
+ * @see SymPy `sympy.solvers.diophantine.diophantine.diop_general_sum_of_squares`
+ * @example
+ * ```ts
+ * import { diopGeneralSumOfSquares, ex } from '@symjs/symjs';
+ * diopGeneralSumOfSquares(ex`a**2 + b**2 + c**2 + d**2 + e**2 - 2345`); // => [[15, 22, 22, 24, 24]]
+ * ```
+ */
 export function diopGeneralSumOfSquares(eq: ExprLike, limit = 1): Expr[][] | NoMatchResult {
   const e = sympify(eq);
   if (classify(e).name !== 'general_sum_of_squares') return NoMatch;
   return [...new GeneralSumOfSquares(e).solve({ limit })].sort(compareTuples);
 }
 
-/** SymPy `diop_general_sum_of_even_powers(eq, limit)`: at most `limit` solutions of `x_1**e + ... + x_n**e - k = 0`. */
+/**
+ * At most `limit` solutions of `x_1**e + ... + x_n**e - k = 0`.
+ *
+ * @remarks SymPy returns `{(2, 3)}`.
+ *
+ * @param eq - The equation, or an expression equal to zero.
+ * @param limit - The maximum number of solutions to return.
+ * @returns Tuples representing the target integer, or `NoMatch` for another equation type.
+ * @see SymPy `sympy.solvers.diophantine.diophantine.diop_general_sum_of_even_powers`
+ * @example
+ * ```ts
+ * import { diopGeneralSumOfEvenPowers, ex } from '@symjs/symjs';
+ * diopGeneralSumOfEvenPowers(ex`a**4 + b**4 - 97`); // => [[2, 3]]
+ * ```
+ */
 export function diopGeneralSumOfEvenPowers(eq: ExprLike, limit = 1): Expr[][] | NoMatchResult {
   const e = sympify(eq);
   if (classify(e).name !== 'general_sum_of_even_powers') return NoMatch;
   return [...new GeneralSumOfEvenPowers(e).solve({ limit })].sort(compareTuples);
 }
 
-/** The partitions of n into k parts, padded with leading zeros when `zeros` (SymPy partition). */
+/**
+ * The partitions of n into k parts, padded with leading zeros when `zeros`.
+ *
+ * @param n - The integer to represent.
+ * @param k - The number of summands.
+ * @param zeros - Whether zero parts are allowed.
+ * @returns An iterator over the generated partitions.
+ * @see SymPy `sympy.solvers.diophantine.diophantine.partition`
+ * @example
+ * ```ts
+ * import { diopPartition } from '@symjs/symjs';
+ * [...diopPartition(5, 2)]; // => [[1, 4], [2, 3]]
+ * ```
+ */
 export function* partition(n: number, k?: number, zeros = false): Generator<bigint[], void, undefined> {
   if (!zeros || k === undefined) {
     for (const i of orderedPartitions(n, k)) yield i.map(BigInt);
@@ -1976,8 +2720,19 @@ function primeAsSumOfTwoSquaresImpl(p: bigint): [bigint, bigint] | null {
 }
 
 /**
- * SymPy `prime_as_sum_of_two_squares(p)`: the positive integers `(x, y)` with
+ * The positive integers `(x, y)` with
  * `x**2 + y**2 = p` for a prime `p = 1 (mod 4)`; EmptySet for other primes.
+ *
+ * @remarks SymPy returns `(1, 2)`.
+ *
+ * @param p - A prime that is congruent to 1 mod 4.
+ * @returns The positive integers `(x, y)` with `x**2 + y**2 = p` for a prime `p = 1 (mod 4)`.
+ * @see SymPy `sympy.solvers.diophantine.diophantine.prime_as_sum_of_two_squares`
+ * @example
+ * ```ts
+ * import { primeAsSumOfTwoSquares } from '@symjs/symjs';
+ * primeAsSumOfTwoSquares(5); // => [1, 2]
+ * ```
  */
 export function primeAsSumOfTwoSquares(p: ExprLike | bigint): [bigint, bigint] | typeof EmptySet {
   return primeAsSumOfTwoSquaresImpl(asBig(p)) ?? EmptySet;
@@ -2044,14 +2799,39 @@ function sumOfThreeSquaresImpl(nIn: bigint): [bigint, bigint, bigint] | null {
 }
 
 /**
- * SymPy `sum_of_three_squares(n)`: sorted non-negative `(a, b, c)` with
+ * Sorted non-negative `(a, b, c)` with
  * `a**2 + b**2 + c**2 = n`; EmptySet when `n = 4**a*(8*m + 7)`.
+ *
+ * @remarks SymPy returns `(18, 37, 207)`.
+ *
+ * @param n - Non-negative integer.
+ * @returns The solutions, or `EmptySet` when no solution exists.
+ * @see SymPy `sympy.solvers.diophantine.diophantine.sum_of_three_squares`
+ * @example
+ * ```ts
+ * import { sumOfThreeSquares } from '@symjs/symjs';
+ * sumOfThreeSquares(44542); // => [18, 37, 207]
+ * ```
  */
 export function sumOfThreeSquares(n: ExprLike | bigint): [bigint, bigint, bigint] | typeof EmptySet {
   return sumOfThreeSquaresImpl(asBig(n)) ?? EmptySet;
 }
 
-/** SymPy `sum_of_four_squares(n)`: sorted non-negative `(a, b, c, d)` with `a**2 + b**2 + c**2 + d**2 = n`. */
+/**
+ * Sorted non-negative `(a, b, c, d)` with `a**2 + b**2 + c**2 + d**2 = n`.
+ *
+ * @remarks SymPy returns `(8, 8, 32, 48)`.
+ *
+ * @param nIn - Non-negative integer.
+ * @returns Four nonnegative integers whose squares sum to the input.
+ * @throws RangeError when the count is negative or nonintegral.
+ * @see SymPy `sympy.solvers.diophantine.diophantine.sum_of_four_squares`
+ * @example
+ * ```ts
+ * import { sumOfFourSquares } from '@symjs/symjs';
+ * sumOfFourSquares(3456); // => [8, 8, 32, 48]
+ * ```
+ */
 export function sumOfFourSquares(nIn: ExprLike | bigint): [bigint, bigint, bigint, bigint] {
   const n0 = asBig(nIn);
   if (n0 < 0n) throw new RangeError('n should be a non-negative integer');
@@ -2079,8 +2859,20 @@ export interface PowerRepresentationOptions {
 }
 
 /**
- * SymPy `power_representation(n, p, k, zeros)`: the k-tuples of integers
- * `(n_1, ..., n_k)` with `n = n_1**p + ... + n_k**p`.
+ * Enumerates representations of an integer as a sum of a fixed number of like powers.
+ *
+ * @param nIn - The integer to represent.
+ * @param pIn - The common exponent of the summands.
+ * @param kIn - The number of summands.
+ * @param opts - The power representation settings.
+ * @returns An iterator over nondecreasing tuples of summands.
+ * @throws RangeError when the exponent or number of terms is not positive.
+ * @see SymPy `sympy.solvers.diophantine.diophantine.power_representation`
+ * @example
+ * ```ts
+ * import { powerRepresentation } from '@symjs/symjs';
+ * [...powerRepresentation(25, 2, 2)]; // => [[3, 4]]
+ * ```
  */
 export function* powerRepresentation(nIn: ExprLike | bigint, pIn: ExprLike | bigint, kIn: ExprLike | bigint | number, opts: PowerRepresentationOptions = {}): Generator<bigint[], void, undefined> {
   const zeros = opts.zeros ?? false;
@@ -2173,8 +2965,19 @@ function* powRepRecursive(ni: bigint, k: bigint, nRemaining: bigint, terms: read
 }
 
 /**
- * SymPy `sum_of_squares(n, k, zeros)`: the sorted k-tuples of non-negative
+ * The sorted k-tuples of non-negative
  * integers whose squares sum to `n`.
+ *
+ * @param n - The integer to represent.
+ * @param k - The number of summands.
+ * @param opts - The power representation settings.
+ * @returns An iterator over nondecreasing tuples of summands.
+ * @see SymPy `sympy.solvers.diophantine.diophantine.sum_of_squares`
+ * @example
+ * ```ts
+ * import { sumOfSquares } from '@symjs/symjs';
+ * [...sumOfSquares(25, 2)]; // => [[3, 4]]
+ * ```
  */
 export function* sumOfSquares(n: ExprLike | bigint, k: ExprLike | bigint | number, opts: PowerRepresentationOptions = {}): Generator<bigint[], void, undefined> {
   yield* powerRepresentation(n, 2n, k, opts);

@@ -26,18 +26,36 @@ import { EmptySet, inf, intersection, sup, type SetExpr } from '../sets/sets';
 import { asSet } from './inequalities';
 import { linearEqToMatrix } from './public';
 
-/** SymPy UnboundedLPError: the objective is unbounded on the feasible region. */
+/**
+ * Indicates that the objective is unbounded on the feasible region.
+ *
+ * @see SymPy `sympy.solvers.simplex.UnboundedLPError`
+ */
 // oxlint-disable-next-line no-restricted-globals -- SymPy's LP errors derive from Exception, like NonlinearError
 export class UnboundedLPError extends Error {
+  /**
+   * Creates an UnboundedLPError instance.
+   *
+   * @param message - The reason for the error.
+   */
   constructor(message: string) {
     super(message);
     this.name = 'UnboundedLPError';
   }
 }
 
-/** SymPy InfeasibleLPError: the constraints have no common solution. */
+/**
+ * Indicates that the constraints have no common feasible point.
+ *
+ * @see SymPy `sympy.solvers.simplex.InfeasibleLPError`
+ */
 // oxlint-disable-next-line no-restricted-globals -- SymPy's LP errors derive from Exception, like NonlinearError
 export class InfeasibleLPError extends Error {
+  /**
+   * Creates an InfeasibleLPError instance.
+   *
+   * @param message - The reason for the error.
+   */
   constructor(message: string) {
     super(message);
     this.name = 'InfeasibleLPError';
@@ -47,7 +65,7 @@ export class InfeasibleLPError extends Error {
 /** A matrix argument: a Matrix, a list of rows or a flat list (a column, as SymPy's Matrix(list)). */
 export type LPMatrixLike = Matrix | readonly ExprLike[] | readonly (readonly ExprLike[])[];
 
-/** The bounds (lower, upper) of a variable; null is no bound (SymPy None). */
+/** The bounds (lower, upper) of a variable; null is no bound. */
 export type LPBound = readonly [ExprLike | null, ExprLike | null];
 
 /** The bounds of linprog: one pair for all variables, a pair per variable, or pairs by variable index. */
@@ -300,16 +318,46 @@ function lp(max: boolean, f: ExprLike, constr: readonly ExprLike[]): [Expr, Expr
 }
 
 /**
- * SymPy lpmin: the minimum of the linear objective f under linear
+ * The minimum of the linear objective f under linear
  * constraints (non-strict inequalities and Eq) and the values of the
  * variables where it is attained. Variables without a lower bound may be
  * negative. Throws UnboundedLPError or InfeasibleLPError.
+ *
+ * @remarks SymPy returns `(1, {x: 1})`.
+ *
+ * @param f - The linear objective function.
+ * @param constr - The constraints on the optimization variables.
+ * @returns The optimal objective value and an optimizing assignment.
+ * @throws InfeasibleLPError when the constraints have no feasible solution.
+ * @throws UnboundedLPError when the objective is unbounded.
+ * @see SymPy `sympy.solvers.simplex.lpmin`
+ * @example
+ * ```ts
+ * import { ex, lpmin } from '@symjs/symjs';
+ * lpmin(ex`x`, [ex`x >= 1`]); // => [1, {x: 1}]
+ * ```
  */
 export function lpmin(f: ExprLike, constr: readonly ExprLike[]): [Expr, ExprMap<Expr>] {
   return lp(false, f, constr);
 }
 
-/** SymPy lpmax: the maximum of the linear objective f under linear constraints (see {@link lpmin}). */
+/**
+ * The maximum of the linear objective f under linear constraints (see {@link lpmin}).
+ *
+ * @remarks SymPy returns `(-1, {x: -1})`.
+ *
+ * @param f - The linear objective function.
+ * @param constr - The constraints on the optimization variables.
+ * @returns The optimal objective value and an optimizing assignment.
+ * @throws InfeasibleLPError when the constraints have no feasible solution.
+ * @throws UnboundedLPError when the objective is unbounded.
+ * @see SymPy `sympy.solvers.simplex.lpmax`
+ * @example
+ * ```ts
+ * import { ex, lpmax } from '@symjs/symjs';
+ * lpmax(ex`x`, [ex`x <= -1`]); // => [-1, {x: -1}]
+ * ```
+ */
 export function lpmax(f: ExprLike, constr: readonly ExprLike[]): [Expr, ExprMap<Expr>] {
   return lp(true, f, constr);
 }
@@ -398,11 +446,30 @@ function boundList(bounds: LPBounds | undefined, n: number): LPBound[] {
 }
 
 /**
- * SymPy linprog: minimize c*x subject to A*x <= b, Aeq*x = beq and the
+ * Minimize c*x subject to A*x <= b, Aeq*x = beq and the
  * bounds (x >= 0 by default; a pair (lo, hi) with null for no bound, for all
  * variables, a list of pairs, or a Map from variable index to pair). Returns
  * the minimum and the values of x. SymPy drops the values when every bound
  * is given as (0, None) in a list; symjs returns them.
+ *
+ * @remarks SymPy returns `(1, [1])`.
+ *
+ * @param c - The coefficients of the objective in variable order.
+ * @param A - The matrix of inequality coefficients.
+ * @param b - The corresponding upper bounds on the linear forms.
+ * @param AEq - The matrix of equality coefficients.
+ * @param bEq - The equality right-hand sides.
+ * @param bounds - The lower and upper bounds on the decision variables.
+ * @returns The optimal objective value and an optimizing assignment.
+ * @throws InfeasibleLPError when the constraints have no feasible solution.
+ * @throws UnboundedLPError when the objective is unbounded.
+ * @throws RangeError when the objective coefficients do not form a vector.
+ * @see SymPy `sympy.solvers.simplex.linprog`
+ * @example
+ * ```ts
+ * import { linprog } from '@symjs/symjs';
+ * linprog([1], [-1], [-1]); // => [1, [1]]
+ * ```
  */
 export function linprog(
   c: LPMatrixLike,
@@ -470,9 +537,17 @@ export function linprog(
 }
 
 /**
- * SymPy show_linprog: the objective and the constraints of a linprog
- * problem in the variables x1, x2, ... (SymPy fails without A_eq or bounds;
- * symjs leaves them out).
+ * Converts a matrix-form linear program into a symbolic objective and constraints.
+ *
+ * @param c - The coefficients of the objective in variable order.
+ * @param A - The matrix of inequality coefficients.
+ * @param b - The corresponding upper bounds on the linear forms.
+ * @param AEq - The matrix of equality coefficients.
+ * @param bEq - The equality right-hand sides.
+ * @param bounds - The lower and upper bounds on the decision variables.
+ * @returns The linear objective and the equivalent list of constraints.
+ * @throws RangeError when the objective coefficients do not form a vector.
+ * @see SymPy `sympy.solvers.simplex.show_linprog`
  */
 export function showLinprog(
   c: LPMatrixLike,

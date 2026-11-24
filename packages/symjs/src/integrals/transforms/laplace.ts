@@ -848,19 +848,25 @@ export function laplaceTransformImpl(fn: Expr, t: Sym, s: Expr, simplify: boolea
   return [back(result), back(maxPlane(planes)), back(and(...conditions))];
 }
 
-/** Options of laplaceTransform (SymPy keyword arguments). */
+/** Options of laplaceTransform. */
 export interface LaplaceOptions extends TransformHints {
-  /** Return only F (SymPy noconds); default false. */
+  /** Returns only F; default false. */
   noconds?: boolean;
 }
 
 /**
- * The Laplace transform F(s) of f(t) (SymPy laplace_transform):
+ * The Laplace transform F(s) of f(t):
  * the integral of exp(-s*t)*f(t) from 0- to oo. Returns [F, a, cond] where
  * a is the abscissa of convergence (Re(s) > a) and cond the auxiliary
  * conditions, or F alone with `noconds: true`. Parts that cannot be
  * transformed stay as unevaluated LaplaceTransform objects.
  *
+ * @param f - The function to transform.
+ * @param t - The time variable.
+ * @param s - The transform-domain variable.
+ * @param opts - `noconds` omits convergence data.
+ * @returns The transformed expression with convergence data when requested.
+ * @see SymPy `sympy.integrals.laplace.laplace_transform`
  * @example
  * ```ts
  * import { laplaceTransform, symbols } from '@symjs/symjs';
@@ -870,8 +876,50 @@ export interface LaplaceOptions extends TransformHints {
  * ```
  */
 export function laplaceTransform(f: ExprLike, t: Sym, s: ExprLike, opts: LaplaceOptions & { noconds: true }): Expr;
+/**
+ * The Laplace transform F(s) of f(t):
+ * the integral of exp(-s*t)*f(t) from 0- to oo. Returns [F, a, cond] where
+ * a is the abscissa of convergence (Re(s) > a) and cond the auxiliary
+ * conditions, or F alone with `noconds: true`. Parts that cannot be
+ * transformed stay as unevaluated LaplaceTransform objects.
+ *
+ * @param f - The function to transform.
+ * @param t - The time variable.
+ * @param s - The transform-domain variable.
+ * @param opts - The laplace settings.
+ * @returns The transformed expression with convergence data when requested.
+ * @see SymPy `sympy.integrals.laplace.laplace_transform`
+ */
 export function laplaceTransform(f: ExprLike, t: Sym, s: ExprLike, opts?: LaplaceOptions): LaplaceTriple;
+/**
+ * The Laplace transform F(s) of f(t):
+ * the integral of exp(-s*t)*f(t) from 0- to oo. Returns [F, a, cond] where
+ * a is the abscissa of convergence (Re(s) > a) and cond the auxiliary
+ * conditions, or F alone with `noconds: true`. Parts that cannot be
+ * transformed stay as unevaluated LaplaceTransform objects.
+ *
+ * @param f - The function to transform.
+ * @param t - The time variable.
+ * @param s - The transform-domain variable.
+ * @param opts - `noconds` omits convergence data.
+ * @returns The transformed expression with convergence data when requested.
+ * @see SymPy `sympy.integrals.laplace.laplace_transform`
+ */
 export function laplaceTransform(f: Matrix, t: Sym, s: ExprLike, opts: LaplaceOptions & { noconds: true }): Matrix;
+/**
+ * The Laplace transform F(s) of f(t):
+ * the integral of exp(-s*t)*f(t) from 0- to oo. Returns [F, a, cond] where
+ * a is the abscissa of convergence (Re(s) > a) and cond the auxiliary
+ * conditions, or F alone with `noconds: true`. Parts that cannot be
+ * transformed stay as unevaluated LaplaceTransform objects.
+ *
+ * @param f - The function to transform.
+ * @param t - The time variable.
+ * @param s - The transform-domain variable.
+ * @param opts - The laplace settings.
+ * @returns The transformed expression with convergence data when requested.
+ * @see SymPy `sympy.integrals.laplace.laplace_transform`
+ */
 export function laplaceTransform(f: Matrix, t: Sym, s: ExprLike, opts?: LaplaceOptions): [Matrix, Expr, Expr];
 export function laplaceTransform(f: ExprLike | Matrix, t: Sym, sIn: ExprLike, opts: LaplaceOptions = {}): Expr | LaplaceTriple | Matrix | [Matrix, Expr, Expr] {
   const s = sympify(sIn);
@@ -893,9 +941,22 @@ export function laplaceTransform(f: ExprLike | Matrix, t: Sym, sIn: ExprLike, op
 }
 
 /**
- * Replace unevaluated LaplaceTransform(y(t), t, s) by Y(s) and
+ * Replaces unevaluated LaplaceTransform(y(t), t, s) by Y(s) and
  * InverseLaplaceTransform(Y(s), s, t) by y(t) for every correspondence
- * y -> Y in `fdict` (SymPy laplace_correspondence).
+ * y -> Y in `fdict`.
+ *
+ * @param f - The function to transform.
+ * @param fdict - The correspondence between functions and their transform or initial data.
+ * @returns The expression with corresponding transform pairs replaced.
+ * @see SymPy `sympy.integrals.laplace.laplace_correspondence`
+ * @example
+ * ```ts
+ * import { LaplaceTransform, SymFunction, laplaceCorrespondence, symbols } from '@symjs/symjs';
+ *
+ * const [s, t] = symbols('s t');
+ * const f = SymFunction('f');
+ * laplaceCorrespondence(new LaplaceTransform(f(t), t, s), new Map([[f, SymFunction('F')]])); // => F(s)
+ * ```
  */
 export function laplaceCorrespondence(f: ExprLike, fdict: ReadonlyMap<UndefinedFunction, UndefinedFunction>): Expr {
   const e = sympify(f);
@@ -913,8 +974,22 @@ export function laplaceCorrespondence(f: ExprLike, fdict: ReadonlyMap<UndefinedF
 }
 
 /**
- * Substitute initial conditions y(0), y'(0), ... given as lists in `fdict`
+ * Substitutes initial conditions y(0), y'(0), ... given as lists in `fdict`
  * (SymPy laplace_initial_conds).
+ *
+ * @param f - The function to transform.
+ * @param t - The time variable.
+ * @param fdict - The correspondence between functions and their transform or initial data.
+ * @returns The expression with the initial values substituted.
+ * @see SymPy `sympy.integrals.laplace.laplace_initial_conds`
+ * @example
+ * ```ts
+ * import { SymFunction, laplaceInitialConds, symbols } from '@symjs/symjs';
+ *
+ * const [t] = symbols('t');
+ * const f = SymFunction('f');
+ * laplaceInitialConds(f(0), t, new Map([[f, [3]]])); // => 3
+ * ```
  */
 export function laplaceInitialConds(f: ExprLike, t: Sym, fdict: ReadonlyMap<UndefinedFunction, readonly ExprLike[]>): Expr {
   let e = sympify(f);
@@ -928,28 +1003,66 @@ export function laplaceInitialConds(f: ExprLike, t: Sym, fdict: ReadonlyMap<Unde
 }
 
 /**
- * The unevaluated Laplace transform of f(t) (SymPy LaplaceTransform);
+ * The unevaluated Laplace transform of f(t);
  * doit() evaluates it with laplaceTransform.
+ *
+ * @see SymPy `sympy.integrals.laplace.LaplaceTransform`
  */
 export class LaplaceTransform extends IntegralTransform {
+  /**
+   * Creates a LaplaceTransform instance.
+   *
+   * @param f - The function to transform.
+   * @param t - The time variable.
+   * @param s - The transform-domain variable.
+   */
   constructor(f: ExprLike, t: ExprLike, s: ExprLike) {
     super('LaplaceTransform', [sympify(f), sympify(t), sympify(s)]);
   }
-  /** SymPy LaplaceTransform._name. */
+  /**
+   * The name of the integral transform.
+   *
+   * @see SymPy `sympy.integrals.laplace.LaplaceTransform._name`
+   */
   static readonly transformName = 'Laplace';
+  /**
+   * Represents the name of the integral transform.
+   *
+   * @returns The name of the integral transform.
+   * @see SymPy `sympy.integrals.laplace.LaplaceTransform._name`
+   */
   get transformName(): string {
     return 'Laplace';
   }
   protected get latexName(): string {
     return '\\mathcal{L}';
   }
+  /**
+   * Rebuilds the expression with replacement arguments.
+   *
+   * @param args - The operands in their defining order.
+   * @returns The expression with the replacement operands.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new LaplaceTransform(...transformArgs(args));
   }
+  /**
+   * Expresses the transform as a symbolic integral.
+   *
+   * @returns The defining integral expression.
+   * @see SymPy `sympy.integrals.laplace.LaplaceTransform._as_integral`
+   */
   get asIntegral(): Expr {
     return new Integral([mul(this.function, exp(mul(-1, this.transformVariable, this.functionVariable))), this.functionVariable, S.Zero, S.Infinity]);
   }
-  /** Evaluate (SymPy doit): F, or [F, plane, cond] with `noconds: false`. */
+  /**
+   * Evaluate: F, or [F, plane, cond] with `noconds: false`.
+   *
+   * @param hints - The transform hints settings.
+   * @returns The transformed expression with convergence data when requested.
+   * @throws IntegralTransformError when evaluation is required and the transform cannot be computed.
+   * @see SymPy `sympy.integrals.laplace.LaplaceTransform.doit`
+   */
   doit(hints: TransformHints = {}): Expr | LaplaceTriple {
     const t = this.functionVariable;
     const r: LaplaceTriple = t instanceof Sym ? laplaceTransformImpl(this.function, t, this.transformVariable, hints.simplify ?? false) : [this, S.NegativeInfinity, S.true];

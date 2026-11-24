@@ -30,6 +30,7 @@ interface FrozenSetItems {
   readonly frozenItems: ReadonlySet<StrPrintable>;
 }
 
+/** A value accepted by the plain-text expression printer. */
 export type StrPrintable = FrozenSetItems | Predicate | { asExpr(): Expr; toString(): string } | StrMatrix | ExprLike | string | boolean | null | readonly StrPrintable[] | ReadonlySet<StrPrintable> | ReadonlyMap<StrPrintable, StrPrintable>;
 
 /** Python's repr of a string ('abc', or "it's" when it contains a single quote). */
@@ -94,17 +95,36 @@ function printValue(v: StrPrintable, strings: (s: string) => string): string {
 }
 
 /**
- * SymPy StrPrinter: `new StrPrinter().doprint(expr)` is `str(expr)`; lists,
- * sets, dicts, strings and None print as Python prints them inside a
- * container.
+ * Formats expressions and containers in plain text. Nested containers retain their list, set or dictionary notation.
+ *
+ * @see SymPy `sympy.printing.str.StrPrinter`
  */
 export class StrPrinter {
-  constructor(readonly settings: Readonly<Record<string, unknown>> = {}) {}
-  /** The str form of expr (SymPy StrPrinter.doprint). */
+  /**
+   * Creates a StrPrinter instance.
+   *
+   * @param settings - The settings for constructor.
+   */
+  constructor(
+    /** The formatting settings for this printer. */
+    readonly settings: Readonly<Record<string, unknown>> = {}) {}
+  /**
+   * The str form of expr.
+   *
+   * @param expr - The value to format.
+   * @returns The formatted text.
+   * @see SymPy `sympy.printing.str.StrPrinter.doprint`
+   */
   doprint(expr: StrPrintable): string {
     return sstr(expr, this.settings);
   }
-  /** SymPy's fallback printer for strings, expressions and scalar values. */
+  /**
+   * SymPy's fallback printer for strings, expressions and scalar values.
+   *
+   * @param expr - The value to format.
+   * @returns The formatted text.
+   * @see SymPy `sympy.printing.str.StrPrinter.emptyPrinter`
+   */
   emptyPrinter(expr: StrPrintable): string {
     return printValue(expr, (s) => s);
   }
@@ -113,38 +133,61 @@ export class StrPrinter {
 /** The settings of {@link sstr}. */
 export interface SstrOptions {
   /**
-   * Print floats with their full precision (true), with trailing zeros
+   * Prints floats with their full precision (true), with trailing zeros
    * removed (false), or with the full precision only at the top level
    * ('auto', the default; SymPy full_prec).
    */
   fullPrec?: boolean | 'auto';
+  /** Uses explicit integer constructors in the printed representation. */
   sympyIntegers?: boolean;
+  /** The lower exponent threshold for scientific notation. */
   min?: number;
+  /** The upper exponent threshold for scientific notation. */
   max?: number;
+  /** The number of decimal digits to print. */
   dps?: number;
-  /** Permutations in cycle notation (default true) or as Permutation([...]) (SymPy perm_cyclic). */
+  /** Permutations in cycle notation (default true) or as Permutation([...]). */
   permCyclic?: boolean;
 }
 
 /**
- * SymPy sstr: the str form of an expression or a container of them
+ * The str form of an expression or a container of them
  * (lists, sets, dicts, strings and None print as Python prints them inside
  * a container).
+ *
+ * @param expr - The value to format.
+ * @param opts - The sstr settings.
+ * @returns The plain-text representation.
+ * @see SymPy `sympy.printing.str.sstr`
+ * @example
+ * ```ts
+ * import { ex, sstr } from '@symjs/symjs';
+ * sstr(ex`x**2 + 1`); // => x**2 + 1
+ * ```
  */
 export function sstr(expr: StrPrintable, opts: SstrOptions = {}): string {
   for (const key of Object.keys(opts)) if (!['fullPrec', 'permCyclic', 'order', 'sympyIntegers', 'abbrev', 'min', 'max', 'dps'].includes(key)) throw new TypeError(`Unknown setting '${key}'.`);
   return withPermCyclic(opts.permCyclic, () => withFullPrec(opts, () => printValue(expr, (s) => s)));
 }
 
-/** SymPy sstrrepr: like sstr, but strings are printed with their quotes (Python repr). */
+/**
+ * Like sstr, but strings are printed with their quotes (Python repr).
+ *
+ * @param expr - The value to format.
+ * @returns The plain-text representation.
+ * @see SymPy `sympy.printing.str.sstrrepr`
+ */
 export function sstrrepr(expr: StrPrintable): string {
   return printValue(expr, reprString);
 }
 
 /**
- * SymPy print_latex(expr): SymPy prints the LaTeX form; symjs has no console
- * output, so this returns the text that would be printed (followed by a
- * newline).
+ * Prints LaTeX representation of the given expression. Takes the same settings as ``latex()``.
+ *
+ * @param expr - The value to format.
+ * @param options - The latex settings.
+ * @returns The formatted LaTeX source.
+ * @see SymPy `sympy.printing.latex.print_latex`
  */
 export function printLatex(expr: LatexPrintable, options?: LatexOptions): string {
   return `${latex(expr, options)}\n`;
@@ -161,9 +204,25 @@ export interface MultilineLatexOptions extends LatexOptions {
 }
 
 /**
- * SymPy multiline_latex(lhs, rhs, terms_per_line=1, environment="align*",
- * use_dots=False): lhs = rhs with the terms of rhs over several lines of a
+ * Lhs = rhs with the terms of rhs over several lines of a
  * LaTeX align* (or eqnarray, IEEEeqnarray) environment.
+ *
+ * @remarks SymPy returns `\begin{align*} x = & e^{i \alpha} \\ & + \sin{\left(\alpha y \right)} \\ & - \cos{\left(\log{\left(y \right)} \right)}  \end{align*}`.
+ *
+ * @param lhs - The left side of the equation.
+ * @param rhs - The right side whose terms are split across lines.
+ * @param termsOrOptions - The number of terms per line or the multiline formatting settings.
+ * @returns The formatted LaTeX source.
+ * @see SymPy `sympy.printing.latex.multiline_latex`
+ * @example
+ * ```ts
+ * import { ex, multilineLatex } from '@symjs/symjs';
+ * multilineLatex(ex`x`, ex`exp(I*alpha) + sin(alpha*y) - cos(log(y))`); // => \begin{align*}
+ * //   x = & e^{i \alpha} \\
+ * //   & + \sin{\left(\alpha y \right)} \\
+ * //   & - \cos{\left(\log{\left(y \right)} \right)}
+ * //   \end{align*}
+ * ```
  */
 export function multilineLatex(lhs: ExprLike, rhs: ExprLike, termsOrOptions: number | MultilineLatexOptions = {}): string {
   // SymPy's third positional parameter is terms_per_line

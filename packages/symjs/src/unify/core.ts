@@ -44,40 +44,111 @@ export function termEquals(a: Term, b: Term): boolean {
   return a === b || termKey(a) === termKey(b);
 }
 
-/** SymPy `Compound(op, args)`: an interior node of a tree (like a non-atomic Basic). */
+/**
+ * An interior node of a tree (like a non-atomic Basic).
+ *
+ * @see SymPy `sympy.unify.core.Compound`
+ */
 export class Compound {
+  /**
+   * Creates a Compound instance.
+   *
+   * @param op - The operator at the root of the compound term.
+   * @param args - Its ordered child terms.
+   */
   constructor(
+    /** The operator at the root of the compound term. */
     readonly op: Term,
+    /** The ordered arguments defining the expression. */
     readonly args: readonly Term[],
   ) {}
+  /**
+   * Tests whether the two values are structurally equal.
+   *
+   * @param other - The right-hand operand.
+   * @returns Whether the operands are equal.
+   * @see SymPy `sympy.unify.core.Compound.__eq__`
+   */
   equals(other: Term): boolean {
     return termEquals(this, other);
   }
+  /**
+   * Formats this value as a string.
+   *
+   * @returns The formatted text.
+   */
   toString(): string {
     return `${String(this.op)}[${this.args.map((a) => String(a)).join(', ')}]`;
   }
 }
 
-/** SymPy `Variable(arg)`: a wild token. */
+/**
+ * A wild token.
+ *
+ * @see SymPy `sympy.unify.core.Variable`
+ */
 export class Variable {
-  constructor(readonly arg: Term) {}
+  /**
+   * Creates a Variable instance.
+   *
+   * @param arg - The argument defining the node.
+   */
+  constructor(
+    /** The token identifying the pattern variable. */
+    readonly arg: Term) {}
+  /**
+   * Tests whether the two values are structurally equal.
+   *
+   * @param other - The right-hand operand.
+   * @returns Whether the operands are equal.
+   * @see SymPy `sympy.unify.core.Variable.__eq__`
+   */
   equals(other: Term): boolean {
     return termEquals(this, other);
   }
+  /**
+   * Formats this value as a string.
+   *
+   * @returns The formatted text.
+   */
   toString(): string {
     return `Variable(${String(this.arg)})`;
   }
 }
 
-/** SymPy `CondVariable(arg, valid)`: a wild token that matches only the terms accepted by `valid`. */
+/**
+ * A wild token that matches only the terms accepted by `valid`.
+ *
+ * @see SymPy `sympy.unify.core.CondVariable`
+ */
 export class CondVariable {
+  /**
+   * Creates a CondVariable instance.
+   *
+   * @param arg - The token identifying the wild variable.
+   * @param valid - The predicate a candidate binding must satisfy.
+   */
   constructor(
+    /** The token identifying the constrained pattern variable. */
     readonly arg: Term,
+    /** The predicate that accepts substitutions for this variable. */
     readonly valid: (x: Term) => boolean,
   ) {}
+  /**
+   * Tests whether the two values are structurally equal.
+   *
+   * @param other - The right-hand operand.
+   * @returns Whether the operands are equal.
+   * @see SymPy `sympy.unify.core.CondVariable.__eq__`
+   */
   equals(other: Term): boolean {
     return termEquals(this, other);
   }
+  /**
+   * Formats this value as a string.
+   *
+   * @returns The formatted text.
+   */
   toString(): string {
     return `CondVariable(${String(this.arg)})`;
   }
@@ -224,7 +295,19 @@ export function partition<T>(it: readonly T[], part: readonly (readonly number[]
   return part.map((ind) => index(it, ind));
 }
 
-/** SymPy `index(it, ind)`: the elements of `it` at the indices `ind`. */
+/**
+ * The elements of `it` at the indices `ind`.
+ *
+ * @param it - The input iterable.
+ * @param ind - The positions to select, in the desired output order.
+ * @returns The selected items in index order.
+ * @see SymPy `sympy.unify.core.index`
+ * @example
+ * ```ts
+ * import { index } from '@symjs/symjs/unify';
+ * index([10, 20, 30], [1, 2, 0]); // => [20, 30, 10]
+ * ```
+ */
 export function index<T>(it: readonly T[], ind: readonly number[]): T[] {
   return ind.map((i) => at(it, i));
 }
