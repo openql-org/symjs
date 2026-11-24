@@ -11,7 +11,20 @@ import { at, getOrThrow } from '../core/guard';
 import type { IntLike } from './intutil';
 import { asInt } from './intutil';
 
-/** The coefficients of (x + y)**n as a Map [k1, k2] -> coefficient (SymPy binomial_coefficients). */
+/**
+ * The coefficients of (x + y)**n as a Map [k1, k2] -> coefficient.
+ *
+ * @remarks SymPy uses tuple keys such as `(1, 8)` for the coefficient 9.
+ * @param nIn - Nonnegative power of the binomial.
+ * @returns The coefficients indexed by exponent pairs.
+ * @see SymPy `sympy.ntheory.multinomial.binomial_coefficients`
+ * @example
+ * ```ts
+ * import { binomialCoefficients } from '@symjs/symjs';
+ *
+ * binomialCoefficients(9); // => {[0, 9]: 1, [9, 0]: 1, [1, 8]: 9, [8, 1]: 9, [2, 7]: 36, [7, 2]: 36, [3, 6]: 84, [6, 3]: 84, [4, 5]: 126, [5, 4]: 126}
+ * ```
+ */
 export function binomialCoefficients(nIn: IntLike): Map<readonly bigint[], bigint> {
   const n = asInt(nIn);
   const d = new Map<string, [readonly bigint[], bigint]>();
@@ -29,7 +42,19 @@ export function binomialCoefficients(nIn: IntLike): Map<readonly bigint[], bigin
   return new Map([...d.values()]);
 }
 
-/** The coefficients of (x + y)**n as a list (SymPy binomial_coefficients_list). */
+/**
+ * The coefficients of (x + y)**n as a list.
+ *
+ * @param nIn - Nonnegative power of the binomial.
+ * @returns The coefficients in increasing order of the exponent index.
+ * @see SymPy `sympy.ntheory.multinomial.binomial_coefficients_list`
+ * @example
+ * ```ts
+ * import { binomialCoefficientsList } from '@symjs/symjs';
+ *
+ * binomialCoefficientsList(9); // => [1, 9, 36, 84, 126, 126, 84, 36, 9, 1]
+ * ```
+ */
 export function binomialCoefficientsList(nIn: IntLike): bigint[] {
   const n = asInt(nIn);
   const d = new Array<bigint>(Number(n) + 1).fill(1n);
@@ -82,8 +107,19 @@ function mcInternal(m: number, n: number): Map<string, [number[], bigint]> {
 }
 
 /**
- * The coefficients of (x1 + ... + xm)**n as a Map of exponent tuples to
- * coefficients (SymPy multinomial_coefficients).
+ * The coefficients of (x1 +... + xm)**n as a Map of exponent tuples to coefficients.
+ *
+ * @remarks SymPy uses tuple keys such as `(1, 4)` for the coefficient 5.
+ * @param mIn - Number of terms in the sum.
+ * @param nIn - Nonnegative exponent of the sum.
+ * @returns The exponent vectors and their multinomial coefficients.
+ * @see SymPy `sympy.ntheory.multinomial.multinomial_coefficients`
+ * @example
+ * ```ts
+ * import { multinomialCoefficients } from '@symjs/symjs';
+ *
+ * multinomialCoefficients(2, 5); // => {[0, 5]: 1, [5, 0]: 1, [1, 4]: 5, [4, 1]: 5, [2, 3]: 10, [3, 2]: 10}
+ * ```
  */
 export function multinomialCoefficients(mIn: IntLike, nIn: IntLike): Map<readonly bigint[], bigint> {
   const m = Number(asInt(mIn));
@@ -94,7 +130,22 @@ export function multinomialCoefficients(mIn: IntLike, nIn: IntLike): Map<readonl
   return new Map([...mcInternal(m, n).values()].map(([k, v]) => [k.map(BigInt), v]));
 }
 
-/** The multinomial coefficients as a generator of [tuple, coefficient] (SymPy multinomial_coefficients_iterator). */
+/**
+ * The multinomial coefficients as a generator of [tuple, coefficient].
+ *
+ * @remarks SymPy yields a pair whose first entry is an exponent tuple and whose second entry is the
+ *   coefficient.
+ * @param mIn - Number of terms in the sum.
+ * @param nIn - Nonnegative exponent of the sum.
+ * @returns The exponent vectors and their multinomial coefficients.
+ * @see SymPy `sympy.ntheory.multinomial.multinomial_coefficients_iterator`
+ * @example
+ * ```ts
+ * import { multinomialCoefficientsIterator } from '@symjs/symjs';
+ *
+ * multinomialCoefficientsIterator(20, 3).next().value; // => [[3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 1]
+ * ```
+ */
 export function* multinomialCoefficientsIterator(mIn: IntLike, nIn: IntLike): Generator<[readonly bigint[], bigint], void, undefined> {
   const m = Number(asInt(mIn));
   const n = Number(asInt(nIn));

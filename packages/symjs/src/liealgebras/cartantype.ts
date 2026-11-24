@@ -21,8 +21,13 @@ export { StandardCartan };
 export type CartanTypeLike = StandardCartan | string | readonly [string, number | bigint];
 
 /**
- * SymPy CartanType: the Cartan type of series A-G and rank n given as
- * 'A3' or ['A', 3]; a RangeError for a rank the series does not have.
+ * Selects a Cartan type from its series and rank.
+ *
+ * @param c - An existing type, a type name or a series and rank.
+ * @returns The corresponding Cartan type.
+ * @throws TypeError when the rank is not an integer.
+ * @throws RangeError when the series is unknown or does not admit the given rank.
+ * @see SymPy `sympy.liealgebras.cartan_type.CartanType`
  */
 export function CartanType(c: CartanTypeLike): StandardCartan {
   if (c instanceof StandardCartan) return c;

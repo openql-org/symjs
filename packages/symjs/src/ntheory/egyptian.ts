@@ -82,8 +82,22 @@ function golomb(x: bigint, y: bigint): bigint[] {
 }
 
 /**
- * The denominators of an Egyptian fraction expansion of the positive
- * rational r (SymPy egyptian_fraction); r is a Rational or a [p, q] pair.
+ * The denominators of an Egyptian fraction expansion of the positive rational r; r is a Rational or
+ * a [p, q] pair.
+ *
+ * @param r - Positive rational number or numerator-denominator pair.
+ * @param algorithm - Expansion algorithm.
+ * @returns The positive unit-fraction denominators.
+ * @throws TypeError when the input is neither rational nor an integer pair.
+ * @throws RangeError when the rational value is not positive.
+ * @see SymPy `sympy.ntheory.egyptian_fraction.egyptian_fraction`
+ * @example
+ * ```ts
+ * import { egyptianFraction } from '@symjs/symjs';
+ *
+ * egyptianFraction([3, 7]); // => [3, 11, 231]
+ * egyptianFraction([3, 7], 'Golomb'); // => [3, 15, 35]
+ * ```
  */
 export function egyptianFraction(r: ExprLike | readonly [bigint | number, bigint | number], algorithm: EgyptianAlgorithm = 'Greedy'): bigint[] {
   let q: Rational;

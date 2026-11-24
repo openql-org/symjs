@@ -20,7 +20,11 @@ import type { IntLike } from './intutil';
 import { asInt, babs, bitLength, bitScan1, gcdN, isSquare, jacobi, powmod, remove } from './intutil';
 import { bisectLeft, sieve } from './sieve';
 
-/** The exponents p of the known Mersenne primes 2**p - 1 (SymPy MERSENNE_PRIME_EXPONENTS). */
+/**
+ * The exponents p of the known Mersenne primes 2**p - 1.
+ *
+ * @see SymPy `sympy.ntheory.primetest.MERSENNE_PRIME_EXPONENTS`
+ */
 export const MERSENNE_PRIME_EXPONENTS: readonly number[] = [
   2, 3, 5, 7, 13, 17, 19, 31, 61, 89, 107, 127, 521, 607, 1279, 2203, 2281, 3217, 4253, 4423, 9689, 9941, 11213, 19937, 21701, 23209, 44497, 86243,
   110503, 132049, 216091, 756839, 859433, 1257787, 1398269, 2976221, 3021377, 6972593, 13466917, 20996011, 24036583, 25964951, 30402457, 32582657,
@@ -51,7 +55,21 @@ function mrTest(n: bigint, base: bigint, s: number, t: bigint): boolean {
   return false;
 }
 
-/** Miller-Rabin test of n for the given bases (SymPy mr). */
+/**
+ * Applies the strong probable-prime test at each witness base.
+ *
+ * @param nIn - Integer to test.
+ * @param bases - Witness bases to test.
+ * @returns Whether the candidate passes every Miller–Rabin round.
+ * @see SymPy `sympy.ntheory.primetest.mr`
+ * @example
+ * ```ts
+ * import { mr } from '@symjs/symjs';
+ *
+ * mr(1373651, [2, 3]); // => False
+ * mr(479001599, [31, 73]); // => True
+ * ```
+ */
 export function mr(nIn: IntLike, bases: readonly IntLike[]): boolean {
   const n = asInt(nIn);
   if (n < 2n || (n > 2n && n % 2n === 0n)) return false;
@@ -65,7 +83,21 @@ export function mr(nIn: IntLike, bases: readonly IntLike[]): boolean {
   return true;
 }
 
-/** Primality of a Proth number k*2**m + 1, with odd k < 2**m. */
+/**
+ * Tests the primality of a Proth number using Proth’s theorem.
+ *
+ * @param nIn - Proth number to test.
+ * @returns Whether the Proth number is prime.
+ * @throws RangeError when the argument is not a Proth number.
+ * @see SymPy `sympy.ntheory.primetest.proth_test`
+ * @example
+ * ```ts
+ * import { prothTest } from '@symjs/symjs';
+ *
+ * prothTest(41); // => True
+ * prothTest(57); // => False
+ * ```
+ */
 export function prothTest(nIn: IntLike): boolean {
   const n = asInt(nIn);
   if (n < 3n) throw new RangeError('n is not a Proth number');
@@ -163,8 +195,20 @@ function prpBase(name: string, n: bigint, a0: bigint): bigint | boolean {
 }
 
 /**
- * SymPy `is_fermat_pseudoprime(n, a)`: whether n is a prime or an odd
- * composite coprime to a with a**(n - 1) = 1 (mod n) (a Fermat pseudoprime).
+ * Tests the Fermat congruence for the supplied base.
+ *
+ * @param nIn - Candidate integer.
+ * @param aIn - Base for the test.
+ * @returns Whether the candidate passes the congruence test.
+ * @throws RangeError when the candidate or base is outside its permitted range or the two are not
+ *   coprime.
+ * @see SymPy `sympy.ntheory.primetest.is_fermat_pseudoprime`
+ * @example
+ * ```ts
+ * import { isFermatPseudoprime } from '@symjs/symjs';
+ *
+ * isFermatPseudoprime(341, 2); // => True
+ * ```
  */
 export function isFermatPseudoprime(nIn: IntLike, aIn: IntLike): boolean {
   const [n, a0] = [asInt(nIn), asInt(aIn)];
@@ -174,9 +218,20 @@ export function isFermatPseudoprime(nIn: IntLike, aIn: IntLike): boolean {
 }
 
 /**
- * SymPy `is_euler_pseudoprime(n, a)`: whether n is a prime or an odd
- * composite coprime to a with a**((n - 1)/2) = +-1 (mod n) (an Euler
- * pseudoprime).
+ * Tests whether `a**((n - 1)/2)` is congruent to plus or minus one for an odd candidate `n` coprime
+ * to `a`.
+ *
+ * @param nIn - Candidate integer.
+ * @param aIn - Base for the test.
+ * @returns Whether the candidate passes the congruence test.
+ * @throws RangeError when the candidate is not positive or the base is not coprime to it.
+ * @see SymPy `sympy.ntheory.primetest.is_euler_pseudoprime`
+ * @example
+ * ```ts
+ * import { isEulerPseudoprime } from '@symjs/symjs';
+ *
+ * isEulerPseudoprime(341, 2); // => True
+ * ```
  */
 export function isEulerPseudoprime(nIn: IntLike, aIn: IntLike): boolean {
   const [n, a] = [asInt(nIn), asInt(aIn)];
@@ -190,9 +245,20 @@ export function isEulerPseudoprime(nIn: IntLike, aIn: IntLike): boolean {
 }
 
 /**
- * SymPy `is_euler_jacobi_pseudoprime(n, a)`: whether n is a prime or an
- * odd composite coprime to a with a**((n - 1)/2) = (a/n) (mod n), the
- * Jacobi symbol (an Euler-Jacobi pseudoprime).
+ * Tests whether `a**((n - 1)/2)` agrees with the Jacobi symbol modulo the candidate.
+ *
+ * @param nIn - Candidate integer.
+ * @param aIn - Base for the test.
+ * @returns Whether the candidate passes the congruence test.
+ * @throws RangeError when the candidate or base is outside its permitted range or the two are not
+ *   coprime.
+ * @see SymPy `sympy.ntheory.primetest.is_euler_jacobi_pseudoprime`
+ * @example
+ * ```ts
+ * import { isEulerJacobiPseudoprime } from '@symjs/symjs';
+ *
+ * isEulerJacobiPseudoprime(561, 2); // => True
+ * ```
  */
 export function isEulerJacobiPseudoprime(nIn: IntLike, aIn: IntLike): boolean {
   const [n, a0] = [asInt(nIn), asInt(aIn)];
@@ -213,9 +279,17 @@ function lucasExtrastrongParams(n: bigint): [bigint, bigint, bigint] {
 }
 
 /**
- * SymPy `is_extra_strong_lucas_prp(n)`: the extra strong Lucas probable
- * prime test (true for every prime; the composites that pass are extra
- * strong Lucas pseudoprimes such as 989 and 3239).
+ * Applies the extra-strong Lucas probable-prime test.
+ *
+ * @param nIn - Candidate integer.
+ * @returns Whether the candidate passes the extra-strong Lucas test.
+ * @see SymPy `sympy.ntheory.primetest.is_extra_strong_lucas_prp`
+ * @example
+ * ```ts
+ * import { isExtraStrongLucasPrp } from '@symjs/symjs';
+ *
+ * isExtraStrongLucasPrp(989); // => True
+ * ```
  */
 export function isExtraStrongLucasPrp(nIn: IntLike): boolean {
   const n = asInt(nIn);
@@ -283,7 +357,20 @@ export function lucasLehmer(p: number): boolean {
   return v === 0n;
 }
 
-/** n is a Mersenne prime 2**p - 1 (SymPy is_mersenne_prime). */
+/**
+ * Tests whether an integer is a Mersenne prime.
+ *
+ * @param nIn - Integer to test.
+ * @returns Whether the number is a prime of the form `2**p - 1`.
+ * @see SymPy `sympy.ntheory.primetest.is_mersenne_prime`
+ * @example
+ * ```ts
+ * import { isMersennePrime } from '@symjs/symjs';
+ *
+ * isMersennePrime(6); // => False
+ * isMersennePrime(127); // => True
+ * ```
+ */
 export function isMersennePrime(nIn: IntLike): boolean {
   // GIMPS verified every exponent below 65 million on September 19, 2023
   return mersennePrimeCheck(asInt(nIn), 65_000_000);
@@ -306,7 +393,14 @@ export function mersennePrimeCheck(n: bigint, verifiedBelow: number): boolean {
   return lucasLehmer(p);
 }
 
-/** num = a + b*I is a Gaussian prime (SymPy is_gaussian_prime). */
+/**
+ * Tests primality in the ring of Gaussian integers.
+ *
+ * @param num - Gaussian integer to test.
+ * @returns Whether the input is prime in the Gaussian integers.
+ * @throws TypeError when the value is not a Gaussian integer.
+ * @see SymPy `sympy.ntheory.primetest.is_gaussian_prime`
+ */
 export function isGaussianPrime(num: ExprLike | bigint): boolean {
   const e = sympify(num);
   let a = 0n;
@@ -334,30 +428,61 @@ export function isGaussianPrime(num: ExprLike | bigint): boolean {
 // ---------------------------------------------------------------------------
 
 /**
- * A cache of the largest known prime factor of integers (SymPy
- * FactorCache): a least recently used map of maximum size `maxsize`
- * (unbounded for undefined). `getExternal` can be overridden to consult an
- * external source of factors.
+ * Stores a known prime divisor for each integer and evicts least recently used entries when its
+ * capacity is reached. Override `getExternal` to supply factors from another source.
+ *
+ * @see SymPy `sympy.ntheory.factor_.FactorCache`
+ * @example
+ * ```ts
+ * import { FactorCache } from '@symjs/symjs';
+ *
+ * const cache = new FactorCache();
+ * cache.set(15, 5);
+ * cache.get(15); // => 5
+ * ```
  */
 export class FactorCache {
   private cache = new Map<bigint, bigint>();
   private maxsizeValue: number | undefined;
 
-  /** FactorCache(maxsize). */
+  /**
+   * Creates a prime-divisor cache with an optional capacity.
+   *
+   * @param maxsize - Maximum number of cached entries.
+   */
   constructor(maxsize?: number) {
     this.maxsize = maxsize;
   }
 
-  /** The number of cached entries. */
+  /**
+   * The number of cached entries.
+   *
+   * @returns The current number of entries.
+   * @see SymPy `sympy.ntheory.factor_.FactorCache.__len__`
+   */
   get size(): number {
     return this.cache.size;
   }
 
-  /** The maximum number of entries (undefined: unbounded). */
+  /**
+   * Limits the number of entries retained in the cache. An omitted limit leaves its capacity
+   * unbounded.
+   *
+   * @returns The capacity of the cache, if bounded.
+   * @see SymPy `sympy.ntheory.factor_.FactorCache.maxsize`
+   */
   get maxsize(): number | undefined {
     return this.maxsizeValue;
   }
 
+  /**
+   * Limits the number of entries retained in the cache. An omitted limit leaves its capacity
+   * unbounded.
+   *
+   * @param value - Positive capacity, or omit the value for an unbounded cache.
+   * @throws RangeError when the specified cache size is not positive.
+   * @see SymPy `sympy.ntheory.factor_.FactorCache.maxsize`
+   */
   set maxsize(value: number | undefined) {
     if (value !== undefined && value <= 0) throw new RangeError('maxsize must be None or a non-negative integer.');
     this.maxsizeValue = value;
@@ -372,12 +497,26 @@ export class FactorCache {
     }
   }
 
-  /** n has a cached factor (SymPy `n in factor_cache`). */
+  /**
+   * Checks for a stored factor of the given integer.
+   *
+   * @param nIn - Integer whose prime divisors are cached.
+   * @returns Whether the integer is cached.
+   * @see SymPy `sympy.ntheory.factor_.FactorCache.__contains__`
+   */
   has(nIn: IntLike): boolean {
     return this.cache.has(asInt(nIn));
   }
 
-  /** Record that factor is a prime factor of n (SymPy factor_cache[n] = factor). */
+  /**
+   * Record that factor is a prime factor of n.
+   *
+   * @param nIn - Integer whose prime divisors are cached.
+   * @param factorIn - Known prime divisor of the cache key.
+   * @returns The updated cache.
+   * @throws RangeError when the proposed factor is not a prime divisor.
+   * @see SymPy `sympy.ntheory.factor_.FactorCache.__setitem__`
+   */
   set(nIn: IntLike, factorIn: IntLike): this {
     const n = asInt(nIn);
     const factor = asInt(factorIn);
@@ -389,24 +528,46 @@ export class FactorCache {
     return this;
   }
 
-  /** Remove the entry of n (SymPy del factor_cache[n]). */
+  /**
+   * Removes the cached prime factor of the given integer.
+   *
+   * @param nIn - Integer whose prime divisors are cached.
+   * @returns Whether the entry was removed.
+   * @throws RangeError when there is no entry for the integer.
+   * @see SymPy `sympy.ntheory.factor_.FactorCache.__delitem__`
+   */
   delete(nIn: IntLike): boolean {
     const n = asInt(nIn);
     if (!this.cache.has(n)) throw new RangeError(`${n} does not exist.`);
     return this.cache.delete(n);
   }
 
-  /** The cached integers. */
+  /**
+   * Lists the integers for which a factor is cached.
+   *
+   * @returns An iterator over the cached integers.
+   * @see SymPy `sympy.ntheory.factor_.FactorCache.keys`
+   */
   keys(): IterableIterator<bigint> {
     return this.cache.keys();
   }
 
-  /** Remove all entries (SymPy cache_clear). */
+  /**
+   * Clears all cached factorizations.
+   *
+   * @see SymPy `sympy.ntheory.factor_.FactorCache.cache_clear`
+   */
   cacheClear(): void {
     this.cache = new Map();
   }
 
-  /** The largest known prime factor of n, or NoMatch (SymPy FactorCache.get). */
+  /**
+   * The largest known prime factor of n, or NoMatch.
+   *
+   * @param nIn - Integer whose prime divisors are cached.
+   * @returns The cached factor, or `NoMatch`.
+   * @see SymPy `sympy.ntheory.factor_.FactorCache.get`
+   */
   get(nIn: IntLike): bigint | NoMatchResult {
     const n = asInt(nIn);
     const ps = sieve.primes;
@@ -430,14 +591,27 @@ export class FactorCache {
     return NoMatch;
   }
 
-  /** The cached factor of n (SymPy factor_cache[n]); throws when there is none. */
+  /**
+   * Retrieves a known prime factor of the given integer.
+   *
+   * @param nIn - Integer whose prime divisors are cached.
+   * @returns The recorded prime divisor.
+   * @throws RangeError when there is no entry for the integer.
+   * @see SymPy `sympy.ntheory.factor_.FactorCache.__getitem__`
+   */
   getItem(nIn: IntLike): bigint {
     const f = this.get(nIn);
     if (isNoMatch(f)) throw new RangeError(`${asInt(nIn)} does not exist.`);
     return f;
   }
 
-  /** Cache the prime factors of n (SymPy FactorCache.add). */
+  /**
+   * Adds the other operand to this value.
+   *
+   * @param nIn - Integer whose prime divisors are cached.
+   * @param factors - Known prime divisors of the cache key.
+   * @see SymPy `sympy.ntheory.factor_.FactorCache.add`
+   */
   add(nIn: IntLike, factors: readonly bigint[]): void {
     let n = asInt(nIn);
     // decreasing (the sign of y - x; a huge difference becomes an infinity of that sign)
@@ -447,11 +621,28 @@ export class FactorCache {
     }
   }
 
-  /** Prime factors of n from an external source; override in a subclass (default NoMatch). */
+  /**
+   * Prime factors of n from an external source; override in a subclass (default NoMatch).
+   *
+   * @param _n - Integer whose prime divisors are cached.
+   * @returns External factors, or `NoMatch`.
+   * @see SymPy `sympy.ntheory.factor_.FactorCache.get_external`
+   */
   getExternal(_n: bigint): bigint[] | NoMatchResult {
     return NoMatch;
   }
 }
 
-/** The shared factor cache (SymPy factor_cache), of maximum size 1000. */
+/**
+ * The shared cache of prime divisors, with capacity for 1,000 entries.
+ *
+ * @see SymPy `sympy.ntheory.factor_.factor_cache`
+ * @example
+ * ```ts
+ * import { factorCache } from '@symjs/symjs';
+ *
+ * factorCache.set(15, 5);
+ * factorCache.get(15); // => 5
+ * ```
+ */
 export const factorCache: FactorCache = new FactorCache(1000);

@@ -9,26 +9,58 @@
  */
 
 /**
- * An element is not representable in a module, e.g. in the ZZ-span of a
- * submodule's basis (SymPy ClosureFailure).
+ * Indicates that an element has no integral coordinate representation in the specified module.
+ *
+ * @see SymPy `sympy.polys.numberfields.exceptions.ClosureFailure`
+ * @example
+ * ```ts
+ * import { DomainMatrix, Poly, PowerBasis, ZZ, ex, toCol } from '@symjs/symjs';
+ *
+ * const A = new PowerBasis(Poly.from(ex`x**4 + x**3 + x**2 + x + 1`));
+ * const B = A.submoduleFromMatrix(DomainMatrix.eye(4, ZZ).scalarmul(ex`2`));
+ * B.represent(A.call(toCol([2, 4, 6, 8]))).toList(); // => [[1], [2], [3], [4]]
+ * ```
  */
 export class ClosureFailure extends RangeError {
+  /**
+   * Creates the exception with the supplied error details.
+   *
+   * @param message - Message describing the error.
+   */
   constructor(message = '') {
     super(message);
     this.name = 'ClosureFailure';
   }
 }
 
-/** A module or order lacks a required structure (SymPy StructureError). */
+/**
+ * A module or order lacks a required structure.
+ *
+ * @see SymPy `sympy.polys.numberfields.exceptions.StructureError`
+ */
 export class StructureError extends TypeError {
+  /**
+   * Creates the exception with the supplied error details.
+   *
+   * @param message - Message describing the error.
+   */
   constructor(message = '') {
     super(message);
     this.name = 'StructureError';
   }
 }
 
-/** A module that should contain 1 does not (SymPy MissingUnityError). */
+/**
+ * A module that should contain 1 does not.
+ *
+ * @see SymPy `sympy.polys.numberfields.exceptions.MissingUnityError`
+ */
 export class MissingUnityError extends StructureError {
+  /**
+   * Creates the exception with the supplied error details.
+   *
+   * @param message - Message describing the error.
+   */
   constructor(message = '') {
     super(message);
     this.name = 'MissingUnityError';

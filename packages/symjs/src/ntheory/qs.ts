@@ -231,9 +231,22 @@ export interface QsOptions {
 }
 
 /**
- * The factorization of N found by the self-initializing quadratic sieve
- * with the given prime bound and sieve interval [-M, M], as a Map factor
- * -> exponent (SymPy qs_factor); factors may be composite.
+ * The factorization of N found by the self-initializing quadratic sieve with the given prime bound
+ * and sieve interval [-M, M], as a Map factor -> exponent; factors may be composite.
+ *
+ * @param NIn - Integer to factor.
+ * @param primeBoundIn - Largest prime used for the factor base.
+ * @param MIn - Half-width of the sieve interval.
+ * @param opts - Sieve threshold and random seed.
+ * @returns The factors discovered by the quadratic sieve.
+ * @throws RangeError when the integer to factor is at most one.
+ * @see SymPy `sympy.ntheory.qs.qs_factor`
+ * @example
+ * ```ts
+ * import { qsFactor } from '@symjs/symjs';
+ *
+ * qsFactor(100903027, 2000, 10000); // => {1009: 1, 100003: 1}
+ * ```
  */
 export function qsFactor(NIn: IntLike, primeBoundIn: IntLike, MIn: IntLike, opts: QsOptions = {}): Map<bigint, bigint> {
   let N = asInt(NIn);
@@ -297,8 +310,21 @@ export function qsFactor(NIn: IntLike, primeBoundIn: IntLike, MIn: IntLike, opts
 }
 
 /**
- * The set of factors of N found by the quadratic sieve (SymPy qs), filled
- * in increasing order.
+ * Finds distinct factors of an integer with the quadratic sieve.
+ *
+ * @param N - Integer to factor.
+ * @param primeBound - Largest prime used for the factor base.
+ * @param M - Half-width of the sieve interval.
+ * @param opts - Sieve threshold and random seed.
+ * @returns The factors discovered by the quadratic sieve.
+ * @throws RangeError when the integer to factor is at most one.
+ * @see SymPy `sympy.ntheory.qs.qs`
+ * @example
+ * ```ts
+ * import { qs } from '@symjs/symjs';
+ *
+ * qs(25645121643901801n, 2000, 10000); // => {5394769, 4753701529}
+ * ```
  */
 export function qs(N: IntLike, primeBound: IntLike, M: IntLike, opts: QsOptions = {}): Set<bigint> {
   // increasing (the sign of a - b; a huge difference becomes an infinity of that sign)

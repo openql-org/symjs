@@ -8,7 +8,20 @@
 import type { CartanTypeLike } from './cartantype';
 import { CartanType } from './cartantype';
 
-/** SymPy DynkinDiagram: the Dynkin diagram of the Cartan type, as text. */
+/**
+ * The Dynkin diagram of the Cartan type, as text.
+ *
+ * @param t - Cartan series and rank.
+ * @returns The labeled diagram as multiline text.
+ * @see SymPy `sympy.liealgebras.dynkin_diagram.DynkinDiagram`
+ * @example
+ * ```ts
+ * import { DynkinDiagram } from '@symjs/symjs';
+ *
+ * DynkinDiagram('A3'); // => 0---0---0
+ * //   1   2   3
+ * ```
+ */
 export function DynkinDiagram(t: CartanTypeLike): string {
   return CartanType(t).dynkinDiagram();
 }

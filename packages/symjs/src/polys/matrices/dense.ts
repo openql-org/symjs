@@ -67,7 +67,13 @@ function rowsOf(a: ExprLike[][], K?: Domain): Expr[][] {
 /** Copies of read-only rows with every value converted to a domain element or expression. */
 const rowsCopy = (a: readonly (readonly ExprLike[])[], K?: Domain): Expr[][] => a.map((row) => row.map((x) => elem(x, K)));
 
-/** SymPy ddm_transpose: the transposed list of rows. */
+/**
+ * Interchanges the rows and columns of a dense matrix.
+ *
+ * @param matrix - Rows of the matrix.
+ * @returns The transposed rows.
+ * @see SymPy `sympy.polys.matrices.dense.ddm_transpose`
+ */
 export function ddmTranspose<T>(matrix: readonly (readonly T[])[]): T[][] {
   if (!matrix.length) return [];
   return first0(matrix).map((_, j) => matrix.map((row) => at(row, j)));
@@ -75,42 +81,84 @@ export function ddmTranspose<T>(matrix: readonly (readonly T[])[]): T[][] {
 
 const first0 = <T>(m: readonly (readonly T[])[]): readonly T[] => at(m, 0);
 
-/** SymPy ddm_iadd: a += b. */
+/**
+ * Adds the second matrix to the first in place.
+ *
+ * @param aIn - Matrix updated in place.
+ * @param bIn - Matrix to combine with the first.
+ * @param K - Coefficient domain.
+ * @see SymPy `sympy.polys.matrices.dense.ddm_iadd`
+ */
 export function ddmIadd(aIn: ExprLike[][], bIn: readonly (readonly ExprLike[])[], K?: Domain): void {
   const o = opsOf(K);
   const [a, b] = [rowsOf(aIn, K), rowsCopy(bIn, K)];
   a.forEach((ai, i) => at(b, i).forEach((bij, j) => (ai[j] = o.add(at(ai, j), bij))));
 }
 
-/** SymPy ddm_isub: a -= b. */
+/**
+ * Subtracts the second matrix from the first in place.
+ *
+ * @param aIn - Matrix updated in place.
+ * @param bIn - Matrix to combine with the first.
+ * @param K - Coefficient domain.
+ * @see SymPy `sympy.polys.matrices.dense.ddm_isub`
+ */
 export function ddmIsub(aIn: ExprLike[][], bIn: readonly (readonly ExprLike[])[], K?: Domain): void {
   const o = opsOf(K);
   const [a, b] = [rowsOf(aIn, K), rowsCopy(bIn, K)];
   a.forEach((ai, i) => at(b, i).forEach((bij, j) => (ai[j] = o.sub(at(ai, j), bij))));
 }
 
-/** SymPy ddm_ineg: a = -a. */
+/**
+ * Negates each matrix entry in place.
+ *
+ * @param aIn - Matrix to negate in place.
+ * @param K - Coefficient domain.
+ * @see SymPy `sympy.polys.matrices.dense.ddm_ineg`
+ */
 export function ddmIneg(aIn: ExprLike[][], K?: Domain): void {
   const o = opsOf(K);
   const a = rowsOf(aIn, K);
   for (const ai of a) ai.forEach((aij, j) => (ai[j] = o.neg(aij)));
 }
 
-/** SymPy ddm_imul: a = a*b. */
+/**
+ * Multiplies each entry on the right by a scalar in place.
+ *
+ * @param aIn - Matrix to scale in place.
+ * @param bIn - Scalar multiplier.
+ * @param K - Coefficient domain.
+ * @see SymPy `sympy.polys.matrices.dense.ddm_imul`
+ */
 export function ddmImul(aIn: ExprLike[][], bIn: ExprLike, K?: Domain): void {
   const o = opsOf(K);
   const [a, b] = [rowsOf(aIn, K), elem(bIn, K)];
   for (const ai of a) ai.forEach((aij, j) => (ai[j] = o.mul(aij, b)));
 }
 
-/** SymPy ddm_irmul: a = b*a. */
+/**
+ * Multiplies each entry on the left by a scalar in place.
+ *
+ * @param aIn - Matrix to scale in place.
+ * @param bIn - Scalar multiplier.
+ * @param K - Coefficient domain.
+ * @see SymPy `sympy.polys.matrices.dense.ddm_irmul`
+ */
 export function ddmIrmul(aIn: ExprLike[][], bIn: ExprLike, K?: Domain): void {
   const o = opsOf(K);
   const [a, b] = [rowsOf(aIn, K), elem(bIn, K)];
   for (const ai of a) ai.forEach((aij, j) => (ai[j] = o.mul(b, aij)));
 }
 
-/** SymPy ddm_imatmul: a += b @ c. */
+/**
+ * Adds the product of two matrices to an accumulator in place.
+ *
+ * @param aIn - Matrix in which to accumulate the product.
+ * @param bIn - Left matrix factor.
+ * @param cIn - Right matrix factor.
+ * @param K - Coefficient domain.
+ * @see SymPy `sympy.polys.matrices.dense.ddm_imatmul`
+ */
 export function ddmImatmul(aIn: ExprLike[][], bIn: readonly (readonly ExprLike[])[], cIn: readonly (readonly ExprLike[])[], K?: Domain): void {
   const o = opsOf(K);
   const [a, b, c] = [rowsOf(aIn, K), rowsCopy(bIn, K), rowsCopy(cIn, K)];
@@ -132,9 +180,22 @@ function swap<T>(a: T[], i: number, j: number): void {
 const magnitude = (e: Expr): number => (e instanceof Float ? Math.abs(e.value) : 0);
 
 /**
- * SymPy ddm_irref: reduced row echelon form in place over a field; returns
- * the pivot columns. With partial pivoting (for floats) the row with the
- * largest entry is the pivot row.
+ * Reduces a matrix over a field to reduced row echelon form in place. Partial pivoting selects a
+ * largest-magnitude pivot.
+ *
+ * @param aIn - Rows to reduce in place.
+ * @param partialPivot - Choose the largest available pivot by absolute value.
+ * @param K - Coefficient field.
+ * @returns The column indices of the pivots.
+ * @see SymPy `sympy.polys.matrices.dense.ddm_irref`
+ * @example
+ * ```ts
+ * import { QQ, ddmIrref } from '@symjs/symjs';
+ *
+ * const rows = [[1, 2, 3], [4, 5, 6]];
+ * ddmIrref(rows, false, QQ); // => [0, 1]
+ * rows; // => [[1, 0, -1], [0, 1, 2]]
+ * ```
  */
 export function ddmIrref(aIn: ExprLike[][], partialPivot = false, K?: Domain): number[] {
   const o = opsOf(K);
@@ -180,9 +241,22 @@ export function ddmIrref(aIn: ExprLike[][], partialPivot = false, K?: Domain): n
 }
 
 /**
- * SymPy ddm_irref_den: fraction-free reduced row echelon form in place;
- * returns [denominator, pivots] with the pivot entries equal to the
+ * Reduces a matrix in place using fraction-free elimination. The pivot entries equal the common
  * denominator.
+ *
+ * @remarks SymPy returns the pair `(-3, [0, 1])`.
+ * @param aIn - Rows to reduce in place.
+ * @param K - Coefficient domain for exact division.
+ * @returns The common denominator and pivot indices.
+ * @see SymPy `sympy.polys.matrices.dense.ddm_irref_den`
+ * @example
+ * ```ts
+ * import { ZZ, ddmIrrefDen } from '@symjs/symjs';
+ *
+ * const rows = [[1, 2, 3], [4, 5, 6]];
+ * ddmIrrefDen(rows, ZZ); // => [-3, [0, 1]]
+ * rows; // => [[-3, 0, 3], [0, -3, -6]]
+ * ```
  */
 export function ddmIrrefDen(aIn: ExprLike[][], K: Domain): [Expr, number[]] {
   const a = rowsOf(aIn, K);
@@ -236,7 +310,20 @@ export function ddmIrrefDen(aIn: ExprLike[][], K: Domain): [Expr, number[]] {
   return [denom, pivots];
 }
 
-/** SymPy ddm_idet: the determinant by fraction-free (Bareiss) elimination in place. */
+/**
+ * Computes the determinant in place with fraction-free Bareiss elimination.
+ *
+ * @param aIn - Square matrix used as elimination workspace.
+ * @param K - Coefficient domain.
+ * @returns The determinant of the original matrix.
+ * @see SymPy `sympy.polys.matrices.dense.ddm_idet`
+ * @example
+ * ```ts
+ * import { ZZ, ddmIdet } from '@symjs/symjs';
+ *
+ * ddmIdet([[1, 2, 3], [4, 5, 6], [7, 8, 9]], ZZ); // => 0
+ * ```
+ */
 export function ddmIdet(aIn: ExprLike[][], K: Domain): Expr {
   const a = rowsOf(aIn, K);
   const m = a.length;
@@ -266,7 +353,26 @@ export function ddmIdet(aIn: ExprLike[][], K: Domain): Expr {
   return K.mul(uf, at(at(a, -1), -1));
 }
 
-/** SymPy ddm_iinv: ainv = a**-1 over a field (in place). */
+/**
+ * Writes the inverse of a square matrix over a field into the supplied rows.
+ *
+ * @param ainv - Rows in which to store the inverse.
+ * @param aIn - Square matrix to invert.
+ * @param K - Coefficient field.
+ * @throws DMDomainError when the coefficient domains are incompatible with the operation.
+ * @throws DMNonSquareMatrixError when the matrix is not square.
+ * @throws DMNonInvertibleMatrixError when the matrix is singular or the system lacks a unique
+ *   solution.
+ * @see SymPy `sympy.polys.matrices.dense.ddm_iinv`
+ * @example
+ * ```ts
+ * import { QQ, ddmIinv } from '@symjs/symjs';
+ *
+ * const inverse = [[0, 0], [0, 0]];
+ * ddmIinv(inverse, [[1, 2], [3, 4]], QQ);
+ * inverse; // => [[-2, 1], [3/2, -1/2]]
+ * ```
+ */
 export function ddmIinv(ainv: ExprLike[][], aIn: readonly (readonly ExprLike[])[], K: Domain): void {
   const a = rowsCopy(aIn, K);
   if (!K.isField) throw new DMDomainError('Not a field');
@@ -280,7 +386,24 @@ export function ddmIinv(ainv: ExprLike[][], aIn: readonly (readonly ExprLike[])[
   ainv.splice(0, ainv.length, ...aug.map((row) => row.slice(n)));
 }
 
-/** SymPy ddm_ilu_split: LU decomposition of U in place, with the multipliers moved to L; returns the row swaps. */
+/**
+ * Reduces the upper factor in place and writes its elimination multipliers into the lower factor.
+ *
+ * @param LIn - Storage for the lower triangular multipliers.
+ * @param UIn - Matrix to reduce to its upper factor.
+ * @param K - Coefficient field.
+ * @returns The row interchanges made during elimination.
+ * @see SymPy `sympy.polys.matrices.dense.ddm_ilu_split`
+ * @example
+ * ```ts
+ * import { QQ, ddmIluSplit } from '@symjs/symjs';
+ *
+ * const L = [[0, 0], [0, 0]];
+ * const U = [[1, 2], [3, 4]];
+ * ddmIluSplit(L, U, QQ); // => []
+ * L; // => [[0, 0], [3, 0]]
+ * ```
+ */
 export function ddmIluSplit(LIn: ExprLike[][], UIn: ExprLike[][], K: Domain): [number, number][] {
   const [L, U] = [rowsOf(LIn, K), rowsOf(UIn, K)];
   const m = U.length;
@@ -298,7 +421,23 @@ export function ddmIluSplit(LIn: ExprLike[][], UIn: ExprLike[][], K: Domain): [n
   return swaps;
 }
 
-/** SymPy ddm_ilu: LU decomposition in place (L below the diagonal); returns the row swaps. */
+/**
+ * Overwrites the matrix with packed triangular factors, storing the lower multipliers below the
+ * diagonal.
+ *
+ * @param aIn - Matrix overwritten with the packed triangular factors.
+ * @param K - Coefficient field.
+ * @returns The pairs of row indices interchanged.
+ * @see SymPy `sympy.polys.matrices.dense.ddm_ilu`
+ * @example
+ * ```ts
+ * import { QQ, ddmIlu, ex } from '@symjs/symjs';
+ *
+ * const rows = [[ex`1/2`, ex`1/3`], [ex`1/4`, ex`1/5`]];
+ * ddmIlu(rows, QQ); // => []
+ * rows; // => [[1/2, 1/3], [1/2, 1/30]]
+ * ```
+ */
 export function ddmIlu(aIn: ExprLike[][], K?: Domain): [number, number][] {
   const o = opsOf(K);
   const a = rowsOf(aIn, K);
@@ -330,7 +469,30 @@ export function ddmIlu(aIn: ExprLike[][], K?: Domain): [number, number][] {
   return swaps;
 }
 
-/** SymPy ddm_ilu_solve: solve L*U*x = b (b with the row swaps applied) into x. */
+/**
+ * Solves a matrix equation using triangular factors and the row exchanges from LU decomposition.
+ *
+ * @param xIn - Rows in which to store the solution.
+ * @param LIn - Lower triangular factor.
+ * @param UIn - Upper triangular factor.
+ * @param swaps - Row exchanges from the LU factorization.
+ * @param bIn - Right-hand side.
+ * @param K - Coefficient field.
+ * @throws DMShapeError when the matrix dimensions are incompatible with the operation.
+ * @throws DMNonInvertibleMatrixError when the matrix is singular or the system lacks a unique
+ *   solution.
+ * @see SymPy `sympy.polys.matrices.dense.ddm_ilu_solve`
+ * @example
+ * ```ts
+ * import { QQ, ddmIlu, ddmIluSolve } from '@symjs/symjs';
+ *
+ * const LU = [[1, 2], [3, 4]];
+ * const swaps = ddmIlu(LU, QQ);
+ * const x = [[0], [0]];
+ * ddmIluSolve(x, LU, LU, swaps, [[5], [6]], QQ);
+ * x; // => [[-4], [9/2]]
+ * ```
+ */
 export function ddmIluSolve(xIn: unknown[][], LIn: readonly (readonly ExprLike[])[], UIn: readonly (readonly ExprLike[])[], swaps: readonly (readonly [number, number])[], bIn: readonly (readonly ExprLike[])[], K?: Domain): void {
   const o = opsOf(K);
   const [L, U] = [rowsCopy(LIn, K), rowsCopy(UIn, K)];
@@ -366,7 +528,21 @@ export function ddmIluSolve(xIn: unknown[][], LIn: readonly (readonly ExprLike[]
   }
 }
 
-/** SymPy ddm_berk: the characteristic polynomial coefficients (as a column) by Berkowitz's algorithm. */
+/**
+ * Computes the characteristic polynomial of a dense square matrix with Berkowitz’s algorithm.
+ *
+ * @param MIn - Square matrix whose characteristic polynomial to compute.
+ * @param K - Coefficient domain.
+ * @returns The characteristic coefficients as a column, highest degree first.
+ * @throws DMShapeError when the matrix dimensions are incompatible with the operation.
+ * @see SymPy `sympy.polys.matrices.dense.ddm_berk`
+ * @example
+ * ```ts
+ * import { ZZ, ddmBerk } from '@symjs/symjs';
+ *
+ * ddmBerk([[1, 2], [3, 4]], ZZ); // => [[1], [-5], [-2]]
+ * ```
+ */
 export function ddmBerk(MIn: readonly (readonly ExprLike[])[], K: Domain): Expr[][] {
   const M = rowsCopy(MIn, K);
   const m = M.length;

@@ -13,7 +13,7 @@ import { asInt } from './intutil';
 import { isprime } from './primetest';
 import { sieve } from './sieve';
 
-/** Options of ecm. */
+/** Controls the smoothness bounds, curve count and seed for elliptic curve factorization. */
 export interface EcmOptions {
   /** Stage 1 bound (even, default 10000). */
   B1?: bigint | number;
@@ -26,8 +26,19 @@ export interface EcmOptions {
 }
 
 /**
- * The set of prime factors of n by the elliptic curve method (SymPy ecm).
- * The set is filled in increasing order (Python's set has its own order).
+ * Factors an integer by the elliptic curve method.
+ *
+ * @param nIn - Integer to factor.
+ * @param opts - Stage bounds, curve limit and random seed.
+ * @returns The distinct prime factors.
+ * @throws RangeError when the stage bounds are odd or the factor search exhausts its bounds.
+ * @see SymPy `sympy.ntheory.ecm.ecm`
+ * @example
+ * ```ts
+ * import { ecm } from '@symjs/symjs';
+ *
+ * ecm(25645121643901801n); // => {5394769, 4753701529}
+ * ```
  */
 export function ecm(nIn: IntLike, opts: EcmOptions = {}): Set<bigint> {
   let n = asInt(nIn);

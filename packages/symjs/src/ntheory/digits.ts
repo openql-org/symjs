@@ -10,8 +10,22 @@ import type { IntLike } from './intutil';
 import { asInt, babs } from './intutil';
 
 /**
- * The digits of n in base b, preceded by b (or -b for negative n) (SymPy
- * digits); `digits` pads with leading zeros to that many digits.
+ * The digits of n in base b, preceded by b (or -b for negative n); `digits` pads with leading zeros
+ * to that many digits.
+ *
+ * @param nIn - Integer to expand.
+ * @param bIn - Radix of the expansion.
+ * @param digitsIn - Minimum number of digits, padding on the left with zeros.
+ * @returns The signed radix followed by the digits from most significant to least.
+ * @throws RangeError when the base is less than two or the requested width is too small.
+ * @see SymPy `sympy.ntheory.digits.digits`
+ * @example
+ * ```ts
+ * import { digits } from '@symjs/symjs';
+ *
+ * digits(35); // => [10, 3, 5]
+ * digits(-35); // => [-10, 3, 5]
+ * ```
  */
 export function digits(nIn: IntLike, bIn: IntLike = 10, digitsIn?: IntLike): bigint[] {
   const ndigits = digitsIn === undefined ? undefined : Number(asInt(digitsIn));
@@ -35,7 +49,20 @@ export function digits(nIn: IntLike, bIn: IntLike = 10, digitsIn?: IntLike): big
   return y;
 }
 
-/** The count of each digit of n in base b, as digit -> count (SymPy count_digits). */
+/**
+ * Counts the occurrences of each digit in the specified radix.
+ *
+ * @param n - Integer whose digits to count.
+ * @param bIn - Radix of the expansion.
+ * @returns A map from each digit to its occurrence count.
+ * @see SymPy `sympy.ntheory.digits.count_digits`
+ * @example
+ * ```ts
+ * import { countDigits } from '@symjs/symjs';
+ *
+ * countDigits(1111339); // => {1: 4, 3: 2, 9: 1}
+ * ```
+ */
 export function countDigits(n: IntLike, bIn: IntLike = 10): Map<bigint, bigint> {
   const b = asInt(bIn);
   const ds = digits(n, b);

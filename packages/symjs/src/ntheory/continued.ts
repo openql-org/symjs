@@ -41,9 +41,23 @@ function signQuad(P: bigint, Sc: bigint, d: bigint): bigint {
 }
 
 /**
- * The continued fraction of (p + s*sqrt(d))/q (SymPy
- * continued_fraction_periodic): a list of terms whose last element is the
- * list of the repeating terms for a quadratic irrational.
+ * Expands `(p + s*sqrt(d))/q` as a continued fraction, ending with a nested array when the
+ * expansion is periodic.
+ *
+ * @param pIn - Rational term in the numerator.
+ * @param qIn - Denominator.
+ * @param dIn - Nonnegative radicand.
+ * @param sIn - Coefficient of the square root.
+ * @returns The expansion with any repeating block in its final entry.
+ * @throws RangeError when the radicand is negative or the denominator is zero.
+ * @see SymPy `sympy.ntheory.continued_fraction.continued_fraction_periodic`
+ * @example
+ * ```ts
+ * import { continuedFractionPeriodic } from '@symjs/symjs';
+ *
+ * continuedFractionPeriodic(3, 2, 7); // => [2, [1, 4, 1, 1]]
+ * continuedFractionPeriodic(1, 2, 5); // => [[1]]
+ * ```
  */
 export function continuedFractionPeriodic(pIn: IntLike, qIn: IntLike, dIn: IntLike = 0, sIn: IntLike = 1): ContinuedFraction {
   let p = asInt(pIn);
@@ -101,7 +115,20 @@ type CfTerm = ExprLike | readonly ExprLike[];
 const isPeriod = (t: CfTerm): t is readonly ExprLike[] => Array.isArray(t);
 const isTermList = (cf: Iterable<CfTerm>): cf is readonly CfTerm[] => Array.isArray(cf);
 
-/** The continued fraction of a rational number or a quadratic irrational (SymPy continued_fraction). */
+/**
+ * The continued fraction of a rational number or a quadratic irrational.
+ *
+ * @param a - Rational number or real quadratic irrational to expand.
+ * @returns The partial quotients, including any repeating block.
+ * @throws RangeError when the value is neither rational nor a supported real quadratic irrational.
+ * @see SymPy `sympy.ntheory.continued_fraction.continued_fraction`
+ * @example
+ * ```ts
+ * import { continuedFraction, ex } from '@symjs/symjs';
+ *
+ * continuedFraction(ex`(1 + 2*sqrt(3))/5`); // => [0, 1, [8, 3, 34, 3]]
+ * ```
+ */
 export function continuedFraction(a: ExprLike): ContinuedFraction {
   const e = sympify(a);
   if (allRationalAtoms(e)) {
@@ -136,7 +163,20 @@ function floorInt(x: Expr): bigint {
   throw new NotImplementedError(`cannot compute floor(${x.toString()})`);
 }
 
-/** The terms of the continued fraction of x (SymPy continued_fraction_iterator); infinite for irrational x. */
+/**
+ * The terms of the continued fraction of x; infinite for irrational x.
+ *
+ * @param xIn - Real number to expand.
+ * @returns An iterator over successive partial quotients.
+ * @see SymPy `sympy.ntheory.continued_fraction.continued_fraction_iterator`
+ * @example
+ * ```ts
+ * import { continuedFractionIterator, ex } from '@symjs/symjs';
+ *
+ * [...continuedFractionIterator(ex`3/8`)]; // => [0, 2, 1, 2]
+ * [...continuedFractionIterator(ex`-3/8`)]; // => [-1, 1, 1, 1, 2]
+ * ```
+ */
 export function* continuedFractionIterator(xIn: ExprLike): Generator<bigint, void, undefined> {
   const x0 = sympify(xIn);
   if (x0 instanceof Rational) {
@@ -161,9 +201,18 @@ export function* continuedFractionIterator(xIn: ExprLike): Generator<bigint, voi
 }
 
 /**
- * The convergents of a continued fraction given as terms (a finite or
- * infinite iterable, or an array whose last element is the periodic part)
- * (SymPy continued_fraction_convergents).
+ * Builds successive rational approximations from the partial quotients of a continued fraction.
+ *
+ * @param cf - Partial quotients, optionally ending in a repeating block.
+ * @returns A generator of successive convergents.
+ * @throws TypeError when a repeating block occurs before the final entry.
+ * @see SymPy `sympy.ntheory.continued_fraction.continued_fraction_convergents`
+ * @example
+ * ```ts
+ * import { continuedFractionConvergents } from '@symjs/symjs';
+ *
+ * [...continuedFractionConvergents([0, 2, 1, 2])]; // => [0, 1/2, 1/3, 3/8]
+ * ```
  */
 export function* continuedFractionConvergents(cf: Iterable<ExprLike | bigint | readonly (ExprLike | bigint)[]>): Generator<Expr, void, undefined> {
   let terms: Iterable<ExprLike | bigint | readonly (ExprLike | bigint)[]> = cf;
@@ -218,9 +267,22 @@ function convergentState<T>(terms: readonly T[], zero: T, one: T, plus: (x: T, y
 }
 
 /**
- * Reduce a finite or periodic continued fraction (SymPy continued_fraction_reduce).
- * A rational period uses exact quadratic arithmetic. A positive symbolic period
- * selects the larger root of its fixed-point equation.
+ * Reduce a finite or periodic continued fraction. A rational period uses exact quadratic
+ * arithmetic. A positive symbolic period selects the larger root of its fixed-point equation.
+ *
+ * @param cf - Finite terms, optionally ending in a repeating block.
+ * @returns The exact value of the continued fraction.
+ * @throws NotImplementedError when the period is degenerate or its symbolic terms are not known to
+ *   be positive.
+ * @throws RangeError when the periodic fraction has no real value.
+ * @see SymPy `sympy.ntheory.continued_fraction.continued_fraction_reduce`
+ * @example
+ * ```ts
+ * import { continuedFractionReduce } from '@symjs/symjs';
+ *
+ * continuedFractionReduce([1, 2, 3, 4, 5]); // => 225/157
+ * continuedFractionReduce([-2, 1, 9, 7, 1, 2]); // => -256/233
+ * ```
  */
 export function continuedFractionReduce(cf: readonly (ExprLike | bigint | readonly (ExprLike | bigint)[])[]): Expr {
   const prefix: (ExprLike | bigint)[] = [];

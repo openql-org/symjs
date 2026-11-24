@@ -40,41 +40,87 @@ const toNum = (n: bigint): number => {
 };
 
 /**
- * A list of prime numbers, implemented as a dynamically growing sieve of
- * Eratosthenes, with lists of totients and Mobius values (SymPy Sieve).
- * Primes are limited to 2**32 - 1. Values are returned as bigints.
+ * A list of prime numbers, implemented as a dynamically growing sieve of Eratosthenes, with lists
+ * of totients and Mobius values. Primes are limited to 2**32 - 1. Values are returned as bigints.
+ *
+ * @remarks SymPy returns the bracketing indices as the tuple `(9, 10)`.
+ * @see SymPy `sympy.ntheory.generate.Sieve`
+ * @example
+ * ```ts
+ * import { Sieve } from '@symjs/symjs';
+ *
+ * const primes = new Sieve();
+ * primes.contains(25); // => False
+ * primes.search(25); // => [9, 10]
+ * ```
  */
 export class Sieve {
   private static readonly INIT_PRIMES = [2, 3, 5, 7, 11, 13];
   private static readonly INIT_TOTIENT = [0, 1, 1, 2, 2, 4];
   private static readonly INIT_MOBIUS = [0, 1, -1, -1, 0, -1];
-  /** @internal The primes found so far (SymPy _list). */
+  /**
+   * The primes found so far.
+   *
+   * @internal
+   */
   primes: number[] = [...Sieve.INIT_PRIMES];
-  /** @internal Totients of 0, 1, 2, ... (SymPy _tlist). */
+  /**
+   * Stores the totients indexed by nonnegative integers.
+   *
+   * @internal
+   */
   tlist: number[] = [...Sieve.INIT_TOTIENT];
-  /** @internal Mobius values of 0, 1, 2, ... (SymPy _mlist). */
+  /**
+   * Stores the Möbius values indexed by nonnegative integers.
+   *
+   * @internal
+   */
   mlist: number[] = [...Sieve.INIT_MOBIUS];
-  /** Size of the blocks of the segmented sieve. */
+  /**
+   * Size of the blocks of the segmented sieve.
+   *
+   * @see SymPy `sympy.ntheory.generate.Sieve.sieve_interval`
+   */
   readonly sieveInterval: number;
 
-  /** Sieve(sieve_interval=1_000_000). */
+  /**
+   * Creates a sieve with separate tables for primes, totients and Möbius values.
+   *
+   * @param sieveInterval - Number of candidate positions in each sieve block.
+   * @throws RangeError when the interval size is not positive.
+   */
   constructor(sieveInterval = 1_000_000) {
     if (sieveInterval <= 0) throw new RangeError('sieve_interval should be a positive integer');
     this.sieveInterval = sieveInterval;
   }
 
-  /** The primes found so far (SymPy sieve._list). */
+  /**
+   * The primes found so far.
+   *
+   * @returns The currently sieved primes.
+   * @see SymPy `sympy.ntheory.generate.Sieve._list`
+   */
   get list(): bigint[] {
     return this.primes.map(BigInt);
   }
 
-  /** String form like SymPy's repr. */
+  /**
+   * Formats the sieve and the extents of its cached tables.
+   *
+   * @returns The printable representation.
+   * @see SymPy `sympy.ntheory.generate.Sieve.__repr__`
+   */
   toString(): string {
     const f = (name: string, l: number[]) => `${name} sieve (${l.length}): ${l[0]}, ${l[1]}, ${l[2]}, ... ${l[l.length - 2]}, ${l[l.length - 1]}`;
     return `<${f('prime', this.primes)}\n${f('totient', this.tlist)}\n${f('mobius', this.mlist)}>`;
   }
 
-  /** Reset the caches (SymPy _reset); with options, only the selected ones. */
+  /**
+   * Reset the caches; with options, only the selected ones.
+   *
+   * @param opts - Select the `prime`, `totient` and `mobius` tables to reset.
+   * @see SymPy `sympy.ntheory.generate.Sieve._reset`
+   */
   reset(opts: { prime?: boolean; totient?: boolean; mobius?: boolean } = {}): void {
     let { prime, totient, mobius } = opts;
     if (prime === undefined && totient === undefined && mobius === undefined) prime = totient = mobius = true;
@@ -83,7 +129,12 @@ export class Sieve {
     if (mobius === true) this.mlist = this.mlist.slice(0, 6);
   }
 
-  /** Grow the sieve to cover all primes <= n (SymPy Sieve.extend). */
+  /**
+   * Grow the sieve to cover all primes <= n.
+   *
+   * @param nIn - Upper sieving bound.
+   * @see SymPy `sympy.ntheory.generate.Sieve.extend`
+   */
   extend(nIn: IntLike): void {
     const n = toNum(asInt(nIn));
     let num = last(this.primes) + 1;
@@ -102,8 +153,12 @@ export class Sieve {
   }
 
   /**
-   * @internal The primes in (a, b) for an even a with
-   * 2 < last prime < a < b < nextprime(last prime)**2 (SymPy _primerange).
+   * The primes in (a, b) for an even a with 2 < last prime < a < b < nextprime(last prime)**2.
+   *
+   * @param aIn - Lower bound, or exclusive upper bound in the one-argument form.
+   * @param bIn - Exclusive upper bound.
+   * @returns A generator of primes in the specified range.
+   * @internal
    */
   *primerangeInternal(aIn: number, bIn: number): Generator<number, void, undefined> {
     let a = aIn;
@@ -124,13 +179,25 @@ export class Sieve {
     }
   }
 
-  /** Extend to include the ith prime number (SymPy Sieve.extend_to_no). */
+  /**
+   * Extend to include the ith prime number.
+   *
+   * @param iIn - Number of primes required.
+   * @see SymPy `sympy.ntheory.generate.Sieve.extend_to_no`
+   */
   extendToNo(iIn: IntLike): void {
     const i = Number(asInt(iIn));
     while (this.primes.length < i) this.extend(Math.floor(last(this.primes) * 1.5));
   }
 
-  /** All primes in [2, a) or [a, b) (SymPy Sieve.primerange). */
+  /**
+   * Enumerates primes below one bound or in a half-open interval.
+   *
+   * @param aIn - Lower bound, or exclusive upper bound in the one-argument form.
+   * @param bIn - Exclusive upper bound.
+   * @returns A generator of primes in the specified range.
+   * @see SymPy `sympy.ntheory.generate.Sieve.primerange`
+   */
   *primerange(aIn: IntLike, bIn?: IntLike): Generator<bigint, void, undefined> {
     let a: bigint;
     let b: bigint;
@@ -151,7 +218,14 @@ export class Sieve {
     for (const p of ps) yield BigInt(p);
   }
 
-  /** Totients of the integers in [a, b) (SymPy Sieve.totientrange). */
+  /**
+   * Totients of the integers in [a, b).
+   *
+   * @param aIn - Lower bound, or exclusive upper bound in the one-argument form.
+   * @param bIn - Exclusive upper bound.
+   * @returns A generator of successive Euler totients.
+   * @see SymPy `sympy.ntheory.generate.Sieve.totientrange`
+   */
   *totientrange(aIn: IntLike, bIn: IntLike): Generator<bigint, void, undefined> {
     let a = Number(asIntCeiling(aIn));
     if (a < 1) a = 1;
@@ -186,7 +260,14 @@ export class Sieve {
     }
   }
 
-  /** Mobius values of the integers in [a, b) (SymPy Sieve.mobiusrange). */
+  /**
+   * Mobius values of the integers in [a, b).
+   *
+   * @param aIn - Lower bound, or exclusive upper bound in the one-argument form.
+   * @param bIn - Exclusive upper bound.
+   * @returns A generator of successive Möbius values.
+   * @see SymPy `sympy.ntheory.generate.Sieve.mobiusrange`
+   */
   *mobiusrange(aIn: IntLike, bIn: IntLike): Generator<bigint, void, undefined> {
     let a = Number(asIntCeiling(aIn));
     if (a < 1) a = 1;
@@ -212,7 +293,14 @@ export class Sieve {
     }
   }
 
-  /** The indices [i, j] of the primes that bound n; i == j when n is prime (SymPy Sieve.search). */
+  /**
+   * The indices [i, j] of the primes that bound n; i == j when n is prime.
+   *
+   * @param nIn - Integer to locate between adjacent primes.
+   * @returns The one-based indices of the bracketing primes.
+   * @throws RangeError when the value is less than two.
+   * @see SymPy `sympy.ntheory.generate.Sieve.search`
+   */
   search(nIn: IntLike): [bigint, bigint] {
     const test = asIntCeiling(nIn);
     const n = asInt(nIn);
@@ -223,7 +311,13 @@ export class Sieve {
     return [BigInt(b), BigInt(b + 1)];
   }
 
-  /** n is a prime (SymPy `n in sieve`). */
+  /**
+   * Checks whether the supplied integer is prime.
+   *
+   * @param nIn - Candidate integer to test for primality.
+   * @returns Whether the element is a member.
+   * @see SymPy `sympy.ntheory.generate.Sieve.__contains__`
+   */
   contains(nIn: IntLike): boolean {
     let n: bigint;
     try {
@@ -237,7 +331,14 @@ export class Sieve {
     return a === b;
   }
 
-  /** The nth prime, indexed from 1 (SymPy sieve[n]). */
+  /**
+   * Selects a prime by its one-based position.
+   *
+   * @param nIn - One-based index of the prime.
+   * @returns The prime at the given one-based index.
+   * @throws RangeError when the prime index is less than one.
+   * @see SymPy `sympy.ntheory.generate.Sieve.__getitem__`
+   */
   get(nIn: IntLike): bigint {
     const n = asInt(nIn);
     if (n < 1n) throw new RangeError('Sieve indices start at 1.');
@@ -245,7 +346,16 @@ export class Sieve {
     return BigInt(at(this.primes, Number(n) - 1));
   }
 
-  /** The primes with indices in [start, stop) by step (SymPy sieve[start:stop:step]). */
+  /**
+   * The primes with indices in [start, stop) by step.
+   *
+   * @param start - First position in the range.
+   * @param stop - Exclusive end of the range.
+   * @param step - Stride between selected indices.
+   * @returns The primes at the selected indices.
+   * @throws RangeError when the index is below one or the stride is not positive.
+   * @see SymPy `sympy.ntheory.generate.Sieve.__getitem__`
+   */
   slice(start: IntLike, stop: IntLike, step: IntLike = 1): bigint[] {
     const s = Number(asInt(start));
     const e = Number(asInt(stop));
@@ -264,5 +374,15 @@ export class Sieve {
   }
 }
 
-/** The shared sieve (SymPy sympy.ntheory.generate.sieve). */
+/**
+ * The shared expanding sieve of Eratosthenes.
+ *
+ * @see SymPy `sympy.ntheory.generate.sieve`
+ * @example
+ * ```ts
+ * import { sieve } from '@symjs/symjs';
+ *
+ * sieve.contains(25); // => False
+ * ```
+ */
 export const sieve: Sieve = new Sieve();

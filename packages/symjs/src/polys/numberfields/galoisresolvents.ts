@@ -31,10 +31,18 @@ import type { PolyElement } from '../rings';
 import { Poly } from '../sympoly';
 import { resolventCoefficients } from './resolventlookup';
 
-/** An error in the computation of a Galois group. */
+/**
+ * An error in the computation of a Galois group.
+ *
+ * @see SymPy `sympy.polys.numberfields.galois_resolvents.GaloisGroupException`
+ */
 export class GaloisGroupException extends RangeError {}
 
-/** A form or a set of cosets that the Resolvent class cannot work with. */
+/**
+ * A form or a set of cosets that the Resolvent class cannot work with.
+ *
+ * @see SymPy `sympy.polys.numberfields.galois_resolvents.ResolventException`
+ */
 export class ResolventException extends GaloisGroupException {}
 
 /** A conjugate of the form of a resolvent, as a function of the values of its variables. */
@@ -62,20 +70,19 @@ function magnitude(p: bigint, q: bigint): number {
 const dupEval = (f: readonly bigint[], a: bigint): bigint => f.reduce((r, c) => r * a + c, 0n);
 
 /**
- * The resolvent R(Y) = prod_{sigma in s} (Y - F(X_sigma(1), ..., X_sigma(n))) of a
- * form F in the variables X, for a set s of left coset representatives of the
- * stabilizer of F in a subgroup G of S_n (Cohen, Def. 6.3.2).
+ * The resolvent R(Y) = prod_{sigma in s} (Y - F(X_sigma(1),..., X_sigma(n))) of a form F in the
+ * variables X, for a set s of left coset representatives of the stabilizer of F in a subgroup G of
+ * S_n (Cohen, Def. 6.3.2).
  *
- * When T is a polynomial with Gal(T) <= G, the coefficients of R evaluated at
- * the roots of T are integers. They are determined by approximating the roots
- * of T to a precision that bounds the error of every coefficient by 1/2: F
- * must be homogeneous of total degree t with r terms of unit coefficient, and
- * the number m of conjugates must satisfy m < r 2^t. The error bound of the
- * coefficients is then r^m (mt + 1) M^(mt - 1) epsilon for roots of absolute
- * value at most M >= 2 approximated within epsilon, and that of the single
- * conjugates (the candidates for integer roots of R) is r (t + 1) M^(t - 1)
- * epsilon.
+ * When T is a polynomial with Gal(T) <= G, the coefficients of R evaluated at the roots of T are
+ * integers. They are determined by approximating the roots of T to a precision that bounds the
+ * error of every coefficient by 1/2: F must be homogeneous of total degree t with r terms of unit
+ * coefficient, and the number m of conjugates must satisfy m < r 2^t. The error bound of the
+ * coefficients is then r^m (mt + 1) M^(mt - 1) epsilon for roots of absolute value at most M >= 2
+ * approximated within epsilon, and that of the single conjugates (the candidates for integer roots
+ * of R) is r (t + 1) M^(t - 1) epsilon.
  *
+ * @see SymPy `sympy.polys.numberfields.galois_resolvents.Resolvent`
  * @example
  * ```ts
  * import { ex, Permutation, Resolvent, symbols } from '@symjs/symjs';
@@ -87,29 +94,78 @@ const dupEval = (f: readonly bigint[], a: bigint): bigint => f.reduce((r, c) => 
  * ```
  */
 export class Resolvent {
+  /**
+   * The polynomial form whose conjugates are the resolvent roots.
+   *
+   * @see SymPy `sympy.polys.numberfields.galois_resolvents.Resolvent.F`
+   */
   readonly F: Expr;
+  /**
+   * The ordered variables of the form.
+   *
+   * @see SymPy `sympy.polys.numberfields.galois_resolvents.Resolvent.X`
+   */
   readonly X: readonly Sym[];
+  /**
+   * The coset representatives acting on the form.
+   *
+   * @see SymPy `sympy.polys.numberfields.galois_resolvents.Resolvent.s`
+   */
   readonly s: readonly Permutation[];
-  /** The number of conjugates of F. */
+  /**
+   * The number of conjugates of F.
+   *
+   * @see SymPy `sympy.polys.numberfields.galois_resolvents.Resolvent.m`
+   */
   readonly m: number;
-  /** The total degree of F. */
+  /**
+   * The total degree of F.
+   *
+   * @see SymPy `sympy.polys.numberfields.galois_resolvents.Resolvent.t`
+   */
   readonly t: number;
-  /** The number of terms of F. */
+  /**
+   * The number of terms of F.
+   *
+   * @see SymPy `sympy.polys.numberfields.galois_resolvents.Resolvent.r`
+   */
   readonly r: number;
-  /** The error bound factor that determines the coefficients of the resolvent, a polynomial in M. */
+  /**
+   * The error bound factor that determines the coefficients of the resolvent, a polynomial in M.
+   *
+   * @see SymPy `sympy.polys.numberfields.galois_resolvents.Resolvent.coeff_prec_func`
+   */
   readonly coeffPrecFunc: Poly;
-  /** The error bound factor that determines its integer roots, a polynomial in M. */
+  /**
+   * The error bound factor that determines its integer roots, a polynomial in M.
+   *
+   * @see SymPy `sympy.polys.numberfields.galois_resolvents.Resolvent.root_prec_func`
+   */
   readonly rootPrecFunc: Poly;
   /**
-   * The conjugates of F, the roots of the resolvent: the conjugate sigma F is
-   * F evaluated at sigma^-1 X. Given symbols they return expressions, given
-   * complex numbers their numerical values.
+   * The conjugates of F, the roots of the resolvent: the conjugate sigma F is F evaluated at sigma^-1
+   * X. Given symbols they return expressions, given complex numbers their numerical values.
+   *
+   * @see SymPy `sympy.polys.numberfields.galois_resolvents.Resolvent.root_lambdas`
    */
   readonly rootLambdas: readonly ResolventRootLambda[];
-  /** The coefficients of the monic polynomial with the given numbers as roots, highest degree first. */
+  /**
+   * The coefficients of the monic polynomial with the given numbers as roots, highest degree first.
+   *
+   * @see SymPy `sympy.polys.numberfields.galois_resolvents.Resolvent.esf_lambdas`
+   */
   readonly esfLambdas: readonly ((...roots: readonly ComplexElement[]) => ComplexElement)[];
   readonly #conjugates: readonly ((values: readonly ComplexElement[]) => ComplexElement)[];
 
+  /**
+   * Builds the conjugates of a polynomial form under the given coset representatives.
+   *
+   * @param F - Form defining the resolvent.
+   * @param X - Variables of the form in permutation order.
+   * @param s - Coset representatives acting on the form.
+   * @throws ResolventException when the form lacks unit coefficients, homogeneity or the required
+   *   degree.
+   */
   constructor(F: ExprLike, X: readonly Sym[], s: readonly Permutation[]) {
     this.F = sympify(F);
     this.X = X;
@@ -159,10 +215,14 @@ export class Resolvent {
   }
 
   /**
-   * A sufficient precision for evaluating complex numbers of absolute value
-   * at most M plugged in for the variables: an int m such that an error below
-   * 2^-m determines the coefficients ('coeffs') or the possible integer roots
-   * ('roots') of the resolvent.
+   * A sufficient precision for evaluating complex numbers of absolute value at most M plugged in for
+   * the variables: an int m such that an error below 2^-m determines the coefficients ('coeffs') or
+   * the possible integer roots ('roots') of the resolvent.
+   *
+   * @param M - Upper bound on the absolute values of the roots.
+   * @param target - Whether the precision is required for coefficients or roots.
+   * @returns The required working precision in bits.
+   * @see SymPy `sympy.polys.numberfields.galois_resolvents.Resolvent.get_prec`
    */
   getPrec(M: ExprLike | RealElement, target: ResolventTarget = 'coeffs'): number {
     const ctx = new MPContext();
@@ -176,8 +236,13 @@ export class Resolvent {
   }
 
   /**
-   * The roots of T approximated precisely enough to evaluate the coefficients
-   * of this resolvent ('coeffs') or to find its possible integer roots ('roots').
+   * The roots of T approximated precisely enough to evaluate the coefficients of this resolvent
+   * ('coeffs') or to find its possible integer roots ('roots').
+   *
+   * @param T - Polynomial defining the algebraic roots.
+   * @param target - Whether the precision is required for coefficients or roots.
+   * @returns Complex approximations of the polynomial roots.
+   * @see SymPy `sympy.polys.numberfields.galois_resolvents.Resolvent.approximate_roots_of_poly`
    */
   approximateRootsOfPoly(T: Poly, target: ResolventTarget = 'coeffs'): ComplexElement[] {
     const ctx = new MPContext();
@@ -196,7 +261,13 @@ export class Resolvent {
     return roots.map((r) => complex(r, digits));
   }
 
-  /** The nearest integer to an integer or real number (ties to even). */
+  /**
+   * The nearest integer to an integer or real number (ties to even).
+   *
+   * @param a - Real value to round to the nearest integer.
+   * @returns The closest integer, rounding ties to even.
+   * @see SymPy `sympy.polys.numberfields.galois_resolvents.Resolvent.round_mpf`
+   */
   static roundMpf(a: bigint | number | RealElement): bigint {
     if (typeof a === 'bigint') return a;
     if (typeof a === 'number') return nearestInteger(new MPContext().toRational(a, false));
@@ -204,10 +275,13 @@ export class Resolvent {
   }
 
   /**
-   * The roots of this resolvent for T rounded to the nearest integers: a Map
-   * from the indices of the permutations in s whose conjugate rounds to a
-   * rational integer to that integer. Any integer root of the resolvent is
-   * among them.
+   * The roots of this resolvent for T rounded to the nearest integers: a Map from the indices of the
+   * permutations in s whose conjugate rounds to a rational integer to that integer. Any integer root
+   * of the resolvent is among them.
+   *
+   * @param T - Polynomial defining the algebraic roots.
+   * @returns Candidate integer roots by conjugate index.
+   * @see SymPy `sympy.polys.numberfields.galois_resolvents.Resolvent.round_roots_to_integers_for_poly`
    */
   roundRootsToIntegersForPoly(T: Poly): Map<number, bigint> {
     const roots = this.approximateRootsOfPoly(T, 'roots');
@@ -220,10 +294,15 @@ export class Resolvent {
   }
 
   /**
-   * The resolvent for T as a dense polynomial over ZZ, with the coefficients
-   * evaluated at the roots of T. With findIntegerRoot, also its first
-   * integer root and the index of the permutation in s that gives it (NoMatch
-   * for both when there is none, or when findIntegerRoot is false).
+   * The resolvent for T as a dense polynomial over ZZ, with the coefficients evaluated at the roots
+   * of T. With findIntegerRoot, also its first integer root and the index of the permutation in s
+   * that gives it (NoMatch for both when there is none, or when findIntegerRoot is false).
+   *
+   * @param T - Polynomial defining the algebraic roots.
+   * @param findIntegerRoot - Also search for an integer root of the resolvent.
+   * @returns The resolvent coefficients and optional integer root and conjugate index.
+   * @throws ResolventException when a resolvent coefficient cannot be recovered as an integer.
+   * @see SymPy `sympy.polys.numberfields.galois_resolvents.Resolvent.eval_for_poly`
    */
   evalForPoly(T: Poly, findIntegerRoot = false): [bigint[], bigint | NoMatchResult, number | NoMatchResult] {
     const roots = this.approximateRootsOfPoly(T, 'coeffs');
@@ -244,7 +323,14 @@ export class Resolvent {
   }
 }
 
-/** Line-wrap a polynomial expression at the first space after width columns. */
+/**
+ * Line-wrap a polynomial expression at the first space after width columns.
+ *
+ * @param text - Polynomial text to wrap.
+ * @param width - Target line length.
+ * @returns The text with inserted line breaks.
+ * @see SymPy `sympy.polys.numberfields.galois_resolvents.wrap`
+ */
 export function wrap(text: string, width = 80): string {
   let out = '', col = 0;
   for (const c of text) {
@@ -259,7 +345,13 @@ export function wrap(text: string, width = 80): string {
   return out;
 }
 
-/** The symbols s1, ..., sn standing for the elementary symmetric polynomials. */
+/**
+ * The symbols s1,..., sn standing for the elementary symmetric polynomials.
+ *
+ * @param n - Number of symbols to create.
+ * @returns The symbols for the elementary symmetric functions.
+ * @see SymPy `sympy.polys.numberfields.galois_resolvents.s_vars`
+ */
 export function sVars(n: number): Sym[] {
   return Array.from({ length: n }, (_, i) => new Sym(`s${i + 1}`));
 }
@@ -267,11 +359,18 @@ export function sVars(n: number): Sym[] {
 const seconds = (): number => performance.now() / 1000;
 
 /**
- * The coefficients of the resolvent of the sparse polynomial F in the ring
- * generators X with coset representatives s, besides the leading 1, as
- * functions of the coefficients of T: polynomials in the elementary symmetric
- * polynomials s1, ..., sn of the roots, printed as strings. Also returns the
- * seconds each symmetrization took. Progress messages go to verbose.
+ * The coefficients of the resolvent of the sparse polynomial F in the ring generators X with coset
+ * representatives s, besides the leading 1, as functions of the coefficients of T: polynomials in
+ * the elementary symmetric polynomials s1,..., sn of the roots, printed as strings. Also returns
+ * the seconds each symmetrization took. Progress messages go to verbose.
+ *
+ * @param F - Sparse form defining the resolvent.
+ * @param X - Generators of its polynomial ring.
+ * @param s - Coset representatives.
+ * @param verbose - Callback for progress messages.
+ * @returns Coefficient formulas and the indices of the nonzero coefficients.
+ * @throws ResolventException when symmetrization leaves a nonzero remainder.
+ * @see SymPy `sympy.polys.numberfields.galois_resolvents.sparse_symmetrize_resolvent_coeffs`
  */
 export function sparseSymmetrizeResolventCoeffs(F: PolyElement, X: readonly PolyElement[], s: readonly Permutation[], verbose?: (text: string) => void): [string[], number[]] {
   const rootForms = s.map((sigma) => F.compose(X.map((x, i) => [x, at(sigma.call([...X]), i)] as const)));
@@ -302,8 +401,11 @@ export function sparseSymmetrizeResolventCoeffs(F: PolyElement, X: readonly Poly
 export type ResolventDefinition = [F: PolyElement, X: PolyElement[], s: Permutation[]];
 
 /**
- * The resolvents used for polynomials T of degrees 4 through 6, keyed by
- * "degree,number" ("4,0", "4,1", "5,1", "6,1", "6,2").
+ * The resolvents used for polynomials T of degrees 4 through 6, keyed by "degree,number" ("4,0",
+ * "4,1", "5,1", "6,1", "6,2").
+ *
+ * @returns The table of resolvent definitions by degree and number.
+ * @see SymPy `sympy.polys.numberfields.galois_resolvents.define_resolvents`
  */
 export function defineResolvents(): Map<string, ResolventDefinition> {
   const cycle = (size: number, ...c: number[]): Permutation => c.length ? new Permutation(size).call(...c) : new Permutation(size);
@@ -341,9 +443,15 @@ export function defineResolvents(): Map<string, ResolventDefinition> {
 }
 
 /**
- * The whole lookup table of resolvent coefficient functions as the source
- * text of the SymPy resolvent_lookup module. trialRun stops after the first
- * resolvent; jobs defaults to defineResolvents().
+ * The whole lookup table of resolvent coefficient functions as the source text of the SymPy
+ * resolvent_lookup module. trialRun stops after the first resolvent; jobs defaults to
+ * defineResolvents().
+ *
+ * @param verbose - Callback for progress messages.
+ * @param trialRun - Stop after the first resolvent.
+ * @param jobs - Resolvent definitions to process.
+ * @returns Source text of the resolvent lookup module.
+ * @see SymPy `sympy.polys.numberfields.galois_resolvents.generate_lambda_lookup`
  */
 export function generateLambdaLookup(verbose?: (text: string) => void, trialRun = false, jobs: ReadonlyMap<string, ResolventDefinition> = defineResolvents()): string {
   const lambdaLists: [string, string][] = [];
@@ -370,7 +478,15 @@ export function generateLambdaLookup(verbose?: (text: string) => void, trialRun 
   return table + '}\n';
 }
 
-/** Exact resolvent coefficients, in descending order, for degrees four through six. */
+/**
+ * Exact resolvent coefficients, in descending order, for degrees four through six.
+ *
+ * @param polynomial - Polynomial whose roots define the resolvent.
+ * @param number - Index of the resolvent for that degree.
+ * @returns The coefficients in descending degree.
+ * @throws RangeError when the polynomial is not monic.
+ * @see SymPy `sympy.polys.numberfields.galois_resolvents.get_resolvent_by_lookup`
+ */
 export function getResolventByLookup(polynomial: Poly, number: number): Rational[] {
   if (!polynomial.isMonic) throw new RangeError('resolvents require a monic polynomial');
   return resolventCoefficients(polynomial.allCoeffs().slice(1).map((c) => expectType(c, (e): e is Rational => e instanceof Rational, 'rational coefficient')), number);

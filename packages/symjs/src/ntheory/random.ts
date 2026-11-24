@@ -25,17 +25,25 @@ export interface RandomState {
   readonly gaussian?: number;
 }
 
-/** Python's random.Random: the MT19937 generator seeded like CPython. */
+/** Generates pseudorandom numbers with the MT19937 algorithm and Python-compatible integer seeding. */
 export class Random {
   private readonly mt = new Uint32Array(N);
   private mti = N + 1;
 
-  /** Random(seed): an integer seed as in Python; without a seed, one from Math.random. */
+  /**
+   * Initializes a pseudorandom generator, using the integer seed when supplied.
+   *
+   * @param seed - Seed for the pseudorandom sequence.
+   */
   constructor(seed?: bigint | number) {
     this.seed(seed);
   }
 
-  /** Python Random.seed(a) for an integer a (None: a seed from Math.random). */
+  /**
+   * A seed from Math.random).
+   *
+   * @param a - Seed for the pseudorandom sequence.
+   */
   seed(a?: bigint | number): void {
     this.#gaussNext = undefined;
     let n: bigint;
@@ -51,12 +59,21 @@ export class Random {
     this.initByArray(key);
   }
 
-  /** Save an independent copy of the current generator state. */
+  /**
+   * Save an independent copy of the current generator state.
+   *
+   * @returns A snapshot of the generator state.
+   */
   getState(): RandomState {
     return { words: [...this.mt], index: this.mti, ...(this.#gaussNext === undefined ? {} : { gaussian: this.#gaussNext }) };
   }
 
-  /** Restore the generator state. */
+  /**
+   * Restore the generator state.
+   *
+   * @param state - Previously saved generator state.
+   * @throws RangeError when the state is not a valid MT19937 state.
+   */
   setState(state: RandomState): void {
     if (state.words.length !== N || !Number.isInteger(state.index) || state.index < 0 || state.index > N ||
         state.words.some((word) => !Number.isInteger(word) || word < 0 || word > 0xffffffff)) {
@@ -107,7 +124,11 @@ export class Random {
     mt[0] = 0x80000000;
   }
 
-  /** A uniformly distributed 32-bit unsigned integer (genrand_uint32). */
+  /**
+   * A uniformly distributed 32-bit unsigned integer (genrand_uint32).
+   *
+   * @returns An unsigned 32-bit sample.
+   */
   genrandUint32(): number {
     const mt = this.mt;
     let y: number;
@@ -133,7 +154,13 @@ export class Random {
     return y >>> 0;
   }
 
-  /** Python Random.getrandbits(k): a non-negative integer with k random bits. */
+  /**
+   * A non-negative integer with k random bits.
+   *
+   * @param k - Number of random bits.
+   * @returns The sampled nonnegative integer.
+   * @throws RangeError when the number of bits is negative.
+   */
   getrandbits(k: number): bigint {
     if (k < 0) throw new RangeError('number of bits must be non-negative');
     if (k === 0) return 0n;
@@ -149,7 +176,11 @@ export class Random {
     return r;
   }
 
-  /** Python Random.random(): a float in [0, 1) with 53 random bits (genrand_res53). */
+  /**
+   * A float in [0, 1) with 53 random bits (genrand_res53).
+   *
+   * @returns A uniform sample in the half-open unit interval.
+   */
   random(): number {
     const a = this.genrandUint32() >>> 5;
     const b = this.genrandUint32() >>> 6;
@@ -158,7 +189,13 @@ export class Random {
 
   #gaussNext: number | undefined;
 
-  /** Python Random.gauss(mu, sigma): a normally distributed float (Box-Muller, the second value kept for the next call). */
+  /**
+   * A normally distributed float (Box-Muller, the second value kept for the next call).
+   *
+   * @param mu - Mean of the normal distribution.
+   * @param sigma - Standard deviation.
+   * @returns A normally distributed sample.
+   */
   gauss(mu = 0, sigma = 1): number {
     let z = this.#gaussNext;
     this.#gaussNext = undefined;
@@ -171,7 +208,12 @@ export class Random {
     return mu + z * sigma;
   }
 
-  /** Python Random._randbelow(n): an integer in [0, n). */
+  /**
+   * Draws a uniformly distributed integer from zero up to the exclusive bound.
+   *
+   * @param n - Exclusive upper bound.
+   * @returns A nonnegative sample below the bound.
+   */
   randbelow(n: bigint): bigint {
     const k = bitLength(n);
     let r = this.getrandbits(k);
@@ -179,28 +221,51 @@ export class Random {
     return r;
   }
 
-  /** Python Random.randrange(start, stop) (step 1). */
+  /**
+   * Samples an integer uniformly from a half-open range with unit stride.
+   *
+   * @param start - First position in the range.
+   * @param stop - Exclusive end of the range.
+   * @returns An integer from the half-open range.
+   * @throws RangeError when the range is empty.
+   */
   randrange(start: bigint, stop: bigint): bigint {
     const width = stop - start;
     if (width <= 0n) throw new RangeError(`empty range in randrange(${start}, ${stop})`);
     return start + this.randbelow(width);
   }
 
-  /** Python Random.randint(a, b): an integer in [a, b]. */
+  /**
+   * Draws a uniformly distributed integer between the two inclusive bounds.
+   *
+   * @param a - Inclusive lower bound.
+   * @param b - Inclusive upper bound.
+   * @returns An integer between the inclusive bounds.
+   * @throws RangeError when the upper bound is below the lower bound.
+   */
   randint(a: bigint, b: bigint): bigint {
     return this.randrange(a, b + 1n);
   }
 }
 
-/** SymPy's shared generator (sympy.core.random.rng). */
+/**
+ * The shared pseudorandom generator for number-theory operations.
+ *
+ * @see SymPy `sympy.core.random.rng`
+ */
 export const rng: Random = new Random();
 
-/** SymPy sympy.core.random.seed(a): seed the shared generator. */
+/**
+ * Seeds the shared pseudorandom number generator.
+ *
+ * @param a - Seed for the shared pseudorandom number generator.
+ * @see SymPy `sympy.core.random.seed`
+ */
 export function seed(a?: bigint | number): void {
   rng.seed(a);
 }
 
-/** A randint function: SymPy _randint(seed) (an integer seed reseeds the shared generator). */
+/** A function drawing an integer from a closed interval. */
 export type RandInt = (a: bigint, b: bigint) => bigint;
 
 /** @internal SymPy _randint(seed) for an integer seed or none. */

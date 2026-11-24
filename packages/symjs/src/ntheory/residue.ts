@@ -31,7 +31,22 @@ const cmpBig = (a: bigint, b: bigint): number => Number(a - b);
 const sortBig = (xs: Iterable<bigint>): bigint[] => [...xs].sort(cmpBig);
 const factorint = (n: bigint): Map<bigint, bigint> => factorintInt(n, {});
 
-/** The order of a modulo n (SymPy n_order). */
+/**
+ * The order of a modulo n.
+ *
+ * @param aIn - Base of the modular power.
+ * @param nIn - Modulus coprime to the base.
+ * @returns The least positive exponent giving residue one.
+ * @throws RangeError when the modulus is at most one or the base is not coprime to it.
+ * @see SymPy `sympy.ntheory.residue_ntheory.n_order`
+ * @example
+ * ```ts
+ * import { nOrder } from '@symjs/symjs';
+ *
+ * nOrder(3, 7); // => 6
+ * nOrder(4, 7); // => 3
+ * ```
+ */
 export function nOrder(aIn: IntLike, nIn: IntLike): bigint {
   const n = asInt(nIn);
   if (n <= 1n) throw new RangeError('n should be an integer greater than 1');
@@ -89,8 +104,21 @@ function primitiveRootPrimePower2(p: bigint, e: bigint): bigint {
 }
 
 /**
- * The smallest primitive root of p, or with `{ smallest: false }` one
- * found more quickly (SymPy primitive_root); NoMatch when none exists.
+ * The smallest primitive root of p, or with `{ smallest: false }` one found more quickly; NoMatch
+ * when none exists.
+ *
+ * @param pIn - Modulus.
+ * @param opts - Set `smallest` to false to accept any primitive root.
+ * @returns A generator of the unit group, or `NoMatch` if it is not cyclic.
+ * @throws RangeError when the modulus is at most one.
+ * @see SymPy `sympy.ntheory.residue_ntheory.primitive_root`
+ * @example
+ * ```ts
+ * import { primitiveRoot } from '@symjs/symjs';
+ *
+ * primitiveRoot(19); // => 2
+ * primitiveRoot(50, { smallest: false }); // => 27
+ * ```
  */
 export function primitiveRoot(pIn: IntLike, opts: { smallest?: boolean } = {}): bigint | NoMatchResult {
   const smallest = opts.smallest ?? true;
@@ -123,7 +151,22 @@ function smallestPrimitiveRoot(start: bigint, step: bigint, p: bigint, q: bigint
   for (let i = start; ; i += step) if (i % q !== 0n && isPrimitiveRoot(i, p)) return i;
 }
 
-/** a is a primitive root of p (SymPy is_primitive_root). */
+/**
+ * Tests whether a residue is a primitive root of the modulus.
+ *
+ * @param aIn - Candidate generator.
+ * @param pIn - Modulus of the group.
+ * @returns Whether the residue generates the unit group.
+ * @throws RangeError when the modulus is at most one or the base is not coprime to it.
+ * @see SymPy `sympy.ntheory.residue_ntheory.is_primitive_root`
+ * @example
+ * ```ts
+ * import { isPrimitiveRoot } from '@symjs/symjs';
+ *
+ * isPrimitiveRoot(3, 10); // => True
+ * isPrimitiveRoot(9, 10); // => False
+ * ```
+ */
 export function isPrimitiveRoot(aIn: IntLike, pIn: IntLike): boolean {
   const p = asInt(pIn);
   if (p <= 1n) throw new RangeError('p should be an integer greater than 1');
@@ -264,7 +307,20 @@ function* iproduct<T>(lists: readonly (readonly T[])[]): Generator<T[], void, un
   for (const [ef, eo] of iproduct2(first(lists)[Symbol.iterator](), tail)) yield [ef, ...eo];
 }
 
-/** The square roots of a modulo p, in SymPy's order (SymPy sqrt_mod_iter). */
+/**
+ * Enumerates the square roots of a residue modulo the given integer.
+ *
+ * @param aIn - Radicand.
+ * @param pIn - Modulus.
+ * @returns An iterator over the modular square roots.
+ * @see SymPy `sympy.ntheory.residue_ntheory.sqrt_mod_iter`
+ * @example
+ * ```ts
+ * import { sqrtModIter } from '@symjs/symjs';
+ *
+ * [...sqrtModIter(11, 43)]; // => [21, 22]
+ * ```
+ */
 export function* sqrtModIter(aIn: IntLike, pIn: IntLike): Generator<bigint, void, undefined> {
   const a = asInt(aIn);
   const p = babs(asInt(pIn));
@@ -291,10 +347,31 @@ export function* sqrtModIter(aIn: IntLike, pIn: IntLike): Generator<bigint, void
 }
 
 /**
- * A square root of a modulo p, the smallest one not above p/2, or NoMatch
- * (SymPy sqrt_mod); with `allRoots`, the sorted list of all roots.
+ * Finds a square root in the lower half of the residue system, or all roots when requested.
+ *
+ * @param a - Radicand.
+ * @param p - Modulus.
+ * @param allRoots - Return all roots in ascending order.
+ * @returns All roots in ascending order.
+ * @see SymPy `sympy.ntheory.residue_ntheory.sqrt_mod`
+ * @example
+ * ```ts
+ * import { sqrtMod } from '@symjs/symjs';
+ *
+ * sqrtMod(11, 43); // => 21
+ * sqrtMod(17, 32, true); // => [7, 9, 23, 25]
+ * ```
  */
 export function sqrtMod(a: IntLike, p: IntLike, allRoots: true): bigint[];
+/**
+ * Finds a square root in the lower half of the residue system, or all roots when requested.
+ *
+ * @param a - Radicand.
+ * @param p - Modulus.
+ * @param allRoots - Return all roots in ascending order.
+ * @returns One modular root, or `NoMatch` if none exists.
+ * @see SymPy `sympy.ntheory.residue_ntheory.sqrt_mod`
+ */
 export function sqrtMod(a: IntLike, p: IntLike, allRoots?: false): bigint | NoMatchResult;
 export function sqrtMod(a: IntLike, pIn: IntLike, allRoots = false): bigint | NoMatchResult | bigint[] {
   if (allRoots) return sortBig(sqrtModIter(a, pIn));
@@ -309,7 +386,22 @@ export function sqrtMod(a: IntLike, pIn: IntLike, allRoots = false): bigint | No
   return x;
 }
 
-/** a is a quadratic residue modulo p (SymPy is_quad_residue). */
+/**
+ * Tests whether a residue is a square modulo the given integer.
+ *
+ * @param aIn - Residue to test.
+ * @param pIn - Modulus.
+ * @returns Whether the congruence has a square root.
+ * @throws RangeError when the modulus is not positive.
+ * @see SymPy `sympy.ntheory.residue_ntheory.is_quad_residue`
+ * @example
+ * ```ts
+ * import { isQuadResidue } from '@symjs/symjs';
+ *
+ * isQuadResidue(21, 100); // => True
+ * isQuadResidue(21, 120); // => False
+ * ```
+ */
 export function isQuadResidue(aIn: IntLike, pIn: IntLike): boolean {
   let p = asInt(pIn);
   if (p < 1n) throw new RangeError('p must be > 0');
@@ -373,7 +465,16 @@ function residueOf(a: IntLike, m: bigint): bigint {
   return e instanceof Rational ? pmod(asInt(e), m) : asInt(Mod(e, Rational.of(m)));
 }
 
-/** a is an nth power residue modulo m (SymPy is_nthpow_residue). */
+/**
+ * Tests whether a residue is an nth power modulo the given integer.
+ *
+ * @param aIn - Target residue.
+ * @param nIn - Exponent.
+ * @param mIn - Modulus.
+ * @returns Whether the power congruence has a solution.
+ * @throws RangeError when the modulus is not positive or the exponent is negative.
+ * @see SymPy `sympy.ntheory.residue_ntheory.is_nthpow_residue`
+ */
 export function isNthpowResidue(aIn: IntLike, nIn: IntLike, mIn: IntLike): boolean {
   const m = asInt(mIn);
   const n = asInt(nIn);
@@ -471,10 +572,37 @@ function nthrootModPrimePower(aIn: bigint, n: bigint, p: bigint, k: bigint): big
 }
 
 /**
- * The smallest solution x of x**n = a (mod p), or NoMatch (SymPy
- * nthroot_mod); with `allRoots`, the sorted list of all solutions.
+ * The smallest solution x of x**n = a (mod p), or NoMatch; with `allRoots`, the sorted list of all
+ * solutions.
+ *
+ * @param a - Target residue.
+ * @param n - Degree of the root.
+ * @param p - Modulus.
+ * @param allRoots - Return all roots in ascending order.
+ * @returns All roots in ascending order.
+ * @throws RangeError when the exponent or modulus is not positive.
+ * @see SymPy `sympy.ntheory.residue_ntheory.nthroot_mod`
+ * @example
+ * ```ts
+ * import { nthrootMod } from '@symjs/symjs';
+ *
+ * nthrootMod(11, 4, 19); // => 8
+ * nthrootMod(11, 4, 19, true); // => [8, 11]
+ * ```
  */
 export function nthrootMod(a: IntLike, n: IntLike, p: IntLike, allRoots: true): bigint[];
+/**
+ * The smallest solution x of x**n = a (mod p), or NoMatch; with `allRoots`, the sorted list of all
+ * solutions.
+ *
+ * @param a - Target residue.
+ * @param n - Degree of the root.
+ * @param p - Modulus.
+ * @param allRoots - Return all roots in ascending order.
+ * @returns One modular root, or `NoMatch` if none exists.
+ * @throws RangeError when the exponent or modulus is not positive.
+ * @see SymPy `sympy.ntheory.residue_ntheory.nthroot_mod`
+ */
 export function nthrootMod(a: IntLike, n: IntLike, p: IntLike, allRoots?: false): bigint | NoMatchResult;
 export function nthrootMod(aIn: IntLike, nIn: IntLike, pIn: IntLike, allRoots = false): bigint | NoMatchResult | bigint[] {
   const p = asInt(pIn);
@@ -499,7 +627,19 @@ export function nthrootMod(aIn: IntLike, nIn: IntLike, pIn: IntLike, allRoots = 
   return first(ret);
 }
 
-/** The sorted list of quadratic residues modulo p (SymPy quadratic_residues). */
+/**
+ * The sorted list of quadratic residues modulo p.
+ *
+ * @param pIn - Modulus.
+ * @returns The distinct squares in ascending residue order.
+ * @see SymPy `sympy.ntheory.residue_ntheory.quadratic_residues`
+ * @example
+ * ```ts
+ * import { quadraticResidues } from '@symjs/symjs';
+ *
+ * quadraticResidues(7); // => [0, 1, 2, 4]
+ * ```
+ */
 export function quadraticResidues(pIn: IntLike): bigint[] {
   const p = asInt(pIn);
   const r = new Set<bigint>();
@@ -718,10 +858,24 @@ function dlogPohligHellman(n: bigint, aIn: bigint, bIn: bigint, order: bigint, o
 }
 
 /**
- * The discrete logarithm x with b**x = a (mod n) (SymPy discrete_log):
- * trial multiplication, Shanks' baby-step giant-step, Pollard's rho, the
- * index calculus or Pohlig-Hellman depending on the order of b. Throws a
- * RangeError when the logarithm does not exist.
+ * The discrete logarithm x with b**x = a (mod n): trial multiplication, Shanks' baby-step
+ * giant-step, Pollard's rho, the index calculus or Pohlig-Hellman depending on the order of b.
+ * Throws a RangeError when the logarithm does not exist.
+ *
+ * @param nIn - Modulus.
+ * @param aIn - Target residue.
+ * @param bIn - Base of the logarithm.
+ * @param orderIn - Known multiplicative order of the base.
+ * @param primeOrderIn - Whether that order is prime.
+ * @returns An exponent giving the specified residue.
+ * @throws RangeError when the modulus is not positive or the logarithm cannot be found.
+ * @see SymPy `sympy.ntheory.residue_ntheory.discrete_log`
+ * @example
+ * ```ts
+ * import { discreteLog } from '@symjs/symjs';
+ *
+ * discreteLog(41, 15, 7); // => 3
+ * ```
  */
 export function discreteLog(nIn: IntLike, aIn: IntLike, bIn: IntLike, orderIn?: IntLike, primeOrderIn?: boolean): bigint {
   const n = asInt(nIn);
@@ -766,7 +920,21 @@ export function discreteLog(nIn: IntLike, aIn: IntLike, bIn: IntLike, orderIn?: 
 // congruences
 // ---------------------------------------------------------------------------
 
-/** The solutions of a*x = b (mod m) (SymPy galoistools linear_congruence). */
+/**
+ * The solutions of a*x = b (mod m).
+ *
+ * @param aIn - Coefficient of the unknown.
+ * @param bIn - Right-hand side.
+ * @param mIn - Modulus.
+ * @returns The residues solving the linear congruence.
+ * @see SymPy `sympy.polys.galoistools.linear_congruence`
+ * @example
+ * ```ts
+ * import { linearCongruence } from '@symjs/symjs';
+ *
+ * linearCongruence(3, 12, 15); // => [4, 9, 14]
+ * ```
+ */
 export function linearCongruence(aIn: IntLike, bIn: IntLike, mIn: IntLike): bigint[] {
   const a = asInt(aIn);
   const b = asInt(bIn);
@@ -786,7 +954,24 @@ export function linearCongruence(aIn: IntLike, bIn: IntLike, mIn: IntLike): bigi
   return out;
 }
 
-/** The solutions of a*x**2 + b*x + c = 0 (mod n), sorted (SymPy quadratic_congruence). */
+/**
+ * The solutions of a*x**2 + b*x + c = 0 (mod n), sorted.
+ *
+ * @param aIn - Quadratic coefficient.
+ * @param bIn - Linear coefficient.
+ * @param cIn - Constant term.
+ * @param nIn - Modulus.
+ * @returns The solution residues in ascending order.
+ * @throws RangeError when the modulus is at most one.
+ * @see SymPy `sympy.ntheory.residue_ntheory.quadratic_congruence`
+ * @example
+ * ```ts
+ * import { quadraticCongruence } from '@symjs/symjs';
+ *
+ * quadraticCongruence(2, 5, 3, 7); // => [2, 6]
+ * quadraticCongruence(8, 6, 4, 15); // => []
+ * ```
+ */
 export function quadraticCongruence(aIn: IntLike, bIn: IntLike, cIn: IntLike, nIn: IntLike): bigint[] {
   const n = asInt(nIn);
   if (n <= 1n) throw new RangeError('n should be an integer greater than 1');
@@ -974,15 +1159,39 @@ function csolvePrimeInt(f: readonly bigint[], p: bigint, e: bigint): bigint[] {
 }
 
 /**
- * The roots of the polynomial with integer coefficients f (leading first)
- * modulo p**e for a prime p (SymPy csolve_prime of sympy.polys.galoistools;
- * kept here because gf_csolve, which ntheory uses, is built on it).
+ * Finds the roots of an integer polynomial modulo a power of a prime.
+ *
+ * @param f - Polynomial coefficients in descending degree.
+ * @param p - Prime modulus base.
+ * @param e - Exponent of the prime power.
+ * @returns The roots modulo the prime power.
+ * @see SymPy `sympy.polys.galoistools.csolve_prime`
+ * @example
+ * ```ts
+ * import { csolvePrime } from '@symjs/symjs';
+ *
+ * csolvePrime([1, 1, 7], 3, 1); // => [1]
+ * csolvePrime([1, 1, 7], 3, 2); // => [1, 4, 7]
+ * ```
  */
 export function csolvePrime(f: readonly IntLike[], p: IntLike, e: IntLike = 1n): bigint[] {
   return csolvePrimeInt(f.map((c) => asInt(c)), asInt(p), asInt(e));
 }
 
-/** The roots of the polynomial with coefficients f (leading first) modulo n (SymPy gf_csolve). */
+/**
+ * The roots of the polynomial with coefficients f (leading first) modulo n.
+ *
+ * @param f - Integer coefficients in descending degree.
+ * @param nIn - Modulus.
+ * @returns The roots modulo the given integer.
+ * @see SymPy `sympy.polys.galoistools.gf_csolve`
+ * @example
+ * ```ts
+ * import { gfCsolve } from '@symjs/symjs';
+ *
+ * gfCsolve([1, 1, 7], 189); // => [13, 49, 76, 112, 139, 175]
+ * ```
+ */
 export function gfCsolve(f: readonly IntLike[], nIn: IntLike): bigint[] {
   const n = asInt(nIn);
   const fs = f.map((c) => asInt(c));
@@ -1028,7 +1237,21 @@ function polyCoeffs(exprIn: ExprLike): bigint[] {
   return out;
 }
 
-/** The solutions of the polynomial congruence expr = 0 (mod m), sorted (SymPy polynomial_congruence). */
+/**
+ * The solutions of the polynomial congruence expr = 0 (mod m), sorted.
+ *
+ * @param expr - Univariate polynomial with integer coefficients.
+ * @param mIn - Modulus.
+ * @returns The solution residues in ascending order.
+ * @throws RangeError when the polynomial is not univariate with integer coefficients.
+ * @see SymPy `sympy.ntheory.residue_ntheory.polynomial_congruence`
+ * @example
+ * ```ts
+ * import { ex, polynomialCongruence } from '@symjs/symjs';
+ *
+ * polynomialCongruence(ex`x**6 - 2*x**5 - 35`, 6125); // => [3257]
+ * ```
+ */
 export function polynomialCongruence(expr: ExprLike, mIn: IntLike): bigint[] {
   const m = asInt(mIn);
   const coefficients = polyCoeffs(expr).map((c) => pmod(c, m));

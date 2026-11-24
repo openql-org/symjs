@@ -55,18 +55,42 @@ const E_GEN1 = Matrix.of([
   [q, nq, nq, nq, nq, nq, nq, R(3, 4)],
 ]);
 
-/** SymPy WeylGroup: the Weyl group of a Cartan type, whose elements are written as products of reflections 'r1*r2*...'. */
+/**
+ * The Weyl group of a Cartan type, whose elements are written as products of reflections
+ * 'r1*r2*...'.
+ *
+ * @see SymPy `sympy.liealgebras.weyl_group.WeylGroup`
+ */
 export class WeylGroup {
-  /** The Cartan type. */
+  /**
+   * The Cartan type.
+   *
+   * @see SymPy `sympy.liealgebras.weyl_group.WeylGroup.cartan_type`
+   */
   readonly cartanType: StandardCartan;
+  /**
+   * Builds the reflection group of the specified Cartan type.
+   *
+   * @param cartantype - Cartan series and rank.
+   */
   constructor(cartantype: CartanTypeLike) {
     this.cartanType = CartanType(cartantype);
   }
-  /** SymPy generators: the names r1, ..., rn of the simple reflections. */
+  /**
+   * The names r1,..., rn of the simple reflections.
+   *
+   * @returns The simple reflections.
+   * @see SymPy `sympy.liealgebras.weyl_group.WeylGroup.generators`
+   */
   generators(): string[] {
     return Array.from({ length: this.cartanType.rank() }, (_x, i) => `r${i + 1}`);
   }
-  /** SymPy group_order: the order of the group (exact; SymPy gives an mpmath float). */
+  /**
+   * Computes the exact number of elements in the Weyl group.
+   *
+   * @returns The order of the Weyl group.
+   * @see SymPy `sympy.liealgebras.weyl_group.WeylGroup.group_order`
+   */
   groupOrder(): bigint {
     const n = this.cartanType.rank();
     switch (this.cartanType.series) {
@@ -85,7 +109,12 @@ export class WeylGroup {
         return 12n;
     }
   }
-  /** SymPy group_name: a description of the group. */
+  /**
+   * A description of the group.
+   *
+   * @returns The group name.
+   * @see SymPy `sympy.liealgebras.weyl_group.WeylGroup.group_name`
+   */
   groupName(): string {
     const n = this.cartanType.rank();
     switch (this.cartanType.series) {
@@ -108,14 +137,26 @@ export class WeylGroup {
   private reflections(weylelt: string): number[] {
     return weylelt.split('').filter((_c, i) => i % 3 === 1).map((c) => Number(c));
   }
-  /** SymPy delete_doubles: adjacent equal reflections removed in one pass. */
+  /**
+   * Adjacent equal reflections removed in one pass.
+   *
+   * @param reflections - Sequence of simple reflections.
+   * @returns The word after cancellation of adjacent equal reflections.
+   * @see SymPy `sympy.liealgebras.weyl_group.WeylGroup.delete_doubles`
+   */
   deleteDoubles(reflections: readonly number[]): number[] {
     const copy = [...reflections];
     // (SymPy iterates over the list it shortens: after a deletion the next element is skipped)
     for (let i = 0; i < copy.length; i++) if (i < copy.length - 1 && copy[i + 1] === copy[i]) copy.splice(i, 2);
     return copy;
   }
-  /** SymPy matrix_form: the matrix of the element 'r1*r2*...' in the standard basis. */
+  /**
+   * The matrix of the element 'r1*r2*...' in the standard basis.
+   *
+   * @param weylelt - Word in the simple reflections.
+   * @returns The matrix representing the reflection word.
+   * @see SymPy `sympy.liealgebras.weyl_group.WeylGroup.matrix_form`
+   */
   matrixForm(weylelt: string): Matrix {
     const n = this.cartanType.rank();
     const series = this.cartanType.series;
@@ -145,7 +186,14 @@ export class WeylGroup {
         return a === 1 ? eyeWith(size, [[0, 0, -1]]) : swap(size, a - 1);
     }
   }
-  /** SymPy element_order: the order of the element 'r1*r2*...'. */
+  /**
+   * The order of the element 'r1*r2*...'.
+   *
+   * @param weylelt - Word in the simple reflections.
+   * @returns The order of the reflection word.
+   * @throws NotImplementedError when no finite order is found for the reflection word.
+   * @see SymPy `sympy.liealgebras.weyl_group.WeylGroup.element_order`
+   */
   elementOrder(weylelt: string): number {
     if (this.cartanType.series === 'G') {
       // a dihedral group: reflections cancel in pairs, an odd product is a reflection
@@ -169,7 +217,12 @@ export class WeylGroup {
     }
     return order;
   }
-  /** SymPy coxeter_diagram: the Coxeter diagram as text. */
+  /**
+   * The Coxeter diagram as text.
+   *
+   * @returns The labeled Coxeter diagram.
+   * @see SymPy `sympy.liealgebras.weyl_group.WeylGroup.coxeter_diagram`
+   */
   coxeterDiagram(): string {
     const n = this.cartanType.rank();
     switch (this.cartanType.series) {

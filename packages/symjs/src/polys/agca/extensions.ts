@@ -25,29 +25,68 @@ function isGroundUnit(K: Domain, c: Expr): boolean {
   return c instanceof Rational && c.q === 1n && (c.p === 1n || c.p === -1n);
 }
 
-/** SymPy ExtensionElement (ExtElem): an element of a finite extension, a polynomial reduced modulo the modulus. */
+/**
+ * An element of a finite extension, a polynomial reduced modulo the modulus.
+ *
+ * @see SymPy `sympy.polys.agca.extensions.ExtensionElement`
+ */
 export class ExtensionElement {
+  /**
+   * Represents a residue class by a polynomial in the generating element.
+   *
+   * @param rep - Representation from which to construct the value.
+   * @param ext - Algebraic extension defining the element.
+   */
   constructor(
+    /**
+     * The polynomial representative of the residue class.
+     *
+     * @see SymPy `sympy.polys.agca.extensions.ExtensionElement.rep`
+     */
     readonly rep: Poly,
+    /**
+     * The extension containing the element.
+     *
+     * @see SymPy `sympy.polys.agca.extensions.ExtensionElement.ext`
+     */
     readonly ext: FiniteExtension,
   ) {}
 
-  /** SymPy parent(): the extension. */
+  /**
+   * The extension.
+   *
+   * @returns The algebra or domain containing this element.
+   * @see SymPy `sympy.polys.agca.extensions.ExtensionElement.parent`
+   */
   parent(): FiniteExtension {
     return this.ext;
   }
 
-  /** SymPy as_expr(). */
+  /**
+   * Substitutes the generator into the reduced polynomial representative.
+   *
+   * @returns The corresponding symbolic expression.
+   * @see SymPy `sympy.polys.agca.extensions.ExtensionElement.as_expr`
+   */
   asExpr(): Expr {
     return this.ext.toSympy(this);
   }
 
-  /** SymPy bool(f): whether the element is nonzero. */
+  /**
+   * Tests for the additive identity.
+   *
+   * @returns Whether the value equals zero.
+   */
   get isZero(): boolean {
     return this.rep.isZero;
   }
 
-  /** SymPy -f. */
+  /**
+   * Reverses the sign of the value.
+   *
+   * @returns The additive inverse.
+   * @see SymPy `sympy.polys.agca.extensions.ExtensionElement.__neg__`
+   */
   neg(): ExtensionElement {
     return new ExtensionElement(this.rep.neg(), this.ext);
   }
@@ -60,17 +99,35 @@ export class ExtensionElement {
     return this.ext.convert(g).rep;
   }
 
-  /** SymPy f + g. */
+  /**
+   * Adds the other operand to this value.
+   *
+   * @param g - Addend.
+   * @returns The sum of the operands.
+   * @see SymPy `sympy.polys.agca.extensions.ExtensionElement.__add__`
+   */
   add(g: ExtensionElement | ExprLike): ExtensionElement {
     return new ExtensionElement(this.rep.add(this.#rep(g)), this.ext);
   }
 
-  /** SymPy f - g. */
+  /**
+   * Subtracts the other operand from this value.
+   *
+   * @param g - Value to subtract.
+   * @returns The difference in operand order.
+   * @see SymPy `sympy.polys.agca.extensions.ExtensionElement.__sub__`
+   */
   sub(g: ExtensionElement | ExprLike): ExtensionElement {
     return new ExtensionElement(this.rep.sub(this.#rep(g)), this.ext);
   }
 
-  /** SymPy f * g. */
+  /**
+   * Multiplies this value by the factor on its right.
+   *
+   * @param g - Factor on the right.
+   * @returns The product in operand order.
+   * @see SymPy `sympy.polys.agca.extensions.ExtensionElement.__mul__`
+   */
   mul(g: ExtensionElement | ExprLike): ExtensionElement {
     return new ExtensionElement(this.rep.mul(this.#rep(g)).rem(this.ext.mod), this.ext);
   }
@@ -84,26 +141,60 @@ export class ExtensionElement {
     }
   }
 
-  /** SymPy inverse(). */
+  /**
+   * Finds an element whose product with the residue class is one.
+   *
+   * @returns The multiplicative inverse.
+   * @throws NotImplementedError when inversion outside a field requires a nonconstant divisor or a
+   *   nonunit.
+   * @throws NotInvertible when the element is zero or has no inverse.
+   * @see SymPy `sympy.polys.agca.extensions.ExtensionElement.inverse`
+   */
   inverse(): ExtensionElement {
     this.#divcheck();
     const inv = this.ext.isField ? this.rep.invert(this.ext.mod) : this.ext.one.rep.exquo(this.rep);
     return new ExtensionElement(inv, this.ext);
   }
 
-  /** SymPy f / g (and f // g). */
+  /**
+   * Divides by the supplied divisor.
+   *
+   * @param g - Divisor.
+   * @returns The quotient.
+   * @throws RangeError when division is not defined for the supplied divisor.
+   * @throws NotImplementedError when inversion outside a field requires a nonconstant divisor or a
+   *   nonunit.
+   * @see SymPy `sympy.polys.agca.extensions.ExtensionElement.__truediv__`
+   */
   div(g: ExtensionElement | ExprLike): ExtensionElement {
     const d = new ExtensionElement(this.#rep(g), this.ext);
     if (d.isZero) throw new RangeError(`${String(this)} / ${String(d)}`);
     return this.mul(d.inverse());
   }
 
-  /** SymPy f // g: the same quotient as f / g. */
+  /**
+   * Computes the quotient under the division rule of this domain.
+   *
+   * @param g - Divisor.
+   * @returns The quotient under floor division.
+   * @throws NotImplementedError when inversion outside a field requires a nonconstant divisor or a
+   *   nonunit.
+   * @see SymPy `sympy.polys.agca.extensions.ExtensionElement.__floordiv__`
+   */
   floordiv(g: ExtensionElement | ExprLike): ExtensionElement {
     return this.div(g);
   }
 
-  /** SymPy f % g: zero for an invertible g. */
+  /**
+   * Returns zero after verifying that division by the supplied element is defined.
+   *
+   * @param g - Divisor.
+   * @returns The remainder after division.
+   * @throws RangeError when division is not defined for the supplied divisor.
+   * @throws NotImplementedError when inversion outside a field requires a nonconstant divisor or a
+   *   nonunit.
+   * @see SymPy `sympy.polys.agca.extensions.ExtensionElement.__mod__`
+   */
   mod(g: ExtensionElement | ExprLike): ExtensionElement {
     const d = new ExtensionElement(this.#rep(g), this.ext);
     if (d.isZero) throw new RangeError(`${String(this)} % ${String(d)}`);
@@ -111,7 +202,14 @@ export class ExtensionElement {
     return this.ext.zero;
   }
 
-  /** SymPy f**n (a negative n through the inverse). */
+  /**
+   * Raises the value to the specified power.
+   *
+   * @param nIn - Exponent to which to raise the value.
+   * @returns The value raised to the given exponent.
+   * @throws RangeError when a negative exponent requires an unavailable inverse.
+   * @see SymPy `sympy.polys.agca.extensions.ExtensionElement.__pow__`
+   */
   pow(nIn: number | bigint): ExtensionElement {
     let n = BigInt(nIn);
     let f: ExtensionElement = this;
@@ -135,59 +233,144 @@ export class ExtensionElement {
     return new ExtensionElement(r, this.ext);
   }
 
-  /** SymPy f == g. */
+  /**
+   * Compares the two operands for equality.
+   *
+   * @param g - Value to compare against.
+   * @returns Whether the operands are equal.
+   * @see SymPy `sympy.polys.agca.extensions.ExtensionElement.__eq__`
+   */
   equals(g: unknown): boolean {
     return g instanceof ExtensionElement && g.ext.equals(this.ext) && g.rep.equals(this.rep);
   }
 
-  /** SymPy is_ground. */
+  /**
+   * Checks that no positive power of the generator occurs in the reduced representative.
+   *
+   * @returns Whether the element belongs to the coefficient domain.
+   * @see SymPy `sympy.polys.agca.extensions.ExtensionElement.is_ground`
+   */
   get isGround(): boolean {
     return this.rep.degree() <= 0;
   }
 
-  /** SymPy to_ground(): the constant of a ground element. */
+  /**
+   * The constant of a ground element.
+   *
+   * @returns The constant coefficient.
+   * @throws RangeError when the element is not constant.
+   * @see SymPy `sympy.polys.agca.extensions.ExtensionElement.to_ground`
+   */
   toGround(): Expr {
     if (!this.isGround) throw new RangeError(`${String(this)} is not a constant`);
     return this.rep.LC();
   }
 
+  /**
+   * Formats the value as text.
+   *
+   * @returns The printable representation.
+   * @see SymPy `sympy.polys.agca.extensions.ExtensionElement.__str__`
+   */
   toString(): string {
     return str(this.asExpr());
   }
 }
 
 /**
- * SymPy FiniteExtension(mod) (MonogenicFiniteExtension): the ring K[x]/(f)
- * of a univariate polynomial f over K (made monic over a field).
+ * Represents the quotient of a univariate polynomial ring by a monic polynomial.
  *
+ * @see SymPy `sympy.polys.agca.extensions.MonogenicFiniteExtension`
  * @example
  * ```ts
- * import { FiniteExtension, parse, Poly } from '@symjs/symjs';
+ * import { ex, FiniteExtension, Poly } from '@symjs/symjs';
  *
- * const R = new FiniteExtension(Poly.from(parse('x**2 - 2')));
- * String(R.new(parse('1 + x')).mul(parse('3 - 2*x'))); // => x - 1
+ * const R = new FiniteExtension(Poly.from(ex`x**2 - 2`));
+ * String(R.new(ex`1 + x`).mul(ex`3 - 2*x`)); // => x - 1
  * ```
  */
 export class FiniteExtension {
+  /**
+   * The flag identifying a finite ring extension.
+   *
+   * @see SymPy `sympy.polys.agca.extensions.MonogenicFiniteExtension.is_FiniteExtension`
+   */
   readonly isFiniteExtension = true;
+  /**
+   * Indicates whether the base coefficient domain is a field.
+   *
+   * @see SymPy `sympy.polys.agca.extensions.MonogenicFiniteExtension.is_Field`
+   */
   readonly isField: boolean;
-  /** SymPy rank: the degree of the modulus. */
+  /**
+   * The degree of the modulus.
+   *
+   * @see SymPy `sympy.polys.agca.extensions.MonogenicFiniteExtension.rank`
+   */
   readonly rank: number;
-  /** SymPy modulus: the (monic) polynomial. */
+  /**
+   * The (monic) polynomial.
+   *
+   * @see SymPy `sympy.polys.agca.extensions.MonogenicFiniteExtension.modulus`
+   */
   readonly modulus: Poly;
-  /** SymPy mod: the modulus (its representation). */
+  /**
+   * Computes the remainder on division by the supplied divisor.
+   *
+   * @see SymPy `sympy.polys.agca.extensions.MonogenicFiniteExtension.mod`
+   */
   readonly mod: Poly;
-  /** SymPy domain: the coefficient domain. */
+  /**
+   * The coefficient domain.
+   *
+   * @see SymPy `sympy.polys.agca.extensions.MonogenicFiniteExtension.domain`
+   */
   readonly domain: Domain;
-  /** SymPy ring: K[x]. */
+  /**
+   * The polynomial ring in the generator over the base domain.
+   *
+   * @see SymPy `sympy.polys.agca.extensions.MonogenicFiniteExtension.ring`
+   */
   readonly ring: GlobalPolynomialRing;
-  /** SymPy symbol: the generator x. */
+  /**
+   * The generator x.
+   *
+   * @see SymPy `sympy.polys.agca.extensions.MonogenicFiniteExtension.symbol`
+   */
   readonly symbol: Sym;
+  /**
+   * The additive identity.
+   *
+   * @see SymPy `sympy.polys.agca.extensions.MonogenicFiniteExtension.zero`
+   */
   readonly zero: ExtensionElement;
+  /**
+   * The multiplicative identity.
+   *
+   * @see SymPy `sympy.polys.agca.extensions.MonogenicFiniteExtension.one`
+   */
   readonly one: ExtensionElement;
+  /**
+   * The residue class of the polynomial variable.
+   *
+   * @see SymPy `sympy.polys.agca.extensions.MonogenicFiniteExtension.generator`
+   */
   readonly generator: ExtensionElement;
+  /**
+   * Counts the independent generators of the Lie algebra.
+   *
+   * @see SymPy `sympy.polys.agca.extensions.MonogenicFiniteExtension.basis`
+   */
   readonly basis: readonly ExtensionElement[];
 
+  /**
+   * Forms the quotient ring by reducing polynomials modulo the supplied polynomial.
+   *
+   * @param modIn - Univariate polynomial defining the quotient.
+   * @throws TypeError when the modulus is not a univariate polynomial.
+   * @throws ExactQuotientFailed when the leading coefficient cannot be divided out in the coefficient
+   *   domain.
+   */
   constructor(modIn: Poly) {
     if (!(modIn instanceof Poly) || modIn.gens.length !== 1) throw new TypeError('modulus must be a univariate Poly');
     // SymPy mod.monic(auto=False): monic over a field, the polynomial itself over a ring when its leading coefficient is not 1
@@ -212,12 +395,26 @@ export class FiniteExtension {
     return Poly.from(e, [this.symbol], { domain: this.domain });
   }
 
-  /** SymPy K(arg) / new(arg): the element of a polynomial or an expression. */
+  /**
+   * The element of a polynomial or an expression.
+   *
+   * @param arg - Value to represent.
+   * @returns The newly constructed element.
+   * @see SymPy `sympy.polys.agca.extensions.MonogenicFiniteExtension.new`
+   */
   new(arg: ExtensionElement | Poly | ExprLike): ExtensionElement {
     return this.convert(arg);
   }
 
-  /** SymPy convert(f): the element of f (an expression, a Poly or an element). */
+  /**
+   * Coerces the input into the target domain.
+   *
+   * @param f - Element to convert or divide.
+   * @param base - Source domain when converting an existing element.
+   * @returns The value represented in the target domain.
+   * @throws CoercionFailed when the value cannot be represented in the target domain.
+   * @see SymPy `sympy.polys.agca.extensions.MonogenicFiniteExtension.convert`
+   */
   convert(f: unknown, base?: Domain): ExtensionElement {
     if (f instanceof ExtensionElement) {
       if (!f.ext.equals(this)) throw new CoercionFailed(`${String(f)} is not an element of ${String(this)}`);
@@ -231,51 +428,110 @@ export class FiniteExtension {
     return new ExtensionElement(this.#poly(e).rem(this.mod), this);
   }
 
-  /** Convert an element with an explicit coefficient domain. */
+  /**
+   * Convert an element with an explicit coefficient domain.
+   *
+   * @param f - Element to convert or divide.
+   * @param base - Source domain when converting an existing element.
+   * @returns The value represented in the target domain.
+   * @see SymPy `sympy.polys.agca.extensions.MonogenicFiniteExtension.convert_from`
+   */
   convertFrom(f: unknown, base: Domain): ExtensionElement {
     return this.convert(f, base);
   }
 
+  /**
+   * Compares the two operands for equality.
+   *
+   * @param other - Value to compare against.
+   * @returns Whether the operands are equal.
+   * @see SymPy `sympy.polys.agca.extensions.MonogenicFiniteExtension.__eq__`
+   */
   equals(other: unknown): boolean {
     return other instanceof FiniteExtension && other.modulus.equals(this.modulus) && other.modulus.domain === this.modulus.domain;
   }
 
+  /**
+   * Formats the value as text.
+   *
+   * @returns The printable representation.
+   * @see SymPy `sympy.polys.agca.extensions.MonogenicFiniteExtension.__str__`
+   */
   toString(): string {
     return `${String(this.ring)}/(${str(this.modulus.asExpr())})`;
   }
 
-  /** SymPy has_CharacteristicZero. */
+  /**
+   * Checks the characteristic of the coefficient ring.
+   *
+   * @returns Whether the characteristic is zero.
+   * @see SymPy `sympy.polys.agca.extensions.MonogenicFiniteExtension.has_CharacteristicZero`
+   */
   get hasCharacteristicZero(): boolean {
     return this.characteristic() === 0n;
   }
 
-  /** SymPy characteristic(). */
+  /**
+   * Computes the characteristic inherited from the coefficient domain.
+   *
+   * @returns The characteristic of the coefficient domain.
+   * @see SymPy `sympy.polys.agca.extensions.MonogenicFiniteExtension.characteristic`
+   */
   characteristic(): bigint {
     const m = /^GF\((\d+)\)$/.exec(this.modulus.domain);
     return m ? BigInt(at(m, 1)) : 0n;
   }
 
-  /** SymPy to_sympy(f). */
+  /**
+   * Expresses the value using symbolic expression nodes.
+   *
+   * @param f - Element to convert or divide.
+   * @returns The corresponding symbolic expression.
+   * @see SymPy `sympy.polys.agca.extensions.MonogenicFiniteExtension.to_sympy`
+   */
   toSympy(f: unknown): Expr {
     return cast(f, ExtensionElement, 'extension element').rep.asExpr();
   }
 
-  /** SymPy from_sympy(f). */
+  /**
+   * Interprets a symbolic expression in this domain.
+   *
+   * @param f - Element to convert or divide.
+   * @returns The expression converted into the domain.
+   * @see SymPy `sympy.polys.agca.extensions.MonogenicFiniteExtension.from_sympy`
+   */
   fromSympy(f: ExprLike): Expr {
     return this.toSympy(this.convert(f));
   }
 
-  /** The same extension with canonical expression elements for DomainMatrix arithmetic. */
+  /**
+   * The same extension with canonical expression elements for DomainMatrix arithmetic.
+   *
+   * @returns The corresponding coefficient domain.
+   */
   toDomain(): Domain {
     return new ExtensionDomain(this);
   }
 
-  /** SymPy set_domain(K): the extension by the modulus over another domain. */
+  /**
+   * The extension by the modulus over another domain.
+   *
+   * @param K - Coefficient domain for the values.
+   * @returns The ring over the replacement domain.
+   * @see SymPy `sympy.polys.agca.extensions.MonogenicFiniteExtension.set_domain`
+   */
   setDomain(K: Domain | string): FiniteExtension {
     return new FiniteExtension(this.modulus.setDomain(K));
   }
 
-  /** SymPy drop(*symbols): the extension over the domain without the symbols. */
+  /**
+   * The extension over the domain without the symbols.
+   *
+   * @param symbols - Polynomial generators.
+   * @returns The extension with the specified symbols removed.
+   * @throws GeneratorsError when a requested symbol is the extension generator.
+   * @see SymPy `sympy.polys.agca.extensions.MonogenicFiniteExtension.drop`
+   */
   drop(...symbols: Expr[]): FiniteExtension {
     if (symbols.some((s) => s.key === this.symbol.key)) throw new GeneratorsError('Can not drop generator from FiniteExtension');
     const rest = this.domain.symbols.filter((s) => !symbols.some((t) => t.key === s.key));
@@ -285,8 +541,12 @@ export class FiniteExtension {
   }
 
   /**
-   * SymPy unify(K): order two extensions by their moduli for a deterministic
-   * tower, or unify the ground domain after dropping the extension generator.
+   * Order two extensions by their moduli for a deterministic tower, or unify the ground domain after
+   * dropping the extension generator.
+   *
+   * @param K - Coefficient domain for the values.
+   * @returns The unified extension.
+   * @see SymPy `sympy.polys.agca.extensions.MonogenicFiniteExtension.unify`
    */
   unify(K: Domain | FiniteExtension): FiniteExtension {
     const other = K instanceof ExtensionDomain ? K.extension : K;
@@ -298,22 +558,49 @@ export class FiniteExtension {
     return this.setDomain(this.domain.unify(other.drop(this.symbol)));
   }
 
-  /** SymPy quo(f, g) = exquo(f, g). */
+  /**
+   * Divides two elements in the coefficient domain.
+   *
+   * @param f - Dividend in the coefficient domain.
+   * @param g - Divisor.
+   * @returns The quotient.
+   * @see SymPy `sympy.polys.agca.extensions.MonogenicFiniteExtension.quo`
+   */
   quo(f: ExtensionElement, g: ExtensionElement): ExtensionElement {
     return this.exquo(f, g);
   }
 
-  /** SymPy exquo(f, g): the exact quotient of the representatives, reduced. */
+  /**
+   * Divides in the coefficient domain, requiring exact divisibility.
+   *
+   * @param f - Dividend in the coefficient domain.
+   * @param g - Divisor.
+   * @returns The exact quotient.
+   * @see SymPy `sympy.polys.agca.extensions.MonogenicFiniteExtension.exquo`
+   */
   exquo(f: ExtensionElement, g: ExtensionElement): ExtensionElement {
     return new ExtensionElement(f.rep.exquo(g.rep).rem(this.mod), this);
   }
 
-  /** SymPy is_negative(a): false. */
+  /**
+   * Treats extension elements as unordered for sign tests.
+   *
+   * @param _a - Element on which to operate.
+   * @returns Whether the value is negative in this domain.
+   * @see SymPy `sympy.polys.agca.extensions.MonogenicFiniteExtension.is_negative`
+   */
   isNegative(_a: ExtensionElement): boolean {
     return false;
   }
 
-  /** SymPy is_unit(a): a nonzero element of a field, or an invertible constant ('unknown' for other elements of a ring). */
+  /**
+   * Tests invertibility in the extension, using the coefficient domain for constant elements.
+   *
+   * @param a - Element on which to operate.
+   * @returns Whether the element is invertible, or `'unknown'` for a nonground element when the base
+   *   is not a field.
+   * @see SymPy `sympy.polys.agca.extensions.MonogenicFiniteExtension.is_unit`
+   */
   isUnit(a: ExtensionElement): boolean | 'unknown' {
     if (this.isField) return !a.isZero;
     // SymPy returns None for a non-constant element (x + 1 is a unit of ZZ[x]/(x**2 - 2))

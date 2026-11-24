@@ -33,7 +33,22 @@ const sortedKeys = (m: ReadonlyMap<bigint, bigint>): bigint[] => [...m.keys()].s
 // multiplicity
 // ---------------------------------------------------------------------------
 
-/** The exponent of p in n! (SymPy multiplicity_in_factorial). */
+/**
+ * The exponent of p in n!.
+ *
+ * @param pIn - Integer factor greater than one.
+ * @param nIn - Nonnegative argument of the factorial.
+ * @returns The highest exponent dividing the factorial.
+ * @throws RangeError when the factor is at most one or the factorial argument is negative.
+ * @see SymPy `sympy.ntheory.factor_.multiplicity_in_factorial`
+ * @example
+ * ```ts
+ * import { multiplicityInFactorial } from '@symjs/symjs';
+ *
+ * multiplicityInFactorial(2, 3); // => 1
+ * multiplicityInFactorial(10, 25); // => 6
+ * ```
+ */
 export function multiplicityInFactorial(pIn: IntLike, nIn: IntLike): bigint {
   const p = asInt(pIn);
   const n = asInt(nIn);
@@ -52,9 +67,21 @@ export function multiplicityInFactorial(pIn: IntLike, nIn: IntLike): bigint {
 }
 
 /**
- * The greatest integer m such that p**m divides n (SymPy multiplicity);
- * also for Rationals (possibly negative) and for an unevaluated
- * factorial(k) as n.
+ * The greatest integer m such that p**m divides n; also for Rationals (possibly negative) and for
+ * an unevaluated factorial(k) as n.
+ *
+ * @param pIn - Factor whose multiplicity to measure.
+ * @param nIn - Number or unevaluated factorial to examine.
+ * @returns The exponent with which the factor divides the value.
+ * @throws RangeError when the multiplicity is undefined for the supplied values.
+ * @throws TypeError when the values cannot be interpreted as integers or rationals.
+ * @see SymPy `sympy.ntheory.factor_.multiplicity`
+ * @example
+ * ```ts
+ * import { ex, multiplicity } from '@symjs/symjs';
+ *
+ * multiplicity(3, ex`1/9`); // => -2
+ * ```
  */
 export function multiplicity(pIn: IntLike, nIn: IntLike): bigint {
   const pe = typeof pIn === 'bigint' || typeof pIn === 'number' ? Rational.of(asInt(pIn)) : sympify(pIn);
@@ -287,11 +314,35 @@ function perfectPowerBig(nIn: bigint, candidatesIn: readonly bigint[] | undefine
 }
 
 /**
- * [b, e] with b**e == n and e > 1 maximal (or, with `{ big: false }`, the
- * smallest prime e), or false (SymPy perfect_power); `candidates`
- * restricts the exponents. A non-integer Rational gives a Rational base.
+ * Determines whether a number is an exact power with an integer exponent greater than one.
+ *
+ * @remarks SymPy prints the base and exponent as tuples, `(2, 4)` and `(-2, 3)`.
+ * @param n - Number to decompose.
+ * @param candidates - Exponents to consider.
+ * @param opts - Exponent selection and trial-division settings.
+ * @returns The base and exponent, or `false` if no power qualifies.
+ * @throws TypeError when the expression cannot be interpreted as an integer or rational.
+ * @see SymPy `sympy.ntheory.factor_.perfect_power`
+ * @example
+ * ```ts
+ * import { perfectPower } from '@symjs/symjs';
+ *
+ * perfectPower(16); // => [2, 4]
+ * perfectPower(-8); // => [-2, 3]
+ * ```
  */
 export function perfectPower(n: bigint | number, candidates?: readonly (bigint | number)[], opts?: PerfectPowerOptions): [bigint, bigint] | false;
+/**
+ * Determines whether a number is an exact power with an integer exponent greater than one.
+ *
+ * @remarks SymPy prints the base and exponent as tuples, `(2, 4)` and `(-2, 3)`.
+ * @param n - Number to decompose.
+ * @param candidates - Exponents to consider.
+ * @param opts - Exponent selection and trial-division settings.
+ * @returns The base and exponent, or `false` if no power qualifies.
+ * @throws TypeError when the expression cannot be interpreted as an integer or rational.
+ * @see SymPy `sympy.ntheory.factor_.perfect_power`
+ */
 export function perfectPower(n: IntLike, candidates?: readonly (bigint | number)[], opts?: PerfectPowerOptions): [bigint | Rational, bigint] | false;
 export function perfectPower(nIn: IntLike, candidatesIn?: readonly (bigint | number)[], opts: PerfectPowerOptions = {}): [bigint | Rational, bigint] | false {
   const big = opts.big ?? true;
@@ -349,7 +400,7 @@ export function perfectPower(nIn: IntLike, candidatesIn?: readonly (bigint | num
 // Pollard's rho and p-1
 // ---------------------------------------------------------------------------
 
-/** Options of pollardRho. */
+/** Configures the iteration and restarts used in Pollard’s rho factor search. */
 export interface PollardRhoOptions {
   /** The initial value (default 2). */
   s?: bigint | number;
@@ -366,9 +417,19 @@ export interface PollardRhoOptions {
 }
 
 /**
- * A nontrivial factor of n by Pollard's rho method, or Unsolved when the
- * method fails (SymPy pollard_rho); retries use Python's Mersenne Twister
- * with SymPy's seeds.
+ * Searches for a nontrivial factor by Pollard’s rho method.
+ *
+ * @param nIn - Composite integer to split.
+ * @param opts - Parameters and retry limits for the factor search.
+ * @returns A nontrivial divisor, or `Unsolved` if the attempts fail.
+ * @throws RangeError when the integer is less than five.
+ * @see SymPy `sympy.ntheory.factor_.pollard_rho`
+ * @example
+ * ```ts
+ * import { pollardRho } from '@symjs/symjs';
+ *
+ * pollardRho(16843009, { a: 16843007, retries: 1 }); // => 257
+ * ```
  */
 export function pollardRho(nIn: IntLike, opts: PollardRhoOptions = {}): bigint | UnsolvedResult {
   const n = truncInt(nIn);
@@ -404,7 +465,7 @@ export function pollardRho(nIn: IntLike, opts: PollardRhoOptions = {}): bigint |
   return Unsolved;
 }
 
-/** Options of pollardPm1. */
+/** Configures the smoothness bound, starting base and restarts for Pollard’s p − 1 method. */
 export interface PollardPm1Options {
   /** The smoothness bound (default 10). */
   B?: bigint | number;
@@ -417,8 +478,20 @@ export interface PollardPm1Options {
 }
 
 /**
- * A nontrivial factor of n by Pollard's p-1 method with smoothness bound
- * B, or Unsolved when the method fails (SymPy pollard_pm1).
+ * A nontrivial factor of n by Pollard's p-1 method with smoothness bound B, or Unsolved when the
+ * method fails.
+ *
+ * @param nIn - Composite integer to split.
+ * @param opts - Parameters and retry limits for the factor search.
+ * @returns A nontrivial divisor, or `Unsolved` if the attempts fail.
+ * @throws RangeError when the integer is less than four or the smoothness bound is less than three.
+ * @see SymPy `sympy.ntheory.factor_.pollard_pm1`
+ * @example
+ * ```ts
+ * import { pollardPm1 } from '@symjs/symjs';
+ *
+ * pollardPm1(257 * 1009, { B: 16, a: 3 }); // => 1009
+ * ```
  */
 export function pollardPm1(nIn: IntLike, opts: PollardPm1Options = {}): bigint | UnsolvedResult {
   const n = truncInt(nIn);
@@ -444,24 +517,66 @@ export function pollardPm1(nIn: IntLike, opts: PollardPm1Options = {}): bigint |
 // elliptic curve method (SymPy sympy.ntheory.ecm._ecm_one_factor)
 // ---------------------------------------------------------------------------
 
-/** A projective Montgomery-curve point (SymPy ntheory.ecm.ECMPoint). */
+/**
+ * A projective Montgomery-curve point.
+ *
+ * @see SymPy `sympy.ntheory.ecm.Point`
+ */
 export class ECMPoint {
+  /**
+   * Creates a projective Montgomery point modulo the integer being factored.
+   *
+   * @param x - Projective x-coordinate.
+   * @param z - Projective z-coordinate.
+   * @param a24 - Montgomery coefficient used for doubling.
+   * @param mod - Modulus used for the arithmetic.
+   */
   constructor(
+    /** The projective X-coordinate. */
     readonly x: bigint,
+    /** The projective Z-coordinate. */
     readonly z: bigint,
+    /**
+     * The Montgomery doubling coefficient.
+     *
+     * @see SymPy `sympy.ntheory.ecm.Point.a_24`
+     */
     readonly a24: bigint,
+    /**
+     * Computes the remainder on division by the supplied divisor.
+     *
+     * @see SymPy `sympy.ntheory.ecm.Point.mod`
+     */
     readonly mod: bigint,
   ) {}
 
-  /** SymPy x_cord: the projective X coordinate. */
+  /**
+   * The projective X coordinate.
+   *
+   * @returns The projective X-coordinate.
+   * @see SymPy `sympy.ntheory.ecm.Point.x_cord`
+   */
   get xCord(): bigint {
     return this.x;
   }
-  /** SymPy z_cord: the projective Z coordinate. */
+  /**
+   * The projective Z coordinate.
+   *
+   * @returns The projective Z-coordinate.
+   * @see SymPy `sympy.ntheory.ecm.Point.z_cord`
+   */
   get zCord(): bigint {
     return this.z;
   }
 
+  /**
+   * Adds the other operand to this value.
+   *
+   * @param Q - Addend.
+   * @param diff - Difference of the two points.
+   * @returns The sum of the operands.
+   * @see SymPy `sympy.ntheory.ecm.Point.add`
+   */
   add(Q: ECMPoint, diff: ECMPoint): ECMPoint {
     const u = (this.x - this.z) * (Q.x + Q.z);
     const v = (this.x + this.z) * (Q.x - Q.z);
@@ -470,6 +585,12 @@ export class ECMPoint {
     return new ECMPoint(pmod(diff.z * ad * ad, this.mod), pmod(diff.x * sb * sb, this.mod), this.a24, this.mod);
   }
 
+  /**
+   * Uses Montgomery doubling to compute the sum of the point with itself.
+   *
+   * @returns Twice the point under the curve group law.
+   * @see SymPy `sympy.ntheory.ecm.Point.double`
+   */
   double(): ECMPoint {
     const u = powmod(this.x + this.z, 2n, this.mod);
     const v = powmod(this.x - this.z, 2n, this.mod);
@@ -477,6 +598,14 @@ export class ECMPoint {
     return new ECMPoint(pmod(u * v, this.mod), pmod(diff * (v + this.a24 * diff), this.mod), this.a24, this.mod);
   }
 
+  /**
+   * Multiplies a Montgomery point by a positive integer using differential addition and doubling.
+   *
+   * @param k - Positive scalar multiplier.
+   * @returns The scalar multiple of the point.
+   * @throws RangeError when the multiplier is not positive.
+   * @see SymPy `sympy.ntheory.ecm.Point.mont_ladder`
+   */
   montLadder(k: bigint): ECMPoint {
     if (k < 1n) throw new RangeError('Multiplier must be a positive integer');
     let Q: ECMPoint = this;
@@ -634,7 +763,7 @@ export function factorintSmall(factors: Map<bigint, bigint>, nIn: bigint, limit:
   return done(n, nextP);
 }
 
-/** Options of factorint (SymPy keyword arguments; verbose is not supported). */
+/** Selects factorization methods, search limits and the form of the result. */
 export interface FactorintOptions {
   /** Trial division only up to this bound (composite factors may remain). */
   limit?: bigint | number;
@@ -898,7 +1027,7 @@ function mulPowers(m: Mul): Map<bigint, bigint> {
  * unevaluated product or an unevaluated `factorial(k)`, which are factored
  * further.
  *
- * @param nIn - The integer.
+ * @param n - The integer to factor.
  * @param opts - `limit` bounds the trial division (the result may then hold
  *   composite factors); `useTrial`, `useRho`, `usePm1` and `useEcm` select the
  *   methods; `multiple` gives the list of the factors; `visual` gives an
@@ -918,10 +1047,50 @@ function mulPowers(m: Mul): Map<bigint, bigint> {
  * ```
  */
 export function factorint(n: bigint | number, opts: FactorintOptions & { multiple: true }): bigint[];
+/**
+ * Factors the integer or factor map using the requested output format.
+ *
+ * @param n - Integer, rational or factor map to factor.
+ * @param opts - Factorization methods and output format.
+ * @returns A list of factors with multiplicity.
+ * @see SymPy `sympy.ntheory.factor_.factorint`
+ */
 export function factorint(n: IntLike | ReadonlyMap<bigint | number, bigint | number>, opts: FactorintOptions & { multiple: true }): (bigint | Rational)[];
+/**
+ * Factors the integer or factor map using the requested output format.
+ *
+ * @param n - Integer, rational or factor map to factor.
+ * @param opts - Factorization methods and output format.
+ * @returns An unevaluated product.
+ * @see SymPy `sympy.ntheory.factor_.factorint`
+ */
 export function factorint(n: IntLike | ReadonlyMap<bigint | number, bigint | number>, opts: FactorintOptions & { visual: true }): Expr;
+/**
+ * Factors the integer or factor map using the requested output format.
+ *
+ * @param n - Integer, rational or factor map to factor.
+ * @param opts - Factorization methods and output format.
+ * @returns A map from prime factors to exponents.
+ * @see SymPy `sympy.ntheory.factor_.factorint`
+ */
 export function factorint(n: ReadonlyMap<bigint | number, bigint | number>, opts: FactorintOptions & { visual: false }): Map<bigint, bigint>;
+/**
+ * Factors the integer or factor map using the requested output format.
+ *
+ * @param n - Integer, rational or factor map to factor.
+ * @param opts - Factorization methods and output format.
+ * @returns An unevaluated product.
+ * @see SymPy `sympy.ntheory.factor_.factorint`
+ */
 export function factorint(n: ReadonlyMap<bigint | number, bigint | number>, opts?: FactorintOptions): Expr;
+/**
+ * Factors the integer or factor map using the requested output format.
+ *
+ * @param n - Integer, rational or factor map to factor.
+ * @param opts - Factorization methods and output format.
+ * @returns A map from prime factors to exponents.
+ * @see SymPy `sympy.ntheory.factor_.factorint`
+ */
 export function factorint(n: IntLike, opts?: FactorintOptions): Map<bigint, bigint>;
 export function factorint(nIn: IntLike | ReadonlyMap<bigint | number, bigint | number>, opts: FactorintOptions = {}): Map<bigint, bigint> | Expr | (bigint | Rational)[] {
   const o = optsOf(opts);
@@ -965,12 +1134,44 @@ export function factorint(nIn: IntLike | ReadonlyMap<bigint | number, bigint | n
 }
 
 /**
- * The factorization of a Rational as a Map prime -> exponent (negative for
- * the denominator) (SymPy factorrat); `visual` and `multiple` as in
- * factorint.
+ * The factorization of a Rational as a Map prime -> exponent (negative for the denominator);
+ * `visual` and `multiple` as in factorint.
+ *
+ * @param rat - Rational number to factor.
+ * @param opts - Factorization methods and output format.
+ * @returns A list of prime factors and reciprocals with multiplicity.
+ * @throws TypeError when the value is not rational.
+ * @see SymPy `sympy.ntheory.factor_.factorrat`
+ * @example
+ * ```ts
+ * import { ex, factorrat } from '@symjs/symjs';
+ *
+ * factorrat(ex`8/9`); // => {2: 3, 3: -2}
+ * factorrat(ex`-1/987`); // => {-1: 1, 3: -1, 7: -1, 47: -1}
+ * ```
  */
 export function factorrat(rat: IntLike, opts: FactorintOptions & { multiple: true }): (bigint | Rational)[];
+/**
+ * The factorization of a Rational as a Map prime -> exponent (negative for the denominator);
+ * `visual` and `multiple` as in factorint.
+ *
+ * @param rat - Rational number to factor.
+ * @param opts - Factorization methods and output format.
+ * @returns An unevaluated product of prime powers.
+ * @throws TypeError when the value is not rational.
+ * @see SymPy `sympy.ntheory.factor_.factorrat`
+ */
 export function factorrat(rat: IntLike, opts: FactorintOptions & { visual: true }): Expr;
+/**
+ * The factorization of a Rational as a Map prime -> exponent (negative for the denominator);
+ * `visual` and `multiple` as in factorint.
+ *
+ * @param rat - Rational number to factor.
+ * @param opts - Factorization methods and output format.
+ * @returns A map from primes to signed exponents.
+ * @throws TypeError when the value is not rational.
+ * @see SymPy `sympy.ntheory.factor_.factorrat`
+ */
 export function factorrat(rat: IntLike, opts?: FactorintOptions): Map<bigint, bigint>;
 export function factorrat(ratIn: IntLike, opts: FactorintOptions = {}): Map<bigint, bigint> | Expr | (bigint | Rational)[] {
   const r = typeof ratIn === 'bigint' || typeof ratIn === 'number' ? Rational.of(asInt(ratIn)) : sympify(ratIn);
@@ -991,7 +1192,21 @@ export function factorrat(ratIn: IntLike, opts: FactorintOptions = {}): Map<bigi
   return visualOf(f);
 }
 
-/** The sorted prime factors of n, without multiplicity (SymPy primefactors). */
+/**
+ * Lists distinct prime factors in ascending order.
+ *
+ * @param nIn - Integer to factor.
+ * @param opts - Use `limit` to bound the factor search.
+ * @returns The distinct known prime divisors in ascending order.
+ * @see SymPy `sympy.ntheory.factor_.primefactors`
+ * @example
+ * ```ts
+ * import { primefactors } from '@symjs/symjs';
+ *
+ * primefactors(6); // => [2, 3]
+ * primefactors(-5); // => [5]
+ * ```
+ */
 export function primefactors(nIn: IntLike, opts: { limit?: bigint | number } = {}): bigint[] {
   const n = truncInt(nIn);
   const factors = sortedKeys(factorintInt(n, { limit: opts.limit === undefined ? undefined : truncInt(opts.limit) }));
@@ -1027,26 +1242,79 @@ function* divisorsGen(n: bigint, proper: boolean): Generator<bigint, void, undef
 }
 
 /**
- * The divisors of n in increasing order (SymPy divisors); with
- * `{ generator: true }`, a generator in SymPy's (unsorted) order.
+ * Enumerates positive divisors in ascending order, or in factorization order as an iterator.
+ *
+ * @param n - Integer whose divisors to enumerate.
+ * @param opts - Set `generator` to iterate and `proper` to exclude the number itself.
+ * @returns An iterator over the divisors.
+ * @see SymPy `sympy.ntheory.factor_.divisors`
+ * @example
+ * ```ts
+ * import { divisors } from '@symjs/symjs';
+ *
+ * divisors(24); // => [1, 2, 3, 4, 6, 8, 12, 24]
+ * [...divisors(120, { generator: true })]; // => [1, 2, 4, 8, 3, 6, 12, 24, 5, 10, 20, 40, 15, 30, 60, 120]
+ * ```
  */
 export function divisors(n: IntLike, opts: { generator: true; proper?: boolean }): Generator<bigint, void, undefined>;
+/**
+ * Enumerates positive divisors in ascending order, or in factorization order as an iterator.
+ *
+ * @param n - Integer whose divisors to enumerate.
+ * @param opts - Set `generator` to iterate and `proper` to exclude the number itself.
+ * @returns The divisors in ascending order.
+ * @see SymPy `sympy.ntheory.factor_.divisors`
+ */
 export function divisors(n: IntLike, opts?: { generator?: false; proper?: boolean }): bigint[];
 export function divisors(nIn: IntLike, opts: { generator?: boolean; proper?: boolean } = {}): bigint[] | Generator<bigint, void, undefined> {
   const rv = divisorsGen(babs(asInt(nIn)), opts.proper ?? false);
   return opts.generator === true ? rv : [...rv].sort(cmpBig);
 }
 
-/** The divisors of n other than n (SymPy proper_divisors). */
+/**
+ * The divisors of n other than n.
+ *
+ * @param n - Integer whose divisors to examine.
+ * @param opts - Set `generator` to iterate over the results.
+ * @returns An iterator over the proper divisors.
+ * @see SymPy `sympy.ntheory.factor_.proper_divisors`
+ * @example
+ * ```ts
+ * import { properDivisors } from '@symjs/symjs';
+ *
+ * properDivisors(24); // => [1, 2, 3, 4, 6, 8, 12]
+ * [...properDivisors(120, { generator: true })]; // => [1, 2, 4, 8, 3, 6, 12, 24, 5, 10, 20, 40, 15, 30, 60]
+ * ```
+ */
 export function properDivisors(n: IntLike, opts: { generator: true }): Generator<bigint, void, undefined>;
+/**
+ * The divisors of n other than n.
+ *
+ * @param n - Integer whose divisors to examine.
+ * @param opts - Set `generator` to iterate over the results.
+ * @returns The proper divisors in ascending order.
+ * @see SymPy `sympy.ntheory.factor_.proper_divisors`
+ */
 export function properDivisors(n: IntLike, opts?: { generator?: false }): bigint[];
 export function properDivisors(n: IntLike, opts: { generator?: boolean } = {}): bigint[] | Generator<bigint, void, undefined> {
   return opts.generator === true ? divisors(n, { generator: true, proper: true }) : divisors(n, { proper: true });
 }
 
 /**
- * The number of divisors of n that are multiples of `modulus` (SymPy
- * divisor_count); `proper` excludes n.
+ * The number of divisors of n that are multiples of `modulus`; `proper` excludes n.
+ *
+ * @param nIn - Integer whose divisors to count.
+ * @param modulus - Only count multiples of this number.
+ * @param opts - Set `proper` to exclude the number itself.
+ * @returns The number of qualifying divisors.
+ * @see SymPy `sympy.ntheory.factor_.divisor_count`
+ * @example
+ * ```ts
+ * import { divisorCount } from '@symjs/symjs';
+ *
+ * divisorCount(6); // => 4
+ * divisorCount(6, 2); // => 2
+ * ```
  */
 export function divisorCount(nIn: IntLike, modulus: IntLike = 1, opts: { proper?: boolean } = {}): bigint {
   let n = asInt(nIn);
@@ -1064,12 +1332,41 @@ export function divisorCount(nIn: IntLike, modulus: IntLike = 1, opts: { proper?
   return c;
 }
 
-/** The number of proper divisors of n that are multiples of `modulus` (SymPy proper_divisor_count). */
+/**
+ * The number of proper divisors of n that are multiples of `modulus`.
+ *
+ * @param n - Integer whose proper divisors to count.
+ * @param modulus - Only count multiples of this number.
+ * @returns The number of qualifying proper divisors.
+ * @see SymPy `sympy.ntheory.factor_.proper_divisor_count`
+ * @example
+ * ```ts
+ * import { properDivisorCount } from '@symjs/symjs';
+ *
+ * properDivisorCount(6); // => 3
+ * properDivisorCount(6, 2); // => 1
+ * ```
+ */
 export function properDivisorCount(n: IntLike, modulus: IntLike = 1): bigint {
   return divisorCount(n, modulus, { proper: true });
 }
 
-/** The t-th-power-free part of a positive integer (SymPy core). */
+/**
+ * The t-th-power-free part of a positive integer.
+ *
+ * @param nIn - Positive integer to decompose.
+ * @param tIn - Degree of the powers to remove.
+ * @returns The factor left after removing all complete powers of the given degree.
+ * @throws RangeError when the integer is not positive or the degree is less than two.
+ * @see SymPy `sympy.ntheory.factor_.core`
+ * @example
+ * ```ts
+ * import { core } from '@symjs/symjs';
+ *
+ * core(24, 2); // => 6
+ * core(9424, 3); // => 1178
+ * ```
+ */
 export function core(nIn: IntLike, tIn: IntLike = 2): bigint {
   const n = asInt(nIn), t = asInt(tIn);
   if (n <= 0n || t < 2n) throw new RangeError('core requires n > 0 and t >= 2');
@@ -1085,15 +1382,48 @@ function* unitaryDivisors(n: bigint): Generator<bigint, void, undefined> {
   yield* values;
 }
 
-/** Divisors d with gcd(d, n/d) = 1 (SymPy udivisors). */
+/**
+ * Enumerates divisors that are coprime to their complementary divisors.
+ *
+ * @param n - Integer whose divisors to examine.
+ * @param opts - Set `generator` to iterate over the results.
+ * @returns An iterator over the unitary divisors.
+ * @see SymPy `sympy.ntheory.factor_.udivisors`
+ * @example
+ * ```ts
+ * import { udivisors } from '@symjs/symjs';
+ *
+ * udivisors(15); // => [1, 3, 5, 15]
+ * ```
+ */
 export function udivisors(n: IntLike, opts: { generator: true }): Generator<bigint, void, undefined>;
+/**
+ * Enumerates divisors that are coprime to their complementary divisors.
+ *
+ * @param n - Integer whose divisors to examine.
+ * @param opts - Set `generator` to iterate over the results.
+ * @returns The unitary divisors in ascending order.
+ * @see SymPy `sympy.ntheory.factor_.udivisors`
+ */
 export function udivisors(n: IntLike, opts?: { generator?: false }): bigint[];
 export function udivisors(n: IntLike, opts: { generator?: boolean } = {}): bigint[] | Generator<bigint, void, undefined> {
   const result = unitaryDivisors(babs(asInt(n)));
   return opts.generator === true ? result : [...result].sort(cmpBig);
 }
 
-/** Number of unitary divisors (SymPy udivisor_count). */
+/**
+ * Counts divisors that are coprime to their complementary divisors.
+ *
+ * @param nIn - Integer whose unitary divisors to count.
+ * @returns The number of unitary divisors.
+ * @see SymPy `sympy.ntheory.factor_.udivisor_count`
+ * @example
+ * ```ts
+ * import { udivisorCount } from '@symjs/symjs';
+ *
+ * udivisorCount(120); // => 8
+ * ```
+ */
 export function udivisorCount(nIn: IntLike): bigint {
   const n = babs(asInt(nIn));
   return n === 0n ? 0n : 2n ** BigInt(factorintInt(n, {}).size);
@@ -1110,15 +1440,49 @@ function* antidivisorsGen(n: bigint): Generator<bigint, void, undefined> {
   }
 }
 
-/** Integers that fail to divide n by the largest possible margin. */
+/**
+ * Enumerates the integers that miss dividing the given number by the largest possible margin.
+ *
+ * @param n - Integer whose divisors to examine.
+ * @param opts - Set `generator` to iterate over the results.
+ * @returns An iterator over the antidivisors.
+ * @see SymPy `sympy.ntheory.factor_.antidivisors`
+ * @example
+ * ```ts
+ * import { antidivisors } from '@symjs/symjs';
+ *
+ * antidivisors(24); // => [7, 16]
+ * ```
+ */
 export function antidivisors(n: IntLike, opts: { generator: true }): Generator<bigint, void, undefined>;
+/**
+ * Enumerates the integers that miss dividing the given number by the largest possible margin.
+ *
+ * @param n - Integer whose divisors to examine.
+ * @param opts - Set `generator` to iterate over the results.
+ * @returns The antidivisors in ascending order.
+ * @see SymPy `sympy.ntheory.factor_.antidivisors`
+ */
 export function antidivisors(n: IntLike, opts?: { generator?: false }): bigint[];
 export function antidivisors(n: IntLike, opts: { generator?: boolean } = {}): bigint[] | Generator<bigint, void, undefined> {
   const result = antidivisorsGen(babs(asInt(n)));
   return opts.generator === true ? result : [...result].sort(cmpBig);
 }
 
-/** Number of antidivisors (SymPy antidivisor_count). */
+/**
+ * Counts the antidivisors of an integer.
+ *
+ * @param nIn - Integer whose antidivisors to count.
+ * @returns The number of antidivisors.
+ * @see SymPy `sympy.ntheory.factor_.antidivisor_count`
+ * @example
+ * ```ts
+ * import { antidivisorCount } from '@symjs/symjs';
+ *
+ * antidivisorCount(13); // => 4
+ * antidivisorCount(27); // => 5
+ * ```
+ */
 export function antidivisorCount(nIn: IntLike): bigint {
   const n = babs(asInt(nIn));
   return n <= 2n ? 0n : divisorCount(2n * n - 1n) + divisorCount(2n * n + 1n) + divisorCount(n) - divisorCount(n, 2) - 5n;
@@ -1131,7 +1495,21 @@ export function divisorSigmaInt(n: bigint): bigint {
   return r;
 }
 
-/** (largest prime factor, largest prime power factor) of n (SymPy smoothness). */
+/**
+ * Finds the largest prime and largest prime power dividing an integer.
+ *
+ * @remarks SymPy prints the two bounds as tuples, `(3, 128)` and `(13, 16)`.
+ * @param nIn - Integer to factor.
+ * @returns The largest prime factor and largest prime-power factor.
+ * @see SymPy `sympy.ntheory.factor_.smoothness`
+ * @example
+ * ```ts
+ * import { smoothness } from '@symjs/symjs';
+ *
+ * smoothness(1152); // => [3, 128]
+ * smoothness(208); // => [13, 16]
+ * ```
+ */
 export function smoothness(nIn: IntLike): [bigint, bigint] {
   const n = asInt(nIn);
   if (n === 1n) return [1n, 1n];
@@ -1149,16 +1527,82 @@ type SmoothnessResult = [bigint, [bigint, [bigint, bigint, bigint]][]];
 type SmoothnessInput = IntLike | string | ReadonlyMap<bigint | number, bigint | number> | SmoothnessResult;
 type SmoothnessOptions = { m?: bigint | number; power?: boolean; visual?: boolean };
 /**
- * The smoothness of p + m for the prime factors p of n (SymPy
- * smoothness_p): [m, [[p, [exponent, B, B-pow]], ...]] sorted by B (by
- * B-pow with `power`), or with `visual: true` the descriptive text.
- * Factor maps and result tuples default to text; text defaults to a factor map.
+ * Computes the smoothness and power smoothness of each shifted prime factor.
+ *
+ * @remarks SymPy prints the example as `(-1, [(3, (2, 2, 2)), (19, (1, 3, 9)), (61, (1, 5, 5))])`.
+ * @param n - Integer, factorization or smoothness description.
+ * @param opts - Set `m` for the shift, `power` to sort by prime-power smoothness and `visual` to
+ *   select text output.
+ * @returns Smoothness data for the shifted prime factors in the requested format.
+ * @throws RangeError when the text is not a smoothness description.
+ * @see SymPy `sympy.ntheory.factor_.smoothness_p`
+ * @example
+ * ```ts
+ * import { smoothnessP } from '@symjs/symjs';
+ *
+ * smoothnessP(10431); // => [-1, [[3, [2, 2, 2]], [19, [1, 3, 9]], [61, [1, 5, 5]]]]
+ * ```
  */
 export function smoothnessP(n: SmoothnessInput, opts: SmoothnessOptions & { visual: false }): SmoothnessResult;
+/**
+ * Computes the smoothness and power smoothness of each shifted prime factor.
+ *
+ * @remarks SymPy prints the example as `(-1, [(3, (2, 2, 2)), (19, (1, 3, 9)), (61, (1, 5, 5))])`.
+ * @param n - Integer, factorization or smoothness description.
+ * @param opts - Set `m` for the shift, `power` to sort by prime-power smoothness and `visual` to
+ *   select text output.
+ * @returns Smoothness data for the shifted prime factors in the requested format.
+ * @throws RangeError when the text is not a smoothness description.
+ * @see SymPy `sympy.ntheory.factor_.smoothness_p`
+ */
 export function smoothnessP(n: SmoothnessInput, opts: SmoothnessOptions & { visual: true }): string;
+/**
+ * Computes the smoothness and power smoothness of each shifted prime factor.
+ *
+ * @remarks SymPy prints the example as `(-1, [(3, (2, 2, 2)), (19, (1, 3, 9)), (61, (1, 5, 5))])`.
+ * @param n - Integer, factorization or smoothness description.
+ * @param opts - Set `m` for the shift, `power` to sort by prime-power smoothness and `visual` to
+ *   select text output.
+ * @returns Smoothness data for the shifted prime factors in the requested format.
+ * @throws RangeError when the text is not a smoothness description.
+ * @see SymPy `sympy.ntheory.factor_.smoothness_p`
+ */
 export function smoothnessP(n: ReadonlyMap<bigint | number, bigint | number> | SmoothnessResult, opts?: SmoothnessOptions & { visual?: undefined }): string;
+/**
+ * Computes the smoothness and power smoothness of each shifted prime factor.
+ *
+ * @remarks SymPy prints the example as `(-1, [(3, (2, 2, 2)), (19, (1, 3, 9)), (61, (1, 5, 5))])`.
+ * @param n - Integer, factorization or smoothness description.
+ * @param opts - Set `m` for the shift, `power` to sort by prime-power smoothness and `visual` to
+ *   select text output.
+ * @returns Smoothness data for the shifted prime factors in the requested format.
+ * @throws RangeError when the text is not a smoothness description.
+ * @see SymPy `sympy.ntheory.factor_.smoothness_p`
+ */
 export function smoothnessP(n: string, opts?: SmoothnessOptions & { visual?: undefined }): Map<bigint, bigint>;
+/**
+ * Computes the smoothness and power smoothness of each shifted prime factor.
+ *
+ * @remarks SymPy prints the example as `(-1, [(3, (2, 2, 2)), (19, (1, 3, 9)), (61, (1, 5, 5))])`.
+ * @param n - Integer, factorization or smoothness description.
+ * @param opts - Set `m` for the shift, `power` to sort by prime-power smoothness and `visual` to
+ *   select text output.
+ * @returns Smoothness data for the shifted prime factors in the requested format.
+ * @throws RangeError when the text is not a smoothness description.
+ * @see SymPy `sympy.ntheory.factor_.smoothness_p`
+ */
 export function smoothnessP(n: IntLike, opts?: SmoothnessOptions & { visual?: false }): SmoothnessResult;
+/**
+ * Computes the smoothness and power smoothness of each shifted prime factor.
+ *
+ * @remarks SymPy prints the example as `(-1, [(3, (2, 2, 2)), (19, (1, 3, 9)), (61, (1, 5, 5))])`.
+ * @param n - Integer, factorization or smoothness description.
+ * @param opts - Set `m` for the shift, `power` to sort by prime-power smoothness and `visual` to
+ *   select text output.
+ * @returns Smoothness data for the shifted prime factors in the requested format.
+ * @throws RangeError when the text is not a smoothness description.
+ * @see SymPy `sympy.ntheory.factor_.smoothness_p`
+ */
 export function smoothnessP(n: SmoothnessInput, opts: SmoothnessOptions): SmoothnessResult | string | Map<bigint, bigint>;
 export function smoothnessP(nIn: SmoothnessInput, opts: SmoothnessOptions = {}): SmoothnessResult | string | Map<bigint, bigint> {
   const m = BigInt(opts.m ?? -1);
@@ -1196,7 +1640,21 @@ export function smoothnessP(nIn: SmoothnessInput, opts: SmoothnessOptions = {}):
 // perfect, abundant, deficient, amicable numbers; digital roots
 // ---------------------------------------------------------------------------
 
-/** The nth Mersenne prime exponent (SymPy mersenne_prime_exponent). */
+/**
+ * The nth Mersenne prime exponent.
+ *
+ * @param nth - One-based index among known Mersenne primes.
+ * @returns The exponent of the indexed Mersenne prime.
+ * @throws RangeError when the index is outside the supported table.
+ * @see SymPy `sympy.ntheory.factor_.mersenne_prime_exponent`
+ * @example
+ * ```ts
+ * import { mersennePrimeExponent } from '@symjs/symjs';
+ *
+ * mersennePrimeExponent(1); // => 2
+ * mersennePrimeExponent(20); // => 4423
+ * ```
+ */
 export function mersennePrimeExponent(nth: IntLike): bigint {
   const n = asInt(nth);
   if (n < 1n) throw new RangeError('nth must be a positive integer; mersenne_prime_exponent(1) == 2');
@@ -1204,13 +1662,39 @@ export function mersennePrimeExponent(nth: IntLike): bigint {
   return BigInt(at(MERSENNE_PRIME_EXPONENTS, Number(n) - 1));
 }
 
-/** sigma(n) - 2n (SymPy abundance). */
+/**
+ * Computes the excess of the sum of proper divisors over the integer.
+ *
+ * @param nIn - Integer whose divisors to sum.
+ * @returns The sum of the proper divisors minus the number itself.
+ * @see SymPy `sympy.ntheory.factor_.abundance`
+ * @example
+ * ```ts
+ * import { abundance } from '@symjs/symjs';
+ *
+ * abundance(6); // => 0
+ * abundance(10); // => -2
+ * ```
+ */
 export function abundance(nIn: IntLike): bigint {
   const n = asInt(nIn);
   return divisorSigmaInt(n) - 2n * n;
 }
 
-/** n is a perfect number (SymPy is_perfect). */
+/**
+ * Tests whether an integer equals the sum of its proper divisors.
+ *
+ * @param nIn - Integer to classify.
+ * @returns Whether the proper divisors sum to the integer.
+ * @see SymPy `sympy.ntheory.factor_.is_perfect`
+ * @example
+ * ```ts
+ * import { isPerfect } from '@symjs/symjs';
+ *
+ * isPerfect(20); // => False
+ * isPerfect(6); // => True
+ * ```
+ */
 export function isPerfect(nIn: IntLike): boolean {
   const n = asInt(nIn);
   if (n < 1n) return false;
@@ -1233,21 +1717,60 @@ export function isPerfect(nIn: IntLike): boolean {
   return abundance(n) === 0n;
 }
 
-/** n is an abundant number (SymPy is_abundant). */
+/**
+ * Tests whether the sum of the proper divisors exceeds the integer.
+ *
+ * @param nIn - Integer to classify.
+ * @returns Whether the proper divisors sum to more than the integer.
+ * @see SymPy `sympy.ntheory.factor_.is_abundant`
+ * @example
+ * ```ts
+ * import { isAbundant } from '@symjs/symjs';
+ *
+ * isAbundant(20); // => True
+ * isAbundant(15); // => False
+ * ```
+ */
 export function isAbundant(nIn: IntLike): boolean {
   const n = asInt(nIn);
   if (isPerfect(n)) return false;
   return n % 6n === 0n || abundance(n) > 0n;
 }
 
-/** n is a deficient number (SymPy is_deficient). */
+/**
+ * Tests whether the sum of the proper divisors falls short of the integer.
+ *
+ * @param nIn - Integer to classify.
+ * @returns Whether the proper divisors sum to less than the integer.
+ * @see SymPy `sympy.ntheory.factor_.is_deficient`
+ * @example
+ * ```ts
+ * import { isDeficient } from '@symjs/symjs';
+ *
+ * isDeficient(20); // => False
+ * isDeficient(15); // => True
+ * ```
+ */
 export function isDeficient(nIn: IntLike): boolean {
   const n = asInt(nIn);
   if (isPerfect(n)) return false;
   return abundance(n) < 0n;
 }
 
-/** m and n are an amicable pair (SymPy is_amicable). */
+/**
+ * Tests whether two numbers form an amicable pair.
+ *
+ * @param mIn - First integer of the pair.
+ * @param nIn - Second integer of the pair.
+ * @returns Whether each integer is the sum of the other’s proper divisors.
+ * @see SymPy `sympy.ntheory.factor_.is_amicable`
+ * @example
+ * ```ts
+ * import { isAmicable } from '@symjs/symjs';
+ *
+ * isAmicable(220, 284); // => True
+ * ```
+ */
 export function isAmicable(mIn: IntLike, nIn: IntLike): boolean {
   const m = asInt(mIn);
   const n = asInt(nIn);
@@ -1256,7 +1779,21 @@ export function isAmicable(mIn: IntLike, nIn: IntLike): boolean {
   return m + n === sm && sm === divisorSigmaInt(n);
 }
 
-/** The digital root of n in base b (SymPy dra). */
+/**
+ * The digital root of n in base b.
+ *
+ * @param nIn - Integer whose digits to reduce.
+ * @param bIn - Radix in which to take the digits.
+ * @returns The final single digit in the specified base.
+ * @throws RangeError when the radix is less than two.
+ * @see SymPy `sympy.ntheory.factor_.dra`
+ * @example
+ * ```ts
+ * import { dra } from '@symjs/symjs';
+ *
+ * dra(3110, 12); // => 8
+ * ```
+ */
 export function dra(nIn: IntLike, bIn: IntLike): bigint {
   const num = babs(asInt(nIn));
   const b = asInt(bIn);
@@ -1265,7 +1802,22 @@ export function dra(nIn: IntLike, bIn: IntLike): bigint {
   return 1n + ((num - 1n) % (b - 1n));
 }
 
-/** The multiplicative digital root of n in base b (SymPy drm). */
+/**
+ * The multiplicative digital root of n in base b.
+ *
+ * @param nIn - Integer whose digits to reduce.
+ * @param bIn - Radix in which to take the digits.
+ * @returns The final single digit in the specified base.
+ * @throws RangeError when the radix is less than two.
+ * @see SymPy `sympy.ntheory.factor_.drm`
+ * @example
+ * ```ts
+ * import { drm } from '@symjs/symjs';
+ *
+ * drm(9876, 10); // => 0
+ * drm(49, 10); // => 8
+ * ```
+ */
 export function drm(nIn: IntLike, bIn: IntLike): bigint {
   let n = babs(asInt(nIn));
   const b = asInt(bIn);

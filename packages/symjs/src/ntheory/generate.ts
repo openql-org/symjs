@@ -75,7 +75,21 @@ export function primepiInt(nIn: IntLike): bigint {
   return BigInt(at(arr2, 1));
 }
 
-/** The nth prime, prime(1) = 2 (SymPy prime). */
+/**
+ * Selects a prime by its one-based index, starting with 2.
+ *
+ * @param nth - One-based position in the sequence.
+ * @returns The number at the requested index.
+ * @throws RangeError when the index is not positive.
+ * @see SymPy `sympy.ntheory.generate.prime`
+ * @example
+ * ```ts
+ * import { prime } from '@symjs/symjs';
+ *
+ * prime(10); // => 29
+ * prime(1); // => 2
+ * ```
+ */
 export function prime(nth: IntLike): bigint {
   const n = asInt(nth);
   if (n < 1n) throw new RangeError('nth must be a positive integer; prime(1) == 2');
@@ -95,7 +109,21 @@ export function prime(nth: IntLike): bigint {
   return nextprime(a - 1, n - primepiInt(a - 1));
 }
 
-/** The ith prime greater than n (SymPy nextprime). */
+/**
+ * The ith prime greater than n.
+ *
+ * @param nIn - Exclusive lower bound.
+ * @param ithIn - One-based index among primes above the bound.
+ * @returns The prime at the requested offset.
+ * @throws RangeError when the prime offset is not positive.
+ * @see SymPy `sympy.ntheory.generate.nextprime`
+ * @example
+ * ```ts
+ * import { nextprime } from '@symjs/symjs';
+ *
+ * nextprime(2, 2); // => 5
+ * ```
+ */
 export function nextprime(nIn: IntLike, ithIn: IntLike = 1): bigint {
   let n = truncInt(nIn);
   let i = asInt(ithIn);
@@ -141,7 +169,20 @@ export function nextprime(nIn: IntLike, ithIn: IntLike = 1): bigint {
   }
 }
 
-/** The largest prime smaller than n (SymPy prevprime). */
+/**
+ * The largest prime smaller than n.
+ *
+ * @param nIn - Exclusive upper bound.
+ * @returns The immediately preceding prime.
+ * @throws RangeError when there is no preceding prime.
+ * @see SymPy `sympy.ntheory.generate.prevprime`
+ * @example
+ * ```ts
+ * import { prevprime } from '@symjs/symjs';
+ *
+ * [10, 11, 12, 13, 14].map(n => prevprime(n)); // => [7, 7, 11, 11, 13]
+ * ```
+ */
 export function prevprime(nIn: IntLike): bigint {
   let n = asIntCeiling(nIn);
   if (n < 3n) throw new RangeError('no preceding primes');
@@ -165,8 +206,19 @@ export function prevprime(nIn: IntLike): bigint {
 }
 
 /**
- * All primes in [2, a) or [a, b) (SymPy primerange). Values beyond the
- * shared sieve are computed without extending it.
+ * All primes in [2, a) or [a, b). Values beyond the shared sieve are computed without extending it.
+ *
+ * @param aIn - Lower bound, or exclusive upper bound when given alone.
+ * @param bIn - Exclusive upper bound for the two-argument form.
+ * @returns A generator of primes in the half-open interval.
+ * @see SymPy `sympy.ntheory.generate.primerange`
+ * @example
+ * ```ts
+ * import { primerange } from '@symjs/symjs';
+ *
+ * [...primerange(19)]; // => [2, 3, 5, 7, 11, 13, 17]
+ * [...primerange(7, 19)]; // => [7, 11, 13, 17]
+ * ```
  */
 export function* primerange(aIn: IntLike, bIn?: IntLike): Generator<bigint, void, undefined> {
   let a: bigint;
@@ -203,8 +255,19 @@ export function* primerange(aIn: IntLike, bIn?: IntLike): Generator<bigint, void
 }
 
 /**
- * A random prime in [a, b) (SymPy randprime), from the shared generator
- * (see `seed`); NoMatch when a >= b.
+ * A random prime in [a, b), from the shared generator (see `seed`); NoMatch when a >= b.
+ *
+ * @param aIn - Inclusive lower bound.
+ * @param bIn - Exclusive upper bound.
+ * @returns A prime in the interval, or `NoMatch` if the bounds are reversed or equal.
+ * @throws RangeError when a nonempty interval contains no primes.
+ * @see SymPy `sympy.ntheory.generate.randprime`
+ * @example
+ * ```ts
+ * import { randprime } from '@symjs/symjs';
+ *
+ * randprime(2, 3); // => 2
+ * ```
  */
 export function randprime(aIn: IntLike, bIn: IntLike): bigint | NoMatchResult {
   const a = truncInt(aIn);
@@ -218,8 +281,20 @@ export function randprime(aIn: IntLike, bIn: IntLike): bigint | NoMatchResult {
 }
 
 /**
- * The product of the first n primes, or of the primes <= n with
- * `{ nth: false }` (SymPy primorial).
+ * The product of the first n primes, or of the primes <= n with `{ nth: false }`.
+ *
+ * @param nIn - Number of primes, or largest prime allowed when `nth` is false.
+ * @param opts - Set `nth` to false to use an upper bound.
+ * @returns The product of the selected primes.
+ * @throws RangeError when the bound is less than one.
+ * @see SymPy `sympy.ntheory.generate.primorial`
+ * @example
+ * ```ts
+ * import { primorial } from '@symjs/symjs';
+ *
+ * primorial(4); // => 210
+ * primorial(4, { nth: false }); // => 6
+ * ```
  */
 export function primorial(nIn: IntLike, opts: { nth?: boolean } = {}): bigint {
   const nth = opts.nth ?? true;
@@ -234,12 +309,35 @@ export function primorial(nIn: IntLike, opts: { nth?: boolean } = {}): bigint {
 const same = (a: unknown, b: unknown): boolean => a === b || (a instanceof Expr && b instanceof Expr && a.key === b.key);
 
 /**
- * Brent's cycle detection of the sequence x0, f(x0), f(f(x0)), ...
- * (SymPy cycle_length): yields [lambda, mu] (the length of the cycle and
- * of the leader); with `nmax`, [nmax, Unsolved] when no cycle was found
- * within nmax terms; with `{ values: true }`, the terms instead.
+ * Examines the orbit of a starting value under repeated application of a function. It yields the
+ * cycle length and preceding tail length, or the visited values when requested.
+ *
+ * @remarks SymPy yields the tuple `(6, 3)` for this orbit.
+ * @param f - Iteration function.
+ * @param x0 - Initial value of the orbit.
+ * @param opts - Limit the iterations with `nmax` or request the orbit with `values`.
+ * @returns A generator of cycle information or successive iterates.
+ * @see SymPy `sympy.ntheory.generate.cycle_length`
+ * @example
+ * ```ts
+ * import { cycleLength } from '@symjs/symjs';
+ *
+ * const f = (i: number) => (i ** 2 + 1) % 51;
+ * cycleLength(f, 4).next().value; // => [6, 3]
+ * ```
  */
 export function cycleLength<T>(f: (x: T) => T, x0: T, opts: { nmax?: number | bigint; values: true }): Generator<T, void, undefined>;
+/**
+ * Examines the orbit of a starting value under repeated application of a function. It yields the
+ * cycle length and preceding tail length, or the visited values when requested.
+ *
+ * @remarks SymPy yields the tuple `(6, 3)` for this orbit.
+ * @param f - Iteration function.
+ * @param x0 - Initial value of the orbit.
+ * @param opts - Limit the iterations with `nmax` or request the orbit with `values`.
+ * @returns A generator of cycle information or successive iterates.
+ * @see SymPy `sympy.ntheory.generate.cycle_length`
+ */
 export function cycleLength<T>(f: (x: T) => T, x0: T, opts?: { nmax?: number | bigint; values?: false }): Generator<[bigint, bigint | UnsolvedResult], void, undefined>;
 export function* cycleLength<T>(f: (x: T) => T, x0: T, opts: { nmax?: number | bigint; values?: boolean } = {}): Generator<T | [bigint, bigint | UnsolvedResult], void, undefined> {
   const nmax = Number(opts.nmax ?? 0);
@@ -279,7 +377,21 @@ export function* cycleLength<T>(f: (x: T) => T, x0: T, opts: { nmax?: number | b
   }
 }
 
-/** The nth composite number, composite(1) = 4 (SymPy composite). */
+/**
+ * Selects a composite number by its one-based index, starting with 4.
+ *
+ * @param nth - One-based position in the sequence.
+ * @returns The number at the requested index.
+ * @throws RangeError when the index is not positive.
+ * @see SymPy `sympy.ntheory.generate.composite`
+ * @example
+ * ```ts
+ * import { composite } from '@symjs/symjs';
+ *
+ * composite(36); // => 52
+ * composite(1); // => 4
+ * ```
+ */
 export function composite(nth: IntLike): bigint {
   const n = asInt(nth);
   if (n < 1n) throw new RangeError('nth must be a positive integer; composite(1) == 4');
@@ -314,7 +426,20 @@ export function composite(nth: IntLike): bigint {
   return a;
 }
 
-/** The number of composite numbers <= n (SymPy compositepi). */
+/**
+ * Counts composite numbers up to and including the given bound.
+ *
+ * @param nIn - Inclusive upper bound.
+ * @returns The count of composite numbers up to the bound.
+ * @see SymPy `sympy.ntheory.generate.compositepi`
+ * @example
+ * ```ts
+ * import { compositepi } from '@symjs/symjs';
+ *
+ * compositepi(25); // => 15
+ * compositepi(1000); // => 831
+ * ```
+ */
 export function compositepi(nIn: IntLike): bigint {
   const n = truncInt(nIn);
   if (n < 4n) return 0n;

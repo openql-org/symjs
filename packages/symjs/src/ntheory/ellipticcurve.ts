@@ -123,21 +123,68 @@ function polyString(terms: readonly (readonly [Rational, readonly [number, numbe
 
 /**
  * The elliptic curve `y**2 + a1*x*y + a3*y = x**3 + a2*x**2 + a4*x + a6` over Q (modulus 0, the
- * default) or GF(modulus) (SymPy EllipticCurve(a4, a6, a1=0, a2=0, a3=0, modulus=0)).
+ * default) or GF(modulus).
+ *
+ * @see SymPy `sympy.ntheory.elliptic_curve.EllipticCurve`
  */
 export class EllipticCurve {
-  /** @internal */ readonly dom: Domain;
-  /** @internal */ readonly a1: Elt;
-  /** @internal */ readonly a2: Elt;
-  /** @internal */ readonly a3: Elt;
-  /** @internal */ readonly a4: Elt;
-  /** @internal */ readonly a6: Elt;
+  /**
+   * The underlying coefficient domain.
+   *
+   * @internal
+   */
+  readonly dom: Domain;
+  /**
+   * Coefficient of the mixed term xy.
+   *
+   * @internal
+   */
+  readonly a1: Elt;
+  /**
+   * Coefficient of the quadratic term x².
+   *
+   * @internal
+   */
+  readonly a2: Elt;
+  /**
+   * Coefficient of the linear term y.
+   *
+   * @internal
+   */
+  readonly a3: Elt;
+  /**
+   * Coefficient of the linear term x.
+   *
+   * @internal
+   */
+  readonly a4: Elt;
+  /**
+   * Constant coefficient of the curve equation.
+   *
+   * @internal
+   */
+  readonly a6: Elt;
   private readonly b2: Elt;
   private readonly b4: Elt;
   private readonly b6: Elt;
   private readonly discrim: Elt;
+  /**
+   * The modulus of the coefficient arithmetic.
+   *
+   * @see SymPy `sympy.ntheory.elliptic_curve.EllipticCurve.modulus`
+   */
   readonly modulus: bigint;
 
+  /**
+   * Defines a Weierstrass curve over the rationals or a prime field.
+   *
+   * @param a4 - Coefficient of the linear term x.
+   * @param a6 - Constant coefficient of the curve equation.
+   * @param a1 - Coefficient of the mixed term xy.
+   * @param a2 - Coefficient of the quadratic term x².
+   * @param a3 - Coefficient of the linear term y.
+   * @param modulus - Prime characteristic, or zero for a curve over the rationals.
+   */
   constructor(a4: ElementLike, a6: ElementLike, a1: ElementLike = 0, a2: ElementLike = 0, a3: ElementLike = 0, modulus: number | bigint = 0) {
     this.modulus = BigInt(modulus);
     const D = (this.dom = new Domain(this.modulus));
@@ -151,7 +198,15 @@ export class EllipticCurve {
     this.discrim = [D.neg(D.mul(D.pow(b2, 2), b8)), D.k(-8n, D.pow(b4, 3)), D.k(-27n, D.pow(b6, 2)), D.k(9n, D.mul(D.mul(b2, b4), b6))].reduce((s, t) => D.add(s, t));
   }
 
-  /** SymPy `curve(x, y, z=1)`: the point (x : y : z) of the curve. */
+  /**
+   * The point (x: y: z) of the curve.
+   *
+   * @param x - Independent variable.
+   * @param y - Second coordinate.
+   * @param z - Third projective coordinate.
+   * @returns The point on the given curve.
+   * @see SymPy `sympy.ntheory.elliptic_curve.EllipticCurve.__call__`
+   */
   call(x: ElementLike, y: ElementLike, z: ElementLike = 1): EllipticCurvePoint {
     return new EllipticCurvePoint(x, y, z, this);
   }
@@ -164,7 +219,14 @@ export class EllipticCurve {
     return D.sub(t.reduce((s, v) => D.add(s, v)), u.reduce((s, v) => D.add(s, v)));
   }
 
-  /** SymPy `point in curve`: a point, or the coordinates [x, y] or [x, y, z]. */
+  /**
+   * A point, or the coordinates [x, y] or [x, y, z].
+   *
+   * @param point - Point at which to evaluate.
+   * @returns Whether the point satisfies the curve equation.
+   * @throws RangeError when the coordinates do not specify a projective point.
+   * @see SymPy `sympy.ntheory.elliptic_curve.EllipticCurve.__contains__`
+   */
   has(point: EllipticCurvePoint | readonly ElementLike[]): boolean {
     if (point instanceof EllipticCurvePoint) return this.hasElts(point.ex, point.ey, point.ez);
     if (point.length < 2) throw new RangeError('Invalid point.');
@@ -172,13 +234,26 @@ export class EllipticCurve {
     return this.hasElts(D.conv(at(point, 0)), D.conv(at(point, 1)), D.conv(point[2] ?? 1));
   }
 
-  /** @internal */
+  /**
+   * Checks the homogeneous curve equation on three field elements.
+   *
+   * @param x - Independent variable.
+   * @param y - Second coordinate.
+   * @param z - Third projective coordinate.
+   * @returns Whether the point satisfies the curve equation.
+   * @internal
+   */
   hasElts(x: Elt, y: Elt, z: Elt): boolean {
     if (this.characteristic === 0n && this.dom.isZero(z)) return true;
     return this.dom.isZero(this.value(x, y, z));
   }
 
-  /** SymPy's repr: the homogeneous polynomial `y**2*z + a1*x*y*z + a3*y*z**2 - x**3 - ...` as a Poly. */
+  /**
+   * Formats the value as text.
+   *
+   * @returns The printable representation.
+   * @see SymPy `sympy.ntheory.elliptic_curve.EllipticCurve.__repr__`
+   */
   toString(): string {
     const D = this.dom;
     const c = (e: Elt, sign: bigint): Rational => D.toSympy(D.k(sign, e));
@@ -194,7 +269,12 @@ export class EllipticCurve {
     return polyString(terms, this.modulus ? `modulus=${this.modulus}` : "domain='QQ'");
   }
 
-  /** SymPy minimal(): the minimal Weierstrass equation. */
+  /**
+   * The minimal Weierstrass equation.
+   *
+   * @returns The curve in minimal Weierstrass form.
+   * @see SymPy `sympy.ntheory.elliptic_curve.EllipticCurve.minimal`
+   */
   minimal(): EllipticCurve {
     const D = this.dom;
     const char = this.characteristic;
@@ -215,7 +295,13 @@ export class EllipticCurve {
     return polynomialCongruence(add(pow(y, 2), mul(lin, y), cst), this.modulus);
   }
 
-  /** SymPy points(): the affine points of a curve over GF(p), as (x, y) tuples. */
+  /**
+   * The affine points of a curve over GF(p), as (x, y) tuples.
+   *
+   * @returns The finite set of affine points.
+   * @throws RangeError when the curve is over the rationals.
+   * @see SymPy `sympy.ntheory.elliptic_curve.EllipticCurve.points`
+   */
   points(): Set<TupleNode> {
     const char = this.characteristic;
     if (char < 1n) throw new RangeError('Infinitely many points');
@@ -227,8 +313,20 @@ export class EllipticCurve {
   }
 
   /**
-   * SymPy points_x(x): the affine points with this x-coordinate. Over Q, the rational points (SymPy
-   * returns the raw solutions of its polynomial in y and z there).
+   * Finds affine points with the given x-coordinate in the curve’s base field.
+   *
+   * @remarks At x = 0 on the example curve, SymPy returns `[(0, {y: -4*z}), (0, {y: 4*z}), (0, {z:
+   *   0})]` from the homogeneous equation. The two affine rational points have y-coordinates -4 and
+   *   4.
+   * @param x - Affine x-coordinate of the points to find.
+   * @returns The affine points above the specified coordinate.
+   * @see SymPy `sympy.ntheory.elliptic_curve.EllipticCurve.points_x`
+   * @example
+   * ```ts
+   * import { EllipticCurve } from '@symjs/symjs';
+   *
+   * new EllipticCurve(-17, 16).pointsX(0); // => [(0, -4), (0, 4)]
+   * ```
    */
   pointsX(x: ElementLike): TupleNode[] {
     const D = this.dom;
@@ -246,8 +344,12 @@ export class EllipticCurve {
   }
 
   /**
-   * SymPy torsion_points(): the points of finite order of a curve over Q (Nagell-Lutz: y = 0 or y**2
-   * divides the discriminant), the point at infinity first.
+   * The points of finite order of a curve over Q (Nagell-Lutz: y = 0 or y**2 divides the
+   * discriminant), the point at infinity first.
+   *
+   * @returns The points of finite order, starting with the identity.
+   * @throws RangeError when the curve is over a finite field.
+   * @see SymPy `sympy.ntheory.elliptic_curve.EllipticCurve.torsion_points`
    */
   torsionPoints(): EllipticCurvePoint[] {
     if (this.characteristic > 0n) throw new RangeError('No torsion point for Finite Field.');
@@ -268,35 +370,67 @@ export class EllipticCurve {
     return l;
   }
 
-  /** SymPy characteristic: 0 over Q, p over GF(p). */
+  /**
+   * Gives the field characteristic, zero over the rationals and the modulus over a prime field.
+   *
+   * @returns The characteristic of the coefficient domain.
+   * @see SymPy `sympy.ntheory.elliptic_curve.EllipticCurve.characteristic`
+   */
   get characteristic(): bigint {
     return this.modulus;
   }
 
-  /** SymPy discriminant (over GF(p), its residue in [0, p)). */
+  /**
+   * Computes the Weierstrass discriminant in the coefficient field.
+   *
+   * @returns The discriminant.
+   * @see SymPy `sympy.ntheory.elliptic_curve.EllipticCurve.discriminant`
+   */
   get discriminant(): bigint {
     return this.discrim.n / this.discrim.d;
   }
 
-  /** SymPy is_singular: the discriminant is zero. */
+  /**
+   * The discriminant is zero.
+   *
+   * @returns Whether the discriminant vanishes.
+   * @see SymPy `sympy.ntheory.elliptic_curve.EllipticCurve.is_singular`
+   */
   get isSingular(): boolean {
     return this.discriminant === 0n;
   }
 
-  /** SymPy j_invariant: c4**3/discriminant. */
+  /**
+   * Computes the j-invariant from the Weierstrass coefficients and the discriminant.
+   *
+   * @returns The j-invariant of the curve.
+   * @see SymPy `sympy.ntheory.elliptic_curve.EllipticCurve.j_invariant`
+   */
   get jInvariant(): Rational {
     const D = this.dom;
     const c4 = D.sub(D.pow(this.b2, 2), D.k(24n, this.b4));
     return D.toSympy(D.div(D.pow(c4, 3), this.discrim));
   }
 
-  /** SymPy order: the number of affine points of a curve over GF(p). */
+  /**
+   * The number of affine points of a curve over GF(p).
+   *
+   * @returns The number of affine points over the finite field.
+   * @throws NotImplementedError when the curve is over the rationals.
+   * @see SymPy `sympy.ntheory.elliptic_curve.EllipticCurve.order`
+   */
   get order(): number {
     if (this.characteristic === 0n) throw new NotImplementedError('Still not implemented');
     return this.points().size;
   }
 
-  /** SymPy rank: 0 over a finite field (not implemented over Q). */
+  /**
+   * Gives rank zero over a finite field. Computing the rank over the rationals is unsupported.
+   *
+   * @returns The rank of the elliptic curve.
+   * @throws NotImplementedError when the rank has not been determined.
+   * @see SymPy `sympy.ntheory.elliptic_curve.EllipticCurve.rank`
+   */
   get rank(): number {
     if (this.modulus) return 0;
     throw new NotImplementedError('Still not implemented');
@@ -347,21 +481,67 @@ function rationalRoots(cs: readonly Elt[]): Elt[] {
   return out.sort((a, b) => (a.n * b.d < b.n * a.d ? -1 : 1));
 }
 
-/** A point (x : y : z) of an elliptic curve; z = 0 is the point at infinity O (SymPy EllipticCurvePoint). */
+/**
+ * A point (x: y: z) of an elliptic curve; z = 0 is the point at infinity O.
+ *
+ * @see SymPy `sympy.ntheory.elliptic_curve.EllipticCurvePoint`
+ * @example
+ * ```ts
+ * import { EllipticCurve } from '@symjs/symjs';
+ *
+ * const E = new EllipticCurve(-17, 16);
+ * E.call(0, -4).add(E.call(1, 0)).toString(); // => (15, -56)
+ * ```
+ */
 export class EllipticCurvePoint {
-  /** @internal */ readonly ex: Elt;
-  /** @internal */ readonly ey: Elt;
-  /** @internal */ readonly ez: Elt;
+  /**
+   * Stores the projective coordinate as a coefficient-domain element.
+   *
+   * @internal
+   */
+  readonly ex: Elt;
+  /**
+   * Stores the projective coordinate as a coefficient-domain element.
+   *
+   * @internal
+   */
+  readonly ey: Elt;
+  /**
+   * Stores the projective coordinate as a coefficient-domain element.
+   *
+   * @internal
+   */
+  readonly ez: Elt;
 
-  /** SymPy point_at_infinity(curve): O = (0 : 1 : 0). */
+  /**
+   * Constructs the neutral element of the curve group, with projective coordinates `(0 : 1 : 0)`.
+   *
+   * @param curve - Curve containing the point.
+   * @returns The identity point of the curve.
+   * @see SymPy `sympy.ntheory.elliptic_curve.EllipticCurvePoint.point_at_infinity`
+   */
   static pointAtInfinity(curve: EllipticCurve): EllipticCurvePoint {
     return new EllipticCurvePoint(0, 1, 0, curve);
   }
 
+  /**
+   * Constructs a curve point from homogeneous coordinates and checks the curve equation.
+   *
+   * @param x - Projective x-coordinate.
+   * @param y - Projective y-coordinate.
+   * @param z - Projective z-coordinate.
+   * @param curve - Curve containing the point.
+   * @throws RangeError when the point does not lie on the curve.
+   */
   constructor(
     x: ElementLike,
     y: ElementLike,
     z: ElementLike,
+    /**
+     * The elliptic curve containing this point.
+     *
+     * @see SymPy `sympy.ntheory.elliptic_curve.EllipticCurvePoint._curve`
+     */
     readonly curve: EllipticCurve,
   ) {
     const D = curve.dom;
@@ -374,18 +554,41 @@ export class EllipticCurvePoint {
     return new EllipticCurvePoint(r(x), r(y), r(z), curve);
   }
 
-  /** The affine coordinates as SymPy numbers (x, y). */
+  /**
+   * Reads the x-coordinate in the curve’s base field.
+   *
+   * @returns The affine x-coordinate.
+   * @see SymPy `sympy.ntheory.elliptic_curve.EllipticCurvePoint.x`
+   */
   get x(): Rational {
     return this.curve.dom.toSympy(this.ex);
   }
+  /**
+   * Reads the y-coordinate in the curve’s base field.
+   *
+   * @returns The affine y-coordinate.
+   * @see SymPy `sympy.ntheory.elliptic_curve.EllipticCurvePoint.y`
+   */
   get y(): Rational {
     return this.curve.dom.toSympy(this.ey);
   }
+  /**
+   * Reads the homogeneous coordinate that vanishes at the point at infinity.
+   *
+   * @returns The projective z-coordinate.
+   * @see SymPy `sympy.ntheory.elliptic_curve.EllipticCurvePoint.z`
+   */
   get z(): Rational {
     return this.curve.dom.toSympy(this.ez);
   }
 
-  /** The group law (SymPy `self + p`). */
+  /**
+   * Adds the other operand to this value.
+   *
+   * @param p - Addend.
+   * @returns The sum of the operands.
+   * @see SymPy `sympy.ntheory.elliptic_curve.EllipticCurvePoint.__add__`
+   */
   add(p: EllipticCurvePoint): EllipticCurvePoint {
     const c = this.curve;
     const D = c.dom;
@@ -410,18 +613,35 @@ export class EllipticCurvePoint {
     return EllipticCurvePoint.of(x3, y3, D.of(1n), c);
   }
 
-  /** SymPy `-self`. */
+  /**
+   * Reverses the sign of the value.
+   *
+   * @returns The additive inverse.
+   * @see SymPy `sympy.ntheory.elliptic_curve.EllipticCurvePoint.__neg__`
+   */
   neg(): EllipticCurvePoint {
     const D = this.curve.dom;
     return EllipticCurvePoint.of(this.ex, D.sub(D.sub(D.neg(this.ey), D.mul(this.curve.a1, this.ex)), this.curve.a3), this.ez, this.curve);
   }
 
-  /** SymPy `self - other`. */
+  /**
+   * Subtracts the other operand from this value.
+   *
+   * @param other - Value to subtract.
+   * @returns The difference in operand order.
+   * @see SymPy `sympy.ntheory.elliptic_curve.EllipticCurvePoint.__sub__`
+   */
   sub(other: EllipticCurvePoint): EllipticCurvePoint {
     return this.add(other.neg());
   }
 
-  /** SymPy `self * n` (and `n * self`): the n-th multiple by double-and-add. */
+  /**
+   * Multiplies this value by the factor on its right.
+   *
+   * @param nIn - Signed scalar multiplier.
+   * @returns The product in operand order.
+   * @see SymPy `sympy.ntheory.elliptic_curve.EllipticCurvePoint.__mul__`
+   */
   mul(nIn: number | bigint): EllipticCurvePoint {
     let n = BigInt(nIn);
     let r = EllipticCurvePoint.pointAtInfinity(this.curve);
@@ -436,13 +656,23 @@ export class EllipticCurvePoint {
     return r;
   }
 
-  /** Whether the two points have the same projective coordinates (SymPy compares the coordinate tuples). */
+  /**
+   * Tests whether the two points have the same projective coordinates.
+   *
+   * @param other - Value to compare against.
+   * @returns Whether the operands are equal.
+   */
   equals(other: EllipticCurvePoint): boolean {
     const D = this.curve.dom;
     return D.eq(this.ex, other.ex) && D.eq(this.ey, other.ey) && D.eq(this.ez, other.ez);
   }
 
-  /** SymPy order(): the least n with n*P = O, or oo (over Q, oo once the multiples stop being integral). */
+  /**
+   * The least n with n*P = O, or oo (over Q, oo once the multiples stop being integral).
+   *
+   * @returns The additive order of the point, or infinity.
+   * @see SymPy `sympy.ntheory.elliptic_curve.EllipticCurvePoint.order`
+   */
   order(): Expr {
     const D = this.curve.dom;
     if (D.isZero(this.ez)) return S.One;
@@ -460,7 +690,12 @@ export class EllipticCurvePoint {
     return S.Infinity;
   }
 
-  /** SymPy's repr: `(x, y)`, or `O` for the point at infinity. */
+  /**
+   * Formats the value as text.
+   *
+   * @returns The printable representation.
+   * @see SymPy `sympy.ntheory.elliptic_curve.EllipticCurvePoint.__repr__`
+   */
   toString(): string {
     if (this.curve.dom.isZero(this.ez)) return 'O';
     return `(${this.x.toString()}, ${this.y.toString()})`;

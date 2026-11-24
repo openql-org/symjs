@@ -22,7 +22,14 @@ export type RationalEigenvectors = [Domain, Expr, number, DomainMatrix];
 /** Minimal polynomial, algebraic multiplicity and row basis over its finite extension. */
 export type AlgebraicEigenvectors = [FiniteExtension, Poly, number, DomainMatrix];
 
-/** Eigenvectors grouped by irreducible factors of the characteristic polynomial. */
+/**
+ * Groups eigenspace bases by the irreducible factors of the characteristic polynomial.
+ *
+ * @param A - Square matrix.
+ * @param lambda - Variable of the characteristic polynomial.
+ * @returns The eigenspaces over the ground domain and its algebraic extensions.
+ * @see SymPy `sympy.polys.matrices.eigen.dom_eigenvects`
+ */
 export function domEigenvects(A: DomainMatrix, lambda: Sym = new Dummy('lambda')): [RationalEigenvectors[], AlgebraicEigenvectors[]] {
   const polynomial = Poly.fromList(A.charpoly(), [lambda], { domain: A.domain.toString() });
   const [, factors] = polynomial.factorList();
@@ -42,7 +49,16 @@ export function domEigenvects(A: DomainMatrix, lambda: Sym = new Dummy('lambda')
   return [rational, algebraic];
 }
 
-/** Convert domain eigenvectors to expression eigenvalues and column matrices. */
+/**
+ * Convert domain eigenvectors to expression eigenvalues and column matrices.
+ *
+ * @param rational - Eigenspaces over the ground domain.
+ * @param algebraic - Eigenspaces over algebraic extensions.
+ * @param matrix - Constructor for the returned column matrices.
+ * @param options - Additional root-finding options.
+ * @returns Eigenvalues with their multiplicities and eigenvector bases.
+ * @see SymPy `sympy.polys.matrices.eigen.dom_eigenvects_to_sympy`
+ */
 export function domEigenvectsToSympy(
   rational: readonly RationalEigenvectors[],
   algebraic: readonly AlgebraicEigenvectors[],

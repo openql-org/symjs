@@ -24,7 +24,14 @@ import { algebraicEnclosure, type AlgebraicBox } from './interval';
 type AlgebraicInput = ExprLike | AlgebraicNumber;
 const value = (a: AlgebraicInput): Expr => a instanceof AlgebraicNumber ? a.asExpr() : sympify(a);
 
-/** Necessary degree and discriminant conditions for an embedding of Q(a) into Q(b). */
+/**
+ * Checks necessary degree and discriminant conditions for embedding one number field in another.
+ *
+ * @param a - Generator of the source field.
+ * @param b - Generator of the target field.
+ * @returns Whether the degree and discriminant tests allow an embedding.
+ * @see SymPy `sympy.polys.numberfields.subfield.is_isomorphism_possible`
+ */
 export function isIsomorphismPossible(a: AlgebraicNumber, b: AlgebraicNumber): boolean {
   const n = a.minpoly().degree(), m = b.minpoly().degree();
   if (m % n !== 0) return false;
@@ -39,7 +46,16 @@ export function isIsomorphismPossible(a: AlgebraicNumber, b: AlgebraicNumber): b
   return true;
 }
 
-/** Recover a real field embedding by PSLQ and verify the candidate modulo the target minimal polynomial. */
+/**
+ * Recover a real field embedding by PSLQ and verify the candidate modulo the target minimal
+ * polynomial.
+ *
+ * @param a - Generator of the source field.
+ * @param b - Generator of the target field.
+ * @returns The image coefficients in descending powers, or `NoMatch` if no embedding is found.
+ * @throws NotImplementedError when the coefficients are complex.
+ * @see SymPy `sympy.polys.numberfields.subfield.field_isomorphism_pslq`
+ */
 export function fieldIsomorphismPslq(a: AlgebraicNumber, b: AlgebraicNumber): Rational[] | NoMatchResult {
   if (isReal(a.root) !== true || isReal(b.root) !== true) throw new NotImplementedError("PSLQ doesn't support complex coefficients");
   const t = new Dummy('t'), f = Poly.from(a.minpoly().asExprAt([t]), [t]), g = Poly.from(b.minpoly().asExprAt([t]), [t]);
@@ -98,12 +114,23 @@ function powerBasisRepresentation(aIn: AlgebraicInput, bIn: AlgebraicInput): Rat
 }
 
 /**
- * An isomorphism of Q(a) onto a subfield of Q(b): the coefficients, in
- * falling powers of b, of an element of Q(b) to which a may be mapped, or
- * NoMatch when Q(a) is not isomorphic to a subfield of Q(b). When the radical
- * expansions of a and b determine it, the element is a itself; otherwise it
- * is a root of the minimal polynomial of a in Q(b), found by factoring that
- * polynomial over Q(b) (Trager's square-free norm) and checked exactly.
+ * An isomorphism of Q(a) onto a subfield of Q(b): the coefficients, in falling powers of b, of an
+ * element of Q(b) to which a may be mapped, or NoMatch when Q(a) is not isomorphic to a subfield of
+ * Q(b). When the radical expansions of a and b determine it, the element is a itself; otherwise it
+ * is a root of the minimal polynomial of a in Q(b), found by factoring that polynomial over Q(b)
+ * (Trager's square-free norm) and checked exactly.
+ *
+ * @param aIn - Generator of the source field.
+ * @param bIn - Generator of the target field.
+ * @returns The image coefficients in descending powers, or `NoMatch` if no embedding is found.
+ * @see SymPy `sympy.polys.numberfields.subfield.field_isomorphism`
+ * @example
+ * ```ts
+ * import { ex, fieldIsomorphism } from '@symjs/symjs';
+ *
+ * fieldIsomorphism(3, ex`sqrt(2)`); // => [3]
+ * fieldIsomorphism(ex`I*sqrt(3)`, ex`I*sqrt(3)/2`); // => [2, 0]
+ * ```
  */
 export function fieldIsomorphism(aIn: AlgebraicInput, bIn: AlgebraicInput): Rational[] | NoMatchResult {
   const direct = powerBasisRepresentation(aIn, bIn);
@@ -192,11 +219,77 @@ function representation(a: AlgebraicInput,b: AlgebraicInput): Rational[] | NoMat
   return isNoMatch(direct)?rootInField(value(a),value(b)):direct;
 }
 
-export interface PrimitiveElementOptions { ex?: boolean; maxCandidates?: number; }
+/** Controls the search for a primitive element and the representation of the original generators. */
+export interface PrimitiveElementOptions {
+  /** The choice to include each generator’s coefficients in the primitive-element basis. */
+  ex?: boolean;
+  /** The maximum number of primitive-element candidates to try. */
+  maxCandidates?: number;
+}
+/**
+ * Finds a linear combination of algebraic generators that generates the whole number field.
+ *
+ * @param extension - Algebraic generators of the extension.
+ * @param x - Variable for the minimal polynomial.
+ * @param options - Set `ex` for generator representations and `maxCandidates` to bound the search.
+ * @returns The minimal polynomial and linear combination, with power-basis representations when
+ *   requested.
+ * @throws RangeError when the generator list is empty or the candidate bound is not positive.
+ * @throws NotImplementedError when the search finds no primitive element within the candidate
+ *   bound.
+ * @see SymPy `sympy.polys.numberfields.subfield.primitive_element`
+ * @example
+ * ```ts
+ * import { ex, primitiveElement, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * const [f, coefficients] = primitiveElement([ex`sqrt(2)`, ex`sqrt(3)`], x);
+ * f; // => x**4 - 10*x**2 + 1
+ * coefficients; // => [1, 1]
+ * ```
+ */
 export function primitiveElement(extension: readonly AlgebraicInput[], x?: Sym, options?: PrimitiveElementOptions & { ex?: false }): [Expr, number[]];
+/**
+ * Finds a linear combination of algebraic generators that generates the whole number field.
+ *
+ * @param extension - Algebraic generators of the extension.
+ * @param x - Variable for the minimal polynomial.
+ * @param options - Set `ex` for generator representations and `maxCandidates` to bound the search.
+ * @returns The minimal polynomial and linear combination, with power-basis representations when
+ *   requested.
+ * @throws RangeError when the generator list is empty or the candidate bound is not positive.
+ * @throws NotImplementedError when the search finds no primitive element within the candidate
+ *   bound.
+ * @see SymPy `sympy.polys.numberfields.subfield.primitive_element`
+ */
 export function primitiveElement(extension: readonly AlgebraicInput[], x: Sym | undefined, options: PrimitiveElementOptions & { ex: true }): [Expr, number[], Rational[][]];
+/**
+ * Finds a linear combination of algebraic generators that generates the whole number field.
+ *
+ * @param extension - Algebraic generators of the extension.
+ * @param x - Variable for the minimal polynomial.
+ * @param options - Set `ex` for generator representations and `maxCandidates` to bound the search.
+ * @returns The minimal polynomial and linear combination, with power-basis representations when
+ *   requested.
+ * @throws RangeError when the generator list is empty or the candidate bound is not positive.
+ * @throws NotImplementedError when the search finds no primitive element within the candidate
+ *   bound.
+ * @see SymPy `sympy.polys.numberfields.subfield.primitive_element`
+ */
 export function primitiveElement(extension: readonly AlgebraicInput[], x: Sym | undefined, options: PrimitiveElementOptions): [Expr, number[]] | [Expr, number[], Rational[][]];
-/** Primitive elements by an unbounded exact search, with certified generator embeddings. */
+/**
+ * Finds a linear combination of algebraic generators that generates the whole number field.
+ *
+ * @param extension - Algebraic generators of the extension.
+ * @param x - Variable for the minimal polynomial.
+ * @param options - Set `ex` for generator representations and `maxCandidates` to bound the search.
+ * @returns The minimal polynomial and linear combination, with power-basis representations when
+ *   requested.
+ * @throws RangeError when the generator list is empty or the candidate bound is not positive.
+ * @throws NotImplementedError when the search finds no primitive element within the candidate
+ *   bound.
+ * @see SymPy `sympy.polys.numberfields.subfield.primitive_element`
+ */
 export function primitiveElement(extension: readonly AlgebraicInput[], x: Sym = new Dummy('x'), options: PrimitiveElementOptions = {}): [Expr, number[]] | [Expr, number[], Rational[][]] {
   if (!extension.length) throw new RangeError('At least one extension is required');
   const maxCandidates = options.maxCandidates ?? Infinity;
@@ -227,7 +320,23 @@ export function primitiveElement(extension: readonly AlgebraicInput[], x: Sym = 
   return [polynomial, coeffs, representations.map((coefficients) => coefficients.length === 1 && at(coefficients, 0).isZero ? [] : coefficients)];
 }
 
-/** Embed one or several algebraic values in an explicitly represented number field. */
+/**
+ * Embed one or several algebraic values in an explicitly represented number field.
+ *
+ * @param extension - Value or generators to embed.
+ * @param theta - Primitive element of the target field.
+ * @returns The algebraic number expressed in the chosen field.
+ * @throws RangeError when the extension list is empty.
+ * @throws NotImplementedError when no exact embedding is found.
+ * @see SymPy `sympy.polys.numberfields.subfield.to_number_field`
+ * @example
+ * ```ts
+ * import { ex, toNumberField } from '@symjs/symjs';
+ *
+ * const a = toNumberField(ex`sqrt(2)`, ex`sqrt(2) + sqrt(3)`);
+ * a.coeffs(); // => [1/2, 0, -9/2, 0]
+ * ```
+ */
 export function toNumberField(extension: AlgebraicInput | readonly AlgebraicInput[], theta?: AlgebraicInput): AlgebraicNumber {
   const generators = Array.isArray(extension) ? extension : [extension];
   if (!generators.length) throw new RangeError('At least one extension is required');
