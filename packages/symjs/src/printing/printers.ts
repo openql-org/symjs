@@ -13,6 +13,7 @@ import type { ExprLike } from '../core/nodes';
 import { Expr, ExtensionExpr, isNum } from '../core/nodes';
 import { mul, sympify } from '../core/ops';
 import { at, first } from '../core/guard';
+import { isNoMatch, type NoMatchResult } from '../core/truth';
 import { str, withFullPrec, withPermCyclic } from './str';
 import { latex } from './latex';
 import type { LatexOptions, LatexPrintable } from './latex';
@@ -31,7 +32,11 @@ interface FrozenSetItems {
 }
 
 /** A value accepted by the plain-text expression printer. */
-export type StrPrintable = FrozenSetItems | Predicate | { asExpr(): Expr; toString(): string } | StrMatrix | ExprLike | string | boolean | null | readonly StrPrintable[] | ReadonlySet<StrPrintable> | ReadonlyMap<StrPrintable, StrPrintable>;
+export type StrPrintable = FrozenSetItems | Predicate | { asExpr(): Expr; toString(): string } | StrMatrix | ExprLike | string | boolean | null | NoMatchResult | readonly StrPrintable[] | ReadonlySet<StrPrintable> | ReadonlyMap<StrPrintable, StrPrintable> | PrintableObject;
+/** Any other object printed by its own `toString` (permutations, cycles, domain matrices, groups, ...). */
+export interface PrintableObject {
+  toString(): string;
+}
 
 /** Python's repr of a string ('abc', or "it's" when it contains a single quote). */
 function reprString(s: string): string {
@@ -91,8 +96,14 @@ function printValue(v: StrPrintable, strings: (s: string) => string): string {
     return (v.numer.length > 1 ? `(${n})` : n) + '/' + (v.denom.isGenerator || v.denom.isGround ? d : `(${d})`);
   }
   if ('asExpr' in v) return String(v);
-  return `[${v.map(go).join(', ')}]`;
+  if (isList(v)) return `[${v.map(go).join(', ')}]`;
+  // NoMatch is SymPy's None
+  if (isNoMatch(v)) return 'None';
+  if (v.toString === Object.prototype.toString) throw new TypeError(`sstr: cannot print ${String(v.constructor.name)}`);
+  return v.toString();
 }
+
+const isList = (v: object): v is readonly StrPrintable[] => Array.isArray(v);
 
 /**
  * Formats expressions and containers in plain text. Nested containers retain their list, set or dictionary notation.
