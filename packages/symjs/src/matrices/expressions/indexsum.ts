@@ -167,9 +167,20 @@ function convertProduct(body: Expr, limits: readonly Limit[], first?: Expr, last
 }
 
 /**
- * SymPy MatrixExpr.from_index_summation(expr, first_index, last_index):
- * a matrix expression from a sum over products of entries, with
+ * A matrix expression from a sum over products of entries, with
  * transposes and traces detected.
+ * @param exprIn - The expression to transform.
+ * @param firstIndex - The free index to use as the first matrix index.
+ * @param lastIndex - The free index to use as the last matrix index.
+ * @returns The resulting symbolic expression.
+ * @see SymPy `sympy.matrices.expressions.matexpr.MatrixExpr.from_index_summation`
+ * @example
+ * ```ts
+ * import { MatrixElement, MatrixSymbol, Sum, ex, fromIndexSummation, symbols } from '@symjs/symjs';
+ *
+ * const [N, i] = symbols('N i');
+ * fromIndexSummation(Sum(MatrixElement(MatrixSymbol('A', N, N), i, i), [i, 0, ex`N - 1`])); // => Trace(A)
+ * ```
  */
 export function fromIndexSummation(exprIn: ExprLike, firstIndex?: Expr, lastIndex?: Expr): Expr {
   const expr = sympify(exprIn);

@@ -15,8 +15,17 @@ import { at } from '../core/guard';
 const KNOWN = [0n, 1n, 4n, 13n, 44n, 160n];
 
 /**
- * SymPy SchurNumber(k): S(k) for k <= 5 (and S(oo) = oo, S(0) = 0); the
+ * S(k) for k <= 5 (and S(oo) = oo, S(0) = 0); the
  * unevaluated SchurNumberNode otherwise, whose lowerBound() is a known lower bound.
+ * @param kIn - The number of sum-free color classes.
+ * @returns The resulting symbolic expression.
+ * @throws RangeError when `k` is not a positive integer.
+ * @see SymPy `sympy.combinatorics.schur_number.SchurNumber`
+ * @example
+ * ```ts
+ * import { SchurNumber } from '@symjs/symjs';
+ * SchurNumber(3); // => 13
+ * ```
  */
 export function SchurNumber(kIn: ExprLike): Expr {
   const k = sympify(kIn);
@@ -28,16 +37,39 @@ export function SchurNumber(kIn: ExprLike): Expr {
   return new SchurNumberNode(k);
 }
 
-/** The unevaluated SymPy SchurNumber(k). */
+/**
+ * The unevaluated SymPy SchurNumber(k).
+ * @see SymPy `sympy.combinatorics.schur_number.SchurNumber`
+ * @example
+ * ```ts
+ * import { SchurNumber, SchurNumberNode } from '@symjs/symjs';
+ *
+ * const s = SchurNumber(6);
+ * s instanceof SchurNumberNode && s.lowerBound(); // => 536
+ * ```
+ */
 export class SchurNumberNode extends ExtensionExpr {
-  /** @internal use SchurNumber(k) */
+  /**
+   * Constructs a `SchurNumber`.
+   * @param k - The number of sum-free color classes.
+   * @internal
+   */
   constructor(k: Expr) {
     super('SchurNumber', [k]);
   }
+  /**
+   * Rebuilds the expression with replacement operands.
+   * @param args - The operands in their defining order.
+   * @returns The expression with the given operands.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return SchurNumber(at(args, 0));
   }
-  /** SymPy lower_bound: 536 for S(6), 1680 for S(7), 3*lower_bound(S(k - 1)) - 1 for a larger integer k, else (3**k - 1)/2. */
+  /**
+   * Computes a lower bound on the Schur number.
+   * @returns A lower bound on the Schur number.
+   * @see SymPy `sympy.combinatorics.schur_number.SchurNumber.lower_bound`
+   */
   lowerBound(): Expr {
     const k = at(this.args, 0);
     if (k instanceof Rational && k.q === 1n) {
@@ -67,8 +99,16 @@ function nextList(current: readonly number[][], n: number): number[][] {
 }
 
 /**
- * SymPy schur_partition: a partition of [1, n] into the number of sum-free
- * subsets given by the lower bound of the Schur numbers.
+ * Partitions the integers from one through the specified bound using the Schur-number construction.
+ * @param nIn - The largest integer to include.
+ * @returns The subsets of the initial integer interval.
+ * @throws RangeError when the argument is infinite or the argument is nonnumeric or `n` is not a positive integer.
+ * @see SymPy `sympy.combinatorics.schur_number.schur_partition`
+ * @example
+ * ```ts
+ * import { schurPartition } from '@symjs/symjs';
+ * schurPartition(5); // => [[3, 2], [5], [1, 4]]
+ * ```
  */
 export function schurPartition(nIn: ExprLike): number[][] {
   const e = sympify(nIn);

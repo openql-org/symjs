@@ -43,34 +43,89 @@ function toLambda2(f: IndexFunction): LambdaNode {
   return new LambdaNode([i, j, f(i, j)]);
 }
 
-/** SymPy FunctionMatrix(rows, cols, lamda): the matrix with entries lamda(i, j). */
+/**
+ * The matrix with entries lamda(i, j).
+ * @see SymPy `sympy.matrices.expressions.funcmatrix.FunctionMatrix`
+ */
 export class FunctionMatrixNode extends MatrixExpr {
+  /**
+   * Constructs a `FunctionMatrix`.
+   * @param rows - The number of rows.
+   * @param cols - The number of columns.
+   * @param lamda - The function of row and column indices.
+   */
   constructor(rows: Expr, cols: Expr, lamda: LambdaNode) {
     super('FunctionMatrix', [rows, cols, lamda]);
   }
-  /** SymPy FunctionMatrix(rows, cols, lamda). */
+  /**
+   * Constructs the function matrix expression from its operands.
+   * @param rows - The number of rows.
+   * @param cols - The number of columns.
+   * @param lamda - The function of row and column indices.
+   * @returns The function matrix expression from its operands.
+   */
   static create(rows: ExprLike, cols: ExprLike, lamda: IndexFunction): FunctionMatrixNode {
     return new FunctionMatrixNode(checkDim(sympify(rows)), checkDim(sympify(cols)), toLambda2(lamda));
   }
+  /**
+   * The number of rows and columns, in that order.
+   * @returns The row and column dimensions.
+   * @see SymPy `sympy.matrices.expressions.funcmatrix.FunctionMatrix.shape`
+   */
   get shape(): [Expr, Expr] {
     return pair(this.args);
   }
-  /** The function of the indices. */
+  /**
+   * Gets the function of the indices.
+   * @returns The function of the indices.
+   * @see SymPy `sympy.matrices.expressions.funcmatrix.FunctionMatrix.lamda`
+   */
   get lamda(): LambdaNode {
     return cast(at(this.args, 2), LambdaNode);
   }
+  /**
+   * Rebuilds the expression with replacement operands.
+   * @param args - The operands in their defining order.
+   * @returns The expression with the given operands.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new FunctionMatrixNode(at(args, 0), at(args, 1), cast(at(args, 2), LambdaNode));
   }
+  /**
+   * Computes the matrix entry at the given row and column.
+   * @param i - The zero-based row index.
+   * @param j - The zero-based column index.
+   * @returns The scalar at the requested position.
+   * @see SymPy `sympy.matrices.expressions.funcmatrix.FunctionMatrix._entry`
+   */
   override entry(i: Expr, j: Expr): Expr {
     return this.lamda.call(i, j);
   }
+  /**
+   * Computes the trace using the structure of this matrix.
+   * @returns The trace using the structure of this matrix.
+   * @see SymPy `sympy.matrices.expressions.funcmatrix.FunctionMatrix._eval_trace`
+   */
   override evalTrace(): Expr {
     return new TraceNode(this).rewriteAsSum();
   }
 }
 
-/** SymPy FunctionMatrix(rows, cols, lamda). */
+/**
+ * Defines a matrix by a function of its row and column indices.
+ * @param rows - The number of rows.
+ * @param cols - The number of columns.
+ * @param lamda - The function of row and column indices.
+ * @returns The resulting matrix expression.
+ * @see SymPy `sympy.matrices.expressions.funcmatrix.FunctionMatrix`
+ * @example
+ * ```ts
+ * import { FunctionMatrix, symbols } from '@symjs/symjs';
+ *
+ * const [n, m] = symbols('n m');
+ * FunctionMatrix(n, m, 'lambda i, j: i + j'); // => FunctionMatrix(n, m, Lambda((i, j), i + j))
+ * ```
+ */
 export const FunctionMatrix = /* @__PURE__ */ callableClass(FunctionMatrixNode, (rows: ExprLike, cols: ExprLike, lamda: IndexFunction): FunctionMatrixNode => FunctionMatrixNode.create(rows, cols, lamda));
 export type FunctionMatrix = FunctionMatrixNode;
 
@@ -94,52 +149,133 @@ function dftEntry(n: Expr, k: Expr): Expr {
   return mul(pow(w, k), scale);
 }
 
-/** SymPy DFT(n): the unitary discrete Fourier transform matrix, entries w**(i*j)/sqrt(n) with w = exp(-2*pi*I/n). */
+/**
+ * The unitary discrete Fourier transform matrix, entries w**(i*j)/sqrt(n) with w = exp(-2*pi*I/n).
+ * @see SymPy `sympy.matrices.expressions.fourier.DFT`
+ */
 export class DFTNode extends MatrixExpr {
+  /**
+   * Constructs a `DFT`.
+   * @param n - The order of the Fourier transform matrix.
+   * @param name - The name used to identify the object.
+   */
   constructor(n: ExprLike, name = 'DFT') {
     super(name, [checkDim(sympify(n))]);
   }
-  /** The size (SymPy DFT.n; n is evalf in symjs). */
+  /**
+   * The size.
+   * @returns The size of the object.
+   */
   get size(): Expr {
     return first(this.args);
   }
+  /**
+   * The number of rows and columns, in that order.
+   * @returns The row and column dimensions.
+   * @see SymPy `sympy.matrices.expressions.fourier.DFT.shape`
+   */
   get shape(): [Expr, Expr] {
     return [this.size, this.size];
   }
+  /**
+   * Rebuilds the expression with replacement operands.
+   * @param args - The operands in their defining order.
+   * @returns The expression with the given operands.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new DFTNode(first(args));
   }
+  /**
+   * Computes the matrix entry at the given row and column.
+   * @param i - The zero-based row index.
+   * @param j - The zero-based column index.
+   * @returns The scalar at the requested position.
+   * @see SymPy `sympy.matrices.expressions.fourier.DFT._entry`
+   */
   override entry(i: Expr, j: Expr): Expr {
     return dftEntry(this.size, mul(i, j));
   }
+  /**
+   * Computes the inverse using the structure of this matrix.
+   * @returns The inverse using the structure of this matrix.
+   * @see SymPy `sympy.matrices.expressions.fourier.DFT._eval_inverse`
+   */
   override evalInverse(): Expr {
     return new IDFTNode(this.size);
   }
+  /**
+   * Formats the expression in LaTeX.
+   * @returns The LaTeX representation.
+   */
   override printLatex(): string {
     return `\\text{${this.name}}_{${latex(this.size)}}`;
   }
 }
 
-/** SymPy IDFT(n): the inverse discrete Fourier transform matrix. */
+/**
+ * The inverse discrete Fourier transform matrix.
+ * @see SymPy `sympy.matrices.expressions.fourier.IDFT`
+ */
 export class IDFTNode extends DFTNode {
+  /**
+   * Constructs an `IDFT`.
+   * @param n - The order of the Fourier transform matrix.
+   */
   constructor(n: ExprLike) {
     super(n, 'IDFT');
   }
+  /**
+   * Rebuilds the expression with replacement operands.
+   * @param args - The operands in their defining order.
+   * @returns The expression with the given operands.
+   */
   override withArgs(args: readonly Expr[]): Expr {
     return new IDFTNode(first(args));
   }
+  /**
+   * Computes the matrix entry at the given row and column.
+   * @param i - The zero-based row index.
+   * @param j - The zero-based column index.
+   * @returns The scalar at the requested position.
+   * @see SymPy `sympy.matrices.expressions.fourier.IDFT._entry`
+   */
   override entry(i: Expr, j: Expr): Expr {
     return dftEntry(this.size, mul(-1, i, j));
   }
+  /**
+   * Computes the inverse using the structure of this matrix.
+   * @returns The inverse using the structure of this matrix.
+   * @see SymPy `sympy.matrices.expressions.fourier.IDFT._eval_inverse`
+   */
   override evalInverse(): Expr {
     return new DFTNode(this.size);
   }
 }
 
-/** SymPy DFT(n). */
+/**
+ * The unitary discrete Fourier transform matrix, entries w**(i*j)/sqrt(n) with w = exp(-2*pi*I/n).
+ * @param n - The order of the Fourier transform matrix.
+ * @returns The resulting matrix expression.
+ * @see SymPy `sympy.matrices.expressions.fourier.DFT`
+ * @example
+ * ```ts
+ * import { DFT } from '@symjs/symjs';
+ * DFT(3); // => DFT(3)
+ * ```
+ */
 export const DFT = /* @__PURE__ */ callableClass(DFTNode, (n: ExprLike): DFTNode => new DFTNode(n));
 export type DFT = DFTNode;
 
-/** SymPy IDFT(n). */
+/**
+ * The inverse discrete Fourier transform matrix.
+ * @param n - The order of the Fourier transform matrix.
+ * @returns The resulting matrix expression.
+ * @see SymPy `sympy.matrices.expressions.fourier.IDFT`
+ * @example
+ * ```ts
+ * import { IDFT } from '@symjs/symjs';
+ * IDFT(3); // => IDFT(3)
+ * ```
+ */
 export const IDFT = /* @__PURE__ */ callableClass(IDFTNode, (n: ExprLike): IDFTNode => new IDFTNode(n));
 export type IDFT = IDFTNode;

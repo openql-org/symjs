@@ -68,17 +68,28 @@ const total = (xs: readonly Expr[]): Expr => add(...xs);
 
 const keysEqual = (a: readonly Expr[], b: readonly Expr[]): boolean => sameList(a, b);
 
-/** SymPy BlockMatrix: a matrix of matrix-expression blocks. */
+/**
+ * A matrix of matrix-expression blocks.
+ * @see SymPy `sympy.matrices.expressions.blockmatrix.BlockMatrix`
+ */
 export class BlockMatrixNode extends MatrixExpr {
   /** Number of block rows and block columns of the stored arguments. */
   protected readonly bshape: [number, number];
+  /**
+   * Constructs a `BlockMatrix`.
+   * @param blocks - The blocks in placement order.
+   * @param blockshape - The number of block rows and block columns.
+   * @param name - The name used to identify the object.
+   */
   constructor(blocks: readonly Expr[], blockshape: [number, number], name = 'BlockMatrix') {
     super(name, blocks);
     this.bshape = blockshape;
   }
   /**
-   * SymPy BlockMatrix(rows): validated. Each row holds blocks of the same
-   * number of rows and each column blocks of the same number of columns.
+   * Constructs the block matrix expression from its operands.
+   * @param rowsIn - The rectangular array of block rows.
+   * @returns The block matrix expression from its operands.
+   * @throws RangeError when the input has no rows of matrix blocks or the blocks do not tile a rectangle with the required dimensions.
    */
   static create(rowsIn: Matrix | readonly MatArg[] | readonly (readonly MatArg[])[]): BlockMatrixNode {
     if (rowsIn instanceof Matrix) return new BlockMatrixNode(rowsIn.data, [rowsIn.rows, rowsIn.cols]);
@@ -120,41 +131,81 @@ export class BlockMatrixNode extends MatrixExpr {
     }
     return new BlockMatrixNode(ms.flat(), [ms.length, at(ms, 0).length]);
   }
-  /** The blocks as an explicit matrix of matrix expressions. */
+  /**
+   * Gets the blocks as an explicit matrix of matrix expressions.
+   * @returns The blocks as an explicit matrix of matrix expressions.
+   * @see SymPy `sympy.matrices.expressions.blockmatrix.BlockMatrix.blocks`
+   */
   get blocks(): Matrix {
     const [r, c] = this.bshape;
     return Matrix.fromFunction(r, c, (i, j) => at(this.args, i * c + j));
   }
-  /** The block at block position (i, j). */
+  /**
+   * Returns the block at block position (i, j).
+   * @param i - The zero-based row index.
+   * @param j - The zero-based column index.
+   * @returns The block at block position (i, j).
+   */
   block(i: number, j: number): MatrixExpr {
     return asMat(this.blocks.get(i, j));
   }
-  /** The number of block rows and columns (SymPy blockshape). */
+  /**
+   * Gets the number of block rows and columns.
+   * @returns The number of block rows and columns.
+   * @see SymPy `sympy.matrices.expressions.blockmatrix.BlockMatrix.blockshape`
+   */
   get blockshape(): [number, number] {
     return [...this.bshape];
   }
+  /**
+   * The number of rows and columns, in that order.
+   * @returns The row and column dimensions.
+   * @see SymPy `sympy.matrices.expressions.blockmatrix.BlockMatrix.shape`
+   */
   get shape(): [Expr, Expr] {
     const [r, c] = this.blockshape;
     return [total(Array.from({ length: r }, (_, i) => this.block(i, 0).rows)), total(Array.from({ length: c }, (_, j) => this.block(0, j).cols))];
   }
-  /** The numbers of rows of the block rows. */
+  /**
+   * Gets the numbers of rows of the block rows.
+   * @returns The numbers of rows of the block rows.
+   * @see SymPy `sympy.matrices.expressions.blockmatrix.BlockMatrix.rowblocksizes`
+   */
   get rowblocksizes(): Expr[] {
     return Array.from({ length: this.blockshape[0] }, (_, i) => this.block(i, 0).rows);
   }
-  /** The numbers of columns of the block columns. */
+  /**
+   * Gets the numbers of columns of the block columns.
+   * @returns The numbers of columns of the block columns.
+   * @see SymPy `sympy.matrices.expressions.blockmatrix.BlockMatrix.colblocksizes`
+   */
   get colblocksizes(): Expr[] {
     return Array.from({ length: this.blockshape[1] }, (_, j) => this.block(0, j).cols);
   }
+  /**
+   * Rebuilds the expression with replacement operands.
+   * @param args - The operands in their defining order.
+   * @returns The expression with the given operands.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new BlockMatrixNode(args, this.bshape);
   }
   protected override computeKey(): string {
     return `${this.name}[${this.bshape.join('x')}](${this.args.map((a) => a.key).join(',')})`;
   }
+  /**
+   * Orders the operands for canonical comparison.
+   * @returns The expression operands used for canonical ordering.
+   */
   override sortArgs(): readonly Expr[] {
     return [new BlockTuple(this.args)];
   }
-  /** SymPy structurally_equal: the same block structure. */
+  /**
+   * Compares the row and column partitions of the two block matrices.
+   * @param other - The value to combine with or compare against.
+   * @returns Whether the block shapes and partition sizes coincide.
+   * @see SymPy `sympy.matrices.expressions.blockmatrix.BlockMatrix.structurally_equal`
+   */
   structurallyEqual(other: Expr): boolean {
     return (
       other instanceof BlockMatrixNode &&
@@ -165,7 +216,12 @@ export class BlockMatrixNode extends MatrixExpr {
       keysEqual(this.colblocksizes, other.colblocksizes)
     );
   }
-  /** SymPy _blockmul: the block product when the block sizes match, else the product. */
+  /**
+   * The block product when the block sizes match, else the product.
+   * @param other - The value to combine with or compare against.
+   * @returns The resulting symbolic expression.
+   * @see SymPy `sympy.matrices.expressions.blockmatrix.BlockMatrix._blockmul`
+   */
   blockmul(other: Expr): Expr {
     if (other instanceof BlockMatrixNode && keysEqual(this.colblocksizes, other.rowblocksizes)) {
       const a = this.blocks;
@@ -178,7 +234,12 @@ export class BlockMatrixNode extends MatrixExpr {
     }
     return times(this, other);
   }
-  /** SymPy _blockadd: the block sum of structurally equal block matrices, else the sum. */
+  /**
+   * The block sum of structurally equal block matrices, else the sum.
+   * @param other - The value to combine with or compare against.
+   * @returns The resulting symbolic expression.
+   * @see SymPy `sympy.matrices.expressions.blockmatrix.BlockMatrix._blockadd`
+   */
   blockadd(other: Expr): Expr {
     if (other instanceof BlockMatrixNode && this.structurallyEqual(other)) {
       const a = this.blocks;
@@ -187,27 +248,56 @@ export class BlockMatrixNode extends MatrixExpr {
     }
     return plus(this, other);
   }
+  /**
+   * Computes the transpose using the structure of this expression.
+   * @returns The transpose using the structure of this expression.
+   * @see SymPy `sympy.matrices.expressions.blockmatrix.BlockMatrix._eval_transpose`
+   */
   override evalTranspose(): Expr {
     const b = this.blocks;
     return BlockMatrixNode.create(Matrix.fromFunction(b.cols, b.rows, (i, j) => transposeOf(b.get(j, i))));
   }
+  /**
+   * Return transpose of matrix.
+   * @returns Transpose of matrix.
+   * @see SymPy `sympy.matrices.expressions.blockmatrix.BlockMatrix.transpose`
+   */
   override transpose(): Expr {
     return this.evalTranspose();
   }
+  /**
+   * Splits each block into its real and imaginary parts.
+   * @returns The real-part matrix followed by the imaginary-part matrix.
+   */
   override asRealImagSelf(): [Expr, Expr] {
     const part = (i: 0 | 1): Expr => BlockMatrixNode.create(this.blocks.map((m) => asMat(m).asRealImagSelf()[i]));
     return [part(0), part(1)];
   }
+  /**
+   * Computes the conjugate transpose of this expression.
+   * @returns The conjugate transpose of this expression.
+   * @see SymPy `sympy.matrices.expressions.blockmatrix.BlockMatrix._eval_adjoint`
+   */
   override evalAdjoint(): Expr {
     const b = this.blocks;
     return BlockMatrixNode.create(Matrix.fromFunction(b.cols, b.rows, (i, j) => adjointFn(b.get(j, i))));
   }
+  /**
+   * Computes the trace using the structure of this matrix.
+   * @returns The trace using the structure of this matrix.
+   * @see SymPy `sympy.matrices.expressions.blockmatrix.BlockMatrix._eval_trace`
+   */
   override evalTrace(): Expr {
     if (keysEqual(this.rowblocksizes, this.colblocksizes)) {
       return add(...Array.from({ length: this.blockshape[0] }, (_, i) => trace(this.block(i, i))));
     }
     return super.evalTrace();
   }
+  /**
+   * Computes the determinant using the structure of this matrix.
+   * @returns The determinant using the structure of this matrix.
+   * @see SymPy `sympy.matrices.expressions.blockmatrix.BlockMatrix._eval_determinant`
+   */
   override evalDeterminant(): Expr {
     const [r, c] = this.blockshape;
     if (r === 1 && c === 1) return det(this.block(0, 0));
@@ -219,9 +309,15 @@ export class BlockMatrixNode extends MatrixExpr {
     return new DeterminantNode(this);
   }
   /**
-   * SymPy schur(mat, generalized): the Schur complement with respect to the
+   * The Schur complement with respect to the
    * block 'A', 'B', 'C' or 'D' of a 2 x 2 block matrix; the generalized
    * complement uses the Moore-Penrose inverse (X.T*X)**-1*X.T.
+   * @param mat - The matrix operand.
+   * @param generalized - Whether to use a pseudoinverse for the pivot block.
+   * @returns The Schur complement with respect to the block 'A', 'B', 'C' or 'D' of a 2 x 2 block matrix.
+   * @throws ShapeError when the matrix does not have two block rows and two block columns.
+   * @throws NonInvertibleMatrixError when the selected block is singular and a generalized complement was not requested.
+   * @see SymPy `sympy.matrices.expressions.blockmatrix.BlockMatrix.schur`
    */
   schur(mat: 'A' | 'B' | 'C' | 'D' = 'A', generalized = false): Expr {
     const [r, c] = this.blockshape;
@@ -250,7 +346,13 @@ export class BlockMatrixNode extends MatrixExpr {
         return minus(A, times(B, inv, C));
     }
   }
-  /** SymPy LDUdecomposition: [L, D, U] with X = L*D*U for a 2 x 2 block matrix. */
+  /**
+   * Returns the Block LDU decomposition of
+   * a 2x2 Block Matrix.
+   * @returns The Block LDU decomposition of a 2x2 Block Matrix.
+   * @throws NonInvertibleMatrixError when the top-left block is singular.
+   * @see SymPy `sympy.matrices.expressions.blockmatrix.BlockMatrix.LDUdecomposition`
+   */
   LDUdecomposition(): [Expr, Expr, Expr] {
     const [A, B, C] = this.blocks22('LDU');
     let AI: Expr;
@@ -274,7 +376,13 @@ export class BlockMatrixNode extends MatrixExpr {
     ]);
     return [L, Dm, U];
   }
-  /** SymPy UDLdecomposition: [U, D, L] with X = U*D*L for a 2 x 2 block matrix. */
+  /**
+   * Returns the Block UDL decomposition of
+   * a 2x2 Block Matrix.
+   * @returns The Block UDL decomposition of a 2x2 Block Matrix.
+   * @throws NonInvertibleMatrixError when the bottom-right block is singular.
+   * @see SymPy `sympy.matrices.expressions.blockmatrix.BlockMatrix.UDLdecomposition`
+   */
   UDLdecomposition(): [Expr, Expr, Expr] {
     const [A, B, C, D] = this.blocks22('UDL');
     let DI: Expr;
@@ -298,7 +406,13 @@ export class BlockMatrixNode extends MatrixExpr {
     ]);
     return [U, Dm, L];
   }
-  /** SymPy LUdecomposition: [L, U] with X = L*U for a 2 x 2 block matrix. */
+  /**
+   * Returns the Block LU decomposition of
+   * a 2x2 Block Matrix.
+   * @returns The Block LU decomposition of a 2x2 Block Matrix.
+   * @throws NonInvertibleMatrixError when the top-left block is singular.
+   * @see SymPy `sympy.matrices.expressions.blockmatrix.BlockMatrix.LUdecomposition`
+   */
   LUdecomposition(): [Expr, Expr] {
     const [A0, B, C] = this.blocks22('LU');
     let A: MatrixExpr;
@@ -327,6 +441,13 @@ export class BlockMatrixNode extends MatrixExpr {
     if (r !== 2 || c !== 2) throw new ShapeError(`Block ${kind} decomposition is supported only for 2x2 block matrices`);
     return [this.block(0, 0), this.block(0, 1), this.block(1, 0), this.block(1, 1)];
   }
+  /**
+   * Computes the matrix entry at the given row and column.
+   * @param iIn - The zero-based row index.
+   * @param jIn - The zero-based column index.
+   * @returns The scalar at the requested position.
+   * @see SymPy `sympy.matrices.expressions.blockmatrix.BlockMatrix._entry`
+   */
   override entry(iIn: Expr, jIn: Expr): Expr {
     let i = iIn;
     let j = jIn;
@@ -353,6 +474,11 @@ export class BlockMatrixNode extends MatrixExpr {
     colBlock = Math.min(colBlock, bc - 1);
     return this.block(rowBlock, colBlock).at(i, j);
   }
+  /**
+   * Tests whether the matrix is the identity.
+   * @returns Whether the property holds, or `'unknown'` if undecidable.
+   * @see SymPy `sympy.matrices.expressions.blockmatrix.BlockMatrix.is_Identity`
+   */
   override get isIdentity(): Truth {
     const [r, c] = this.blockshape;
     if (r !== c) return false;
@@ -365,19 +491,39 @@ export class BlockMatrixNode extends MatrixExpr {
     }
     return true;
   }
-  /** SymPy is_structurally_symmetric: the row and column block sizes agree. */
+  /**
+   * The row and column block sizes agree.
+   * @returns Whether the matrix is structurally symmetric.
+   * @see SymPy `sympy.matrices.expressions.blockmatrix.BlockMatrix.is_structurally_symmetric`
+   */
   get isStructurallySymmetric(): boolean {
     return keysEqual(this.rowblocksizes, this.colblocksizes);
   }
+  /**
+   * Test elementwise equality between matrices, potentially of different types.
+   * @param other - The other matrix operand.
+   * @returns Whether entrywise equality can be established.
+   * @see SymPy `sympy.matrices.expressions.blockmatrix.BlockMatrix.equals`
+   */
   override equalsExplicit(other: ExprLike | Matrix): boolean {
     const o = toExpr(other);
     if (same(this, o)) return true;
     if (o instanceof BlockMatrixNode && sameList(this.blocks.data, o.blocks.data) && this.blocks.rows === o.blocks.rows) return true;
     return super.equalsExplicit(other);
   }
+  /**
+   * Formats the expression as plain text.
+   * @param print - Formats a child expression.
+   * @returns The plain-text representation.
+   */
   override printStr(print: (e: Expr) => string): string {
     return explicitStr(this.blocks, print);
   }
+  /**
+   * Formats the expression in LaTeX.
+   * @param print - Formats a child expression.
+   * @returns The LaTeX representation.
+   */
   override printLatex(print: (e: Expr) => string): string {
     return `\\left[${explicitLatexContents(this.blocks, print)}\\right]`;
   }
@@ -393,63 +539,152 @@ class BlockTuple extends ExtensionExpr {
   }
 }
 
-/** SymPy BlockMatrix(rows): a block matrix from rows of blocks (or an explicit matrix of blocks). */
+/**
+ * A block matrix from rows of blocks (or an explicit matrix of blocks).
+ * @param rows - The rectangular array of block rows.
+ * @returns The resulting matrix expression.
+ * @throws RangeError when the input has no rows of matrix blocks or the blocks do not tile a rectangle with the required dimensions.
+ * @see SymPy `sympy.matrices.expressions.blockmatrix.BlockMatrix`
+ * @example
+ * ```ts
+ * import { BlockMatrix, Matrix, MatrixSymbol, symbols } from '@symjs/symjs';
+ *
+ * const [n, m] = symbols('n m');
+ * BlockMatrix(Matrix.of([[MatrixSymbol('A', n, n), MatrixSymbol('B', n, m)], [MatrixSymbol('C', m, n), MatrixSymbol('D', m, m)]])).schur(); // => -C*A**(-1)*B + D
+ * ```
+ */
 export const BlockMatrix = /* @__PURE__ */ callableClass(BlockMatrixNode, (rows: Matrix | readonly MatArg[] | readonly (readonly MatArg[])[]): BlockMatrixNode => BlockMatrixNode.create(rows));
 export type BlockMatrix = BlockMatrixNode;
 
-/** SymPy BlockDiagMatrix(*mats): a block diagonal matrix. */
+/**
+ * A block diagonal matrix.
+ * @see SymPy `sympy.matrices.expressions.blockmatrix.BlockDiagMatrix`
+ */
 export class BlockDiagMatrixNode extends BlockMatrixNode {
+  /**
+   * Constructs a `BlockDiagMatrix`.
+   * @param mats - The diagonal blocks in order.
+   */
   constructor(mats: readonly Expr[]) {
     super(mats, [mats.length, mats.length], 'BlockDiagMatrix');
   }
-  /** SymPy BlockDiagMatrix(*mats). */
+  /**
+   * Constructs the block diag matrix expression from its operands.
+   * @param mats - The diagonal blocks in order.
+   * @returns The block diag matrix expression from its operands.
+   */
   static override create(mats: readonly MatArg[]): BlockDiagMatrixNode {
     return new BlockDiagMatrixNode(mats.map((m) => toExpr(m)));
   }
-  /** The diagonal blocks (SymPy diag). */
+  /**
+   * Gets the diagonal blocks.
+   * @returns The diagonal blocks.
+   * @see SymPy `sympy.matrices.expressions.blockmatrix.BlockDiagMatrix.diag`
+   */
   get diag(): MatrixExpr[] {
     return this.args.map(asMat);
   }
+  /**
+   * Gets the blocks.
+   * @returns The blocks.
+   * @see SymPy `sympy.matrices.expressions.blockmatrix.BlockDiagMatrix.blocks`
+   */
   override get blocks(): Matrix {
     const ms = this.diag;
     return Matrix.fromFunction(ms.length, ms.length, (i, j) => (i === j ? at(ms, i) : new ZeroMatrixNode(at(ms, i).rows, at(ms, j).cols)));
   }
+  /**
+   * The number of rows and columns, in that order.
+   * @returns The row and column dimensions.
+   * @see SymPy `sympy.matrices.expressions.blockmatrix.BlockDiagMatrix.shape`
+   */
   override get shape(): [Expr, Expr] {
     return [total(this.diag.map((b) => b.rows)), total(this.diag.map((b) => b.cols))];
   }
+  /**
+   * Gets the heights of the block rows.
+   * @returns The heights of the block rows.
+   * @see SymPy `sympy.matrices.expressions.blockmatrix.BlockDiagMatrix.rowblocksizes`
+   */
   override get rowblocksizes(): Expr[] {
     return this.diag.map((b) => b.rows);
   }
+  /**
+   * Gets the widths of the block columns.
+   * @returns The widths of the block columns.
+   * @see SymPy `sympy.matrices.expressions.blockmatrix.BlockDiagMatrix.colblocksizes`
+   */
   override get colblocksizes(): Expr[] {
     return this.diag.map((b) => b.cols);
   }
+  /**
+   * Rebuilds the expression with replacement operands.
+   * @param args - The operands in their defining order.
+   * @returns The expression with the given operands.
+   */
   override withArgs(args: readonly Expr[]): Expr {
     return new BlockDiagMatrixNode(args);
   }
+  /**
+   * Orders the operands for canonical comparison.
+   * @returns The expression operands used for canonical ordering.
+   */
   override sortArgs(): readonly Expr[] {
     return this.args;
   }
-  /** SymPy _all_square_blocks. */
+  /**
+   * Returns true if all blocks are square.
+   * @returns True if all blocks are square.
+   * @see SymPy `sympy.matrices.expressions.blockmatrix.BlockDiagMatrix._all_square_blocks`
+   */
   allSquareBlocks(): boolean {
     return this.diag.every((m) => m.isSquare === true);
   }
+  /**
+   * Computes the determinant using the structure of this matrix.
+   * @returns The determinant using the structure of this matrix.
+   * @see SymPy `sympy.matrices.expressions.blockmatrix.BlockDiagMatrix._eval_determinant`
+   */
   override evalDeterminant(): Expr {
     if (this.allSquareBlocks()) return mul(...this.diag.map((m) => det(m)));
     return S.Zero;
   }
+  /**
+   * Computes the inverse using the structure of this matrix.
+   * @returns The inverse using the structure of this matrix.
+   * @throws NonInvertibleMatrixError when the matrix is singular.
+   * @see SymPy `sympy.matrices.expressions.blockmatrix.BlockDiagMatrix._eval_inverse`
+   */
   override evalInverse(): Expr {
     if (this.allSquareBlocks()) return BlockDiagMatrixNode.create(this.diag.map((m) => m.inverse()));
     throw new NonInvertibleMatrixError('Matrix det == 0; not invertible.');
   }
+  /**
+   * Computes the transpose using the structure of this expression.
+   * @returns The transpose using the structure of this expression.
+   * @see SymPy `sympy.matrices.expressions.blockmatrix.BlockDiagMatrix._eval_transpose`
+   */
   override evalTranspose(): Expr {
     return BlockDiagMatrixNode.create(this.diag.map((m) => m.transpose()));
   }
+  /**
+   * Multiplies matrices using their block partitions.
+   * @param other - The value to combine with or compare against.
+   * @returns The resulting symbolic expression.
+   * @see SymPy `sympy.matrices.expressions.blockmatrix.BlockDiagMatrix._blockmul`
+   */
   override blockmul(other: Expr): Expr {
     if (other instanceof BlockDiagMatrixNode && keysEqual(this.colblocksizes, other.rowblocksizes)) {
       return BlockDiagMatrixNode.create(this.diag.map((a, k) => times(a, at(other.diag, k))));
     }
     return super.blockmul(other);
   }
+  /**
+   * Adds matrices using their block partitions.
+   * @param other - The value to combine with or compare against.
+   * @returns The resulting symbolic expression.
+   * @see SymPy `sympy.matrices.expressions.blockmatrix.BlockDiagMatrix._blockadd`
+   */
   override blockadd(other: Expr): Expr {
     if (
       other instanceof BlockDiagMatrixNode &&
@@ -461,13 +696,30 @@ export class BlockDiagMatrixNode extends BlockMatrixNode {
     }
     return super.blockadd(other);
   }
-  /** SymPy get_diag_blocks: the diagonal blocks. */
+  /**
+   * Returns the diagonal blocks.
+   * @returns The diagonal blocks.
+   * @see SymPy `sympy.matrices.expressions.blockmatrix.BlockDiagMatrix.get_diag_blocks`
+   */
   getDiagBlocks(): MatrixExpr[] {
     return this.diag;
   }
 }
 
-/** SymPy BlockDiagMatrix(*mats). */
+/**
+ * A block diagonal matrix.
+ * @param mats - The diagonal blocks in order.
+ * @returns The resulting matrix expression.
+ * @see SymPy `sympy.matrices.expressions.blockmatrix.BlockDiagMatrix`
+ * @remarks SymPy prints this result as `Matrix([ [X, 0], [0, Y]])`.
+ * @example
+ * ```ts
+ * import { BlockDiagMatrix, MatrixSymbol, symbols } from '@symjs/symjs';
+ *
+ * const [n, m] = symbols('n m');
+ * BlockDiagMatrix(MatrixSymbol('X', n, n), MatrixSymbol('Y', m, m)); // => Matrix([[X, 0], [0, Y]])
+ * ```
+ */
 export const BlockDiagMatrix = /* @__PURE__ */ callableClass(BlockDiagMatrixNode, (...mats: MatArg[]): BlockDiagMatrixNode => BlockDiagMatrixNode.create(mats));
 export type BlockDiagMatrix = BlockDiagMatrixNode;
 
@@ -513,6 +765,19 @@ function bcUnpack(e: Expr): Expr {
   return r === 1 && c === 1 ? b.block(0, 0) : e;
 }
 
+/**
+ * Combines compatible block matrices in a matrix sum.
+ * @param e - The expression to examine.
+ * @returns The resulting symbolic expression.
+ * @see SymPy `sympy.matrices.expressions.blockmatrix.bc_matadd`
+ * @example
+ * ```ts
+ * import { BlockMatrix, MatAdd, Matrix, MatrixSymbol, bcMatAdd, symbols } from '@symjs/symjs';
+ *
+ * const [n] = symbols('n', { integer: true });
+ * bcMatAdd(MatAdd(BlockMatrix(Matrix.of([[MatrixSymbol('G', n, n), MatrixSymbol('H', n, n)]])), BlockMatrix(Matrix.of([[MatrixSymbol('H', n, n), MatrixSymbol('H', n, n)]])))); // => Matrix([[G + H, 2*H]])
+ * ```
+ */
 export function bcMatAdd(e: Expr): Expr {
   const blocks = e.args.filter(isBlock);
   if (!blocks.length) return e;
@@ -523,6 +788,12 @@ export function bcMatAdd(e: Expr): Expr {
   return block;
 }
 
+/**
+ * Adds a conforming block identity to the block matrix.
+ * @param e - The expression to examine.
+ * @returns The resulting symbolic expression.
+ * @see SymPy `sympy.matrices.expressions.blockmatrix.bc_block_plus_ident`
+ */
 export function bcBlockPlusIdent(e: Expr): Expr {
   const idents = e.args.filter((a) => a instanceof MatrixExpr && a.isIdentity === true);
   if (!idents.length) return e;
@@ -544,6 +815,19 @@ function bcDist(e: Expr): Expr {
   return e;
 }
 
+/**
+ * Combines compatible block matrices in a matrix product.
+ * @param e - The expression to examine.
+ * @returns The resulting symbolic expression.
+ * @see SymPy `sympy.matrices.expressions.blockmatrix.bc_matmul`
+ * @example
+ * ```ts
+ * import { BlockMatrix, MatMul, Matrix, MatrixSymbol, bcMatMul, symbols } from '@symjs/symjs';
+ *
+ * const [n] = symbols('n', { integer: true });
+ * bcMatMul(MatMul(MatrixSymbol('H', n, n), BlockMatrix(Matrix.of([[MatrixSymbol('G', n, n), MatrixSymbol('H', n, n)]])), BlockMatrix(Matrix.of([[MatrixSymbol('G', n, n)], [MatrixSymbol('H', n, n)]])), MatrixSymbol('G', n, n))); // => Matrix([[(H**3 + H*G**2)*G]])
+ * ```
+ */
 export function bcMatMul(e: Expr): Expr {
   let factor: Expr;
   let matrices: Expr[];
@@ -576,6 +860,20 @@ export function bcMatMul(e: Expr): Expr {
   return times(factor, ...matrices);
 }
 
+/**
+ * Transposes the blocks and exchanges their row and column positions.
+ * @param e - The expression to examine.
+ * @returns The resulting symbolic expression.
+ * @see SymPy `sympy.matrices.expressions.blockmatrix.bc_transpose`
+ * @remarks SymPy prints this result as `Matrix([ [A.T, C.T], [B.T, D.T]])`.
+ * @example
+ * ```ts
+ * import { BlockMatrix, Matrix, MatrixSymbol, Transpose, bcTranspose, symbols } from '@symjs/symjs';
+ *
+ * const [n] = symbols('n', { integer: true });
+ * bcTranspose(Transpose(BlockMatrix(Matrix.of([[MatrixSymbol('A', n, n), MatrixSymbol('B', n, n)], [MatrixSymbol('C', n, n), MatrixSymbol('D', n, n)]])))); // => Matrix([[A.T, C.T], [B.T, D.T]])
+ * ```
+ */
 export function bcTranspose(e: Expr): Expr {
   return asMat(blockCollapse(at(e.args, 0))).evalTranspose();
 }
@@ -636,7 +934,12 @@ function choose2x2InversionFormula(A: MatrixExpr, B: MatrixExpr, C: MatrixExpr, 
   return undefined;
 }
 
-/** SymPy deblock: a BlockMatrix of BlockMatrices flattened. */
+/**
+ * A BlockMatrix of BlockMatrices flattened.
+ * @param B - The block matrix to flatten.
+ * @returns The resulting symbolic expression.
+ * @see SymPy `sympy.matrices.expressions.blockmatrix.deblock`
+ */
 export function deblock(B: Expr): Expr {
   if (!(B instanceof BlockMatrixNode) || !B.blocks.data.some((b) => hasNode(b, isBlock))) return B;
   const bb = B.blocks.map((x) => (isBlock(x) ? x : BlockMatrixNode.create([[x]])));
@@ -651,7 +954,12 @@ export function deblock(B: Expr): Expr {
   return BlockMatrixNode.create(Matrix.of(rows));
 }
 
-/** SymPy reblock_2x2: a block matrix regrouped into 2 x 2 blocks of block matrices. */
+/**
+ * A block matrix regrouped into 2 x 2 blocks of block matrices.
+ * @param expr - The expression to transform.
+ * @returns The resulting symbolic expression.
+ * @see SymPy `sympy.matrices.expressions.blockmatrix.reblock_2x2`
+ */
 export function reblock2x2(expr: Expr): Expr {
   if (!(expr instanceof BlockMatrixNode) || !expr.blockshape.every((d) => d > 2)) return expr;
   const [rowblocks, colblocks] = expr.blockshape;
@@ -699,15 +1007,33 @@ const conditionedRule: Rule = (e) => {
 };
 
 /**
- * SymPy block_collapse(expr): a matrix expression with block matrices
+ * A matrix expression with block matrices
  * evaluated blockwise (block products, sums, transposes and inverses).
+ * @param expr - The expression to transform.
+ * @returns The resulting symbolic expression.
+ * @see SymPy `sympy.matrices.expressions.blockmatrix.block_collapse`
+ * @example
+ * ```ts
+ * import { BlockMatrix, Matrix, blockCollapse, sympifyMatrix } from '@symjs/symjs';
+ * blockCollapse(BlockMatrix(Matrix.of([[sympifyMatrix(Matrix.of([[1, 2], [3, 4]]))]]))); // => Matrix([[1, 2], [3, 4]])
+ * ```
  */
 export function blockCollapse(expr: MatArg): Expr {
   const rule = exhaust((e) => bottomUp(exhaust(conditionedRule), e));
   return doitArg(rule(toExpr(expr)));
 }
 
-/** SymPy bounds(sizes): consecutive [low, high) pairs. */
+/**
+ * Consecutive [low, high) pairs.
+ * @param sizes - The lengths of consecutive blocks.
+ * @returns One half-open index interval for each block.
+ * @see SymPy `sympy.matrices.expressions.blockmatrix.bounds`
+ * @example
+ * ```ts
+ * import { bounds } from '@symjs/symjs';
+ * bounds([1, 10, 50]); // => [[0, 1], [1, 11], [11, 61]]
+ * ```
+ */
 export function bounds(sizes: readonly number[]): [number, number][] {
   let low = 0;
   return sizes.map((s) => {
@@ -717,7 +1043,19 @@ export function bounds(sizes: readonly number[]): [number, number][] {
   });
 }
 
-/** SymPy blockcut(expr, rowsizes, colsizes): a matrix cut into blocks of slices. */
+/**
+ * A matrix cut into blocks of slices.
+ * @param expr - The expression to transform.
+ * @param rowsizes - The heights of consecutive block rows.
+ * @param colsizes - The widths of consecutive block columns.
+ * @returns The resulting matrix expression.
+ * @see SymPy `sympy.matrices.expressions.blockmatrix.blockcut`
+ * @example
+ * ```ts
+ * import { Matrix, blockcut } from '@symjs/symjs';
+ * blockcut(Matrix.eye(4), [1, 3], [1, 3]).blockshape; // => [2, 2]
+ * ```
+ */
 export function blockcut(expr: MatArg, rowsizes: readonly ExprLike[], colsizes: readonly ExprLike[]): BlockMatrixNode {
   const cuts = (sizes: readonly ExprLike[]): [Expr, Expr][] => {
     let low: Expr = S.Zero;

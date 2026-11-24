@@ -118,18 +118,37 @@ export interface FftOptions {
 }
 
 /**
- * The Discrete Fourier Transform (DFT) in the complex domain (SymPy fft),
- * by the radix-2 Cooley-Tukey algorithm; the sequence is padded to the
- * right with zeros to a power of 2. Exact by default; `{ dps }` evaluates
- * numerically with that many decimal digits.
- *
- * `fft([1, 2, 3, 4])` is `[10, -2 - 2*I, -2, -2 + 2*I]`.
+ * Computes the discrete Fourier transform, padding with zeros to a power of two.
+ * @param seq - The sequence of input coefficients.
+ * @param opts - The settings described by {@link FftOptions}.
+ * @returns The transformed coefficients in index order.
+ * @throws TypeError when the coefficients are not iterable.
+ * @throws RangeError when an input coefficient contains a free symbol.
+ * @see SymPy `sympy.discrete.transforms.fft`
+ * @example
+ * ```ts
+ * import { fft } from '@symjs/symjs';
+ * fft([1, 2, 3, 4]); // => [10, -2 - 2*I, -2, -2 + 2*I]
+ * ```
  */
 export function fft(seq: Iterable<ExprLike>, opts: FftOptions = {}): Expr[] {
   return fourierTransform(seq, opts.dps, false);
 }
 
-/** The inverse Discrete Fourier Transform (SymPy ifft); see {@link fft}. */
+/**
+ * Computes the inverse discrete Fourier transform, padding with zeros to a power of two.
+ * @param seq - The sequence of input coefficients.
+ * @param opts - The settings described by {@link FftOptions}.
+ * @returns The transformed coefficients in index order.
+ * @throws TypeError when the coefficients are not iterable.
+ * @throws RangeError when an input coefficient contains a free symbol.
+ * @see SymPy `sympy.discrete.transforms.ifft`
+ * @example
+ * ```ts
+ * import { ifft } from '@symjs/symjs';
+ * ifft([1, 2, 3, 4]); // => [5/2, -1/2 + I/2, -1/2, -1/2 - I/2]
+ * ```
+ */
 export function ifft(seq: Iterable<ExprLike>, opts: FftOptions = {}): Expr[] {
   return fourierTransform(seq, opts.dps, true);
 }
@@ -172,18 +191,37 @@ function numberTheoreticTransform(seq: Iterable<IntLike>, prime: IntLike, invers
 }
 
 /**
- * The Number Theoretic Transform (NTT) (SymPy ntt): the Discrete Fourier
- * Transform over the quotient ring Z/pZ for a prime `prime` of the form
- * m*2**k + 1 instead of the complex numbers. The sequence is padded to the
- * right with zeros to a power of 2, which must divide prime - 1.
- *
- * `ntt([1, 2, 3, 4], 3*2**8 + 1)` is `[10n, 643n, 767n, 122n]`.
+ * Computes the discrete Fourier transform modulo a prime, padding to a power of two.
+ * @param seq - The sequence of input coefficients.
+ * @param prime - The prime modulus, with the padded transform length dividing its predecessor.
+ * @returns The transformed coefficients in index order.
+ * @throws TypeError when the coefficients are not iterable.
+ * @throws RangeError when the coefficients are nonintegral or the prime modulus does not admit the padded transform length.
+ * @see SymPy `sympy.discrete.transforms.ntt`
+ * @example
+ * ```ts
+ * import { ntt } from '@symjs/symjs';
+ * ntt([1, 2, 3, 4], 769); // => [10, 643, 767, 122]
+ * ```
  */
 export function ntt(seq: Iterable<IntLike>, prime: IntLike): bigint[] {
   return numberTheoreticTransform(seq, prime, false);
 }
 
-/** The inverse Number Theoretic Transform (SymPy intt); see {@link ntt}. */
+/**
+ * Computes the inverse discrete Fourier transform modulo a prime.
+ * @param seq - The sequence of input coefficients.
+ * @param prime - The prime modulus, with the padded transform length dividing its predecessor.
+ * @returns The transformed coefficients in index order.
+ * @throws TypeError when the coefficients are not iterable.
+ * @throws RangeError when the coefficients are nonintegral or the prime modulus does not admit the padded transform length.
+ * @see SymPy `sympy.discrete.transforms.intt`
+ * @example
+ * ```ts
+ * import { intt } from '@symjs/symjs';
+ * intt([1, 2, 3, 4], 769); // => [387, 415, 384, 353]
+ * ```
+ */
 export function intt(seq: Iterable<IntLike>, prime: IntLike): bigint[] {
   return numberTheoreticTransform(seq, prime, true);
 }
@@ -209,16 +247,33 @@ function walshHadamardTransform(seq: Iterable<ExprLike>, inverse: boolean): Expr
 }
 
 /**
- * The Walsh Hadamard Transform (WHT) in Hadamard ordering (SymPy fwht); the
- * sequence is padded to the right with zeros to a power of 2.
- *
- * `fwht([4, 2, 2, 0, 0, 2, -2, 0])` is `[8, 0, 8, 0, 8, 8, 0, 0]`.
+ * Computes the Walsh–Hadamard transform in Hadamard order.
+ * @param seq - The sequence of input coefficients.
+ * @returns The transformed coefficients in index order.
+ * @throws TypeError when the coefficients are not iterable.
+ * @see SymPy `sympy.discrete.transforms.fwht`
+ * @example
+ * ```ts
+ * import { fwht } from '@symjs/symjs';
+ * fwht([4, 2, 2, 0, 0, 2, -2, 0]); // => [8, 0, 8, 0, 8, 8, 0, 0]
+ * ```
  */
 export function fwht(seq: Iterable<ExprLike>): Expr[] {
   return walshHadamardTransform(seq, false);
 }
 
-/** The inverse Walsh Hadamard Transform (SymPy ifwht); see {@link fwht}. */
+/**
+ * Computes the inverse Walsh–Hadamard transform in Hadamard order.
+ * @param seq - The sequence of input coefficients.
+ * @returns The transformed coefficients in index order.
+ * @throws TypeError when the coefficients are not iterable.
+ * @see SymPy `sympy.discrete.transforms.ifwht`
+ * @example
+ * ```ts
+ * import { ifwht } from '@symjs/symjs';
+ * ifwht([8, 0, 8, 0, 8, 8, 0, 0]); // => [4, 2, 2, 0, 0, 2, -2, 0]
+ * ```
+ */
 export function ifwht(seq: Iterable<ExprLike>): Expr[] {
   return walshHadamardTransform(seq, true);
 }
@@ -246,18 +301,38 @@ export interface MobiusTransformOptions {
 
 /**
  * The Mobius Transform for the subset lattice, with the indices of the
- * sequence as bitmasks (SymPy mobius_transform): entry i of the result is
+ * sequence as bitmasks: entry i of the result is
  * the sum of the entries whose index is a subset of i (with
  * `{ subset: false }`, a superset of i). The sequence is padded to the
  * right with zeros to a power of 2.
- *
- * `mobiusTransform([x, y, z])` is `[x, x + y, x + z, x + y + z]`.
+ * @param seq - The sequence of input coefficients.
+ * @param opts - The settings described by {@link MobiusTransformOptions}.
+ * @returns The transformed coefficients in index order.
+ * @throws TypeError when the coefficients are not iterable.
+ * @see SymPy `sympy.discrete.transforms.mobius_transform`
+ * @example
+ * ```ts
+ * import { mobiusTransform } from '@symjs/symjs';
+ * mobiusTransform([1, 2, 3, 4]); // => [1, 3, 4, 10]
+ * ```
  */
 export function mobiusTransform(seq: Iterable<ExprLike>, opts: MobiusTransformOptions = {}): Expr[] {
   return mobiusTransformImpl(seq, 1, opts.subset ?? true);
 }
 
-/** The inverse Mobius Transform for the subset lattice (SymPy inverse_mobius_transform); see {@link mobiusTransform}. */
+/**
+ * The inverse Mobius Transform for the subset lattice; see {@link mobiusTransform}.
+ * @param seq - The sequence of input coefficients.
+ * @param opts - The settings described by {@link MobiusTransformOptions}.
+ * @returns The transformed coefficients in index order.
+ * @throws TypeError when the coefficients are not iterable.
+ * @see SymPy `sympy.discrete.transforms.inverse_mobius_transform`
+ * @example
+ * ```ts
+ * import { inverseMobiusTransform } from '@symjs/symjs';
+ * inverseMobiusTransform([1, 3, 4, 10]); // => [1, 2, 3, 4]
+ * ```
+ */
 export function inverseMobiusTransform(seq: Iterable<ExprLike>, opts: MobiusTransformOptions = {}): Expr[] {
   return mobiusTransformImpl(seq, -1, opts.subset ?? true);
 }

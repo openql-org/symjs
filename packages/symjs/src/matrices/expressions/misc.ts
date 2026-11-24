@@ -28,12 +28,26 @@ import { parse } from '../../parsing/parser';
 // DotProduct
 // ---------------------------------------------------------------------------
 
-/** SymPy DotProduct(a, b): the dot product of two vectors of the same length. */
+/**
+ * The dot product of two vectors of the same length.
+ * @see SymPy `sympy.matrices.expressions.dotproduct.DotProduct`
+ */
 export class DotProductNode extends MatScalar {
+  /**
+   * Constructs a `DotProduct`.
+   * @param a - The first operand.
+   * @param b - The second operand.
+   */
   constructor(a: Expr, b: Expr) {
     super('DotProduct', [a, b]);
   }
-  /** SymPy DotProduct(arg1, arg2): validated. */
+  /**
+   * Constructs the dot product expression from its operands.
+   * @param a1 - The first vector.
+   * @param a2 - The second vector.
+   * @returns The dot product expression from its operands.
+   * @throws TypeError when a matrix operand is required or a vector argument has more than one row and column or the vector lengths differ.
+   */
   static create(a1: MatArg, a2: MatArg): DotProductNode {
     const a = toExpr(a1);
     const b = toExpr(a2);
@@ -48,9 +62,20 @@ export class DotProductNode extends MatScalar {
     if (sa.size !== sb.size || [...sa].some((k) => !sb.has(k))) throw new TypeError('DotProduct arguments are not the same length');
     return new DotProductNode(a, b);
   }
+  /**
+   * Rebuilds the expression with replacement operands.
+   * @param args - The operands in their defining order.
+   * @returns The expression with the given operands.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new DotProductNode(...pair(args));
   }
+  /**
+   * Evaluates the operations represented by this expression.
+   * @param hints - Evaluation options, including whether to evaluate the operands recursively.
+   * @returns The evaluated expression.
+   * @see SymPy `sympy.matrices.expressions.dotproduct.DotProduct.doit`
+   */
   override doit(hints: DoitHints = {}): Expr {
     const [a0, b0] = pair(this.args.map((x) => cast(hints.deep === false ? x : doitArg(x, hints), MatrixExpr)));
     const mul = (x: Expr, y: Expr): MatrixExpr => cast(cast(x, MatrixExpr).mul(y), MatrixExpr);
@@ -59,15 +84,35 @@ export class DotProductNode extends MatScalar {
     else m = same(a0.rows, S.One) ? mul(a0, b0) : mul(transposeOf(a0), transposeOf(b0));
     return m.at(0);
   }
+  /**
+   * Returns the binding precedence used to parenthesize LaTeX output.
+   * @returns The binding precedence used to parenthesize LaTeX output.
+   */
   override latexPrecedence(): number {
     return 49;
   }
+  /**
+   * Formats the expression in LaTeX.
+   * @returns The LaTeX representation.
+   */
   override printLatex(): string {
     return `${parenLatex(at(this.args, 0), 49)} \\cdot ${parenLatex(at(this.args, 1), 49)}`;
   }
 }
 
-/** SymPy DotProduct(a, b). */
+/**
+ * The dot product of two vectors of the same length.
+ * @param a - The first operand.
+ * @param b - The second operand.
+ * @returns The resulting matrix expression.
+ * @throws TypeError when a matrix operand is required or a vector argument has more than one row and column or the vector lengths differ.
+ * @see SymPy `sympy.matrices.expressions.dotproduct.DotProduct`
+ * @example
+ * ```ts
+ * import { DotProduct, MatrixSymbol } from '@symjs/symjs';
+ * DotProduct(MatrixSymbol('A', 1, 3), MatrixSymbol('B', 1, 3)); // => DotProduct(A, B)
+ * ```
+ */
 export const DotProduct = /* @__PURE__ */ callableClass(DotProductNode, (a: MatArg, b: MatArg): DotProductNode => DotProductNode.create(a, b));
 export type DotProduct = DotProductNode;
 
@@ -75,15 +120,27 @@ export type DotProduct = DotProductNode;
 // CompanionMatrix
 // ---------------------------------------------------------------------------
 
-/** SymPy CompanionMatrix(poly): the companion matrix of a monic univariate polynomial. */
+/**
+ * The companion matrix of a monic univariate polynomial.
+ * @see SymPy `sympy.matrices.expressions.companion.CompanionMatrix`
+ */
 export class CompanionMatrixNode extends MatrixExpr {
   /** The polynomial. */
   readonly poly: Poly;
+  /**
+   * Constructs a `CompanionMatrix`.
+   * @param poly - The monic polynomial defining the companion matrix.
+   */
   constructor(poly: Poly) {
     super('CompanionMatrix', [poly.asExpr(), ...poly.gens]);
     this.poly = poly;
   }
-  /** SymPy CompanionMatrix(poly): the polynomial must be monic, univariate and of degree >= 1. */
+  /**
+   * Constructs the companion matrix expression from its operands.
+   * @param poly - The monic polynomial defining the companion matrix.
+   * @returns The companion matrix expression from its operands.
+   * @throws RangeError when the argument is not a polynomial or the polynomial has more than one variable or the polynomial is not monic or the polynomial has degree less than one.
+   */
   static create(poly: Poly): CompanionMatrixNode {
     if (!(poly instanceof Poly)) throw new RangeError(`${String(poly)} must be a Poly instance.`);
     if (poly.gens.length !== 1) throw new RangeError(`${String(poly)} must be a univariate polynomial.`);
@@ -91,16 +148,34 @@ export class CompanionMatrixNode extends MatrixExpr {
     if (poly.degree() < 1) throw new RangeError(`${String(poly)} must have degree not less than 1.`);
     return new CompanionMatrixNode(poly);
   }
+  /**
+   * The number of rows and columns, in that order.
+   * @returns The row and column dimensions.
+   * @see SymPy `sympy.matrices.expressions.companion.CompanionMatrix.shape`
+   */
   get shape(): [Expr, Expr] {
     const n = sympify(this.poly.degree());
     return [n, n];
   }
+  /**
+   * Rebuilds the expression with replacement operands.
+   * @param args - The operands in their defining order.
+   * @returns The expression with the given operands.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new CompanionMatrixNode(Poly.from(first(args), args.slice(1)));
   }
   protected override computeKey(): string {
     return `CompanionMatrix(${String(this.poly)})`;
   }
+  /**
+   * Computes the matrix entry at the given row and column.
+   * @param i - The zero-based row index.
+   * @param j - The zero-based column index.
+   * @returns The scalar at the requested position.
+   * @throws TypeError when the indices are not integers.
+   * @see SymPy `sympy.matrices.expressions.companion.CompanionMatrix._entry`
+   */
   override entry(i: Expr, j: Expr): Expr {
     const n = this.poly.degree();
     if (!isInt(i) || !isInt(j)) throw new TypeError('CompanionMatrix entries need integer indices');
@@ -112,12 +187,25 @@ export class CompanionMatrixNode extends MatrixExpr {
     }
     return r === c + 1 ? S.One : S.Zero;
   }
+  /**
+   * Evaluates the entries to construct an explicit matrix.
+   * @returns The resulting matrix.
+   * @see SymPy `sympy.matrices.expressions.companion.CompanionMatrix.as_explicit`
+   */
   override asExplicit(): Matrix {
     return companion(this.poly.allCoeffs());
   }
+  /**
+   * Formats the expression as plain text.
+   * @returns The plain-text representation.
+   */
   override printStr(): string {
     return `CompanionMatrix(${String(this.poly)})`;
   }
+  /**
+   * Formats the expression in LaTeX.
+   * @returns The LaTeX representation.
+   */
   override printLatex(): string {
     const dom = domainLatex(this.poly.domain);
     const gens = this.poly.gens.map((g) => latex(g)).join(', ');
@@ -160,7 +248,20 @@ function polyLatex(poly: Poly): string {
   return terms.slice(1).join(' ');
 }
 
-/** SymPy CompanionMatrix(poly). */
+/**
+ * The companion matrix of a monic univariate polynomial.
+ * @param poly - The monic polynomial defining the companion matrix.
+ * @returns The resulting matrix expression.
+ * @throws RangeError when the argument is not a polynomial or the polynomial has more than one variable or the polynomial is not monic or the polynomial has degree less than one.
+ * @see SymPy `sympy.matrices.expressions.companion.CompanionMatrix`
+ * @example
+ * ```ts
+ * import { CompanionMatrix, Poly, ZZ, ex } from '@symjs/symjs';
+ *
+ * const x = ex`x`;
+ * CompanionMatrix(Poly.from(ex`c0 + x`, [x], { domain: 'ZZ[c0]', pure: false })).asExplicit(); // => Matrix([[-c0]])
+ * ```
+ */
 export const CompanionMatrix = /* @__PURE__ */ callableClass(CompanionMatrixNode, (poly: Poly): CompanionMatrixNode => CompanionMatrixNode.create(poly));
 export type CompanionMatrix = CompanionMatrixNode;
 
@@ -168,20 +269,44 @@ export type CompanionMatrix = CompanionMatrixNode;
 // MatrixSet
 // ---------------------------------------------------------------------------
 
-/** SymPy MatrixSet(n, m, set): the set of n x m matrices with entries in a set (a set, as in SymPy). */
+/**
+ * The set of n x m matrices with entries in a set (a set, as in SymPy).
+ * @see SymPy `sympy.matrices.expressions.sets.MatrixSet`
+ */
 export class MatrixSetNode extends SetExpr {
+  /**
+   * Returns a tuple of arguments of 'self'.
+   * @see SymPy `sympy.matrices.expressions.sets.MatrixSet.args`
+   */
   readonly args: readonly Expr[];
+  /**
+   * Constructs a `MatrixSet`.
+   * @param n - The number of rows.
+   * @param m - The matrix being factored.
+   * @param set - The set of allowed matrix entries.
+   */
   constructor(n: Expr, m: Expr, set: SetExpr) {
     super();
     this.args = [n, m, set];
   }
+  /**
+   * Gets the class name.
+   * @returns The class name.
+   */
   get className(): string {
     return 'MatrixSet';
   }
   protected computeKey(): string {
     return `MatrixSet(${this.args.map((a) => a.key).join(',')})`;
   }
-  /** SymPy MatrixSet(n, m, set). */
+  /**
+   * Constructs the matrix set expression from its operands.
+   * @param n - The number of rows.
+   * @param m - The matrix being factored.
+   * @param set - The set of allowed matrix entries.
+   * @returns The matrix set expression from its operands.
+   * @throws RangeError when a dimension is negative or nonintegral.
+   */
   static create(n: ExprLike, m: ExprLike, set: SetExpr): MatrixSetNode {
     const d = (x: ExprLike): Expr => {
       const e = sympify(x);
@@ -190,22 +315,45 @@ export class MatrixSetNode extends SetExpr {
     };
     return new MatrixSetNode(d(n), d(m), set);
   }
-  /** The shape (n, m). */
+  /**
+   * The shape (n, m).
+   * @returns The row and column dimensions.
+   * @see SymPy `sympy.matrices.expressions.sets.MatrixSet.shape`
+   */
   get shape(): [Expr, Expr] {
     return pair(this.args);
   }
-  /** The set of the entries. */
+  /**
+   * Gets the set of the entries.
+   * @returns The set of the entries.
+   * @see SymPy `sympy.matrices.expressions.sets.MatrixSet.set`
+   */
   get set(): SetExpr {
     return cast(at(this.args, 2), SetExpr);
   }
+  /**
+   * Rebuilds the expression with replacement operands.
+   * @param args - The operands in their defining order.
+   * @returns The expression with the given operands.
+   */
   override withArgs(args: readonly Expr[]): Expr {
     return new MatrixSetNode(at(args, 0), at(args, 1), cast(at(args, 2), SetExpr));
   }
-  /** SymPy MatrixSet._contains (a TypeError for a value that is not a matrix expression). */
+  /**
+   * Tests whether the given expression belongs to this set of matrices.
+   * @param x - The expression or entry to examine.
+   * @returns Whether the property holds, or `'unknown'` if undecidable.
+   */
   override elementOf(x: Expr): Truth {
     return this.contains(x);
   }
-  /** SymPy X in M: true, false or 'unknown'. */
+  /**
+   * Tests the dimensions and entry set of a candidate matrix.
+   * @param other - The other matrix operand.
+   * @returns Whether the property holds, or `'unknown'` if undecidable.
+   * @throws TypeError when a matrix operand is required.
+   * @see SymPy `sympy.matrices.expressions.sets.MatrixSet.contains`
+   */
   contains(other: MatArg): Truth {
     const x = toExpr(other);
     if (!(x instanceof MatrixExpr)) throw new TypeError(`${String(x)} should be an instance of MatrixExpr.`);
@@ -222,15 +370,38 @@ export class MatrixSetNode extends SetExpr {
     }
     return result;
   }
+  /**
+   * Formats the expression as plain text.
+   * @param print - Formats a child expression.
+   * @returns The plain-text representation.
+   */
   printStr(print: (e: Expr) => string): string {
     return `MatrixSet(${this.args.map(print).join(', ')})`;
   }
+  /**
+   * Formats the expression in LaTeX.
+   * @param print - Formats a child expression.
+   * @returns The LaTeX representation.
+   */
   printLatex(print: (e: Expr) => string): string {
     return `\\operatorname{MatrixSet}\\left(${this.args.map(print).join(', ')}\\right)`;
   }
 }
 
-/** SymPy MatrixSet(n, m, set). */
+/**
+ * The set of n x m matrices with entries in a set (a set, as in SymPy).
+ * @param n - The number of rows.
+ * @param m - The number of columns.
+ * @param set - The set of allowed matrix entries.
+ * @returns The resulting matrix expression.
+ * @throws RangeError when a dimension is negative or nonintegral.
+ * @see SymPy `sympy.matrices.expressions.sets.MatrixSet`
+ * @example
+ * ```ts
+ * import { Matrix, MatrixSet, Reals } from '@symjs/symjs';
+ * MatrixSet(2, 2, Reals).contains(Matrix.of([[1, 2], [3, 4]])); // => True
+ * ```
+ */
 export const MatrixSet = /* @__PURE__ */ callableClass(MatrixSetNode, (n: ExprLike, m: ExprLike, set: SetExpr): MatrixSetNode => MatrixSetNode.create(n, m, set));
 export type MatrixSet = MatrixSetNode;
 
@@ -238,8 +409,22 @@ export type MatrixSet = MatrixSetNode;
 // Factorizations
 // ---------------------------------------------------------------------------
 
-/** SymPy Factorization: a factor of a matrix factorization, with the shape of the matrix. */
+/**
+ * A factor of a matrix factorization, with the shape of the matrix.
+ * @see SymPy `sympy.matrices.expressions.factorizations.Factorization`
+ * @example
+ * ```ts
+ * import { Factorization, LofLU, MatrixSymbol } from '@symjs/symjs';
+ * LofLU(MatrixSymbol('A', 3, 3)) instanceof Factorization; // => True
+ * ```
+ */
 export class FactorizationNode extends MatrixExpr {
+  /**
+   * Constructs a `Factorization`.
+   * @param name - The name used to identify the object.
+   * @param arg - The expression to operate on.
+   * @param predicates - The matrix properties satisfied by the factor.
+   */
   constructor(
     name: string,
     arg: Expr,
@@ -248,13 +433,27 @@ export class FactorizationNode extends MatrixExpr {
   ) {
     super(name, [arg]);
   }
-  /** The factorized matrix. */
+  /**
+   * The factorized matrix.
+   * @returns The operand of the expression.
+   * @see SymPy `sympy.matrices.expressions.factorizations.Factorization.arg`
+   */
   get arg(): MatrixExpr {
     return cast(first(this.args), MatrixExpr);
   }
+  /**
+   * The number of rows and columns, in that order.
+   * @returns The row and column dimensions.
+   * @see SymPy `sympy.matrices.expressions.factorizations.Factorization.shape`
+   */
   get shape(): [Expr, Expr] {
     return this.arg.shape;
   }
+  /**
+   * Rebuilds the expression with replacement operands.
+   * @param args - The operands in their defining order.
+   * @returns The expression with the given operands.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new FactorizationNode(this.name, first(args), this.predicates);
   }
@@ -262,45 +461,175 @@ export class FactorizationNode extends MatrixExpr {
 
 const factor = (name: string, preds: readonly string[]) => (m: MatArg) => new FactorizationNode(name, toMatrix(m), preds);
 
-/** SymPy LofLU(X). */
+/**
+ * Represents the lower triangular factor of an LU decomposition.
+ * @param m - The matrix being factored.
+ * @returns The symbolic factor of the input matrix.
+ * @see SymPy `sympy.matrices.expressions.factorizations.LofLU`
+ * @example
+ * ```ts
+ * import { LofLU, MatrixSymbol } from '@symjs/symjs';
+ * LofLU(MatrixSymbol('A', 3, 3)).shape; // => [3, 3]
+ * ```
+ */
 export const LofLU = factor('LofLU', ['lower_triangular']);
-/** SymPy UofLU(X). */
+/**
+ * Represents the upper triangular factor of an LU decomposition.
+ * @param m - The matrix being factored.
+ * @returns The symbolic factor of the input matrix.
+ * @see SymPy `sympy.matrices.expressions.factorizations.UofLU`
+ * @example
+ * ```ts
+ * import { MatrixSymbol, UofLU } from '@symjs/symjs';
+ * UofLU(MatrixSymbol('A', 3, 3)).shape; // => [3, 3]
+ * ```
+ */
 export const UofLU = factor('UofLU', ['upper_triangular']);
-/** SymPy LofCholesky(X). */
+/**
+ * Represents the lower triangular Cholesky factor.
+ * @param m - The matrix being factored.
+ * @returns The symbolic factor of the input matrix.
+ * @see SymPy `sympy.matrices.expressions.factorizations.LofCholesky`
+ * @example
+ * ```ts
+ * import { LofCholesky, MatrixSymbol } from '@symjs/symjs';
+ * LofCholesky(MatrixSymbol('A', 3, 3)).shape; // => [3, 3]
+ * ```
+ */
 export const LofCholesky = factor('LofCholesky', ['lower_triangular']);
-/** SymPy UofCholesky(X). */
+/**
+ * Represents the upper triangular Cholesky factor.
+ * @param m - The matrix being factored.
+ * @returns The symbolic factor of the input matrix.
+ * @see SymPy `sympy.matrices.expressions.factorizations.UofCholesky`
+ * @example
+ * ```ts
+ * import { MatrixSymbol, UofCholesky } from '@symjs/symjs';
+ * UofCholesky(MatrixSymbol('A', 3, 3)).shape; // => [3, 3]
+ * ```
+ */
 export const UofCholesky = factor('UofCholesky', ['upper_triangular']);
-/** SymPy QofQR(X). */
+/**
+ * Represents the orthogonal factor of a QR decomposition.
+ * @param m - The matrix being factored.
+ * @returns The symbolic factor of the input matrix.
+ * @see SymPy `sympy.matrices.expressions.factorizations.QofQR`
+ * @example
+ * ```ts
+ * import { MatrixSymbol, QofQR } from '@symjs/symjs';
+ * QofQR(MatrixSymbol('A', 3, 3)).shape; // => [3, 3]
+ * ```
+ */
 export const QofQR = factor('QofQR', ['orthogonal']);
-/** SymPy RofQR(X). */
+/**
+ * Represents the upper triangular factor of a QR decomposition.
+ * @param m - The matrix being factored.
+ * @returns The symbolic factor of the input matrix.
+ * @see SymPy `sympy.matrices.expressions.factorizations.RofQR`
+ * @example
+ * ```ts
+ * import { MatrixSymbol, RofQR } from '@symjs/symjs';
+ * RofQR(MatrixSymbol('A', 3, 3)).shape; // => [3, 3]
+ * ```
+ */
 export const RofQR = factor('RofQR', ['upper_triangular']);
-/** SymPy EigenVectors(X). */
+/**
+ * Represents the eigenvector factor of a symbolic eigendecomposition.
+ * @param m - The matrix being factored.
+ * @returns The symbolic factor of the input matrix.
+ * @see SymPy `sympy.matrices.expressions.factorizations.EigenVectors`
+ * @example
+ * ```ts
+ * import { EigenVectors, MatrixSymbol } from '@symjs/symjs';
+ * EigenVectors(MatrixSymbol('A', 3, 3)).shape; // => [3, 3]
+ * ```
+ */
 export const EigenVectors = factor('EigenVectors', ['orthogonal']);
-/** SymPy EigenValues(X). */
+/**
+ * Represents the diagonal eigenvalue factor of a symbolic eigendecomposition.
+ * @param m - The matrix being factored.
+ * @returns The symbolic factor of the input matrix.
+ * @see SymPy `sympy.matrices.expressions.factorizations.EigenValues`
+ * @example
+ * ```ts
+ * import { EigenValues, MatrixSymbol } from '@symjs/symjs';
+ * EigenValues(MatrixSymbol('A', 3, 3)).shape; // => [3, 3]
+ * ```
+ */
 export const EigenValues = factor('EigenValues', ['diagonal']);
-/** SymPy UofSVD(X). */
+/**
+ * Represents the left singular vectors of a symbolic singular value decomposition.
+ * @param m - The matrix being factored.
+ * @returns The symbolic factor of the input matrix.
+ * @see SymPy `sympy.matrices.expressions.factorizations.UofSVD`
+ * @example
+ * ```ts
+ * import { MatrixSymbol, UofSVD } from '@symjs/symjs';
+ * UofSVD(MatrixSymbol('A', 3, 3)).shape; // => [3, 3]
+ * ```
+ */
 export const UofSVD = factor('UofSVD', ['orthogonal']);
-/** SymPy SofSVD(X). */
+/**
+ * Represents the diagonal matrix of singular values.
+ * @param m - The matrix being factored.
+ * @returns The symbolic factor of the input matrix.
+ * @see SymPy `sympy.matrices.expressions.factorizations.SofSVD`
+ * @example
+ * ```ts
+ * import { MatrixSymbol, SofSVD } from '@symjs/symjs';
+ * SofSVD(MatrixSymbol('A', 3, 3)).shape; // => [3, 3]
+ * ```
+ */
 export const SofSVD = factor('SofSVD', ['diagonal']);
-/** SymPy VofSVD(X). */
+/**
+ * Represents the right singular vectors of a symbolic singular value decomposition.
+ * @param m - The matrix being factored.
+ * @returns The symbolic factor of the input matrix.
+ * @see SymPy `sympy.matrices.expressions.factorizations.VofSVD`
+ * @example
+ * ```ts
+ * import { MatrixSymbol, VofSVD } from '@symjs/symjs';
+ * VofSVD(MatrixSymbol('A', 3, 3)).shape; // => [3, 3]
+ * ```
+ */
 export const VofSVD = factor('VofSVD', ['orthogonal']);
 
-/** SymPy lu(X): (LofLU(X), UofLU(X)). */
+/**
+ * Forms symbolic lower and upper triangular factors of a matrix.
+ * @param expr - The expression to transform.
+ * @returns The symbolic factors `[L, U]`.
+ * @see SymPy `sympy.matrices.expressions.factorizations.lu`
+ */
 export function lu(expr: MatArg): [FactorizationNode, FactorizationNode] {
   return [LofLU(expr), UofLU(expr)];
 }
 
-/** SymPy qr(X): (QofQR(X), RofQR(X)). */
+/**
+ * Forms the symbolic orthogonal and upper triangular factors of a matrix.
+ * @param expr - The expression to transform.
+ * @returns The symbolic factors `[Q, R]`.
+ * @see SymPy `sympy.matrices.expressions.factorizations.qr`
+ */
 export function qr(expr: MatArg): [FactorizationNode, FactorizationNode] {
   return [QofQR(expr), RofQR(expr)];
 }
 
-/** SymPy eig(X): (EigenValues(X), EigenVectors(X)). */
+/**
+ * Forms the symbolic eigenvalue and eigenvector matrices.
+ * @param expr - The expression to transform.
+ * @returns The eigenvalue matrix followed by the eigenvector matrix.
+ * @see SymPy `sympy.matrices.expressions.factorizations.eig`
+ */
 export function eig(expr: MatArg): [FactorizationNode, FactorizationNode] {
   return [EigenValues(expr), EigenVectors(expr)];
 }
 
-/** SymPy svd(X): (UofSVD(X), SofSVD(X), VofSVD(X)). */
+/**
+ * Forms the symbolic factors of a singular value decomposition.
+ * @param expr - The expression to transform.
+ * @returns The symbolic factors `[U, S, V]`.
+ * @see SymPy `sympy.matrices.expressions.factorizations.svd`
+ */
 export function svd(expr: MatArg): [FactorizationNode, FactorizationNode, FactorizationNode] {
   return [UofSVD(expr), SofSVD(expr), VofSVD(expr)];
 }

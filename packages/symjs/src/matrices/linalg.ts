@@ -2,10 +2,11 @@
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 
 /**
- * @file Linear algebra on symbolic matrices (SymPy-compatible results):
+ * Linear algebra on symbolic matrices, including
  * row reduction, rank, null/column/row spaces, eigenvectors,
  * diagonalization, LU/QR/Cholesky/LDL decompositions, norms, singular
  * values, pseudo-inverse, matrix exponential and structural helpers.
+ * @module
  */
 
 import { at, defined, expectType, first, last } from '../core/guard';
@@ -69,7 +70,18 @@ const fromRows = (r: Rows, cols: number): Matrix => (r.length === 0 ? Matrix.zer
 // row reduction
 // ---------------------------------------------------------------------------
 
-/** Reduced row echelon form and pivot columns. */
+/**
+ * Reduces the matrix to reduced row echelon form and identifies the pivot columns.
+ * @param m - The input matrix.
+ * @param opts - An optional `iszerofunc` predicate for choosing pivots.
+ * @returns The reduced matrix and zero-based pivot columns.
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.rref`
+ * @example
+ * ```ts
+ * import { Matrix, rref } from '@symjs/symjs';
+ * rref(Matrix.of([[1, 2], [2, 4]]))[1]; // => [0]
+ * ```
+ */
 export function rref(m: Matrix, opts: { iszerofunc?: (e: Expr) => boolean } = {}): [Matrix, number[]] {
   const zero = opts.iszerofunc ?? isZeroE;
   const A = rowsOf(m);
@@ -106,7 +118,17 @@ export function rref(m: Matrix, opts: { iszerofunc?: (e: Expr) => boolean } = {}
   return [fromRows(A, m.cols), pivots];
 }
 
-/** All zero rows follow the nonzero rows and leading entries move strictly right. */
+/**
+ * Tests whether the leading entries move strictly to the right and all zero rows are last.
+ * @param m - The input matrix.
+ * @returns Whether the matrix is echelon.
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.is_echelon`
+ * @example
+ * ```ts
+ * import { Matrix, isEchelon } from '@symjs/symjs';
+ * isEchelon(Matrix.of([[1]])); // => True
+ * ```
+ */
 export function isEchelon(m: Matrix): boolean {
   let pivotRow = 0;
   for (let col = 0; col < m.cols && pivotRow < m.rows; col++) {
@@ -118,7 +140,20 @@ export function isEchelon(m: Matrix): boolean {
   return true;
 }
 
-/** Echelon form by fraction-free cross-multiplication (SymPy echelon_form). */
+/**
+ * Echelon form by fraction-free cross-multiplication.
+ * @param m - The input matrix.
+ * @returns The resulting matrix.
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.echelon_form`
+ * @remarks SymPy prints this result as `Matrix([[1, 2], [0, -2]])`.
+ * @example
+ * ```ts
+ * import { Matrix, echelonForm } from '@symjs/symjs';
+ * echelonForm(Matrix.of([[1, 2], [3, 4]])); // => Matrix([
+ * //   [1,  2],
+ * //   [0, -2]])
+ * ```
+ */
 export function echelonForm(m: Matrix): Matrix {
   const A = rowsOf(m);
   let r = 0;
@@ -146,6 +181,18 @@ export function echelonForm(m: Matrix): Matrix {
   return fromRows(A, m.cols);
 }
 
+/**
+ * Computes the number of linearly independent rows or columns.
+ * @param m - The input matrix.
+ * @param opts - An optional `iszerofunc` predicate for deciding which entries are zero.
+ * @returns The dimension of the column space.
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.rank`
+ * @example
+ * ```ts
+ * import { Matrix, rank } from '@symjs/symjs';
+ * rank(Matrix.of([[1, 2, 3], [4, 5, 6], [7, 8, 9]]), {}); // => 2
+ * ```
+ */
 export function rank(m: Matrix, opts: { iszerofunc?: (e: Expr) => boolean } = {}): number {
   if (opts.iszerofunc && m.rows === 2 && m.cols === 2) {
     if (m.data.every(opts.iszerofunc)) return 0;
@@ -154,6 +201,19 @@ export function rank(m: Matrix, opts: { iszerofunc?: (e: Expr) => boolean } = {}
   return rref(m, opts)[1].length;
 }
 
+/**
+ * Finds a basis for the solutions of the homogeneous matrix equation.
+ * @param m - The input matrix.
+ * @returns A basis for the kernel.
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.nullspace`
+ * @example
+ * ```ts
+ * import { Matrix, nullspace } from '@symjs/symjs';
+ *
+ * const M = Matrix.of([[1, 3, 0], [-2, -6, 0], [3, 9, 6]]);
+ * nullspace(M).map(v => v.toArray()); // => [[[-3], [1], [0]]]
+ * ```
+ */
 export function nullspace(m: Matrix): Matrix[] {
   const [R, pivots] = rref(m);
   const free = [...Array(m.cols).keys()].filter((c) => !pivots.includes(c));
@@ -167,10 +227,36 @@ export function nullspace(m: Matrix): Matrix[] {
   });
 }
 
+/**
+ * Finds a basis for the space spanned by the columns.
+ * @param m - The input matrix.
+ * @returns A basis of column vectors.
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.columnspace`
+ * @example
+ * ```ts
+ * import { Matrix, columnspace } from '@symjs/symjs';
+ *
+ * const M = Matrix.of([[1, 3, 0], [-2, -6, 0], [3, 9, 6]]);
+ * columnspace(M).map(v => v.toArray()); // => [[[1], [-2], [3]], [[0], [0], [6]]]
+ * ```
+ */
 export function columnspace(m: Matrix): Matrix[] {
   return rref(m)[1].map((c) => m.col(c));
 }
 
+/**
+ * Finds a basis for the space spanned by the rows.
+ * @param m - The input matrix.
+ * @returns A basis of row vectors.
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.rowspace`
+ * @example
+ * ```ts
+ * import { Matrix, rowspace } from '@symjs/symjs';
+ *
+ * const M = Matrix.of([[1, 3, 0], [-2, -6, 0], [3, 9, 6]]);
+ * rowspace(M).map(v => v.toArray()); // => [[[1, 3, 0]], [[0, 0, 6]]]
+ * ```
+ */
 export function rowspace(m: Matrix): Matrix[] {
   const E = echelonForm(m);
   const out: Matrix[] = [];
@@ -196,7 +282,17 @@ function eigenvalueMultiplicities(m: Matrix): [Expr, number][] {
   return [...out.values()].sort((a, b) => compareKeys(sortKey(a[0]), sortKey(b[0])));
 }
 
-/** [(eigenvalue, algebraic multiplicity, basis of the eigenspace)] */
+/**
+ * Computes the eigenvalues and a basis for each eigenspace.
+ * @param m - The input matrix.
+ * @returns Triples of eigenvalue, algebraic multiplicity and eigenspace basis.
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.eigenvects`
+ * @example
+ * ```ts
+ * import { Matrix, eigenvects } from '@symjs/symjs';
+ * eigenvects(Matrix.diag(1, 2)).map(([value, multiplicity]) => [value, multiplicity]); // => [[1, 1], [2, 1]]
+ * ```
+ */
 export function eigenvects(m: Matrix): [Expr, number, Matrix[]][] {
   const fields = rationalEigenspaces(m);
   return eigenvalueMultiplicities(m).map(([v, k]) => {
@@ -297,6 +393,18 @@ function isRealEigenvalue(v: Expr): boolean {
   return isReal(v) === true;
 }
 
+/**
+ * Returns `True` if a matrix is diagonalizable.
+ * @param m - The input matrix.
+ * @param realsOnly - Whether to require a real eigenbasis.
+ * @returns Whether the matrix is diagonalizable.
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.is_diagonalizable`
+ * @example
+ * ```ts
+ * import { Matrix, isDiagonalizable } from '@symjs/symjs';
+ * isDiagonalizable(Matrix.of([[0, 1], [0, 0]]), false); // => False
+ * ```
+ */
 export function isDiagonalizable(m: Matrix, realsOnly = false): boolean {
   if (!m.isSquare) return false;
   for (const [v, k, vecs] of eigenvects(m)) {
@@ -306,7 +414,19 @@ export function isDiagonalizable(m: Matrix, realsOnly = false): boolean {
   return true;
 }
 
-/** (P, D) with M = P D P^-1. */
+/**
+ * Finds a basis in which a square matrix is diagonal.
+ * @param m - The input matrix.
+ * @param realsOnly - Whether to require a real eigenbasis.
+ * @returns The basis matrix and diagonal matrix, in matching column order.
+ * @throws MatrixError when the matrix has no eigenbasis over the requested field.
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.diagonalize`
+ * @example
+ * ```ts
+ * import { Matrix, diagonalize } from '@symjs/symjs';
+ * diagonalize(Matrix.of([[1, 2, 0], [0, 3, 0], [2, -4, 2]]))[1].toArray(); // => [[1, 0, 0], [0, 2, 0], [0, 0, 3]]
+ * ```
+ */
 export function diagonalize(m: Matrix, realsOnly = false): [Matrix, Matrix] {
   if (!isDiagonalizable(m, realsOnly)) throw new MatrixError('Matrix is not diagonalizable');
   const cols: Matrix[] = [];
@@ -323,7 +443,22 @@ export function diagonalize(m: Matrix, realsOnly = false): [Matrix, Matrix] {
   return [P, Matrix.diag(...vals)];
 }
 
-/** Matrix exponential by Hermite interpolation, including defective matrices. */
+/**
+ * Computes the exponential of a square matrix, including matrices without an eigenbasis.
+ * @param m - The input matrix.
+ * @returns The exponential of a square matrix, including matrices without an eigenbasis.
+ * @throws NonSquareMatrixError when the matrix is not square.
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.exp`
+ * @remarks SymPy prints this result as `Matrix([[E, 0, 0], [0, E, 0], [0, 0, E]])`.
+ * @example
+ * ```ts
+ * import { Matrix, matrixExp } from '@symjs/symjs';
+ * matrixExp(Matrix.of([[1, 0, 0], [0, 1, 0], [0, 0, 1]])); // => Matrix([
+ * //   [E, 0, 0],
+ * //   [0, E, 0],
+ * //   [0, 0, E]])
+ * ```
+ */
 export function matrixExp(m: Matrix): Matrix {
   if (!m.isSquare) throw new NonSquareMatrixError('Matrix exponential requires a square matrix');
   if (!isDiagonalizable(m)) {
@@ -336,9 +471,24 @@ export function matrixExp(m: Matrix): Matrix {
 }
 
 /**
- * f(A) for an analytic function f of x (SymPy Matrix.analytic_func): the
- * interpolating polynomial matching f and its derivatives at the
- * eigenvalues (with multiplicity) evaluated at A.
+ * Evaluates an analytic scalar function at a square matrix by interpolation at its eigenvalues.
+ * @param m - The input matrix.
+ * @param fIn - The scalar function to evaluate or differentiate.
+ * @param x - The differentiation variable.
+ * @returns The resulting matrix.
+ * @throws NonSquareMatrixError when the matrix is not square.
+ * @throws RangeError when the function variable is not independent of the matrix or the function is not analytic at an eigenvalue.
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.analytic_func`
+ * @remarks SymPy prints this result as `Matrix([[0, log(2)], [log(2), 0]])`.
+ * @example
+ * ```ts
+ * import { Matrix, analyticFunc, ex, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * analyticFunc(Matrix.of([[ex`5/4`, ex`3/4`], [ex`3/4`, ex`5/4`]]), ex`log(x)`, x); // => Matrix([
+ * //   [     0, log(2)],
+ * //   [log(2),      0]])
+ * ```
  */
 export function analyticFunc(m: Matrix, fIn: ExprLike, x: Sym): Matrix {
   if (!m.isSquare) throw new NonSquareMatrixError('analytic_func: square matrix expected');
@@ -391,7 +541,21 @@ function subsValue(e: Expr, x: Sym, v: Expr): Expr {
   return impl.subs(e, [[x, v]]);
 }
 
-/** Matrix logarithm (SymPy Matrix.log) via analytic_func. */
+/**
+ * Computes the logarithm of a square matrix.
+ * @param m - The input matrix.
+ * @returns The logarithm of a square matrix.
+ * @throws MatrixError when the matrix has a zero eigenvalue.
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.log`
+ * @remarks SymPy prints this result as `Matrix([[0, 1], [0, 0]])`.
+ * @example
+ * ```ts
+ * import { Matrix, matrixLog } from '@symjs/symjs';
+ * matrixLog(Matrix.of([[1, 1], [0, 1]])); // => Matrix([
+ * //   [0, 1],
+ * //   [0, 0]])
+ * ```
+ */
 export function matrixLog(m: Matrix): Matrix {
   const x = new Dummy('x');
   if (m.isSquare && m.eigenvals().some(isExactZero)) throw new MatrixError('Matrix logarithm requires nonzero eigenvalues');
@@ -500,7 +664,17 @@ function positiveSemidefiniteCholesky(m0: Matrix): boolean | undefined {
   return isNonnegativeTri(at(at(a, n - 1), n - 1));
 }
 
-/** The matrix is positive definite (SymPy is_positive_definite): x^H M x > 0 for all nonzero x. */
+/**
+ * Tests whether the matrix is positive definite.
+ * @param m0 - The input matrix.
+ * @returns Whether the property holds, or `'unknown'` if undecidable.
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.is_positive_definite`
+ * @example
+ * ```ts
+ * import { Matrix, isPositiveDefinite } from '@symjs/symjs';
+ * isPositiveDefinite(Matrix.of([[1, 0], [0, 1]])); // => True
+ * ```
+ */
 export function isPositiveDefinite(m0: Matrix): Truth {
   if (!m0.isSquare) return false;
   const m = hermitianPart(m0);
@@ -510,7 +684,17 @@ export function isPositiveDefinite(m0: Matrix): Truth {
   return toTruth(positiveDefiniteGE(m));
 }
 
-/** The matrix is positive semidefinite (SymPy is_positive_semidefinite): x^H M x >= 0 for all x. */
+/**
+ * Tests whether the matrix is positive semidefinite.
+ * @param m0 - The input matrix.
+ * @returns Whether the property holds, or `'unknown'` if undecidable.
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.is_positive_semidefinite`
+ * @example
+ * ```ts
+ * import { Matrix, isPositiveSemidefinite } from '@symjs/symjs';
+ * isPositiveSemidefinite(Matrix.of([[1, 0], [0, 1]])); // => True
+ * ```
+ */
 export function isPositiveSemidefinite(m0: Matrix): Truth {
   if (!m0.isSquare) return false;
   const m = hermitianPart(m0);
@@ -520,33 +704,100 @@ export function isPositiveSemidefinite(m0: Matrix): Truth {
   return toTruth(positiveSemidefiniteCholesky(m));
 }
 
-/** The matrix is negative definite (SymPy is_negative_definite). */
+/**
+ * Tests whether the matrix is negative definite.
+ * @param m - The input matrix.
+ * @returns Whether the property holds, or `'unknown'` if undecidable.
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.is_negative_definite`
+ * @example
+ * ```ts
+ * import { Matrix, isNegativeDefinite } from '@symjs/symjs';
+ * isNegativeDefinite(Matrix.of([[-1, 0], [0, -1]])); // => True
+ * ```
+ */
 export function isNegativeDefinite(m: Matrix): Truth {
   return isPositiveDefinite(m.neg());
 }
 
-/** The matrix is negative semidefinite (SymPy is_negative_semidefinite). */
+/**
+ * Tests whether the matrix is negative semidefinite.
+ * @param m - The input matrix.
+ * @returns Whether the property holds, or `'unknown'` if undecidable.
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.is_negative_semidefinite`
+ * @example
+ * ```ts
+ * import { Matrix, isNegativeSemidefinite } from '@symjs/symjs';
+ * isNegativeSemidefinite(Matrix.of([[-1, 0], [0, -1]])); // => True
+ * ```
+ */
 export function isNegativeSemidefinite(m: Matrix): Truth {
   return isPositiveSemidefinite(m.neg());
 }
 
-/** The Hermitian part has both positive and negative directions. */
+/**
+ * Tests whether the matrix is indefinite.
+ * @param m - The input matrix.
+ * @returns Whether the property holds, or `'unknown'` if undecidable.
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.is_indefinite`
+ * @example
+ * ```ts
+ * import { Matrix, isIndefinite } from '@symjs/symjs';
+ * isIndefinite(Matrix.of([[1, 2], [2, -1]])); // => True
+ * ```
+ */
 export function isIndefinite(m: Matrix): Truth {
   if (!m.isSquare) return false;
   return truthAnd(truthNot(isPositiveSemidefinite(m)), truthNot(isNegativeSemidefinite(m)));
 }
 
-/** Strict row diagonal dominance (SymPy is_strongly_diagonally_dominant). */
+/**
+ * Tests whether each diagonal magnitude exceeds the sum of the other magnitudes in its row.
+ * @param m - The input matrix.
+ * @returns Whether the property holds, or `'unknown'` if undecidable.
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.is_strongly_diagonally_dominant`
+ * @example
+ * ```ts
+ * import { Matrix, isStronglyDiagonallyDominant } from '@symjs/symjs';
+ * isStronglyDiagonallyDominant(Matrix.of([[-4, 2, 1], [1, 6, 2], [1, -2, 5]])); // => True
+ * ```
+ */
 export function isStronglyDiagonallyDominant(m: Matrix): Truth {
   return m.isSquare ? toTruth(diagonallyDominant(m, true)) : false;
 }
 
-/** Weak row diagonal dominance (SymPy is_weakly_diagonally_dominant). */
+/**
+ * Tests whether each diagonal magnitude is at least the sum of the other magnitudes in its row.
+ * @param m - The input matrix.
+ * @returns Whether the property holds, or `'unknown'` if undecidable.
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.is_weakly_diagonally_dominant`
+ * @example
+ * ```ts
+ * import { Matrix, isWeaklyDiagonallyDominant } from '@symjs/symjs';
+ * isWeaklyDiagonallyDominant(Matrix.of([[-4, 2, 1], [1, 6, 2], [1, -2, 5]])); // => True
+ * ```
+ */
 export function isWeaklyDiagonallyDominant(m: Matrix): Truth {
   return m.isSquare ? toTruth(diagonallyDominant(m, false)) : false;
 }
 
-/** Cholesky: lower L with A = L L^H (hermitian) or A = L L^T. */
+/**
+ * Cholesky: lower L with A = L L^H (hermitian) or A = L L^T.
+ * @param m - The input matrix.
+ * @param hermitian - Whether to use conjugate transposition.
+ * @returns The resulting matrix.
+ * @throws NonSquareMatrixError when the matrix is not square.
+ * @throws MatrixError when the matrix is not Hermitian or the matrix is not symmetric.
+ * @throws NonPositiveDefiniteMatrixError when the matrix is not positive definite.
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.cholesky`
+ * @remarks SymPy prints this result as `Matrix([[1, 0], [2, sqrt(3)*I]])`.
+ * @example
+ * ```ts
+ * import { Matrix, cholesky } from '@symjs/symjs';
+ * cholesky(Matrix.of([[1, 2], [2, 1]]), false); // => Matrix([
+ * //   [1,         0],
+ * //   [2, sqrt(3)*I]])
+ * ```
+ */
 export function cholesky(m: Matrix, hermitian = true): Matrix {
   if (!m.isSquare) throw new NonSquareMatrixError('Matrix must be square');
   // SymPy raises ValueError for these two
@@ -585,7 +836,21 @@ function isNotPositive(e: Expr): boolean {
   return isPositive(e) === false;
 }
 
-/** LDL^H decomposition: (L, D). */
+/**
+ * Factors a matrix into unit lower triangular, diagonal and transposed triangular factors.
+ * @param m - The input matrix.
+ * @param hermitian - Whether to use conjugate transposition.
+ * @returns The unit lower triangular and diagonal factors.
+ * @throws NonSquareMatrixError when the matrix is not square.
+ * @throws MatrixError when the matrix is not Hermitian or the matrix is not symmetric.
+ * @throws NonPositiveDefiniteMatrixError when the matrix is not positive definite.
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.LDLdecomposition`
+ * @example
+ * ```ts
+ * import { LDLdecomposition, Matrix } from '@symjs/symjs';
+ * LDLdecomposition(Matrix.of([[25, 15, -5], [15, 18, 0], [-5, 0, 11]]))[1].toArray(); // => [[25, 0, 0], [0, 9, 0], [0, 0, 9]]
+ * ```
+ */
 export function ldl(m: Matrix, hermitian = true): [Matrix, Matrix] {
   if (!m.isSquare) throw new NonSquareMatrixError('Matrix must be square.');
   if (hermitian && m.isHermitian() !== true) throw new MatrixError('Matrix must be Hermitian.');
@@ -612,9 +877,15 @@ export function ldl(m: Matrix, hermitian = true): [Matrix, Matrix] {
 }
 
 /**
- * LU decomposition with row swaps: (L, U, perm) where perm lists the swaps [i, j]
- * (SymPy LUdecomposition with rankcheck=False: a column without a pivot is
- * skipped and the elimination goes on with the next column at the same row).
+ * Factors a matrix into lower and upper triangular factors with row swaps.
+ * @param m - The input matrix.
+ * @returns The lower factor, upper factor and row swaps.
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.LUdecomposition`
+ * @example
+ * ```ts
+ * import { LUdecomposition, Matrix } from '@symjs/symjs';
+ * LUdecomposition(Matrix.of([[4, 3], [6, 3]]))[0].toArray(); // => [[1, 0], [3/2, 1]]
+ * ```
  */
 export function luDecomposition(m: Matrix): [Matrix, Matrix, [number, number][]] {
   const n = m.rows;
@@ -664,7 +935,20 @@ export function luDecomposition(m: Matrix): [Matrix, Matrix, [number, number][]]
   return [Lm, Um, perm];
 }
 
-/** QR decomposition by Gram-Schmidt: (Q, R). */
+/**
+ * Factors a matrix into a matrix of orthonormal columns and an upper triangular matrix.
+ * @param m - The input matrix.
+ * @returns The orthogonal and triangular factors, in that order.
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.QRdecomposition`
+ * @example
+ * ```ts
+ * import { Matrix, QRdecomposition } from '@symjs/symjs';
+ *
+ * const A = Matrix.of([[12, -51, 4], [6, 167, -68], [-4, 24, -41]]);
+ * const [Q, R] = QRdecomposition(A);
+ * Q.mul(R).equals(A); // => True
+ * ```
+ */
 export function qrDecomposition(m: Matrix): [Matrix, Matrix] {
   const qs: Matrix[] = [];
   const R: Expr[][] = [];
@@ -703,9 +987,20 @@ export const vectorProducts: {
 } = {};
 
 /**
- * Dot product of two matrices (SymPy Matrix.dot); with hermitian, the first
- * argument is conjugated ('maths') or the second ('physics'). Of two
- * vectors of `@symjs/symjs/vector`, SymPy sympy.vector.dot.
+ * Computes a dot product of two vectors, optionally conjugating one operand.
+ * @param a - The first operand.
+ * @param b - The second operand.
+ * @param hermitian - Whether to use conjugate transposition.
+ * @param convention - Which argument is conjugated for a Hermitian dot product.
+ * @returns A dot product of two vectors, optionally conjugating one operand.
+ * @throws RangeError when the inner dimensions do not agree.
+ * @see SymPy `sympy.vector.vector.dot`
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.dot`
+ * @example
+ * ```ts
+ * import { Matrix, dot } from '@symjs/symjs';
+ * dot(Matrix.of([[1, 2, 3]]), Matrix.col(3, 2, 1), false, 'maths'); // => 10
+ * ```
  */
 export function dot(a: Matrix | Expr, b: Matrix | Expr, hermitian = false, convention: 'maths' | 'physics' = 'maths'): Expr {
   if (!(a instanceof Matrix) || !(b instanceof Matrix)) return vectorProduct('dot', a, b);
@@ -726,8 +1021,21 @@ function vectorProduct(name: 'dot' | 'cross', a: Matrix | Expr, b: Matrix | Expr
 }
 
 /**
- * Cross product of two 3-vectors as matrices (SymPy Matrix.cross); of two
- * vectors of `@symjs/symjs/vector`, SymPy sympy.vector.cross.
+ * Computes the cross product of two three-dimensional vectors.
+ * @param a - The first operand.
+ * @param b - The second operand.
+ * @returns The cross product of two three-dimensional vectors.
+ * @see SymPy `sympy.vector.vector.cross`
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.cross`
+ * @remarks SymPy prints this result as `Matrix([[-4], [8], [-4]])`.
+ * @example
+ * ```ts
+ * import { Matrix, cross } from '@symjs/symjs';
+ * cross(Matrix.of([[1], [2], [3]]), Matrix.of([[3], [2], [1]])); // => Matrix([
+ * //   [-4],
+ * //   [ 8],
+ * //   [-4]])
+ * ```
  */
 export function cross(a: Matrix, b: Matrix): Matrix;
 export function cross(a: Expr, b: Expr): Expr;
@@ -749,6 +1057,17 @@ function threeEntries(v: Matrix): [Expr, Expr, Expr] {
   return [x, y, z];
 }
 
+/**
+ * Compute the singular values of a Matrix.
+ * @param m - The input matrix.
+ * @returns The singular values with their multiplicities.
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.singular_values`
+ * @example
+ * ```ts
+ * import { Matrix, singularValues } from '@symjs/symjs';
+ * singularValues(Matrix.of([[0, 1], [-1, 0]])); // => [1, 1]
+ * ```
+ */
 export function singularValues(m: Matrix): Expr[] {
   // eigenvals of the cols x cols matrix A^H A gives all cols values (or throws)
   const vals = m.adjoint().mul(m).eigenvals(false).map((v) => sqrt(v));
@@ -761,7 +1080,19 @@ export function singularValues(m: Matrix): Expr[] {
   });
 }
 
-/** SymPy Matrix.norm(ord). */
+/**
+ * Computes the specified vector or matrix norm.
+ * @param m - The input matrix.
+ * @param ord - The norm order.
+ * @returns The specified vector or matrix norm.
+ * @throws RangeError when the requested norm order is unsupported.
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.norm`
+ * @example
+ * ```ts
+ * import { Matrix, norm, oo } from '@symjs/symjs';
+ * norm(Matrix.of([[1], [-2]]), oo); // => 2
+ * ```
+ */
 export function norm(m: Matrix, ord?: ExprLike | string): Expr {
   const isVector = m.rows === 1 || m.cols === 1;
   const vals = m.data;
@@ -788,7 +1119,21 @@ export function norm(m: Matrix, ord?: ExprLike | string): Expr {
   throw new RangeError(`norm: unsupported order ${String(ord)}`);
 }
 
-/** Moore-Penrose pseudo-inverse via a full rank factorization. */
+/**
+ * Moore-Penrose pseudo-inverse via a full rank factorization.
+ * @param m - The input matrix.
+ * @returns The resulting matrix.
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.pinv`
+ * @remarks SymPy prints this result as `Matrix([[-17/18, 4/9], [-1/9, 1/9], [13/18, -2/9]])`.
+ * @example
+ * ```ts
+ * import { Matrix, pinv } from '@symjs/symjs';
+ * pinv(Matrix.of([[1, 2, 3], [4, 5, 6]])); // => Matrix([
+ * //   [-17/18,  4/9],
+ * //   [  -1/9,  1/9],
+ * //   [ 13/18, -2/9]])
+ * ```
+ */
 export function pinv(m: Matrix): Matrix {
   const [B, C] = rankDecomposition(m);
   if (B.cols === 0) return Matrix.zeros(m.cols, m.rows);
@@ -796,6 +1141,24 @@ export function pinv(m: Matrix): Matrix {
   return CH.mul(C.mul(CH).inv()).mul(BH.mul(B).inv()).mul(BH).map(tidy);
 }
 
+/**
+ * Calculates the Jacobian matrix (derivative of a vector-valued function).
+ * @param X - The functions to differentiate.
+ * @param Y - The variables in column order.
+ * @returns The derivatives of each function with respect to each variable.
+ * @throws TypeError when a vector argument has more than one row and column.
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.jacobian`
+ * @remarks SymPy prints this result as `Matrix([[cos(phi), -rho*sin(phi)], [sin(phi), rho*cos(phi)]])`.
+ * @example
+ * ```ts
+ * import { Matrix, ex, jacobian, symbols } from '@symjs/symjs';
+ *
+ * const [rho, phi] = symbols('rho phi');
+ * jacobian(Matrix.of([[ex`rho*cos(phi)`], [ex`rho*sin(phi)`]]), Matrix.of([[rho], [phi]])); // => Matrix([
+ * //   [cos(phi), -rho*sin(phi)],
+ * //   [sin(phi),  rho*cos(phi)]])
+ * ```
+ */
 export function jacobian(X: Matrix, Y: Matrix | readonly Expr[]): Matrix {
   if (X.rows !== 1 && X.cols !== 1) throw new TypeError('jacobian requires a row or column matrix');
   if (Y instanceof Matrix && Y.rows !== 1 && Y.cols !== 1) throw new TypeError('jacobian variables must be a row or column matrix');
@@ -826,14 +1189,50 @@ export const isDiagonal = (m: Matrix): boolean => m.isDiagonal();
 export const isUpper = (m: Matrix): boolean => m.isUpper();
 export const isLower = (m: Matrix): boolean => m.isLower();
 export const isNilpotent = (m: Matrix): boolean => m.isNilpotent();
+/**
+ * Return the Hadamard product (elementwise product) of A and B.
+ * @param a - The first operand.
+ * @param b - The second operand.
+ * @returns The Hadamard product (elementwise product) of A and B.
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.multiply_elementwise`
+ * @remarks SymPy prints this result as `Matrix([[0, 10, 200], [300, 40, 5]])`.
+ * @example
+ * ```ts
+ * import { Matrix, multiplyElementwise } from '@symjs/symjs';
+ * multiplyElementwise(Matrix.of([[0, 1, 2], [3, 4, 5]]), Matrix.of([[1, 10, 100], [100, 10, 1]])); // => Matrix([
+ * //   [  0, 10, 200],
+ * //   [300, 40,   5]])
+ * ```
+ */
 export const multiplyElementwise = (a: Matrix, b: Matrix): Matrix => a.multiplyElementwise(b);
-/** SymPy matrix_multiply_elementwise(A, B): the Hadamard product. */
+/**
+ * The Hadamard product.
+ * @param a - The first operand.
+ * @param b - The second operand.
+ * @returns The resulting matrix.
+ * @see SymPy `sympy.matrices.dense.matrix_multiply_elementwise`
+ * @example
+ * ```ts
+ * import { Matrix, matrixMultiplyElementwise } from '@symjs/symjs';
+ * matrixMultiplyElementwise(Matrix.of([[0, 1, 2]]), Matrix.of([[1, 10, 100]])).toArray(); // => [[0, 10, 200]]
+ * ```
+ */
 export const matrixMultiplyElementwise = (a: Matrix, b: Matrix): Matrix => a.multiplyElementwise(b);
 export const project = (a: Matrix, b: Matrix): Matrix => a.project(b);
 export const rowInsert = (m: Matrix, pos: number, o: Matrix): Matrix => m.rowInsert(pos, o);
 export const colInsert = (m: Matrix, pos: number, o: Matrix): Matrix => m.colInsert(pos, o);
 
-/** Block-diagonal matrix from scalars and matrices (SymPy diag). */
+/**
+ * Block-diagonal matrix from scalars and matrices.
+ * @param blocks - The matrices or scalars to place along the diagonal.
+ * @returns The assembled block-diagonal matrix.
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.diag`
+ * @example
+ * ```ts
+ * import { blockDiag } from '@symjs/symjs';
+ * blockDiag(1, 2, 3).toArray(); // => [[1, 0, 0], [0, 2, 0], [0, 0, 3]]
+ * ```
+ */
 export function blockDiag(...blocks: (Matrix | ExprLike)[]): Matrix {
   return blockDiagSized(blocks);
 }
@@ -843,7 +1242,23 @@ export interface BlockDiagOptions {
   readonly cols?: number;
 }
 
-/** SymPy Matrix.diag block placement with optional result dimensions. */
+/**
+ * Returns a matrix with the specified diagonal.
+ * @param blocks - The matrices or scalars to place along the diagonal.
+ * @param opts - The settings described by {@link BlockDiagOptions}.
+ * @returns The block-diagonal matrix with any requested padding.
+ * @throws RangeError when the specified dimensions cannot accommodate the entries.
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.diag`
+ * @remarks SymPy prints this result as `Matrix([[1], [2], [3]])`.
+ * @example
+ * ```ts
+ * import { Matrix, blockDiagSized } from '@symjs/symjs';
+ * blockDiagSized([Matrix.col(1, 2, 3)], {}); // => Matrix([
+ * //   [1],
+ * //   [2],
+ * //   [3]])
+ * ```
+ */
 export function blockDiagSized(blocks: readonly (Matrix | ExprLike)[], opts: BlockDiagOptions = {}): Matrix {
   const ms = blocks.map((b) => (b instanceof Matrix ? b : Matrix.of([[b]])));
   const minimumRows = ms.reduce((s, m) => s + m.rows, 0);
@@ -865,17 +1280,124 @@ export function blockDiagSized(blocks: readonly (Matrix | ExprLike)[], opts: Blo
   return Matrix.of(out);
 }
 
+/**
+ * Constructs the clockwise rotation matrix about the x-axis.
+ * @param t - The rotation angle in radians.
+ * @returns The clockwise rotation matrix about the x-axis.
+ * @see SymPy `sympy.matrices.dense.rot_axis1`
+ * @remarks SymPy prints this result as `Matrix([[1, 0, 0], [0, 0, 1], [0, -1, 0]])`.
+ * @example
+ * ```ts
+ * import { ex, rotAxis1 } from '@symjs/symjs';
+ * rotAxis1(ex`pi/2`); // => Matrix([
+ * //   [1,  0, 0],
+ * //   [0,  0, 1],
+ * //   [0, -1, 0]])
+ * ```
+ */
 export const rotAxis1 = (t: ExprLike): Matrix =>
   Matrix.of([[1, 0, 0], [0, cos(t), sin(t)], [0, mul(-1, sin(t)), cos(t)]]);
+/**
+ * Constructs the clockwise rotation matrix about the y-axis.
+ * @param t - The rotation angle in radians.
+ * @returns The clockwise rotation matrix about the y-axis.
+ * @see SymPy `sympy.matrices.dense.rot_axis2`
+ * @remarks SymPy prints this result as `Matrix([[0, 0, -1], [0, 1, 0], [1, 0, 0]])`.
+ * @example
+ * ```ts
+ * import { ex, rotAxis2 } from '@symjs/symjs';
+ * rotAxis2(ex`pi/2`); // => Matrix([
+ * //   [0, 0, -1],
+ * //   [0, 1,  0],
+ * //   [1, 0,  0]])
+ * ```
+ */
 export const rotAxis2 = (t: ExprLike): Matrix =>
   Matrix.of([[cos(t), 0, mul(-1, sin(t))], [0, 1, 0], [sin(t), 0, cos(t)]]);
+/**
+ * Constructs the clockwise rotation matrix about the z-axis.
+ * @param t - The rotation angle in radians.
+ * @returns The clockwise rotation matrix about the z-axis.
+ * @see SymPy `sympy.matrices.dense.rot_axis3`
+ * @remarks SymPy prints this result as `Matrix([[0, 1, 0], [-1, 0, 0], [0, 0, 1]])`.
+ * @example
+ * ```ts
+ * import { ex, rotAxis3 } from '@symjs/symjs';
+ * rotAxis3(ex`pi/2`); // => Matrix([
+ * //   [ 0, 1, 0],
+ * //   [-1, 0, 0],
+ * //   [ 0, 0, 1]])
+ * ```
+ */
 export const rotAxis3 = (t: ExprLike): Matrix =>
   Matrix.of([[cos(t), sin(t), 0], [mul(-1, sin(t)), cos(t), 0], [0, 0, 1]]);
+/**
+ * Constructs the counterclockwise rotation matrix about the x-axis.
+ * @param t - The rotation angle in radians.
+ * @returns The counterclockwise rotation matrix about the x-axis.
+ * @see SymPy `sympy.matrices.dense.rot_ccw_axis1`
+ * @remarks SymPy prints this result as `Matrix([[1, 0, 0], [0, 0, -1], [0, 1, 0]])`.
+ * @example
+ * ```ts
+ * import { ex, rotCcwAxis1 } from '@symjs/symjs';
+ * rotCcwAxis1(ex`pi/2`); // => Matrix([
+ * //   [1, 0,  0],
+ * //   [0, 0, -1],
+ * //   [0, 1,  0]])
+ * ```
+ */
 export const rotCcwAxis1 = (t: ExprLike): Matrix => rotAxis1(t).transpose();
+/**
+ * Constructs the counterclockwise rotation matrix about the y-axis.
+ * @param t - The rotation angle in radians.
+ * @returns The counterclockwise rotation matrix about the y-axis.
+ * @see SymPy `sympy.matrices.dense.rot_ccw_axis2`
+ * @remarks SymPy prints this result as `Matrix([[0, 0, 1], [0, 1, 0], [-1, 0, 0]])`.
+ * @example
+ * ```ts
+ * import { ex, rotCcwAxis2 } from '@symjs/symjs';
+ * rotCcwAxis2(ex`pi/2`); // => Matrix([
+ * //   [ 0, 0, 1],
+ * //   [ 0, 1, 0],
+ * //   [-1, 0, 0]])
+ * ```
+ */
 export const rotCcwAxis2 = (t: ExprLike): Matrix => rotAxis2(t).transpose();
+/**
+ * Constructs the counterclockwise rotation matrix about the z-axis.
+ * @param t - The rotation angle in radians.
+ * @returns The counterclockwise rotation matrix about the z-axis.
+ * @see SymPy `sympy.matrices.dense.rot_ccw_axis3`
+ * @remarks SymPy prints this result as `Matrix([[0, -1, 0], [1, 0, 0], [0, 0, 1]])`.
+ * @example
+ * ```ts
+ * import { ex, rotCcwAxis3 } from '@symjs/symjs';
+ * rotCcwAxis3(ex`pi/2`); // => Matrix([
+ * //   [0, -1, 0],
+ * //   [1,  0, 0],
+ * //   [0,  0, 1]])
+ * ```
+ */
 export const rotCcwAxis3 = (t: ExprLike): Matrix => rotAxis3(t).transpose();
 
-/** Givens rotation in the (i, j) plane of a dim x dim identity. */
+/**
+ * Givens rotation in the (i, j) plane of a dim x dim identity.
+ * @param i - The zero-based row index.
+ * @param j - The zero-based column index.
+ * @param theta - The rotation angle in radians.
+ * @param dim - The dimension of the rotation matrix.
+ * @returns The resulting matrix.
+ * @see SymPy `sympy.matrices.dense.rot_givens`
+ * @remarks SymPy prints this result as `Matrix([[0, -1, 0], [1, 0, 0], [0, 0, 1]])`.
+ * @example
+ * ```ts
+ * import { ex, rotGivens } from '@symjs/symjs';
+ * rotGivens(1, 0, ex`pi/2`, 3); // => Matrix([
+ * //   [0, -1, 0],
+ * //   [1,  0, 0],
+ * //   [0,  0, 1]])
+ * ```
+ */
 export function rotGivens(i: number, j: number, theta: ExprLike, dim = 3): Matrix {
   const c = cos(theta);
   const s = sin(theta);
@@ -888,7 +1410,26 @@ export function rotGivens(i: number, j: number, theta: ExprLike, dim = 3): Matri
   });
 }
 
-/** SymPy Matrix.jordan_block(size, eigenvalue, band='upper'). */
+/**
+ * Returns a Jordan block.
+ * @param size - The number of positions.
+ * @param eigenvalue - The eigenvalue along the diagonal.
+ * @param band - The side of the diagonal on which the ones appear.
+ * @returns A Jordan block.
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.jordan_block`
+ * @remarks SymPy prints this result as `Matrix([[x, 1, 0, 0], [0, x, 1, 0], [0, 0, x, 1], [0, 0, 0, x]])`.
+ * @example
+ * ```ts
+ * import { jordanBlock, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * jordanBlock(4, x); // => Matrix([
+ * //   [x, 1, 0, 0],
+ * //   [0, x, 1, 0],
+ * //   [0, 0, x, 1],
+ * //   [0, 0, 0, x]])
+ * ```
+ */
 export function jordanBlock(size: number, eigenvalue: ExprLike, band: 'upper' | 'lower' = 'upper'): Matrix {
   return Matrix.fromFunction(size, size, (i, j) => (i === j ? eigenvalue : band === 'upper' ? (j === i + 1 ? 1 : 0) : i === j + 1 ? 1 : 0));
 }
@@ -896,6 +1437,17 @@ export function jordanBlock(size: number, eigenvalue: ExprLike, band: 'upper' | 
 /**
  * Companion matrix of a monic polynomial (SymPy Matrix.companion(poly)),
  * given as a Poly or by its coefficients (highest first).
+ * @param p - The monic polynomial or its coefficients in descending order.
+ * @returns The resulting matrix.
+ * @throws RangeError when the polynomial is not monic.
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.companion`
+ * @example
+ * ```ts
+ * import { Poly, ZZ, companion, ex } from '@symjs/symjs';
+ *
+ * const x = ex`x`;
+ * companion(Poly.from(ex`c0 + x`, [x], { domain: 'ZZ[c0]', pure: false })); // => Matrix([[-c0]])
+ * ```
  */
 export function companion(p: readonly Expr[] | { allCoeffs(): Expr[]; toString(): string }): Matrix {
   const coeffs = 'allCoeffs' in p ? p.allCoeffs() : p;
@@ -904,7 +1456,17 @@ export function companion(p: readonly Expr[] | { allCoeffs(): Expr[]; toString()
   return Matrix.fromFunction(n, n, (i, j) => (j === n - 1 ? mul(-1, at(coeffs, n - i)) : i === j + 1 ? 1 : 0));
 }
 
-/** Rectangular permanent by subset dynamic programming of the Laplace recurrence. */
+/**
+ * Rectangular permanent by subset dynamic programming of the Laplace recurrence.
+ * @param mIn - The input matrix.
+ * @returns The permanent of the explicit matrix.
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.per`
+ * @example
+ * ```ts
+ * import { Matrix, permanent } from '@symjs/symjs';
+ * permanent(Matrix.of([[1], [5], [7]])); // => 13
+ * ```
+ */
 export function permanent(mIn: Matrix): Expr {
   let m = mIn;
   let [r, c] = m.shape;
@@ -935,7 +1497,23 @@ export function permanent(mIn: Matrix): Expr {
 /** SymPy connected_components / strongly_connected_components of a graph or of a matrix's nonzero pattern (one definition, in utilities). */
 export { connectedComponents, stronglyConnectedComponents } from '../utilities/iterables';
 
-/** Least-squares solution A^+ B plus the null-space part (I - A^+ A) W (SymPy pinv_solve). */
+/**
+ * Least-squares solution A^+ B plus the null-space part (I - A^+ A) W.
+ * @param A - The input matrix.
+ * @param B - The right-hand side of the linear system.
+ * @param arbitrary - The matrix of free parameters in the solution.
+ * @returns The resulting matrix.
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.pinv_solve`
+ * @remarks SymPy prints this result as `Matrix([[-55/18], [1/9], [59/18]])`.
+ * @example
+ * ```ts
+ * import { Matrix, pinvSolve } from '@symjs/symjs';
+ * pinvSolve(Matrix.of([[1, 2, 3], [4, 5, 6]]), Matrix.of([[7], [8]]), Matrix.of([[0], [0], [0]])); // => Matrix([
+ * //   [-55/18],
+ * //   [   1/9],
+ * //   [ 59/18]])
+ * ```
+ */
 export function pinvSolve(A: Matrix, B: Matrix, arbitrary?: Matrix): Matrix {
   const Ap = pinv(A);
   const n = A.shape[1];
@@ -947,9 +1525,18 @@ export function pinvSolve(A: Matrix, B: Matrix, arbitrary?: Matrix): Matrix {
 // ---- solving and constructions (SymPy Matrix.solve, GramSchmidt, hessian, wronskian, casoratian) ----
 
 /**
- * SymPy Matrix.gauss_jordan_solve: [solution, parameters]. Free variables of
- * an underdetermined system are the parameters tau0, tau1, ...; an
- * inconsistent system throws.
+ * Solves a linear system by Gauss–Jordan elimination, introducing parameters for free variables.
+ * @param A - The input matrix.
+ * @param b - The right-hand side of the linear system.
+ * @param opts - Set `freevar` to include the free column indices.
+ * @returns The solution, its parameters and, when requested, the free column indices.
+ * @throws RangeError when the linear system is inconsistent.
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.gauss_jordan_solve`
+ * @example
+ * ```ts
+ * import { Matrix, gaussJordanSolve } from '@symjs/symjs';
+ * gaussJordanSolve(Matrix.of([[1, 2], [2, 1]]), Matrix.col(5, 4))[0].toArray(); // => [[1], [2]]
+ * ```
  */
 export function gaussJordanSolve(A: Matrix, b: Matrix, opts: { freevar: true }): [Matrix, Matrix, number[]];
 export function gaussJordanSolve(A: Matrix, b: Matrix, opts?: { freevar?: false }): [Matrix, Matrix];
@@ -979,20 +1566,55 @@ export function gaussJordanSolve(A: Matrix, b: Matrix, opts: { freevar?: boolean
   return opts.freevar === true ? [sol, taus, free] : [sol, taus];
 }
 
-/** SymPy Matrix.solve (and LUsolve, QRsolve, ...): the unique solution of A*x = b. */
+/**
+ * The unique solution of A*x = b.
+ * @param A - The input matrix.
+ * @param b - The right-hand side of the linear system.
+ * @returns The resulting matrix.
+ * @throws NonInvertibleMatrixError when the matrix is singular.
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.solve`
+ * @remarks SymPy prints this result as `Matrix([[0, -5], [4, 3], [-6, 9]])`.
+ * @example
+ * ```ts
+ * import { Matrix, matrixSolve } from '@symjs/symjs';
+ * matrixSolve(Matrix.of([[0, -6, 1], [0, -6, -1], [-5, -2, 3]]), Matrix.of([[-30, -9], [-18, -27], [-26, 46]])); // => Matrix([
+ * //   [ 0, -5],
+ * //   [ 4,  3],
+ * //   [-6,  9]])
+ * ```
+ */
 export function matrixSolve(A: Matrix, b: Matrix): Matrix {
   const [sol, params] = gaussJordanSolve(A, b);
   if (params.rows) throw new NonInvertibleMatrixError('Matrix det == 0; not invertible.');
   return sol;
 }
 
-/** SymPy Matrix.solve_least_squares: the x minimizing |A*x - b| (A of full column rank). */
+/**
+ * Finds the least-squares solution for a coefficient matrix of full column rank.
+ * @param A - The input matrix.
+ * @param b - The right-hand side of the linear system.
+ * @returns The least-squares solution for a coefficient matrix of full column rank.
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.solve_least_squares`
+ * @example
+ * ```ts
+ * import { Matrix, solveLeastSquares } from '@symjs/symjs';
+ * solveLeastSquares(Matrix.of([[1, 2], [2, 3], [3, 4]]), Matrix.col(8, 14, 18)).toArray(); // => [[5/3], [10/3]]
+ * ```
+ */
 export function solveLeastSquares(A: Matrix, b: Matrix): Matrix {
   const At = A.transpose();
   return matrixSolve(At.mul(A), At.mul(b));
 }
 
-/** SymPy GramSchmidt(vlist, orthonormal=False). */
+/**
+ * Orthogonalizes an ordered list of vectors and optionally normalizes them.
+ * @param vs - The vectors to orthogonalize, in order.
+ * @param orthonormal - Whether to normalize each orthogonal vector.
+ * @param rankcheck - Whether to reject a rank deficiency.
+ * @returns The orthogonal or orthonormal basis vectors.
+ * @throws RangeError when the vectors are linearly dependent and rank checking is enabled.
+ * @see SymPy `sympy.matrices.dense.GramSchmidt`
+ */
 export function gramSchmidt(vs: readonly Matrix[], orthonormal = false, rankcheck = true): Matrix[] {
   const out: Matrix[] = [];
   for (const v of vs) {
@@ -1008,7 +1630,21 @@ export function gramSchmidt(vs: readonly Matrix[], orthonormal = false, rankchec
   return orthonormal ? out.map((u) => normalized(u)) : out;
 }
 
-/** SymPy Matrix.normalized: v/|v|. */
+/**
+ * Divides a vector by its Euclidean norm, leaving the zero vector unchanged.
+ * @param v - The vector to normalize.
+ * @returns The resulting matrix.
+ * @throws ShapeError when a vector argument has more than one row and column.
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.normalized`
+ * @remarks SymPy prints this result as `Matrix([[3/5], [4/5]])`.
+ * @example
+ * ```ts
+ * import { Matrix, normalized } from '@symjs/symjs';
+ * normalized(Matrix.of([[3], [4]])); // => Matrix([
+ * //   [3/5],
+ * //   [4/5]])
+ * ```
+ */
 export function normalized(v: Matrix): Matrix {
   if (v.rows !== 1 && v.cols !== 1) throw new ShapeError('normalized requires a row or column matrix');
   const n = norm(v);
@@ -1016,7 +1652,20 @@ export function normalized(v: Matrix): Matrix {
   return v.map((e) => mul(e, pow(n, -1)));
 }
 
-/** SymPy hessian(f, varlist, constraints): the optionally bordered Hessian. */
+/**
+ * Computes the matrix of second partial derivatives, optionally bordered by constraint gradients.
+ * @param f - The scalar function to evaluate or differentiate.
+ * @param vars - The ordered differentiation variables.
+ * @param constraints - The functions that border the Hessian.
+ * @returns The matrix of second partial derivatives, optionally bordered by constraint gradients.
+ * @throws ShapeError when the variable list is empty.
+ * @see SymPy `sympy.matrices.dense.hessian`
+ * @example
+ * ```ts
+ * import { ex, hessian } from '@symjs/symjs';
+ * hessian(ex`x**2 + x*y`, [ex`x`, ex`y`]).toArray(); // => [[2, 1], [1, 0]]
+ * ```
+ */
 export function hessian(f: ExprLike, vars: readonly Expr[], constraints: readonly ExprLike[] = []): Matrix {
   if (!vars.length) throw new ShapeError('hessian: variable list must not be empty');
   const e = sympify(f);
@@ -1029,27 +1678,76 @@ export function hessian(f: ExprLike, vars: readonly Expr[], constraints: readonl
   });
 }
 
-/** SymPy wronskian(functions, var): det of the derivatives 0..n-1 of the functions. */
+/**
+ * Computes the determinant of the successive derivatives of a list of functions.
+ * @param fs - The functions whose derivatives form the determinant.
+ * @param x - The differentiation variable.
+ * @returns The determinant of the successive derivatives of a list of functions.
+ * @see SymPy `sympy.matrices.dense.wronskian`
+ * @example
+ * ```ts
+ * import { symbols, wronskian } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * wronskian([], x); // => 1
+ * ```
+ */
 export function wronskian(fs: readonly ExprLike[], x: Expr): Expr {
   const es = fs.map(sympify);
   if (!es.length) return S.One;
   return Matrix.fromFunction(es.length, es.length, (i, j) => diff(at(es, j), x, i)).det();
 }
 
-/** SymPy casoratian(seqs, n, zero=True): det of the shifted sequences (n = 0, 1, ... when zero). */
+/**
+ * Computes the determinant of successive shifts of a list of sequences.
+ * @param seqs - The sequences whose shifts form the determinant.
+ * @param n - The order of the square matrix.
+ * @param zero - Whether to evaluate the shifts starting at zero.
+ * @returns The determinant of successive shifts of a list of sequences.
+ * @see SymPy `sympy.matrices.dense.casoratian`
+ * @example
+ * ```ts
+ * import { casoratian, ex } from '@symjs/symjs';
+ * casoratian([ex`2**n`, ex`factorial(n)`], ex`n`); // => -1
+ * ```
+ */
 export function casoratian(seqs: readonly ExprLike[], n: Expr, zero = true): Expr {
   const es = seqs.map(sympify);
   const k = (i: number) => (zero ? Rational.of(i) : add(n, i));
   return Matrix.fromFunction(es.length, es.length, (i, j) => impl.subs(at(es, j), [[n, k(i)]])).det();
 }
 
-/** SymPy Matrix.rref_rhs(rhs): [rref of A, the right-hand side transformed alike]. */
+/**
+ * Applies row reduction to a matrix and its right-hand side together.
+ * @param A - The input matrix.
+ * @param rhs - The right-hand side of the linear system.
+ * @returns The pair of matrices after the same elementary row operations.
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.rref_rhs`
+ * @example
+ * ```ts
+ * import { Matrix, rrefRhs } from '@symjs/symjs';
+ * rrefRhs(Matrix.of([[1, 1], [2, 1]]), Matrix.col(3, 4))[1].toArray(); // => [[1], [2]]
+ * ```
+ */
 export function rrefRhs(A: Matrix, rhs: Matrix): [Matrix, Matrix] {
   const [R] = rref(A.hstack(Matrix.eye(A.rows), rhs));
   return [R.slice(range(0, A.rows), range(0, A.cols)), R.slice(range(0, A.rows), range(R.cols - rhs.cols, R.cols))];
 }
 
-/** SymPy Matrix.rank_decomposition: [C, F] with A = C*F, C the pivot columns of A and F the nonzero rows of rref(A). */
+/**
+ * Factors a matrix as a column basis times a matrix of coordinates in that basis.
+ * @param A - The input matrix.
+ * @returns The factors `[C, F]` satisfying `A = C*F`.
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.rank_decomposition`
+ * @example
+ * ```ts
+ * import { Matrix, rankDecomposition } from '@symjs/symjs';
+ *
+ * const A = Matrix.of([[1, 2], [2, 4]]);
+ * const [C, F] = rankDecomposition(A);
+ * C.mul(F).equals(A); // => True
+ * ```
+ */
 export function rankDecomposition(A: Matrix): [Matrix, Matrix] {
   const [R, pivots] = rref(A);
   const C = Matrix.fromFunction(A.rows, pivots.length, (i, j) => A.get(i, at(pivots, j)));
@@ -1057,7 +1755,23 @@ export function rankDecomposition(A: Matrix): [Matrix, Matrix] {
   return [C, F];
 }
 
-/** SymPy Matrix.inv_mod(m): the inverse modulo m of an integer matrix. */
+/**
+ * The inverse modulo m of an integer matrix.
+ * @param A - The input matrix.
+ * @param m - The integer modulus.
+ * @returns The resulting matrix.
+ * @throws TypeError when an entry is not an integer.
+ * @throws NonInvertibleMatrixError when the determinant is not invertible modulo the modulus.
+ * @see SymPy `sympy.matrices.dense.MutableDenseMatrix.inv_mod`
+ * @remarks SymPy prints this result as `Matrix([[3, 1], [4, 2]])`.
+ * @example
+ * ```ts
+ * import { Matrix, invMod } from '@symjs/symjs';
+ * invMod(Matrix.of([[1, 2], [3, 4]]), 5n); // => Matrix([
+ * //   [3, 1],
+ * //   [4, 2]])
+ * ```
+ */
 export function invMod(A: Matrix, m: number | bigint): Matrix {
   const M = BigInt(m);
   const toInt = (e: Expr): bigint => {
@@ -1076,18 +1790,38 @@ export function invMod(A: Matrix, m: number | bigint): Matrix {
   return A.adjugate().map((e) => Rational.of((((toInt(e) * dinv) % M) + M) % M));
 }
 
-/** SymPy Matrix.permute_rows(perm) / permute_cols(perm) with a list of indices (direction 'forward'). */
+/**
+ * Reorders the rows using a forward permutation.
+ * @param A - The input matrix.
+ * @param perm - The permutation to apply.
+ * @returns The resulting matrix.
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.permute_rows`
+ */
 export function permuteRows(A: Matrix, perm: readonly number[]): Matrix {
   return Matrix.fromFunction(A.rows, A.cols, (i, j) => A.get(perm[i] ?? i, j));
 }
+/**
+ * Reorders the columns using a forward permutation.
+ * @param A - The input matrix.
+ * @param perm - The permutation to apply.
+ * @returns The resulting matrix.
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.permute_cols`
+ */
 export function permuteCols(A: Matrix, perm: readonly number[]): Matrix {
   return Matrix.fromFunction(A.rows, A.cols, (i, j) => A.get(i, perm[j] ?? j));
 }
 
 /**
- * SymPy Matrix.jordan_form: [P, J] with A = P*J*P**-1, J block diagonal with
- * Jordan blocks (eigenvalues in increasing order of their real parts) and the
- * columns of P Jordan chains of generalized eigenvectors.
+ * Computes a similarity transformation to Jordan normal form.
+ * @param A - The input matrix.
+ * @returns The basis matrix and corresponding Jordan matrix.
+ * @throws NonSquareMatrixError when the matrix is not square.
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.jordan_form`
+ * @example
+ * ```ts
+ * import { Matrix, jordanForm } from '@symjs/symjs';
+ * jordanForm(Matrix.of([[2, 1], [0, 2]]))[1].toArray(); // => [[2, 1], [0, 2]]
+ * ```
  */
 export function jordanForm(A: Matrix): [Matrix, Matrix] {
   if (!A.isSquare) throw new NonSquareMatrixError('jordan_form: square matrix expected');
@@ -1161,9 +1895,17 @@ export function jordanForm(A: Matrix): [Matrix, Matrix] {
 }
 
 /**
- * SymPy Matrix.liupc: the nonzero column indices on or below the diagonal of
+ * The nonzero column indices on or below the diagonal of
  * each row and the parent array of the elimination tree (Liu's algorithm,
  * for symbolic sparse Cholesky factorization).
+ * @param A - The input matrix.
+ * @returns The lower nonzero column indices by row and the elimination-tree parents.
+ * @see SymPy `sympy.matrices.sparse.SparseRepMatrix.liupc`
+ * @example
+ * ```ts
+ * import { Matrix, liupc } from '@symjs/symjs';
+ * liupc(Matrix.eye(2)); // => [[[0], [1]], [2, 2]]
+ * ```
  */
 export function liupc(A: Matrix): [number[][], number[]] {
   const n = A.rows;
@@ -1183,7 +1925,17 @@ export function liupc(A: Matrix): [number[][], number[]] {
   return [R, parent];
 }
 
-/** SymPy Matrix.row_structure_symbolic_cholesky: the nonzero structure of the rows of L. */
+/**
+ * Returns the nonzero structure of the rows of L.
+ * @param A - The input matrix.
+ * @returns The nonzero structure of the rows of L.
+ * @see SymPy `sympy.matrices.sparse.SparseRepMatrix.row_structure_symbolic_cholesky`
+ * @example
+ * ```ts
+ * import { Matrix, rowStructureSymbolicCholesky } from '@symjs/symjs';
+ * rowStructureSymbolicCholesky(Matrix.eye(2)); // => [[0], [1]]
+ * ```
+ */
 export function rowStructureSymbolicCholesky(A: Matrix): number[][] {
   const [R, parent] = liupc(A);
   const inf = R.length;
@@ -1200,9 +1952,24 @@ export function rowStructureSymbolicCholesky(A: Matrix): number[][] {
 }
 
 /**
- * SymPy Matrix.irregular(ntop, *matrices): the matrix filled by the blocks in
+ * The matrix filled by the blocks in
  * order of appearance from left to right, top to bottom, ntop of them in the
  * first row.
+ * @param ntop - The number of blocks in the top row.
+ * @param blocks - The matrices to fit into the rectangular result.
+ * @returns The resulting matrix.
+ * @throws RangeError when the blocks do not tile a rectangle with the required dimensions.
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.irregular`
+ * @remarks SymPy prints this result as `Matrix([[1, 2, 2, 2, 3, 3], [1, 2, 2, 2, 3, 3], [4, 2, 2, 2, 5, 5], [6, 6, 7, 7, 5, 5]])`.
+ * @example
+ * ```ts
+ * import { Matrix, irregular } from '@symjs/symjs';
+ * irregular(3, Matrix.of([[1], [1]]), Matrix.of([[2, 2, 2], [2, 2, 2], [2, 2, 2]]), Matrix.of([[3, 3], [3, 3]]), Matrix.of([[4]]), Matrix.of([[5, 5], [5, 5]]), Matrix.of([[6, 6]]), Matrix.of([[7, 7]])); // => Matrix([
+ * //   [1, 2, 2, 2, 3, 3],
+ * //   [1, 2, 2, 2, 3, 3],
+ * //   [4, 2, 2, 2, 5, 5],
+ * //   [6, 6, 7, 7, 5, 5]])
+ * ```
  */
 export function irregular(ntop: number, ...blocks: Matrix[]): Matrix {
   const q = blocks.map((_, i) => i);
@@ -1231,14 +1998,49 @@ export function irregular(ntop: number, ...blocks: Matrix[]): Matrix {
 // Solving by decompositions and the inverse methods (SymPy matrices/solvers.py and inverse.py)
 // ---------------------------------------------------------------------------
 
-/** SymPy Matrix.diagonal_solve(rhs): the solution of a diagonal system. */
+/**
+ * The solution of a diagonal system.
+ * @param M - The input matrix.
+ * @param rhs - The right-hand side of the linear system.
+ * @returns The resulting matrix.
+ * @throws TypeError when the matrix is not diagonal or the operand sizes differ.
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.diagonal_solve`
+ * @remarks SymPy prints this result as `Matrix([[x/2, y/2], [y/2, x/2]])`.
+ * @example
+ * ```ts
+ * import { Matrix, diagonalSolve, symbols } from '@symjs/symjs';
+ *
+ * const [x, y] = symbols('x y');
+ * diagonalSolve(Matrix.of([[2, 0], [0, 2]]), Matrix.of([[x, y], [y, x]])); // => Matrix([
+ * //   [x/2, y/2],
+ * //   [y/2, x/2]])
+ * ```
+ */
 export function diagonalSolve(M: Matrix, rhs: Matrix): Matrix {
   if (!M.isDiagonal()) throw new TypeError('Matrix should be diagonal');
   if (rhs.rows !== M.rows) throw new TypeError('Size mismatch');
   return Matrix.fromFunction(rhs.rows, rhs.cols, (i, j) => mul(rhs.get(i, j), pow(M.get(i, i), -1)));
 }
 
-/** SymPy Matrix.lower_triangular_solve(rhs): forward substitution. */
+/**
+ * Solves a lower triangular system by forward substitution.
+ * @param M - The input matrix.
+ * @param rhs - The right-hand side of the linear system.
+ * @returns The resulting matrix.
+ * @throws NonSquareMatrixError when the matrix is not square.
+ * @throws ShapeError when the matrix shapes differ.
+ * @throws RangeError when the matrix is not lower triangular.
+ * @throws TypeError when the matrix is singular.
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.lower_triangular_solve`
+ * @remarks SymPy prints this result as `Matrix([[4, 8], [2, 9]])`.
+ * @example
+ * ```ts
+ * import { Matrix, lowerTriangularSolve } from '@symjs/symjs';
+ * lowerTriangularSolve(Matrix.of([[1, 0], [0, 1]]), Matrix.of([[4, 8], [2, 9]])); // => Matrix([
+ * //   [4, 8],
+ * //   [2, 9]])
+ * ```
+ */
 export function lowerTriangularSolve(M: Matrix, rhs: Matrix): Matrix {
   if (!M.isSquare) throw new NonSquareMatrixError('Matrix must be square.');
   if (rhs.rows !== M.rows) throw new ShapeError('Matrices size mismatch.');
@@ -1254,7 +2056,25 @@ export function lowerTriangularSolve(M: Matrix, rhs: Matrix): Matrix {
   return fromRows(X, rhs.cols);
 }
 
-/** SymPy Matrix.upper_triangular_solve(rhs): back substitution. */
+/**
+ * Solves an upper triangular system by back substitution.
+ * @param M - The input matrix.
+ * @param rhs - The right-hand side of the linear system.
+ * @returns The resulting matrix.
+ * @throws NonSquareMatrixError when the matrix is not square.
+ * @throws ShapeError when the matrix shapes differ.
+ * @throws TypeError when the matrix is not upper triangular.
+ * @throws RangeError when the matrix is singular.
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.upper_triangular_solve`
+ * @remarks SymPy prints this result as `Matrix([[2, 4], [3, 8]])`.
+ * @example
+ * ```ts
+ * import { Matrix, upperTriangularSolve } from '@symjs/symjs';
+ * upperTriangularSolve(Matrix.of([[1, 0], [0, 1]]), Matrix.of([[2, 4], [3, 8]])); // => Matrix([
+ * //   [2, 4],
+ * //   [3, 8]])
+ * ```
+ */
 export function upperTriangularSolve(M: Matrix, rhs: Matrix): Matrix {
   if (!M.isSquare) throw new NonSquareMatrixError('Matrix must be square.');
   if (rhs.rows !== M.rows) throw new ShapeError('Matrix size mismatch.');
@@ -1290,7 +2110,21 @@ function normalSystem(M: Matrix, rhs: Matrix): [Matrix, Matrix, boolean] {
   return [M, rhs, hermitian];
 }
 
-/** SymPy Matrix.cholesky_solve(rhs): A x = b by the Cholesky decomposition. */
+/**
+ * Solves a linear system using Cholesky factors.
+ * @param M - The input matrix.
+ * @param rhsIn - The right-hand side of the linear system.
+ * @returns The resulting matrix.
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.cholesky_solve`
+ * @remarks SymPy prints this result as `Matrix([[4], [-3]])`.
+ * @example
+ * ```ts
+ * import { Matrix, choleskySolve } from '@symjs/symjs';
+ * choleskySolve(Matrix.of([[1, 5], [5, 1]]), Matrix.of([[-11], [17]])); // => Matrix([
+ * //   [ 4],
+ * //   [-3]])
+ * ```
+ */
 export function choleskySolve(M: Matrix, rhsIn: Matrix): Matrix {
   const [A, rhs, hermitian] = normalSystem(M, rhsIn);
   const L = cholesky(A, hermitian);
@@ -1332,7 +2166,18 @@ export function luSolve(M: Matrix, rhs: Matrix): Matrix {
   return upperTriangularSolve(U, lowerTriangularSolve(L, b));
 }
 
-/** SymPy Matrix.cramer_solve(rhs): each unknown as a ratio of determinants. */
+/**
+ * Solves a square linear system using ratios of determinants.
+ * @param M - The input matrix.
+ * @param rhs - The right-hand side of the linear system.
+ * @returns The resulting matrix.
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.cramer_solve`
+ * @example
+ * ```ts
+ * import { Matrix, cramerSolve } from '@symjs/symjs';
+ * cramerSolve(Matrix.of([[0, -6, 1], [0, -6, -1], [-5, -2, 3]]), Matrix.col(-30, -18, -26)).toArray(); // => [[0], [4], [-6]]
+ * ```
+ */
 export function cramerSolve(M: Matrix, rhs: Matrix): Matrix {
   const d = M.det();
   return Matrix.fromFunction(rhs.rows, rhs.cols, (col, sol) => {
@@ -1349,13 +2194,25 @@ function verifyInvertible(M: Matrix): Expr {
   return d;
 }
 
-/** SymPy Matrix.inverse_ADJ(): the adjugate divided by the determinant. */
+/**
+ * Computes a square matrix inverse using the adjugate and determinant.
+ * @param M - The input matrix.
+ * @returns The inverse matrix.
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.inverse_ADJ`
+ */
 export function inverseADJ(M: Matrix): Matrix {
   const d = verifyInvertible(M);
   return M.adjugate().map((e) => mul(e, pow(d, -1)));
 }
 
-/** SymPy Matrix.inverse_GE(): Gauss-Jordan elimination of [M | I]. */
+/**
+ * Computes a square matrix inverse using Gauss–Jordan elimination.
+ * @param M - The input matrix.
+ * @returns The inverse matrix.
+ * @throws NonSquareMatrixError when the matrix is not square.
+ * @throws NonInvertibleMatrixError when the matrix is singular.
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.inverse_GE`
+ */
 export function inverseGE(M: Matrix): Matrix {
   if (!M.isSquare) throw new NonSquareMatrixError('A Matrix must be square to invert.');
   const n = M.rows;
@@ -1364,34 +2221,56 @@ export function inverseGE(M: Matrix): Matrix {
   return red.slice(range(0, n), range(n, 2 * n));
 }
 
-/** SymPy Matrix.inverse_LU(): LUsolve with the identity. */
+/**
+ * Computes a square matrix inverse using LU factors.
+ * @param M - The input matrix.
+ * @returns The inverse matrix.
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.inverse_LU`
+ */
 export function inverseLU(M: Matrix): Matrix {
   verifyInvertible(M);
   return luSolve(M, Matrix.eye(M.rows));
 }
 
-/** SymPy Matrix.inverse_CH(): cholesky_solve with the identity. */
+/**
+ * Computes a square matrix inverse using a Cholesky factorization.
+ * @param M - The input matrix.
+ * @returns The inverse matrix.
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.inverse_CH`
+ */
 export function inverseCH(M: Matrix): Matrix {
   verifyInvertible(M);
   return choleskySolve(M, Matrix.eye(M.rows));
 }
 
-/** SymPy Matrix.inverse_LDL(): LDLsolve with the identity. */
+/**
+ * Computes a square matrix inverse using an LDL factorization.
+ * @param M - The input matrix.
+ * @returns The inverse matrix.
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.inverse_LDL`
+ */
 export function inverseLDL(M: Matrix): Matrix {
   verifyInvertible(M);
   return ldlSolve(M, Matrix.eye(M.rows));
 }
 
-/** SymPy Matrix.inverse_QR(): QRsolve with the identity. */
+/**
+ * Computes a square matrix inverse using a QR factorization.
+ * @param M - The input matrix.
+ * @returns The inverse matrix.
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.inverse_QR`
+ */
 export function inverseQR(M: Matrix): Matrix {
   verifyInvertible(M);
   return qrSolve(M, Matrix.eye(M.rows));
 }
 
 /**
- * SymPy Matrix.inverse_BLOCK(): up to `threshold` rows (20 in SymPy) the LU
- * inverse; a larger matrix by the inverses of its 2x2 block partition (the
- * Schur complement), falling back to LU when a block is singular.
+ * Computes a square matrix inverse using recursive block inversion with an LU fallback.
+ * @param M - The input matrix.
+ * @param threshold - The minimum order for recursive block inversion.
+ * @returns The inverse matrix.
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.inverse_BLOCK`
  */
 export function inverseBLOCK(M: Matrix, threshold = 20): Matrix {
   const i = M.rows;
@@ -1416,14 +2295,34 @@ export function inverseBLOCK(M: Matrix, threshold = 20): Matrix {
   ]);
 }
 
-/** SymPy Matrix.condition_number(): the ratio of the largest to the smallest singular value. */
+/**
+ * The ratio of the largest to the smallest singular value.
+ * @param M - The input matrix.
+ * @returns The resulting symbolic expression.
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.condition_number`
+ * @example
+ * ```ts
+ * import { Matrix, conditionNumber, ex } from '@symjs/symjs';
+ * conditionNumber(Matrix.of([[1, 0, 0], [0, 10, 0], [0, 0, ex`1/10`]])); // => 100
+ * ```
+ */
 export function conditionNumber(M: Matrix): Expr {
   if (M.rows === 0 || M.cols === 0) return S.Zero;
   const sv = singularValues(M);
   return mul(Max(...sv), pow(Min(...sv), -1));
 }
 
-/** SymPy Matrix.left_eigenvects(): the eigenvectors of the transpose, as rows. */
+/**
+ * Computes the eigenvalues and a row basis for each left eigenspace.
+ * @param M - The input matrix.
+ * @returns Triples of eigenvalue, algebraic multiplicity and left eigenvector basis.
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.left_eigenvects`
+ * @example
+ * ```ts
+ * import { Matrix, leftEigenvects } from '@symjs/symjs';
+ * leftEigenvects(Matrix.diag(1, 2)).map(([value, multiplicity]) => [value, multiplicity]); // => [[1, 1], [2, 1]]
+ * ```
+ */
 export function leftEigenvects(M: Matrix): [Expr, number, Matrix[]][] {
   return eigenvects(M.transpose()).map(([v, k, vs]) => [v, k, vs.map((w) => w.transpose())]);
 }

@@ -21,9 +21,15 @@ function elementKey(v: unknown): string {
 }
 
 /**
- * SymPy Subset(subset, superset): a subset of a superset (both given as
+ * A subset of a superset (both given as
  * lists), with its ranks and neighbours in binary, lexicographic and Gray
  * code order.
+ * @see SymPy `sympy.combinatorics.subsets.Subset`
+ * @example
+ * ```ts
+ * import { Subset } from '@symjs/symjs';
+ * new Subset([], ['a', 'b', 'c', 'd']).rankBinary; // => 0
+ * ```
  */
 export class Subset<T = unknown> {
   readonly #subset: readonly T[];
@@ -32,6 +38,12 @@ export class Subset<T = unknown> {
   #rankLex: bigint | undefined;
   #rankGray: bigint | undefined;
 
+  /**
+   * Constructs a `Subset`.
+   * @param subset - The selected elements.
+   * @param superset - The ordered set from which the subset is drawn.
+   * @throws RangeError when the proposed subset is larger than the superset or the proposed subset contains an element outside the superset.
+   */
   constructor(subset: readonly T[], superset: readonly T[]) {
     if (subset.length > superset.length) throw new RangeError('Invalid arguments have been provided. The superset must be larger than the subset.');
     const keys = new Set(superset.map(elementKey));
@@ -42,13 +54,22 @@ export class Subset<T = unknown> {
     this.#superset = superset;
   }
 
-  /** SymPy a == b: the same subset and superset. */
+  /**
+   * The same subset and superset.
+   * @param other - The value to combine with or compare against.
+   * @returns The result of the comparison.
+   */
   equals(other: Subset<T>): boolean {
     const same = (a: readonly T[], b: readonly T[]) => a.length === b.length && a.every((x, i) => elementKey(x) === elementKey(b[i]));
     return same(this.#subset, other.#subset) && same(this.#superset, other.#superset);
   }
 
-  /** SymPy iterate_binary(k): the subset k steps further in binary order. */
+  /**
+   * The subset k steps further in binary order.
+   * @param k - The signed number of steps in the enumeration.
+   * @returns The resulting subset.
+   * @see SymPy `sympy.combinatorics.subsets.Subset.iterate_binary`
+   */
   iterateBinary(k: number | bigint): Subset<T> {
     const binList = Subset.bitlistFromSubset(this.#subset, this.#superset);
     const card = this.cardinality;
@@ -57,17 +78,29 @@ export class Subset<T = unknown> {
     return Subset.subsetFromBitlist(this.#superset, bits);
   }
 
-  /** SymPy next_binary(): the next subset in binary order. */
+  /**
+   * The next subset in binary order.
+   * @returns The resulting subset.
+   * @see SymPy `sympy.combinatorics.subsets.Subset.next_binary`
+   */
   nextBinary(): Subset<T> {
     return this.iterateBinary(1);
   }
 
-  /** SymPy prev_binary(): the previous subset in binary order. */
+  /**
+   * The previous subset in binary order.
+   * @returns The resulting subset.
+   * @see SymPy `sympy.combinatorics.subsets.Subset.prev_binary`
+   */
   prevBinary(): Subset<T> {
     return this.iterateBinary(-1);
   }
 
-  /** SymPy next_lexicographic(): the next subset in lexicographic order. */
+  /**
+   * The next subset in lexicographic order.
+   * @returns The resulting subset.
+   * @see SymPy `sympy.combinatorics.subsets.Subset.next_lexicographic`
+   */
   nextLexicographic(): Subset<T> {
     let i = this.supersetSize - 1;
     const indices = Subset.subsetIndices(this.#subset, this.#superset);
@@ -93,7 +126,11 @@ export class Subset<T = unknown> {
     );
   }
 
-  /** SymPy prev_lexicographic(): the previous subset in lexicographic order. */
+  /**
+   * The previous subset in lexicographic order.
+   * @returns The resulting subset.
+   * @see SymPy `sympy.combinatorics.subsets.Subset.prev_lexicographic`
+   */
   prevLexicographic(): Subset<T> {
     let i = this.supersetSize - 1;
     const indices = Subset.subsetIndices(this.#subset, this.#superset);
@@ -113,30 +150,51 @@ export class Subset<T = unknown> {
     );
   }
 
-  /** SymPy iterate_graycode(k): the subset k steps further in Gray code order. */
+  /**
+   * The subset k steps further in Gray code order.
+   * @param k - The signed number of steps in the enumeration.
+   * @returns The resulting subset.
+   * @see SymPy `sympy.combinatorics.subsets.Subset.iterate_graycode`
+   */
   iterateGraycode(k: number | bigint): Subset<T> {
     const card = this.cardinality;
     const unranked = GrayCode.unrank(this.supersetSize, (((this.rankGray + BigInt(k)) % card) + card) % card);
     return Subset.subsetFromBitlist(this.#superset, unranked);
   }
 
-  /** SymPy next_gray(): the next subset in Gray code order. */
+  /**
+   * The next subset in Gray code order.
+   * @returns The resulting subset.
+   * @see SymPy `sympy.combinatorics.subsets.Subset.next_gray`
+   */
   nextGray(): Subset<T> {
     return this.iterateGraycode(1);
   }
 
-  /** SymPy prev_gray(): the previous subset in Gray code order. */
+  /**
+   * The previous subset in Gray code order.
+   * @returns The resulting subset.
+   * @see SymPy `sympy.combinatorics.subsets.Subset.prev_gray`
+   */
   prevGray(): Subset<T> {
     return this.iterateGraycode(-1);
   }
 
-  /** SymPy rank_binary: the rank in binary order. */
+  /**
+   * Gets the rank in binary order.
+   * @returns The rank in binary order.
+   * @see SymPy `sympy.combinatorics.subsets.Subset.rank_binary`
+   */
   get rankBinary(): bigint {
     this.#rankBinary ??= BigInt(`0b0${Subset.bitlistFromSubset(this.#subset, this.#superset)}`);
     return this.#rankBinary;
   }
 
-  /** SymPy rank_lexicographic: the rank in lexicographic order. */
+  /**
+   * Gets the rank in lexicographic order.
+   * @returns The rank in lexicographic order.
+   * @see SymPy `sympy.combinatorics.subsets.Subset.rank_lexicographic`
+   */
   get rankLexicographic(): bigint {
     if (this.#rankLex === undefined) {
       const indices = Subset.subsetIndices(this.#subset, this.#superset);
@@ -154,7 +212,11 @@ export class Subset<T = unknown> {
     return this.#rankLex;
   }
 
-  /** SymPy rank_gray: the rank in Gray code order. */
+  /**
+   * Gets the rank in Gray code order.
+   * @returns The rank in Gray code order.
+   * @see SymPy `sympy.combinatorics.subsets.Subset.rank_gray`
+   */
   get rankGray(): bigint {
     if (this.#rankGray === undefined) {
       const bits = Subset.bitlistFromSubset(this.#subset, this.#superset);
@@ -163,32 +225,59 @@ export class Subset<T = unknown> {
     return this.#rankGray;
   }
 
-  /** SymPy subset: the elements of the subset. */
+  /**
+   * Gets the elements of the subset.
+   * @returns The elements of the subset.
+   * @see SymPy `sympy.combinatorics.subsets.Subset.subset`
+   */
   get subset(): T[] {
     return [...this.#subset];
   }
 
-  /** SymPy size: the number of elements of the subset. */
+  /**
+   * The number of elements of the subset.
+   * @returns The size of the object.
+   * @see SymPy `sympy.combinatorics.subsets.Subset.size`
+   */
   get size(): number {
     return this.#subset.length;
   }
 
-  /** SymPy superset: the elements of the superset. */
+  /**
+   * Gets the elements of the superset.
+   * @returns The elements of the superset.
+   * @see SymPy `sympy.combinatorics.subsets.Subset.superset`
+   */
   get superset(): T[] {
     return [...this.#superset];
   }
 
-  /** SymPy superset_size: the number of elements of the superset. */
+  /**
+   * Gets the number of elements of the superset.
+   * @returns The number of elements of the superset.
+   * @see SymPy `sympy.combinatorics.subsets.Subset.superset_size`
+   */
   get supersetSize(): number {
     return this.#superset.length;
   }
 
-  /** SymPy cardinality: the number of subsets of the superset. */
+  /**
+   * Gets the number of subsets of the superset.
+   * @returns The number of subsets of the superset.
+   * @see SymPy `sympy.combinatorics.subsets.Subset.cardinality`
+   */
   get cardinality(): bigint {
     return 1n << BigInt(this.supersetSize);
   }
 
-  /** SymPy Subset.subset_from_bitlist(super_set, bitlist): the subset of the elements whose bit is 1. */
+  /**
+   * The subset of the elements whose bit is 1.
+   * @param superSet - The ordered set from which the subset is drawn.
+   * @param bitlist - The membership bits in superset order.
+   * @returns The resulting subset.
+   * @throws RangeError when the operand sizes differ.
+   * @see SymPy `sympy.combinatorics.subsets.Subset.subset_from_bitlist`
+   */
   static subsetFromBitlist<U>(superSet: readonly U[], bitlist: string): Subset<U> {
     if (superSet.length !== bitlist.length) throw new RangeError('The sizes of the lists are not equal');
     return new Subset(
@@ -197,7 +286,13 @@ export class Subset<T = unknown> {
     );
   }
 
-  /** SymPy Subset.bitlist_from_subset(subset, superset): the bit string of a subset. */
+  /**
+   * The bit string of a subset.
+   * @param subsetIn - The selected elements.
+   * @param superset - The ordered set from which the subset is drawn.
+   * @returns The formatted text.
+   * @see SymPy `sympy.combinatorics.subsets.Subset.bitlist_from_subset`
+   */
   static bitlistFromSubset<U>(subsetIn: readonly U[] | Subset<U>, superset: readonly U[]): string {
     const subset = subsetIn instanceof Subset ? subsetIn.subset : subsetIn;
     const bitlist = superset.map(() => '0');
@@ -205,20 +300,41 @@ export class Subset<T = unknown> {
     return bitlist.join('');
   }
 
-  /** SymPy Subset.unrank_binary(rank, superset): the subset of the given rank in binary order. */
+  /**
+   * The subset of the given rank in binary order.
+   * @param rank - The zero-based position in the enumeration.
+   * @param superset - The ordered set from which the subset is drawn.
+   * @returns The resulting subset.
+   * @see SymPy `sympy.combinatorics.subsets.Subset.unrank_binary`
+   * @example
+   * ```ts
+   * import { Subset } from '@symjs/symjs';
+   * Subset.unrankBinary(3, [1, 2, 3]).subset; // => [2, 3]
+   * ```
+   */
   static unrankBinary<U>(rank: number | bigint, superset: readonly U[]): Subset<U> {
     return Subset.subsetFromBitlist(superset, BigInt(rank).toString(2).padStart(superset.length, '0'));
   }
 
-  /** SymPy Subset.unrank_gray(rank, superset): the subset of the given rank in Gray code order. */
+  /**
+   * The subset of the given rank in Gray code order.
+   * @param rank - The zero-based position in the enumeration.
+   * @param superset - The ordered set from which the subset is drawn.
+   * @returns The resulting subset.
+   * @see SymPy `sympy.combinatorics.subsets.Subset.unrank_gray`
+   */
   static unrankGray<U>(rank: number | bigint, superset: readonly U[]): Subset<U> {
     return Subset.subsetFromBitlist(superset, GrayCode.unrank(superset.length, rank));
   }
 
   /**
-   * SymPy Subset.subset_indices(subset, superset): the indices of the
+   * The indices of the
    * elements of subset in superset, or [] when some element is not in
    * superset.
+   * @param subset - The selected elements.
+   * @param superset - The ordered set from which the subset is drawn.
+   * @returns The indices of the elements of subset in superset.
+   * @see SymPy `sympy.combinatorics.subsets.Subset.subset_indices`
    */
   static subsetIndices(subset: readonly unknown[], superset: readonly unknown[]): number[] {
     const sb = new Set(subset.map(elementKey));
@@ -234,13 +350,27 @@ export class Subset<T = unknown> {
     return [];
   }
 
-  /** The subset and superset, as SymPy's repr shows the object. */
+  /**
+   * Formats the object as plain text.
+   * @returns The printable representation.
+   */
   toString(): string {
     return `Subset([${this.#subset.map(String).join(', ')}], [${this.#superset.map(String).join(', ')}])`;
   }
 }
 
-/** SymPy ksubsets(superset, k): the subsets of k elements in lexicographic order. */
+/**
+ * The subsets of k elements in lexicographic order.
+ * @param superset - The ordered set from which the subset is drawn.
+ * @param k - The subset size.
+ * @returns An iterator over the successive subsets.
+ * @see SymPy `sympy.combinatorics.subsets.ksubsets`
+ * @example
+ * ```ts
+ * import { ksubsets } from '@symjs/symjs';
+ * Array.from(ksubsets([1, 2, 3], 2)); // => [[1, 2], [1, 3], [2, 3]]
+ * ```
+ */
 export function* ksubsets<T>(superset: readonly T[], k: number): Generator<T[]> {
   const n = superset.length;
   if (k > n || k < 0) return;

@@ -43,12 +43,25 @@ const factors = (e: Expr): MatrixExpr[] => e.args.map((a) => cast(a, MatrixExpr)
 
 const isKron = (e: Expr): e is KroneckerProductNode => e instanceof KroneckerProductNode;
 
-/** SymPy KroneckerProduct(*args): the Kronecker (tensor) product of matrices. */
+/**
+ * The Kronecker (tensor) product of matrices.
+ * @see SymPy `sympy.matrices.expressions.kronecker.KroneckerProduct`
+ */
 export class KroneckerProductNode extends MatrixExpr {
+  /**
+   * Constructs a `KroneckerProduct`.
+   * @param args - The operands in their defining order.
+   */
   constructor(args: readonly Expr[]) {
     super('KroneckerProduct', args);
   }
-  /** SymPy KroneckerProduct(*args): identities give an identity; validated, unevaluated. */
+  /**
+   * Constructs the kronecker product expression from its operands.
+   * @param argsIn - The operands in their defining order.
+   * @param check - Whether to verify that the images respect the relations.
+   * @returns The kronecker product expression from its operands.
+   * @throws TypeError when the sum mixes matrix and scalar terms.
+   */
   static create(argsIn: readonly MatArg[], check = true): Expr {
     const args = argsIn.map(toExpr);
     if (args.length && args.every(isMatrix) && args.every((a) => a.isIdentity === true)) {
@@ -59,13 +72,30 @@ export class KroneckerProductNode extends MatrixExpr {
     if (check && !args.every((a) => a instanceof MatrixExpr)) throw new TypeError('Mix of Matrix and Scalar symbols');
     return new KroneckerProductNode(args);
   }
+  /**
+   * The number of rows and columns, in that order.
+   * @returns The row and column dimensions.
+   * @see SymPy `sympy.matrices.expressions.kronecker.KroneckerProduct.shape`
+   */
   get shape(): [Expr, Expr] {
     const ms = factors(this);
     return [mul(...ms.map((m) => m.rows)), mul(...ms.map((m) => m.cols))];
   }
+  /**
+   * Rebuilds the expression with replacement operands.
+   * @param args - The operands in their defining order.
+   * @returns The expression with the given operands.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new KroneckerProductNode(args);
   }
+  /**
+   * Computes the matrix entry at the given row and column.
+   * @param i0 - The zero-based row index.
+   * @param j0 - The zero-based column index.
+   * @returns The scalar at the requested position.
+   * @see SymPy `sympy.matrices.expressions.kronecker.KroneckerProduct._entry`
+   */
   override entry(i0: Expr, j0: Expr): Expr {
     // SymPy: i, m = divmod(i, mat.rows) over the factors from the last one
     let i = i0;
@@ -80,24 +110,54 @@ export class KroneckerProductNode extends MatrixExpr {
     }
     return result;
   }
+  /**
+   * Computes the conjugate transpose of this expression.
+   * @returns The conjugate transpose of this expression.
+   * @see SymPy `sympy.matrices.expressions.kronecker.KroneckerProduct._eval_adjoint`
+   */
   override evalAdjoint(): Expr {
     return doitKron(this.args.map((a) => adjointFn(a)));
   }
+  /**
+   * Conjugates the entries of this expression.
+   * @returns The resulting symbolic expression.
+   * @see SymPy `sympy.matrices.expressions.kronecker.KroneckerProduct._eval_conjugate`
+   */
   override evalConjugate(): Expr {
     return doitKron(this.args.map((a) => cast(a, MatrixExpr).conjugate()));
   }
+  /**
+   * Computes the transpose using the structure of this expression.
+   * @returns The transpose using the structure of this expression.
+   * @see SymPy `sympy.matrices.expressions.kronecker.KroneckerProduct._eval_transpose`
+   */
   override evalTranspose(): Expr {
     return doitKron(this.args.map(transposeOf));
   }
+  /**
+   * Computes the trace using the structure of this matrix.
+   * @returns The trace using the structure of this matrix.
+   * @see SymPy `sympy.matrices.expressions.kronecker.KroneckerProduct._eval_trace`
+   */
   override evalTrace(): Expr {
     return mul(...this.args.map((a) => trace(a)));
   }
+  /**
+   * Computes the determinant using the structure of this matrix.
+   * @returns The determinant using the structure of this matrix.
+   * @see SymPy `sympy.matrices.expressions.kronecker.KroneckerProduct._eval_determinant`
+   */
   override evalDeterminant(): Expr {
     const ms = factors(this);
     if (!ms.every((a) => a.isSquare === true)) return new DeterminantNode(this);
     const m = this.rows;
     return mul(...ms.map((a) => pow(det(a), mul(m, pow(a.rows, -1)))));
   }
+  /**
+   * Computes the inverse using the structure of this matrix.
+   * @returns The inverse using the structure of this matrix.
+   * @see SymPy `sympy.matrices.expressions.kronecker.KroneckerProduct._eval_inverse`
+   */
   override evalInverse(): Expr {
     try {
       return KroneckerProductNode.create(this.args.map((a) => cast(a, MatrixExpr).inverse()));
@@ -107,7 +167,12 @@ export class KroneckerProductNode extends MatrixExpr {
       throw e;
     }
   }
-  /** SymPy structurally_equal: Kronecker products with factors of the same shapes. */
+  /**
+   * Kronecker products with factors of the same shapes.
+   * @param other - The value to combine with or compare against.
+   * @returns Whether both Kronecker products have corresponding factors of identical shape.
+   * @see SymPy `sympy.matrices.expressions.kronecker.KroneckerProduct.structurally_equal`
+   */
   structurallyEqual(other: Expr): boolean {
     return (
       other instanceof KroneckerProductNode &&
@@ -116,7 +181,12 @@ export class KroneckerProductNode extends MatrixExpr {
       this.args.every((a, k) => sameList(cast(a, MatrixExpr).shape, cast(other.args[k], MatrixExpr).shape))
     );
   }
-  /** SymPy has_matching_shape: the factors can be multiplied factorwise. */
+  /**
+   * Returns the factors can be multiplied factorwise.
+   * @param other - The value to combine with or compare against.
+   * @returns The factors can be multiplied factorwise.
+   * @see SymPy `sympy.matrices.expressions.kronecker.KroneckerProduct.has_matching_shape`
+   */
   hasMatchingShape(other: Expr): boolean {
     return (
       other instanceof KroneckerProductNode &&
@@ -125,7 +195,10 @@ export class KroneckerProductNode extends MatrixExpr {
       this.args.every((a, k) => same(cast(a, MatrixExpr).cols, cast(other.args[k], MatrixExpr).rows))
     );
   }
-  /** SymPy _eval_expand_kroneckerproduct: distributed over sums of the factors. */
+  /**
+   * Distributed over sums of the factors.
+   * @returns The resulting symbolic expression.
+   */
   expandKroneckerProduct(): Expr {
     let products: Expr[][] = [[]];
     for (const f of this.args) {
@@ -135,26 +208,55 @@ export class KroneckerProductNode extends MatrixExpr {
     if (products.length === 1) return this;
     return MatAddNode.create(products.map((p) => new KroneckerProductNode(p)));
   }
+  /**
+   * Expands the expression using its algebraic structure.
+   * @param hint - The requested kind of expansion.
+   * @returns The distributed Kronecker product when that expansion is requested.
+   */
   override expandSelf(hint: string): Expr | undefined {
     return hint === 'kroneckerproduct' ? this.expandKroneckerProduct() : undefined;
   }
-  /** SymPy _kronecker_add. */
+  /**
+   * Adds corresponding factors when both Kronecker products have the same structure.
+   * @param other - The value to combine with or compare against.
+   * @returns The resulting symbolic expression.
+   * @see SymPy `sympy.matrices.expressions.kronecker.KroneckerProduct._kronecker_add`
+   */
   kroneckerAdd(other: Expr): Expr {
     if (this.structurallyEqual(other)) return new KroneckerProductNode(this.args.map((a, k) => MatAddNode.create([a, at(other.args, k)]).doit()));
     return MatAddNode.create([this, other]).doit();
   }
-  /** SymPy _kronecker_mul. */
+  /**
+   * Multiplies corresponding Kronecker factors when their dimensions permit it.
+   * @param other - The value to combine with or compare against.
+   * @returns The resulting symbolic expression.
+   * @see SymPy `sympy.matrices.expressions.kronecker.KroneckerProduct._kronecker_mul`
+   */
   kroneckerMul(other: Expr): Expr {
     if (this.hasMatchingShape(other)) return new KroneckerProductNode(this.args.map((a, k) => times(a, at(other.args, k))));
     return times(this, other);
   }
+  /**
+   * Evaluates the operations represented by this expression.
+   * @param hints - Evaluation options, including whether to evaluate the operands recursively.
+   * @returns The evaluated expression.
+   * @see SymPy `sympy.matrices.expressions.kronecker.KroneckerProduct.doit`
+   */
   override doit(hints: DoitHints = {}): Expr {
     const args = hints.deep === false ? this.args : this.args.map((a) => doitArg(a, hints));
     return canonicalizeKron(KroneckerProductNode.create(args));
   }
+  /**
+   * Returns the binding precedence used to parenthesize expressions in plain text.
+   * @returns The binding precedence used to parenthesize expressions in plain text.
+   */
   override strPrecedence(): number {
     return PRECEDENCE.Mul;
   }
+  /**
+   * Formats the expression in LaTeX.
+   * @returns The LaTeX representation.
+   */
   override printLatex(): string {
     return this.args.map((a) => parenLatex(a, PRECEDENCE.Pow, true)).join(' \\otimes ');
   }
@@ -169,18 +271,58 @@ function doitKron(args: readonly Expr[]): Expr {
   return cast(KroneckerProductNode.create(args), MatrixExpr).doit();
 }
 
-/** SymPy KroneckerProduct(*args). */
+/**
+ * The Kronecker (tensor) product of matrices.
+ * @param args - The operands in their defining order.
+ * @returns The resulting matrix expression.
+ * @throws TypeError when the sum mixes matrix and scalar terms.
+ * @see SymPy `sympy.matrices.expressions.kronecker.KroneckerProduct`
+ * @example
+ * ```ts
+ * import { Identity, KroneckerProduct, symbols } from '@symjs/symjs';
+ *
+ * const [m, n] = symbols('m n');
+ * KroneckerProduct(Identity(m), Identity(n)); // => I
+ * ```
+ */
 export const KroneckerProduct = /* @__PURE__ */ callableClass(KroneckerProductNode, (...args: MatArg[]): Expr => KroneckerProductNode.create(args));
 export type KroneckerProduct = KroneckerProductNode;
 
-/** SymPy kronecker_product(*matrices): the evaluated Kronecker product (explicit for explicit factors). */
+/**
+ * The evaluated Kronecker product (explicit for explicit factors).
+ * @param matrices - The matrix operands in order.
+ * @returns The resulting symbolic expression.
+ * @throws TypeError when no factors are supplied.
+ * @see SymPy `sympy.matrices.expressions.kronecker.kronecker_product`
+ * @example
+ * ```ts
+ * import { MatrixSymbol, kroneckerProduct } from '@symjs/symjs';
+ * kroneckerProduct(MatrixSymbol('A', 2, 2)); // => A
+ * ```
+ */
 export function kroneckerProduct(...matrices: MatArg[]): Expr {
   if (!matrices.length) throw new TypeError('Empty Kronecker product is undefined');
   if (matrices.length === 1) return toExpr(first(matrices));
   return doitKron(matrices.map(toExpr));
 }
 
-/** SymPy matrix_kronecker_product(*matrices): the Kronecker product of explicit matrices. */
+/**
+ * The Kronecker product of explicit matrices.
+ * @param matrices - The matrix operands in order.
+ * @returns The resulting matrix.
+ * @throws TypeError when a matrix operand is required.
+ * @see SymPy `sympy.matrices.expressions.kronecker.matrix_kronecker_product`
+ * @remarks SymPy prints this result as `Matrix([[1, 0, 2, 0], [0, 1, 0, 2], [3, 0, 4, 0], [0, 3, 0, 4]])`.
+ * @example
+ * ```ts
+ * import { Matrix, matrixKroneckerProduct } from '@symjs/symjs';
+ * matrixKroneckerProduct(Matrix.of([[1, 2], [3, 4]]), Matrix.of([[1, 0], [0, 1]])); // => Matrix([
+ * //   [1, 0, 2, 0],
+ * //   [0, 1, 0, 2],
+ * //   [3, 0, 4, 0],
+ * //   [0, 3, 0, 4]])
+ * ```
+ */
 export function matrixKroneckerProduct(...matrices: Matrix[]): Matrix {
   if (!matrices.length || !matrices.every((m) => m instanceof Matrix)) throw new TypeError('Sequence of Matrices expected');
   return matrices.slice(1).reduce((a, b) => a.kron(b), first(matrices));
@@ -256,8 +398,19 @@ function kroneckerMatPow(e: Expr): Expr {
 }
 
 /**
- * SymPy combine_kronecker(expr): sums, products and powers of Kronecker
+ * Sums, products and powers of Kronecker
  * products with matching factors combined factorwise.
+ * @param exprIn - The expression to transform.
+ * @returns The resulting symbolic expression.
+ * @see SymPy `sympy.matrices.expressions.kronecker.combine_kronecker`
+ * @example
+ * ```ts
+ * import { KroneckerProduct, MatPow, MatrixSymbol, combineKronecker, symbols } from '@symjs/symjs';
+ *
+ * const [n] = symbols('n', { integer: true });
+ * const [m] = symbols('m', { integer: true });
+ * combineKronecker(MatPow(KroneckerProduct(MatrixSymbol('C', n, n), MatrixSymbol('D', m, m)), m)); // => KroneckerProduct(C**m, D**m)
+ * ```
  */
 export function combineKronecker(exprIn: MatArg): Expr {
   const haskron = (e: Expr): boolean => e instanceof MatrixExpr && hasNode(e, isKron);

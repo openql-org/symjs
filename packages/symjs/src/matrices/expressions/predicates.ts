@@ -37,7 +37,7 @@ import { at, first } from '../../core/guard';
 import { FactorizationNode } from './misc';
 import { DFTNode } from './funcmatrix';
 
-/** Names of the matrix predicates (SymPy Q.<name>). */
+/** Names of the matrix predicates. */
 export type MatrixPredicateName =
   | 'invertible'
   | 'singular'
@@ -54,15 +54,31 @@ export type MatrixPredicateName =
 
 /**
  * A matrix predicate applied to a matrix expression, such as
- * Q.orthogonal(X) (SymPy AppliedPredicate).
- *
+ * Q.orthogonal(X).
+ * @see SymPy `sympy.assumptions.assume.AppliedPredicate`
  * @experimental May change in a minor release.
+ * @example
+ * ```ts
+ * import { MatrixQ, MatrixSymbol } from '@symjs/symjs';
+ * String(MatrixQ.orthogonal(MatrixSymbol('A', 3, 3))); // => Q.orthogonal(A)
+ * ```
  */
 export class MatrixPredicate {
+  /**
+   * Constructs a `MatrixPredicate`.
+   * @param name - The name used to identify the object.
+   * @param arg - The expression to operate on.
+   */
   constructor(
+    /** The identifying name. */
     readonly name: MatrixPredicateName,
+    /** The expression to operate on. */
     readonly arg: Expr,
   ) {}
+  /**
+   * Formats the object as plain text.
+   * @returns The printable representation.
+   */
   toString(): string {
     return `Q.${this.name}(${str(this.arg)})`;
   }
@@ -78,8 +94,13 @@ const pred =
 
 /**
  * The matrix predicates of SymPy's Q (Q.orthogonal(X), Q.symmetric(X), ...).
- *
+ * @see SymPy `sympy.assumptions.ask.Q`
  * @experimental May change in a minor release.
+ * @example
+ * ```ts
+ * import { MatrixQ, MatrixSymbol, askMatrix } from '@symjs/symjs';
+ * askMatrix(MatrixQ.square(MatrixSymbol('A', 2, 3))); // => False
+ * ```
  */
 export const MatrixQ = {
   invertible: pred('invertible'),
@@ -122,10 +143,17 @@ const all = (xs: readonly Truth[]): Truth => (xs.every((x) => x === true) ? true
 const notT = (t: Truth): Truth => (t === 'unknown' ? t : !t);
 
 /**
- * SymPy ask(Q.<name>(M), assumptions) for the matrix predicates: true,
- * false or 'unknown'.
- *
+ * Evaluates a matrix predicate under the supplied assumptions.
+ * @param p - The applied matrix predicate to evaluate.
+ * @param assumptions - The assumptions to apply.
+ * @returns Whether the property holds, or `'unknown'` if undecidable.
+ * @see SymPy `sympy.assumptions.ask.ask`
  * @experimental May change in a minor release.
+ * @example
+ * ```ts
+ * import { Identity, MatrixQ, askMatrix } from '@symjs/symjs';
+ * askMatrix(MatrixQ.invertible(Identity(3))); // => True
+ * ```
  */
 export function askMatrix(p: MatrixPredicate, assumptions?: MatrixAssumption): Truth {
   return askPred(p.name, p.arg, flatten(assumptions));
@@ -269,11 +297,24 @@ function refineNode(e: Expr, as: readonly MatrixPredicate[]): Expr {
 }
 
 /**
- * SymPy refine(expr, assumptions) for matrix expressions with the matrix
- * predicates: refine(X.T, Q.symmetric(X)) = X, refine(X.I, Q.orthogonal(X))
- * = X.T, refine(X*X.T, Q.orthogonal(X)) = I, refine(det(X), Q.orthogonal(X)) = 1.
- *
+ * Simplifies matrix expressions using the supplied matrix assumptions.
+ * @param expr - The expression to transform.
+ * @param assumptions - The assumptions to apply.
+ * @returns The resulting symbolic expression.
+ * @throws RangeError when refining the inverse of a matrix known to be singular.
+ * @see SymPy `sympy.assumptions.refine.refine`
+ * @remarks For a unitary matrix, its adjoint is its inverse. SymPy 1.14 gives
+ * `Adjoint(A.T)` for the inverse and leaves `A*Adjoint(A)` unevaluated.
  * @experimental May change in a minor release.
+ * @example
+ * ```ts
+ * import { Inverse, MatMul, MatrixQ, MatrixSymbol, refineMatrix } from '@symjs/symjs';
+ *
+ * const A = MatrixSymbol('A', 3, 3);
+ * refineMatrix(MatMul(A.T, A), MatrixQ.orthogonal(A)); // => I
+ * refineMatrix(Inverse(A), MatrixQ.unitary(A)); // => Adjoint(A)
+ * refineMatrix(MatMul(A, A.H), MatrixQ.unitary(A)); // => I
+ * ```
  */
 export function refineMatrix(expr: MatArg, assumptions?: MatrixAssumption): Expr {
   const as = flatten(assumptions);

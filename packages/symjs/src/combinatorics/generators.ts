@@ -17,9 +17,10 @@ const range = (n: number): number[] => Array.from({ length: n }, (_, i) => i);
 const rotateLeft = (a: readonly number[], k: number): number[] => [...a.slice(k), ...a.slice(0, k)];
 
 /**
- * SymPy symmetric(n): the permutations of the symmetric group of order n!,
- * in lexicographic order of their array forms.
- *
+ * Enumerates all permutations of the given degree in lexicographic order of their array forms.
+ * @param n - The number of points in the permutation action.
+ * @returns An iterator over the permutations in enumeration order.
+ * @see SymPy `sympy.combinatorics.generators.symmetric`
  * @example
  * ```ts
  * import { symmetric } from '@symjs/symjs';
@@ -32,9 +33,11 @@ export function* symmetric(n: number): Generator<Permutation, void, undefined> {
 }
 
 /**
- * SymPy cyclic(n): the n permutations of the cyclic group of order n, the
+ * The n permutations of the cyclic group of order n, the
  * powers of the left rotation of [0, 1, ..., n - 1].
- *
+ * @param n - The number of points in the permutation action.
+ * @returns An iterator over the permutations in enumeration order.
+ * @see SymPy `sympy.combinatorics.generators.cyclic`
  * @example
  * ```ts
  * import { cyclic } from '@symjs/symjs';
@@ -51,9 +54,11 @@ export function* cyclic(n: number): Generator<Permutation, void, undefined> {
 }
 
 /**
- * SymPy alternating(n): the even permutations of the symmetric group, the
+ * The even permutations of the symmetric group, the
  * alternating group of order n!/2.
- *
+ * @param n - The number of points in the permutation action.
+ * @returns An iterator over the permutations in enumeration order.
+ * @see SymPy `sympy.combinatorics.generators.alternating`
  * @example
  * ```ts
  * import { alternating } from '@symjs/symjs';
@@ -69,10 +74,12 @@ export function* alternating(n: number): Generator<Permutation, void, undefined>
 }
 
 /**
- * SymPy dihedral(n): the 2n permutations of the dihedral group of order 2n,
+ * The 2n permutations of the dihedral group of order 2n,
  * the rotations of an n-gon each followed by its reflection; for n = 1 and
  * n = 2 the groups of order 2 and 4 on 2 and 4 points (as in SymPy).
- *
+ * @param n - The number of points in the permutation action.
+ * @returns An iterator over the permutations in enumeration order.
+ * @see SymPy `sympy.combinatorics.generators.dihedral`
  * @example
  * ```ts
  * import { dihedral } from '@symjs/symjs';

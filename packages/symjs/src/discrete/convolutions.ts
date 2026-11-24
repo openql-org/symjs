@@ -61,9 +61,17 @@ function scaledIntegers(a: readonly ExprLike[]): [bigint[], bigint] | undefined 
 }
 
 /**
- * The linear convolution of two integer sequences (SymPy convolution_int).
- * Like SymPy's packing into one integer, the result ends at the last nonzero
- * term ([0] when every term is 0), and an empty sequence raises SymPy's error.
+ * Computes the linear convolution of two integer sequences.
+ * @param aIn - The first coefficient sequence.
+ * @param bIn - The second coefficient sequence.
+ * @returns The exact integer convolution coefficients.
+ * @throws RangeError when the collection is empty.
+ * @see SymPy `sympy.discrete.convolutions.convolution_int`
+ * @example
+ * ```ts
+ * import { convolutionInt } from '@symjs/symjs';
+ * convolutionInt([2, 3], [4, 5]); // => [8, 22, 15]
+ * ```
  */
 export function convolutionInt(aIn: readonly IntLike[], bIn: readonly IntLike[]): bigint[] {
   const a = aIn.map((v) => asInt(v)), b = bIn.map((v) => asInt(v));
@@ -90,14 +98,19 @@ function cyclic<T>(ls: readonly T[], c: number, zero: T, plus: (u: T, v: T) => T
 }
 
 /**
- * Convolution of two sequences, of the kind the options select (SymPy
- * convolution): linear convolution by FFT by default (exact, or numeric
- * with `dps`), modulo a prime by NTT with `prime`, dyadic with
- * `{ dyadic: true }` and subset convolution with `{ subset: true }`; at
- * most one of them may be given. `cycle` gives the length of a cyclic
- * convolution. The results modulo a prime are bigints.
- *
- * `convolution([1, 2, 3], [4, 5, 6], { cycle: 3 })` is `[31, 31, 28]`.
+ * Convolves two coefficient sequences using the selected transform and optionally folds the result to a cycle length.
+ * @param a - The first coefficient sequence.
+ * @param b - The second coefficient sequence.
+ * @param opts - The cycle length and transform selection in {@link ConvolutionOptions}.
+ * @returns The coefficients of the resulting product.
+ * @throws RangeError when the cycle length is negative.
+ * @throws TypeError when multiple convolution types are selected.
+ * @see SymPy `sympy.discrete.convolutions.convolution`
+ * @example
+ * ```ts
+ * import { convolution } from '@symjs/symjs';
+ * convolution([1, 2, 3], [4, 5, 6], { cycle: 3 }); // => [31, 31, 28]
+ * ```
  */
 export function convolution(a: Iterable<IntLike>, b: Iterable<IntLike>, opts: ConvolutionOptions & { prime: IntLike }): bigint[];
 export function convolution(a: Iterable<ExprLike>, b: Iterable<ExprLike>, opts?: ConvolutionOptions & { prime?: undefined }): Expr[];
@@ -138,10 +151,17 @@ function pointwise(a: readonly Expr[], b: readonly Expr[]): Expr[] {
 }
 
 /**
- * Linear convolution by the Fast Fourier Transform (SymPy convolution_fft);
- * exact by default, numeric with `{ dps }` decimal digits.
- *
- * `convolutionFft([2, 5], [6, 7, 3])` is `[12, 44, 41, 15]`.
+ * Computes the linear convolution of two sequences using the Fourier transform.
+ * @param a - The first coefficient sequence.
+ * @param b - The second coefficient sequence.
+ * @param opts - Set `dps` for a numerical transform at the given decimal precision.
+ * @returns The coefficients of the resulting product.
+ * @see SymPy `sympy.discrete.convolutions.convolution_fft`
+ * @example
+ * ```ts
+ * import { convolutionFft } from '@symjs/symjs';
+ * convolutionFft([2, 3], [4, 5]); // => [8, 22, 15]
+ * ```
  */
 export function convolutionFft(a: Iterable<ExprLike>, b: Iterable<ExprLike>, opts: { dps?: number } = {}): Expr[] {
   const aa = sympifySeq(a, SEQ_MESSAGE);
@@ -156,10 +176,17 @@ export function convolutionFft(a: Iterable<ExprLike>, b: Iterable<ExprLike>, opt
 }
 
 /**
- * Linear convolution modulo a prime of the form m*2**k + 1 by the Number
- * Theoretic Transform (SymPy convolution_ntt); the results are bigints.
- *
- * `convolutionNtt([2, 5], [6, 7, 3], 19*2**10 + 1)` is `[12n, 44n, 41n, 15n]`.
+ * Computes the linear convolution modulo a prime using the number theoretic transform.
+ * @param a - The first coefficient sequence.
+ * @param b - The second coefficient sequence.
+ * @param prime - The prime modulus, with the padded transform length dividing its predecessor.
+ * @returns The coefficients of the resulting product.
+ * @see SymPy `sympy.discrete.convolutions.convolution_ntt`
+ * @example
+ * ```ts
+ * import { convolutionNtt } from '@symjs/symjs';
+ * convolutionNtt([2, 3], [4, 5], 19457); // => [8, 22, 15]
+ * ```
  */
 export function convolutionNtt(a: Iterable<IntLike>, b: Iterable<IntLike>, prime: IntLike): bigint[] {
   const aa: IntLike[] = toArray(a);
@@ -189,10 +216,16 @@ function padPair(a: Iterable<ExprLike>, b: Iterable<ExprLike>): [Expr[], Expr[]]
 }
 
 /**
- * Dyadic (bitwise-XOR) convolution by the Fast Walsh Hadamard Transform
- * (SymPy convolution_fwht); padded to the right with zeros to a power of 2.
- *
- * `convolutionFwht([u, v], [x, y])` is `[u*x + v*y, u*y + v*x]`.
+ * Convolves two sequences by grouping products according to the bitwise XOR of their indices.
+ * @param a - The first coefficient sequence.
+ * @param b - The second coefficient sequence.
+ * @returns The coefficients of the resulting product.
+ * @see SymPy `sympy.discrete.convolutions.convolution_fwht`
+ * @example
+ * ```ts
+ * import { convolutionFwht } from '@symjs/symjs';
+ * convolutionFwht([2, 3], [4, 5]); // => [23, 22]
+ * ```
  */
 export function convolutionFwht(a: Iterable<ExprLike>, b: Iterable<ExprLike>): Expr[] {
   const ab = padPair(a, b);
@@ -201,12 +234,16 @@ export function convolutionFwht(a: Iterable<ExprLike>, b: Iterable<ExprLike>): E
 }
 
 /**
- * Subset convolution, with the indices as bitmasks of subsets of a finite
- * set (SymPy convolution_subset): entry `mask` of the result is the sum of
- * a[s]*b[mask^s] over the subsets s of mask. Padded to the right with zeros
- * to a power of 2.
- *
- * `convolutionSubset([u, v], [x, y])` is `[u*x, u*y + v*x]`.
+ * Convolves sequences indexed by subsets, summing products for disjoint pairs with the specified union.
+ * @param a - The first coefficient sequence.
+ * @param b - The second coefficient sequence.
+ * @returns The coefficients of the resulting product.
+ * @see SymPy `sympy.discrete.convolutions.convolution_subset`
+ * @example
+ * ```ts
+ * import { convolutionSubset } from '@symjs/symjs';
+ * convolutionSubset([2, 3], [4, 5]); // => [8, 22]
+ * ```
  */
 export function convolutionSubset(a: Iterable<ExprLike>, b: Iterable<ExprLike>): Expr[] {
   const ab = padPair(a, b);
@@ -224,11 +261,16 @@ export function convolutionSubset(a: Iterable<ExprLike>, b: Iterable<ExprLike>):
 }
 
 /**
- * The covering product (SymPy covering_product): the sums of the products
- * of the entries grouped by the bitwise OR of their indices. Padded to the
- * right with zeros to a power of 2.
- *
- * `coveringProduct([u, v], [x, y])` is `[u*x, u*y + v*x + v*y]`.
+ * Sums products of coefficients whose index bitmasks have the specified union.
+ * @param a - The first coefficient sequence.
+ * @param b - The second coefficient sequence.
+ * @returns The coefficients of the resulting product.
+ * @see SymPy `sympy.discrete.convolutions.covering_product`
+ * @example
+ * ```ts
+ * import { coveringProduct } from '@symjs/symjs';
+ * coveringProduct([2, 3], [4, 5]); // => [8, 37]
+ * ```
  */
 export function coveringProduct(a: Iterable<ExprLike>, b: Iterable<ExprLike>): Expr[] {
   const ab = padPair(a, b);
@@ -237,11 +279,16 @@ export function coveringProduct(a: Iterable<ExprLike>, b: Iterable<ExprLike>): E
 }
 
 /**
- * The intersecting product (SymPy intersecting_product): the sums of the
- * products of the entries grouped by the bitwise AND of their indices.
- * Padded to the right with zeros to a power of 2.
- *
- * `intersectingProduct([u, v], [x, y])` is `[u*x + u*y + v*x, v*y]`.
+ * Sums products of coefficients whose index bitmasks have the specified intersection.
+ * @param a - The first coefficient sequence.
+ * @param b - The second coefficient sequence.
+ * @returns The coefficients of the resulting product.
+ * @see SymPy `sympy.discrete.convolutions.intersecting_product`
+ * @example
+ * ```ts
+ * import { intersectingProduct } from '@symjs/symjs';
+ * intersectingProduct([2, 3], [4, 5]); // => [30, 15]
+ * ```
  */
 export function intersectingProduct(a: Iterable<ExprLike>, b: Iterable<ExprLike>): Expr[] {
   const ab = padPair(a, b);

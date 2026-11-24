@@ -16,9 +16,16 @@ import type { FreeGroup, FreeGroupElement } from './freegroups';
 
 /** The part of a finitely presented group a rewriting system uses. */
 export interface RewritingGroup {
+  /** The free group on the generators. */
   readonly freeGroup: FreeGroup;
+  /** The generators in their defining order. */
   readonly generators: readonly FreeGroupElement[];
+  /** The words imposed as defining relations. */
   readonly relators: readonly FreeGroupElement[];
+  /**
+   * Formats the object as plain text.
+   * @returns The printable representation.
+   */
   toString(): string;
 }
 
@@ -26,17 +33,44 @@ export interface RewritingGroup {
 export type StateName = FreeGroupElement | 'start';
 const nameKey = (n: StateName): string => (n === 'start' ? 'start' : `w:${n.key}`);
 
-/** SymPy State: a state of a reduction automaton, with its transitions on letters. */
+/**
+ * A state of a reduction automaton, with its transitions on letters.
+ * @see SymPy `sympy.combinatorics.rewritingsystem_fsm.State`
+ */
 export class State {
+  /**
+   * The identifying name.
+   * @see SymPy `sympy.combinatorics.rewritingsystem_fsm.State.name`
+   */
   readonly name: StateName;
+  /**
+   * The automaton containing this state.
+   * @see SymPy `sympy.combinatorics.rewritingsystem_fsm.State.state_machine`
+   */
   readonly stateMachine: StateMachine;
-  /** 's' (start), 'a' (accept) or 'd' (dead: a left-hand side of a rule). */
+  /**
+   * The state role, encoded as `s` for start, `a` for accept or `d` for a completed rule pattern.
+   * @see SymPy `sympy.combinatorics.rewritingsystem_fsm.State.state_type`
+   */
   stateType: string;
-  /** The right-hand side of the rule of a dead state. */
+  /**
+   * The right-hand side of the rule of a dead state.
+   * @see SymPy `sympy.combinatorics.rewritingsystem_fsm.State.rh_rule`
+   */
   rhRule: FreeGroupElement | undefined;
-  /** The next state for each letter (by the letter's key). */
+  /**
+   * The next state for each letter (by the letter's key).
+   * @see SymPy `sympy.combinatorics.rewritingsystem_fsm.State.transitions`
+   */
   readonly transitions = new Map<string, StateName>();
 
+  /**
+   * Constructs a `State`.
+   * @param name - The name used to identify the object.
+   * @param stateMachine - The automaton containing the state.
+   * @param stateType - The role of the state in recognizing a rewrite rule.
+   * @param rhRule - The right-hand side of a recognized rule.
+   */
   constructor(name: StateName, stateMachine: StateMachine, stateType: string, rhRule?: FreeGroupElement) {
     this.name = name;
     this.stateMachine = stateMachine;
@@ -44,45 +78,90 @@ export class State {
     this.rhRule = rhRule;
   }
 
-  /** SymPy add_transition(letter, state). */
+  /**
+   * Add a transition from the current state to a new state.
+   * @param letter - The generator or inverse generator.
+   * @param state - The target state reached by the transition.
+   * @see SymPy `sympy.combinatorics.rewritingsystem_fsm.State.add_transition`
+   */
   addTransition(letter: FreeGroupElement, state: StateName): void {
     this.transitions.set(letter.key, state);
   }
 }
 
-/** SymPy StateMachine(name, automaton_alphabet): a finite state machine, starting with the state 'start'. */
+/**
+ * A finite state machine, starting with the state 'start'.
+ * @see SymPy `sympy.combinatorics.rewritingsystem_fsm.StateMachine`
+ */
 export class StateMachine {
+  /**
+   * The identifying name.
+   * @see SymPy `sympy.combinatorics.rewritingsystem_fsm.StateMachine.name`
+   */
   readonly name: string;
+  /**
+   * The letters recognized by the automaton.
+   * @see SymPy `sympy.combinatorics.rewritingsystem_fsm.StateMachine.automaton_alphabet`
+   */
   readonly automatonAlphabet: readonly FreeGroupElement[];
-  /** @internal The states by name key. */
+  /** The states by name key. @internal */
   readonly stateMap = new Map<string, State>();
 
+  /**
+   * Constructs a `StateMachine`.
+   * @param name - The name used to identify the object.
+   * @param automatonAlphabet - The generator letters recognized by the automaton.
+   */
   constructor(name: string, automatonAlphabet: readonly FreeGroupElement[]) {
     this.name = name;
     this.automatonAlphabet = automatonAlphabet;
     this.addState('start', 's');
   }
 
-  /** SymPy add_state(state_name, state_type, rh_rule). */
+  /**
+   * Instantiate a state object and stores it in the 'states' dictionary.
+   * @param stateName - The label of the state.
+   * @param stateType - The role of the state in recognizing a rewrite rule.
+   * @param rhRule - The right-hand side of a recognized rule.
+   * @see SymPy `sympy.combinatorics.rewritingsystem_fsm.StateMachine.add_state`
+   */
   addState(stateName: StateName, stateType: string, rhRule?: FreeGroupElement): void {
     this.stateMap.set(nameKey(stateName), new State(stateName, this, stateType, rhRule));
   }
 
-  /** SymPy states: the states by name. */
+  /**
+   * Gets the states by name.
+   * @returns The states by name.
+   * @see SymPy `sympy.combinatorics.rewritingsystem_fsm.StateMachine.states`
+   */
   get states(): Map<StateName, State> {
     return new Map([...this.stateMap.values()].map((s) => [s.name, s]));
   }
 
-  /** @internal Whether a state has this name. */
+  /**
+   * Whether a state has this name.
+   * @param name - The name used to identify the object.
+   * @returns Whether a state with this name exists.
+   * @internal
+   */
   hasState(name: StateName): boolean {
     return this.stateMap.has(nameKey(name));
   }
 
-  /** @internal The state with this name. */
+  /**
+   * Returns the state with this name.
+   * @param name - The name used to identify the object.
+   * @returns The state with this name.
+   * @internal
+   */
   state(name: StateName): State {
     return getOrThrow(this.stateMap, nameKey(name));
   }
 
+  /**
+   * Formats the object as plain text.
+   * @returns The printable representation.
+   */
   toString(): string {
     return this.name;
   }
@@ -90,6 +169,7 @@ export class StateMachine {
 
 /** Python's RuntimeError of a rewriting system that exceeds its maximum number of rules. */
 export class RewritingRulesExceeded extends RangeError {
+  /** Constructs a `RewritingRulesExceeded`. */
   constructor() {
     super('Too many rules were defined.');
     this.name = 'RewritingRulesExceeded';
@@ -100,25 +180,48 @@ export class RewritingRulesExceeded extends RangeError {
 type Rules = Map<string, [FreeGroupElement, FreeGroupElement]>;
 
 /**
- * SymPy RewritingSystem(group): reduction rules lhs -> rhs (lhs > rhs in
+ * Reduction rules lhs -> rhs (lhs > rhs in
  * the order of words) that hold in a finitely presented group.
+ * @see SymPy `sympy.combinatorics.rewritingsystem.RewritingSystem`
  */
 export class RewritingSystem {
+  /**
+   * The group to which the words belong.
+   * @see SymPy `sympy.combinatorics.rewritingsystem.RewritingSystem.group`
+   */
   readonly group: RewritingGroup;
+  /**
+   * The letters used in the rewrite rules.
+   * @see SymPy `sympy.combinatorics.rewritingsystem.RewritingSystem.alphabet`
+   */
   readonly alphabet: readonly FreeGroupElement[];
-  /** SymPy maxeqns: the maximum number of rules. */
+  /**
+   * The maximum number of rules.
+   * @see SymPy `sympy.combinatorics.rewritingsystem.RewritingSystem.maxeqns`
+   */
   maxeqns = 32767;
-  /** SymPy tidyint: the number of new rules after which redundant ones are removed. */
+  /**
+   * The number of new rules after which redundant ones are removed.
+   * @see SymPy `sympy.combinatorics.rewritingsystem.RewritingSystem.tidyint`
+   */
   tidyint = 100;
   #isConfluent: boolean | undefined;
   #maxExceeded = false;
+  /**
+   * The automaton recognizing left-hand sides of rewrite rules.
+   * @see SymPy `sympy.combinatorics.rewritingsystem.RewritingSystem.reduction_automaton`
+   */
   readonly reductionAutomaton: StateMachine;
   #newRules: Rules = new Map();
-  /** @internal */
+  /** The mapping from reducible group words to their replacements. @internal */
   readonly ruleMap: Rules = new Map();
   #rulesCache: [string, string][] = [];
   #automatonReady = false;
 
+  /**
+   * Constructs a `RewritingSystem`.
+   * @param group - The ambient group.
+   */
   constructor(group: RewritingGroup) {
     this.group = group;
     this.alphabet = group.generators;
@@ -131,18 +234,30 @@ export class RewritingSystem {
     this.constructAutomaton();
   }
 
-  /** SymPy rules: the reduction rules, left-hand side to right-hand side. */
+  /**
+   * Gets the reduction rules, left-hand side to right-hand side.
+   * @returns The reduction rules, left-hand side to right-hand side.
+   * @see SymPy `sympy.combinatorics.rewritingsystem.RewritingSystem.rules`
+   */
   get rules(): Map<FreeGroupElement, FreeGroupElement> {
     return new Map(this.ruleMap.values());
   }
 
-  /** SymPy set_max(n): the maximum number of rules. */
+  /**
+   * The maximum number of rules.
+   * @param n - The number of positions.
+   * @see SymPy `sympy.combinatorics.rewritingsystem.RewritingSystem.set_max`
+   */
   setMax(n: number): void {
     if (n > this.maxeqns) this.#maxExceeded = false;
     this.maxeqns = n;
   }
 
-  /** SymPy is_confluent: whether the rules are confluent (computed once). */
+  /**
+   * Whether the rules are confluent (computed once).
+   * @returns Whether the object is confluent.
+   * @see SymPy `sympy.combinatorics.rewritingsystem.RewritingSystem.is_confluent`
+   */
   get isConfluent(): boolean {
     return (this.#isConfluent ??= this.#checkConfluence());
   }
@@ -158,8 +273,13 @@ export class RewritingSystem {
   }
 
   /**
-   * SymPy add_rule(w1, w2, check): add w1 = w2 and the rules it implies;
+   * Add w1 = w2 and the rules it implies;
    * the new left-hand sides (with `check`, those that would be added).
+   * @param w1In - The first group word.
+   * @param w2In - The second group word.
+   * @param check - Whether to verify that the images respect the relations.
+   * @returns The left-hand sides of newly introduced rules.
+   * @see SymPy `sympy.combinatorics.rewritingsystem.RewritingSystem.add_rule`
    */
   addRule(w1In: FreeGroupElement, w2In: FreeGroupElement, check = false): Set<FreeGroupElement> {
     const newKeys = new Map<string, FreeGroupElement>();
@@ -232,9 +352,12 @@ export class RewritingSystem {
   }
 
   /**
-   * SymPy make_confluent(check): complete the rules by the Knuth-Bendix
+   * Complete the rules by the Knuth-Bendix
    * procedure (with `check`, only test confluence). Whether the system is
    * confluent; false when the maximum number of rules stopped the completion.
+   * @param check - Whether to verify that the images respect the relations.
+   * @returns Whether all overlapping reductions agree.
+   * @see SymPy `sympy.combinatorics.rewritingsystem.RewritingSystem.make_confluent`
    */
   makeConfluent(check = false): boolean {
     // the confluence was checked when the maximum was exceeded
@@ -317,7 +440,13 @@ export class RewritingSystem {
     return this.makeConfluent(true);
   }
 
-  /** SymPy reduce(word, exclude): the normal form of word under the rules (without the rule for exclude). */
+  /**
+   * The normal form of word under the rules (without the rule for exclude).
+   * @param word - The group word to examine.
+   * @param exclude - The rule to skip during reduction.
+   * @returns The resulting group word.
+   * @see SymPy `sympy.combinatorics.rewritingsystem.RewritingSystem.reduce`
+   */
   reduce(word: FreeGroupElement, exclude?: FreeGroupElement): FreeGroupElement {
     const rules = [...this.ruleMap.values()].filter(([r]) => exclude === undefined || !r.equals(exclude));
     let again = true;
@@ -333,7 +462,10 @@ export class RewritingSystem {
     return w;
   }
 
-  /** SymPy construct_automaton(): add the rules (and their inverses) to the reduction automaton. */
+  /**
+   * Add the rules (and their inverses) to the reduction automaton.
+   * @see SymPy `sympy.combinatorics.rewritingsystem.RewritingSystem.construct_automaton`
+   */
   constructAutomaton(): void {
     this.#addToAutomaton(this.ruleMap);
   }
@@ -389,7 +521,12 @@ export class RewritingSystem {
     }
   }
 
-  /** SymPy reduce_using_automaton(word): the reduced word, found with the reduction automaton. */
+  /**
+   * The reduced word, found with the reduction automaton.
+   * @param wordIn - The group word to examine.
+   * @returns The resulting group word.
+   * @see SymPy `sympy.combinatorics.rewritingsystem.RewritingSystem.reduce_using_automaton`
+   */
   reduceUsingAutomaton(wordIn: FreeGroupElement): FreeGroupElement {
     if (this.#newRules.size) {
       this.#addToAutomaton(this.#newRules);
