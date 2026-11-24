@@ -102,6 +102,19 @@ const entry00 = (m: Expr): Expr => cast(m, MatrixExpr).at(0, 0);
  * The marginal density of the components at the indices of a joint random
  * symbol (SymPy marginal_distribution): a Lambda. The indices are integers
  * or components `X.at(i)`.
+ *
+ * @param rv - Random variable whose distribution is requested.
+ * @param indicesIn - Component indices to retain.
+ * @returns A lambda for the joint density of the retained components.
+ * @throws RangeError when no component is selected.
+ * @see SymPy `sympy.stats.joint_rv_types.marginal_distribution`
+ * @example
+ * ```ts
+ * import { Lambda, MultivariateNormal, marginalDistribution } from '@symjs/symjs';
+ *
+ * const m = MultivariateNormal('X', [1, 2], [[2, 1], [1, 2]]);
+ * (marginalDistribution(m, 0) as Lambda).call(1); // => 1/(2*sqrt(pi))
+ * ```
  */
 export function marginalDistribution(rv: RandomSymbol, ...indicesIn: (ExprLike | readonly ExprLike[])[]): Expr {
   // an array of indices is one argument, as SymPy's list
@@ -125,27 +138,76 @@ abstract class JointDistributionWithMarginal extends JointDistribution {
 // Handmade joint distributions
 // ---------------------------------------------------------------------------
 
-/** SymPy JointDistributionHandmade(pdf, set): a joint distribution given by a Lambda density on a set. */
+/**
+ * A joint distribution given by a Lambda density on a set.
+ *
+ * @see SymPy `sympy.stats.joint_rv_types.JointDistributionHandmade`
+ */
 export class JointDistributionHandmade extends JointDistribution {
+  /**
+   * Constructs a new `JointDistributionHandmade`.
+   *
+   * @param args - Operands in the order `pdf`, `set`.
+   */
   constructor(args: readonly Expr[]) {
     super('JointDistributionHandmade', args);
   }
+  /**
+   * Whether the distribution is continuous.
+   *
+   * @returns `true` for this distribution.
+   * @see SymPy `sympy.stats.joint_rv_types.JointDistributionHandmade.is_Continuous`
+   */
   override get isContinuous(): boolean {
     return true;
   }
-  /** The density (SymPy pdf, the first argument). */
+  /**
+   * The density (SymPy pdf, the first argument).
+   *
+   * @returns The density.
+   * @see SymPy `sympy.stats.joint_rv_types.JointDistributionHandmade.pdf`
+   */
   get pdfLambda(): Expr {
     return this.arg(0);
   }
+  /**
+   * The support of the distribution.
+   *
+   * @returns The support of the distribution.
+   * @see SymPy `sympy.stats.joint_rv_types.JointDistributionHandmade.set`
+   */
   get set(): SetExpr {
     return cast(this.arg(1), SetExpr, 'set');
   }
+  /**
+   * The probability density at the supplied value.
+   *
+   * @param xs - Outcome at which to evaluate the density.
+   * @returns The density evaluated at the supplied outcome.
+   * @see SymPy `sympy.stats.joint_rv_types.JointDistributionHandmade.pdf`
+   */
   pdf(...xs: ExprLike[]): Expr {
     return cast(this.pdfLambda, LambdaNode, 'pdf').call(...xs);
   }
 }
 
-/** A random vector with the joint density of the components sym[i] in the expression (SymPy JointRV(symbol, pdf, _set=None)). */
+/**
+ * A random vector with the joint density of the components sym[i] in the expression (SymPy JointRV(symbol, pdf, _set=None)).
+ *
+ * @param symbolIn - Name or symbol for the random variable.
+ * @param pdfIn - Joint density expressed in the indexed components.
+ * @returns A random vector with the joint density of the components sym[i] in the expression.
+ * @see SymPy `sympy.stats.joint_rv_types.JointRV`
+ * @example
+ * ```ts
+ * import { IndexedBase, JointDistribution, JointRV, density, ex, exp } from '@symjs/symjs';
+ *
+ * const u = new IndexedBase('x').at(1), v = new IndexedBase('x').at(2);
+ * const pdf = exp(u.pow(2).add(v.pow(2)).mul(ex`-1/2`).add(u).sub(ex`1/2`)).div(ex`2*pi`);
+ * const X = JointRV('x', pdf);
+ * (density(X) as JointDistribution).call(ex`1`, ex`2`); // => exp(-2)/(2*pi)
+ * ```
+ */
 export function JointRV(symbolIn: string | Sym, pdfIn: ExprLike): RandomSymbol {
   const symbol = typeof symbolIn === 'string' ? new Sym(symbolIn) : symbolIn;
   const pdf = sympify(pdfIn);
@@ -167,28 +229,74 @@ export function JointRV(symbolIn: string | Sym, pdfIn: ExprLike): RandomSymbol {
 // Multivariate normal distribution
 // ---------------------------------------------------------------------------
 
-/** SymPy MultivariateNormalDistribution(mu, sigma). */
+/**
+ * The normal law of a random vector with a specified mean vector and covariance matrix.
+ *
+ * @see SymPy `sympy.stats.joint_rv_types.MultivariateNormalDistribution`
+ */
 export class MultivariateNormalDistribution extends JointDistributionWithMarginal {
+  /**
+   * Constructs a new `MultivariateNormalDistribution`.
+   *
+   * @param args - Distribution parameters in the order `mu`, `sigma`.
+   */
   constructor(args: readonly Expr[]) {
     super('MultivariateNormalDistribution', args);
   }
+  /**
+   * Whether the distribution is continuous.
+   *
+   * @returns `true` for this distribution.
+   * @see SymPy `sympy.stats.joint_rv_types.MultivariateNormalDistribution.is_Continuous`
+   */
   override get isContinuous(): boolean {
     return true;
   }
+  /**
+   * Mean vector.
+   *
+   * @returns Mean vector.
+   * @see SymPy `sympy.stats.joint_rv_types.MultivariateNormalDistribution.mu`
+   */
   get mu(): Expr {
     return this.arg(0);
   }
+  /**
+   * Positive semidefinite covariance matrix.
+   *
+   * @returns Positive semidefinite covariance matrix.
+   * @see SymPy `sympy.stats.joint_rv_types.MultivariateNormalDistribution.sigma`
+   */
   get sigma(): Expr {
     return this.arg(1);
   }
+  /**
+   * The support of the distribution.
+   *
+   * @returns The support of the distribution.
+   * @see SymPy `sympy.stats.joint_rv_types.MultivariateNormalDistribution.set`
+   */
   get set(): SetExpr {
     return realsPower(at(shapeOf(this.mu), 0));
   }
+  /**
+   * Checks that the distribution parameters satisfy their defining constraints.
+   *
+   * @throws RangeError when the parameters fail the requirement for compatible dimensions and a positive semidefinite covariance matrix.
+   * @see SymPy `sympy.stats.joint_rv_types.MultivariateNormalDistribution.check`
+   */
   check(): void {
     valueCheck(at(shapeOf(this.mu), 0).key === at(shapeOf(this.sigma), 0).key, 'Size of the mean vector and covariance matrix are incorrect.');
     // check if covariance matrix is positive semi definite or not
     if (!(this.sigma instanceof MatrixSymbolNode)) valueCheck(truthOf(isPositiveSemidefinite(explicit(this.sigma))), 'The covariance matrix must be positive semi definite. ');
   }
+  /**
+   * The probability density at the supplied value.
+   *
+   * @param args - Coordinate values in component order.
+   * @returns The density evaluated at the supplied outcome.
+   * @see SymPy `sympy.stats.joint_rv_types.MultivariateNormalDistribution.pdf`
+   */
   pdf(...args: ExprLike[]): Expr {
     const [mu, sigma] = [this.mu, this.sigma];
     const k = at(shapeOf(mu), 0);
@@ -206,6 +314,13 @@ export class MultivariateNormalDistribution extends JointDistributionWithMargina
     const symbolicNorm = new Pow(mul(pow(mul(2, S.Pi), k), det(sigma)), Rational.of(-1, 2));
     return new MatrixElementNode(new Mul([symbolicNorm, exp(quadS)]), S.Zero, S.Zero);
   }
+  /**
+   * The marginal density in the selected coordinates.
+   *
+   * @param indices - Component indices to retain.
+   * @param sym - Name or symbol for the random variable.
+   * @returns The marginal density in the selected coordinates.
+   */
   marginalDistributionOf(indices: readonly Expr[], sym: Sym): Expr {
     const kept = new Set(indices.map((i) => i.key));
     const k = Number(at(shapeOf(this.mu), 0).toString());
@@ -223,7 +338,25 @@ export class MultivariateNormalDistribution extends JointDistributionWithMargina
 /** The Truth of a predicate as a value for valueCheck. */
 const truthOf = (t: boolean | 'unknown' | undefined): boolean | undefined => (t === 'unknown' ? undefined : t);
 
-/** A multivariate normal random vector (SymPy MultivariateNormal(name, mu, sigma)). */
+/**
+ * A multivariate normal random vector.
+ *
+ * @param name - Name of the symbol.
+ * @param mu - Mean vector.
+ * @param sigma - Positive semidefinite covariance matrix.
+ * @returns The random vector with this distribution.
+ * @throws RangeError when the parameters fail the requirement for compatible dimensions and a positive semidefinite covariance matrix.
+ * @see SymPy `sympy.stats.joint_rv_types.MultivariateNormal`
+ * @remarks For the second marginal in the example, SymPy prints the equivalent factored exponent in `exp(-(y - 4)**2/4)/(2*sqrt(pi))`.
+ * @example
+ * ```ts
+ * import { JointDistribution, Lambda, MultivariateNormal, density, ex, marginalDistribution } from '@symjs/symjs';
+ *
+ * const X = MultivariateNormal('X', [3, 4], [[2, 1], [1, 2]]);
+ * (density(X) as JointDistribution).call(ex`1`, ex`2`); // => sqrt(3)*exp(-4/3)/(6*pi)
+ * (marginalDistribution(X, 1) as Lambda).call(ex`y`); // => exp(-y**2/4 + 2*y - 4)/(2*sqrt(pi))
+ * ```
+ */
 export function MultivariateNormal(name: string | Sym, mu: MatrixParam, sigma: MatrixParam): RandomSymbol {
   return multivariateRv(new MultivariateNormalDistribution([param(mu), param(sigma)]), name);
 }
@@ -232,28 +365,74 @@ export function MultivariateNormal(name: string | Sym, mu: MatrixParam, sigma: M
 // Multivariate Laplace distribution
 // ---------------------------------------------------------------------------
 
-/** SymPy MultivariateLaplaceDistribution(mu, sigma). */
+/**
+ * A multivariate Laplace law parameterized by a vector and a positive definite matrix.
+ *
+ * @see SymPy `sympy.stats.joint_rv_types.MultivariateLaplaceDistribution`
+ */
 export class MultivariateLaplaceDistribution extends JointDistribution {
+  /**
+   * Constructs a new `MultivariateLaplaceDistribution`.
+   *
+   * @param args - Distribution parameters in the order `mu`, `sigma`.
+   */
   constructor(args: readonly Expr[]) {
     super('MultivariateLaplaceDistribution', args);
   }
+  /**
+   * Whether the distribution is continuous.
+   *
+   * @returns `true` for this distribution.
+   * @see SymPy `sympy.stats.joint_rv_types.MultivariateLaplaceDistribution.is_Continuous`
+   */
   override get isContinuous(): boolean {
     return true;
   }
+  /**
+   * Location vector.
+   *
+   * @returns Location vector.
+   * @see SymPy `sympy.stats.joint_rv_types.MultivariateLaplaceDistribution.mu`
+   */
   get mu(): Expr {
     return this.arg(0);
   }
+  /**
+   * Positive definite scale matrix.
+   *
+   * @returns Positive definite scale matrix.
+   * @see SymPy `sympy.stats.joint_rv_types.MultivariateLaplaceDistribution.sigma`
+   */
   get sigma(): Expr {
     return this.arg(1);
   }
+  /**
+   * The support of the distribution.
+   *
+   * @returns The support of the distribution.
+   * @see SymPy `sympy.stats.joint_rv_types.MultivariateLaplaceDistribution.set`
+   */
   get set(): SetExpr {
     return realsPower(at(shapeOf(this.mu), 0));
   }
+  /**
+   * Checks that the distribution parameters satisfy their defining constraints.
+   *
+   * @throws RangeError when the parameters fail the requirement for compatible dimensions and a positive definite scale matrix.
+   * @see SymPy `sympy.stats.joint_rv_types.MultivariateLaplaceDistribution.check`
+   */
   check(): void {
     valueCheck(at(shapeOf(this.mu), 0).key === at(shapeOf(this.sigma), 0).key, 'Size of the mean vector and covariance matrix are incorrect.');
     // check if covariance matrix is positive definite or not
     if (!(this.sigma instanceof MatrixSymbolNode)) valueCheck(truthOf(isPositiveDefinite(explicit(this.sigma))), 'The covariance matrix must be positive definite. ');
   }
+  /**
+   * The probability density at the supplied value.
+   *
+   * @param xs - Outcome at which to evaluate the density.
+   * @returns The density evaluated at the supplied outcome.
+   * @see SymPy `sympy.stats.joint_rv_types.MultivariateLaplaceDistribution.pdf`
+   */
   pdf(...xs: ExprLike[]): Expr {
     const mu = explicit(this.mu);
     const sigma = explicit(this.sigma);
@@ -273,7 +452,23 @@ export class MultivariateLaplaceDistribution extends JointDistribution {
   }
 }
 
-/** A multivariate Laplace random vector (SymPy MultivariateLaplace(name, mu, sigma)). */
+/**
+ * A multivariate Laplace random vector.
+ *
+ * @param name - Name of the symbol.
+ * @param mu - Location vector.
+ * @param sigma - Positive definite scale matrix.
+ * @returns The random vector with this distribution.
+ * @throws RangeError when the parameters fail the requirement for compatible dimensions and a positive definite scale matrix.
+ * @see SymPy `sympy.stats.joint_rv_types.MultivariateLaplace`
+ * @example
+ * ```ts
+ * import { JointDistribution, MultivariateLaplace, density, ex } from '@symjs/symjs';
+ *
+ * const X = MultivariateLaplace('X', [2, 4], [[3, 1], [1, 3]]);
+ * (density(X) as JointDistribution).call(ex`1`, ex`2`); // => sqrt(2)*exp(11/4)*besselk(0, sqrt(165)/4)/(4*pi)
+ * ```
+ */
 export function MultivariateLaplace(name: string | Sym, mu: MatrixParam, sigma: MatrixParam): RandomSymbol {
   return multivariateRv(new MultivariateLaplaceDistribution([param(mu), param(sigma)]), name);
 }
@@ -282,31 +477,83 @@ export function MultivariateLaplace(name: string | Sym, mu: MatrixParam, sigma: 
 // Multivariate Student t distribution
 // ---------------------------------------------------------------------------
 
-/** SymPy MultivariateTDistribution(mu, shape_mat, dof). */
+/**
+ * A multivariate Student t law with a location vector, shape matrix, and degrees of freedom.
+ *
+ * @see SymPy `sympy.stats.joint_rv_types.MultivariateTDistribution`
+ */
 export class MultivariateTDistribution extends JointDistribution {
+  /**
+   * Constructs a new `MultivariateTDistribution`.
+   *
+   * @param args - Distribution parameters in the order `mu`, `shape_mat`, `dof`.
+   */
   constructor(args: readonly Expr[]) {
     super('MultivariateTDistribution', args);
   }
+  /**
+   * Whether the distribution is continuous.
+   *
+   * @returns `true` for this distribution.
+   * @see SymPy `sympy.stats.joint_rv_types.MultivariateTDistribution.is_Continuous`
+   */
   override get isContinuous(): boolean {
     return true;
   }
+  /**
+   * Location vector.
+   *
+   * @returns Location vector.
+   * @see SymPy `sympy.stats.joint_rv_types.MultivariateTDistribution.mu`
+   */
   get mu(): Expr {
     return this.arg(0);
   }
+  /**
+   * The shape matrix of the multivariate distribution.
+   *
+   * @returns The shape matrix of the multivariate distribution.
+   * @see SymPy `sympy.stats.joint_rv_types.MultivariateTDistribution.shape_mat`
+   */
   get shapeMat(): Expr {
     return this.arg(1);
   }
+  /**
+   * The degrees of freedom of the distribution.
+   *
+   * @returns The degrees of freedom of the distribution.
+   * @see SymPy `sympy.stats.joint_rv_types.MultivariateTDistribution.dof`
+   */
   get dof(): Expr {
     return this.arg(2);
   }
+  /**
+   * The support of the distribution.
+   *
+   * @returns The support of the distribution.
+   * @see SymPy `sympy.stats.joint_rv_types.MultivariateTDistribution.set`
+   */
   get set(): SetExpr {
     return realsPower(at(shapeOf(this.mu), 0));
   }
+  /**
+   * Checks that the distribution parameters satisfy their defining constraints.
+   *
+   * @throws RangeError when the parameters fail the requirement for compatible dimensions and a positive definite shape matrix.
+   * @see SymPy `sympy.stats.joint_rv_types.MultivariateTDistribution.check`
+   */
   check(): void {
     valueCheck(at(shapeOf(this.mu), 0).key === at(shapeOf(this.shapeMat), 0).key, 'Size of the location vector and shape matrix are incorrect.');
     // check if covariance matrix is positive definite or not
     if (!(this.shapeMat instanceof MatrixSymbolNode)) valueCheck(truthOf(isPositiveDefinite(explicit(this.shapeMat))), 'The shape matrix must be positive definite. ');
   }
+  /**
+   * The probability density at the supplied value.
+   *
+   * @param xs - Outcome at which to evaluate the density.
+   * @returns The density evaluated at the supplied outcome.
+   * @see SymPy `sympy.stats.joint_rv_types.MultivariateTDistribution.pdf`
+   */
   pdf(...xs: ExprLike[]): Expr {
     const mu = explicit(this.mu);
     const sigma = explicit(this.shapeMat);
@@ -319,7 +566,24 @@ export class MultivariateTDistribution extends JointDistribution {
   }
 }
 
-/** A multivariate Student t random vector (SymPy MultivariateT(syms, mu, sigma, v)). */
+/**
+ * A multivariate Student t random vector.
+ *
+ * @param name - Name of the symbol.
+ * @param mu - Location vector.
+ * @param sigma - Positive definite shape matrix.
+ * @param v - Degrees of freedom.
+ * @returns The random vector with this distribution.
+ * @throws RangeError when the parameters fail the requirement for compatible dimensions and a positive definite shape matrix.
+ * @see SymPy `sympy.stats.joint_rv_types.MultivariateT`
+ * @example
+ * ```ts
+ * import { JointDistribution, MultivariateT, density, ex } from '@symjs/symjs';
+ *
+ * const X = MultivariateT('X', [1, 1], [[1, 0], [0, 1]], 2);
+ * (density(X) as JointDistribution).call(ex`1`, ex`2`); // => 2/(9*pi)
+ * ```
+ */
 export function MultivariateT(name: string | Sym, mu: MatrixParam, sigma: MatrixParam, v: ExprLike): RandomSymbol {
   return multivariateRv(new MultivariateTDistribution([param(mu), param(sigma), sympify(v)]), name);
 }
@@ -328,35 +592,94 @@ export function MultivariateT(name: string | Sym, mu: MatrixParam, sigma: Matrix
 // Normal-gamma distribution
 // ---------------------------------------------------------------------------
 
-/** SymPy NormalGammaDistribution(mu, lamda, alpha, beta). */
+/**
+ * The joint law of a normally distributed component conditional on a gamma-distributed precision.
+ *
+ * @see SymPy `sympy.stats.joint_rv_types.NormalGammaDistribution`
+ */
 export class NormalGammaDistribution extends JointDistributionWithMarginal {
+  /**
+   * Constructs a new `NormalGammaDistribution`.
+   *
+   * @param args - Distribution parameters in the order `mu`, `lamda`, `alpha`, `beta`.
+   */
   constructor(args: readonly Expr[]) {
     super('NormalGammaDistribution', args);
   }
+  /**
+   * Whether the distribution is continuous.
+   *
+   * @returns `true` for this distribution.
+   * @see SymPy `sympy.stats.joint_rv_types.NormalGammaDistribution.is_Continuous`
+   */
   override get isContinuous(): boolean {
     return true;
   }
+  /**
+   * Conditional normal location.
+   *
+   * @returns Conditional normal location.
+   * @see SymPy `sympy.stats.joint_rv_types.NormalGammaDistribution.mu`
+   */
   get mu(): Expr {
     return this.arg(0);
   }
+  /**
+   * Positive scaling factor for the precision.
+   *
+   * @returns Positive scaling factor for the precision.
+   * @see SymPy `sympy.stats.joint_rv_types.NormalGammaDistribution.lamda`
+   */
   get lamda(): Expr {
     return this.arg(1);
   }
+  /**
+   * Gamma shape.
+   *
+   * @returns Gamma shape.
+   * @see SymPy `sympy.stats.joint_rv_types.NormalGammaDistribution.alpha`
+   */
   get alpha(): Expr {
     return this.arg(2);
   }
+  /**
+   * Gamma rate.
+   *
+   * @returns Gamma rate.
+   * @see SymPy `sympy.stats.joint_rv_types.NormalGammaDistribution.beta`
+   */
   get beta(): Expr {
     return this.arg(3);
   }
+  /**
+   * Checks that the distribution parameters satisfy their defining constraints.
+   *
+   * @throws RangeError when the parameters fail the requirement for real location, positive precision factor, and positive gamma shape and rate.
+   * @see SymPy `sympy.stats.joint_rv_types.NormalGammaDistribution.check`
+   */
   check(): void {
     valueCheck(truthOf(isReal(this.mu)), 'Location must be real.');
     valueCheck(Gt(this.lamda, 0), 'Lambda must be positive');
     valueCheck(Gt(this.alpha, 0), 'alpha must be positive');
     valueCheck(Gt(this.beta, 0), 'beta must be positive');
   }
+  /**
+   * The support of the distribution.
+   *
+   * @returns The support of the distribution.
+   * @see SymPy `sympy.stats.joint_rv_types.NormalGammaDistribution.set`
+   */
   get set(): SetExpr {
     return productSet(Reals, interval(0, S.Infinity));
   }
+  /**
+   * The probability density at the supplied value.
+   *
+   * @param xIn - Outcome at which to evaluate the density.
+   * @param tauIn - Outcome at which to evaluate the density.
+   * @returns The density evaluated at the supplied outcome.
+   * @see SymPy `sympy.stats.joint_rv_types.NormalGammaDistribution.pdf`
+   */
   pdf(xIn: ExprLike, tauIn: ExprLike): Expr {
     const [x, tau] = [sympify(xIn), sympify(tauIn)];
     const [mu, lamda, alpha, beta] = [this.mu, this.lamda, this.alpha, this.beta];
@@ -369,6 +692,14 @@ export class NormalGammaDistribution extends JointDistributionWithMarginal {
       exp(mul(-1, lamda, tau, pow(sub(x, mu), 2), S.Half)),
     );
   }
+  /**
+   * The marginal density in the selected coordinates.
+   *
+   * @param indices - Component indices to retain.
+   * @param sym - Name or symbol for the random variable.
+   * @returns The marginal density in the selected coordinates.
+   * @throws TypeError when the selected coordinates require both normal and precision arguments.
+   */
   marginalDistributionOf(indices: readonly Expr[], sym: Sym): Expr {
     // SymPy self.pdf(*sym) with the one symbol: a TypeError
     if (indices.length === 2) throw new TypeError('NormalGammaDistribution.pdf() missing 1 required positional argument: tau');
@@ -385,7 +716,25 @@ export class NormalGammaDistribution extends JointDistributionWithMarginal {
   }
 }
 
-/** A normal-gamma random vector (SymPy NormalGamma(sym, mu, lamda, alpha, beta)). */
+/**
+ * A normal-gamma random vector.
+ *
+ * @param sym - Name or symbol for the random variable.
+ * @param mu - Conditional normal location.
+ * @param lamda - Positive scaling factor for the precision.
+ * @param alpha - Gamma shape.
+ * @param beta - Gamma rate.
+ * @returns The random vector with this distribution.
+ * @throws RangeError when the parameters fail the requirement for real location, positive precision factor, and positive gamma shape and rate.
+ * @see SymPy `sympy.stats.joint_rv_types.NormalGamma`
+ * @example
+ * ```ts
+ * import { JointDistribution, NormalGamma, density, ex } from '@symjs/symjs';
+ *
+ * const X = NormalGamma('X', 0, 1, 2, 3);
+ * (density(X) as JointDistribution).call(ex`1`, ex`2`); // => 18*exp(-7)/sqrt(pi)
+ * ```
+ */
 export function NormalGamma(sym: string | Sym, mu: ExprLike, lamda: ExprLike, alpha: ExprLike, beta: ExprLike): RandomSymbol {
   return multivariateRv(new NormalGammaDistribution([mu, lamda, alpha, beta].map(sympify)), sym);
 }
@@ -394,25 +743,65 @@ export function NormalGamma(sym: string | Sym, mu: ExprLike, lamda: ExprLike, al
 // Multivariate beta (Dirichlet) distribution
 // ---------------------------------------------------------------------------
 
-/** SymPy MultivariateBetaDistribution(alpha). */
+/**
+ * The Dirichlet law of a vector of proportions with a specified concentration for each category.
+ *
+ * @see SymPy `sympy.stats.joint_rv_types.MultivariateBetaDistribution`
+ */
 export class MultivariateBetaDistribution extends JointDistribution {
+  /**
+   * Constructs a new `MultivariateBetaDistribution`.
+   *
+   * @param args - Distribution parameters in the order `alpha`.
+   */
   constructor(args: readonly Expr[]) {
     super('MultivariateBetaDistribution', args);
   }
+  /**
+   * Whether the distribution is continuous.
+   *
+   * @returns `true` for this distribution.
+   * @see SymPy `sympy.stats.joint_rv_types.MultivariateBetaDistribution.is_Continuous`
+   */
   override get isContinuous(): boolean {
     return true;
   }
+  /**
+   * The vector of concentration parameters, one per category.
+   *
+   * @returns The vector of concentration parameters, one per category.
+   * @see SymPy `sympy.stats.joint_rv_types.MultivariateBetaDistribution.alpha`
+   */
   get alpha(): Expr {
     return this.arg(0);
   }
+  /**
+   * Checks that the distribution parameters satisfy their defining constraints.
+   *
+   * @throws RangeError when the parameters fail the requirement for at least two positive concentration parameters.
+   * @see SymPy `sympy.stats.joint_rv_types.MultivariateBetaDistribution.check`
+   */
   check(): void {
     const alpha = entries(this.alpha);
     valueCheck(alpha.length >= 2, 'At least two categories should be passed.');
     for (const a of alpha) valueCheck(Gt(a, 0) !== S.false, 'Each concentration parameter should be positive.');
   }
+  /**
+   * The support of the distribution.
+   *
+   * @returns The support of the distribution.
+   * @see SymPy `sympy.stats.joint_rv_types.MultivariateBetaDistribution.set`
+   */
   get set(): SetExpr {
     return productSet(...entries(this.alpha).map(() => interval(0, 1)));
   }
+  /**
+   * The probability density at the supplied value.
+   *
+   * @param syms - Name or symbol for the random vector.
+   * @returns The density evaluated at the supplied outcome.
+   * @see SymPy `sympy.stats.joint_rv_types.MultivariateBetaDistribution.pdf`
+   */
   pdf(...syms: ExprLike[]): Expr {
     const alpha = entries(this.alpha);
     const B = mul(...alpha.map((a) => gamma(a)), pow(gamma(add(...alpha)), -1));
@@ -420,34 +809,98 @@ export class MultivariateBetaDistribution extends JointDistribution {
   }
 }
 
-/** A multivariate beta (Dirichlet) random vector (SymPy MultivariateBeta(syms, *alpha)): the parameters as an array or one by one. */
+/**
+ * A multivariate beta (Dirichlet) random vector: the parameters as an array or one by one.
+ *
+ * @param syms - Name or symbol for the random vector.
+ * @param alpha - Positive concentration parameters, as an array or separate values.
+ * @returns The random vector with this distribution.
+ * @throws RangeError when the parameters fail the requirement for at least two positive concentration parameters.
+ * @see SymPy `sympy.stats.joint_rv_types.MultivariateBeta`
+ * @example
+ * ```ts
+ * import { JointDistribution, MultivariateBeta, density, ex } from '@symjs/symjs';
+ *
+ * const X = MultivariateBeta('X', [2, 3]);
+ * (density(X) as JointDistribution).call(ex`1/2`, ex`1/2`); // => 3/2
+ * ```
+ */
 export function MultivariateBeta(syms: string | Sym, ...alpha: (ExprLike | readonly ExprLike[])[]): RandomSymbol {
   const a = listOrArgs(alpha);
   return multivariateRv(new MultivariateBetaDistribution([param(a)]), syms);
 }
 
-/** SymPy Dirichlet: the multivariate beta distribution. */
+/**
+ * Creates a random vector with a Dirichlet distribution.
+ *
+ * @param syms - Name or symbol for the random vector.
+ * @param alpha - Positive concentration parameters, as an array or separate values.
+ * @returns The random vector with this distribution.
+ * @throws RangeError when the parameters fail the requirement for at least two positive concentration parameters.
+ * @see SymPy `sympy.stats.joint_rv_types.MultivariateBeta`
+ * @example
+ * ```ts
+ * import { Dirichlet, JointDistribution, density, ex } from '@symjs/symjs';
+ *
+ * const X = Dirichlet('X', [2, 3]);
+ * (density(X) as JointDistribution).call(ex`1/2`, ex`1/2`); // => 3/2
+ * ```
+ */
 export const Dirichlet = MultivariateBeta;
 
 // ---------------------------------------------------------------------------
 // Multivariate Ewens distribution
 // ---------------------------------------------------------------------------
 
-/** SymPy MultivariateEwensDistribution(n, theta). */
+/**
+ * The Ewens sampling law for the counts of groups of each size in a sample.
+ *
+ * @see SymPy `sympy.stats.joint_rv_types.MultivariateEwensDistribution`
+ */
 export class MultivariateEwensDistribution extends JointDistribution {
+  /**
+   * Constructs a new `MultivariateEwensDistribution`.
+   *
+   * @param args - Distribution parameters in the order `n`, `theta`.
+   */
   constructor(args: readonly Expr[]) {
     super('MultivariateEwensDistribution', args);
   }
+  /**
+   * Whether the distribution is discrete.
+   *
+   * @returns `true` for this distribution.
+   * @see SymPy `sympy.stats.joint_rv_types.MultivariateEwensDistribution.is_Discrete`
+   */
   override get isDiscrete(): boolean {
     return true;
   }
+  /**
+   * Positive mutation parameter.
+   *
+   * @returns Positive mutation parameter.
+   * @see SymPy `sympy.stats.joint_rv_types.MultivariateEwensDistribution.theta`
+   */
   get theta(): Expr {
     return this.arg(1);
   }
+  /**
+   * Checks that the distribution parameters satisfy their defining constraints.
+   *
+   * @throws RangeError when the parameters fail the requirement for a positive integer sample size and a positive mutation parameter.
+   * @see SymPy `sympy.stats.joint_rv_types.MultivariateEwensDistribution.check`
+   */
   check(): void {
     valueCheck(Gt(this.arg(0), 0), 'sample size should be positive integer.');
     valueCheck(truthOf(isPositive(this.theta)), 'mutation rate should be positive.');
   }
+  /**
+   * The support of the distribution.
+   *
+   * @returns The support of the distribution.
+   * @throws NotImplementedError when the dimension is symbolic.
+   * @see SymPy `sympy.stats.joint_rv_types.MultivariateEwensDistribution.set`
+   */
   get set(): SetExpr {
     const n = this.arg(0);
     // SymPy: Product(Intersection(Naturals0, Interval(0, n//i)), (i, 1, n)), a product of sets that is not a set
@@ -455,6 +908,14 @@ export class MultivariateEwensDistribution extends JointDistribution {
     const k = Number(n.toString());
     return productSet(range(0, k + 1), ...Array.from({ length: k - 1 }, (_, j) => range(0, Math.floor(k / (j + 2)) + 1)));
   }
+  /**
+   * The probability density at the supplied value.
+   *
+   * @param syms - Name or symbol for the random vector.
+   * @returns The density evaluated at the supplied outcome.
+   * @throws RangeError when a symbolic dimension is used without an indexed base.
+   * @see SymPy `sympy.stats.joint_rv_types.MultivariateEwensDistribution.pdf`
+   */
   pdf(...syms: (ExprLike | IndexedBase)[]): Expr {
     const [n, theta] = [this.arg(0), this.theta];
     const condi = isInteger(n);
@@ -476,7 +937,23 @@ export class MultivariateEwensDistribution extends JointDistribution {
   }
 }
 
-/** A multivariate Ewens random vector (SymPy MultivariateEwens(syms, n, theta)). */
+/**
+ * A multivariate Ewens random vector.
+ *
+ * @param syms - Name or symbol for the random vector.
+ * @param n - Sample size.
+ * @param theta - Positive mutation parameter.
+ * @returns The random vector with this distribution.
+ * @throws RangeError when the parameters fail the requirement for a positive integer sample size and a positive mutation parameter.
+ * @see SymPy `sympy.stats.joint_rv_types.MultivariateEwens`
+ * @example
+ * ```ts
+ * import { JointDistribution, MultivariateEwens, density, ex } from '@symjs/symjs';
+ *
+ * const X = MultivariateEwens('X', 2, 1);
+ * (density(X) as JointDistribution).call(ex`2`, ex`0`); // => 1/2
+ * ```
+ */
 export function MultivariateEwens(syms: string | Sym, n: ExprLike, theta: ExprLike): RandomSymbol {
   return multivariateRv(new MultivariateEwensDistribution([sympify(n), sympify(theta)]), syms);
 }
@@ -485,26 +962,71 @@ export function MultivariateEwens(syms: string | Sym, n: ExprLike, theta: ExprLi
 // Generalized multivariate log-gamma distribution
 // ---------------------------------------------------------------------------
 
-/** SymPy GeneralizedMultivariateLogGammaDistribution(delta, v, lamda, mu). */
+/**
+ * A joint log-gamma law with dependence parameter `delta` and component-specific parameters.
+ *
+ * @see SymPy `sympy.stats.joint_rv_types.GeneralizedMultivariateLogGammaDistribution`
+ */
 export class GeneralizedMultivariateLogGammaDistribution extends JointDistribution {
+  /**
+   * Constructs a new `GeneralizedMultivariateLogGammaDistribution`.
+   *
+   * @param args - Distribution parameters in the order `delta`, `v`, `lamda`, `mu`.
+   */
   constructor(args: readonly Expr[]) {
     super('GeneralizedMultivariateLogGammaDistribution', args);
   }
+  /**
+   * Whether the distribution is continuous.
+   *
+   * @returns `true` for this distribution.
+   * @see SymPy `sympy.stats.joint_rv_types.GeneralizedMultivariateLogGammaDistribution.is_Continuous`
+   */
   override get isContinuous(): boolean {
     return true;
   }
+  /**
+   * Dependence parameter between zero and one.
+   *
+   * @returns Dependence parameter between zero and one.
+   * @see SymPy `sympy.stats.joint_rv_types.GeneralizedMultivariateLogGammaDistribution.delta`
+   */
   get delta(): Expr {
     return this.arg(0);
   }
+  /**
+   * Positive shape parameter.
+   *
+   * @returns Positive shape parameter.
+   * @see SymPy `sympy.stats.joint_rv_types.GeneralizedMultivariateLogGammaDistribution.v`
+   */
   get v(): Expr {
     return this.arg(1);
   }
+  /**
+   * Vector of positive component parameters.
+   *
+   * @returns Vector of positive component parameters.
+   * @see SymPy `sympy.stats.joint_rv_types.GeneralizedMultivariateLogGammaDistribution.lamda`
+   */
   get lamda(): Expr {
     return this.arg(2);
   }
+  /**
+   * Vector of positive component scales.
+   *
+   * @returns Vector of positive component scales.
+   * @see SymPy `sympy.stats.joint_rv_types.GeneralizedMultivariateLogGammaDistribution.mu`
+   */
   get mu(): Expr {
     return this.arg(3);
   }
+  /**
+   * Checks that the distribution parameters satisfy their defining constraints.
+   *
+   * @throws RangeError when the parameters fail the requirement for a dependence parameter in the closed unit interval, positive shape and positive component parameters for at least two coordinates.
+   * @see SymPy `sympy.stats.joint_rv_types.GeneralizedMultivariateLogGammaDistribution.check`
+   */
   check(): void {
     valueCheck([Ge(this.delta, 0), Le(this.delta, 1)], 'delta must be in range [0, 1].');
     valueCheck(Gt(this.v, 0), 'v must be positive');
@@ -512,9 +1034,22 @@ export class GeneralizedMultivariateLogGammaDistribution extends JointDistributi
     for (const muk of entries(this.mu)) valueCheck(Gt(muk, 0), 'mu must be a positive vector.');
     valueCheck(entries(this.lamda).length > 1, 'the distribution should have at least two random variables.');
   }
+  /**
+   * The support of the distribution.
+   *
+   * @returns The support of the distribution.
+   * @see SymPy `sympy.stats.joint_rv_types.GeneralizedMultivariateLogGammaDistribution.set`
+   */
   get set(): SetExpr {
     return realsPower(sympify(entries(this.lamda).length));
   }
+  /**
+   * The probability density at the supplied value.
+   *
+   * @param yIn - Outcome at which to evaluate the density.
+   * @returns The density evaluated at the supplied outcome.
+   * @see SymPy `sympy.stats.joint_rv_types.GeneralizedMultivariateLogGammaDistribution.pdf`
+   */
   pdf(...yIn: ExprLike[]): Expr {
     const [d, v] = [this.delta, this.v];
     const [l, mu] = [entries(this.lamda), entries(this.mu)];
@@ -529,7 +1064,26 @@ export class GeneralizedMultivariateLogGammaDistribution extends JointDistributi
   }
 }
 
-/** A generalized multivariate log-gamma random vector (SymPy GeneralizedMultivariateLogGamma(syms, delta, v, lamda, mu)). */
+/**
+ * A generalized multivariate log-gamma random vector.
+ *
+ * @param syms - Name or symbol for the random vector.
+ * @param delta - Dependence parameter between zero and one.
+ * @param v - Positive shape parameter.
+ * @param lamda - Vector of positive component parameters.
+ * @param mu - Vector of positive component scales.
+ * @returns The random vector with this distribution.
+ * @throws RangeError when the parameters fail the requirement for a dependence parameter in the closed unit interval, positive shape and positive component parameters for at least two coordinates.
+ * @see SymPy `sympy.stats.joint_rv_types.GeneralizedMultivariateLogGamma`
+ * @remarks SymPy writes the same density at the origin as `Sum(exp(-3)/(2**n*gamma(n + 1)**3), (n, 0, oo))/2`.
+ * @example
+ * ```ts
+ * import { GeneralizedMultivariateLogGamma, JointDistribution, density, ex } from '@symjs/symjs';
+ *
+ * const X = GeneralizedMultivariateLogGamma('X', ex`1/2`, 1, [1, 1, 1], [1, 1, 1]); // => X
+ * (density(X) as JointDistribution).call(ex`0`, ex`0`, ex`0`); // => Sum((1/2)**n*exp(-3)/gamma(n + 1)**3, (n, 0, oo))/2
+ * ```
+ */
 export function GeneralizedMultivariateLogGamma(syms: string | Sym, delta: ExprLike, v: ExprLike, lamda: readonly ExprLike[], mu: readonly ExprLike[]): RandomSymbol {
   return multivariateRv(new GeneralizedMultivariateLogGammaDistribution([sympify(delta), sympify(v), param(lamda), param(mu)]), syms);
 }
@@ -538,6 +1092,23 @@ export function GeneralizedMultivariateLogGamma(syms: string | Sym, delta: ExprL
  * A generalized multivariate log-gamma random vector given the matrix
  * omega, whose determinant gives delta (SymPy
  * GeneralizedMultivariateLogGammaOmega(syms, omega, v, lamda, mu)).
+ *
+ * @param syms - Name or symbol for the random vector.
+ * @param omegaIn - Square dependence matrix with unit diagonal.
+ * @param v - Positive shape parameter.
+ * @param lamda - Vector of positive component parameters.
+ * @param mu - Vector of positive component scales.
+ * @returns The random vector with this distribution.
+ * @throws RangeError when the parameters fail the requirement for a square matrix with ones on its diagonal and compatible positive parameter vectors of length at least two.
+ * @see SymPy `sympy.stats.joint_rv_types.GeneralizedMultivariateLogGammaOmega`
+ * @remarks SymPy writes the same density at the origin as `3*Sum(exp(-2)/(4**n*gamma(n + 1)**2), (n, 0, oo))/4`.
+ * @example
+ * ```ts
+ * import { GeneralizedMultivariateLogGammaOmega, JointDistribution, density, ex } from '@symjs/symjs';
+ *
+ * const X = GeneralizedMultivariateLogGammaOmega('X', [[1, ex`1/2`], [ex`1/2`, 1]], 1, [1, 1], [1, 1]); // => X
+ * (density(X) as JointDistribution).call(ex`0`, ex`0`); // => 3*Sum((1/4)**n*exp(-2)/gamma(n + 1)**2, (n, 0, oo))/4
+ * ```
  */
 export function GeneralizedMultivariateLogGammaOmega(syms: string | Sym, omegaIn: Matrix | readonly (readonly ExprLike[])[], v: ExprLike, lamda: readonly ExprLike[], mu: readonly ExprLike[]): RandomSymbol {
   const omega = omegaIn instanceof Matrix ? omegaIn : Matrix.of(omegaIn);
@@ -554,26 +1125,66 @@ export function GeneralizedMultivariateLogGammaOmega(syms: string | Sym, omegaIn
 // Multinomial distribution
 // ---------------------------------------------------------------------------
 
-/** SymPy MultinomialDistribution(n, p). */
+/**
+ * The joint counts of mutually exclusive categories in a fixed number of independent trials.
+ *
+ * @see SymPy `sympy.stats.joint_rv_types.MultinomialDistribution`
+ */
 export class MultinomialDistribution extends JointDistribution {
+  /**
+   * Constructs a new `MultinomialDistribution`.
+   *
+   * @param args - Distribution parameters in the order `n`, `p`.
+   */
   constructor(args: readonly Expr[]) {
     super('MultinomialDistribution', args);
   }
+  /**
+   * Whether the distribution is discrete.
+   *
+   * @returns `true` for this distribution.
+   * @see SymPy `sympy.stats.joint_rv_types.MultinomialDistribution.is_Discrete`
+   */
   override get isDiscrete(): boolean {
     return true;
   }
+  /**
+   * Category probabilities summing to one.
+   *
+   * @returns Category probabilities summing to one.
+   * @see SymPy `sympy.stats.joint_rv_types.MultinomialDistribution.p`
+   */
   get p(): Expr {
     return this.arg(1);
   }
+  /**
+   * Checks that the distribution parameters satisfy their defining constraints.
+   *
+   * @throws RangeError when the parameters fail the requirement for a positive integer trial count and probabilities in the closed unit interval that sum to one.
+   * @see SymPy `sympy.stats.joint_rv_types.MultinomialDistribution.check`
+   */
   check(): void {
     valueCheck(Gt(this.arg(0), 0), 'number of trials must be a positive integer');
     for (const pk of entries(this.p)) valueCheck([Ge(pk, 0), Le(pk, 1)], 'probability must be in range [0, 1]');
     valueCheck(Eq(add(...entries(this.p)), 1), 'probabilities must sum to 1');
   }
+  /**
+   * The support of the distribution.
+   *
+   * @returns The support of the distribution.
+   * @see SymPy `sympy.stats.joint_rv_types.MultinomialDistribution.set`
+   */
   get set(): SetExpr {
     const s = intersection(Naturals0, interval(0, this.arg(0)));
     return productSet(...entries(this.p).map(() => s));
   }
+  /**
+   * The probability density at the supplied value.
+   *
+   * @param xIn - Outcome at which to evaluate the density.
+   * @returns The density evaluated at the supplied outcome.
+   * @see SymPy `sympy.stats.joint_rv_types.MultinomialDistribution.pdf`
+   */
   pdf(...xIn: ExprLike[]): Expr {
     const [n, p] = [this.arg(0), entries(this.p)];
     const x = xIn.map(sympify);
@@ -583,7 +1194,23 @@ export class MultinomialDistribution extends JointDistribution {
   }
 }
 
-/** A multinomial random vector (SymPy Multinomial(syms, n, *p)): the probabilities as an array or one by one. */
+/**
+ * A multinomial random vector: the probabilities as an array or one by one.
+ *
+ * @param syms - Name or symbol for the random vector.
+ * @param n - Positive integer number of trials.
+ * @param p - Category probabilities summing to one.
+ * @returns The random vector with this distribution.
+ * @throws RangeError when the parameters fail the requirement for a positive integer trial count and probabilities in the closed unit interval that sum to one.
+ * @see SymPy `sympy.stats.joint_rv_types.Multinomial`
+ * @example
+ * ```ts
+ * import { JointDistribution, Multinomial, density, ex } from '@symjs/symjs';
+ *
+ * const X = Multinomial('X', 3, ex`1/2`, ex`1/2`);
+ * (density(X) as JointDistribution).call(ex`1`, ex`2`); // => 3/8
+ * ```
+ */
 export function Multinomial(syms: string | Sym, n: ExprLike, ...p: (ExprLike | readonly ExprLike[])[]): RandomSymbol {
   const ps = listOrArgs(p);
   return multivariateRv(new MultinomialDistribution([sympify(n), param(ps)]), syms);
@@ -593,28 +1220,74 @@ export function Multinomial(syms: string | Sym, n: ExprLike, ...p: (ExprLike | r
 // Negative multinomial distribution
 // ---------------------------------------------------------------------------
 
-/** SymPy NegativeMultinomialDistribution(k0, p). */
+/**
+ * The joint counts of successes in several categories before a fixed number of failures.
+ *
+ * @see SymPy `sympy.stats.joint_rv_types.NegativeMultinomialDistribution`
+ */
 export class NegativeMultinomialDistribution extends JointDistribution {
+  /**
+   * Constructs a new `NegativeMultinomialDistribution`.
+   *
+   * @param args - Distribution parameters in the order `k0`, `p`.
+   */
   constructor(args: readonly Expr[]) {
     super('NegativeMultinomialDistribution', args);
   }
+  /**
+   * Whether the distribution is discrete.
+   *
+   * @returns `true` for this distribution.
+   * @see SymPy `sympy.stats.joint_rv_types.NegativeMultinomialDistribution.is_Discrete`
+   */
   override get isDiscrete(): boolean {
     return true;
   }
+  /**
+   * Number of failures at which to stop.
+   *
+   * @returns Number of failures at which to stop.
+   * @see SymPy `sympy.stats.joint_rv_types.NegativeMultinomialDistribution.k0`
+   */
   get k0(): Expr {
     return this.arg(0);
   }
+  /**
+   * Probabilities of the success categories.
+   *
+   * @returns Probabilities of the success categories.
+   * @see SymPy `sympy.stats.joint_rv_types.NegativeMultinomialDistribution.p`
+   */
   get p(): Expr {
     return this.arg(1);
   }
+  /**
+   * Checks that the distribution parameters satisfy their defining constraints.
+   *
+   * @throws RangeError when the parameters fail the requirement for a positive integer failure count and probabilities in the closed unit interval whose sum is at most one.
+   * @see SymPy `sympy.stats.joint_rv_types.NegativeMultinomialDistribution.check`
+   */
   check(): void {
     valueCheck(Gt(this.k0, 0), 'number of failures must be a positive integer');
     for (const pk of entries(this.p)) valueCheck([Ge(pk, 0), Le(pk, 1)], 'probability must be in range [0, 1].');
     valueCheck(Le(add(...entries(this.p)), 1), 'success probabilities must not be greater than 1.');
   }
+  /**
+   * The support of the distribution.
+   *
+   * @returns The support of the distribution.
+   * @see SymPy `sympy.stats.joint_rv_types.NegativeMultinomialDistribution.set`
+   */
   get set(): SetExpr {
     return productSet(...entries(this.p).map(() => range(0, S.Infinity)));
   }
+  /**
+   * The probability density at the supplied value.
+   *
+   * @param kIn - Outcome at which to evaluate the density.
+   * @returns The density evaluated at the supplied outcome.
+   * @see SymPy `sympy.stats.joint_rv_types.NegativeMultinomialDistribution.pdf`
+   */
   pdf(...kIn: ExprLike[]): Expr {
     const [k0, p] = [this.k0, entries(this.p)];
     const k = kIn.map(sympify);
@@ -624,7 +1297,23 @@ export class NegativeMultinomialDistribution extends JointDistribution {
   }
 }
 
-/** A negative multinomial random vector (SymPy NegativeMultinomial(syms, k0, *p)): the probabilities as an array or one by one. */
+/**
+ * A negative multinomial random vector: the probabilities as an array or one by one.
+ *
+ * @param syms - Name or symbol for the random vector.
+ * @param k0 - Number of failures at which to stop.
+ * @param p - Probabilities of the success categories.
+ * @returns The random vector with this distribution.
+ * @throws RangeError when the parameters fail the requirement for a positive integer failure count and probabilities in the closed unit interval whose sum is at most one.
+ * @see SymPy `sympy.stats.joint_rv_types.NegativeMultinomial`
+ * @example
+ * ```ts
+ * import { JointDistribution, NegativeMultinomial, density, ex } from '@symjs/symjs';
+ *
+ * const X = NegativeMultinomial('X', 3, ex`1/4`, ex`1/4`);
+ * (density(X) as JointDistribution).call(ex`1`, ex`2`); // => 15/256
+ * ```
+ */
 export function NegativeMultinomial(syms: string | Sym, k0: ExprLike, ...p: (ExprLike | readonly ExprLike[])[]): RandomSymbol {
   const ps = listOrArgs(p);
   return multivariateRv(new NegativeMultinomialDistribution([sympify(k0), param(ps)]), syms);

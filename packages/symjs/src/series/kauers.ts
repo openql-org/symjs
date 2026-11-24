@@ -14,8 +14,22 @@ import { expand } from '../simplify/expand';
 import { at } from '../core/guard';
 
 /**
- * SymPy finite_diff: the forward difference expr(variable + increment) -
+ * The forward difference expr(variable + increment) -
  * expr(variable) of the expanded expression.
+ *
+ * @param expression - Expression to difference.
+ * @param variable - Independent variable.
+ * @param increment - Step added to the variable.
+ * @returns The expanded forward difference.
+ * @see SymPy `sympy.series.kauers.finite_diff`
+ * @example
+ * ```ts
+ * import { ex, finiteDiff, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * finiteDiff(ex`x**2`, x); // => 2*x + 1
+ * finiteDiff(ex`x**2 + 3*x + 8`, x, 2); // => 4*x + 10
+ * ```
  */
 export function finiteDiff(expression: ExprLike, variable: ExprLike, increment: ExprLike = 1): Expr {
   const e = expand(sympify(expression));
@@ -25,9 +39,21 @@ export function finiteDiff(expression: ExprLike, variable: ExprLike, increment: 
 }
 
 /**
- * SymPy finite_diff_kauers: the difference of a sum with respect to its
+ * The difference of a sum with respect to its
  * upper limits, the summand with every variable replaced by its upper limit
  * plus one.
+ *
+ * @param sum - Sum whose upper bounds are advanced.
+ * @returns The summand with the summation variables replaced by their upper bounds plus one.
+ * @throws TypeError when the argument is not a sum.
+ * @see SymPy `sympy.series.kauers.finite_diff_kauers`
+ * @example
+ * ```ts
+ * import { Sum, finiteDiffKauers, symbols } from '@symjs/symjs';
+ *
+ * const [k, n] = symbols('k n');
+ * finiteDiffKauers(Sum(k, [k, 1, n])); // => n + 1
+ * ```
  */
 export function finiteDiffKauers(sum: ExprLike): Expr {
   const s = sympify(sum);

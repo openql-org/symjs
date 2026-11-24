@@ -23,7 +23,7 @@ import { Covariance } from './symbolicprobability';
 export interface VariancePropOptions {
   /** Symbols that are constants (their variance is 0). */
   readonly consts?: readonly Expr[];
-  /** Include the covariance terms (SymPy include_covar). */
+  /** Include the covariance terms. */
   readonly includeCovar?: boolean;
 }
 
@@ -34,9 +34,19 @@ const arg0OrVar = (v: Expr): Expr => (v instanceof Mul ? first(asOrderedFactors(
 const isExp = (e: Expr): e is Pow => e instanceof Pow && e.base === S.E;
 
 /**
- * The variance of an expression of independent variables, to first order
- * (SymPy variance_prop). Symbols that are not random variables are given
+ * The variance of an expression of independent variables, to first order. Symbols that are not random variables are given
  * a Variance of their own.
+ *
+ * @param exprIn - Expression to evaluate.
+ * @param opts - Use `consts` for deterministic symbols and `includeCovar` to include covariances.
+ * @returns The first-order variance in terms of the derivatives, variances and requested covariances.
+ * @see SymPy `sympy.stats.error_prop.variance_prop`
+ * @example
+ * ```ts
+ * import { ex, varianceProp } from '@symjs/symjs';
+ *
+ * varianceProp(ex`x + y`); // => Variance(x) + Variance(y)
+ * ```
  */
 export function varianceProp(exprIn: ExprLike, opts: VariancePropOptions = {}): Expr {
   const expr = sympify(exprIn);

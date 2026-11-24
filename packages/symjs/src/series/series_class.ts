@@ -25,27 +25,80 @@ function index(value: number): number {
   return value;
 }
 
-/** SymPy SeriesBase: subclasses supply bounds and evalTerm. */
+/**
+ * Base class for indexed series with inclusive bounds and cached terms.
+ *
+ * @see SymPy `sympy.series.series_class.SeriesBase`
+ */
 export class SeriesBase extends ExtensionExpr {
   private readonly termCache = new Map<string, Expr>();
 
+  /**
+   * Constructs a new `SeriesBase`.
+   *
+   * @param args - The defining expressions in structural order.
+   */
   constructor(...args: ExprLike[]) {
     super('SeriesBase', args.map(sympify));
   }
 
+  /**
+   * Rebuilds this expression with the supplied operands.
+   *
+   * @param args - Replacement operands in the original order.
+   * @returns The rebuilt expression.
+   */
   override withArgs(args: readonly Expr[]): Expr {
     return new SeriesBase(...args);
   }
 
-  /** The interval of term indices, with both endpoints included. */
+  /**
+   * The interval of term indices, with both endpoints included.
+   *
+   * @returns The interval of term indices, with both endpoints included.
+   * @throws NotImplementedError when the concrete series does not implement this operation.
+   * @see SymPy `sympy.series.series_class.SeriesBase.interval`
+   */
   get interval(): SetExpr { throw new NotImplementedError(`${this.name}.interval`); }
+  /**
+   * The first index of the series or sequence.
+   *
+   * @returns The first index of the series or sequence.
+   * @throws NotImplementedError when the concrete series does not implement this operation.
+   * @see SymPy `sympy.series.series_class.SeriesBase.start`
+   */
   get start(): Expr { throw new NotImplementedError(`${this.name}.start`); }
+  /**
+   * The last index of the series or sequence.
+   *
+   * @returns The last index of the series or sequence.
+   * @throws NotImplementedError when the concrete series does not implement this operation.
+   * @see SymPy `sympy.series.series_class.SeriesBase.stop`
+   */
   get stop(): Expr { throw new NotImplementedError(`${this.name}.stop`); }
+  /**
+   * The number of terms, possibly infinite.
+   *
+   * @returns The number of terms, possibly infinite.
+   * @throws NotImplementedError when the concrete series does not implement this operation.
+   * @see SymPy `sympy.series.series_class.SeriesBase.length`
+   */
   get length(): Expr { throw new NotImplementedError(`${this.name}.length`); }
 
-  /** Variables bound by the series. */
+  /**
+   * Variables bound by the series.
+   *
+   * @returns Variables bound by the series.
+   * @see SymPy `sympy.series.series_class.SeriesBase.variables`
+   */
   get variables(): Sym[] { return []; }
 
+  /**
+   * The free symbols of the series after removing its bound variables.
+   *
+   * @returns The free symbols of the series after removing its bound variables.
+   * @see SymPy `sympy.series.series_class.SeriesBase.free_symbols`
+   */
   override freeSymbolsSelf(): ReadonlySet<Expr> {
     const symbols = new Map<string, Expr>();
     for (const arg of this.args) for (const symbol of freeSymbols(arg)) symbols.set(symbol.key, symbol);
@@ -53,7 +106,14 @@ export class SeriesBase extends ExtensionExpr {
     return new Set(symbols.values());
   }
 
-  /** The cached term at a point, checked against the inclusive bounds. */
+  /**
+   * The cached term at a point, checked against the inclusive bounds.
+   *
+   * @param pt - Index of the requested term.
+   * @returns The term at the specified index.
+   * @throws RangeError when the index lies outside the inclusive bounds.
+   * @see SymPy `sympy.series.series_class.SeriesBase.term`
+   */
   term(pt: ExprLike): Expr {
     const point = sympify(pt);
     const cached = this.termCache.get(point.key);
@@ -75,12 +135,27 @@ export class SeriesBase extends ExtensionExpr {
     return this.start === S.NegativeInfinity ? add(this.stop, -i) : add(this.start, i);
   }
 
-  /** SymPy series[i]; negative indices are offsets, not offsets from the end. */
+  /**
+   * The term at an offset from the initial endpoint. A negative offset extends backwards from that endpoint.
+   *
+   * @param i - Integer term offset.
+   * @returns The term at the requested offset.
+   * @see SymPy `sympy.series.series_class.SeriesBase.__getitem__`
+   */
   getItem(i: number): Expr {
     return this.term(this.ithPoint(index(i)));
   }
 
-  /** SymPy series[start:stop:step], without clipping to the series bounds. */
+  /**
+   * The terms at successive offsets, up to the exclusive stop.
+   *
+   * @param start - First offset to include.
+   * @param stop - Exclusive ending offset.
+   * @param step - Stride between offsets.
+   * @returns The selected terms in order.
+   * @throws TypeError when an infinite series is sliced without a finite stop, or an offset is not a safe integer.
+   * @see SymPy `sympy.series.series_class.SeriesBase.__getitem__`
+   */
   slice(start = 0, stop?: number, step = 1): Expr[] {
     index(start);
     let end = stop;
@@ -97,6 +172,12 @@ export class SeriesBase extends ExtensionExpr {
     return terms;
   }
 
+  /**
+   * Iterates over the terms in index order. An infinite series keeps yielding terms.
+   *
+   * @returns A generator over successive terms.
+   * @see SymPy `sympy.series.series_class.SeriesBase.__iter__`
+   */
   *[Symbol.iterator](): Generator<Expr, void, undefined> {
     for (let i = 0; less(i, this.length); i++) yield this.getItem(i);
   }

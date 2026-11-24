@@ -35,8 +35,22 @@ const isSum = (e: Expr): boolean => e instanceof Concrete && e.kind2 === 'Sum';
 const hasSum = (e: Expr): boolean => isSum(e) || e.args.some(hasSum);
 
 /**
- * SymPy difference_delta(expr, n, step): the difference x[n + step] - x[n] of
+ * The difference x[n + step] - x[n] of
  * the sequence x[n] = expr (n is the free symbol of expr when omitted).
+ *
+ * @param ex - Expression to expand or evaluate.
+ * @param n - Index variable of the sequence.
+ * @param step - Spacing between successive indices.
+ * @returns The shifted term minus the original term.
+ * @throws RangeError when the index is ambiguous or the step is not finite.
+ * @see SymPy `sympy.series.limitseq.difference_delta`
+ * @example
+ * ```ts
+ * import { differenceDelta, ex, symbols } from '@symjs/symjs';
+ *
+ * const [n] = symbols('n');
+ * differenceDelta(ex`n*(n + 1)`, n); // => 2*n + 2
+ * ```
  */
 export function differenceDelta(ex: ExprLike, n?: Sym, step: ExprLike = 1): Expr {
   const e = sympify(ex);
@@ -263,9 +277,23 @@ function limitSeqImpl(ex: Expr, n: Sym, trials: number, depth: number): Expr | u
 const hasTrig = (e: Expr): boolean => (e instanceof Fn && (e.name === 'sin' || e.name === 'cos')) || e.args.some(hasTrig);
 
 /**
- * SymPy limit_seq(expr, n, trials): the limit of the sequence expr as the
+ * The limit of the sequence expr as the
  * integer n tends to oo, for sequences built from rational functions,
  * indefinite sums and products; Unsolved when the algorithm finds none.
+ *
+ * @param ex - Expression to expand or evaluate.
+ * @param n - Index variable of the sequence.
+ * @param trials - Maximum number of attempts to evaluate the limit.
+ * @returns The limit at positive infinity, or `Unsolved` if it cannot be determined.
+ * @throws RangeError when a multivariate expression is given without an index.
+ * @see SymPy `sympy.series.limitseq.limit_seq`
+ * @example
+ * ```ts
+ * import { ex, limitSeq, symbols } from '@symjs/symjs';
+ *
+ * const [n] = symbols('n');
+ * limitSeq(ex`(5*n**3 + 3*n**2 + 4)/(3*n**3 + 4*n - 5)`, n); // => 5/3
+ * ```
  */
 export function limitSeq(ex: ExprLike, n?: Sym, trials = 5): Expr | UnsolvedResult {
   const e = sympify(ex);

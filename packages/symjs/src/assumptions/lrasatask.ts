@@ -20,11 +20,23 @@ import { type AppliedPredicate, globalAssumptions, registerPropositionHandler, Q
 import { UnhandledInput, linearSatisfiable } from '../logic/algorithms/lratheory';
 
 /**
- * SymPy extract_pred_from_old_assum: the predicate (Q.zero, Q.positive,
+ * The predicate (Q.zero, Q.positive,
  * Q.negative, Q.nonzero, Q.nonpositive or Q.nonnegative) that the old
  * assumptions of each non-constant expression give. Throws UnhandledInput
  * for an expression that is not known to be real, is an integer (other
  * than zero), cannot be an integer or is irrational.
+ *
+ * @param allExprs - Expressions whose intrinsic assumptions supply facts.
+ * @returns The sign predicates implied by the nonconstant expressions.
+ * @throws UnhandledInput when a nonconstant expression lacks the real-domain assumptions required by the solver.
+ * @see SymPy `sympy.assumptions.lra_satask.extract_pred_from_old_assum`
+ * @example
+ * ```ts
+ * import { ex, extractPredFromOldAssum, symbols } from '@symjs/symjs';
+ *
+ * const [x, y] = symbols('x y', { positive: true });
+ * extractPredFromOldAssum([x, y, ex`2`]); // => [Q.positive(x), Q.positive(y)]
+ * ```
  */
 export function extractPredFromOldAssum(allExprs: Iterable<ExprLike>): AppliedPredicate[] {
   const ret: AppliedPredicate[] = [];
@@ -51,7 +63,16 @@ export function extractPredFromOldAssum(allExprs: Iterable<ExprLike>): AppliedPr
 }
 
 
-/** Decide a proposition by checking both polarities against the real theory. */
+/**
+ * Decide a proposition by checking both polarities against the real theory.
+ *
+ * @param proposition - Proposition whose truth is to be decided.
+ * @param assumptions - Facts assumed to hold.
+ * @returns Whether the predicate holds, or `'unknown'` when undecided.
+ * @throws RangeError when the assumptions are inconsistent.
+ * @throws UnhandledInput when the expression falls outside linear real arithmetic.
+ * @see SymPy `sympy.assumptions.lra_satask.lra_satask`
+ */
 export function lraSatask(proposition: ExprLike | boolean, assumptions: Assumption = true): Truth {
   const prop = typeof proposition === 'boolean' ? (proposition ? S.true : S.false) : sympify(proposition);
   const assumed = typeof assumptions === 'boolean' ? (assumptions ? S.true : S.false) : assumptions instanceof Expr ? assumptions : and(...assumptions);

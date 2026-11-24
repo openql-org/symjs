@@ -28,32 +28,88 @@ const applied = (symbol: ExprLike, fact: ExprLike, expr: ExprLike): Expr[] => {
   return sympify(expr).args.map((a) => subs(f, [[s, a]]));
 };
 
-/** SymPy allargs: the fact (in symbol) holds for all the arguments of expr. */
+/**
+ * The fact (in symbol) holds for all the arguments of expr.
+ *
+ * @param symbol - Placeholder replaced by each argument of the expression.
+ * @param fact - Boolean relation between the predicates.
+ * @param expr - Expression to evaluate.
+ * @returns The fact (in symbol) holds for all the arguments of expr.
+ * @see SymPy `sympy.assumptions.sathandlers.allargs`
+ * @example
+ * ```ts
+ * import { Q, allargs, ex, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * allargs(x, Q.positive(x), ex`x*y`); // => Q.positive(x) & Q.positive(y)
+ * ```
+ */
 export function allargs(symbol: ExprLike, fact: ExprLike, expr: ExprLike): Expr {
   return and(...applied(symbol, fact, expr));
 }
 
-/** SymPy anyarg: the fact (in symbol) holds for some argument of expr. */
+/**
+ * The fact (in symbol) holds for some argument of expr.
+ *
+ * @param symbol - Placeholder replaced by each argument of the expression.
+ * @param fact - Boolean relation between the predicates.
+ * @param expr - Expression to evaluate.
+ * @returns The fact (in symbol) holds for some argument of expr.
+ * @see SymPy `sympy.assumptions.sathandlers.anyarg`
+ * @example
+ * ```ts
+ * import { Q, anyarg, ex, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * anyarg(x, Q.positive(x), ex`x*y`); // => Q.positive(x) | Q.positive(y)
+ * ```
+ */
 export function anyarg(symbol: ExprLike, fact: ExprLike, expr: ExprLike): Expr {
   return or(...applied(symbol, fact, expr));
 }
 
-/** SymPy exactlyonearg: the fact (in symbol) holds for exactly one argument of expr. */
+/**
+ * The fact (in symbol) holds for exactly one argument of expr.
+ *
+ * @param symbol - Placeholder replaced by each argument of the expression.
+ * @param fact - Boolean relation between the predicates.
+ * @param expr - Expression to evaluate.
+ * @returns The fact (in symbol) holds for exactly one argument of expr.
+ * @see SymPy `sympy.assumptions.sathandlers.exactlyonearg`
+ * @example
+ * ```ts
+ * import { Q, ex, exactlyonearg, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * exactlyonearg(x, Q.positive(x), ex`x*y`); // => (Q.positive(x) & ~Q.positive(y)) | (Q.positive(y) & ~Q.positive(x))
+ * ```
+ */
 export function exactlyonearg(symbol: ExprLike, fact: ExprLike, expr: ExprLike): Expr {
   const ps = applied(symbol, fact, expr);
   return or(...ps.map((p, i) => and(p, ...ps.filter((_q, j) => j !== i).map((q) => not(q)))));
 }
 
-/** A handler giving one fact about an expression (SymPy ClassFactRegistry.register). */
+/**
+ * A callback supplying a fact about an expression.
+ *
+ * @param expr - Expression to evaluate.
+ * @returns A boolean expression known to hold for the input.
+ */
 export type FactHandler = (expr: Expr) => Expr;
-/** A handler giving several facts about an expression (SymPy ClassFactRegistry.multiregister). */
+/**
+ * A callback supplying several facts about an expression.
+ *
+ * @param expr - Expression to evaluate.
+ * @returns Boolean expressions known to hold for the input.
+ */
 export type MultiFactHandler = (expr: Expr) => readonly Expr[];
 
 /**
- * The expression is an instance of the SymPy class: a core class (Add,
- * Mul, Pow, Number, NumberSymbol, ImaginaryUnit, ...), a function (Abs,
- * sin, ...) or an extension node class (MatMul, ...); MatAdd and MatMul are
- * also Add and Mul, as in SymPy.
+ * Tests whether an expression belongs to the named expression class.
+ *
+ * @param expr - Expression to evaluate.
+ * @param cls - Name of the expression class to match.
+ * @returns True if the expression belongs to the specified class.
  */
 export function isClassInstance(expr: Expr, cls: string): boolean {
   if (cls === 'Add') return isAddLike(expr);
@@ -63,34 +119,66 @@ export function isClassInstance(expr: Expr, cls: string): boolean {
 }
 
 /**
- * Facts registered against classes of expressions (SymPy
- * ClassFactRegistry). `register` adds a handler giving one fact,
- * `multiregister` a handler giving several facts; `call(expr)` gives the
- * facts of every handler registered for a class of expr.
+ * A registry of facts about expression classes. A handler contributes one or more facts about an instance of its class.
+ *
+ * @see SymPy `sympy.assumptions.sathandlers.ClassFactRegistry`
+ * @example
+ * ```ts
+ * import { ClassFactRegistry, Q, ex } from '@symjs/symjs';
+ *
+ * const registry = new ClassFactRegistry();
+ * registry.register('Abs', e => Q.nonnegative(e));
+ * registry.call(ex`Abs(x)`); // => [Q.nonnegative(Abs(x))]
+ * ```
  */
 export class ClassFactRegistry {
   private readonly singlefacts = new Map<string, Set<FactHandler>>();
   private readonly multifacts = new Map<string, Set<MultiFactHandler>>();
-  /** Registers a handler giving one fact about the expressions of a class (SymPy register). */
+  /**
+   * Registers a handler giving one fact about the expressions of a class.
+   *
+   * @param cls - Name of the expression class to match.
+   * @param handler - Callback that supplies the facts for a matching expression.
+   * @returns The registered handler.
+   * @see SymPy `sympy.assumptions.sathandlers.ClassFactRegistry.register`
+   */
   register(cls: string, handler: FactHandler): FactHandler {
     this.singlefacts.set(cls, new Set([...(this.singlefacts.get(cls) ?? []), handler]));
     return handler;
   }
-  /** Registers a handler giving several facts about the expressions of each class (SymPy multiregister). */
+  /**
+   * Registers a handler giving several facts about the expressions of each class.
+   *
+   * @param classes - Expression class names to which the handler applies.
+   * @param handler - Callback that supplies the facts for a matching expression.
+   * @returns The registered handler.
+   * @see SymPy `sympy.assumptions.sathandlers.ClassFactRegistry.multiregister`
+   */
   multiregister(classes: string | readonly string[], handler: MultiFactHandler): MultiFactHandler {
     for (const cls of typeof classes === 'string' ? [classes] : classes) {
       this.multifacts.set(cls, new Set([...(this.multifacts.get(cls) ?? []), handler]));
     }
     return handler;
   }
-  /** The single-fact and multiple-fact handlers that apply to expr (SymPy registry[type(expr)]). */
+  /**
+   * The single-fact and multiple-fact handlers that apply to expr (SymPy registry[type(expr)]).
+   *
+   * @param expr - Expression to evaluate.
+   * @returns The single-fact and multiple-fact handlers that apply to expr.
+   */
   handlers(expr: Expr): [FactHandler[], MultiFactHandler[]] {
     const pick = <H>(m: ReadonlyMap<string, ReadonlySet<H>>): H[] => [
       ...new Set([...m].filter(([cls]) => isClassInstance(expr, cls)).flatMap(([, hs]) => [...hs])),
     ];
     return [pick(this.singlefacts), pick(this.multifacts)];
   }
-  /** The facts about expr, without repetition (SymPy registry(expr)). */
+  /**
+   * Collects all registered facts about the expression.
+   *
+   * @param expr - Expression to evaluate.
+   * @returns The distinct facts supplied by matching handlers.
+   * @see SymPy `sympy.assumptions.sathandlers.ClassFactRegistry.__call__`
+   */
   call(expr: ExprLike): Expr[] {
     const e = sympify(expr);
     const [single, multi] = this.handlers(e);
@@ -99,7 +187,18 @@ export class ClassFactRegistry {
   }
 }
 
-/** The facts satask uses about Abs, Add, Mul, MatMul, Pow and the numbers (SymPy class_fact_registry). */
+/**
+ * The facts satask uses about Abs, Add, Mul, MatMul, Pow and the numbers.
+ *
+ * @see SymPy `sympy.assumptions.sathandlers.class_fact_registry`
+ * @example
+ * ```ts
+ * import { Q, classFactRegistry, ex } from '@symjs/symjs';
+ *
+ * const facts = classFactRegistry.call(ex`Abs(x)`);
+ * facts.some(fact => fact.equals(Q.nonnegative(ex`Abs(x)`))); // => True
+ * ```
+ */
 export const classFactRegistry: ClassFactRegistry = new ClassFactRegistry();
 
 const x = new Sym('x');

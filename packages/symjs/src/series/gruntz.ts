@@ -99,18 +99,31 @@ class SubsSet {
   }
 }
 
-/** Limits at infinity by the Gruntz algorithm; one instance per limit (it bounds the work). */
+/** Computes limits at infinity by comparing the growth of subexpressions, with a shared recursion budget. */
 export class Gruntz {
   private calls = 0;
   private readonly limits = new Map<string, Expr>();
 
+  /**
+   * Constructs a new `Gruntz`.
+   *
+   * @param budget - Maximum number of recursive steps.
+   */
   constructor(private readonly budget = 3000) {}
 
   private tick(): void {
     if (++this.calls > this.budget) throw new GruntzError('too many steps');
   }
 
-  /** Compare the growth of two mrv candidates: '<', '>' or '='. */
+  /**
+   * Compares the growth rates of two expressions at positive infinity.
+   *
+   * @param a - First operand.
+   * @param b - Second operand.
+   * @param x - Variable of the expansion.
+   * @returns One of `'<'`, `'>'` or `'='`, according to relative growth.
+   * @see SymPy `sympy.series.gruntz.compare`
+   */
   compare(a: Expr, b: Expr, x: Sym): '<' | '>' | '=' {
     const la = isExp(a) ? a.exp : log(a);
     const lb = isExp(b) ? b.exp : log(b);
@@ -134,7 +147,15 @@ export class Gruntz {
     return this.mrvMax3(f, g.doSubs(exps), g, f.doSubs(exps), u, b, x);
   }
 
-  /** The mrv set of e and e with its elements replaced by their dummies. */
+  /**
+   * The mrv set of e and e with its elements replaced by their dummies.
+   *
+   * @param eIn - Expression to evaluate.
+   * @param x - Variable of the expansion.
+   * @returns The substitution set and the expression with dummy variables in place of its members.
+   * @throws GruntzError when the rapidly varying terms cannot be determined.
+   * @see SymPy `sympy.series.gruntz.mrv`
+   */
   mrv(eIn: Expr, x: Sym): [SubsSet, Expr] {
     this.tick();
     const e = powsimp(eIn, { deep: true, combine: 'exp' });
@@ -205,7 +226,14 @@ export class Gruntz {
     throw new GruntzError(`cannot compute the mrv set of ${e.toString()}`);
   }
 
-  /** Sign of e as x -> oo: 1, -1, 0, or sign(c) for a constant c of unknown sign. */
+  /**
+   * Sign of e as x -> oo: 1, -1, 0, or sign(c) for a constant c of unknown sign.
+   *
+   * @param e - Expression to evaluate.
+   * @param x - Variable of the expansion.
+   * @returns The eventual sign, possibly a symbolic sign for a constant.
+   * @see SymPy `sympy.series.gruntz.sign`
+   */
   sign(e: Expr, x: Sym): Expr {
     this.tick();
     if (isPositive(e)) return S.One;
@@ -228,7 +256,14 @@ export class Gruntz {
     return this.sign(c0, x);
   }
 
-  /** Limit of e as x -> oo (x positive). */
+  /**
+   * Limit of e as x -> oo (x positive).
+   *
+   * @param eIn - Expression to evaluate.
+   * @param x - Variable of the expansion.
+   * @returns The limit at positive infinity.
+   * @see SymPy `sympy.series.gruntz.limitinf`
+   */
   limitinf(eIn: Expr, x: Sym): Expr {
     this.tick();
     if (!eIn.has(x)) return eIn;
@@ -265,7 +300,15 @@ export class Gruntz {
     return this.limitinf(c0, x);
   }
 
-  /** Leading coefficient and exponent of e in the most rapidly varying subexpression w -> 0+. */
+  /**
+   * Leading coefficient and exponent of e in the most rapidly varying subexpression w -> 0+.
+   *
+   * @param e - Expression to evaluate.
+   * @param x - Variable of the expansion.
+   * @returns The leading coefficient and exponent in the most rapidly varying subexpression.
+   * @throws GruntzError when the leading term cannot be found.
+   * @see SymPy `sympy.series.gruntz.mrv_leadterm`
+   */
   mrvLeadterm(e: Expr, x: Sym): [Expr, Expr] {
     if (!e.has(x)) return [e, S.Zero];
     // (the mrv set of an expression in x is not empty)
@@ -302,7 +345,17 @@ export class Gruntz {
     }
   }
 
-  /** e with the elements of omega written in terms of w; and log(w) in terms of x. */
+  /**
+   * Rewrites the rapidly varying subexpressions using the new variable `w`.
+   *
+   * @param e - Expression to evaluate.
+   * @param omegaSet - Most rapidly varying subexpressions.
+   * @param x - Variable of the expansion.
+   * @param w - Dummy variable tending to zero.
+   * @returns The rewritten expression and the logarithm of the new variable in terms of `x`.
+   * @throws SignUnknownError when the sign needed to rewrite an exponential cannot be determined.
+   * @see SymPy `sympy.series.gruntz.rewrite`
+   */
   rewrite(e: Expr, omegaSet: SubsSet, x: Sym, w: Dummy): [Expr, Expr] {
     const entries = [...omegaSet.items.values()];
     // (after moving up, every element is an exponential)
@@ -508,8 +561,17 @@ function rewriteTractable(e: Expr, x: Sym, limitinf: (g: Expr) => Expr | undefin
 }
 
 /**
- * Limit of e as z -> z0 by the Gruntz algorithm (SymPy gruntz); throws GruntzError when
+ * Limit of e as z -> z0 by the Gruntz algorithm; throws GruntzError when
  * the algorithm cannot decide it.
+ *
+ * @param e - Expression to evaluate.
+ * @param z - Limit variable.
+ * @param z0 - Point approached by the limit variable.
+ * @param dir - Side from which the variable approaches the point.
+ * @param budget - Maximum number of recursive steps.
+ * @returns The limiting value in the specified direction.
+ * @throws GruntzError when the limit cannot be decided within the computation budget.
+ * @see SymPy `sympy.series.gruntz.gruntz`
  */
 export function gruntz(e: Expr, z: Sym, z0: Expr, dir: '+' | '-', budget?: number): Expr {
   const p = new Dummy('p', { positive: true });

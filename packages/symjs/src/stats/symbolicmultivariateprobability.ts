@@ -62,21 +62,60 @@ abstract class MatrixStatsNode extends MatrixExpr {
 // ExpectationMatrix
 // ---------------------------------------------------------------------------
 
-/** SymPy ExpectationMatrix(expr, condition): the expectation of a random vector or matrix. */
+/**
+ * The expectation of a random vector or matrix.
+ *
+ * @see SymPy `sympy.stats.symbolic_multivariate_probability.ExpectationMatrix`
+ * @example
+ * ```ts
+ * import { ExpectationMatrixNode, RandomMatrixSymbol, symbols } from '@symjs/symjs';
+ *
+ * const [k] = symbols('k');
+ * const X = new RandomMatrixSymbol('X', k, 1);
+ * new ExpectationMatrixNode([X]).shape; // => [k, 1]
+ * ```
+ */
 export class ExpectationMatrixNode extends MatrixStatsNode {
+  /**
+   * Constructs a new `ExpectationMatrixNode`.
+   *
+   * @param args - Operands in the order `expr`, `condition`.
+   */
   constructor(args: readonly Expr[]) {
     super('ExpectationMatrix', args);
   }
+  /**
+   * The conditioning event, when one was supplied.
+   *
+   * @returns The conditioning event, when one was supplied.
+   */
   get condition(): Expr | undefined {
     return this.args[1];
   }
+  /**
+   * The row and column dimensions of the matrix expression.
+   *
+   * @returns The row and column dimensions of the matrix expression.
+   * @see SymPy `sympy.stats.symbolic_multivariate_probability.ExpectationMatrix.shape`
+   */
   get shape(): [Expr, Expr] {
     return shapeOf(at(this.args, 0));
   }
+  /**
+   * Rebuilds this expression with the supplied operands.
+   *
+   * @param args - Replacement operands in the original order.
+   * @returns The rebuilt expression.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new ExpectationMatrixNode(args);
   }
-  /** The expectations of the terms and of the random factors of products (SymPy ExpectationMatrix.expand). */
+  /**
+   * The expectations of the terms and of the random factors of products.
+   *
+   * @returns The expectations of the terms and of the random factors of products.
+   * @see SymPy `sympy.stats.symbolic_multivariate_probability.ExpectationMatrix.expand`
+   */
   override expand(): Expr {
     const e = at(this.args, 0);
     const condition = this.condition;
@@ -102,7 +141,13 @@ export class ExpectationMatrixNode extends MatrixStatsNode {
     }
     return this;
   }
-  /** The expected value: entry by entry for an explicit matrix (SymPy Expectation.doit). */
+  /**
+   * The expected value: entry by entry for an explicit matrix.
+   *
+   * @param hints - Evaluation controls, including whether to evaluate nested expressions.
+   * @returns The expected value: entry by entry for an explicit matrix.
+   * @see SymPy `sympy.stats.symbolic_multivariate_probability.ExpectationMatrix.doit`
+   */
   override doit(hints: { deep?: boolean } = {}): Expr {
     const e = hints.deep ?? true ? doit(at(this.args, 0)) : at(this.args, 0);
     if (!isRandom(e) || e instanceof ExpectationMatrixNode) return e;
@@ -125,7 +170,22 @@ export function makeExpectationMatrix(exprIn: ExprLike, conditionIn?: ExprLike):
   return new ExpectationMatrixNode([e, sympify(conditionIn)]);
 }
 
-/** SymPy ExpectationMatrix(expr, condition=None). */
+/**
+ * The expectation of a random vector or matrix.
+ *
+ * @param exprIn - Expression to evaluate.
+ * @param conditionIn - Condition on the random variables.
+ * @returns The matrix expectation, or a deterministic argument itself.
+ * @see SymPy `sympy.stats.symbolic_multivariate_probability.ExpectationMatrix`
+ * @example
+ * ```ts
+ * import { ExpectationMatrix, RandomMatrixSymbol, symbols } from '@symjs/symjs';
+ *
+ * const [k] = symbols('k');
+ * const X = new RandomMatrixSymbol('X', k, 1);
+ * ExpectationMatrix(X); // => ExpectationMatrix(X)
+ * ```
+ */
 export const ExpectationMatrix = /* @__PURE__ */ callableClass(ExpectationMatrixNode, makeExpectationMatrix);
 export type ExpectationMatrix = ExpectationMatrixNode;
 
@@ -136,24 +196,64 @@ export type ExpectationMatrix = ExpectationMatrixNode;
 /** The dimension is 1. */
 const isOne = (d: Expr): boolean => d.key === S.One.key;
 
-/** SymPy VarianceMatrix(arg, condition): the variance-covariance matrix of a random vector. */
+/**
+ * The variance-covariance matrix of a random vector.
+ *
+ * @see SymPy `sympy.stats.symbolic_multivariate_probability.VarianceMatrix`
+ * @example
+ * ```ts
+ * import { RandomMatrixSymbol, VarianceMatrixNode, symbols } from '@symjs/symjs';
+ *
+ * const [k] = symbols('k');
+ * const X = new RandomMatrixSymbol('X', k, 1);
+ * new VarianceMatrixNode([X]).shape; // => [k, k]
+ * ```
+ */
 export class VarianceMatrixNode extends MatrixStatsNode {
+  /**
+   * Constructs a new `VarianceMatrixNode`.
+   *
+   * @param args - Operands in the order `arg`, `condition`.
+   * @throws ShapeError when the argument is not a vector.
+   */
   constructor(args: readonly Expr[]) {
     const [r, c] = shapeOf(at(args, 0));
     if (!isOne(r) && !isOne(c)) throw new ShapeError('Expression is not a vector');
     super('VarianceMatrix', args);
   }
+  /**
+   * The conditioning event, when one was supplied.
+   *
+   * @returns The conditioning event, when one was supplied.
+   */
   get condition(): Expr | undefined {
     return this.args[1];
   }
+  /**
+   * The row and column dimensions of the matrix expression.
+   *
+   * @returns The row and column dimensions of the matrix expression.
+   * @see SymPy `sympy.stats.symbolic_multivariate_probability.VarianceMatrix.shape`
+   */
   get shape(): [Expr, Expr] {
     const [r, c] = shapeOf(at(this.args, 0));
     return isOne(c) ? [r, r] : [c, c];
   }
+  /**
+   * Rebuilds this expression with the supplied operands.
+   *
+   * @param args - Replacement operands in the original order.
+   * @returns The rebuilt expression.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new VarianceMatrixNode(args);
   }
-  /** The variances and cross-covariances of the terms (SymPy VarianceMatrix.expand). */
+  /**
+   * The variances and cross-covariances of the terms.
+   *
+   * @returns The variances and cross-covariances of the terms.
+   * @see SymPy `sympy.stats.symbolic_multivariate_probability.VarianceMatrix.expand`
+   */
   override expand(): Expr {
     const arg = at(this.args, 0);
     const condition = this.condition;
@@ -181,7 +281,23 @@ export class VarianceMatrixNode extends MatrixStatsNode {
   }
 }
 
-/** SymPy VarianceMatrix(arg, condition=None). */
+/**
+ * The variance-covariance matrix of a random vector.
+ *
+ * @param arg - Argument expression.
+ * @param condition - Condition on the random variables.
+ * @returns The resulting statistical expression.
+ * @throws ShapeError when the argument is not a vector.
+ * @see SymPy `sympy.stats.symbolic_multivariate_probability.VarianceMatrix`
+ * @example
+ * ```ts
+ * import { RandomMatrixSymbol, VarianceMatrix, symbols } from '@symjs/symjs';
+ *
+ * const [k] = symbols('k');
+ * const X = new RandomMatrixSymbol('X', k, 1);
+ * VarianceMatrix(X).shape; // => [k, k]
+ * ```
+ */
 export const VarianceMatrix = /* @__PURE__ */ callableClass(
   VarianceMatrixNode,
   (arg: ExprLike, condition?: ExprLike): VarianceMatrixNode => new VarianceMatrixNode(withCondition([sympify(arg)], condition === undefined ? undefined : sympify(condition))),
@@ -192,24 +308,64 @@ export type VarianceMatrix = VarianceMatrixNode;
 // CrossCovarianceMatrix
 // ---------------------------------------------------------------------------
 
-/** SymPy CrossCovarianceMatrix(arg1, arg2, condition): the cross-covariance matrix of two random vectors. */
+/**
+ * The cross-covariance matrix of two random vectors.
+ *
+ * @see SymPy `sympy.stats.symbolic_multivariate_probability.CrossCovarianceMatrix`
+ * @example
+ * ```ts
+ * import { CrossCovarianceMatrixNode, RandomMatrixSymbol, symbols } from '@symjs/symjs';
+ *
+ * const [k] = symbols('k');
+ * const X = new RandomMatrixSymbol('X', k, 1);
+ * new CrossCovarianceMatrixNode([X, new RandomMatrixSymbol('Y', k, 1)]).shape; // => [k, k]
+ * ```
+ */
 export class CrossCovarianceMatrixNode extends MatrixStatsNode {
+  /**
+   * Constructs a new `CrossCovarianceMatrixNode`.
+   *
+   * @param args - Operands in the order `arg1`, `arg2`, `condition`.
+   * @throws ShapeError when the operands are not vectors with compatible orientations.
+   */
   constructor(args: readonly Expr[]) {
     const [s1, s2] = [shapeOf(at(args, 0)), shapeOf(at(args, 1))];
     if ((!isOne(s1[0]) && !isOne(s1[1])) || (!isOne(s2[0]) && !isOne(s2[1])) || s1[1].key !== s2[1].key) throw new ShapeError('Expression is not a vector');
     super('CrossCovarianceMatrix', args);
   }
+  /**
+   * The conditioning event, when one was supplied.
+   *
+   * @returns The conditioning event, when one was supplied.
+   */
   get condition(): Expr | undefined {
     return this.args[2];
   }
+  /**
+   * The row and column dimensions of the matrix expression.
+   *
+   * @returns The row and column dimensions of the matrix expression.
+   * @see SymPy `sympy.stats.symbolic_multivariate_probability.CrossCovarianceMatrix.shape`
+   */
   get shape(): [Expr, Expr] {
     const [s1, s2] = [shapeOf(at(this.args, 0)), shapeOf(at(this.args, 1))];
     return isOne(s1[1]) && isOne(s2[1]) ? [s1[0], s2[0]] : [S.One, S.One];
   }
+  /**
+   * Rebuilds this expression with the supplied operands.
+   *
+   * @param args - Replacement operands in the original order.
+   * @returns The rebuilt expression.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new CrossCovarianceMatrixNode(args);
   }
-  /** The cross-covariances of the random terms (SymPy CrossCovarianceMatrix.expand). */
+  /**
+   * The cross-covariances of the random terms.
+   *
+   * @returns The cross-covariances of the random terms.
+   * @see SymPy `sympy.stats.symbolic_multivariate_probability.CrossCovarianceMatrix.expand`
+   */
   override expand(): Expr {
     const [arg1, arg2] = [at(this.args, 0), at(this.args, 1)];
     const condition = this.condition;
@@ -243,7 +399,24 @@ function mulNonrvRv(m: Expr): [Expr, Expr] {
   return [product(m.args.filter((a) => !isRandom(a))), product(m.args.filter((a) => isRandom(a)))];
 }
 
-/** SymPy CrossCovarianceMatrix(arg1, arg2, condition=None). */
+/**
+ * The cross-covariance matrix of two random vectors.
+ *
+ * @param arg1 - First random expression.
+ * @param arg2 - Second random expression.
+ * @param condition - Condition on the random variables.
+ * @returns The resulting statistical expression.
+ * @throws ShapeError when the operands are not vectors with compatible orientations.
+ * @see SymPy `sympy.stats.symbolic_multivariate_probability.CrossCovarianceMatrix`
+ * @example
+ * ```ts
+ * import { CrossCovarianceMatrix, RandomMatrixSymbol, symbols } from '@symjs/symjs';
+ *
+ * const [k] = symbols('k');
+ * const X = new RandomMatrixSymbol('X', k, 1);
+ * CrossCovarianceMatrix(X, new RandomMatrixSymbol('Y', k, 1)).shape; // => [k, k]
+ * ```
+ */
 export const CrossCovarianceMatrix = /* @__PURE__ */ callableClass(
   CrossCovarianceMatrixNode,
   (arg1: ExprLike, arg2: ExprLike, condition?: ExprLike): CrossCovarianceMatrixNode =>

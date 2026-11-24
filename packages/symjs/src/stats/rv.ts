@@ -46,38 +46,92 @@ import { Matrix } from '../matrices/matrix';
 /** The global symbol x of sympy/stats/rv.py (the variable of the density of a constant). */
 const xGlobal = new Sym('x');
 
-/** A random symbol, an expression of random symbols or any value is random (SymPy is_random). */
+/**
+ * Tests whether a value is a random symbol or contains one.
+ *
+ * @param x - Value to inspect for random symbols.
+ * @returns Whether the value contains or is a random symbol.
+ * @see SymPy `sympy.stats.rv.is_random`
+ */
 export function isRandom(x: unknown): boolean {
   if (x instanceof RandomSymbol || x instanceof RandomMatrixSymbol) return true;
   if (!(x instanceof Expr)) return false;
   return [...x.freeSymbols()].filter((s) => s instanceof Sym).some((s) => s instanceof RandomSymbol) || hasNode(x, (e) => e instanceof RandomMatrixSymbol);
 }
 
-/** A dict of the probability spaces of a probability computation (SymPy FiniteDensity and the dicts of finite spaces). */
+/**
+ * A map from outcomes to their probabilities. Structurally equal expressions refer to the same outcome.
+ *
+ * @see SymPy `sympy.stats.frv.FiniteDensity`
+ * @example
+ * ```ts
+ * import { Die, DieDistribution, FiniteDensity, density } from '@symjs/symjs';
+ *
+ * const X = Die('X', 4);
+ * const masses = (density(X) as DieDistribution).dict as FiniteDensity;
+ * masses.call(2); // => 1/4
+ * masses.call(5); // => 0
+ * ```
+ */
 export class FiniteDensity extends Map<Expr, Expr> {
   readonly #byKey = new Map<string, Expr>();
+  /**
+   * Constructs a new `FiniteDensity`.
+   *
+   * @param entries - Outcome and probability pairs.
+   */
   constructor(entries: Iterable<readonly [Expr, Expr]> = []) {
     super();
     for (const [k, v] of entries) this.set(k, v);
   }
+  /**
+   * Associates an outcome with its probability mass.
+   *
+   * @param k - Outcome at which to evaluate the probability mass.
+   * @param v - Probability assigned to the outcome.
+   * @returns This map.
+   */
   override set(k: Expr, v: Expr): this {
     const c = this.#byKey.get(k.key);
     if (c !== undefined) return super.set(c, v);
     this.#byKey.set(k.key, k);
     return super.set(k, v);
   }
+  /**
+   * Looks up an outcome by structural equality using the standard map lookup contract.
+   *
+   * @param k - Outcome at which to evaluate the probability mass.
+   * @returns The stored mass if the outcome is present.
+   */
   override get(k: Expr): Expr | undefined {
     const c = this.#byKey.get(k.key);
     return c === undefined ? undefined : super.get(c);
   }
+  /**
+   * Tests whether a structurally equal outcome has a stored mass.
+   *
+   * @param k - Outcome at which to evaluate the probability mass.
+   * @returns Whether the map contains the outcome.
+   */
   override has(k: Expr): boolean {
     return this.#byKey.has(k.key);
   }
-  /** The probability of the value (SymPy FiniteDensity.__call__): 0 for a value that is not taken. */
+  /**
+   * The probability of the value (SymPy FiniteDensity.__call__): 0 for a value that is not taken.
+   *
+   * @param item - Outcome at which to look up the mass.
+   * @returns The mass at this outcome, or zero if absent.
+   * @see SymPy `sympy.stats.frv.FiniteDensity.__call__`
+   */
   call(item: ExprLike): Expr {
     return this.get(sympify(item)) ?? S.Zero;
   }
-  /** SymPy FiniteDensity.dict: a plain copy. */
+  /**
+   * A copy of the outcome-to-probability map.
+   *
+   * @returns A copy of the outcome-to-probability map.
+   * @see SymPy `sympy.stats.frv.FiniteDensity.dict`
+   */
   get dict(): FiniteDensity {
     return new FiniteDensity(this);
   }
@@ -93,7 +147,7 @@ export type MatrixParam = Matrix | MatrixExpr | readonly ExprLike[] | readonly (
 /** The value is a vector or matrix parameter (SymPy isinstance(v, list) or v.is_Matrix). */
 export const isMatrixParam = (v: unknown): v is MatrixParam => Array.isArray(v) || v instanceof Matrix || v instanceof MatrixExpr;
 
-/** A density: a distribution (callable through `call`), a Lambda, a dict of a finite space, or an unevaluated Density. */
+/** A distribution, a lambda expression, an outcome-to-mass map, or an unevaluated density. */
 export type DensityResult = Expr | FiniteDensity;
 
 // ---------------------------------------------------------------------------
@@ -145,111 +199,274 @@ export const statsClasses: {
 // Random domains
 // ---------------------------------------------------------------------------
 
-/** SymPy RandomDomain: a set of variables and the values they can take. */
+/**
+ * A set of variables and the values they can take.
+ *
+ * @see SymPy `sympy.stats.rv.RandomDomain`
+ */
 export abstract class RandomDomain extends ExtensionExpr {
-  /** SymPy is_ProductDomain. */
+  /**
+   * Whether the domain is a product domain.
+   *
+   * @returns `false` for this domain.
+   * @see SymPy `sympy.stats.rv.RandomDomain.is_ProductDomain`
+   */
   get isProductDomain(): boolean {
     return false;
   }
-  /** SymPy is_Finite. */
+  /**
+   * Whether the domain is finite.
+   *
+   * @returns `false` for this domain.
+   * @see SymPy `sympy.stats.rv.RandomDomain.is_Finite`
+   */
   get isFinite(): boolean {
     return false;
   }
-  /** SymPy is_Continuous. */
+  /**
+   * Whether the domain is continuous.
+   *
+   * @returns `false` for this domain.
+   * @see SymPy `sympy.stats.rv.RandomDomain.is_Continuous`
+   */
   get isContinuous(): boolean {
     return false;
   }
-  /** SymPy is_Discrete. */
+  /**
+   * Whether the domain is discrete.
+   *
+   * @returns `false` for this domain.
+   * @see SymPy `sympy.stats.rv.RandomDomain.is_Discrete`
+   */
   get isDiscrete(): boolean {
     return false;
   }
-  /** The domain is a SymPy ConditionalDomain. */
+  /**
+   * The domain is a SymPy ConditionalDomain.
+   *
+   * @returns `false` for this domain.
+   */
   get isConditional(): boolean {
     return false;
   }
-  /** The variables of the domain (SymPy symbols, a FiniteSet: sorted). */
+  /**
+   * The variables of the domain (SymPy symbols, a FiniteSet: sorted).
+   *
+   * @returns The variables of the domain.
+   * @see SymPy `sympy.stats.rv.RandomDomain.symbols`
+   */
   abstract get symbols(): Sym[];
-  /** The values the variables take (SymPy set). */
+  /**
+   * The values the variables take.
+   *
+   * @returns The values the variables take.
+   * @see SymPy `sympy.stats.rv.RandomDomain.set`
+   */
   abstract get set(): SetExpr;
-  /** The domain as a condition on its variables (SymPy as_boolean). */
+  /**
+   * The domain as a condition on its variables.
+   *
+   * @returns The domain as a condition on its variables.
+   * @throws NotImplementedError when the concrete probability space does not implement this operation.
+   */
   asBoolean(): Expr {
     throw new NotImplementedError(`as_boolean is not implemented for ${this.name}`);
   }
-  /** The expectation of expr over the domain (SymPy compute_expectation). */
+  /**
+   * The expectation of expr over the domain.
+   *
+   * @param _expr - Expression to evaluate.
+   * @param _variables - Variables to integrate or sum over.
+   * @returns The expected value over the selected variables.
+   * @throws NotImplementedError when the concrete probability space does not implement this operation.
+   * @see SymPy `sympy.stats.rv.RandomDomain.compute_expectation`
+   */
   computeExpectation(_expr: Expr, _variables?: readonly Sym[]): Expr {
     throw new NotImplementedError(`compute_expectation is not implemented for ${this.name}`);
   }
-  /** SymPy StrPrinter._print_RandomDomain. */
+  /**
+   * Formats the expression using the supplied expression printer.
+   *
+   * @param print - Printer used for the component expressions.
+   * @returns A plain-text representation.
+   */
   override printStr(print: (e: Expr) => string): string {
     // SymPy _print_RandomDomain: the condition, or the variables and their set
     if (this.hasBoolean) return `Domain: ${print(this.asBoolean())}`;
     return `Domain: {${this.symbols.map(print).join(', ')}} in ${print(this.set)}`;
   }
-  /** The domain has a condition form (SymPy hasattr(d, 'as_boolean')). */
+  /**
+   * The domain has a condition form (SymPy hasattr(d, 'as_boolean')).
+   *
+   * @returns `true` for this domain.
+   */
   get hasBoolean(): boolean {
     return true;
   }
+  /**
+   * Rebuilds this expression with the supplied operands.
+   *
+   * @param args - Replacement operands in the original order.
+   * @returns The rebuilt expression.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return cast(Reflect.construct(this.constructor, [args]), Expr);
   }
 }
 
-/** SymPy SingleDomain(symbol, set): a single variable and its domain. */
+/**
+ * A single variable and its domain.
+ *
+ * @see SymPy `sympy.stats.rv.SingleDomain`
+ */
 export class SingleDomain extends RandomDomain {
+  /**
+   * Constructs a new `SingleDomain`.
+   *
+   * @param args - Operands in the order `symbol`, `set`.
+   * @param name - Expression class name used for the node.
+   */
   constructor(args: readonly Expr[], name = 'SingleDomain') {
     super(name, args);
     cast(at(args, 0), Sym, 'domain symbol');
     cast(at(args, 1), SetExpr, 'domain set');
   }
+  /**
+   * The underlying symbol naming the random variable.
+   *
+   * @returns The underlying symbol naming the random variable.
+   * @see SymPy `sympy.stats.rv.SingleDomain.symbol`
+   */
   get symbol(): Sym {
     return cast(at(this.args, 0), Sym);
   }
+  /**
+   * The symbols whose values form this domain or probability space.
+   *
+   * @returns The symbols whose values form this domain or probability space.
+   * @see SymPy `sympy.stats.rv.SingleDomain.symbols`
+   */
   get symbols(): Sym[] {
     return [this.symbol];
   }
+  /**
+   * The set of outcomes in this domain.
+   *
+   * @returns The set of outcomes in this domain.
+   * @see SymPy `sympy.stats.rv.SingleDomain.set`
+   */
   get set(): SetExpr {
     return cast(at(this.args, 1), SetExpr);
   }
-  /** SymPy's plain SingleDomain has no as_boolean (the continuous, discrete and finite ones do). */
+  /**
+   * Whether the domain supplies a boolean membership condition.
+   *
+   * @returns False for a plain single domain.
+   */
   override get hasBoolean(): boolean {
     return this.name !== 'SingleDomain';
   }
 }
 
-/** SymPy MatrixDomain(symbol, set): a random matrix variable and its domain. */
+/**
+ * A random matrix variable and its domain.
+ *
+ * @see SymPy `sympy.stats.rv.MatrixDomain`
+ */
 export class MatrixDomain extends RandomDomain {
+  /**
+   * Constructs a new `MatrixDomain`.
+   *
+   * @param args - Operands in the order `symbol`, `set`.
+   */
   constructor(args: readonly Expr[]) {
     super('MatrixDomain', [symbolConverter(at(args, 0)), at(args, 1)]);
   }
+  /**
+   * The underlying symbol naming the random variable.
+   *
+   * @returns The underlying symbol naming the random variable.
+   * @see SymPy `sympy.stats.rv.MatrixDomain.symbol`
+   */
   get symbol(): Sym {
     return cast(at(this.args, 0), Sym);
   }
+  /**
+   * The symbols whose values form this domain or probability space.
+   *
+   * @returns The symbols whose values form this domain or probability space.
+   * @see SymPy `sympy.stats.rv.MatrixDomain.symbols`
+   */
   get symbols(): Sym[] {
     return [this.symbol];
   }
+  /**
+   * The set of outcomes in this domain.
+   *
+   * @returns The set of outcomes in this domain.
+   * @see SymPy `sympy.stats.rv.MatrixDomain.set`
+   */
   get set(): SetExpr {
     return cast(at(this.args, 1), SetExpr, 'domain set');
   }
-  /** SymPy StrPrinter._print_RandomDomain of a domain without as_boolean: its symbols and set. */
+  /**
+   * Formats the expression using the supplied expression printer.
+   *
+   * @param print - Printer used for the component expressions.
+   * @returns A plain-text representation.
+   */
   override printStr(print: (e: Expr) => string): string {
     return `Domain: {${print(this.symbol)}} in ${print(this.set)}`;
   }
 }
 
-/** SymPy ConditionalDomain(fulldomain, condition): a domain with an attached condition. */
+/**
+ * A domain with an attached condition.
+ *
+ * @see SymPy `sympy.stats.rv.ConditionalDomain`
+ */
 export abstract class ConditionalDomain extends RandomDomain {
+  /**
+   * Whether the domain is conditional.
+   *
+   * @returns `true` for this domain.
+   */
   override get isConditional(): boolean {
     return true;
   }
+  /**
+   * The domain before conditioning.
+   *
+   * @returns The domain before conditioning.
+   * @see SymPy `sympy.stats.rv.ConditionalDomain.fulldomain`
+   */
   get fulldomain(): RandomDomain {
     return cast(at(this.args, 0), RandomDomain);
   }
+  /**
+   * The conditioning event, when one was supplied.
+   *
+   * @returns The conditioning event, when one was supplied.
+   * @see SymPy `sympy.stats.rv.ConditionalDomain.condition`
+   */
   get condition(): Expr {
     return at(this.args, 1);
   }
+  /**
+   * The symbols whose values form this domain or probability space.
+   *
+   * @returns The symbols whose values form this domain or probability space.
+   * @see SymPy `sympy.stats.rv.ConditionalDomain.symbols`
+   */
   get symbols(): Sym[] {
     return this.fulldomain.symbols;
   }
+  /**
+   * The condition expressing membership in this domain.
+   *
+   * @returns The condition expressing membership in this domain.
+   * @see SymPy `sympy.stats.rv.ConditionalDomain.as_boolean`
+   */
   override asBoolean(): Expr {
     return and(this.fulldomain.asBoolean(), this.condition);
   }
@@ -260,27 +477,72 @@ export function conditionOnSymbols(condition: Expr): Expr {
   return xreplace(condition, randomSymbols(condition).map((rs) => [rs, rs.symbol] as const));
 }
 
-/** SymPy ProductDomain(*domains): a domain resulting from the merger of independent domains. */
+/**
+ * A domain resulting from the merger of independent domains.
+ *
+ * @see SymPy `sympy.stats.rv.ProductDomain`
+ */
 export class ProductDomain extends RandomDomain {
+  /**
+   * Constructs a new `ProductDomain`.
+   *
+   * @param args - Operands in the order `domains`.
+   * @param name - Expression class name used for the node.
+   */
   constructor(args: readonly Expr[], name = 'ProductDomain') {
     super(name, args);
   }
+  /**
+   * Whether the domain is a product domain.
+   *
+   * @returns `true` for this domain.
+   * @see SymPy `sympy.stats.rv.ProductDomain.is_ProductDomain`
+   */
   override get isProductDomain(): boolean {
     return true;
   }
+  /**
+   * The component domains of the product.
+   *
+   * @returns The component domains of the product.
+   * @see SymPy `sympy.stats.rv.ProductDomain.domains`
+   */
   get domains(): RandomDomain[] {
     return this.args.map((d) => cast(d, RandomDomain));
   }
+  /**
+   * The symbols whose values form this domain or probability space.
+   *
+   * @returns The symbols whose values form this domain or probability space.
+   * @see SymPy `sympy.stats.rv.ProductDomain.symbols`
+   */
   get symbols(): Sym[] {
     return sortedSymbols(this.domains.flatMap((d) => d.symbols));
   }
+  /**
+   * The set of outcomes in this domain.
+   *
+   * @returns The set of outcomes in this domain.
+   * @see SymPy `sympy.stats.rv.ProductDomain.set`
+   */
   get set(): SetExpr {
     return productSet(...this.domains.map((d) => d.set));
   }
-  /** The domain of each symbol (SymPy sym_domain_dict). */
+  /**
+   * The domain of each symbol.
+   *
+   * @returns The domain of each symbol.
+   * @see SymPy `sympy.stats.rv.ProductDomain.sym_domain_dict`
+   */
   get symDomainDict(): Map<string, RandomDomain> {
     return new Map(this.domains.flatMap((d) => d.symbols.map((s) => [s.key, d] as const)));
   }
+  /**
+   * The condition expressing membership in this domain.
+   *
+   * @returns The condition expressing membership in this domain.
+   * @see SymPy `sympy.stats.rv.ProductDomain.as_boolean`
+   */
   override asBoolean(): Expr {
     return and(...this.domains.map((d) => d.asBoolean()));
   }
@@ -312,36 +574,78 @@ export function makeProductDomain(domains: readonly RandomDomain[]): RandomDomai
 // Probability spaces
 // ---------------------------------------------------------------------------
 
-/** SymPy PSpace: a probability space. `new PSpace()` is SymPy's PSpace() of a random symbol without a space. */
+/**
+ * A probability space. `new PSpace()` is SymPy's PSpace() of a random symbol without a space.
+ *
+ * @see SymPy `sympy.stats.rv.PSpace`
+ */
 export class PSpace extends ExtensionExpr {
+  /**
+   * Constructs a new `PSpace`.
+   *
+   * @param args - The defining expressions in structural order.
+   * @param name - Expression class name used for the node.
+   */
   constructor(args: readonly Expr[] = [], name = 'PSpace') {
     super(name, args);
   }
-  /** SymPy is_Finite. */
+  /**
+   * Whether the probability space is finite.
+   *
+   * @returns `false` for this space.
+   * @see SymPy `sympy.stats.rv.PSpace.is_Finite`
+   */
   get isFinite(): boolean {
     return false;
   }
-  /** SymPy is_Continuous. */
+  /**
+   * Whether the probability space is continuous.
+   *
+   * @returns `false` for this space.
+   * @see SymPy `sympy.stats.rv.PSpace.is_Continuous`
+   */
   get isContinuous(): boolean {
     return false;
   }
-  /** SymPy is_Discrete. */
+  /**
+   * Whether the probability space is discrete.
+   *
+   * @returns `false` for this space.
+   * @see SymPy `sympy.stats.rv.PSpace.is_Discrete`
+   */
   get isDiscrete(): boolean {
     return false;
   }
-  /** SymPy is_real (None for the generic space). */
+  /**
+   * Whether the probability space is real.
+   *
+   * @returns `false` for this space.
+   * @see SymPy `sympy.stats.rv.PSpace.is_real`
+   */
   get isReal(): boolean {
     return false;
   }
-  /** The space is a SymPy SinglePSpace (one variable with a distribution). */
+  /**
+   * The space is a SymPy SinglePSpace (one variable with a distribution).
+   *
+   * @returns `false` for this space.
+   */
   get isSingle(): boolean {
     return false;
   }
-  /** The space is a SymPy CompoundPSpace. */
+  /**
+   * The space is a SymPy CompoundPSpace.
+   *
+   * @returns `false` for this space.
+   */
   get isCompound(): boolean {
     return false;
   }
-  /** The space is a SymPy StochasticPSpace (of a random indexed symbol of a stochastic process). */
+  /**
+   * The space is a SymPy StochasticPSpace (of a random indexed symbol of a stochastic process).
+   *
+   * @returns `false` for this space.
+   */
   get isStochastic(): boolean {
     return false;
   }
@@ -349,6 +653,8 @@ export class PSpace extends ExtensionExpr {
    * The space is not counted in the check of overlapping random variables of
    * a product space (SymPy: a space whose distribution is a
    * CompoundDistribution or a MarginalDistribution).
+   *
+   * @returns Whether this space can share a symbol with another factor of a product.
    */
   get sharesSymbols(): boolean {
     return this.isCompound;
@@ -357,56 +663,167 @@ export class PSpace extends ExtensionExpr {
    * The density of the value of the space is its distribution (SymPy
    * Density.doit of a random symbol of a SinglePSpace, JointPSpace or
    * MatrixPSpace) or its model (RandomMatrixPSpace): `valueDensity`.
+   *
+   * @returns Whether this space directly supplies the density of its random symbol.
    */
   get hasValueDensity(): boolean {
     return this.isSingle && !this.isCompound;
   }
-  /** The density of the value of the space (see `hasValueDensity`): the distribution of a single space. */
+  /**
+   * The density of the value of the space (see `hasValueDensity`): the distribution of a single space.
+   *
+   * @returns The density of the value of the space (see `hasValueDensity`): the distribution of a single space.
+   * @throws NotImplementedError when the concrete probability space does not implement this operation.
+   */
   get valueDensity(): Expr {
     if (isSingleSpace(this)) return this.distribution;
     throw new NotImplementedError(`the density of the value of ${this.name} is computed`);
   }
+  /**
+   * The domain of outcomes of this probability space.
+   *
+   * @returns The domain of outcomes of this probability space.
+   * @see SymPy `sympy.stats.rv.PSpace.domain`
+   */
   get domain(): RandomDomain {
     return cast(at(this.args, 0), RandomDomain, 'domain');
   }
+  /**
+   * The density of the random variable or expression.
+   *
+   * @returns The density of the random variable or expression.
+   * @see SymPy `sympy.stats.rv.PSpace.density`
+   */
   get density(): Expr {
     return at(this.args, 1);
   }
-  /** The random symbols of the space (SymPy values, a frozenset). */
+  /**
+   * The random symbols of the space (SymPy values, a frozenset).
+   *
+   * @returns The random symbols of the space.
+   * @see SymPy `sympy.stats.rv.PSpace.values`
+   */
   get values(): RandomSymbol[] {
     return this.symbols.map((s) => new RandomSymbol(s, this));
   }
+  /**
+   * The symbols whose values form this domain or probability space.
+   *
+   * @returns The symbols whose values form this domain or probability space.
+   * @see SymPy `sympy.stats.rv.PSpace.symbols`
+   */
   get symbols(): Sym[] {
     return this.domain.symbols;
   }
-  /** The probability density of the space as an expression of its symbols (SymPy pdf). */
+  /**
+   * The probability density of the space as an expression of its symbols.
+   *
+   * @returns The joint density in the symbols of the space.
+   * @throws NotImplementedError when the concrete probability space does not implement this operation.
+   */
   get pdf(): Expr {
     throw new NotImplementedError(`pdf is not implemented for ${this.name}`);
   }
+  /**
+   * The subset of the domain on which the condition holds.
+   *
+   * @param _condition - Condition on the random variables.
+   * @returns The domain satisfying the condition.
+   * @throws NotImplementedError when the concrete probability space does not implement this operation.
+   * @see SymPy `sympy.stats.rv.PSpace.where`
+   */
   where(_condition: Expr): RandomDomain {
     throw new NotImplementedError(`where is not implemented for ${this.name}`);
   }
+  /**
+   * The distribution of the expression on this probability space.
+   *
+   * @param _expr - Expression to evaluate.
+   * @param _opts - Evaluation options accepted by the probability-space interface.
+   * @returns The probability distribution of the expression.
+   * @throws NotImplementedError when the concrete probability space does not implement this operation.
+   * @see SymPy `sympy.stats.rv.PSpace.compute_density`
+   */
   computeDensity(_expr: Expr, _opts?: ComputeOptions): DensityResult {
     throw new NotImplementedError(`compute_density is not implemented for ${this.name}`);
   }
+  /**
+   * The probability that the event holds.
+   *
+   * @param _condition - Condition on the random variables.
+   * @param _opts - Evaluation options accepted by the probability-space interface.
+   * @returns The probability of the event.
+   * @throws NotImplementedError when the concrete probability space does not implement this operation.
+   * @see SymPy `sympy.stats.rv.PSpace.probability`
+   */
   probability(_condition: Expr, _opts?: ComputeOptions): Expr {
     throw new NotImplementedError(`probability is not implemented for ${this.name}`);
   }
+  /**
+   * The expectation of the expression over the specified variables.
+   *
+   * @param _expr - Expression to evaluate.
+   * @param _rvs - Random variables to integrate or sum over.
+   * @param _opts - Evaluation options accepted by the probability-space interface.
+   * @returns The expected value over the selected variables.
+   * @throws NotImplementedError when the concrete probability space does not implement this operation.
+   * @see SymPy `sympy.stats.rv.PSpace.compute_expectation`
+   */
   computeExpectation(_expr: Expr, _rvs?: readonly RandomSymbol[], _opts?: ComputeOptions): Expr {
     throw new NotImplementedError(`compute_expectation is not implemented for ${this.name}`);
   }
+  /**
+   * The cumulative distribution function of the expression.
+   *
+   * @param _expr - Expression to evaluate.
+   * @param _opts - Evaluation options accepted by the probability-space interface.
+   * @returns The cumulative distribution function.
+   * @throws NotImplementedError when the concrete probability space does not implement this operation.
+   */
   computeCdf(_expr: Expr, _opts?: ComputeOptions): DensityResult {
     throw new NotImplementedError(`compute_cdf is not implemented for ${this.name}`);
   }
+  /**
+   * The characteristic function of the expression.
+   *
+   * @param _expr - Expression to evaluate.
+   * @param _opts - Evaluation options accepted by the probability-space interface.
+   * @returns The characteristic function of the expression.
+   * @throws NotImplementedError when the concrete probability space does not implement this operation.
+   */
   computeCharacteristicFunction(_expr: Expr, _opts?: ComputeOptions): Expr {
     throw new NotImplementedError(`compute_characteristic_function is not implemented for ${this.name}`);
   }
+  /**
+   * The moment generating function of the expression.
+   *
+   * @param _expr - Expression to evaluate.
+   * @param _opts - Evaluation options accepted by the probability-space interface.
+   * @returns The moment generating function of the expression.
+   * @throws NotImplementedError when the concrete probability space does not implement this operation.
+   */
   computeMomentGeneratingFunction(_expr: Expr, _opts?: ComputeOptions): Expr {
     throw new NotImplementedError(`compute_moment_generating_function is not implemented for ${this.name}`);
   }
+  /**
+   * The quantile function of the expression.
+   *
+   * @param _expr - Expression to evaluate.
+   * @param _opts - Evaluation options accepted by the probability-space interface.
+   * @returns The quantile function.
+   * @throws NotImplementedError when the concrete probability space does not implement this operation.
+   */
   computeQuantile(_expr: Expr, _opts?: ComputeOptions): Expr {
     throw new NotImplementedError(`compute_quantile is not implemented for ${this.name}`);
   }
+  /**
+   * The probability space restricted to outcomes satisfying the condition.
+   *
+   * @param _condition - Condition on the random variables.
+   * @param _opts - Evaluation options accepted by the probability-space interface.
+   * @returns The conditioned probability space.
+   * @throws NotImplementedError when the concrete probability space does not implement this operation.
+   */
   conditionalSpace(_condition: Expr, _opts?: ComputeOptions): PSpace {
     throw new NotImplementedError(`conditional_space is not implemented for ${this.name}`);
   }
@@ -414,6 +831,12 @@ export class PSpace extends ExtensionExpr {
    * The probability of a condition on random indexed symbols given another
    * condition (SymPy StochasticPSpace.probability(condition,
    * given_condition, evaluate)), which Probability.doit calls for them.
+   *
+   * @param _condition - Condition on the random variables.
+   * @param _givenCondition - Additional event assumed to hold.
+   * @param _opts - Evaluation options accepted by the probability-space interface.
+   * @returns The probability of a condition on random indexed symbols given another condition.
+   * @throws NotImplementedError when the concrete probability space does not implement this operation.
    */
   probabilityGiven(_condition: Expr, _givenCondition: Expr | undefined, _opts?: ComputeOptions): Expr {
     throw new NotImplementedError(`probability given a condition is not implemented for ${this.name}`);
@@ -422,10 +845,22 @@ export class PSpace extends ExtensionExpr {
    * The expectation of an expression of random indexed symbols given a
    * condition (SymPy StochasticPSpace.compute_expectation(expr, condition,
    * evaluate)), which Expectation.doit calls for them.
+   *
+   * @param _expr - Expression to evaluate.
+   * @param _condition - Condition on the random variables.
+   * @param _opts - Evaluation options accepted by the probability-space interface.
+   * @returns The expectation of an expression of random indexed symbols given a condition.
+   * @throws NotImplementedError when the concrete probability space does not implement this operation.
    */
   expectationGiven(_expr: Expr, _condition: Expr | undefined, _opts?: ComputeOptions): Expr {
     throw new NotImplementedError(`expectation given a condition is not implemented for ${this.name}`);
   }
+  /**
+   * Rebuilds this expression with the supplied operands.
+   *
+   * @param args - Replacement operands in the original order.
+   * @returns The rebuilt expression.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return cast(Reflect.construct(this.constructor, [args]), Expr);
   }
@@ -433,9 +868,9 @@ export class PSpace extends ExtensionExpr {
 
 /** Options of the computations of a probability space (SymPy keyword arguments). */
 export interface ComputeOptions {
-  /** false: integrals and sums are left unevaluated (SymPy evaluate=False). */
+  /** False: integrals and sums are left unevaluated (SymPy evaluate=False). */
   readonly evaluate?: boolean;
-  /** CompoundPSpace: the marginalised density is evaluated (SymPy compound_evaluate). */
+  /** CompoundPSpace: the marginalised density is evaluated. */
   readonly compoundEvaluate?: boolean;
 }
 
@@ -446,24 +881,62 @@ export function symbolConverter(sym: string | Expr): Sym {
   return sym;
 }
 
-/** SymPy SinglePSpace(s, distribution): a space of one variable with a distribution. */
+/**
+ * A space of one variable with a distribution.
+ *
+ * @see SymPy `sympy.stats.rv.SinglePSpace`
+ */
 export class SinglePSpace extends PSpace {
+  /**
+   * Constructs a new `SinglePSpace`.
+   *
+   * @param args - Operands in the order `s`, `distribution`.
+   * @param name - Expression class name used for the node.
+   */
   constructor(args: readonly Expr[], name = 'SinglePSpace') {
     super([symbolConverter(at(args, 0)), at(args, 1)], name);
   }
+  /**
+   * Whether the probability space is single.
+   *
+   * @returns `true` for this space.
+   */
   override get isSingle(): boolean {
     return true;
   }
-  /** The random symbol of the space (SymPy value). */
+  /**
+   * The random symbol of the space.
+   *
+   * @returns The random symbol of the space.
+   * @see SymPy `sympy.stats.rv.SinglePSpace.value`
+   */
   get value(): RandomSymbol {
     return new RandomSymbol(this.symbol, this);
   }
+  /**
+   * The underlying symbol naming the random variable.
+   *
+   * @returns The underlying symbol naming the random variable.
+   * @see SymPy `sympy.stats.rv.SinglePSpace.symbol`
+   */
   get symbol(): Sym {
     return cast(at(this.args, 0), Sym);
   }
+  /**
+   * The probability law governing the random variable.
+   *
+   * @returns The probability law governing the random variable.
+   * @see SymPy `sympy.stats.rv.SinglePSpace.distribution`
+   */
   get distribution(): Distribution {
     return cast(at(this.args, 1), Distribution, 'distribution');
   }
+  /**
+   * The density expressed in the underlying symbols of the space.
+   *
+   * @returns The joint density in the symbols of the space.
+   * @see SymPy `sympy.stats.rv.SinglePSpace.pdf`
+   */
   override get pdf(): Expr {
     return this.distribution.pdf(this.symbol);
   }
@@ -471,8 +944,11 @@ export class SinglePSpace extends PSpace {
 
 /** The members of a single probability space (SymPy SinglePSpace, which the spaces of the other modules also derive from). */
 export interface SingleSpace {
+  /** The underlying symbol naming the random variable. */
   readonly symbol: Sym;
+  /** The probability law governing the random variable. */
   readonly distribution: Distribution;
+  /** The random symbol with this probability space. */
   readonly value: RandomSymbol;
 }
 
@@ -481,10 +957,31 @@ export function isSingleSpace(ps: PSpace): ps is PSpace & SingleSpace {
   return ps.isSingle;
 }
 
-/** SymPy RandomSymbol(symbol, pspace): a symbol whose values are distributed as its probability space says. */
+/**
+ * A symbol whose values are distributed as its probability space says.
+ *
+ * @see SymPy `sympy.stats.rv.RandomSymbol`
+ */
 export class RandomSymbol extends Sym {
+  /**
+   * The underlying symbol naming the random variable.
+   *
+   * @see SymPy `sympy.stats.rv.RandomSymbol.symbol`
+   */
   readonly symbol: Sym;
+  /**
+   * The probability space governing this symbol.
+   *
+   * @see SymPy `sympy.stats.rv.RandomSymbol.pspace`
+   */
   readonly pspace: PSpace;
+  /**
+   * Constructs a new `RandomSymbol`.
+   *
+   * @param symbol - Name or symbol for the random variable.
+   * @param pspace - Probability space determining the joint law.
+   * @throws TypeError when the supplied space is not a probability space.
+   */
   constructor(symbol: string | Sym, pspace: PSpace = new PSpace()) {
     const s = symbolConverter(symbol);
     if (!(pspace instanceof PSpace)) throw new TypeError('pspace variable should be of type PSpace');
@@ -494,14 +991,28 @@ export class RandomSymbol extends Sym {
     this.symbol = s;
     this.pspace = pspace;
   }
-  /** Sorted as SymPy's RandomSymbol, a Basic (class key (5, 0, 'RandomSymbol')). */
+  /**
+   * Sorted as SymPy's RandomSymbol, a Basic (class key (5, 0, 'RandomSymbol')).
+   *
+   * @returns The class name used for canonical ordering.
+   */
   override get sortClass(): string {
     return 'RandomSymbol';
   }
+  /**
+   * The priority used to order this symbol among expression classes.
+   *
+   * @returns The priority used to order this symbol among expression classes.
+   */
   override get sortPriority(): number {
     return 5;
   }
-  /** Substitution reaches the probability space (SymPy subs traverses the arguments (symbol, pspace)). */
+  /**
+   * Substitution reaches the probability space (SymPy subs traverses the arguments (symbol, pspace)).
+   *
+   * @param f - Substitution applied to the inner expression.
+   * @returns The replacement expression when this hook supplies one.
+   */
   override substituteInner(f: (e: Expr) => Expr): Expr | undefined {
     // the symbol of the variable is bound: only the parameters of a single space's distribution are substituted
     // (SymPy also substitutes the symbol, and fails when it becomes an expression such as x + 1)
@@ -513,7 +1024,13 @@ export class RandomSymbol extends Sym {
     const dist = f(ps.distribution);
     return dist === ps.distribution ? undefined : new RandomSymbol(this.symbol, cast(ps.withArgs([ps.symbol, dist]), PSpace, 'probability space'));
   }
-  /** SymPy has: the symbol and the probability space are arguments. */
+  /**
+   * The symbol and the probability space are arguments.
+   *
+   * @param sub - Expression to locate.
+   * @returns Whether the expression occurs in the symbol or its probability space.
+   * @see SymPy `sympy.stats.rv.RandomSymbol.has`
+   */
   override has(sub: Expr): boolean {
     return super.has(sub) || this.pspace.has(sub);
   }
@@ -523,36 +1040,71 @@ export class RandomSymbol extends Sym {
 }
 
 /**
- * SymPy RandomIndexedSymbol(idx_obj, pspace): a random symbol that is an
+ * A random symbol that is an
  * indexed object X[n] (a discrete-time stochastic process) or the
  * application X(t) of a function (a continuous-time one). It prints as the
  * indexed object; `symbol` is the plain symbol of that name, and
  * `indexedSymbol` is SymPy's symbol (the Indexed or the applied function).
+ *
+ * @see SymPy `sympy.stats.rv.RandomIndexedSymbol`
  */
 export class RandomIndexedSymbol extends RandomSymbol {
-  /** SymPy symbol: the Indexed X[n] or the applied function X(t). */
+  /** The Indexed X[n] or the applied function X(t). */
   readonly indexedSymbol: Expr;
+  /**
+   * Constructs a new `RandomIndexedSymbol`.
+   *
+   * @param idxObj - Indexed expression naming this component.
+   * @param pspace - Probability space determining the joint law.
+   * @throws TypeError when the argument is neither indexed nor an applied undefined function.
+   */
   constructor(idxObj: Expr, pspace: PSpace = new PSpace()) {
     if (!(idxObj instanceof Indexed || idxObj instanceof UndefFn)) throw new TypeError(`An Function or Indexed object is expected not ${idxObj.toString()}`);
     super(idxObj.toString(), pspace);
     this.indexedSymbol = idxObj;
   }
+  /**
+   * The class name used for canonical ordering.
+   *
+   * @returns The class name used for canonical ordering.
+   */
   override get sortClass(): string {
     return 'RandomIndexedSymbol';
   }
-  /** The index of the symbol (SymPy key: n of X[n], t of X(t)). */
+  /**
+   * The index of the symbol (SymPy key: n of X[n], t of X(t)).
+   *
+   * @returns The index of the symbol.
+   */
   get indexKey(): Expr {
     const i = this.indexedSymbol;
     return i instanceof Indexed ? at(i.args, 1) : at(i.args, 0);
   }
-  /** SymPy free_symbols: the free symbols of the index too. */
+  /**
+   * The free symbols of the index too.
+   *
+   * @returns The free symbols of the index too.
+   */
   override innerFreeSymbols(): readonly Sym[] {
     return [...this.indexKey.freeSymbols()].filter((s) => s instanceof Sym);
   }
+  /**
+   * Applies a substitution to the expression inside the random symbol.
+   *
+   * @param f - Substitution applied to the inner expression.
+   * @returns The replacement expression when this hook supplies one.
+   */
   override substituteInner(f: (e: Expr) => Expr): Expr | undefined {
     const [i, ps] = [f(this.indexedSymbol), f(this.pspace)];
     return i === this.indexedSymbol && ps === this.pspace ? undefined : new RandomIndexedSymbol(i, cast(ps, PSpace, 'probability space'));
   }
+  /**
+   * Whether the expression contains the specified subexpression.
+   *
+   * @param sub - Expression to locate.
+   * @returns Whether the expression contains the specified subexpression.
+   * @see SymPy `sympy.stats.rv.RandomIndexedSymbol.has`
+   */
   override has(sub: Expr): boolean {
     return super.has(sub) || this.indexedSymbol.has(sub);
   }
@@ -562,23 +1114,56 @@ export class RandomIndexedSymbol extends RandomSymbol {
 }
 
 /**
- * SymPy RandomMatrixSymbol(symbol, n, m, pspace): a matrix symbol whose
+ * A matrix symbol whose
  * values are distributed as its probability space says. It is a matrix
  * symbol (SymPy derives from RandomSymbol and MatrixSymbol), so it takes
  * part in matrix expressions; `isRandom` and `pspace` recognize it.
+ *
+ * @see SymPy `sympy.stats.rv.RandomMatrixSymbol`
  */
 export class RandomMatrixSymbol extends MatrixSymbolNode {
+  /**
+   * The underlying symbol naming the random variable.
+   *
+   * @see SymPy `sympy.stats.rv.RandomMatrixSymbol.symbol`
+   */
   readonly symbol: Sym;
+  /**
+   * The probability space governing this symbol.
+   *
+   * @see SymPy `sympy.stats.rv.RandomMatrixSymbol.pspace`
+   */
   readonly pspace: PSpace;
+  /**
+   * Constructs a new `RandomMatrixSymbol`.
+   *
+   * @param symbol - Name or symbol for the random variable.
+   * @param n - Number of rows.
+   * @param m - Number of columns.
+   * @param pspace - Probability space determining the joint law.
+   */
   constructor(symbol: string | Sym, n: ExprLike, m: ExprLike, pspace: PSpace = new PSpace()) {
     const s = symbolConverter(symbol);
     super(s.name, n, m, [pspace]);
     this.symbol = s;
     this.pspace = pspace;
   }
+  /**
+   * Rebuilds this expression with the supplied operands.
+   *
+   * @param args - Replacement operands in the original order.
+   * @returns The rebuilt expression.
+   */
   override withArgs(args: readonly Expr[]): Expr {
     return new RandomMatrixSymbol(this.symbol, at(args, 1), at(args, 2), cast(args[3] ?? this.pspace, PSpace));
   }
+  /**
+   * Whether the expression contains the specified subexpression.
+   *
+   * @param sub - Expression to locate.
+   * @returns Whether the expression contains the specified subexpression.
+   * @see SymPy `sympy.stats.rv.RandomMatrixSymbol.has`
+   */
   override has(sub: Expr): boolean {
     return super.has(sub) || this.pspace.has(sub);
   }
@@ -603,35 +1188,85 @@ export function randomMatrixSymbols(expr: Expr): RandomMatrixSymbol[] {
   return [...out.values()];
 }
 
-/** SymPy ProductPSpace: a probability space with several random variables. */
+/**
+ * A probability space with several random variables.
+ *
+ * @see SymPy `sympy.stats.rv.ProductPSpace`
+ */
 export class ProductPSpace extends PSpace {}
 
 /**
- * SymPy IndependentProductPSpace(*spaces): the merger of independent
+ * The merger of independent
  * probability spaces. Use `independentProductPSpace` to build one (finite
  * spaces give a ProductFinitePSpace).
+ *
+ * @see SymPy `sympy.stats.rv.IndependentProductPSpace`
  */
 export class IndependentProductPSpace extends ProductPSpace {
+  /**
+   * Constructs a new `IndependentProductPSpace`.
+   *
+   * @param args - Operands in the order `spaces`.
+   * @param name - Expression class name used for the node.
+   */
   constructor(args: readonly Expr[], name = 'IndependentProductPSpace') {
     super(args, name);
   }
+  /**
+   * The density expressed in the underlying symbols of the space.
+   *
+   * @returns The joint density in the symbols of the space.
+   * @see SymPy `sympy.stats.rv.IndependentProductPSpace.pdf`
+   */
   override get pdf(): Expr {
     const p = mul(...this.spaces.map((s) => s.pdf));
     return xreplace(p, this.values.map((rv) => [rv, rv.symbol] as const));
   }
-  /** The space of each random symbol (SymPy rs_space_dict). */
+  /**
+   * The space of each random symbol.
+   *
+   * @returns The space of each random symbol.
+   * @see SymPy `sympy.stats.rv.IndependentProductPSpace.rs_space_dict`
+   */
   get rsSpaceDict(): Map<string, [RandomSymbol, PSpace]> {
     return new Map(this.spaces.flatMap((sp) => sp.values.map((v) => [v.key, [v, sp]] as const)));
   }
+  /**
+   * The symbols whose values form this domain or probability space.
+   *
+   * @returns The symbols whose values form this domain or probability space.
+   * @see SymPy `sympy.stats.rv.IndependentProductPSpace.symbols`
+   */
   override get symbols(): Sym[] {
     return sortedSymbols([...this.rsSpaceDict.values()].map(([v]) => v.symbol));
   }
+  /**
+   * The independent component probability spaces.
+   *
+   * @returns The independent component probability spaces.
+   * @see SymPy `sympy.stats.rv.IndependentProductPSpace.spaces`
+   */
   get spaces(): PSpace[] {
     return this.args.map((a) => cast(a, PSpace));
   }
+  /**
+   * The random symbols belonging to this probability space.
+   *
+   * @returns The random symbols belonging to this probability space.
+   * @see SymPy `sympy.stats.rv.IndependentProductPSpace.values`
+   */
   override get values(): RandomSymbol[] {
     return [...this.rsSpaceDict.values()].map(([v]) => v);
   }
+  /**
+   * The expectation of the expression over the specified variables.
+   *
+   * @param exprIn - Expression to evaluate.
+   * @param rvsIn - Random variables to integrate or sum over.
+   * @param opts - Evaluation controls for integrals, sums and compound distributions.
+   * @returns The expected value over the selected variables.
+   * @see SymPy `sympy.stats.rv.IndependentProductPSpace.compute_expectation`
+   */
   override computeExpectation(exprIn: Expr, rvsIn?: readonly RandomSymbol[], opts: ComputeOptions = {}): Expr {
     const rvs = rvsIn ?? this.values;
     let expr = exprIn;
@@ -645,12 +1280,33 @@ export class IndependentProductPSpace extends ProductPSpace {
     }
     return opts.evaluate === true ? doit(expr) : expr;
   }
+  /**
+   * The domain of outcomes of this probability space.
+   *
+   * @returns The domain of outcomes of this probability space.
+   * @see SymPy `sympy.stats.rv.IndependentProductPSpace.domain`
+   */
   override get domain(): RandomDomain {
     return makeProductDomain(this.spaces.map((s) => s.domain));
   }
+  /**
+   * The density of the random variable or expression.
+   *
+   * @returns The density of the random variable or expression.
+   * @throws NotImplementedError when the density of the product space itself is requested.
+   * @see SymPy `sympy.stats.rv.IndependentProductPSpace.density`
+   */
   override get density(): Expr {
     throw new NotImplementedError('Density not available for ProductSpaces');
   }
+  /**
+   * The probability that the event holds.
+   *
+   * @param conditionIn - Condition on the random variables.
+   * @param opts - Evaluation controls for integrals, sums and compound distributions.
+   * @returns The probability of the event.
+   * @see SymPy `sympy.stats.rv.IndependentProductPSpace.probability`
+   */
   override probability(conditionIn: Expr, opts: ComputeOptions = {}): Expr {
     let condition = conditionIn;
     let condInv = false;
@@ -684,6 +1340,14 @@ export class IndependentProductPSpace extends ProductPSpace {
     const result = space.probability(rel(r.op, space.value, 0));
     return condInv ? add(1, mul(-1, result)) : result;
   }
+  /**
+   * The distribution of the expression on this probability space.
+   *
+   * @param expr - Expression to evaluate.
+   * @param opts - Evaluation controls for integrals, sums and compound distributions.
+   * @returns The probability distribution of the expression.
+   * @see SymPy `sympy.stats.rv.IndependentProductPSpace.compute_density`
+   */
   override computeDensity(expr: Expr, opts: ComputeOptions = {}): DensityResult {
     const rvs = randomSymbols(expr);
     if (rvs.some((rv) => pspace(rv).isContinuous)) {
@@ -693,9 +1357,25 @@ export class IndependentProductPSpace extends ProductPSpace {
     const z = new Dummy('z', { integer: true });
     return Lambda(z, this.computeExpectation(KroneckerDelta(expr, z), undefined, opts));
   }
+  /**
+   * The cumulative distribution function of the expression.
+   *
+   * @param _expr - Expression to evaluate.
+   * @returns The cumulative distribution function.
+   * @throws RangeError when the expression is multivariate.
+   * @see SymPy `sympy.stats.rv.IndependentProductPSpace.compute_cdf`
+   */
   override computeCdf(_expr: Expr): DensityResult {
     throw new RangeError('CDF not well defined on multivariate expressions');
   }
+  /**
+   * The probability space restricted to outcomes satisfying the condition.
+   *
+   * @param conditionIn - Condition on the random variables.
+   * @param _opts - Evaluation options accepted by the probability-space interface.
+   * @returns The conditioned probability space.
+   * @see SymPy `sympy.stats.rv.IndependentProductPSpace.conditional_space`
+   */
   override conditionalSpace(conditionIn: Expr, _opts: ComputeOptions = {}): PSpace {
     const rvs = randomSymbols(conditionIn);
     const condition = xreplace(conditionIn, this.values.map((rv) => [rv, rv.symbol] as const));
@@ -736,21 +1416,55 @@ export function independentProductPSpace(spacesIn: readonly PSpace[]): PSpace {
 // Distributions
 // ---------------------------------------------------------------------------
 
-/** SymPy Distribution: the base class of the distributions (an expression node of its parameters). */
+/**
+ * The base class of the distributions (an expression node of its parameters).
+ *
+ * @see SymPy `sympy.stats.rv.Distribution`
+ * @example
+ * ```ts
+ * import { BetaDistribution, ex } from '@symjs/symjs';
+ *
+ * const law = new BetaDistribution([ex`2`, ex`3`]);
+ * law.pdf(ex`1/2`); // => 3/2
+ * ```
+ */
 export abstract class Distribution extends ExtensionExpr {
-  /** The probability density (or mass) function at x (SymPy pdf). */
+  /**
+   * The probability density (or mass) function at x.
+   *
+   * @param x - Outcome at which to evaluate the density.
+   * @returns The density evaluated at the supplied outcome.
+   */
   abstract pdf(x: ExprLike): Expr;
-  /** The values the distribution takes (SymPy set). */
+  /**
+   * The values the distribution takes.
+   *
+   * @returns The values the distribution takes.
+   */
   abstract get set(): SetExpr;
-  /** The distribution is a SymPy SingleFiniteDistribution. */
+  /**
+   * The distribution is a SymPy SingleFiniteDistribution.
+   *
+   * @returns `false` for this distribution.
+   */
   get isFinite(): boolean {
     return false;
   }
-  /** The values and their probabilities of a finite distribution (SymPy SingleFiniteDistribution.dict). */
+  /**
+   * The values and their probabilities of a finite distribution.
+   *
+   * @returns The values and their probabilities of a finite distribution.
+   * @throws NotImplementedError when the distribution has no finite mass table.
+   */
   get dict(): DensityResult {
     throw new NotImplementedError(`${this.name} is not a finite distribution`);
   }
-  /** SymPy __call__: the density at x. */
+  /**
+   * The density at x.
+   *
+   * @param x - Outcome at which to evaluate the density.
+   * @returns The density at x.
+   */
   call(x: ExprLike): Expr {
     return this.pdf(x);
   }
@@ -758,6 +1472,12 @@ export abstract class Distribution extends ExtensionExpr {
   protected arg(i: number): Expr {
     return at(this.args, i);
   }
+  /**
+   * Rebuilds this expression with the supplied operands.
+   *
+   * @param args - Replacement operands in the original order.
+   * @returns The rebuilt expression.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return cast(Reflect.construct(this.constructor, [args]), Expr);
   }
@@ -778,7 +1498,13 @@ export function valueCheck(condition: Expr | boolean | undefined | readonly (Exp
 // Random symbols of an expression
 // ---------------------------------------------------------------------------
 
-/** All random symbols of an expression, sorted by name (SymPy random_symbols). */
+/**
+ * All random symbols of an expression, sorted by name.
+ *
+ * @param expr - Expression to evaluate.
+ * @returns All random symbols of an expression, sorted by name.
+ * @see SymPy `sympy.stats.rv.random_symbols`
+ */
 export function randomSymbols(expr: unknown): RandomSymbol[] {
   if (!(expr instanceof Expr)) return [];
   const out = new Map<string, RandomSymbol>();
@@ -793,7 +1519,21 @@ export function randomSymbols(expr: unknown): RandomSymbol[] {
 /** The value is an array of expressions (several expressions whose common space is wanted). */
 const isExprArray = (x: ExprLike | readonly Expr[]): x is readonly Expr[] => Array.isArray(x);
 
-/** The probability space of a random expression (SymPy pspace). */
+/**
+ * The probability space of a random expression.
+ *
+ * @param exprIn - Expression to evaluate.
+ * @returns The probability space of a random expression.
+ * @throws RangeError when the expression contains no random variables.
+ * @see SymPy `sympy.stats.rv.pspace`
+ * @example
+ * ```ts
+ * import { Normal, pspace } from '@symjs/symjs';
+ *
+ * const X = Normal('X', 0, 1);
+ * pspace(X.mul(2).add(1)).equals(X.pspace); // => True
+ * ```
+ */
 export function pspace(exprIn: ExprLike | readonly Expr[]): PSpace {
   const expr = isExprArray(exprIn) ? new TupleNode(exprIn) : sympify(exprIn);
   if (expr instanceof RandomSymbol || expr instanceof RandomMatrixSymbol) return expr.pspace;
@@ -830,6 +1570,20 @@ export function rvSubs(expr: Expr, symbols?: readonly RandomSymbol[]): Expr {
  * Conditional random expression (SymPy given): the expression on the
  * probability space conditioned on the condition. A random symbol as the
  * condition is considered fixed.
+ *
+ * @param exprIn - Expression to evaluate.
+ * @param conditionIn - Condition on the random variables.
+ * @param opts - Evaluation controls for integrals, sums and compound distributions.
+ * @returns The expression on the conditioned probability space.
+ * @throws TypeError when the conditioning equation cannot be resolved to a finite set of values.
+ * @see SymPy `sympy.stats.rv.given`
+ * @example
+ * ```ts
+ * import { Die, FiniteDensity, Gt, density, given } from '@symjs/symjs';
+ *
+ * const X = Die('X', 6);
+ * (density(given(X, Gt(X, 3))) as FiniteDensity).dict; // => {4: 1/3, 5: 1/3, 6: 1/3}
+ * ```
  */
 export function given(exprIn: ExprLike, conditionIn?: ExprLike, opts: ComputeOptions = {}): Expr {
   const expr = sympify(exprIn);
@@ -863,11 +1617,27 @@ export function given(exprIn: ExprLike, conditionIn?: ExprLike, opts: ComputeOpt
 
 /** Options of the probability functions (SymPy keyword arguments). */
 export interface ProbabilityOptions {
-  /** false: integrals and sums are left unevaluated (SymPy evaluate=False). */
+  /** False: integrals and sums are left unevaluated (SymPy evaluate=False). */
   readonly evaluate?: boolean;
 }
 
-/** The expected value of a random expression, optionally given a condition (SymPy E, expectation). */
+/**
+ * The expected value of a random expression, optionally given a condition (SymPy E, expectation).
+ *
+ * @param expr - Expression to evaluate.
+ * @param condition - Condition on the random variables.
+ * @param opts - Set `evaluate` to false to retain an unevaluated expression.
+ * @returns The conditional or unconditional mean, or an unevaluated expectation.
+ * @see SymPy `sympy.stats.rv.expectation`
+ * @example
+ * ```ts
+ * import { Die, Gt, expectation } from '@symjs/symjs';
+ *
+ * const X = Die('X', 6);
+ * expectation(X); // => 7/2
+ * expectation(X, Gt(X, 3)); // => 5
+ * ```
+ */
 export function expectation(expr: ExprLike, condition?: ExprLike, opts: ProbabilityOptions = {}): Expr {
   const e = sympify(expr);
   // expr isn't random
@@ -875,28 +1645,84 @@ export function expectation(expr: ExprLike, condition?: ExprLike, opts: Probabil
   return defined(statsClasses.expectation, 'stats symbolic_probability')(e, condition === undefined ? undefined : sympify(condition), opts.evaluate ?? true);
 }
 
-/** The probability that a condition is true, optionally given a second condition (SymPy P, probability). */
+/**
+ * The probability that a condition is true, optionally given a second condition (SymPy P, probability).
+ *
+ * @param condition - Condition on the random variables.
+ * @param givenCondition - Additional event assumed to hold.
+ * @param opts - Set `evaluate` to false to retain an unevaluated expression.
+ * @returns The probability of the event under the given condition, or an unevaluated probability.
+ * @see SymPy `sympy.stats.rv.probability`
+ * @example
+ * ```ts
+ * import { Die, Eq, Gt, P } from '@symjs/symjs';
+ *
+ * const X = Die('X', 6);
+ * P(Gt(X, 3)); // => 1/2
+ * P(Eq(X, 5), Gt(X, 2)); // => 1/4
+ * ```
+ */
 export function P(condition: ExprLike | boolean, givenCondition?: ExprLike | boolean, opts: ProbabilityOptions = {}): Expr {
   const c = typeof condition === 'boolean' ? (condition ? S.true : S.false) : sympify(condition);
   const g = givenCondition === undefined ? undefined : typeof givenCondition === 'boolean' ? (givenCondition ? S.true : S.false) : sympify(givenCondition);
   return defined(statsClasses.probability, 'stats symbolic_probability')(c, g, opts.evaluate ?? true);
 }
 
-/** SymPy Density(expr, condition): the unevaluated density of a random expression. */
+/**
+ * The unevaluated density of a random expression.
+ *
+ * @see SymPy `sympy.stats.rv.Density`
+ * @example
+ * ```ts
+ * import { Density, Normal } from '@symjs/symjs';
+ *
+ * const X = Normal('X', 0, 1);
+ * new Density([X]).compute(); // => NormalDistribution(0, 1)
+ * ```
+ */
 export class Density extends ExtensionExpr {
+  /**
+   * Constructs a new `Density`.
+   *
+   * @param args - Operands in the order `expr`, `condition`.
+   */
   constructor(args: readonly Expr[]) {
     super('Density', args);
   }
+  /**
+   * The expression to which the operation applies.
+   *
+   * @returns The expression to which the operation applies.
+   * @see SymPy `sympy.stats.rv.Density.expr`
+   */
   get expr(): Expr {
     return at(this.args, 0);
   }
+  /**
+   * The conditioning event, when one was supplied.
+   *
+   * @returns The conditioning event, when one was supplied.
+   * @see SymPy `sympy.stats.rv.Density.condition`
+   */
   get condition(): Expr | undefined {
     return this.args[1];
   }
+  /**
+   * Rebuilds this expression with the supplied operands.
+   *
+   * @param args - Replacement operands in the original order.
+   * @returns The rebuilt expression.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new Density(args);
   }
-  /** The density (SymPy Density.doit). */
+  /**
+   * The density.
+   *
+   * @param opts - Evaluation controls for integrals, sums and compound distributions.
+   * @returns The density.
+   * @see SymPy `sympy.stats.rv.Density.doit`
+   */
   compute(opts: ComputeOptions = {}): DensityResult {
     let expr = this.expr;
     const condition = this.condition;
@@ -908,7 +1734,12 @@ export class Density extends ExtensionExpr {
     const result = ps.computeDensity(expr, ps.isCompound ? { ...opts, compoundEvaluate: opts.evaluate ?? true } : opts);
     return (opts.evaluate ?? true) && result instanceof Expr ? doit(result) : result;
   }
-  /** SymPy doit: the density, when it is an expression (a finite space gives a dict: see `compute`). */
+  /**
+   * The density, when it is an expression (a finite space gives a dict: see `compute`).
+   *
+   * @returns The replacement expression when this hook supplies one.
+   * @see SymPy `sympy.stats.rv.Density.doit`
+   */
   override doitSelf(): Expr | undefined {
     const r = this.compute();
     return r instanceof Expr ? r : undefined;
@@ -924,6 +1755,19 @@ export function makeDensity(expr: ExprLike, condition?: ExprLike): Density {
  * The probability density of a random expression, optionally given a
  * condition (SymPy density): a distribution for a random symbol (callable
  * through `call`), a dict for a finite space, a Lambda otherwise.
+ *
+ * @param expr - Expression to evaluate.
+ * @param condition - Condition on the random variables.
+ * @param opts - Set `evaluate` to false to retain an unevaluated expression.
+ * @returns The distribution or lambda density, a finite mass map, or an unevaluated density.
+ * @see SymPy `sympy.stats.rv.density`
+ * @example
+ * ```ts
+ * import { Distribution, Normal, density, ex } from '@symjs/symjs';
+ *
+ * const X = Normal('x', 0, 1);
+ * (density(X) as Distribution).pdf(ex`x`); // => sqrt(2)*exp(-x**2/2)/(2*sqrt(pi))
+ * ```
  */
 export function density(expr: ExprLike, condition?: ExprLike, opts: ProbabilityOptions = {}): DensityResult {
   return makeDensity(expr, condition).compute({ evaluate: opts.evaluate ?? true });
@@ -932,7 +1776,24 @@ export function density(expr: ExprLike, condition?: ExprLike, opts: ProbabilityO
 /** A result that is an expression is evaluated (SymPy `if evaluate and hasattr(result, 'doit')`). */
 const evaluated = (r: DensityResult, evaluate: boolean): DensityResult => (evaluate && r instanceof Expr ? doit(r) : r);
 
-/** The cumulative distribution function of a random expression, optionally given a condition (SymPy cdf). */
+/**
+ * The cumulative distribution function of a random expression, optionally given a condition.
+ *
+ * @param expr - Expression to evaluate.
+ * @param condition - Condition on the random variables.
+ * @param opts - Set `evaluate` to false to retain an unevaluated expression.
+ * @returns The cumulative probabilities as a finite map or a cumulative distribution function.
+ * @throws RangeError when the expression contains no random variables.
+ * @throws NotImplementedError when the space cannot compute a cumulative distribution.
+ * @see SymPy `sympy.stats.rv.cdf`
+ * @example
+ * ```ts
+ * import { Die, cdf } from '@symjs/symjs';
+ *
+ * const D = Die('D', 6);
+ * cdf(D); // => {1: 1/6, 2: 1/3, 3: 1/2, 4: 2/3, 5: 5/6, 6: 1}
+ * ```
+ */
 export function cdf(expr: ExprLike, condition?: ExprLike, opts: ProbabilityOptions = {}): DensityResult {
   // recompute on the conditional expression
   if (condition !== undefined) return cdf(given(expr, condition), undefined, opts);
@@ -940,7 +1801,24 @@ export function cdf(expr: ExprLike, condition?: ExprLike, opts: ProbabilityOptio
   return evaluated(pspace(e).computeCdf(e, {}), opts.evaluate ?? true);
 }
 
-/** The characteristic function of a random expression, optionally given a condition: a Lambda (SymPy characteristic_function). */
+/**
+ * The characteristic function of a random expression, optionally given a condition: a Lambda.
+ *
+ * @param expr - Expression to evaluate.
+ * @param condition - Condition on the random variables.
+ * @param opts - Set `evaluate` to false to retain an unevaluated expression.
+ * @returns The characteristic function of a random expression, optionally given a condition: a Lambda.
+ * @throws RangeError when the expression contains no random variables.
+ * @throws NotImplementedError when the space does not implement the transform.
+ * @see SymPy `sympy.stats.rv.characteristic_function`
+ * @example
+ * ```ts
+ * import { Normal, characteristicFunction } from '@symjs/symjs';
+ *
+ * const X = Normal('X', 0, 1);
+ * characteristicFunction(X); // => Lambda(_t, exp(-_t**2/2))
+ * ```
+ */
 export function characteristicFunction(expr: ExprLike, condition?: ExprLike, opts: ProbabilityOptions = {}): Expr {
   if (condition !== undefined) return characteristicFunction(given(expr, condition), undefined, opts);
   const e = sympify(expr);
@@ -948,7 +1826,24 @@ export function characteristicFunction(expr: ExprLike, condition?: ExprLike, opt
   return opts.evaluate ?? true ? doit(r) : r;
 }
 
-/** The moment generating function of a random expression, optionally given a condition: a Lambda (SymPy moment_generating_function). */
+/**
+ * The moment generating function of a random expression, optionally given a condition: a Lambda.
+ *
+ * @param expr - Expression to evaluate.
+ * @param condition - Condition on the random variables.
+ * @param opts - Set `evaluate` to false to retain an unevaluated expression.
+ * @returns The moment generating function of a random expression, optionally given a condition: a Lambda.
+ * @throws RangeError when the expression contains no random variables.
+ * @throws NotImplementedError when the distribution has no supported moment generating function.
+ * @see SymPy `sympy.stats.rv.moment_generating_function`
+ * @example
+ * ```ts
+ * import { Normal, momentGeneratingFunction } from '@symjs/symjs';
+ *
+ * const X = Normal('X', 0, 1);
+ * momentGeneratingFunction(X); // => Lambda(_t, exp(_t**2/2))
+ * ```
+ */
 export function momentGeneratingFunction(expr: ExprLike, condition?: ExprLike, opts: ProbabilityOptions = {}): Expr {
   if (condition !== undefined) return momentGeneratingFunction(given(expr, condition), undefined, opts);
   const e = sympify(expr);
@@ -956,14 +1851,43 @@ export function momentGeneratingFunction(expr: ExprLike, condition?: ExprLike, o
   return opts.evaluate ?? true ? doit(r) : r;
 }
 
-/** The domain where a condition is true, optionally given a second condition (SymPy where). */
+/**
+ * The domain where a condition is true, optionally given a second condition.
+ *
+ * @param condition - Condition on the random variables.
+ * @param givenCondition - Additional event assumed to hold.
+ * @returns The domain restricted to outcomes satisfying the event.
+ * @see SymPy `sympy.stats.rv.where`
+ * @example
+ * ```ts
+ * import { Lt, Normal, where } from '@symjs/symjs';
+ *
+ * const X = Normal('x', 0, 1);
+ * where(Lt(X.pow(2), 1)).set; // => Interval.open(-1, 1)
+ * ```
+ */
 export function where(condition: ExprLike, givenCondition?: ExprLike): RandomDomain {
   if (givenCondition !== undefined) return where(given(condition, givenCondition));
   const c = sympify(condition);
   return pspace(c).where(c);
 }
 
-/** The quantile function of a random expression: a Lambda (SymPy quantile). */
+/**
+ * The quantile function of a random expression: a Lambda.
+ *
+ * @param expr - Expression to evaluate.
+ * @param opts - Set `evaluate` to false to retain an unevaluated expression.
+ * @returns A lambda mapping cumulative probability to an outcome, or an unevaluated quantile.
+ * @throws RangeError when the expression contains no random variables.
+ * @see SymPy `sympy.stats.rv.quantile`
+ * @example
+ * ```ts
+ * import { Lambda, Exponential, ex, quantile, symbols } from '@symjs/symjs';
+ *
+ * const [rate] = symbols('lambda', { positive: true });
+ * (quantile(Exponential('x', rate)) as Lambda).call(ex`p`); // => -log(1 - p)/lambda
+ * ```
+ */
 export function quantile(expr: ExprLike, opts: ProbabilityOptions = {}): Expr {
   const e = sympify(expr);
   const r = pspace(e).computeQuantile(e);
@@ -979,7 +1903,21 @@ function sameDensity(a: DensityResult, b: DensityResult): boolean {
   return a.key === b.key;
 }
 
-/** The random expressions are dependent (SymPy dependent). */
+/**
+ * Tests whether two random expressions are dependent.
+ *
+ * @param a - First random expression.
+ * @param b - Second random expression.
+ * @returns True if conditioning changes the distribution.
+ * @see SymPy `sympy.stats.rv.dependent`
+ * @example
+ * ```ts
+ * import { Normal, dependent } from '@symjs/symjs';
+ *
+ * const X = Normal('X', 0, 1), Y = Normal('Y', 0, 1);
+ * dependent(X, Y); // => False
+ * ```
+ */
 export function dependent(a: ExprLike, b: ExprLike): boolean {
   const ea = sympify(a);
   const eb = sympify(b);
@@ -988,7 +1926,21 @@ export function dependent(a: ExprLike, b: ExprLike): boolean {
   return !sameDensity(density(ea, Eq(eb, z)), density(ea)) || !sameDensity(density(eb, Eq(ea, z)), density(eb));
 }
 
-/** The random expressions are independent (SymPy independent). */
+/**
+ * Tests whether two random expressions are independent.
+ *
+ * @param a - First random expression.
+ * @param b - Second random expression.
+ * @returns True if conditioning on the other expression leaves the distribution unchanged.
+ * @see SymPy `sympy.stats.rv.independent`
+ * @example
+ * ```ts
+ * import { Normal, independent } from '@symjs/symjs';
+ *
+ * const X = Normal('X', 0, 1), Y = Normal('Y', 0, 1);
+ * independent(X, Y); // => True
+ * ```
+ */
 export function independent(a: ExprLike, b: ExprLike): boolean {
   return !dependent(a, b);
 }

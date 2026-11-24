@@ -15,12 +15,20 @@ import { registerHandler, Q } from '../../core/refine';
 import type { Truth } from '../../core/truth';
 import { defined, pair } from '../../core/guard';
 
-/** Decides `lhs R rhs` under the assumptions: true, false or 'unknown' (a SymPy dispatch handler). */
+/**
+ * A callback that decides a binary relation for two expressions under local assumptions.
+ *
+ * @param lhs - Left operand of the relation.
+ * @param rhs - Right operand of the relation.
+ * @param assumptions - Facts assumed to hold.
+ * @returns True, false, or `'unknown'` when the relation cannot be decided.
+ */
 export type BinaryRelationHandler = (lhs: Expr, rhs: Expr, assumptions: Expr) => Truth;
 
+/** Controls how a binary relation treats equal operands. */
 export interface BinaryRelationOptions {
   /**
-   * SymPy is_reflexive: true when `x R x` holds for every x, false when it never holds (an antireflexive
+   * True when `x R x` holds for every x, false when it never holds (an antireflexive
    * relation); undefined (the default) when neither.
    */
   readonly isReflexive?: boolean;
@@ -31,6 +39,20 @@ export interface BinaryRelationOptions {
  * handlers registered with `Q.R.register(...)`). `ask(Q[name](a, b))` answers the reflexivity of
  * structurally equal arguments without calling the handler (never for nan), then asks the handler, and
  * for a reflexive relation also the handler with the arguments swapped.
+ *
+ * @param name - Name under which to register the predicate in `Q`.
+ * @param handler - Callback deciding the relation for two operands under the current assumptions.
+ * @param options - Set `isReflexive` to decide the relation on equal operands.
+ * @returns The registered binary predicate.
+ * @throws RangeError when the resulting predicate is queried with a number of operands other than two.
+ * @see SymPy `sympy.assumptions.relation.binrel.BinaryRelation`
+ * @example
+ * ```ts
+ * import { BinaryRelation, ask, ex } from '@symjs/symjs';
+ *
+ * const R = BinaryRelation('R', (a, b) => a.equals(b), { isReflexive: true });
+ * ask(R(ex`x`, ex`x`)); // => True
+ * ```
  */
 export function BinaryRelation(name: string, handler: BinaryRelationHandler, options: BinaryRelationOptions = {}): Predicate {
   registerHandler(name, (_e, assumptions, args) => {

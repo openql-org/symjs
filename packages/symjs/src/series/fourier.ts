@@ -25,12 +25,23 @@ import { SeriesBase } from './series_class';
 const isZeroExpr = (e: Expr): boolean => e instanceof Rational && e.isZero;
 
 /**
- * SymPy FourierSeries: a0/2 + sum(an cos(n pi x / L) + bn sin(n pi x / L))
+ * A0/2 + sum(an cos(n pi x / L) + bn sin(n pi x / L))
  * on the interval (a, b) with L = (b - a)/2. A series made by shift, scale,
  * shiftx or scalex keeps the coefficients of the original function and
  * transforms its terms.
+ *
+ * @see SymPy `sympy.series.fourier.FourierSeries`
+ * @example
+ * ```ts
+ * import { ex, fourierSeries, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * const s = fourierSeries(ex`x**2`, x);
+ * s.truncate(2); // => -4*cos(x) + pi**2/3
+ * ```
  */
 export class FourierSeries extends SeriesBase {
+  /** The expression class name used when printing the series. */
   override readonly name = 'FourierSeries';
   private readonly L: Expr;
   /** The function whose coefficients are computed (fn itself unless transformed). */
@@ -41,10 +52,31 @@ export class FourierSeries extends SeriesBase {
   private readonly factor: Expr;
   /** The constant added to the series (shift). */
   private readonly offset: Expr;
+  /**
+   * Constructs a new `FourierSeries`.
+   *
+   * @param fn - Function represented by the series.
+   * @param x - Variable of the expansion.
+   * @param a - Left endpoint of the period.
+   * @param b - Right endpoint of the period.
+   * @param transform - Source function and the accumulated change of argument, scale and offset.
+   */
   constructor(
+    /**
+     * The function represented by the series.
+     *
+     * @see SymPy `sympy.series.fourier.FourierSeries.function`
+     */
     readonly fn: Expr,
+    /**
+     * The independent variable of the series.
+     *
+     * @see SymPy `sympy.series.fourier.FourierSeries.x`
+     */
     readonly x: Sym,
+    /** The left endpoint of the Fourier interval. */
     readonly a: Expr,
+    /** The right endpoint of the Fourier interval. */
     readonly b: Expr,
     transform?: { source: Expr; xmap: Expr; factor: Expr; offset: Expr },
   ) {
@@ -55,11 +87,23 @@ export class FourierSeries extends SeriesBase {
     this.factor = transform?.factor ?? S.One;
     this.offset = transform?.offset ?? S.Zero;
   }
+  /**
+   * Rebuilds this expression with the supplied operands.
+   *
+   * @param args - Replacement operands in the original order.
+   * @returns The rebuilt expression.
+   */
   override withArgs(args: readonly Expr[]): Expr {
     return new FourierSeries(at(args, 0), cast(at(args, 1), Sym), at(args, 2), at(args, 3), {
       source: at(args, 4), xmap: at(args, 5), factor: at(args, 6), offset: at(args, 7),
     });
   }
+  /**
+   * Formats the expression using the supplied expression printer.
+   *
+   * @param print - Printer used for the component expressions.
+   * @returns A plain-text representation.
+   */
   override printStr(print: (e: Expr) => string): string {
     const n = new Dummy('n');
     const [constant, dependent] = asIndependent(this.source, [this.x], { asAdd: false });
@@ -75,11 +119,36 @@ export class FourierSeries extends SeriesBase {
     };
     return `FourierSeries(${print(this.fn)}, (${print(this.x)}, ${print(this.a)}, ${print(this.b)}), (${print(this.a0())}, ${print(sequence(cos))}, ${print(sequence(sin))}))`;
   }
+  /**
+   * The endpoints of one Fourier period.
+   *
+   * @returns The endpoints of one Fourier period.
+   * @see SymPy `sympy.series.fourier.FourierSeries.period`
+   */
   get period(): readonly [Expr, Expr] { return [this.a, this.b]; }
+  /**
+   * The leading term of the represented function.
+   *
+   * @returns The first nonzero asymptotic term.
+   * @see SymPy `sympy.series.fourier.FourierSeries.as_leading_term`
+   */
   asLeadingTerm(): Expr { return this.truncate(1); }
+  /**
+   * Applies substitution rules specific to this series.
+   *
+   * @param old - Expression being replaced.
+   * @returns The replacement expression when this hook supplies one.
+   */
   override subsSelf(old: Expr): Expr | undefined {
     return old.has(this.x) ? this : undefined;
   }
+  /**
+   * The sum with the other operand.
+   *
+   * @param other - Other operand.
+   * @returns The sum with the other operand.
+   * @throws RangeError when the two Fourier periods differ.
+   */
   override add(other: ExprLike): Expr {
     if (!(other instanceof FourierSeries)) return super.add(other);
     if (!this.a.equals(other.a) || !this.b.equals(other.b)) throw new RangeError('Both series should have the same period');
@@ -92,13 +161,48 @@ export class FourierSeries extends SeriesBase {
       source, xmap: this.xmap, factor: S.One, offset,
     });
   }
+  /**
+   * The difference from the other operand.
+   *
+   * @param other - Other operand.
+   * @returns The difference from the other operand.
+   */
   override sub(other: ExprLike): Expr {
     return other instanceof FourierSeries ? this.add(other.neg()) : super.sub(other);
   }
+  /**
+   * The additive inverse of the series.
+   *
+   * @returns The additive inverse of the series.
+   */
   override neg(): FourierSeries { return this.scale(-1); }
+  /**
+   * The inclusive interval of term indices.
+   *
+   * @returns The inclusive interval of term indices.
+   * @see SymPy `sympy.series.fourier.FourierSeries.interval`
+   */
   override get interval(): SetExpr { return interval(0, S.Infinity); }
+  /**
+   * The first index of the series or sequence.
+   *
+   * @returns The first index of the series or sequence.
+   * @see SymPy `sympy.series.fourier.FourierSeries.start`
+   */
   override get start(): Expr { return S.Zero; }
+  /**
+   * The last index of the series or sequence.
+   *
+   * @returns The last index of the series or sequence.
+   * @see SymPy `sympy.series.fourier.FourierSeries.stop`
+   */
   override get stop(): Expr { return S.Infinity; }
+  /**
+   * The number of terms, possibly infinite.
+   *
+   * @returns The number of terms, possibly infinite.
+   * @see SymPy `sympy.series.fourier.FourierSeries.length`
+   */
   override get length(): Expr { return S.Infinity; }
 
   private arg(k: ExprLike): Expr {
@@ -108,16 +212,33 @@ export class FourierSeries extends SeriesBase {
     const v = integrate(mul(this.source, trig(mul(k, S.Pi, this.x, pow(this.L, -1)))), this.x, [this.a, this.b]);
     return simplify(mul(v, pow(this.L, -1)));
   }
-  /** The constant term a0/2. */
+  /**
+   * The constant term a0/2.
+   *
+   * @returns The constant term a0/2.
+   * @see SymPy `sympy.series.fourier.FourierSeries.a0`
+   */
   a0(): Expr {
     const c = simplify(mul(integrate(this.source, this.x, [this.a, this.b]), Rational.of(1n, 2n), pow(this.L, -1)));
     return add(mul(c, this.factor), this.offset);
   }
-  /** The cosine coefficient of order k >= 1. */
+  /**
+   * The cosine coefficient of order k >= 1.
+   *
+   * @param k - Coefficient index.
+   * @returns The cosine coefficient of order k >= 1.
+   * @see SymPy `sympy.series.fourier.FourierSeries.an`
+   */
   an(k: ExprLike): Expr {
     return mul(this.coefficient(k, cos), this.factor);
   }
-  /** The sine coefficient of order k >= 1. */
+  /**
+   * The sine coefficient of order k >= 1.
+   *
+   * @param k - Coefficient index.
+   * @returns The sine coefficient of order k >= 1.
+   * @see SymPy `sympy.series.fourier.FourierSeries.bn`
+   */
   bn(k: ExprLike): Expr {
     return mul(this.coefficient(k, sin), this.factor);
   }
@@ -126,7 +247,21 @@ export class FourierSeries extends SeriesBase {
     if (isZeroExpr(k)) return this.a0();
     return add(mul(this.an(k), cos(this.arg(k))), mul(this.bn(k), sin(this.arg(k))));
   }
-  /** The first n nonzero terms (SymPy truncate). */
+  /**
+   * The first n nonzero terms.
+   *
+   * @param n - Number of nonzero terms to retain.
+   * @returns The truncated expansion.
+   * @see SymPy `sympy.series.fourier.FourierSeries.truncate`
+   * @example
+   * ```ts
+   * import { fourierSeries, symbols } from '@symjs/symjs';
+   *
+   * const [x] = symbols('x');
+   * const s = fourierSeries(x, x);
+   * s.truncate(4); // => 2*sin(x) - sin(2*x) + 2*sin(3*x)/3 - sin(4*x)/2
+   * ```
+   */
   truncate(n = 3): Expr {
     const out: Expr[] = [];
     for (let k = 0; out.length < n && k < 64 + n * 4; k++) {
@@ -148,22 +283,46 @@ export class FourierSeries extends SeriesBase {
     if (v.has(this.x)) throw new RangeError(`'${str(v)}' should be independent of ${str(this.x)}`);
     return v;
   }
-  /** The series of f(x) + s (SymPy shift). */
+  /**
+   * The series of f(x) + s.
+   *
+   * @param s - Shift or scale factor.
+   * @returns The Fourier series with the added constant.
+   * @see SymPy `sympy.series.fourier.FourierSeries.shift`
+   */
   shift(s: ExprLike): FourierSeries {
     const v = this.independent(s);
     return this.transformed(add(this.fn, v), { offset: add(this.offset, v) });
   }
-  /** The series of s*f(x) (SymPy scale). */
+  /**
+   * The series of s*f(x).
+   *
+   * @param s - Shift or scale factor.
+   * @returns The scaled Fourier series.
+   * @see SymPy `sympy.series.fourier.FourierSeries.scale`
+   */
   scale(s: ExprLike): FourierSeries {
     const v = this.independent(s);
     return this.transformed(mul(this.fn, v), { factor: mul(this.factor, v), offset: mul(this.offset, v) });
   }
-  /** The series of f(x + s) (SymPy shiftx). */
+  /**
+   * The series of f(x + s).
+   *
+   * @param s - Shift or scale factor.
+   * @returns The Fourier series of the translated argument.
+   * @see SymPy `sympy.series.fourier.FourierSeries.shiftx`
+   */
   shiftx(s: ExprLike): FourierSeries {
     const v = this.independent(s);
     return this.transformed(subs(this.fn, [[this.x, add(this.x, v)]]), { xmap: subs(this.xmap, [[this.x, add(this.x, v)]]) });
   }
-  /** The series of f(s*x) (SymPy scalex). */
+  /**
+   * The series of f(s*x).
+   *
+   * @param s - Shift or scale factor.
+   * @returns The Fourier series of the scaled argument.
+   * @see SymPy `sympy.series.fourier.FourierSeries.scalex`
+   */
   scalex(s: ExprLike): FourierSeries {
     const v = this.independent(s);
     return this.transformed(subs(this.fn, [[this.x, mul(this.x, v)]]), { xmap: subs(this.xmap, [[this.x, mul(this.x, v)]]) });
@@ -171,6 +330,18 @@ export class FourierSeries extends SeriesBase {
   /**
    * The sigma approximation of order n (SymPy sigma_approximation): the
    * terms of order k < n weighted by the Lanczos factor sinc(pi*k/n).
+   *
+   * @param n - Harmonic cutoff (exclusive).
+   * @returns The sigma approximation of order n.
+   * @see SymPy `sympy.series.fourier.FourierSeries.sigma_approximation`
+   * @example
+   * ```ts
+   * import { fourierSeries, symbols } from '@symjs/symjs';
+   *
+   * const [x] = symbols('x');
+   * const s = fourierSeries(x, x);
+   * s.sigmaApproximation(4); // => 2*sin(x)*sinc(pi/4) - 2*sin(2*x)/pi + 2*sin(3*x)*sinc(3*pi/4)/3
+   * ```
    */
   sigmaApproximation(n = 3): Expr {
     const out: Expr[] = [];
@@ -182,7 +353,23 @@ export class FourierSeries extends SeriesBase {
   }
 }
 
-/** SymPy fourier_series(f, (x, a, b)): the Fourier series of f on (a, b); (-pi, pi) by default. */
+/**
+ * The Fourier series of f on (a, b); (-pi, pi) by default.
+ *
+ * @param ex - Expression to expand or evaluate.
+ * @param x - Variable of the expansion.
+ * @param limits - Lower and upper endpoints of the interval.
+ * @returns The Fourier series, or the constant expression itself.
+ * @throws RangeError when the variable is ambiguous or invalid, or an endpoint is infinite.
+ * @see SymPy `sympy.series.fourier.fourier_series`
+ * @example
+ * ```ts
+ * import { ex, fourierSeries, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * fourierSeries(ex`x**2`, x).truncate(3); // => -4*cos(x) + cos(2*x) + pi**2/3
+ * ```
+ */
 export function fourierSeries(ex: ExprLike, x: Sym, limits?: readonly [ExprLike, ExprLike]): FourierSeries;
 export function fourierSeries(ex: ExprLike, x: undefined, limits?: readonly [ExprLike, ExprLike]): Expr;
 export function fourierSeries(ex: ExprLike, variable: Sym | undefined, limits: readonly [ExprLike, ExprLike] = [S.Pi.neg(), S.Pi]): Expr {

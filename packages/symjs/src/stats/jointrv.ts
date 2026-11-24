@@ -66,19 +66,43 @@ const countOf = (n: Expr): number => Number(n.toString());
 // Joint distributions
 // ---------------------------------------------------------------------------
 
-/** SymPy JointDistribution: a distribution of several variables, applied to one value of each (`pdf(x1, x2, ...)`). */
+/**
+ * A distribution of several variables, applied to one value of each (`pdf(x1, x2, ...)`).
+ *
+ * @see SymPy `sympy.stats.joint_rv.JointDistribution`
+ */
 export abstract class JointDistribution extends Distribution {
-  /** SymPy is_Continuous. */
+  /**
+   * Whether the distribution is continuous.
+   *
+   * @returns `false` for this distribution.
+   */
   get isContinuous(): boolean {
     return false;
   }
-  /** SymPy is_Discrete. */
+  /**
+   * Whether the distribution is discrete.
+   *
+   * @returns `false` for this distribution.
+   */
   get isDiscrete(): boolean {
     return false;
   }
-  /** The joint density at the values (SymPy pdf(*args)). */
+  /**
+   * The joint density at the values (SymPy pdf(*args)).
+   *
+   * @param xs - Outcome at which to evaluate the density.
+   * @returns The density evaluated at the supplied outcome.
+   * @see SymPy `sympy.stats.joint_rv.JointDistribution.pdf`
+   */
   abstract override pdf(...xs: ExprLike[]): Expr;
-  /** SymPy __call__: the density at the values. */
+  /**
+   * The density at the values.
+   *
+   * @param xs - Outcome at which to evaluate the density.
+   * @returns The density at the values.
+   * @see SymPy `sympy.stats.joint_rv.JointDistribution.__call__`
+   */
   override call(...xs: ExprLike[]): Expr {
     return this.pdf(...xs);
   }
@@ -94,60 +118,138 @@ function callDistribution(d: Distribution, xs: readonly Expr[]): Expr {
 // ---------------------------------------------------------------------------
 
 /**
- * SymPy JointPSpace(sym, dist): the probability space of a random vector.
+ * The probability space of a random vector.
  * Use `jointPSpace`, which gives a single space for a single-variable
  * distribution as SymPy's constructor does.
+ *
+ * @see SymPy `sympy.stats.joint_rv.JointPSpace`
  */
 export class JointPSpace extends ProductPSpace {
+  /**
+   * Constructs a new `JointPSpace`.
+   *
+   * @param args - Operands in the order `sym`, `dist`.
+   */
   constructor(args: readonly Expr[]) {
     super([symbolConverter(at(args, 0)), cast(at(args, 1), Distribution, 'distribution')], 'JointPSpace');
   }
+  /**
+   * The underlying symbol naming the random variable.
+   *
+   * @returns The underlying symbol naming the random variable.
+   * @see SymPy `sympy.stats.joint_rv.JointPSpace.symbol`
+   */
   get symbol(): Sym {
     return cast(at(this.args, 0), Sym);
   }
+  /**
+   * The probability law governing the random variable.
+   *
+   * @returns The probability law governing the random variable.
+   * @see SymPy `sympy.stats.joint_rv.JointPSpace.distribution`
+   */
   get distribution(): Distribution {
     return cast(at(this.args, 1), Distribution);
   }
-  /** The joint random symbol of the space (SymPy value). */
+  /**
+   * The joint random symbol of the space.
+   *
+   * @returns The joint random symbol of the space.
+   * @see SymPy `sympy.stats.joint_rv.JointPSpace.value`
+   */
   get value(): JointRandomSymbol {
     return new JointRandomSymbol(this.symbol, this);
   }
+  /**
+   * The random symbols belonging to this probability space.
+   *
+   * @returns The random symbols belonging to this probability space.
+   * @see SymPy `sympy.stats.joint_rv.JointPSpace.values`
+   */
   override get values(): RandomSymbol[] {
     return [this.value];
   }
+  /**
+   * Whether this space supplies a density for its random symbol.
+   *
+   * @returns `true` for this space.
+   */
   override get hasValueDensity(): boolean {
     return true;
   }
+  /**
+   * The density associated with the random symbol of the space.
+   *
+   * @returns The density associated with the random symbol of the space.
+   */
   override get valueDensity(): Expr {
     return this.distribution;
   }
+  /**
+   * Whether this space can share an underlying symbol with another component space.
+   *
+   * @returns Whether this space can share an underlying symbol with another component space.
+   */
   override get sharesSymbols(): boolean {
     return this.distribution instanceof MarginalDistribution;
   }
-  /** The values of the random vector (SymPy set). */
+  /**
+   * The values of the random vector.
+   *
+   * @returns The values of the random vector.
+   * @see SymPy `sympy.stats.joint_rv.JointPSpace.set`
+   */
   get set(): SetExpr {
     return this.domain.set;
   }
-  /** The number of components (SymPy component_count). */
+  /**
+   * The number of components.
+   *
+   * @returns The number of components.
+   * @see SymPy `sympy.stats.joint_rv.JointPSpace.component_count`
+   */
   get componentCount(): Expr {
     const set = this.distribution.set;
     return set instanceof ProductSetNode ? sympify(set.args.length) : S.One;
   }
-  /** The joint density as an expression of the components sym[i] (SymPy pdf). */
+  /**
+   * The joint density as an expression of the components sym[i].
+   *
+   * @returns The joint density in the symbols of the space.
+   * @see SymPy `sympy.stats.joint_rv.JointPSpace.pdf`
+   */
   override get pdf(): Expr {
     const n = countOf(this.componentCount);
     return callDistribution(this.distribution, Array.from({ length: n }, (_, i) => new Indexed([this.symbol, sympify(i)])));
   }
+  /**
+   * The domain of outcomes of this probability space.
+   *
+   * @returns The domain of outcomes of this probability space.
+   * @see SymPy `sympy.stats.joint_rv.JointPSpace.domain`
+   */
   override get domain(): RandomDomain {
     const rvs = randomSymbols(this.distribution);
     if (!rvs.length) return new SingleDomain([this.symbol, this.distribution.set]);
     return makeProductDomain(rvs.map((rv) => rv.pspace.domain));
   }
-  /** The set of the component at an index (SymPy component_domain). */
+  /**
+   * The set of the component at an index.
+   *
+   * @param index - Index of the component.
+   * @returns The set of the component at an index.
+   * @see SymPy `sympy.stats.joint_rv.JointPSpace.component_domain`
+   */
   componentDomain(index: number): SetExpr {
     return cast(at(this.set.args, index), SetExpr, 'component set');
   }
-  /** The marginal density of the components at the indices: a Lambda (SymPy marginal_distribution). */
+  /**
+   * The marginal density of the components at the indices: a Lambda.
+   *
+   * @param indices - Component indices to retain.
+   * @returns The marginal density of the components at the indices: a Lambda.
+   * @see SymPy `sympy.stats.joint_rv.JointPSpace.marginal_distribution`
+   */
   marginalDistribution(...indices: number[]): Expr {
     const count = countOf(this.componentCount);
     const orig = Array.from({ length: count }, (_, i) => new Indexed([this.symbol, sympify(i)]));
@@ -166,10 +268,15 @@ export class JointPSpace extends ProductPSpace {
   }
   /**
    * The expectation of an expression of the components: the unevaluated
-   * integral of the expression times the density over the components
-   * (SymPy compute_expectation). Random symbols of other spaces are
+   * integral of the expression times the density over the components. Random symbols of other spaces are
    * expected separately: an expression without components of this space is
    * returned unchanged.
+   *
+   * @param exprIn - Expression to evaluate.
+   * @param rvsIn - Random variables to integrate or sum over.
+   * @returns The expected value over the selected variables.
+   * @throws NotImplementedError when the expression contains a joint symbol without component indices.
+   * @see SymPy `sympy.stats.joint_rv.JointPSpace.compute_expectation`
    */
   override computeExpectation(exprIn: Expr, rvsIn?: readonly Expr[]): Expr {
     const n = countOf(this.componentCount);
@@ -210,9 +317,20 @@ export function jointPSpace(sym: string | Sym, dist: Distribution): PSpace & { v
 // Joint random symbols
 // ---------------------------------------------------------------------------
 
-/** SymPy JointRandomSymbol: a random vector, whose components are `X.at(i)` (SymPy X[i]). */
+/**
+ * A random vector whose components can be accessed with `at(i)`.
+ *
+ * @see SymPy `sympy.stats.joint_rv.JointRandomSymbol`
+ */
 export class JointRandomSymbol extends RandomSymbol {
-  /** The component at an index (SymPy __getitem__): the Indexed X[i]. */
+  /**
+   * The indexed component of this random vector.
+   *
+   * @param keyIn - Time or component index.
+   * @returns The indexed component of this random vector.
+   * @throws RangeError when the component index exceeds the dimension.
+   * @see SymPy `sympy.stats.joint_rv.JointRandomSymbol.__getitem__`
+   */
   at(keyIn: ExprLike): Indexed {
     const key = sympify(keyIn);
     const ps = this.pspace;
@@ -227,27 +345,63 @@ export class JointRandomSymbol extends RandomSymbol {
 // Marginal distributions
 // ---------------------------------------------------------------------------
 
-/** SymPy MarginalDistribution(dist, rvs): a distribution whose random parameters are marginalised out. */
+/**
+ * A distribution whose random parameters are marginalised out.
+ *
+ * @see SymPy `sympy.stats.joint_rv.MarginalDistribution`
+ */
 export class MarginalDistribution extends Distribution {
+  /**
+   * Constructs a new `MarginalDistribution`.
+   *
+   * @param args - Operands in the order `dist`, `rvs`.
+   */
   constructor(args: readonly Expr[]) {
     super('MarginalDistribution', args);
   }
-  /** The random variables of the distribution (SymPy args[1]). */
+  /**
+   * The random variables of the distribution (SymPy args[1]).
+   *
+   * @returns The random variables of the distribution.
+   */
   get rvs(): Expr[] {
     return [...at(this.args, 1).args];
   }
+  /**
+   * The support of the distribution.
+   *
+   * @returns The support of the distribution.
+   * @see SymPy `sympy.stats.joint_rv.MarginalDistribution.set`
+   */
   get set(): SetExpr {
     return productSet(...this.rvs.filter((r): r is RandomSymbol => r instanceof RandomSymbol).map((r) => r.pspace.domain.set));
   }
-  /** The symbols of the spaces of the random variables (SymPy symbols). */
+  /**
+   * The symbols of the spaces of the random variables.
+   *
+   * @returns The symbols of the spaces of the random variables.
+   * @see SymPy `sympy.stats.joint_rv.MarginalDistribution.symbols`
+   */
   get symbols(): Sym[] {
     return sortedSymbols(this.rvs.flatMap((r) => pspace(r).symbols));
   }
-  /** SymPy __call__: the density at the values. */
+  /**
+   * The density at the values.
+   *
+   * @param x - Outcome at which to evaluate the density.
+   * @returns The density at the values.
+   * @see SymPy `sympy.stats.joint_rv.MarginalDistribution.__call__`
+   */
   override call(...x: ExprLike[]): Expr {
     return this.pdf(...x);
   }
-  /** The density at the values, with the random parameters marginalised out (SymPy pdf). */
+  /**
+   * The density at the values, with the random parameters marginalised out.
+   *
+   * @param x - Outcome at which to evaluate the density.
+   * @returns The density evaluated at the supplied outcome.
+   * @see SymPy `sympy.stats.joint_rv.MarginalDistribution.pdf`
+   */
   pdf(...x: ExprLike[]): Expr {
     let expr = at(this.args, 0);
     const keys = new Set(this.rvs.map((r) => r.key));
@@ -274,13 +428,27 @@ export class MarginalDistribution extends Distribution {
     const marginaliseOut = [...nested.values()].sort((p, q) => (p.symbol.name < q.symbol.name ? -1 : p.symbol.name > q.symbol.name ? 1 : 0)).filter((r) => !keys.has(r.key));
     return Lambda(syms, this.computePdf(expr, marginaliseOut)).call(...x);
   }
-  /** The density times the densities of the random variables, each marginalised out (SymPy compute_pdf). */
+  /**
+   * The density times the densities of the random variables, each marginalised out.
+   *
+   * @param exprIn - Expression to evaluate.
+   * @param rvs - Random variables to integrate or sum over.
+   * @returns The density times the densities of the random variables, each marginalised out.
+   * @see SymPy `sympy.stats.joint_rv.MarginalDistribution.compute_pdf`
+   */
   computePdf(exprIn: Expr, rvs: readonly RandomSymbol[]): Expr {
     let expr = exprIn;
     for (const rv of rvs) expr = this.marginaliseOut(mul(expr, rv.pspace.pdf), rv);
     return expr;
   }
-  /** The unevaluated integral (or sum) of the expression over the values of the random variable (SymPy marginalise_out). */
+  /**
+   * The unevaluated integral (or sum) of the expression over the values of the random variable.
+   *
+   * @param exprIn - Expression to evaluate.
+   * @param rv - Random variable whose distribution is requested.
+   * @returns The unevaluated integral (or sum) of the expression over the values of the random variable.
+   * @see SymPy `sympy.stats.joint_rv.MarginalDistribution.marginalise_out`
+   */
   marginaliseOut(exprIn: Expr, rv: RandomSymbol): Expr {
     const sym = rv.symbol;
     const expr = xreplace(exprIn, [[rv, sym]]);

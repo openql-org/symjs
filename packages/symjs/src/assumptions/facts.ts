@@ -28,9 +28,11 @@ let composites: Map<Predicate, readonly Predicate[]> | undefined;
 
 /**
  * The composite predicates and their decomposition into primitive
- * predicates, which keeps the SAT problems small (SymPy
- * get_composite_predicates). Each value lists the predicates whose
+ * predicates, which keeps the SAT problems small. Each value lists the predicates whose
  * disjunction the key is (`Q.real: Q.negative | Q.zero | Q.positive`).
+ *
+ * @returns Each composite predicate mapped to the alternatives that define it.
+ * @see SymPy `sympy.assumptions.facts.get_composite_predicates`
  */
 export function getCompositePredicates(): Map<Predicate, readonly Predicate[]> {
   composites ??= new Map<Predicate, readonly Predicate[]>([
@@ -52,13 +54,25 @@ export function getCompositePredicates(): Map<Predicate, readonly Predicate[]> {
 
 const placeholder = (x: ExprLike | undefined): Expr => (x === undefined ? new Sym('x') : sympify(x));
 
-/** The facts between unary number and matrix predicates of x (default the symbol x) (SymPy get_known_facts). */
+/**
+ * Combines the known numerical and matrix implications for a single expression.
+ *
+ * @param x - Expression to which the known predicates are applied.
+ * @returns A boolean expression combining the known number and matrix facts.
+ * @see SymPy `sympy.assumptions.facts.get_known_facts`
+ */
 export function getKnownFacts(x?: ExprLike): Expr {
   const s = placeholder(x);
   return and(getNumberFacts(s), getMatrixFacts(s));
 }
 
-/** The facts between unary number predicates of x (default the symbol x) (SymPy get_number_facts). */
+/**
+ * Combines the known implications between numerical predicates for a single expression.
+ *
+ * @param x - Expression to which the known predicates are applied.
+ * @returns A boolean expression combining the known number facts.
+ * @see SymPy `sympy.assumptions.facts.get_number_facts`
+ */
 export function getNumberFacts(x?: ExprLike): Expr {
   const s = placeholder(x);
   return and(
@@ -92,7 +106,13 @@ export function getNumberFacts(x?: ExprLike): Expr {
   );
 }
 
-/** The facts between unary matrix predicates of x (default the symbol x) (SymPy get_matrix_facts). */
+/**
+ * Combines the known implications between matrix predicates for a single expression.
+ *
+ * @param x - Expression to which the known predicates are applied.
+ * @returns A boolean expression combining the known matrix facts.
+ * @see SymPy `sympy.assumptions.facts.get_matrix_facts`
+ */
 export function getMatrixFacts(x?: ExprLike): Expr {
   const s = placeholder(x);
   return and(
@@ -122,16 +142,34 @@ export function getMatrixFacts(x?: ExprLike): Expr {
   );
 }
 
-/** The predicate Q.<name> (a predicate not in Q is made anew). */
+/**
+ * The predicate Q.<name> (a predicate not in Q is made anew).
+ *
+ * @param name - Name of the predicate in `Q`.
+ * @returns The predicate with the given name.
+ */
 export const predicateNamed = (name: string): Predicate => Q[name] ?? makePredicate(name);
 
 /** The implied and rejected predicates of each predicate (the values of generate_known_facts_dict). */
 export type KnownFactsDict = Map<Predicate, [Set<Predicate>, Set<Predicate>]>;
 
 /**
- * The predicates implied and rejected by each unary predicate (SymPy
- * generate_known_facts_dict). The keys are applied predicates with the same
+ * The predicates implied and rejected by each unary predicate. The keys are applied predicates with the same
  * placeholder symbol; fact is a fact between them.
+ *
+ * @param keys - Predicates applied to the same placeholder.
+ * @param fact - Boolean relation between the predicates.
+ * @returns Each predicate mapped to the sets of predicates it implies and rejects.
+ * @see SymPy `sympy.assumptions.facts.generate_known_facts_dict`
+ * @example
+ * ```ts
+ * import { Implies, Q, generateKnownFactsDict, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * const facts = Implies(Q.zero(x), Q.even(x));
+ * const table = generateKnownFactsDict([Q.even(x), Q.zero(x)], facts);
+ * table.get(Q.zero)?.[0].has(Q.even); // => True
+ * ```
  */
 export function generateKnownFactsDict(keys: readonly Expr[], fact: ExprLike | boolean): KnownFactsDict {
   const factCnf = toCnf(fact);
@@ -150,7 +188,12 @@ export function generateKnownFactsDict(keys: readonly Expr[], fact: ExprLike | b
   return ret;
 }
 
-/** Every unary predicate of Q: all but eq, ne, gt, lt, ge and le (SymPy get_known_facts_keys). */
+/**
+ * Every unary predicate of Q: all but eq, ne, gt, lt, ge and le.
+ *
+ * @returns The unary predicates used as keys in the generated facts.
+ * @see SymPy `sympy.assumptions.facts.get_known_facts_keys`
+ */
 export function getKnownFactsKeys(): Predicate[] {
   const exclude = new Set(['eq', 'ne', 'gt', 'lt', 'ge', 'le']);
   return Object.keys(Q)
@@ -160,7 +203,12 @@ export function getKnownFactsKeys(): Predicate[] {
 
 /**
  * For each key, the keys and negated keys that it implies under the known
- * facts (SymPy single_fact_lookup).
+ * facts.
+ *
+ * @param knownFactsKeys - Applied predicates sharing a placeholder symbol.
+ * @param knownFactsCnf - Known facts in conjunctive normal form.
+ * @returns Implied positive and negated facts indexed by the applied predicate.
+ * @see SymPy `sympy.assumptions.facts.single_fact_lookup`
  */
 export function singleFactLookup(knownFactsKeys: readonly Expr[], knownFactsCnf: ExprLike | boolean): ExprMap<Expr[]> {
   const mapping = new ExprMap<Expr[]>();
@@ -178,7 +226,13 @@ export function singleFactLookup(knownFactsKeys: readonly Expr[], knownFactsCnf:
 
 /**
  * Whether the proposition holds under the assumptions and the known facts:
- * true, false or 'unknown' (SymPy ask_full_inference).
+ * true, false or 'unknown'.
+ *
+ * @param proposition - Proposition whose truth is to be decided.
+ * @param assumptions - Facts assumed to hold.
+ * @param knownFactsCnf - Known facts in conjunctive normal form.
+ * @returns Whether the predicate holds, or `'unknown'` when undecided.
+ * @see SymPy `sympy.assumptions.facts.ask_full_inference`
  */
 export function askFullInference(proposition: ExprLike | boolean, assumptions: ExprLike | boolean, knownFactsCnf: ExprLike | boolean): Truth {
   if (satisfiable(and(knownFactsCnf, assumptions, proposition)) === false) return false;

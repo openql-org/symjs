@@ -31,11 +31,11 @@ import { PSpace, RandomSymbol, dependent, given, hasRandomIndexedSymbol, isRando
 import { MatrixExpr } from '../matrices/expressions/matexpr';
 import { BernoulliDistribution } from './frvtypes';
 
-/** Hints of doit (SymPy keyword arguments). */
+/** Controls evaluation of a symbolic probability or expectation. */
 export interface ProbabilityDoitHints {
-  /** false: the argument is not evaluated first (SymPy deep=False). */
+  /** False: the argument is not evaluated first (SymPy deep=False). */
   readonly deep?: boolean;
-  /** false: integrals and sums are left unevaluated (SymPy evaluate=False). */
+  /** False: integrals and sums are left unevaluated (SymPy evaluate=False). */
   readonly evaluate?: boolean;
 }
 
@@ -77,19 +77,52 @@ abstract class StatsNode extends ExtensionExpr {
 // Probability
 // ---------------------------------------------------------------------------
 
-/** SymPy Probability(prob, condition): the unevaluated probability of a condition. */
+/**
+ * The unevaluated probability of a condition.
+ *
+ * @see SymPy `sympy.stats.symbolic_probability.Probability`
+ * @example
+ * ```ts
+ * import { Gt, Normal, ProbabilityNode } from '@symjs/symjs';
+ *
+ * const X = Normal('X', 0, 1);
+ * new ProbabilityNode([Gt(X, 1)]); // => Probability(X > 1)
+ * ```
+ */
 export class ProbabilityNode extends StatsNode {
+  /**
+   * Constructs a new `ProbabilityNode`.
+   *
+   * @param args - Operands in the order `prob`, `condition`.
+   */
   constructor(args: readonly Expr[]) {
     super('Probability', args);
   }
-  /** The given condition, if any. */
+  /**
+   * The given condition, if any.
+   *
+   * @returns The given condition, if any.
+   */
   get condition(): Expr | undefined {
     return this.args[1];
   }
+  /**
+   * Rebuilds this expression with the supplied operands.
+   *
+   * @param args - Replacement operands in the original order.
+   * @returns The rebuilt expression.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new ProbabilityNode(args);
   }
-  /** The probability (SymPy Probability.doit). */
+  /**
+   * The probability.
+   *
+   * @param hints - Evaluation controls, including whether to evaluate nested expressions.
+   * @returns The probability.
+   * @throws RangeError when the event or conditioning expression is not a boolean relation.
+   * @see SymPy `sympy.stats.symbolic_probability.Probability.doit`
+   */
   doit(hints: ProbabilityDoitHints = {}): Expr {
     const condition = at(this.args, 0);
     const givenCondition = this.condition;
@@ -115,14 +148,34 @@ export class ProbabilityNode extends StatsNode {
     const result = ps.probability(condition);
     return hints.evaluate ?? true ? doit(result) : result;
   }
-  /** SymPy _eval_rewrite_as_Integral and _eval_rewrite_as_Sum: the unevaluated probability. */
+  /**
+   * Rewrites the statistical expression in the requested representation when supported.
+   *
+   * @param target - Name of the requested representation.
+   * @param args - Rewritten operands in their original order.
+   * @returns The replacement expression when this hook supplies one.
+   */
   override rewriteSelf(target: string, args: readonly Expr[]): Expr | undefined {
     if (target === 'Integral' || target === 'Sum') return new ProbabilityNode(args).doit({ evaluate: false });
     return undefined;
   }
 }
 
-/** SymPy Probability(prob, condition=None). */
+/**
+ * The unevaluated probability of a condition.
+ *
+ * @param prob - Event whose probability is requested.
+ * @param condition - Condition on the random variables.
+ * @returns The resulting statistical expression.
+ * @see SymPy `sympy.stats.symbolic_probability.Probability`
+ * @example
+ * ```ts
+ * import { Gt, Normal, Probability } from '@symjs/symjs';
+ *
+ * const X = Normal('X', 0, 1);
+ * Probability(Gt(X, 1)); // => Probability(X > 1)
+ * ```
+ */
 export const Probability = /* @__PURE__ */ callableClass(
   ProbabilityNode,
   (prob: ExprLike | boolean, condition?: ExprLike | boolean): ProbabilityNode =>
@@ -137,22 +190,53 @@ const toExpr = (v: ExprLike | boolean): Expr => (typeof v === 'boolean' ? (v ? S
 // Expectation
 // ---------------------------------------------------------------------------
 
-/** SymPy Expectation(expr, condition): the unevaluated expectation of a random expression. */
+/**
+ * The unevaluated expectation of a random expression.
+ *
+ * @see SymPy `sympy.stats.symbolic_probability.Expectation`
+ * @example
+ * ```ts
+ * import { ExpectationNode, Normal } from '@symjs/symjs';
+ *
+ * const X = Normal('X', 0, 1);
+ * new ExpectationNode([X]); // => Expectation(X)
+ * ```
+ */
 export class ExpectationNode extends StatsNode {
+  /**
+   * Constructs a new `ExpectationNode`.
+   *
+   * @param args - Operands in the order `expr`, `condition`.
+   */
   constructor(args: readonly Expr[]) {
     super('Expectation', args);
   }
-  /** The given condition, if any. */
+  /**
+   * The given condition, if any.
+   *
+   * @returns The given condition, if any.
+   */
   get condition(): Expr | undefined {
     return this.args[1];
   }
+  /**
+   * Rebuilds this expression with the supplied operands.
+   *
+   * @param args - Replacement operands in the original order.
+   * @returns The rebuilt expression.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return makeExpectation(at(args, 0), args[1]);
   }
   protected override computeCommutative(): boolean {
     return at(this.args, 0).isCommutative;
   }
-  /** The expectation of each term and of the random factors of products (SymPy Expectation.expand). */
+  /**
+   * The expectation of each term and of the random factors of products.
+   *
+   * @returns The expectation of each term and of the random factors of products.
+   * @see SymPy `sympy.stats.symbolic_probability.Expectation.expand`
+   */
   expand(): Expr {
     const e = at(this.args, 0);
     const condition = this.condition;
@@ -166,10 +250,21 @@ export class ExpectationNode extends StatsNode {
     }
     return this;
   }
+  /**
+   * Expands the outer statistical operator using its algebraic rules.
+   *
+   * @returns Expands the outer statistical operator using its algebraic rules.
+   */
   override expandTop(): Expr {
     return this.expand();
   }
-  /** The expected value (SymPy Expectation.doit). */
+  /**
+   * The expected value.
+   *
+   * @param hints - Evaluation controls, including whether to evaluate nested expressions.
+   * @returns The expected value.
+   * @see SymPy `sympy.stats.symbolic_probability.Expectation.doit`
+   */
   doit(hints: ProbabilityDoitHints = {}): Expr {
     const deep = hints.deep ?? true;
     const condition = this.condition;
@@ -188,7 +283,14 @@ export class ExpectationNode extends StatsNode {
     const result = ps.computeExpectation(e, undefined, { evaluate });
     return evaluate ? doit(result) : result;
   }
-  /** SymPy _eval_rewrite_as_Probability, _eval_rewrite_as_Integral and _eval_rewrite_as_Sum. */
+  /**
+   * Rewrites the statistical expression in the requested representation when supported.
+   *
+   * @param target - Name of the requested representation.
+   * @param args - Rewritten operands in their original order.
+   * @returns The replacement expression when this hook supplies one.
+   * @throws NotImplementedError when rewriting in terms of probabilities would require a finite random variable or multiple random variables.
+   */
   override rewriteSelf(target: string, args: readonly Expr[]): Expr | undefined {
     const [arg, condition] = [at(args, 0), args[1]];
     if (target === 'Integral' || target === 'Sum') return doitExpectation(makeExpectation(arg, condition), { deep: false, evaluate: false });
@@ -228,7 +330,21 @@ export function makeExpectation(exprIn: ExprLike, conditionIn?: ExprLike): Expr 
   return new ExpectationNode([e, sympify(conditionIn)]);
 }
 
-/** SymPy Expectation(expr, condition=None). */
+/**
+ * The unevaluated expectation of a random expression.
+ *
+ * @param exprIn - Expression to evaluate.
+ * @param conditionIn - Condition on the random variables.
+ * @returns The expectation expression, or a deterministic argument itself.
+ * @see SymPy `sympy.stats.symbolic_probability.Expectation`
+ * @example
+ * ```ts
+ * import { Expectation, Normal } from '@symjs/symjs';
+ *
+ * const X = Normal('X', 0, 1);
+ * Expectation(X); // => Expectation(X)
+ * ```
+ */
 export const Expectation = /* @__PURE__ */ callableClass(ExpectationNode, makeExpectation);
 export type Expectation = ExpectationNode;
 
@@ -242,22 +358,53 @@ export const interfaceHooks: {
   covariance?: (x: Expr, y: Expr, condition: Expr | undefined, evaluate: boolean) => Expr;
 } = {};
 
-/** SymPy Variance(arg, condition): the unevaluated variance of a random expression. */
+/**
+ * The unevaluated variance of a random expression.
+ *
+ * @see SymPy `sympy.stats.symbolic_probability.Variance`
+ * @example
+ * ```ts
+ * import { Normal, VarianceNode } from '@symjs/symjs';
+ *
+ * const X = Normal('X', 0, 1);
+ * new VarianceNode([X]); // => Variance(X)
+ * ```
+ */
 export class VarianceNode extends StatsNode {
+  /**
+   * Constructs a new `VarianceNode`.
+   *
+   * @param args - Operands in the order `arg`, `condition`.
+   */
   constructor(args: readonly Expr[]) {
     super('Variance', args);
   }
-  /** The given condition, if any. */
+  /**
+   * The given condition, if any.
+   *
+   * @returns The given condition, if any.
+   */
   get condition(): Expr | undefined {
     return this.args[1];
   }
+  /**
+   * Rebuilds this expression with the supplied operands.
+   *
+   * @param args - Replacement operands in the original order.
+   * @returns The rebuilt expression.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new VarianceNode(args);
   }
   protected override computeCommutative(): boolean {
     return at(this.args, 0).isCommutative;
   }
-  /** The variances and covariances of the terms (SymPy Variance.expand). */
+  /**
+   * The variances and covariances of the terms.
+   *
+   * @returns The variances and covariances of the terms.
+   * @see SymPy `sympy.stats.symbolic_probability.Variance.expand`
+   */
   expand(): Expr {
     const arg = at(this.args, 0);
     const condition = this.condition;
@@ -278,13 +425,30 @@ export class VarianceNode extends StatsNode {
     }
     return this;
   }
+  /**
+   * Expands the outer statistical operator using its algebraic rules.
+   *
+   * @returns Expands the outer statistical operator using its algebraic rules.
+   */
   override expandTop(): Expr {
     return this.expand();
   }
-  /** SymPy Variance.doit (Basic.doit: the variance is not evaluated, only its arguments). */
+  /**
+   * Evaluates the arguments of the variance expression when deep evaluation is requested.
+   *
+   * @returns The variance with its evaluated arguments.
+   * @see SymPy `sympy.stats.symbolic_probability.Variance.doit`
+   */
   doit(): Expr {
     return new VarianceNode(this.args.map((a) => doit(a)));
   }
+  /**
+   * Rewrites the statistical expression in the requested representation when supported.
+   *
+   * @param target - Name of the requested representation.
+   * @param args - Rewritten operands in their original order.
+   * @returns The replacement expression when this hook supplies one.
+   */
   override rewriteSelf(target: string, args: readonly Expr[]): Expr | undefined {
     const [arg, condition] = [at(args, 0), args[1]];
     if (target === 'Expectation') return sub(makeExpectation(pow(arg, 2), condition), pow(makeExpectation(arg, condition), 2));
@@ -294,7 +458,21 @@ export class VarianceNode extends StatsNode {
   }
 }
 
-/** SymPy Variance(arg, condition=None). */
+/**
+ * The unevaluated variance of a random expression.
+ *
+ * @param argIn - Argument expression.
+ * @param conditionIn - Condition on the random variables.
+ * @returns The variance expression, or zero for a deterministic scalar.
+ * @see SymPy `sympy.stats.symbolic_probability.Variance`
+ * @example
+ * ```ts
+ * import { Normal, Variance } from '@symjs/symjs';
+ *
+ * const X = Normal('X', 0, 1);
+ * Variance(X); // => Variance(X)
+ * ```
+ */
 export const Variance = /* @__PURE__ */ callableClass(
   VarianceNode,
   (argIn: ExprLike, conditionIn?: ExprLike): Expr => {
@@ -308,22 +486,53 @@ export type Variance = VarianceNode;
 /** The two arguments in default_sort_key order. */
 const sorted2 = (a: Expr, b: Expr): [Expr, Expr] => (compareKeys(sortKey(a), sortKey(b)) <= 0 ? [a, b] : [b, a]);
 
-/** SymPy Covariance(arg1, arg2, condition): the unevaluated covariance of two random expressions. */
+/**
+ * The unevaluated covariance of two random expressions.
+ *
+ * @see SymPy `sympy.stats.symbolic_probability.Covariance`
+ * @example
+ * ```ts
+ * import { CovarianceNode, Normal } from '@symjs/symjs';
+ *
+ * const X = Normal('X', 0, 1), Y = Normal('Y', 0, 1);
+ * new CovarianceNode([X, Y]); // => Covariance(X, Y)
+ * ```
+ */
 export class CovarianceNode extends StatsNode {
+  /**
+   * Constructs a new `CovarianceNode`.
+   *
+   * @param args - Operands in the order `arg1`, `arg2`, `condition`.
+   */
   constructor(args: readonly Expr[]) {
     super('Covariance', args);
   }
-  /** The given condition, if any. */
+  /**
+   * The given condition, if any.
+   *
+   * @returns The given condition, if any.
+   */
   get condition(): Expr | undefined {
     return this.args[2];
   }
+  /**
+   * Rebuilds this expression with the supplied operands.
+   *
+   * @param args - Replacement operands in the original order.
+   * @returns The rebuilt expression.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new CovarianceNode(args);
   }
   protected override computeCommutative(): boolean {
     return at(this.args, 0).isCommutative;
   }
-  /** The covariances of the random terms (SymPy Covariance.expand). */
+  /**
+   * The covariances of the random terms.
+   *
+   * @returns The covariances of the random terms.
+   * @see SymPy `sympy.stats.symbolic_probability.Covariance.expand`
+   */
   expand(): Expr {
     const [a1, a2] = [at(this.args, 0), at(this.args, 1)];
     const condition = this.condition;
@@ -335,13 +544,30 @@ export class CovarianceNode extends StatsNode {
     const list2 = expandSingleArgument(expand(arg2));
     return add(...list1.flatMap(([a, r1]) => list2.map(([b, r2]) => mul(a, b, cov(r1, r2, condition)))));
   }
+  /**
+   * Expands the outer statistical operator using its algebraic rules.
+   *
+   * @returns Expands the outer statistical operator using its algebraic rules.
+   */
   override expandTop(): Expr {
     return this.expand();
   }
-  /** SymPy Covariance.doit (Basic.doit: only the arguments are evaluated). */
+  /**
+   * Evaluates the arguments of the covariance expression when deep evaluation is requested.
+   *
+   * @returns The covariance with its evaluated arguments.
+   * @see SymPy `sympy.stats.symbolic_probability.Covariance.doit`
+   */
   doit(): Expr {
     return new CovarianceNode(this.args.map((a) => doit(a)));
   }
+  /**
+   * Rewrites the statistical expression in the requested representation when supported.
+   *
+   * @param target - Name of the requested representation.
+   * @param args - Rewritten operands in their original order.
+   * @returns The replacement expression when this hook supplies one.
+   */
   override rewriteSelf(target: string, args: readonly Expr[]): Expr | undefined {
     const [arg1, arg2, condition] = [at(args, 0), at(args, 1), args[2]];
     if (target === 'Expectation') return sub(makeExpectation(mul(arg1, arg2), condition), mul(makeExpectation(arg1, condition), makeExpectation(arg2, condition)));
@@ -377,7 +603,23 @@ function mulNonrvRv(m: Mul): [Expr, Expr] {
   return [mul(...nonrv), mul(...rv)];
 }
 
-/** SymPy Covariance(arg1, arg2, condition=None, evaluate=True): the arguments are sorted unless evaluate is false. */
+/**
+ * The arguments are sorted unless evaluate is false.
+ *
+ * @param arg1 - First random expression.
+ * @param arg2 - Second random expression.
+ * @param condition - Condition on the random variables.
+ * @param opts - Set `evaluate` to false to preserve operand order.
+ * @returns The covariance expression after any requested evaluation.
+ * @see SymPy `sympy.stats.symbolic_probability.Covariance`
+ * @example
+ * ```ts
+ * import { Covariance, Normal } from '@symjs/symjs';
+ *
+ * const X = Normal('X', 0, 1), Y = Normal('Y', 0, 1);
+ * Covariance(X, Y); // => Covariance(X, Y)
+ * ```
+ */
 export const Covariance = /* @__PURE__ */ callableClass(
   CovarianceNode,
   (arg1: ExprLike, arg2: ExprLike, condition?: ExprLike, opts: { evaluate?: boolean } = {}): Expr => {
@@ -393,18 +635,53 @@ export type Covariance = CovarianceNode;
 // Moments
 // ---------------------------------------------------------------------------
 
-/** SymPy Moment(X, n, c=0, condition=None): the unevaluated n-th moment of X about c. */
+/**
+ * The unevaluated n-th moment of X about c.
+ *
+ * @see SymPy `sympy.stats.symbolic_probability.Moment`
+ * @example
+ * ```ts
+ * import { MomentNode, Normal, ex } from '@symjs/symjs';
+ *
+ * const X = Normal('X', 0, 1);
+ * new MomentNode([X, ex`3`, ex`1`]); // => Moment(X, 3, 1)
+ * ```
+ */
 export class MomentNode extends StatsNode {
+  /**
+   * Constructs a new `MomentNode`.
+   *
+   * @param args - Operands in the order `X`, `n`, `c`, `condition`.
+   */
   constructor(args: readonly Expr[]) {
     super('Moment', args);
   }
+  /**
+   * Rebuilds this expression with the supplied operands.
+   *
+   * @param args - Replacement operands in the original order.
+   * @returns The rebuilt expression.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new MomentNode(args);
   }
-  /** The moment (SymPy Moment.doit: the expectation, evaluated). */
+  /**
+   * The moment (SymPy Moment.doit: the expectation, evaluated).
+   *
+   * @param hints - Evaluation controls, including whether to evaluate nested expressions.
+   * @returns The moment.
+   * @see SymPy `sympy.stats.symbolic_probability.Moment.doit`
+   */
   doit(hints: ProbabilityDoitHints = {}): Expr {
     return doitExpectation(rewrite(this, 'Expectation'), hints);
   }
+  /**
+   * Rewrites the statistical expression in the requested representation when supported.
+   *
+   * @param target - Name of the requested representation.
+   * @param args - Rewritten operands in their original order.
+   * @returns The replacement expression when this hook supplies one.
+   */
   override rewriteSelf(target: string, args: readonly Expr[]): Expr | undefined {
     const [X, n, c, condition] = [at(args, 0), at(args, 1), at(args, 2), args[3]];
     if (target === 'Expectation') return makeExpectation(pow(sub(X, c), n), condition);
@@ -413,7 +690,23 @@ export class MomentNode extends StatsNode {
   }
 }
 
-/** SymPy Moment(X, n, c=0, condition=None). */
+/**
+ * The unevaluated n-th moment of X about c.
+ *
+ * @param X - Random expression.
+ * @param n - Order of the moment.
+ * @param c - Center about which to take the moment.
+ * @param condition - Condition on the random variables.
+ * @returns The resulting statistical expression.
+ * @see SymPy `sympy.stats.symbolic_probability.Moment`
+ * @example
+ * ```ts
+ * import { Moment, Normal, ex } from '@symjs/symjs';
+ *
+ * const X = Normal('X', 0, 1);
+ * Moment(X, ex`3`, ex`1`); // => Moment(X, 3, 1)
+ * ```
+ */
 export const Moment = /* @__PURE__ */ callableClass(
   MomentNode,
   (X: ExprLike, n: ExprLike, c: ExprLike = 0, condition?: ExprLike): MomentNode =>
@@ -421,18 +714,53 @@ export const Moment = /* @__PURE__ */ callableClass(
 );
 export type Moment = MomentNode;
 
-/** SymPy CentralMoment(X, n, condition=None): the unevaluated n-th moment of X about its mean. */
+/**
+ * The unevaluated n-th moment of X about its mean.
+ *
+ * @see SymPy `sympy.stats.symbolic_probability.CentralMoment`
+ * @example
+ * ```ts
+ * import { CentralMomentNode, Normal, ex } from '@symjs/symjs';
+ *
+ * const X = Normal('X', 0, 1);
+ * new CentralMomentNode([X, ex`4`]); // => CentralMoment(X, 4)
+ * ```
+ */
 export class CentralMomentNode extends StatsNode {
+  /**
+   * Constructs a new `CentralMomentNode`.
+   *
+   * @param args - Operands in the order `X`, `n`, `condition`.
+   */
   constructor(args: readonly Expr[]) {
     super('CentralMoment', args);
   }
+  /**
+   * Rebuilds this expression with the supplied operands.
+   *
+   * @param args - Replacement operands in the original order.
+   * @returns The rebuilt expression.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new CentralMomentNode(args);
   }
-  /** The central moment (SymPy CentralMoment.doit). */
+  /**
+   * The central moment.
+   *
+   * @param hints - Evaluation controls, including whether to evaluate nested expressions.
+   * @returns The central moment.
+   * @see SymPy `sympy.stats.symbolic_probability.CentralMoment.doit`
+   */
   doit(hints: ProbabilityDoitHints = {}): Expr {
     return doitExpectation(rewrite(this, 'Expectation'), hints);
   }
+  /**
+   * Rewrites the statistical expression in the requested representation when supported.
+   *
+   * @param target - Name of the requested representation.
+   * @param args - Rewritten operands in their original order.
+   * @returns The replacement expression when this hook supplies one.
+   */
   override rewriteSelf(target: string, args: readonly Expr[]): Expr | undefined {
     const [X, n, condition] = [at(args, 0), at(args, 1), args[2]];
     if (target === 'Expectation') {
@@ -444,7 +772,22 @@ export class CentralMomentNode extends StatsNode {
   }
 }
 
-/** SymPy CentralMoment(X, n, condition=None). */
+/**
+ * The unevaluated n-th moment of X about its mean.
+ *
+ * @param X - Random expression.
+ * @param n - Order of the moment.
+ * @param condition - Condition on the random variables.
+ * @returns The resulting statistical expression.
+ * @see SymPy `sympy.stats.symbolic_probability.CentralMoment`
+ * @example
+ * ```ts
+ * import { CentralMoment, Normal, ex } from '@symjs/symjs';
+ *
+ * const X = Normal('X', 0, 1);
+ * CentralMoment(X, ex`4`); // => CentralMoment(X, 4)
+ * ```
+ */
 export const CentralMoment = /* @__PURE__ */ callableClass(
   CentralMomentNode,
   (X: ExprLike, n: ExprLike, condition?: ExprLike): CentralMomentNode =>
