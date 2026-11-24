@@ -9,7 +9,7 @@ import { abs } from '../functions/elementary/elementary';
 import { float } from './floatctor';
 
 /**
- * strict comparison using an absolute tolerance.
+ * Tests whether the absolute difference between the operands is strictly less than `epsilon`.
  *
  * @param a - The first operand.
  * @param b - The second operand.

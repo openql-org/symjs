@@ -3450,8 +3450,8 @@ function compareGaussianCoefficients(a: readonly Expr[], b: readonly Expr[]): nu
 }
 
 /**
- * factorListExpr with integer multiplicities, for callers that factor
- * polynomials: a factor with another exponent is kept as the power.
+ * Returns the coefficient and factors with integer multiplicities, keeping a power with a
+ * noninteger exponent as a single factor of multiplicity one.
  */
 export function factorListInt(e: Expr, gens?: readonly Expr[]): [Expr, [Expr, number][]] {
   const [c, fs] = factorListExpr(e, gens);

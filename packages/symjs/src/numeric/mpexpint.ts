@@ -153,7 +153,7 @@ export function ce1(z: Mpc, prec: number): Mpc {
   return complexEi(z, prec, true);
 }
 
-/** li(z) = Ei(log z). */
+/** Computes the logarithmic integral of `z` as `Ei(log(z))`. */
 export function cli(z: Mpc, prec: number): Mpc {
   return cei(clog(z, prec + 20), prec);
 }
@@ -220,7 +220,10 @@ function asymptoticExpint(n: number, x: Mpf, wp: number): boolean {
   return siz < -wp - 10;
 }
 
-/** expint(nu, z) = E_nu(z) (mpmath expint): z**(nu - 1) Gamma(1 - nu, z) for a non-integer order. */
+/**
+ * Computes the generalized exponential integral `E_nu(z)`. For noninteger order it uses the
+ * upper incomplete gamma function, `z**(nu - 1) * Gamma(1 - nu, z)`.
+ */
 export function cexpint(nu: Mpc, z: Mpc, prec: number): Mpc {
   if (F.isZero(z[0]) && F.isZero(z[1])) {
     // the integral from 1 to infinity of t**-nu

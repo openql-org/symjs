@@ -195,7 +195,11 @@ class CRootOfNode extends ExtensionExpr {
   get isRealRoot(): boolean {
     return this.index < this.realCount;
   }
-  /** SymPy CRootOf.is_real: the real roots come first. */
+  /**
+   * Tests whether the root index lies among the real roots, which precede all nonreal roots.
+   *
+   * @see SymPy `sympy.polys.rootoftools.ComplexRootOf.is_real`
+   */
   override isRealSelf(): boolean {
     return this.isRealRoot;
   }

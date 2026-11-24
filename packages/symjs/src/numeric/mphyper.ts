@@ -25,7 +25,7 @@ import { bernoulli, cgamma, cloggamma, cpolygamma } from './mpspecial';
 import { chyp2f1 } from './mporthopoly';
 import { quad } from './mpquad';
 
-/** mpmath NoConvergence: a series that converges too slowly (or an asymptotic one that diverges). */
+/** Signals that a series converges too slowly or that an asymptotic series diverges. */
 export class NoConvergence extends RangeError {
   constructor(message = 'Hypergeometric series converges too slowly. Try increasing maxterms.') {
     super(message);
@@ -33,7 +33,7 @@ export class NoConvergence extends RangeError {
   }
 }
 
-/** mpmath's ZeroDivisionError of a series with a pole (a nonpositive integer lower parameter). */
+/** Signals a pole in a hypergeometric series caused by a nonpositive integer lower parameter. */
 export class HyperPoleError extends RangeError {
   constructor() {
     super('pole in hypergeometric series');
@@ -41,7 +41,10 @@ export class HyperPoleError extends RangeError {
   }
 }
 
-/** mpmath's infinite value of q+1Fq at z = 1 where the series diverges; sign is the sign of the series below 1. */
+/**
+ * Signals divergence of a generalized hypergeometric function at `z = 1` and carries the sign of
+ * the series as `z` approaches 1 from below.
+ */
 export class HyperInfinity extends RangeError {
   constructor(readonly value: Mpc) {
     super('hypergeometric series diverges at 1');
@@ -84,8 +87,8 @@ const defaultMaxprec = (p: number): number => Math.floor(1000 * p ** 0.25 + 4 * 
 const sumC = (xs: readonly Mpc[], wp: number): Mpc => xs.reduce((s, x) => cadd(s, x, wp), C0);
 
 /**
- * mpmath nint_distance: the nearest integer n to the real part and the binary logarithm d of the
- * distance to it (and of the imaginary part); -Infinity for an integer.
+ * Returns the integer `n` nearest the real part of `z` and the larger of the binary magnitudes
+ * of the components of `z - n`. The magnitude is `-Infinity` for an exact integer.
  */
 export function nintDistance(z: Mpc): [n: bigint, d: number] {
   const im = F.isZero(z[1]) ? -Infinity : F.mag(z[1]);
@@ -190,7 +193,10 @@ function summator(as: readonly Mpc[], bs: readonly Mpc[], z: Mpc, prec: number, 
   return [v, isZeroC(v) ? -wp + 1 : cmag(v)];
 }
 
-/** mpmath hypsum: the series of pFq at z to prec bits, with the working precision raised until the cancellation is covered. */
+/**
+ * Sums the generalized hypergeometric series at `z` to `prec` bits, increasing the working
+ * precision to compensate for cancellation.
+ */
 export function hypsum(as: readonly Mpc[], bs: readonly Mpc[], z: Mpc, prec: number, opts: HyperOptions = {}): Mpc {
   const maxprec = opts.maxprec ?? defaultMaxprec(prec);
   let extraprec = 50;
@@ -281,9 +287,9 @@ function checkNeedPerturb(terms: readonly HyperTerm[]): { perturb: boolean; reco
 }
 
 /**
- * mpmath hypercomb: the sum of the terms fn(params, wp), with the parameters perturbed by a
- * small h at poles of the gamma factors (the limit is reached when two perturbations agree)
- * and the working precision raised for cancellation between the terms.
+ * Sums the hypergeometric terms supplied by `fn`, increasing precision to compensate for
+ * cancellation and estimating limits at gamma poles by comparing successive parameter
+ * perturbations.
  */
 export function hypercomb(fn: (params: Mpc[], wp: number) => HyperTerm[], params: readonly Mpc[], prec: number, opts: HyperOptions = {}): Mpc {
   const maxprec = opts.maxprec ?? defaultMaxprec(prec);
@@ -368,8 +374,8 @@ function attempt(f: () => Mpc): Mpc | undefined {
 }
 
 /**
- * mpmath hyper: pFq(as; bs; z) to prec bits. Parameters common to as and bs cancel (unless they
- * are nonpositive integers), and the special cases use their own methods.
+ * Evaluates the generalized hypergeometric function at `z` to `prec` bits. Matching upper and
+ * lower parameters cancel unless they are nonpositive integers.
  */
 export function hyper(asIn: readonly Mpc[], bsIn: readonly Mpc[], z: Mpc, prec: number, opts: HyperOptions = {}): Mpc {
   const as = [...asIn];
@@ -767,8 +773,8 @@ function csign(z: Mpc, wp: number): Mpc {
 }
 
 /**
- * mpmath richardson: Richardson extrapolation of the partial sums seq (of every other one when the
- * last differences change sign); [the estimate, the largest weight].
+ * Extrapolates partial sums by Richardson's method and returns the estimate and largest absolute
+ * weight. It uses every other sum when the last two differences change sign.
  */
 export function richardson(seqIn: readonly Mpc[], wp: number): [Mpc, Mpf] {
   const d = (i: number): Mpc => csub(at(seqIn, seqIn.length - i), at(seqIn, seqIn.length - i - 1), wp);
@@ -790,8 +796,8 @@ export function richardson(seqIn: readonly Mpc[], wp: number): [Mpc, Mpf] {
 }
 
 /**
- * mpmath shanks(seq, table, randomized=True): the epsilon table of the partial sums, extended from
- * the rows already in table; a zero difference is replaced by a small random multiple of eps.
+ * Extends the supplied epsilon table in place with Shanks transforms of the partial sums,
+ * replacing zero differences with small pseudorandom multiples of the working epsilon.
  */
 export function shanks(seq: readonly Mpc[], table: Mpc[][], wp: number): Mpc[][] {
   const start = table.length;
@@ -821,10 +827,9 @@ export function shanks(seq: readonly Mpc[], table: Mpc[][], wp: number): Mpc[][]
 }
 
 /**
- * mpmath nsum(term, [0, inf], method='r+s', strict=True): the partial sums extended in steps of
- * 10, 20, 30, ... terms and extrapolated by Richardson's and Shanks' methods, at 4 (prec + 10)
- * bits, until an estimate changes by less than eps/2**10; NoConvergence after maxterms terms
- * (mpmath's default 10 dps).
+ * Sums `term(k, wp)` from zero to infinity using partial sums and Richardson and Shanks
+ * extrapolation. It adds batches of 10, 20, 30, … terms at `4 * (prec + 10)` bits and throws
+ * `NoConvergence` if the term budget is exhausted before an estimate converges.
  */
 export function nsum(term: (k: number, wp: number) => Mpc, prec: number, maxterms = F.precToDps(prec) * 10): Mpc {
   const tol = F.ldexp(ONE, -9 - prec);
@@ -964,10 +969,10 @@ function hypq1fq(as: readonly Mpc[], bs: readonly Mpc[], z: Mpc, prec: number, o
 }
 
 /**
- * mpmath _hypq1fq's last resort: integrate the gamma-ratio tail and add
- * Euler–Maclaurin corrections. Logarithmic derivatives are polygammas;
- * exponential Bell polynomials recover the derivatives of the term itself.
- * maxTruncations bounds work when the error estimate does not converge.
+ * Sums a hypergeometric series by integrating its gamma-ratio tail and adding Euler–Maclaurin
+ * corrections. Polygamma functions and exponential Bell polynomials give the tail derivatives.
+ * The number of truncation points tried is bounded by `maxTruncations`.
+ *
  * @internal
  */
 export function hyperEulerMaclaurin(as: readonly Mpc[], bs: readonly Mpc[], z: Mpc, prec: number, maxTruncations = 5, initialTruncation = Math.max(32, 2 * prec)): Mpc {

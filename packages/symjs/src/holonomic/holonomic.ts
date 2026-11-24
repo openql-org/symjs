@@ -538,7 +538,11 @@ function derivateDiffEq(listofpoly: readonly DMF[]): DMF[] {
   return sol;
 }
 
-/** p(x0)/q(x0) for a fraction p/q (SymPy DMFsubs). */
+/**
+ * Evaluates a polynomial fraction `p/q` at `x0` as `p(x0)/q(x0)`.
+ *
+ * @see SymPy `sympy.holonomic.holonomic.DMFsubs`
+ */
 export function DMFsubs(frac: DMF, x0In: ExprLike): Expr {
   const x0 = sympify(x0In);
   const dom = frac.field.dom;
@@ -642,7 +646,13 @@ function hyperToMeijerg(func: Hyper): Expr {
   );
 }
 
-/** SymPy solve(eqs, *unknowns) for the linear systems of to_sequence: the solved unknowns, or undefined for SymPy's list result. @internal */
+/**
+ * Solves the linear equations for a holonomic recurrence and maps each determined unknown to its
+ * value.
+ *
+ * @internal
+ * @see SymPy `sympy.solvers.solvers.solve`
+ */
 export function solveLinear(eqs: readonly Expr[], unknowns: readonly Sym[]): ExprMap<Expr> | undefined {
   const nonzero = eqs.filter((e) => !zeroE(e));
   if (!nonzero.length || !unknowns.length) return undefined;
@@ -1961,7 +1971,7 @@ export interface ExprToHolonomicOptions {
   lenics?: number;
   /** The ground domain of the coefficients (QQ, RR for Floats, with the other symbols as a fraction field). */
   domain?: Domain;
-  /** false: no initial conditions. */
+  /** Whether to compute initial conditions when none are supplied. Defaults to `true`. */
   initcond?: boolean;
 }
 

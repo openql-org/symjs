@@ -127,9 +127,10 @@ export interface DomainElement {
 export const isDomainElement = (x: unknown): x is DomainElement => typeof x === 'object' && x !== null && !(x instanceof Expr) && typeof (x as { mul?: unknown }).mul === 'function';
 
 /**
- * a op b for elements of K of any representation (SymPy's operators on
- * domain elements): integers as bigints, element objects by their methods,
- * expressions by K's canonical arithmetic. @internal
+ * Adds, subtracts, multiplies or divides two elements of `K` using the domain's bigint, element
+ * object or expression representation.
+ *
+ * @internal
  */
 export function domainArith(K: Domain, op: 'add' | 'sub' | 'mul' | 'quo', aIn: unknown, bIn: unknown): unknown {
   const [a, b] = [K.convert(aIn), K.convert(bIn)];

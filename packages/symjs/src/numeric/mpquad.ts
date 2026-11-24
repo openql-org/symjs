@@ -123,7 +123,7 @@ function log10abs(z: Mpc): number {
   return (m + Math.log2(Math.hypot(F.toNumber(F.ldexp(z[0], -m)), F.toNumber(F.ldexp(z[1], -m))))) * Math.LOG10E * Math.LN2;
 }
 
-/** mpmath QuadratureRule.estimate_error of the last results (prec bits, computed at wp). */
+/** Estimates the absolute quadrature error from the two or three most recent approximations. */
 export function estimateError(results: readonly Mpc[], prec: number, wp: number): Mpf {
   const n = results.length;
   const r = (i: number): Mpc => at(results, n - i);
@@ -137,11 +137,10 @@ export function estimateError(results: readonly Mpc[], prec: number, wp: number)
 }
 
 /**
- * mpmath quad(f, points, error=True) with the tanh-sinh rule: the sum of the integrals over the
- * segments of the path (straight lines between the complex points, then from the last one to +oo
- * in the real direction when toInfinity is set), each by degrees 1, 2, ... up to mpmath's
- * guess_degree until the error estimate is below eps/8; [the value to prec bits, the total error estimate]. f(x, wp) is f at
- * x with wp bits.
+ * Integrates along the straight segments between complex points by tanh-sinh quadrature and
+ * returns the value rounded to `prec` bits with the sum of the segment error estimates. When
+ * `toInfinity` is set, the path continues from its last point in the positive real direction to
+ * infinity. The integrand receives each quadrature point and the working precision in bits.
  */
 export function quad(f: (x: Mpc, wp: number) => Mpc, points: readonly Mpc[], toInfinity: boolean, prec: number): [Mpc, Mpf] {
   const path: (Mpc | 'inf')[] = toInfinity ? [...points, 'inf'] : [...points];

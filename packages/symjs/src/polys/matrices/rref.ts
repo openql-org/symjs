@@ -24,7 +24,10 @@ import { SDM, sdmIrref, sdmRrefDen } from './sdm';
 export type RrefMethod = 'auto' | 'GJ' | 'FF' | 'CD' | 'GJ_dense' | 'FF_dense' | 'CD_dense';
 type Fmt = 'dense' | 'sparse';
 
-/** SymPy _dm_rref: [rref over the field, pivots]. */
+/**
+ * Computes the reduced row echelon form over the coefficient field or fraction field and returns
+ * it with the pivot column indices.
+ */
 export function dmRref(Min: DomainMatrix, opts: { method?: RrefMethod } = {}): [DomainMatrix, number[]] {
   const [method, useFmt] = dmRrefChooseMethod(Min, opts.method ?? 'auto', false);
   const [M, oldFmt] = dmToFmt(Min, useFmt);
@@ -42,7 +45,10 @@ export function dmRref(Min: DomainMatrix, opts: { method?: RrefMethod } = {}): [
   return [dmToFmt(rref, oldFmt)[0], pivots];
 }
 
-/** SymPy _dm_rref_den: [fraction-free rref, denominator, pivots]. */
+/**
+ * Returns the numerator matrix and common denominator of the reduced row echelon form, followed
+ * by the pivot column indices.
+ */
 export function dmRrefDen(Min: DomainMatrix, opts: { method?: RrefMethod; keepDomain?: boolean } = {}): [DomainMatrix, Expr, number[]] {
   const keepDomain = opts.keepDomain ?? true;
   const [method, useFmt] = dmRrefChooseMethod(Min, opts.method ?? 'auto', true);
@@ -96,7 +102,10 @@ function dmRrefDenFF(M: DomainMatrix): [DomainMatrix, Expr, number[]] {
   return [M.fromRep(new DDM(ddm.data, M.shape, M.domain)), den, pivots];
 }
 
-/** SymPy _dm_rref_choose_method: [method, format]. */
+/**
+ * Selects the row reduction method and the dense or sparse matrix format for computing the
+ * reduced row echelon form.
+ */
 export function dmRrefChooseMethod(M: DomainMatrix, methodIn: RrefMethod, denominator: boolean): [string, Fmt] {
   if (methodIn !== 'auto') {
     const dense = methodIn.endsWith('_dense');

@@ -23,7 +23,7 @@ export function basicRoot(n: number, i: number, j: number): Root {
   return root;
 }
 
-/** n copies of a coordinate. */
+/** Creates a root with `n` coordinates, each equal to `v`. */
 export const filled = (n: number, v: RootCoordinate): Root => Array<RootCoordinate>(n).fill(v);
 
 /** The n x n matrix 2*I with the given off-diagonal entries. */
@@ -34,7 +34,7 @@ export function cartanFrom(n: number, entries: readonly (readonly [number, numbe
 
 /** The labels 1, ..., n of a Dynkin diagram, separated by three spaces. */
 export const labels = (from: number, to: number): string => Array.from({ length: to - from + 1 }, (_x, i) => String(from + i)).join('   ');
-/** n nodes joined by single bonds. */
+/** Draws a chain of `n` Dynkin diagram nodes joined by single bonds. */
 export const chain = (n: number): string => Array<string>(n).fill('0').join('---');
 
 /**
