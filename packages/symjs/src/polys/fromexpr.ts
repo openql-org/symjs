@@ -22,12 +22,12 @@ export interface PolyOptions {
 }
 
 /**
- * [Poly, { gens, domain }].
+ * Converts an expression to a polynomial and determines its generators and coefficient domain.
  *
  * @param expr - Expression to convert.
  * @param gens - Polynomial generators in the desired order.
  * @param opts - Controls `domain` (the coefficient domain).
- * @returns [Poly, { gens, domain }].
+ * @returns The polynomial and resolved options.
  * @see SymPy `sympy.polys.polytools.poly_from_expr`
  */
 export function polyFromExpr(expr: ExprLike, gens: readonly Expr[] = [], opts: { domain?: string } = {}): [Poly, PolyOptions] {
@@ -36,13 +36,12 @@ export function polyFromExpr(expr: ExprLike, gens: readonly Expr[] = [], opts: {
 }
 
 /**
- * Polynomials over common
- * generators and a common domain.
+ * Converts several expressions using shared generators and a single coefficient domain.
  *
  * @param exprs - Expressions to convert, with a common generator order.
  * @param gens - Polynomial generators in the desired order.
  * @param opts - Controls `domain` (the coefficient domain).
- * @returns Polynomials over common generators and a common domain.
+ * @returns The polynomial list and resolved options.
  * @throws PolificationFailed when the input cannot be converted to polynomial form.
  * @see SymPy `sympy.polys.polytools.parallel_poly_from_expr`
  */

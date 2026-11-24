@@ -35,7 +35,7 @@ import { cgamma, funcExpanders } from './special';
 type BName = 'besselj' | 'bessely' | 'besseli' | 'besselk';
 type HName = 'hankel1' | 'hankel2';
 /**
- * Order of a Bessel function (SymPy BesselBase.order).
+ * Extracts the order parameter from the Bessel function.
  *
  * @param e - The Bessel function application.
  * @returns The order of the Bessel function.
@@ -47,7 +47,7 @@ export function order(e: Expr): Expr {
   return at(e.args, 0);
 }
 /**
- * Argument of a Bessel function (SymPy BesselBase.argument).
+ * Extracts the argument at which the Bessel function is evaluated.
  *
  * @param e - The Bessel function application.
  * @returns The argument of the Bessel function.
@@ -537,7 +537,7 @@ for (const name of ['airyai', 'airybi', 'airyaiprime', 'airybiprime'] as const) 
  *
  * @param nu - The order of the function.
  * @param z - The argument of the function.
- * @returns The Bessel function of the first kind.
+ * @returns The Bessel J expression.
  * @see SymPy `sympy.functions.special.bessel.besselj`
  * @example
  * ```ts
@@ -552,7 +552,7 @@ export const besselj = (nu: ExprLike, z: ExprLike): Expr => fn('besselj', [nu, z
  *
  * @param nu - The order of the function.
  * @param z - The argument of the function.
- * @returns The Bessel function of the second kind.
+ * @returns The Bessel Y expression.
  * @see SymPy `sympy.functions.special.bessel.bessely`
  * @example
  * ```ts
@@ -567,7 +567,7 @@ export const bessely = (nu: ExprLike, z: ExprLike): Expr => fn('bessely', [nu, z
  *
  * @param nu - The order of the function.
  * @param z - The argument of the function.
- * @returns The modified Bessel function of the first kind.
+ * @returns The modified Bessel I expression.
  * @see SymPy `sympy.functions.special.bessel.besseli`
  * @example
  * ```ts
@@ -582,7 +582,7 @@ export const besseli = (nu: ExprLike, z: ExprLike): Expr => fn('besseli', [nu, z
  *
  * @param nu - The order of the function.
  * @param z - The argument of the function.
- * @returns The modified Bessel function of the second kind.
+ * @returns The modified Bessel K expression.
  * @see SymPy `sympy.functions.special.bessel.besselk`
  * @example
  * ```ts
@@ -596,7 +596,7 @@ export const besselk = (nu: ExprLike, z: ExprLike): Expr => fn('besselk', [nu, z
  * Computes the Airy Ai function.
  *
  * @param z - The argument of the function.
- * @returns The Airy Ai function.
+ * @returns The Ai expression.
  * @see SymPy `sympy.functions.special.bessel.airyai`
  * @example
  * ```ts
@@ -611,7 +611,7 @@ export const airyai = (z: ExprLike): Expr => fn('airyai', [z]);
  * Computes the Airy Bi function.
  *
  * @param z - The argument of the function.
- * @returns The Airy Bi function.
+ * @returns The Bi expression.
  * @see SymPy `sympy.functions.special.bessel.airybi`
  * @example
  * ```ts
@@ -626,7 +626,7 @@ export const airybi = (z: ExprLike): Expr => fn('airybi', [z]);
  * Computes the first derivative of the Airy Ai function.
  *
  * @param z - The argument of the function.
- * @returns The first derivative of the Airy Ai function.
+ * @returns The Ai derivative.
  * @see SymPy `sympy.functions.special.bessel.airyaiprime`
  * @example
  * ```ts
@@ -641,7 +641,7 @@ export const airyaiprime = (z: ExprLike): Expr => fn('airyaiprime', [z]);
  * Computes the first derivative of the Airy Bi function.
  *
  * @param z - The argument of the function.
- * @returns The first derivative of the Airy Bi function.
+ * @returns The Bi derivative.
  * @see SymPy `sympy.functions.special.bessel.airybiprime`
  * @example
  * ```ts
@@ -653,7 +653,7 @@ export const airyaiprime = (z: ExprLike): Expr => fn('airyaiprime', [z]);
  */
 export const airybiprime = (z: ExprLike): Expr => fn('airybiprime', [z]);
 /**
- * Hankel function of the first kind.
+ * Evaluates the Hankel function of the first kind.
  *
  * @param nu - The order of the function.
  * @param z - The argument of the function.
@@ -668,7 +668,7 @@ export const airybiprime = (z: ExprLike): Expr => fn('airybiprime', [z]);
  */
 export const hankel1 = (nu: ExprLike, z: ExprLike): Expr => fn('hankel1', [nu, z]);
 /**
- * Hankel function of the second kind.
+ * Evaluates the Hankel function of the second kind.
  *
  * @param nu - The order of the function.
  * @param z - The argument of the function.
@@ -683,12 +683,12 @@ export const hankel1 = (nu: ExprLike, z: ExprLike): Expr => fn('hankel1', [nu, z
  */
 export const hankel2 = (nu: ExprLike, z: ExprLike): Expr => fn('hankel2', [nu, z]);
 /**
- * The generalized Marcum Q-function.
+ * Evaluates the generalized Marcum Q-function.
  *
  * @param m - The order.
  * @param a - The first operand.
  * @param b - The second operand.
- * @returns The generalized Marcum Q-function.
+ * @returns The Marcum Q expression.
  * @see SymPy `sympy.functions.special.bessel.marcumq`
  * @example
  * ```ts

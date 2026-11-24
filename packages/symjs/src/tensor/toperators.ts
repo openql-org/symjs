@@ -55,9 +55,9 @@ export class PartialDerivativeNode extends TensExpr {
     this.freeIndices = [...contracted.free].sort((a, b) => a[1] - b[1]).map(([i]) => i);
   }
   /**
-   * The underlying expression on which this operation acts.
+   * Identifies the operand of this tensor operation.
    *
-   * @returns The underlying expression on which this operation acts.
+   * @returns The underlying expression.
    * @see SymPy `sympy.tensor.toperators.PartialDerivative.expr`
    */
   get expr(): Expr { return first(this.args); }
@@ -69,7 +69,7 @@ export class PartialDerivativeNode extends TensExpr {
    */
   get variables(): readonly Expr[] { return this.args.slice(1); }
   /**
-   * \\frac{\\partial^{n}}{\\partial {A{}_{j}} ...}{expr}, the expression in parentheses below a
+   * Formats the tensor partial derivative as a LaTeX fraction, parenthesizing it when needed inside a
    * product.
    *
    * @param print - Formatter for a child expression.
@@ -82,16 +82,16 @@ export class PartialDerivativeNode extends TensExpr {
     return `\\frac{\\partial^{${vars.length}}}{${vars.map((v) => `\\partial {${print(v)}}`).join(' ')}}{${body}}`;
   }
   /**
-   * The scalar coefficient of the tensor expression.
+   * Extracts the numerical or symbolic scalar factor of the tensor expression.
    *
-   * @returns The scalar coefficient of the tensor expression.
+   * @returns The scalar coefficient.
    * @see SymPy `sympy.tensor.toperators.PartialDerivative.coeff`
    */
   get coEff(): Expr { return S.One; }
   /**
-   * The tensor expression with its scalar coefficient removed.
+   * Factors out the scalar multiplier of the tensor expression.
    *
-   * @returns The tensor expression with its scalar coefficient removed.
+   * @returns The coefficient-free tensor expression.
    * @see SymPy `sympy.tensor.toperators.PartialDerivative.nocoeff`
    */
   get nocoeff(): Expr { return this; }
@@ -123,7 +123,7 @@ export class PartialDerivativeNode extends TensExpr {
    */
   doitShallow(): PartialDerivativeNode { return this.withArgs(this.args); }
   /**
-   * The derivative rebuilt with its indices contracted (the derivative itself is not performed).
+   * Rebuilds the derivative with contracted indices without differentiating the operand.
    *
    * @returns The evaluated expression when the operation can be performed.
    * @see SymPy `sympy.tensor.toperators.PartialDerivative.doit`
@@ -200,7 +200,7 @@ export class PartialDerivativeNode extends TensExpr {
 }
 
 /**
- * Partial derivative for tensor expressions.
+ * Constructs a partial derivative for a tensor expression.
  *
  * @param expr - Symbolic expression on which to operate.
  * @param variables - Tensor or scalar variables of differentiation.

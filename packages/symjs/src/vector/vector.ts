@@ -66,16 +66,16 @@ export interface ProjectionOptions {
  */
 export abstract class Vector extends BasisDependent {
   /**
-   * The operations shared by elements of this basis family.
+   * Identifies the operations common to this family of basis-dependent expressions.
    *
-   * @returns The operations shared by elements of this basis family.
+   * @returns The family descriptor.
    */
   override get family(): BasisFamily {
     return VECTOR;
   }
 
   /**
-   * The zero vector.
+   * Provides the additive identity for vectors.
    *
    * @returns The zero vector.
    * @see SymPy `sympy.vector.vector.Vector.zero`
@@ -85,9 +85,9 @@ export abstract class Vector extends BasisDependent {
   }
 
   /**
-   * Whether this expression is a vector.
+   * Indicates whether the expression represents a vector.
    *
-   * @returns Whether this expression is a vector.
+   * @returns The vector flag.
    * @see SymPy `sympy.vector.vector.Vector.is_Vector`
    */
   get isVector(): boolean {
@@ -95,7 +95,7 @@ export abstract class Vector extends BasisDependent {
   }
 
   /**
-   * VectorKind(NumberKind).
+   * Identifies the expression as a vector with numeric components.
    *
    * @returns The kind of this expression.
    * @see SymPy `sympy.vector.vector.Vector.kind`
@@ -105,9 +105,9 @@ export abstract class Vector extends BasisDependent {
   }
 
   /**
-   * The length sqrt(v & v).
+   * Computes the square root of the vector's inner product with itself.
    *
-   * @returns The length sqrt(v & v).
+   * @returns The vector magnitude.
    * @see SymPy `sympy.vector.vector.Vector.magnitude`
    */
   magnitude(): Expr {
@@ -115,9 +115,9 @@ export abstract class Vector extends BasisDependent {
   }
 
   /**
-   * The vector divided by its magnitude.
+   * Scales the vector by the reciprocal of its magnitude.
    *
-   * @returns The vector divided by its magnitude.
+   * @returns The unit vector.
    * @see SymPy `sympy.vector.vector.Vector.normalize`
    */
   normalize(): Expr {
@@ -125,8 +125,7 @@ export abstract class Vector extends BasisDependent {
   }
 
   /**
-   * The vectors are equal for all values of the symbols (also across coordinate systems). An
-   * undecided comparison is false.
+   * Tests vector equality across coordinate systems, giving false for an undecidable comparison.
    *
    * @param other - Object to compare with this one.
    * @returns Whether the operands are equal.
@@ -138,8 +137,7 @@ export abstract class Vector extends BasisDependent {
   }
 
   /**
-   * The dot product with a vector (a scalar) or a dyadic (a vector). With a Del operator it is the
-   * directional derivative operator, a function of a scalar field.
+   * Computes the inner product or, with a del operand, constructs the directional derivative operator.
    *
    * @param other - Other operand of the inner product.
    * @returns The inner product, or a directional derivative operator when `other` is `Del`.
@@ -161,10 +159,10 @@ export abstract class Vector extends BasisDependent {
   }
 
   /**
-   * The cross product with a vector (a vector) or a dyadic (a dyadic).
+   * Takes the cross product with a vector or a dyadic.
    *
    * @param other - Other operand of the cross product.
-   * @returns The cross product with a vector (a vector) or a dyadic (a dyadic).
+   * @returns A vector or dyadic matching the operand.
    * @see SymPy `sympy.vector.vector.Vector.cross`
    */
   cross(other: Expr): Expr {
@@ -178,10 +176,10 @@ export abstract class Vector extends BasisDependent {
   }
 
   /**
-   * The outer product, a dyadic.
+   * Forms the outer product of the two vectors.
    *
    * @param other - Right operand of the outer product.
-   * @returns The outer product, a dyadic.
+   * @returns The resulting dyadic.
    * @see SymPy `sympy.vector.vector.Vector.outer`
    */
   outer(other: Expr): Expr {
@@ -189,11 +187,11 @@ export abstract class Vector extends BasisDependent {
   }
 
   /**
-   * The vector (or with `scalar`, scalar) projection of other on this vector.
+   * Projects the other vector onto this one, optionally taking the scalar component.
    *
    * @param other - Operand to project.
    * @param opts - Settings described by {@link ProjectionOptions}.
-   * @returns The vector (or with `scalar`, scalar) projection of other on this vector.
+   * @returns The vector or scalar projection.
    * @see SymPy `sympy.vector.vector.Vector.projection`
    */
   projection(other: Expr, opts: ProjectionOptions = {}): Expr {
@@ -203,10 +201,10 @@ export abstract class Vector extends BasisDependent {
   }
 
   /**
-   * The column of the components along the base vectors of system.
+   * Resolves the vector along the specified system's basis vectors.
    *
    * @param system - Coordinate system in which to express components.
-   * @returns The column of the components along the base vectors of system.
+   * @returns The column matrix of components.
    * @see SymPy `sympy.vector.vector.Vector.to_matrix`
    */
   toMatrix(system: CoordSysBase): Matrix {
@@ -214,9 +212,9 @@ export abstract class Vector extends BasisDependent {
   }
 
   /**
-   * The constituents of the vector in each coordinate system.
+   * Groups the vector's components by their coordinate system.
    *
-   * @returns The constituents of the vector in each coordinate system.
+   * @returns A map from systems to component vectors.
    * @see SymPy `sympy.vector.vector.Vector.separate`
    */
   separate(): ExprMap<Expr> {
@@ -327,7 +325,7 @@ export class BaseVectorNode extends Vector implements ScaledBase {
     this.latexForm = latexStr ?? `x_${index}`;
   }
   /**
-   * The base vector as an attribute of its system.
+   * Formats the basis vector as an attribute of its system.
    *
    * @param repr - Formatter for expression arguments.
    * @returns The constructor representation.
@@ -344,15 +342,15 @@ export class BaseVectorNode extends Vector implements ScaledBase {
     return this;
   }
   /**
-   * The label used by the pretty printer.
+   * Supplies the label used in pretty-printed expressions.
    *
-   * @returns The label used by the pretty printer.
+   * @returns The display label.
    */
   override get prettyForm(): string {
     return this.#pretty;
   }
   /**
-   * The scalar coefficients keyed by their basis vectors.
+   * Associates each basis vector with its scalar coefficient.
    *
    * @returns The scalar coefficients keyed by basis element.
    * @see SymPy `sympy.vector.vector.BaseVector.components`
@@ -361,17 +359,17 @@ export class BaseVectorNode extends Vector implements ScaledBase {
     return (this.#components ??= new ExprMap<Expr>([[this, S.One]]));
   }
   /**
-   * The scalar coefficient multiplying the basis element.
+   * Extracts the scalar weight of the basis element.
    *
-   * @returns The scalar coefficient multiplying the basis element.
+   * @returns The measure number.
    */
   get measureNumber(): Expr {
     return S.One;
   }
   /**
-   * The basis element carrying the scalar coefficient.
+   * Identifies the basis element multiplied by the scalar coefficient.
    *
-   * @returns The basis element carrying the scalar coefficient.
+   * @returns The basis factor.
    */
   get baseInstance(): BaseVectorNode {
     return this;
@@ -393,9 +391,9 @@ export class BaseVectorNode extends Vector implements ScaledBase {
     return this.latexForm;
   }
   /**
-   * A base vector is its own conjugate.
+   * Preserves the real basis vector under complex conjugation.
    *
-   * @returns A base vector is its own conjugate.
+   * @returns The basis vector itself.
    * @see SymPy `sympy.vector.vector.BaseVector._eval_conjugate`
    */
   override conjugateSelf(): Expr {
@@ -440,7 +438,7 @@ export class VectorMulNode extends Vector implements ScaledBase {
     return basisMul(VECTOR, args);
   }
   /**
-   * The scalar coefficients keyed by their basis vectors.
+   * Associates each basis vector with its scalar coefficient.
    *
    * @returns The scalar coefficients keyed by basis element.
    * @see SymPy `sympy.vector.vector.VectorMul.components`
@@ -449,9 +447,9 @@ export class VectorMulNode extends Vector implements ScaledBase {
     return new ExprMap<Expr>([[this.baseInstance, this.measureNumber]]);
   }
   /**
-   * The base vector of the product.
+   * Extracts the basis vector from its scalar multiple.
    *
-   * @returns The base vector of the product.
+   * @returns The vector factor.
    * @see SymPy `sympy.vector.vector.VectorMul.base_vector`
    */
   get baseVector(): BaseVectorNode {
@@ -502,7 +500,7 @@ export class VectorAddNode extends Vector {
     return basisAdd(VECTOR, args);
   }
   /**
-   * The scalar coefficients keyed by their basis vectors.
+   * Associates each basis vector with its scalar coefficient.
    *
    * @returns The scalar coefficients keyed by basis element.
    * @see SymPy `sympy.vector.vector.VectorAdd.components`
@@ -511,7 +509,7 @@ export class VectorAddNode extends Vector {
     return this.#components;
   }
   /**
-   * The terms by system (in order of the names), then by base vector.
+   * Orders terms by system name and then by basis vector.
    *
    * @param print - Formatter for a child expression.
    * @returns The formatted expression.
@@ -550,7 +548,7 @@ export class VectorZeroNode extends Vector {
     return ZERO;
   }
   /**
-   * The scalar coefficients keyed by their basis vectors.
+   * Associates each basis vector with its scalar coefficient.
    *
    * @returns The scalar coefficients keyed by basis element.
    * @see SymPy `sympy.vector.vector.VectorZero.components`
@@ -559,9 +557,9 @@ export class VectorZeroNode extends Vector {
     return new ExprMap<Expr>();
   }
   /**
-   * Returns the zero vector.
+   * Preserves the zero vector under normalization.
    *
-   * @returns The zero vector.
+   * @returns The vector zero.
    * @see SymPy `sympy.vector.vector.VectorZero.normalize`
    */
   override normalize(): Expr {
@@ -576,9 +574,9 @@ export class VectorZeroNode extends Vector {
     return '0';
   }
   /**
-   * The label used by the pretty printer.
+   * Supplies the label used in pretty-printed expressions.
    *
-   * @returns The label used by the pretty printer.
+   * @returns The display label.
    * @see SymPy `sympy.vector.vector.VectorZero._pretty_form`
    */
   override get prettyForm(): string {
@@ -699,9 +697,9 @@ export class CrossNode extends Vector {
     return undefined;
   }
   /**
-   * Cross of the operands as they are (not deep).
+   * Keeps the operands of a cross product unevaluated during recursive evaluation.
    *
-   * @returns Cross of the operands as they are (not deep).
+   * @returns `false`.
    */
   override get doitDeep(): boolean {
     return false;
@@ -724,7 +722,7 @@ export class CrossNode extends Vector {
     return `${parenMul(at(this.args, 0), print)} \\times ${parenMul(at(this.args, 1), print)}`;
   }
   /**
-   * Binding strength used to insert parentheses when printing LaTeX.
+   * Supplies the precedence used to decide when LaTeX output needs parentheses.
    *
    * @returns The LaTeX printer’s precedence for this node.
    */
@@ -746,7 +744,7 @@ export const OPERATOR_PRECEDENCE = PREC.MUL - 1;
 const latexPrecedence = (e: Expr): number => declaredPrecedence(e, 'latexPrecedence') ?? precedence(e);
 
 /**
- * An unevaluated cross product with operands in canonical order.
+ * Constructs an unevaluated cross product with operands in canonical order.
  *
  * @param expr1In - First operand of the product.
  * @param expr2In - Second operand of the product.
@@ -803,9 +801,9 @@ export class DotNode extends ExtensionExpr {
     return new DotNode(at(args, 0), at(args, 1));
   }
   /**
-   * Dot of the operands as they are (not deep).
+   * Keeps the operands of a dot product unevaluated during recursive evaluation.
    *
-   * @returns Dot of the operands as they are (not deep).
+   * @returns `false`.
    */
   override get doitDeep(): boolean {
     return false;
@@ -828,7 +826,7 @@ export class DotNode extends ExtensionExpr {
     return `${parenMul(at(this.args, 0), print)} \\cdot ${parenMul(at(this.args, 1), print)}`;
   }
   /**
-   * Binding strength used to insert parentheses when printing LaTeX.
+   * Supplies the precedence used to decide when LaTeX output needs parentheses.
    *
    * @returns The LaTeX printer’s precedence for this node.
    */
@@ -838,7 +836,7 @@ export class DotNode extends ExtensionExpr {
 }
 
 /**
- * An unevaluated dot product with operands in canonical order.
+ * Constructs an unevaluated dot product with operands in canonical order.
  *
  * @param expr1In - First operand of the product.
  * @param expr2In - Second operand of the product.
@@ -960,7 +958,7 @@ export function projections(v: Expr): [Expr, Expr, Expr] {
 }
 
 /**
- * A basis vector of a three-dimensional coordinate system.
+ * Constructs a basis vector of a three-dimensional coordinate system.
  *
  * @param index - Zero-based index or indices selecting the desired component.
  * @param system - Coordinate system in which to express components.
@@ -978,7 +976,7 @@ export const BaseVector = /* @__PURE__ */ callableClass(
 export type BaseVector = BaseVectorNode;
 
 /**
- * The sum of vectors.
+ * Adds the supplied vector terms.
  *
  * @param args - Operands in their defining order.
  * @returns The resulting `VectorAdd` expression.
@@ -988,7 +986,7 @@ export const VectorAdd = /* @__PURE__ */ callableClass(VectorAddNode, (...args: 
 export type VectorAdd = VectorAddNode;
 
 /**
- * The product of scalars and a vector.
+ * Constructs the product of scalars and a vector.
  *
  * @param args - Operands in their defining order.
  * @returns The resulting `VectorMul` expression.
@@ -998,7 +996,7 @@ export const VectorMul = /* @__PURE__ */ callableClass(VectorMulNode, (...args: 
 export type VectorMul = VectorMulNode;
 
 /**
- * The zero vector.
+ * Provides the additive identity for vectors.
  *
  * @returns The resulting `VectorZero` expression.
  * @see SymPy `sympy.vector.vector.VectorZero`

@@ -38,10 +38,10 @@ export class VectorKindNode extends Kind {
     super();
   }
   /**
-   * The cached VectorKind of the given element kind.
+   * Obtains the vector kind associated with a particular element kind.
    *
    * @param elementKind - Kind of the component values.
-   * @returns The cached VectorKind of the given element kind.
+   * @returns The corresponding vector kind.
    */
   static of(elementKind: Kind = NumberKind): VectorKindNode {
     let k = vectorKinds.get(elementKind);
@@ -62,7 +62,7 @@ export class VectorKindNode extends Kind {
 }
 
 /**
- * The kind of vectors (cached, VectorKind(NumberKind) by default).
+ * Constructs the kind of a vector from its component kind, defaulting to numeric components.
  *
  * @param elementKind - Kind of the component values.
  * @returns The cached kind for vectors with components of the specified kind.

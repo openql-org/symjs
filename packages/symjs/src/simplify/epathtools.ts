@@ -184,7 +184,7 @@ export class EPath {
   }
 
   /**
-   * The path string.
+   * Preserves the expression path in its textual form.
    *
    * @returns The path string.
    */
@@ -193,7 +193,7 @@ export class EPath {
   }
 
   /**
-   * `EPath('/*\/[0]')`.
+   * Formats the expression path as an `EPath` constructor call.
    *
    * @returns The formatted string.
    */
@@ -248,10 +248,10 @@ export class EPath {
   }
 
   /**
-   * The parts of expr selected by the path.
+   * Matches the path against an expression tree.
    *
    * @param expr - The input expression.
-   * @returns The parts of expr selected by the path.
+   * @returns The selected subexpressions.
    * @see SymPy `sympy.simplify.epathtools.EPath.select`
    */
   select(expr: unknown): unknown[] {
@@ -282,10 +282,8 @@ export class EPath {
 }
 
 /**
- * Without expr, the
- * compiled {@link EPath}; without func, the parts of expr selected by the
- * path; otherwise expr with func (called with the part and the extra
- * arguments args) applied to each selected part. The path syntax:
+ * Compiles an expression path, selects its matches when given an expression, or applies a function to
+ * those matches.
  *
  * - `/*` selects all arguments (or items of an array);
  * - `/[0]`, `/[1:5]`, `/[1:5:2]` select by index or slice;

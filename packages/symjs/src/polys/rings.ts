@@ -176,7 +176,7 @@ export class PolyRing extends IPolys<PolyElement> {
   }
 
   /**
-   * The printable representation.
+   * Formats this object as text.
    *
    * @returns The formatted text.
    * @see SymPy `sympy.polys.rings.PolyRing.__str__`
@@ -186,7 +186,7 @@ export class PolyRing extends IPolys<PolyElement> {
   }
 
   /**
-   * The rings have the same generators, domain and order.
+   * Checks whether two rings have the same generators, domain, and monomial order.
    *
    * @param other - Operand to combine or compare with this value.
    * @returns Whether the comparison holds.
@@ -197,10 +197,10 @@ export class PolyRing extends IPolys<PolyElement> {
   }
 
   /**
-   * The ring with other generators, domain or order.
+   * Copies the ring with the requested generators, coefficient domain, or ordering.
    *
    * @param opts - Controls `symbols` (replacement generator symbols), `domain` (the coefficient domain), `order` (the monomial order).
-   * @returns The ring with other generators, domain or order.
+   * @returns The resulting ring.
    * @see SymPy `sympy.polys.rings.PolyRing.clone`
    */
   clone(opts: { symbols?: RingSymbols; domain?: DomainLike; order?: OrderLike } = {}): PolyRing {
@@ -208,9 +208,9 @@ export class PolyRing extends IPolys<PolyElement> {
   }
 
   /**
-   * The rational function field with these generators, coefficients and order.
+   * Forms the rational function field with this ring's generators and coefficient domain.
    *
-   * @returns The polynomial over the associated coefficient field.
+   * @returns The associated fraction field.
    * @see SymPy `sympy.polys.rings.PolyRing.to_field`
    */
   toField(): FracField {
@@ -218,10 +218,10 @@ export class PolyRing extends IPolys<PolyElement> {
   }
 
   /**
-   * The exponent vector of the i-th generator.
+   * Constructs the unit exponent vector for the chosen generator.
    *
    * @param i - Zero-based index.
-   * @returns The exponent vector of the i-th generator.
+   * @returns The generator monomial.
    * @see SymPy `sympy.polys.rings.PolyRing.monomial_basis`
    */
   monomialBasis(i: IntLike): number[] {
@@ -231,7 +231,7 @@ export class PolyRing extends IPolys<PolyElement> {
   }
 
   /**
-   * The additive identity.
+   * Represents zero in this ring.
    *
    * @returns The additive identity.
    * @see SymPy `sympy.polys.rings.PolyRing.zero`
@@ -241,7 +241,7 @@ export class PolyRing extends IPolys<PolyElement> {
   }
 
   /**
-   * The multiplicative identity.
+   * Represents one in this ring.
    *
    * @returns The multiplicative identity.
    * @see SymPy `sympy.polys.rings.PolyRing.one`
@@ -251,7 +251,7 @@ export class PolyRing extends IPolys<PolyElement> {
   }
 
   /**
-   * e is an element of this ring.
+   * Tests whether the value belongs to this ring.
    *
    * @param e - Expression to convert.
    * @returns Whether the operand belongs to this ring or field.
@@ -262,10 +262,10 @@ export class PolyRing extends IPolys<PolyElement> {
   }
 
   /**
-   * A value as an element of the ground domain.
+   * Converts the input to the ring's ground domain.
    *
    * @param element - Value to coerce into the domain.
-   * @returns A value as an element of the ground domain.
+   * @returns The ground element.
    * @throws CoercionFailed when the value cannot be represented in the target domain.
    * @see SymPy `sympy.polys.rings.PolyRing.domain_new`
    */
@@ -278,7 +278,7 @@ export class PolyRing extends IPolys<PolyElement> {
   }
 
   /**
-   * The constant polynomial c.
+   * Constructs a constant polynomial from the ground coefficient.
    *
    * @param coeff - Coefficient of the term.
    * @returns The corresponding constant element.
@@ -289,11 +289,11 @@ export class PolyRing extends IPolys<PolyElement> {
   }
 
   /**
-   * The term c*x**monom.
+   * Builds a polynomial term from a coefficient and an exponent vector.
    *
    * @param monom - Exponent vector of the monomial.
    * @param coeff - Coefficient of the term.
-   * @returns The term c*x**monom.
+   * @returns The single-term polynomial.
    * @see SymPy `sympy.polys.rings.PolyRing.term_new`
    */
   termNew(monom: Monom, coeff: ExprLike | PolyElement): PolyElement {
@@ -302,12 +302,11 @@ export class PolyRing extends IPolys<PolyElement> {
   }
 
   /**
-   * An element of this ring (SymPy ring_new, R(element)): a polynomial of
-   * this ring, a map or list of terms, a dense list, an expression or a
-   * ground value.
+   * Constructs a ring element from a polynomial, term collection, dense list, expression, or ground
+   * value.
    *
    * @param element - Value to coerce into the domain.
-   * @returns An element of this ring (SymPy ring_new, R(element)): a polynomial of this ring, a map or list of terms, a dense list, an expression or a ground value.
+   * @returns The polynomial in this ring.
    * @throws NotImplementedError when the source representation cannot be converted to this ring or the requested input syntax is unsupported.
    * @throws TypeError when the input is not a polynomial, term map, coefficient list or expression.
    * @see SymPy `sympy.polys.rings.PolyRing.ring_new`
@@ -330,10 +329,10 @@ export class PolyRing extends IPolys<PolyElement> {
   }
 
   /**
-   * An element from a map of exponent vectors to coefficients.
+   * Builds a polynomial from an exponent-vector-to-coefficient map.
    *
    * @param element - Value to coerce into the domain.
-   * @returns An element from a map of exponent vectors to coefficients.
+   * @returns The ring element.
    * @see SymPy `sympy.polys.rings.PolyRing.from_dict`
    */
   fromDict(element: ReadonlyMap<Monom, ExprLike> | Iterable<readonly [Monom, ExprLike]>): PolyElement {
@@ -341,7 +340,7 @@ export class PolyRing extends IPolys<PolyElement> {
   }
 
   /**
-   * An element from (exponent vector, coefficient) pairs; repeated monomials are added.
+   * Builds the polynomial from term pairs, adding coefficients for repeated monomials.
    *
    * @param terms - Monomial and coefficient pairs.
    * @returns An element from (exponent vector, coefficient) pairs.
@@ -362,10 +361,10 @@ export class PolyRing extends IPolys<PolyElement> {
   }
 
   /**
-   * An element from a dense recursive list, highest degree first.
+   * Converts a recursive dense coefficient list in descending degree order to a ring element.
    *
    * @param element - Value to coerce into the domain.
-   * @returns An element from a dense recursive list, highest degree first.
+   * @returns The polynomial.
    * @throws PolynomialError when the coefficient list depth differs from the number of generators.
    * @see SymPy `sympy.polys.rings.PolyRing.from_list`
    */
@@ -386,10 +385,10 @@ export class PolyRing extends IPolys<PolyElement> {
   }
 
   /**
-   * An element from an expression in the generators.
+   * Converts an expression in the ring's generators to polynomial form.
    *
    * @param expr - Expression to convert.
-   * @returns An element from an expression in the generators.
+   * @returns The ring element.
    * @throws RangeError when the expression is not polynomial in the specified ring.
    * @see SymPy `sympy.polys.rings.PolyRing.from_expr`
    */
@@ -410,10 +409,10 @@ export class PolyRing extends IPolys<PolyElement> {
   }
 
   /**
-   * The index of a generator given as an element, an index, a name or undefined.
+   * Locates a generator by element, position, or name, defaulting to the first generator.
    *
    * @param gen - Generator or its index.
-   * @returns The index of a generator given as an element, an index, a name or undefined.
+   * @returns The generator index, or −1 for an empty ring when omitted.
    * @throws RangeError when the specified generator or index is invalid.
    * @see SymPy `sympy.polys.rings.PolyRing.index`
    */
@@ -436,10 +435,10 @@ export class PolyRing extends IPolys<PolyElement> {
   }
 
   /**
-   * The ring without the given generators, or the domain when none remain.
+   * Removes the specified generators from the ring.
    *
    * @param gens - Polynomial generators in the desired order.
-   * @returns The ring without the given generators, or the domain when none remain.
+   * @returns The reduced ring or the ground domain if empty.
    * @see SymPy `sympy.polys.rings.PolyRing.drop`
    */
   drop(...gens: (PolyElement | IntLike | string)[]): PolyRing | Domain {
@@ -449,11 +448,11 @@ export class PolyRing extends IPolys<PolyElement> {
   }
 
   /**
-   * The ring with the generators start..end, or the domain when none remain.
+   * Selects a slice of the ordered generators.
    *
    * @param start - Inclusive starting index.
    * @param end - Exclusive ending index.
-   * @returns The ring with the generators start..end, or the domain when none remain.
+   * @returns The resulting ring or the ground domain if empty.
    */
   slice(start: number, end?: number): PolyRing | Domain {
     const symbols = this.symbols.slice(start, end);
@@ -461,9 +460,9 @@ export class PolyRing extends IPolys<PolyElement> {
   }
 
   /**
-   * The ring over the ground domain of a composite domain.
+   * Replaces a composite coefficient domain by its own ground domain.
    *
-   * @returns The ring over the ground domain of a composite domain.
+   * @returns The ring over the ground domain.
    * @throws PolynomialError when the coefficient domain is not composite.
    * @see SymPy `sympy.polys.rings.PolyRing.to_ground`
    */
@@ -475,9 +474,9 @@ export class PolyRing extends IPolys<PolyElement> {
   }
 
   /**
-   * Whether there is exactly one generator.
+   * Checks whether there is exactly one generator.
    *
-   * @returns Whether there is exactly one generator.
+   * @returns True for a univariate ring.
    * @see SymPy `sympy.polys.rings.PolyRing.is_univariate`
    */
   get isUnivariate(): boolean {
@@ -485,9 +484,9 @@ export class PolyRing extends IPolys<PolyElement> {
   }
 
   /**
-   * Whether there is more than one generator.
+   * Checks whether there are at least two generators.
    *
-   * @returns Whether there is more than one generator.
+   * @returns True for a multivariate ring.
    * @see SymPy `sympy.polys.rings.PolyRing.is_multivariate`
    */
   get isMultivariate(): boolean {
@@ -495,10 +494,10 @@ export class PolyRing extends IPolys<PolyElement> {
   }
 
   /**
-   * The sum of polynomials or nested sequences of them.
+   * Adds the polynomials in the supplied operands, including nested sequences.
    *
    * @param objs - Objects whose rings are to be unified.
-   * @returns The sum of polynomials or nested sequences of them.
+   * @returns Their sum.
    * @see SymPy `sympy.polys.rings.PolyRing.add`
    */
   add(...objs: (PolyElement | ExprLike | Iterable<PolyElement | ExprLike>)[]): PolyElement {
@@ -508,10 +507,10 @@ export class PolyRing extends IPolys<PolyElement> {
   }
 
   /**
-   * The product of polynomials or nested sequences of them.
+   * Multiplies the polynomials in the supplied operands, including nested sequences.
    *
    * @param objs - Objects whose rings are to be unified.
-   * @returns The product of polynomials or nested sequences of them.
+   * @returns Their product.
    * @see SymPy `sympy.polys.rings.PolyRing.mul`
    */
   mul(...objs: (PolyElement | ExprLike | Iterable<PolyElement | ExprLike>)[]): PolyElement {
@@ -521,10 +520,10 @@ export class PolyRing extends IPolys<PolyElement> {
   }
 
   /**
-   * The ring without the given generators over a domain that contains them.
+   * Moves the specified generators from the ring to the coefficient domain.
    *
    * @param gens - Polynomial generators in the desired order.
-   * @returns The ring without the given generators over a domain that contains them.
+   * @returns The ring in the remaining generators.
    * @see SymPy `sympy.polys.rings.PolyRing.drop_to_ground`
    */
   dropToGround(...gens: (PolyElement | IntLike | string)[]): PolyRing {
@@ -536,10 +535,10 @@ export class PolyRing extends IPolys<PolyElement> {
   }
 
   /**
-   * The ring with the generators of both rings.
+   * Combines the generators of two polynomial rings.
    *
    * @param other - Operand to combine or compare with this value.
-   * @returns The ring with the generators of both rings.
+   * @returns The composite ring.
    * @see SymPy `sympy.polys.rings.PolyRing.compose`
    */
   compose(other: PolyRing): PolyRing {
@@ -548,10 +547,10 @@ export class PolyRing extends IPolys<PolyElement> {
   }
 
   /**
-   * The ring with the given symbols added to its generators, sorted as SymPy's set union.
+   * Adjoins the supplied symbols and sorts the combined generator set.
    *
    * @param symbols - Symbols naming the generators, in order.
-   * @returns The ring with the given symbols added to its generators, sorted as SymPy's set union.
+   * @returns The extended ring.
    * @see SymPy `sympy.polys.rings.PolyRing.add_gens`
    */
   addGens(symbols: readonly Expr[]): PolyRing {
@@ -561,10 +560,10 @@ export class PolyRing extends IPolys<PolyElement> {
   }
 
   /**
-   * The elementary symmetric polynomial of degree n in the generators.
+   * Sums all square-free products of `n` distinct generators.
    *
    * @param n - Order of the elementary symmetric polynomial.
-   * @returns The elementary symmetric polynomial of degree n in the generators.
+   * @returns The elementary symmetric polynomial.
    * @throws RangeError when the requested order is outside the range allowed by the number of generators.
    * @see SymPy `sympy.polys.rings.PolyRing.symmetric_poly`
    */
@@ -578,10 +577,10 @@ export class PolyRing extends IPolys<PolyElement> {
   }
 
   /**
-   * The ring without the i-th generator (of a ring with several).
+   * Removes the generator at the specified position from a multivariate ring.
    *
    * @param i - Zero-based index.
-   * @returns The ring without the i-th generator (of a ring with several).
+   * @returns The reduced polynomial ring.
    */
   dropGen(i: number): PolyRing {
     return this.clone({ symbols: this.symbols.filter((_, j) => j !== i) });
@@ -590,10 +589,10 @@ export class PolyRing extends IPolys<PolyElement> {
   // ---- IPolys plumbing -----------------------------------------------------
 
   /**
-   * A ring with the same generators over the specified coefficient domain.
+   * Rebuilds the ring over a different coefficient domain while retaining the generators.
    *
    * @param K - Coefficient domain for the polynomial arithmetic.
-   * @returns A ring with the same generators over the specified coefficient domain.
+   * @returns The converted ring.
    * @see SymPy `sympy.polys.rings.PolyRing.clone`
    */
   withDomain(K: Domain): PolyRing {
@@ -688,9 +687,9 @@ export class PolyElement {
   }
 
   /**
-   * The ring of the element as a domain (ZZ[x,y]).
+   * Represents the element's parent ring as a coefficient domain.
    *
-   * @returns The ring of the element as a domain (ZZ[x,y]).
+   * @returns The polynomial-ring domain.
    * @see SymPy `sympy.polys.rings.PolyElement.parent`
    */
   parent(): Domain {
@@ -702,19 +701,19 @@ export class PolyElement {
   }
 
   /**
-   * The number of terms.
+   * Counts the polynomial's nonzero terms.
    *
-   * @returns The number of terms.
+   * @returns The term count.
    */
   get length(): number {
     return this.map.size;
   }
 
   /**
-   * The coefficient of an exponent vector (zero when absent).
+   * Reads the coefficient associated with an exponent vector.
    *
    * @param monom - Exponent vector of the monomial.
-   * @returns The coefficient of an exponent vector (zero when absent).
+   * @returns The coefficient or zero.
    * @see SymPy `sympy.polys.rings.PolyElement.get`
    */
   get(monom: Monom): Expr {
@@ -722,9 +721,9 @@ export class PolyElement {
   }
 
   /**
-   * The polynomial as a map of exponent vectors to coefficients.
+   * Indexes the polynomial coefficients by exponent vector.
    *
-   * @returns The polynomial as a map of exponent vectors to coefficients.
+   * @returns The term map.
    * @see SymPy `sympy.polys.rings.PolyElement.to_dict`
    */
   toDict(): Map<Monom, Expr> {
@@ -732,10 +731,10 @@ export class PolyElement {
   }
 
   /**
-   * The element in another ring with the same or reordered generators.
+   * Rewrites the polynomial in a ring with compatible or reordered generators.
    *
    * @param newRing - Target polynomial ring.
-   * @returns The element in another ring with the same or reordered generators.
+   * @returns The converted element.
    * @throws GeneratorsError when the polynomial depends on a generator that would be removed.
    * @see SymPy `sympy.polys.rings.PolyElement.set_ring`
    */
@@ -757,7 +756,7 @@ export class PolyElement {
   }
 
   /**
-   * The polynomial as an expression in the generators (or the given symbols).
+   * Expresses the polynomial in its generators or the supplied symbols.
    *
    * @param symbols - Symbols naming the generators, in order.
    * @returns The symbolic expression.
@@ -771,9 +770,9 @@ export class PolyElement {
   }
 
   /**
-   * The lcm of the coefficient denominators and the polynomial multiplied by it.
+   * Clears the denominators of all polynomial coefficients.
    *
-   * @returns The lcm of the coefficient denominators and the polynomial multiplied by it.
+   * @returns The common denominator and scaled polynomial.
    * @see SymPy `sympy.polys.rings.PolyElement.clear_denoms`
    */
   clearDenoms(): [Expr, PolyElement] {
@@ -786,7 +785,7 @@ export class PolyElement {
   }
 
   /**
-   * Equality with a polynomial of the same ring or a ground value.
+   * Tests equality with another polynomial in the ring or with a ground value.
    *
    * @param other - Operand to combine or compare with this value.
    * @returns Whether the comparison holds.
@@ -813,10 +812,10 @@ export class PolyElement {
   }
 
   /**
-   * The polynomial without the generator, which must not occur.
+   * Drops an unused generator from the polynomial's ring.
    *
    * @param gen - Generator or its index.
-   * @returns The polynomial without the generator, which must not occur.
+   * @returns The polynomial in the remaining generators or its ground value.
    * @throws RangeError when the polynomial depends on a generator that would be removed.
    * @see SymPy `sympy.polys.rings.PolyElement.drop`
    */
@@ -832,10 +831,10 @@ export class PolyElement {
   }
 
   /**
-   * The polynomial over the ring without the generator, with the generator moved into the domain.
+   * Moves a generator of the polynomial into the ground domain.
    *
    * @param gen - Generator or its index.
-   * @returns The polynomial over the ring without the generator, with the generator moved into the domain.
+   * @returns The polynomial with the new coefficient domain.
    * @throws RangeError when the only generator would be removed.
    * @see SymPy `sympy.polys.rings.PolyElement.drop_to_ground`
    */
@@ -848,9 +847,9 @@ export class PolyElement {
   }
 
   /**
-   * The dense recursive representation.
+   * Expands the sparse term representation into recursive coefficient lists.
    *
-   * @returns The dense recursive representation.
+   * @returns The dense polynomial.
    * @see SymPy `sympy.polys.rings.PolyElement.to_dense`
    */
   toDense(): unknown[] {
@@ -866,7 +865,7 @@ export class PolyElement {
   }
 
   /**
-   * The printable representation.
+   * Formats this object as text.
    *
    * @returns The formatted text.
    * @see SymPy `sympy.polys.rings.PolyElement.__str__`
@@ -909,153 +908,153 @@ export class PolyElement {
   // ---- predicates ------------------------------------------------------------
 
   /**
-   * Whether the element is one of the ring generators.
+   * Tests whether the element is one of the ring's generators.
    *
-   * @returns Whether the element is one of the ring generators.
+   * @returns True for a generator.
    * @see SymPy `sympy.polys.rings.PolyElement.is_generator`
    */
   get isGenerator(): boolean {
     return this.ring.gens.some((g) => g.equals(this));
   }
   /**
-   * Whether the polynomial is constant in its generators.
+   * Checks that the polynomial is independent of its generators.
    *
-   * @returns Whether the polynomial is constant in its generators.
+   * @returns True for a ground element.
    * @see SymPy `sympy.polys.rings.PolyElement.is_ground`
    */
   get isGround(): boolean {
     return this.isZero || (this.length === 1 && this.map.has(mkey(this.ring.zeroMonom)));
   }
   /**
-   * Whether the polynomial is zero or consists of one term with coefficient one.
+   * Checks for zero or a single term with coefficient one.
    *
-   * @returns Whether the polynomial is zero or consists of one term with coefficient one.
+   * @returns The monomial flag.
    * @see SymPy `sympy.polys.rings.PolyElement.is_monomial`
    */
   get isMonomial(): boolean {
     return this.isZero || (this.length === 1 && groundEq(this.LC, this.K.one));
   }
   /**
-   * Whether the polynomial has at most one nonzero term.
+   * Tests whether the polynomial has at most one nonzero term.
    *
-   * @returns Whether the polynomial has at most one nonzero term.
+   * @returns True for zero or a single term.
    * @see SymPy `sympy.polys.rings.PolyElement.is_term`
    */
   get isTerm(): boolean {
     return this.length <= 1;
   }
   /**
-   * Whether the leading coefficient is negative.
+   * Tests the sign of the leading coefficient for negativity.
    *
-   * @returns Whether the leading coefficient is negative.
+   * @returns True for a negative polynomial.
    * @see SymPy `sympy.polys.rings.PolyElement.is_negative`
    */
   get isNegative(): boolean {
     return groundIsNegative(this.K, this.LC);
   }
   /**
-   * Whether the polynomial is nonzero with positive sign.
+   * Tests whether the polynomial has positive sign.
    *
-   * @returns Whether the polynomial is nonzero with positive sign.
+   * @returns True for a positive polynomial.
    * @see SymPy `sympy.polys.rings.PolyElement.is_positive`
    */
   get isPositive(): boolean {
     return !this.isZero && !this.isNegative;
   }
   /**
-   * Whether the polynomial has nonnegative sign.
+   * Tests whether the polynomial's sign is zero or positive.
    *
-   * @returns Whether the polynomial has nonnegative sign.
+   * @returns The nonnegative flag.
    * @see SymPy `sympy.polys.rings.PolyElement.is_nonnegative`
    */
   get isNonnegative(): boolean {
     return !this.isNegative;
   }
   /**
-   * Whether the polynomial has nonpositive sign.
+   * Tests whether the polynomial's sign is zero or negative.
    *
-   * @returns Whether the polynomial has nonpositive sign.
+   * @returns The nonpositive flag.
    * @see SymPy `sympy.polys.rings.PolyElement.is_nonpositive`
    */
   get isNonpositive(): boolean {
     return this.isZero || this.isNegative;
   }
   /**
-   * Whether the element is zero.
+   * Tests for equality with the domain's additive identity.
    *
-   * @returns Whether the element is zero.
+   * @returns True for zero.
    * @see SymPy `sympy.polys.rings.PolyElement.is_zero`
    */
   get isZero(): boolean {
     return this.map.size === 0;
   }
   /**
-   * Whether the element is the multiplicative identity.
+   * Tests for equality with the domain's multiplicative identity.
    *
-   * @returns Whether the element is the multiplicative identity.
+   * @returns True for one.
    * @see SymPy `sympy.polys.rings.PolyElement.is_one`
    */
   get isOne(): boolean {
     return this.equals(this.ring.one);
   }
   /**
-   * Whether the leading coefficient is one.
+   * Tests whether the leading coefficient equals one.
    *
-   * @returns Whether the leading coefficient is one.
+   * @returns True for a monic polynomial.
    * @see SymPy `sympy.polys.rings.PolyElement.is_monic`
    */
   get isMonic(): boolean {
     return groundEq(this.LC, this.K.one);
   }
   /**
-   * Whether the coefficients have unit content.
+   * Tests whether the coefficients have a unit as their GCD.
    *
-   * @returns Whether the coefficients have unit content.
+   * @returns True for a primitive polynomial.
    * @see SymPy `sympy.polys.rings.PolyElement.is_primitive`
    */
   get isPrimitive(): boolean {
     return groundEq(this.content(), this.K.one);
   }
   /**
-   * Whether the total degree is at most one.
+   * Checks whether the total degree is at most one.
    *
-   * @returns Whether the total degree is at most one.
+   * @returns The linearity flag.
    * @see SymPy `sympy.polys.rings.PolyElement.is_linear`
    */
   get isLinear(): boolean {
     return this.listmonoms().every((m) => m.reduce((s, e) => s + e, 0) <= 1);
   }
   /**
-   * Whether the total degree is at most two.
+   * Checks whether the total degree is at most two.
    *
-   * @returns Whether the total degree is at most two.
+   * @returns The quadratic flag.
    * @see SymPy `sympy.polys.rings.PolyElement.is_quadratic`
    */
   get isQuadratic(): boolean {
     return this.listmonoms().every((m) => m.reduce((s, e) => s + e, 0) <= 2);
   }
   /**
-   * Whether the polynomial is square-free.
+   * Checks whether all irreducible factors have multiplicity one.
    *
-   * @returns Whether the polynomial is square-free.
+   * @returns True for a square-free polynomial.
    * @see SymPy `sympy.polys.rings.PolyElement.is_squarefree`
    */
   get isSquarefree(): boolean {
     return this.ring.ngens === 0 || this.ring.dmpSqfP(this);
   }
   /**
-   * Whether the polynomial is irreducible in its coefficient domain.
+   * Tests for irreducibility over the coefficient domain.
    *
-   * @returns Whether the polynomial is irreducible in its coefficient domain.
+   * @returns True for an irreducible polynomial.
    * @see SymPy `sympy.polys.rings.PolyElement.is_irreducible`
    */
   get isIrreducible(): boolean {
     return this.ring.ngens === 0 || this.ring.dmpIrreducibleP(this);
   }
   /**
-   * Whether the polynomial is cyclotomic.
+   * Tests whether the polynomial is cyclotomic.
    *
-   * @returns Whether the polynomial is cyclotomic.
+   * @returns The cyclotomic flag.
    * @throws MultivariatePolynomialError when the operation requires a univariate polynomial.
    * @see SymPy `sympy.polys.rings.PolyElement.is_cyclotomic`
    */
@@ -1067,7 +1066,7 @@ export class PolyElement {
   // ---- arithmetic ------------------------------------------------------------
 
   /**
-   * -f.
+   * Negates every coefficient of the polynomial.
    *
    * @returns The additive inverse.
    * @see SymPy `sympy.polys.rings.PolyElement.__neg__`
@@ -1087,10 +1086,10 @@ export class PolyElement {
   }
 
   /**
-   * f + g.
+   * Adds the corresponding coefficients of two polynomials.
    *
    * @param o - Operand to combine or compare with this value.
-   * @returns The sum of the operands.
+   * @returns The sum polynomial.
    * @see SymPy `sympy.polys.rings.PolyElement.__add__`
    */
   add(o: PolyElement | ExprLike): PolyElement {
@@ -1105,10 +1104,10 @@ export class PolyElement {
   }
 
   /**
-   * f - g.
+   * Subtracts the second polynomial from the first.
    *
    * @param o - Operand to combine or compare with this value.
-   * @returns The difference of the operands.
+   * @returns The difference polynomial.
    * @see SymPy `sympy.polys.rings.PolyElement.__sub__`
    */
   sub(o: PolyElement | ExprLike): PolyElement {
@@ -1116,10 +1115,10 @@ export class PolyElement {
   }
 
   /**
-   * f*g.
+   * Multiplies the two input polynomials.
    *
    * @param o - Operand to combine or compare with this value.
-   * @returns The product of the operands.
+   * @returns The product polynomial.
    * @see SymPy `sympy.polys.rings.PolyElement.__mul__`
    */
   mul(o: PolyElement | ExprLike): PolyElement {
@@ -1139,7 +1138,7 @@ export class PolyElement {
   }
 
   /**
-   * f**n for a nonnegative integer n.
+   * Raises the polynomial to a nonnegative integer power.
    *
    * @param n - Exponent or degree.
    * @returns The element raised to the specified exponent.
@@ -1198,9 +1197,9 @@ export class PolyElement {
   }
 
   /**
-   * f**2.
+   * Multiplies the polynomial by itself.
    *
-   * @returns The square of the polynomial.
+   * @returns The squared polynomial.
    * @see SymPy `sympy.polys.rings.PolyElement.square`
    */
   square(): PolyElement {
@@ -1217,8 +1216,8 @@ export class PolyElement {
   }
 
   /**
-   * Division by a polynomial or a list of polynomials ([CLO] p. 64): the
-   * quotients and the remainder with f = sum(q_i*g_i) + r.
+   * Divides by one or more polynomials, expressing the dividend as a sum of divisor multiples and a
+   * remainder.
    *
    * @param fv - Divisor polynomial or ordered list of divisors.
    * @returns The quotient (one per divisor for a list) and the remainder.
@@ -1227,8 +1226,8 @@ export class PolyElement {
    */
   div(fv: PolyElement): [PolyElement, PolyElement];
   /**
-   * Division by a polynomial or a list of polynomials ([CLO] p. 64): the
-   * quotients and the remainder with f = sum(q_i*g_i) + r.
+   * Divides by one or more polynomials, expressing the dividend as a sum of divisor multiples and a
+   * remainder.
    *
    * @param fv - Divisor polynomial or ordered list of divisors.
    * @returns The quotient (one per divisor for a list) and the remainder.
@@ -1265,10 +1264,10 @@ export class PolyElement {
   }
 
   /**
-   * The remainder of the division by one or more polynomials.
+   * Reduces the polynomial by one divisor or a list of divisors.
    *
    * @param G - Divisor polynomial or ordered list of divisors.
-   * @returns The remainder of the division by one or more polynomials.
+   * @returns The polynomial remainder.
    * @see SymPy `sympy.polys.rings.PolyElement.rem`
    */
   rem(G: PolyElement | readonly PolyElement[]): PolyElement {
@@ -1276,10 +1275,10 @@ export class PolyElement {
   }
 
   /**
-   * The quotient.
+   * Divides the dividend by the divisor and keeps the quotient.
    *
    * @param G - Divisor polynomial or ordered list of divisors.
-   * @returns The quotient.
+   * @returns The polynomial quotient.
    * @see SymPy `sympy.polys.rings.PolyElement.quo`
    */
   quo(G: PolyElement | readonly PolyElement[]): PolyElement | PolyElement[] {
@@ -1287,7 +1286,7 @@ export class PolyElement {
   }
 
   /**
-   * The exact quotient; ExactQuotientFailed when the remainder is not zero.
+   * Computes the exact quotient, raising `ExactQuotientFailed` for a nonzero remainder.
    *
    * @param G - Divisor polynomial or ordered list of divisors.
    * @returns The exact quotient.
@@ -1301,10 +1300,10 @@ export class PolyElement {
   }
 
   /**
-   * (f // g, f % g) for a polynomial or a ground value.
+   * Divides by a polynomial or ground value with remainder.
    *
    * @param o - Operand to combine or compare with this value.
-   * @returns (f // g, f % g) for a polynomial or a ground value.
+   * @returns The quotient and remainder.
    * @see SymPy `sympy.polys.rings.PolyElement.__divmod__`
    */
   divmod(o: PolyElement | ExprLike): [PolyElement, PolyElement] {
@@ -1314,7 +1313,7 @@ export class PolyElement {
   }
 
   /**
-   * f // g.
+   * Keeps the quotient of polynomial division.
    *
    * @param o - Operand to combine or compare with this value.
    * @returns The polynomial quotient.
@@ -1325,7 +1324,7 @@ export class PolyElement {
   }
 
   /**
-   * f % g.
+   * Keeps the remainder of polynomial division.
    *
    * @param o - Operand to combine or compare with this value.
    * @returns The modulus defining the algebraic extension.
@@ -1336,7 +1335,7 @@ export class PolyElement {
   }
 
   /**
-   * f / g: the exact quotient by a polynomial, the quotient by a ground value.
+   * Computes an exact polynomial quotient or divides by a ground value.
    *
    * @param o - Operand to combine or compare with this value.
    * @returns The quotient of the two elements.
@@ -1353,7 +1352,8 @@ export class PolyElement {
   // ---- degrees and terms -----------------------------------------------------
 
   /**
-   * The degree in x (the first generator by default); -Infinity for zero.
+   * Computes the degree in the selected generator, defaulting to the first and giving negative infinity
+   * for zero.
    *
    * @param x - Polynomial generator.
    * @returns The degree in the selected generator, or `-Infinity` for zero.
@@ -1367,9 +1367,9 @@ export class PolyElement {
   }
 
   /**
-   * The degrees in all generators.
+   * Finds the largest exponent in each generator.
    *
-   * @returns The degrees in all generators.
+   * @returns The degree vector.
    * @see SymPy `sympy.polys.rings.PolyElement.degrees`
    */
   degrees(): number[] {
@@ -1377,10 +1377,10 @@ export class PolyElement {
   }
 
   /**
-   * The tail degree in x.
+   * Finds the smallest power of the specified generator among the terms.
    *
    * @param x - Polynomial generator.
-   * @returns The tail degree in x.
+   * @returns The tail degree.
    * @see SymPy `sympy.polys.rings.PolyElement.tail_degree`
    */
   tailDegree(x?: GenLike): number {
@@ -1391,9 +1391,9 @@ export class PolyElement {
   }
 
   /**
-   * The tail degrees in all generators.
+   * Finds the smallest exponent in each generator.
    *
-   * @returns The tail degrees in all generators.
+   * @returns The tail degree vector.
    * @see SymPy `sympy.polys.rings.PolyElement.tail_degrees`
    */
   tailDegrees(): number[] {
@@ -1405,7 +1405,8 @@ export class PolyElement {
   }
 
   /**
-   * The leading exponent vector in the order of the ring; the zero vector for zero.
+   * Selects the leading exponent vector in the ring's order, using the zero vector for the zero
+   * polynomial.
    *
    * @returns The leading exponent vector in the order of the ring.
    * @see SymPy `sympy.polys.rings.PolyElement.leading_expv`
@@ -1417,10 +1418,10 @@ export class PolyElement {
   }
 
   /**
-   * The coefficient of a monomial (an element with one monomial term) or of 1.
+   * Extracts the coefficient of a monomial or of the unit monomial.
    *
    * @param element - Value to coerce into the domain.
-   * @returns The coefficient of a monomial (an element with one monomial term) or of 1.
+   * @returns The selected coefficient.
    * @throws RangeError when the argument is not a monomial.
    * @see SymPy `sympy.polys.rings.PolyElement.coeff`
    */
@@ -1437,9 +1438,9 @@ export class PolyElement {
   }
 
   /**
-   * The constant coefficient.
+   * Reads the coefficient of the all-zero exponent vector.
    *
-   * @returns The constant coefficient.
+   * @returns The constant term.
    * @see SymPy `sympy.polys.rings.PolyElement.const`
    */
   const(): Expr {
@@ -1447,7 +1448,7 @@ export class PolyElement {
   }
 
   /**
-   * The leading coefficient.
+   * Extracts the coefficient of the leading term.
    *
    * @returns The leading coefficient.
    * @see SymPy `sympy.polys.rings.PolyElement.LC`
@@ -1457,7 +1458,7 @@ export class PolyElement {
   }
 
   /**
-   * The leading exponent vector.
+   * Extracts the exponents of the first term in monomial order.
    *
    * @returns The leading exponent vector.
    * @see SymPy `sympy.polys.rings.PolyElement.LM`
@@ -1467,9 +1468,9 @@ export class PolyElement {
   }
 
   /**
-   * The leading monomial as an element.
+   * Constructs the leading monomial as a ring element.
    *
-   * @returns The leading monomial as an element.
+   * @returns The monic leading monomial.
    * @see SymPy `sympy.polys.rings.PolyElement.leading_monom`
    */
   leadingMonom(): PolyElement {
@@ -1478,9 +1479,9 @@ export class PolyElement {
   }
 
   /**
-   * The leading term (exponent vector, coefficient).
+   * Selects the highest term in the ring's monomial order.
    *
-   * @returns The leading term (exponent vector, coefficient).
+   * @returns Its exponent vector and coefficient.
    * @see SymPy `sympy.polys.rings.PolyElement.LT`
    */
   get LT(): readonly [Monom, Expr] {
@@ -1489,9 +1490,9 @@ export class PolyElement {
   }
 
   /**
-   * The leading term as an element.
+   * Constructs the highest term as a polynomial in this ring.
    *
-   * @returns The leading term as an element.
+   * @returns The leading term polynomial.
    * @see SymPy `sympy.polys.rings.PolyElement.leading_term`
    */
   leadingTerm(): PolyElement {
@@ -1499,10 +1500,10 @@ export class PolyElement {
   }
 
   /**
-   * The terms sorted by a monomial order, largest first.
+   * Lists terms from largest to smallest in the specified monomial order.
    *
    * @param order - Monomial order used to compare terms.
-   * @returns The terms sorted by a monomial order, largest first.
+   * @returns The ordered monomial–coefficient pairs.
    * @see SymPy `sympy.polys.rings.PolyElement.terms`
    */
   terms(order?: OrderLike): [Monom, Expr][] {
@@ -1511,10 +1512,10 @@ export class PolyElement {
   }
 
   /**
-   * The coefficients sorted by a monomial order.
+   * Lists coefficients according to the monomial order of their terms.
    *
    * @param order - Monomial order used to compare terms.
-   * @returns The coefficients sorted by a monomial order.
+   * @returns The ordered coefficients.
    * @see SymPy `sympy.polys.rings.PolyElement.coeffs`
    */
   coeffs(order?: OrderLike): Expr[] {
@@ -1522,10 +1523,10 @@ export class PolyElement {
   }
 
   /**
-   * The exponent vectors sorted by a monomial order.
+   * Lists monomials according to the specified term order.
    *
    * @param order - Monomial order used to compare terms.
-   * @returns The exponent vectors sorted by a monomial order.
+   * @returns The ordered exponent vectors.
    * @see SymPy `sympy.polys.rings.PolyElement.monoms`
    */
   monoms(order?: OrderLike): Monom[] {
@@ -1533,9 +1534,9 @@ export class PolyElement {
   }
 
   /**
-   * The terms in no particular order.
+   * Collects the nonzero terms without imposing a monomial order.
    *
-   * @returns The terms in no particular order.
+   * @returns The monomial–coefficient pairs.
    * @see SymPy `sympy.polys.rings.PolyElement.listterms`
    */
   listterms(): [Monom, Expr][] {
@@ -1543,9 +1544,9 @@ export class PolyElement {
   }
 
   /**
-   * The coefficients in no particular order.
+   * Collects the stored coefficients without imposing a monomial order.
    *
-   * @returns The coefficients in no particular order.
+   * @returns The coefficient list.
    * @see SymPy `sympy.polys.rings.PolyElement.listcoeffs`
    */
   listcoeffs(): Expr[] {
@@ -1553,9 +1554,9 @@ export class PolyElement {
   }
 
   /**
-   * The exponent vectors in no particular order.
+   * Collects the stored monomials without imposing a monomial order.
    *
-   * @returns The exponent vectors in no particular order.
+   * @returns The exponent vectors.
    * @see SymPy `sympy.polys.rings.PolyElement.listmonoms`
    */
   listmonoms(): Monom[] {
@@ -1565,9 +1566,9 @@ export class PolyElement {
   // ---- ground operations -----------------------------------------------------
 
   /**
-   * The gcd of the coefficients.
+   * Computes the polynomial content as the GCD of its coefficients.
    *
-   * @returns The gcd of the coefficients.
+   * @returns The content.
    * @see SymPy `sympy.polys.rings.PolyElement.content`
    */
   content(): Expr {
@@ -1576,9 +1577,9 @@ export class PolyElement {
   }
 
   /**
-   * The content and the primitive part.
+   * Separates the coefficient GCD from the primitive polynomial.
    *
-   * @returns The content and the primitive part.
+   * @returns The content and primitive part.
    * @see SymPy `sympy.polys.rings.PolyElement.primitive`
    */
   primitive(): [Expr, PolyElement] {
@@ -1588,9 +1589,9 @@ export class PolyElement {
   }
 
   /**
-   * f divided by its leading coefficient.
+   * Divides by the leading coefficient to normalize the polynomial.
    *
-   * @returns The polynomial normalized to have leading coefficient one.
+   * @returns The monic polynomial.
    * @see SymPy `sympy.polys.rings.PolyElement.monic`
    */
   monic(): PolyElement {
@@ -1598,10 +1599,10 @@ export class PolyElement {
   }
 
   /**
-   * c*f.
+   * Multiplies every coefficient by the ground scalar.
    *
    * @param x - Polynomial generator.
-   * @returns The polynomial scaled by the ground coefficient.
+   * @returns The scaled polynomial.
    * @see SymPy `sympy.polys.rings.PolyElement.mul_ground`
    */
   mulGround(x: ExprLike): PolyElement {
@@ -1611,10 +1612,10 @@ export class PolyElement {
   }
 
   /**
-   * Multiply all coefficients in place.
+   * Multiplies every coefficient by the scalar in place.
    *
    * @param x - Polynomial generator.
-   * @returns Multiply all coefficients in place.
+   * @returns The updated polynomial.
    * @see SymPy `sympy.polys.rings.PolyElement.imul_num`
    */
   imulNum(x: ExprLike): this {
@@ -1623,7 +1624,7 @@ export class PolyElement {
   }
 
   /**
-   * f*x**monom.
+   * Multiplies the polynomial by the supplied monomial.
    *
    * @param monom - Exponent vector of the monomial.
    * @returns The polynomial with the monomial exponents added to each term.
@@ -1634,7 +1635,7 @@ export class PolyElement {
   }
 
   /**
-   * f*c*x**monom.
+   * Multiplies the polynomial by the supplied coefficient and monomial.
    *
    * @param term - Monomial and coefficient of the term.
    * @returns The polynomial multiplied by the term.
@@ -1648,7 +1649,7 @@ export class PolyElement {
   }
 
   /**
-   * The coefficients divided by x; over a ring, the terms with a remainder are dropped.
+   * Divides coefficients by the ground element, dropping terms with inexact quotients over a ring.
    *
    * @param x - Polynomial generator.
    * @returns The polynomial obtained by dividing its coefficients by the ground element.
@@ -1665,7 +1666,7 @@ export class PolyElement {
   }
 
   /**
-   * f divided by c*x**monom, dropping the terms that do not divide.
+   * Divides by the supplied term and drops terms that are not divisible.
    *
    * @param term - Monomial and coefficient of the term.
    * @returns The quotient by the supplied term.
@@ -1687,10 +1688,10 @@ export class PolyElement {
   }
 
   /**
-   * The coefficients modulo p, in the symmetric range over ZZ.
+   * Reduces coefficients modulo `p`, choosing symmetric residues over the integers.
    *
    * @param p - Modulus for reducing coefficients.
-   * @returns The coefficients modulo p, in the symmetric range over ZZ.
+   * @returns The truncated polynomial.
    * @see SymPy `sympy.polys.rings.PolyElement.trunc_ground`
    */
   truncGround(p: ExprLike): PolyElement {
@@ -1714,10 +1715,10 @@ export class PolyElement {
   }
 
   /**
-   * The coefficients modulo p.
+   * Takes the remainder of each coefficient modulo `p`.
    *
    * @param p - Polynomial to operate on.
-   * @returns The coefficients modulo p.
+   * @returns The reduced polynomial.
    * @see SymPy `sympy.polys.rings.PolyElement.rem_ground`
    */
   remGround(p: ExprLike): PolyElement {
@@ -1725,10 +1726,10 @@ export class PolyElement {
   }
 
   /**
-   * The gcd of the contents of f and g and both divided by it.
+   * Divides both polynomials by the GCD of their contents.
    *
    * @param g - Second polynomial operand.
-   * @returns The gcd of the contents of f and g and both divided by it.
+   * @returns The shared content and both quotients.
    * @see SymPy `sympy.polys.rings.PolyElement.extract_ground`
    */
   extractGround(g: PolyElement): [Expr, PolyElement, PolyElement] {
@@ -1737,9 +1738,9 @@ export class PolyElement {
   }
 
   /**
-   * The largest absolute value of a coefficient.
+   * Computes the maximum norm from the polynomial's coefficients.
    *
-   * @returns The largest absolute value of a coefficient.
+   * @returns The largest absolute coefficient.
    * @see SymPy `sympy.polys.rings.PolyElement.max_norm`
    */
   maxNorm(): Expr {
@@ -1747,9 +1748,9 @@ export class PolyElement {
   }
 
   /**
-   * The sum of the absolute values of the coefficients.
+   * Computes the polynomial's L1 norm.
    *
-   * @returns The sum of the absolute values of the coefficients.
+   * @returns The sum of absolute coefficients.
    * @see SymPy `sympy.polys.rings.PolyElement.l1_norm`
    */
   l1Norm(): Expr {
@@ -1758,10 +1759,10 @@ export class PolyElement {
   }
 
   /**
-   * The exponents divided by their gcds in each generator, for f and the given polynomials.
+   * Divides exponents by common divisors computed per generator across all inputs.
    *
    * @param G - Other polynomials to deflate by the same exponent factors.
-   * @returns The exponents divided by their gcds in each generator, for f and the given polynomials.
+   * @returns The divisor vector and deflated polynomials.
    * @see SymPy `sympy.polys.rings.PolyElement.deflate`
    */
   deflate(...G: PolyElement[]): [number[], PolyElement[]] {
@@ -1774,10 +1775,10 @@ export class PolyElement {
   }
 
   /**
-   * The exponents multiplied by J.
+   * Multiplies each generator's exponents by its factor in `J`.
    *
    * @param J - Indices of the generators.
-   * @returns The exponents multiplied by J.
+   * @returns The inflated polynomial.
    * @see SymPy `sympy.polys.rings.PolyElement.inflate`
    */
   inflate(J: readonly IntLike[]): PolyElement {
@@ -1786,10 +1787,10 @@ export class PolyElement {
   }
 
   /**
-   * The lcm.
+   * Finds the least polynomial multiple common to both inputs.
    *
    * @param g - Second polynomial operand.
-   * @returns The lcm.
+   * @returns The LCM.
    * @see SymPy `sympy.polys.rings.PolyElement.lcm`
    */
   lcm(g: PolyElement): PolyElement {
@@ -1809,10 +1810,10 @@ export class PolyElement {
   }
 
   /**
-   * The gcd.
+   * Finds the greatest polynomial divisor common to both inputs.
    *
    * @param g - Second polynomial operand.
-   * @returns The gcd.
+   * @returns The GCD.
    * @see SymPy `sympy.polys.rings.PolyElement.gcd`
    */
   gcd(g: PolyElement): PolyElement {
@@ -1820,10 +1821,10 @@ export class PolyElement {
   }
 
   /**
-   * The gcd and the cofactors f/gcd and g/gcd.
+   * Factors the GCD out of the polynomial pair.
    *
    * @param g - Second polynomial operand.
-   * @returns The gcd and the cofactors f/gcd and g/gcd.
+   * @returns The GCD and both quotients.
    * @see SymPy `sympy.polys.rings.PolyElement.cofactors`
    */
   cofactors(g: PolyElement): [PolyElement, PolyElement, PolyElement] {
@@ -1857,10 +1858,10 @@ export class PolyElement {
   }
 
   /**
-   * f/g with the common factors cancelled: (p, q) with a canonical denominator.
+   * Cancels common polynomial factors and normalizes the denominator.
    *
    * @param g - Second polynomial operand.
-   * @returns F/g with the common factors cancelled: (p, q) with a canonical denominator.
+   * @returns The reduced numerator and denominator.
    * @see SymPy `sympy.polys.rings.PolyElement.cancel`
    */
   cancel(g: PolyElement): [PolyElement, PolyElement] {
@@ -1886,9 +1887,9 @@ export class PolyElement {
   }
 
   /**
-   * The canonical unit of the leading coefficient.
+   * Finds the unit that normalizes the leading coefficient.
    *
-   * @returns The canonical unit of the leading coefficient.
+   * @returns The canonical unit.
    * @see SymPy `sympy.polys.rings.PolyElement.canonical_unit`
    */
   canonicalUnit(): Expr {
@@ -1896,10 +1897,10 @@ export class PolyElement {
   }
 
   /**
-   * The partial derivative in x.
+   * Differentiates with respect to the specified generator.
    *
    * @param x - Polynomial generator.
-   * @returns The partial derivative in x.
+   * @returns The partial derivative.
    * @see SymPy `sympy.polys.rings.PolyElement.diff`
    */
   diff(x: GenLike): PolyElement {
@@ -1912,7 +1913,7 @@ export class PolyElement {
   }
 
   /**
-   * f evaluated at values for its first generators.
+   * Evaluates the polynomial at values for the leading generators.
    *
    * @param values - Values to substitute, in generator order.
    * @returns Evaluate the rational function at the supplied values.
@@ -1925,11 +1926,11 @@ export class PolyElement {
   }
 
   /**
-   * f with x = a, in the ring without x; with a list of pairs, all of them in turn.
+   * Substitutes generator values in sequence, removing each specified generator from the ring.
    *
    * @param x - Polynomial generator.
    * @param a - Value to substitute for the chosen generator.
-   * @returns F with x = a, in the ring without x; with a list of pairs, all of them in turn.
+   * @returns The specialized polynomial or ground value.
    * @see SymPy `sympy.polys.rings.PolyElement.evaluate`
    */
   evaluate(x: GenLike | readonly (readonly [GenLike, ExprLike])[], a?: ExprLike): PolyElement | Expr {
@@ -1956,7 +1957,7 @@ export class PolyElement {
   }
 
   /**
-   * f with x = a, in the same ring; with a list of pairs, one after the other.
+   * Substitutes generator values in sequence while retaining the original ring.
    *
    * @param x - Polynomial generator.
    * @param a - First operand.
@@ -1975,10 +1976,9 @@ export class PolyElement {
   }
 
   /**
-   * f in terms of the elementary symmetric polynomials (Lauer's algorithm):
-   * (p, r, m) with p.compose(m) + r == f, r the part that is not symmetric.
+   * Applies Lauer's algorithm to express the symmetric part in elementary symmetric polynomials.
    *
-   * @returns F in terms of the elementary symmetric polynomials (Lauer's algorithm): (p, r, m) with p.compose(m) + r == f, r the part that is not symmetric.
+   * @returns The symmetric expression, remainder, and generator substitutions.
    * @see SymPy `sympy.polys.rings.PolyElement.symmetrize`
    */
   symmetrize(): [PolyElement, PolyElement, [PolyElement, PolyElement][]] {
@@ -2013,7 +2013,7 @@ export class PolyElement {
   }
 
   /**
-   * f with generators replaced by polynomials, all at once.
+   * Substitutes polynomial expressions for the specified generators.
    *
    * @param x - Polynomial generator.
    * @param a - First operand.
@@ -2044,11 +2044,11 @@ export class PolyElement {
   }
 
   /**
-   * The coefficient of x**deg as a polynomial in the other generators.
+   * Collects the terms at the requested degree in one generator.
    *
    * @param x - Polynomial generator.
    * @param deg - Degree to select.
-   * @returns The coefficient of x**deg as a polynomial in the other generators.
+   * @returns The coefficient polynomial in the remaining generators.
    * @see SymPy `sympy.polys.rings.PolyElement.coeff_wrt`
    */
   coeffWrt(x: GenLike, deg: IntLike): PolyElement {
@@ -2058,7 +2058,7 @@ export class PolyElement {
   }
 
   /**
-   * The pseudo-remainder with respect to x (the first generator by default).
+   * Performs pseudo-division in the main variable and retains the remainder.
    *
    * @param g - Divisor polynomial.
    * @param x - Polynomial generator.
@@ -2070,12 +2070,11 @@ export class PolyElement {
   }
 
   /**
-   * Pseudo-division with respect to x: (q, r) with LC(g, x)**(deg(f, x) -
-   * deg(g, x) + 1)*f = g*q + r.
+   * Performs pseudo-division in the selected generator.
    *
    * @param g - Divisor polynomial.
    * @param x - Polynomial generator.
-   * @returns The quotient and remainder.
+   * @returns The pseudo-quotient and pseudo-remainder.
    * @see SymPy `sympy.polys.rings.PolyElement.pdiv`
    */
   pdiv(g: PolyElement, x?: GenLike): [PolyElement, PolyElement] {
@@ -2108,7 +2107,7 @@ export class PolyElement {
   }
 
   /**
-   * The pseudo-quotient.
+   * Computes the quotient from polynomial pseudo-division.
    *
    * @param g - Divisor polynomial.
    * @param x - Polynomial generator.
@@ -2120,7 +2119,7 @@ export class PolyElement {
   }
 
   /**
-   * The exact pseudo-quotient; ExactQuotientFailed when the pseudo-remainder is not zero.
+   * Performs exact pseudo-division in the main variable.
    *
    * @param g - Divisor polynomial.
    * @param x - Polynomial generator.
@@ -2135,11 +2134,11 @@ export class PolyElement {
   }
 
   /**
-   * The subresultant PRS with respect to x.
+   * Builds the subresultant polynomial remainder sequence in the selected generator.
    *
    * @param g0 - Polynomial divisor.
    * @param x0 - Expansion point.
-   * @returns The subresultant PRS with respect to x.
+   * @returns The subresultant polynomials.
    * @see SymPy `sympy.polys.rings.PolyElement.subresultants`
    */
   subresultants(g0: PolyElement, x0?: GenLike): (PolyElement | number)[] {
@@ -2173,27 +2172,27 @@ export class PolyElement {
   }
 
   /**
-   * The half extended Euclidean algorithm.
+   * Finds a coefficient `s` satisfying `s*f = h` modulo `g` for the GCD `h`.
    *
    * @param g - Second polynomial operand.
-   * @returns A Bézout coefficient and the greatest common divisor.
+   * @returns The pair `[s, h]`.
    * @see SymPy `sympy.polys.rings.PolyElement.half_gcdex`
    */
   halfGcdex(g: PolyElement): [PolyElement, PolyElement] {
     return this.ring.dupHalfGcdex(this, g);
   }
   /**
-   * The extended Euclidean algorithm.
+   * Computes a polynomial GCD and the coefficients of its Bézout identity.
    *
    * @param g - Second polynomial operand.
-   * @returns The extended Euclidean algorithm.
+   * @returns The two Bézout coefficients and GCD.
    * @see SymPy `sympy.polys.rings.PolyElement.gcdex`
    */
   gcdex(g: PolyElement): [PolyElement, PolyElement, PolyElement] {
     return this.ring.dupGcdex(this, g);
   }
   /**
-   * The resultant.
+   * Eliminates the polynomial variable by taking the resultant of the inputs.
    *
    * @param g - Second polynomial operand.
    * @returns The resultant with respect to the elimination variable.
@@ -2203,18 +2202,18 @@ export class PolyElement {
     return this.ring.dmpResultant(this, g);
   }
   /**
-   * The discriminant.
+   * Computes the discriminant of the polynomial.
    *
-   * @returns The discriminant.
+   * @returns The discriminant value.
    * @see SymPy `sympy.polys.rings.PolyElement.discriminant`
    */
   discriminant(): PolyElement | Expr {
     return this.ring.dmpDiscriminant(this);
   }
   /**
-   * A functional decomposition.
+   * Writes the polynomial as a composition of lower-degree polynomials when possible.
    *
-   * @returns A functional decomposition.
+   * @returns The components in composition order.
    * @throws MultivariatePolynomialError when the operation requires a univariate polynomial.
    * @see SymPy `sympy.polys.rings.PolyElement.decompose`
    */
@@ -2223,7 +2222,7 @@ export class PolyElement {
     return this.ring.dupDecompose(this);
   }
   /**
-   * f(x + a).
+   * Translates the polynomial's argument by the supplied value.
    *
    * @param a - First operand.
    * @returns The translated polynomial.
@@ -2235,7 +2234,7 @@ export class PolyElement {
     return this.ring.dupShift(this, a);
   }
   /**
-   * f(x_0 + a_0, ...).
+   * Translates each generator by its corresponding shift.
    *
    * @param a - First operand.
    * @returns The polynomial translated by one amount for each generator.
@@ -2245,9 +2244,9 @@ export class PolyElement {
     return this.ring.dmpShift(this, a);
   }
   /**
-   * The Sturm sequence.
+   * Builds the Sturm sequence for the polynomial.
    *
-   * @returns The Sturm sequence.
+   * @returns The ordered Sturm polynomials.
    * @throws MultivariatePolynomialError when the operation requires a univariate polynomial.
    * @see SymPy `sympy.polys.rings.PolyElement.sturm`
    */
@@ -2256,16 +2255,16 @@ export class PolyElement {
     return this.ring.dupSturm(this);
   }
   /**
-   * The greatest factorial factorization.
+   * Computes the greatest factorial factorization of the polynomial.
    *
-   * @returns The greatest factorial factorization.
+   * @returns The factors and their factorial lengths.
    * @see SymPy `sympy.polys.rings.PolyElement.gff_list`
    */
   gffList(): [PolyElement, number][] {
     return this.ring.dmpGffList(this);
   }
   /**
-   * The square-free part.
+   * Removes repeated irreducible factors from the polynomial.
    *
    * @returns The square-free part of the polynomial.
    * @see SymPy `sympy.polys.rings.PolyElement.sqf_part`
@@ -2274,17 +2273,17 @@ export class PolyElement {
     return this.ring.dmpSqfPart(this);
   }
   /**
-   * The square-free decomposition.
+   * Separates the polynomial into square-free factors by multiplicity.
    *
    * @param all - Include factors of missing multiplicities.
-   * @returns The square-free decomposition.
+   * @returns The coefficient and factor–multiplicity pairs.
    * @see SymPy `sympy.polys.rings.PolyElement.sqf_list`
    */
   sqfList(all = false): [Expr, [PolyElement, number][]] {
     return this.ring.dmpSqfList(this, all);
   }
   /**
-   * Field norm of the polynomial over the ground domain of an algebraic extension.
+   * Computes the norm of the polynomial over its ground domain.
    *
    * @returns The polynomial norm over the ground domain.
    * @see SymPy `sympy.polys.rings.PolyElement.norm`
@@ -2294,18 +2293,18 @@ export class PolyElement {
     return this.ring.toGround().fromExpr(polynomial.norm().asExpr());
   }
   /**
-   * Translate a polynomial so its norm over the ground field is square-free.
+   * Shifts the polynomial until its norm is square-free over the ground field.
    *
-   * @returns Translate a polynomial so its norm over the ground field is square-free.
+   * @returns The shift, translated polynomial, and norm.
    * @see SymPy `sympy.polys.rings.PolyElement.sqf_norm`
    */
   sqfNorm(): [number[], PolyElement, PolyElement] {
     return this.ring.dmpSqfNorm(this);
   }
   /**
-   * The factorization.
+   * Decomposes the polynomial into irreducible factors.
    *
-   * @returns The factorization.
+   * @returns The coefficient and factor–multiplicity pairs.
    * @see SymPy `sympy.polys.rings.PolyElement.factor_list`
    */
   factorList(): [Expr, [PolyElement, number][]] {
@@ -2317,12 +2316,12 @@ export class PolyElement {
 const greater = (a: Expr, b: Expr): boolean => a instanceof Rational && b instanceof Rational && a.p * b.q > b.p * a.q;
 
 /**
- * A polynomial ring and its generators: [R, x_1, ..., x_n].
+ * Constructs a polynomial ring and exposes its generators as individual tuple entries.
  *
  * @param symbols - Symbols naming the generators, in order.
  * @param domain - Coefficient domain.
  * @param order - Monomial order used to compare terms.
- * @returns A polynomial ring and its generators: [R, x_1, ..., x_n].
+ * @returns The tuple `[ring, ...generators]`.
  * @see SymPy `sympy.polys.rings.ring`
  * @example
  * ```ts
@@ -2338,12 +2337,12 @@ export function ring(symbols: RingSymbols, domain: DomainLike = ZZ, order: Order
 }
 
 /**
- * A polynomial ring and the list of its generators: [R, [x_1, ..., x_n]].
+ * Constructs a polynomial ring and collects its generators in a list.
  *
  * @param symbols - Symbols naming the generators, in order.
  * @param domain - Coefficient domain.
  * @param order - Monomial order used to compare terms.
- * @returns A polynomial ring and the list of its generators: [R, [x_1, ..., x_n]].
+ * @returns The pair `[ring, generators]`.
  * @see SymPy `sympy.polys.rings.xring`
  * @example
  * ```ts
@@ -2389,13 +2388,11 @@ export interface SringOptions {
 }
 
 /**
- * A ring for expressions with the generators and the domain derived from
- * them, and the expressions as its elements: [R, f] for one
- * expression, [R, [f_1, ...]] for a list.
+ * Infers a polynomial ring for the input expressions and converts them to elements of that ring.
  *
  * @param exprs - Expressions to convert, with a common generator order.
  * @param rest - Additional generators and polynomial construction options.
- * @returns The inferred polynomial ring and its element or array of elements.
+ * @returns The ring and the converted element or list.
  * @see SymPy `sympy.polys.rings.sring`
  * @example
  * ```ts
@@ -2406,13 +2403,11 @@ export interface SringOptions {
  */
 export function sring(exprs: ExprLike, ...rest: (Expr | SringOptions)[]): [PolyRing, PolyElement];
 /**
- * A ring for expressions with the generators and the domain derived from
- * them, and the expressions as its elements: [R, f] for one
- * expression, [R, [f_1, ...]] for a list.
+ * Infers a polynomial ring for the input expressions and converts them to elements of that ring.
  *
  * @param exprs - Expressions to convert, with a common generator order.
  * @param rest - Additional generators and polynomial construction options.
- * @returns The inferred polynomial ring and its element or array of elements.
+ * @returns The ring and the converted element or list.
  * @see SymPy `sympy.polys.rings.sring`
  */
 export function sring(exprs: readonly ExprLike[], ...rest: (Expr | SringOptions)[]): [PolyRing, PolyElement[]];

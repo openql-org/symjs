@@ -180,8 +180,7 @@ function orderTruth(op: 'Lt' | 'Le' | 'Gt' | 'Ge', d: Expr): boolean | undefined
 }
 
 /**
- * The equation `a = b`. It evaluates to `true` or `false` when the two sides
- * are known to be equal or different, and stays unevaluated otherwise.
+ * Tests equality of the operands, retaining a symbolic equation when equality is undecidable.
  *
  * @param a - The left-hand side.
  * @param b - The right-hand side.
@@ -198,7 +197,7 @@ function orderTruth(op: 'Lt' | 'Le' | 'Gt' | 'Ge', d: Expr): boolean | undefined
  */
 export const Eq = (a: ExprLike, b: ExprLike): Expr => rel('Eq', a, b);
 /**
- * The relation `a != b`, the negation of {@link Eq}.
+ * Forms the inequality asserting that the operands differ, the negation of {@link Eq}.
  *
  * @param a - The left-hand side.
  * @param b - The right-hand side.
@@ -284,12 +283,11 @@ const isNumber = (e: Expr): boolean => e.kind !== 'Set' && e.freeSymbols().size 
 const REVERSED: Record<RelOp, RelOp> = { Lt: 'Gt', Le: 'Ge', Gt: 'Lt', Ge: 'Le', Eq: 'Eq', Ne: 'Ne' };
 
 /**
- * A number on the right, otherwise the sides in
- * default_sort_key order, and no minus sign that can be extracted on the
- * left (-x < y is y > -x).
+ * Orders the operands canonically, placing a numeric operand on the right and removing an extractable
+ * minus sign on the left.
  *
  * @param r - The relation to transform.
- * @returns A number on the right, otherwise the sides in default_sort_key order, and no minus sign that can be extracted on the left (-x < y is y > -x).
+ * @returns The canonical comparison.
  * @see SymPy `sympy.core.relational.Relational.canonical`
  * @example
  * ```ts

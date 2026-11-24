@@ -77,9 +77,9 @@ export class PlaneNode extends GeometryEntity {
   }
 
   /**
-   * The point defining the plane.
+   * Identifies the reference point used to define the plane.
    *
-   * @returns The point defining the plane.
+   * @returns A point on the plane.
    * @see SymPy `sympy.geometry.plane.Plane.p1`
    */
   get p1(): Point3DNode {
@@ -87,9 +87,9 @@ export class PlaneNode extends GeometryEntity {
   }
 
   /**
-   * The normal vector as a Tuple.
+   * Expresses the plane's normal in Cartesian components.
    *
-   * @returns The normal vector as a Tuple.
+   * @returns A coordinate tuple.
    * @see SymPy `sympy.geometry.plane.Plane.normal_vector`
    */
   get normalVector(): TupleNode {
@@ -97,9 +97,9 @@ export class PlaneNode extends GeometryEntity {
   }
 
   /**
-   * The number of coordinates in the surrounding space.
+   * Counts the coordinates needed to describe a point in the ambient space.
    *
-   * @returns The number of coordinates in the surrounding space.
+   * @returns The ambient dimension.
    * @see SymPy `sympy.geometry.plane.Plane.ambient_dimension`
    */
   get ambientDimension(): number {
@@ -107,7 +107,7 @@ export class PlaneNode extends GeometryEntity {
   }
 
   /**
-   * The point or linear entity lies in the plane.
+   * Tests whether the point or linear entity lies in the plane.
    *
    * @param o - Point or entity tested for containment.
    * @returns Whether the operand belongs to the entity.
@@ -140,7 +140,7 @@ export class PlaneNode extends GeometryEntity {
   }
 
   /**
-   * The point and normal vector evaluated numerically.
+   * Evaluates the reference point and normal vector numerically.
    *
    * @param evalfArg - Function that evaluates an operand numerically.
    * @param _dps - Decimal digits of numerical precision.
@@ -152,10 +152,10 @@ export class PlaneNode extends GeometryEntity {
   }
 
   /**
-   * The angle with a 3D linear entity or another plane.
+   * Computes the angle between this plane and another plane or a linear entity in space.
    *
    * @param o - Second entity defining the angle.
-   * @returns The angle with a 3D linear entity or another plane.
+   * @returns The angle in radians.
    * @throws TypeError when the supplied entity has no defined angle with a plane.
    * @see SymPy `sympy.geometry.plane.Plane.angle_between`
    */
@@ -175,12 +175,12 @@ export class PlaneNode extends GeometryEntity {
   }
 
   /**
-   * A point of the plane: on the circle of radius 1 about p1 as a function of the angle u, or p1 +
-   * u*a + v*b with two parameters.
+   * Parametrizes the unit circle about the plane's reference point with one parameter, or the plane
+   * itself with two.
    *
    * @param u - First surface parameter.
    * @param v - Parameter of the geometric entity.
-   * @returns A point of the plane: on the circle of radius 1 about p1 as a function of the angle u, or p1 + u*a + v*b with two parameters.
+   * @returns A point in the plane.
    * @see SymPy `sympy.geometry.plane.Plane.arbitrary_point`
    */
   override arbitraryPoint(u?: string | Sym | null, v?: string | Sym | null): Point3DNode {
@@ -216,7 +216,7 @@ export class PlaneNode extends GeometryEntity {
   }
 
   /**
-   * The planes have a line in common.
+   * Tests whether the planes share a common line.
    *
    * @param planesIn - Planes to test.
    * @returns Whether the entities share a point.
@@ -242,10 +242,10 @@ export class PlaneNode extends GeometryEntity {
   }
 
   /**
-   * The shortest distance to a point, linear entity or plane.
+   * Measures the minimum separation from a point, linear entity, or plane.
    *
    * @param oIn - Entity to measure the distance to.
-   * @returns The shortest distance to a point, linear entity or plane.
+   * @returns The shortest distance.
    * @see SymPy `sympy.geometry.plane.Plane.distance`
    */
   override distance(oIn: unknown): Expr {
@@ -265,7 +265,7 @@ export class PlaneNode extends GeometryEntity {
   }
 
   /**
-   * The planes are the same.
+   * Tests whether the two planes coincide.
    *
    * @param o - Object to compare with this one.
    * @returns Whether the operands are equal.
@@ -277,12 +277,12 @@ export class PlaneNode extends GeometryEntity {
   }
 
   /**
-   * The equation of the plane in real symbols x, y and z.
+   * Forms the Cartesian equation of the plane in real coordinates.
    *
    * @param x - Symbol for the x coordinate.
    * @param y - Symbol for the y coordinate.
    * @param z - Symbol for the z coordinate.
-   * @returns The equation of the plane in real symbols x, y and z.
+   * @returns An expression that vanishes on the plane.
    * @see SymPy `sympy.geometry.plane.Plane.equation`
    */
   equation(x?: Sym | string, y?: Sym | string, z?: Sym | string): Expr {
@@ -293,10 +293,10 @@ export class PlaneNode extends GeometryEntity {
   }
 
   /**
-   * The entities this plane has in common with o.
+   * Finds the geometry shared by the plane and the other entity.
    *
    * @param oIn - Entity to intersect with this one.
-   * @returns The entities this plane has in common with o.
+   * @returns The intersection entities.
    * @throws TypeError when the operand type has no supported intersection rule.
    * @see SymPy `sympy.geometry.plane.Plane.intersection`
    */
@@ -337,10 +337,10 @@ export class PlaneNode extends GeometryEntity {
   }
 
   /**
-   * The entity lies in the plane.
+   * Tests whether the entity lies in this plane.
    *
    * @param o - Entity tested for coplanarity.
-   * @returns The entity lies in the plane.
+   * @returns True for coplanarity.
    * @see SymPy `sympy.geometry.plane.Plane.is_coplanar`
    */
   isCoplanar(o: GeometryEntity): boolean {
@@ -354,10 +354,10 @@ export class PlaneNode extends GeometryEntity {
   }
 
   /**
-   * The plane and the 3D linear entity or plane are parallel.
+   * Tests whether the plane is parallel to another plane or linear entity in space.
    *
    * @param l - Linear entity to compare.
-   * @returns The plane and the 3D linear entity or plane are parallel.
+   * @returns True for parallelism.
    * @see SymPy `sympy.geometry.plane.Plane.is_parallel`
    */
   isParallel(l: GeometryEntity): boolean {
@@ -374,10 +374,10 @@ export class PlaneNode extends GeometryEntity {
   }
 
   /**
-   * The plane and the 3D linear entity or plane are perpendicular.
+   * Tests whether the plane is perpendicular to another plane or linear entity in space.
    *
    * @param l - Linear entity to compare.
-   * @returns The plane and the 3D linear entity or plane are perpendicular.
+   * @returns True for perpendicularity.
    * @see SymPy `sympy.geometry.plane.Plane.is_perpendicular`
    */
   isPerpendicular(l: GeometryEntity): boolean {
@@ -393,10 +393,10 @@ export class PlaneNode extends GeometryEntity {
   }
 
   /**
-   * The parallel plane through pt.
+   * Constructs a plane through the point with the same normal direction.
    *
    * @param p - Point used in the geometric construction or comparison.
-   * @returns The parallel plane through pt.
+   * @returns The parallel plane.
    * @see SymPy `sympy.geometry.plane.Plane.parallel_plane`
    */
   parallelPlane(p: PointInput): PlaneNode {
@@ -404,7 +404,7 @@ export class PlaneNode extends GeometryEntity {
   }
 
   /**
-   * The line through pt perpendicular to the plane.
+   * Constructs the perpendicular to the plane through the specified point.
    *
    * @param p - Point used in the geometric construction or comparison.
    * @returns The perpendicular line through the given point.
@@ -415,10 +415,10 @@ export class PlaneNode extends GeometryEntity {
   }
 
   /**
-   * A plane through the given points (at most two) perpendicular to this one.
+   * Constructs a plane normal to this one through up to two specified points.
    *
    * @param ptsIn - Points to compare.
-   * @returns A plane through the given points (at most two) perpendicular to this one.
+   * @returns A perpendicular plane.
    * @throws RangeError when more than two points are supplied.
    * @see SymPy `sympy.geometry.plane.Plane.perpendicular_plane`
    */
@@ -441,10 +441,10 @@ export class PlaneNode extends GeometryEntity {
   }
 
   /**
-   * The projection of a linear entity onto the plane: a point, or a 3D line, ray or segment.
+   * Projects a linear entity orthogonally onto this plane.
    *
    * @param line - Line defining the direction or reflection axis.
-   * @returns The projection of a linear entity onto the plane: a point, or a 3D line, ray or segment.
+   * @returns A point, line, ray, or segment in space.
    * @throws TypeError when the argument is not a linear entity.
    * @see SymPy `sympy.geometry.plane.Plane.projection_line`
    */
@@ -458,10 +458,10 @@ export class PlaneNode extends GeometryEntity {
   }
 
   /**
-   * The orthogonal projection of a point onto the plane.
+   * Drops a perpendicular from the point to the plane.
    *
    * @param p - Point used in the geometric construction or comparison.
-   * @returns The orthogonal projection of a point onto the plane.
+   * @returns The projected point.
    * @see SymPy `sympy.geometry.plane.Plane.projection`
    */
   projection(p: PointInput): Point3DNode {
@@ -471,10 +471,10 @@ export class PlaneNode extends GeometryEntity {
   }
 
   /**
-   * A random point of the plane; the same for the same integer seed.
+   * Samples a point on the plane, reproducibly for a given integer seed.
    *
    * @param seed - Seed for reproducible sampling.
-   * @returns A random point of the plane; the same for the same integer seed.
+   * @returns The sampled point.
    * @see SymPy `sympy.geometry.plane.Plane.random_point`
    */
   randomPoint(seed?: number | bigint): Point3DNode {
@@ -556,7 +556,7 @@ function newPlane(p1In: PointInput, a: PointInput | undefined, b: PointInput | u
 type PlaneArg = PointInput | PlaneOptions;
 
 /**
- * A plane in three-dimensional space defined by three points or by a point and a normal.
+ * Constructs a plane in three-dimensional space defined by three points or by a point and a normal.
  *
  * @param args - Three points, or a point and a normal vector.
  * @returns The resulting `Plane` expression.

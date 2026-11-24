@@ -216,27 +216,27 @@ export class StochasticProcess extends ExtensionExpr {
     return cast(Reflect.construct(this.constructor, [args]), Expr);
   }
   /**
-   * The set of the times.
+   * Specifies the times at which the process is defined.
    *
-   * @returns The set of the times.
+   * @returns The time index set.
    * @see SymPy `sympy.stats.stochastic_process_types.StochasticProcess.index_set`
    */
   get indexSet(): SetExpr {
     return Reals;
   }
   /**
-   * The underlying symbol naming the random variable.
+   * Identifies the ordinary symbol that names the random variable.
    *
-   * @returns The underlying symbol naming the random variable.
+   * @returns The underlying symbol.
    * @see SymPy `sympy.stats.stochastic_process_types.StochasticProcess.symbol`
    */
   get symbol(): Sym {
     return cast(at(this.args, 0), Sym);
   }
   /**
-   * The values the process takes.
+   * Specifies the values a realization of the process can take.
    *
-   * @returns The values the process takes.
+   * @returns The state space.
    * @see SymPy `sympy.stats.stochastic_process_types.StochasticProcess.state_space`
    */
   get stateSpace(): SetExpr {
@@ -245,7 +245,7 @@ export class StochasticProcess extends ExtensionExpr {
     return cast(s, SetExpr, 'state space');
   }
   /**
-   * The distribution at a time (SymPy distribution(key)): unspecified here.
+   * Obtains the marginal distribution of the process at the requested time when defined by the process.
    *
    * @param _key - Time or component index.
    * @returns The distribution at a time.
@@ -255,7 +255,7 @@ export class StochasticProcess extends ExtensionExpr {
     return new UnspecifiedDistribution();
   }
   /**
-   * The density of a random indexed symbol (SymPy density(x)): unspecified here.
+   * Obtains the density of an indexed random symbol when defined by the process.
    *
    * @param _x - Outcome at which to evaluate the density.
    * @returns The density of a random indexed symbol.
@@ -265,20 +265,20 @@ export class StochasticProcess extends ExtensionExpr {
     return new Density([]);
   }
   /**
-   * The random value of the process at the specified time.
+   * Obtains the random variable indexed by the supplied time.
    *
    * @param _time - Time at which to evaluate the process.
-   * @returns The random value of the process at the specified time.
+   * @returns The process value at that time.
    * @throws NotImplementedError when the process does not support continuous-time evaluation.
    */
   call(_time: ExprLike): RandomIndexedSymbol {
     throw new NotImplementedError('Use [] for indexing discrete time stochastic process.');
   }
   /**
-   * The value of the process at the specified time.
+   * Selects the process value at the requested time index.
    *
    * @param _time - Time at which to evaluate the process.
-   * @returns The value of the process at the specified time.
+   * @returns The indexed random variable.
    * @throws NotImplementedError when the process does not support discrete-time indexing.
    * @see SymPy `sympy.stats.stochastic_process_types.StochasticProcess.__getitem__`
    */
@@ -286,7 +286,7 @@ export class StochasticProcess extends ExtensionExpr {
     throw new NotImplementedError('Use () for indexing continuous time stochastic process.');
   }
   /**
-   * The probability that the event holds.
+   * Computes the probability assigned to the event.
    *
    * @param _condition - Condition on the random variables.
    * @param _givenCondition - Additional event assumed to hold.
@@ -299,12 +299,12 @@ export class StochasticProcess extends ExtensionExpr {
     throw new NotImplementedError('probability queries are not implemented for this process');
   }
   /**
-   * The expected value of the expression in this process.
+   * Computes the mean of the expression under the process law.
    *
    * @param _expr - Expression to evaluate.
    * @param _condition - Condition on the random variables.
    * @param _opts - Evaluation options accepted by the probability-space interface.
-   * @returns The expected value of the expression in this process.
+   * @returns The expectation.
    * @throws NotImplementedError when the concrete process does not implement this operation.
    * @see SymPy `sympy.stats.stochastic_process_types.StochasticProcess.expectation`
    */
@@ -312,9 +312,7 @@ export class StochasticProcess extends ExtensionExpr {
     throw new NotImplementedError('Abstract method for expectation queries.');
   }
   /**
-   * The joint distribution of the process at several times (SymPy
-   * joint_distribution): a time is replaced by the random indexed symbol at
-   * that time.
+   * Constructs the joint law of the process values at the specified times.
    *
    * @param argsIn - Operands in structural order.
    * @returns The joint distribution of the process at several times.
@@ -385,10 +383,10 @@ export class DiscreteTimeStochasticProcess extends StochasticProcess {
     super(args, name);
   }
   /**
-   * The value of the process at the specified time.
+   * Selects the process value at the requested time index.
    *
    * @param time - Time at which to evaluate the process.
-   * @returns The value of the process at the specified time.
+   * @returns The indexed random variable.
    * @see SymPy `sympy.stats.stochastic_process_types.DiscreteTimeStochasticProcess.__getitem__`
    */
   override at(time: ExprLike): RandomIndexedSymbol {
@@ -412,10 +410,10 @@ export class ContinuousTimeStochasticProcess extends StochasticProcess {
     super(args, name);
   }
   /**
-   * The random value of the process at the specified time.
+   * Obtains the random variable indexed by the supplied time.
    *
    * @param time - Time at which to evaluate the process.
-   * @returns The random value of the process at the specified time.
+   * @returns The process value at that time.
    * @see SymPy `sympy.stats.stochastic_process_types.ContinuousTimeStochasticProcess.__call__`
    */
   override call(time: ExprLike): RandomIndexedSymbol {
@@ -456,18 +454,18 @@ export class TransitionMatrixOfNode extends ExtensionExpr {
     return cast(Reflect.construct(this.constructor, [args]), Expr);
   }
   /**
-   * The stochastic process constrained by this condition.
+   * Identifies the process to which the condition applies.
    *
-   * @returns The stochastic process constrained by this condition.
+   * @returns The constrained process.
    * @see SymPy `sympy.stats.stochastic_process_types.TransitionMatrixOf.process`
    */
   get process(): Expr {
     return at(this.args, 0);
   }
   /**
-   * The matrix imposed by the condition.
+   * Extracts the matrix specified by the condition.
    *
-   * @returns The matrix imposed by the condition.
+   * @returns The conditioning matrix.
    * @see SymPy `sympy.stats.stochastic_process_types.TransitionMatrixOf.matrix`
    */
   get matrix(): ImmutableMatrixNode | MatrixSymbolNode {
@@ -476,7 +474,7 @@ export class TransitionMatrixOfNode extends ExtensionExpr {
 }
 
 /**
- * The transition matrix of a discrete Markov chain, as a condition.
+ * Specifies a transition matrix as a condition on a discrete Markov chain.
  *
  * @param process - Process to which the condition applies.
  * @param matrix - Matrix specified by the condition.
@@ -506,7 +504,7 @@ export class GeneratorMatrixOfNode extends TransitionMatrixOfNode {
 }
 
 /**
- * The generator matrix of a continuous Markov chain, as a condition.
+ * Specifies an infinitesimal generator as a condition on a continuous Markov chain.
  *
  * @param process - Process to which the condition applies.
  * @param matrix - Matrix specified by the condition.
@@ -546,18 +544,18 @@ export class StochasticStateSpaceOfNode extends ExtensionExpr {
     return new StochasticStateSpaceOfNode(args);
   }
   /**
-   * The stochastic process constrained by this condition.
+   * Identifies the process to which the condition applies.
    *
-   * @returns The stochastic process constrained by this condition.
+   * @returns The constrained process.
    * @see SymPy `sympy.stats.stochastic_process_types.StochasticStateSpaceOf.process`
    */
   get process(): Expr {
     return at(this.args, 0);
   }
   /**
-   * The range of integer state indices.
+   * Numbers the chain's states with consecutive integer indices.
    *
-   * @returns The range of integer state indices.
+   * @returns The index range.
    * @see SymPy `sympy.stats.stochastic_process_types.StochasticStateSpaceOf.state_index`
    */
   get stateIndex(): Range {
@@ -566,7 +564,7 @@ export class StochasticStateSpaceOfNode extends ExtensionExpr {
 }
 
 /**
- * The state space of a Markov chain as a condition (the Range of the state indices).
+ * Restricts the chain to the specified range of state indices.
  *
  * @param process - Process to which the condition applies.
  * @param stateSpace - Possible states of the process.
@@ -643,26 +641,26 @@ export abstract class MarkovProcess extends StochasticProcess {
   /** The transition probabilities from the time difference (SymPy trans_probs**dt or trans_probs(dt)). */
   protected abstract transitionsAt(mat: ImmutableMatrixNode | MatrixSymbolNode, dt: Expr): MatrixExpr;
   /**
-   * The number of states in the chain.
+   * Counts the states in the Markov chain.
    *
-   * @returns The number of states in the chain.
+   * @returns The state count.
    * @see SymPy `sympy.stats.stochastic_process_types.MarkovProcess.number_of_states`
    */
   get numberOfStates(): Expr {
     return chainMatrix(this.args).shape[0];
   }
   /**
-   * The state labels in transition-matrix order.
+   * Lists the state labels in the order used by the transition matrix.
    *
-   * @returns The state labels in transition-matrix order.
+   * @returns The ordered states.
    */
   get stateIndexArg(): Expr {
     return at(this.args, 1);
   }
   /**
-   * The set of possible process values.
+   * Describes the values that the process can attain.
    *
-   * @returns The set of possible process values.
+   * @returns The state set.
    * @see SymPy `sympy.stats.stochastic_process_types.MarkovProcess.state_space`
    */
   override get stateSpace(): SetExpr {
@@ -726,10 +724,10 @@ export abstract class MarkovProcess extends StochasticProcess {
     return { insufficient: false, mat, stateIndex: this.workOutStateIndex(stateIndex0, given, mat), given };
   }
   /**
-   * The states of a relational replaced by their indices.
+   * Rewrites a relational condition using integer state indices.
    *
    * @param condition - Condition on the random variables.
-   * @returns The states of a relational replaced by their indices.
+   * @returns The indexed condition.
    * @see SymPy `sympy.stats.stochastic_process_types.MarkovProcess.replace_with_index`
    */
   replaceWithIndex(condition: Expr): Expr {
@@ -739,7 +737,7 @@ export abstract class MarkovProcess extends StochasticProcess {
     return relOf(condition, this.indexOrSelf(lhs), this.indexOrSelf(rhs));
   }
   /**
-   * The probability that the event holds.
+   * Computes the probability assigned to the event.
    *
    * @param conditionIn - Condition on the random variables.
    * @param givenConditionIn - Additional event assumed to hold.
@@ -907,12 +905,12 @@ export abstract class MarkovProcess extends StochasticProcess {
     return piecewise([greater ? total : sub(1, total), later], [new ProbabilityNode([eqCond]), true]);
   }
   /**
-   * The expected value of the expression in this process.
+   * Computes the mean of the expression under the process law.
    *
    * @param expr - Expression to evaluate.
    * @param conditionIn - Condition on the random variables.
    * @param opts - Evaluation controls for integrals, sums and compound distributions.
-   * @returns The expected value of the expression in this process.
+   * @returns The expectation.
    * @throws RangeError when the conditioning state, time or expression is unsupported.
    * @throws NotImplementedError when the conditioning state, time or expression is unsupported.
    * @see SymPy `sympy.stats.stochastic_process_types.MarkovProcess.expectation`
@@ -978,9 +976,9 @@ export class DiscreteMarkovChainNode extends MarkovProcess {
     super(args, 'DiscreteMarkovChain');
   }
   /**
-   * The set of time indices of the process.
+   * Identifies the admissible time indices of the process.
    *
-   * @returns The set of time indices of the process.
+   * @returns The time index set.
    * @see SymPy `sympy.stats.stochastic_process_types.DiscreteMarkovChain.index_set`
    */
   override get indexSet(): SetExpr {
@@ -1002,19 +1000,19 @@ export class DiscreteMarkovChainNode extends MarkovProcess {
     return cast(mat.pow(dt), MatrixExpr, 'matrix power');
   }
   /**
-   * The value of the process at the specified time.
+   * Selects the process value at the requested time index.
    *
    * @param time - Time at which to evaluate the process.
-   * @returns The value of the process at the specified time.
+   * @returns The indexed random variable.
    * @see SymPy `sympy.stats.stochastic_process_types.DiscreteMarkovChain.__getitem__`
    */
   override at(time: ExprLike): RandomIndexedSymbol {
     return discreteAt(this, time);
   }
   /**
-   * The matrix of one-step transition probabilities.
+   * Specifies the single-step probabilities between pairs of states.
    *
-   * @returns The matrix of one-step transition probabilities.
+   * @returns The transition matrix.
    * @see SymPy `sympy.stats.stochastic_process_types.DiscreteMarkovChain.transition_probabilities`
    */
   get transitionProbabilities(): ImmutableMatrixNode | MatrixSymbolNode {
@@ -1027,10 +1025,9 @@ export class DiscreteMarkovChainNode extends MarkovProcess {
     return t.matrix;
   }
   /**
-   * The communication classes with their recurrence and period (SymPy
-   * communication_classes): [states, is_recurrent, period] for each class.
+   * Partitions states into communicating classes and determines recurrence and period for each.
    *
-   * @returns The communication classes with their recurrence and period.
+   * @returns The state list, recurrence flag, and period for each class.
    * @see SymPy `sympy.stats.stochastic_process_types.DiscreteMarkovChain.communication_classes`
    * @example
    * ```ts
@@ -1079,9 +1076,9 @@ export class DiscreteMarkovChainNode extends MarkovProcess {
     return out;
   }
   /**
-   * The fundamental matrix of the chain.
+   * Computes the fundamental matrix of the Markov chain.
    *
-   * @returns The fundamental matrix of the chain.
+   * @returns The fundamental matrix.
    * @throws RangeError when the fundamental matrix does not exist.
    * @see SymPy `sympy.stats.stochastic_process_types.DiscreteMarkovChain.fundamental_matrix`
    */
@@ -1100,9 +1097,9 @@ export class DiscreteMarkovChainNode extends MarkovProcess {
     return new ImmutableMatrixNode(M.inv());
   }
   /**
-   * The probabilities of absorption in each recurrent state from each transient state.
+   * Computes absorption probabilities from each transient state into each recurrent state.
    *
-   * @returns The probabilities of absorption in each recurrent state from each transient state.
+   * @returns The absorption probability matrix.
    * @see SymPy `sympy.stats.stochastic_process_types.DiscreteMarkovChain.absorbing_probabilities`
    */
   absorbingProbabilities(): ImmutableMatrixNode {
@@ -1121,9 +1118,9 @@ export class DiscreteMarkovChainNode extends MarkovProcess {
     return this.absorbingProbabilities();
   }
   /**
-   * The chain is regular: one class of period 1.
+   * Tests whether the chain has one communicating class of period one.
    *
-   * @returns The chain is regular: one class of period 1.
+   * @returns The symbolic Boolean regularity result.
    * @see SymPy `sympy.stats.stochastic_process_types.DiscreteMarkovChain.is_regular`
    */
   isRegular(): Expr {
@@ -1132,19 +1129,19 @@ export class DiscreteMarkovChainNode extends MarkovProcess {
     return tuples.length === 1 && at(tuples, 0)[2].key === S.One.key ? S.true : S.false;
   }
   /**
-   * The chain is ergodic: one class.
+   * Tests whether the chain has a single communicating class.
    *
-   * @returns The chain is ergodic: one class.
+   * @returns The symbolic Boolean ergodicity result.
    * @see SymPy `sympy.stats.stochastic_process_types.DiscreteMarkovChain.is_ergodic`
    */
   isErgodic(): Expr {
     return this.communicationClasses().length === 1 ? S.true : S.false;
   }
   /**
-   * The state is absorbing; 'unknown' for a symbolic matrix or a state out of range.
+   * Checks whether the state has a unit self-transition probability.
    *
    * @param state - Index of the state to test.
-   * @returns The state is absorbing; 'unknown' for a symbolic matrix or a state out of range.
+   * @returns True for an absorbing state, false otherwise, or `'unknown'` when undecidable.
    * @see SymPy `sympy.stats.stochastic_process_types.DiscreteMarkovChain.is_absorbing_state`
    */
   isAbsorbingState(state: number): boolean | 'unknown' {
@@ -1153,9 +1150,9 @@ export class DiscreteMarkovChainNode extends MarkovProcess {
     return 'unknown';
   }
   /**
-   * The chain is absorbing.
+   * Tests whether the recurrent block consists entirely of absorbing states.
    *
-   * @returns The chain is absorbing.
+   * @returns The symbolic Boolean absorption result.
    * @see SymPy `sympy.stats.stochastic_process_types.DiscreteMarkovChain.is_absorbing_chain`
    */
   isAbsorbingChain(): Expr {
@@ -1164,12 +1161,11 @@ export class DiscreteMarkovChainNode extends MarkovProcess {
     return r > 0 && A.matrix.equals(Matrix.eye(r)) ? S.true : S.false;
   }
   /**
-   * The stationary distribution (SymPy stationary_distribution): a row
-   * vector; for a symbolic matrix, the Lambda (or with `conditionSet`, the
-   * ConditionSet) of the equation wm*T = wm.
+   * Solves for a stationary row vector of the transition matrix, retaining the defining equation
+   * symbolically when needed.
    *
    * @param opts - Set `conditionSet` to express stationarity as a condition on the probability vector.
-   * @returns The stationary distribution.
+   * @returns A row vector, lambda, or condition set.
    * @see SymPy `sympy.stats.stochastic_process_types.DiscreteMarkovChain.stationary_distribution`
    * @example
    * ```ts
@@ -1193,7 +1189,7 @@ export class DiscreteMarkovChainNode extends MarkovProcess {
     return new ImmutableMatrixNode(Matrix.of([linsolveTau(eqs, xs)]));
   }
   /**
-   * The stationary distribution.
+   * Finds a distribution fixed by the chain's transitions.
    *
    * @returns The stationary distribution.
    * @see SymPy `sympy.stats.stochastic_process_types.DiscreteMarkovChain.fixed_row_vector`
@@ -1202,7 +1198,7 @@ export class DiscreteMarkovChainNode extends MarkovProcess {
     return this.stationaryDistribution();
   }
   /**
-   * The stationary distribution.
+   * Finds a distribution fixed by the chain's transitions.
    *
    * @returns The stationary distribution.
    * @see SymPy `sympy.stats.stochastic_process_types.DiscreteMarkovChain.limiting_distribution`
@@ -1211,11 +1207,9 @@ export class DiscreteMarkovChainNode extends MarkovProcess {
     return this.fixedRowVector();
   }
   /**
-   * The states reordered recurrent first and the blocks of the transition
-   * matrix: recurrent to recurrent, transient to recurrent and transient to
-   * transient.
+   * Reorders recurrent states first and separates the recurrent and transient blocks.
    *
-   * @returns The states reordered recurrent first and the blocks of the transition matrix: recurrent to recurrent, transient to recurrent and transient to transient.
+   * @returns The ordered states and recurrent–recurrent, transient–recurrent, and transient–transient blocks.
    * @see SymPy `sympy.stats.stochastic_process_types.DiscreteMarkovChain.decompose`
    */
   decompose(): [Expr[], ImmutableMatrixNode, ImmutableMatrixNode, ImmutableMatrixNode] {
@@ -1234,9 +1228,9 @@ export class DiscreteMarkovChainNode extends MarkovProcess {
     return [states, new ImmutableMatrixNode(A), new ImmutableMatrixNode(B), new ImmutableMatrixNode(C)];
   }
   /**
-   * The states reordered and the transition matrix in canonical form [[A, 0], [B, C]].
+   * Reorders the states to put the transition matrix in block form.
    *
-   * @returns The states reordered and the transition matrix in canonical form [[A, 0], [B, C]].
+   * @returns The ordered states and canonical transition matrix.
    * @see SymPy `sympy.stats.stochastic_process_types.DiscreteMarkovChain.canonical_form`
    */
   canonicalForm(): [Expr[], ImmutableMatrixNode] {
@@ -1249,7 +1243,7 @@ export class DiscreteMarkovChainNode extends MarkovProcess {
 }
 
 /**
- * A discrete-time Markov chain.
+ * Constructs a discrete-time Markov chain.
  *
  * @param sym - Name or symbol for the random variable.
  * @param stateSpace - Possible states of the process.
@@ -1314,18 +1308,18 @@ export class ContinuousMarkovChainNode extends MarkovProcess {
     return cast(this.transitionProbabilities(mat).call(dt), MatrixExpr, 'transition matrix');
   }
   /**
-   * The value at the supplied argument.
+   * Selects the random process value at the supplied argument.
    *
    * @param time - Time at which to evaluate the process.
-   * @returns The value at the supplied argument.
+   * @returns The indexed random variable.
    */
   override call(time: ExprLike): RandomIndexedSymbol {
     return continuousCall(this, time);
   }
   /**
-   * The infinitesimal generator of the continuous-time chain.
+   * Specifies the rates of transition in the continuous-time chain.
    *
-   * @returns The infinitesimal generator of the continuous-time chain.
+   * @returns The generator matrix.
    * @see SymPy `sympy.stats.stochastic_process_types.ContinuousMarkovChain.generator_matrix`
    */
   get generatorMatrix(): ImmutableMatrixNode | MatrixSymbolNode {
@@ -1348,9 +1342,10 @@ export class ContinuousMarkovChainNode extends MarkovProcess {
     return Lambda(t, exp(genMat.rmul(t)));
   }
   /**
-   * The limiting distribution (SymPy limiting_distribution): a row vector, or for a symbolic matrix the Lambda of wm*G = wm.
+   * Finds the chain's limiting distribution, retaining a symbolic equation for a symbolic generator
+   * matrix.
    *
-   * @returns The limiting distribution.
+   * @returns A row vector or lambda.
    * @see SymPy `sympy.stats.stochastic_process_types.ContinuousMarkovChain.limiting_distribution`
    */
   limitingDistribution(): Expr {
@@ -1365,7 +1360,7 @@ export class ContinuousMarkovChainNode extends MarkovProcess {
 }
 
 /**
- * A continuous-time Markov chain.
+ * Constructs a continuous-time Markov chain.
  *
  * @param sym - Name or symbol for the random variable.
  * @param stateSpace - Possible states of the process.
@@ -1463,52 +1458,52 @@ export class BernoulliProcessNode extends DiscreteTimeStochasticProcess implemen
     super(args, 'BernoulliProcess');
   }
   /**
-   * The set of time indices of the process.
+   * Identifies the admissible time indices of the process.
    *
-   * @returns The set of time indices of the process.
+   * @returns The time index set.
    * @see SymPy `sympy.stats.stochastic_process_types.BernoulliProcess.index_set`
    */
   override get indexSet(): SetExpr {
     return Naturals0;
   }
   /**
-   * The probability of success on each trial.
+   * Gives the chance of success in one process trial.
    *
-   * @returns The probability of success on each trial.
+   * @returns The per-trial probability.
    * @see SymPy `sympy.stats.stochastic_process_types.BernoulliProcess.p`
    */
   get p(): Expr {
     return at(this.args, 1);
   }
   /**
-   * The value of a successful trial.
+   * Identifies the value recorded when the trial succeeds.
    *
-   * @returns The value of a successful trial.
+   * @returns The success outcome.
    * @see SymPy `sympy.stats.stochastic_process_types.BernoulliProcess.success`
    */
   get success(): Expr {
     return at(this.args, 2);
   }
   /**
-   * The value of an unsuccessful trial.
+   * Identifies the value recorded when the trial fails.
    *
-   * @returns The value of an unsuccessful trial.
+   * @returns The failure outcome.
    * @see SymPy `sympy.stats.stochastic_process_types.BernoulliProcess.failure`
    */
   get failure(): Expr {
     return at(this.args, 3);
   }
   /**
-   * The set of possible process values.
+   * Describes the values that the process can attain.
    *
-   * @returns The set of possible process values.
+   * @returns The state set.
    * @see SymPy `sympy.stats.stochastic_process_types.BernoulliProcess.state_space`
    */
   override get stateSpace(): SetExpr {
     return setConverter([this.success, this.failure]);
   }
   /**
-   * The Bernoulli distribution of each trial (SymPy distribution(key)).
+   * Constructs the Bernoulli distribution shared by the individual trials.
    *
    * @param _key - Time or component index.
    * @returns The Bernoulli distribution of each trial.
@@ -1518,29 +1513,29 @@ export class BernoulliProcessNode extends DiscreteTimeStochasticProcess implemen
     return new BernoulliDistribution([this.p, this.success, this.failure]);
   }
   /**
-   * The Bernoulli random symbol of the trial.
+   * Constructs a Bernoulli variable with the process's trial parameters.
    *
    * @param rv - Random variable whose distribution is requested.
-   * @returns The Bernoulli random symbol of the trial.
+   * @returns The trial random symbol.
    * @see SymPy `sympy.stats.stochastic_process_types.BernoulliProcess.simple_rv`
    */
   simpleRv(rv: RandomIndexedSymbol): RandomSymbol {
     return Bernoulli(rv.name, this.p, this.success, this.failure);
   }
   /**
-   * The expected value of the expression in this process.
+   * Computes the mean of the expression under the process law.
    *
    * @param expr - Expression to evaluate.
    * @param condition - Condition on the random variables.
    * @param opts - Evaluation controls for integrals, sums and compound distributions.
-   * @returns The expected value of the expression in this process.
+   * @returns The expectation.
    * @see SymPy `sympy.stats.stochastic_process_types.BernoulliProcess.expectation`
    */
   override expectation(expr: Expr, condition?: Expr, opts: ComputeOptions = {}): Expr {
     return substituteExpectation(expr, condition, opts);
   }
   /**
-   * The probability that the event holds.
+   * Computes the probability assigned to the event.
    *
    * @param condition - Condition on the random variables.
    * @param givenCondition - Additional event assumed to hold.
@@ -1552,10 +1547,10 @@ export class BernoulliProcessNode extends DiscreteTimeStochasticProcess implemen
     return substituteProbability(condition, givenCondition, opts);
   }
   /**
-   * The density of the random variable or expression.
+   * Computes the probability law of the supplied random variable or expression.
    *
    * @param x - Outcome at which to evaluate the density.
-   * @returns The density of the random variable or expression.
+   * @returns The resulting density.
    * @see SymPy `sympy.stats.stochastic_process_types.BernoulliProcess.density`
    */
   override density(x: Expr): Expr {
@@ -1564,7 +1559,7 @@ export class BernoulliProcessNode extends DiscreteTimeStochasticProcess implemen
 }
 
 /**
- * A sequence of independent Bernoulli trials.
+ * Constructs a sequence of independent Bernoulli trials.
  *
  * @param sym - Name or symbol for the random variable.
  * @param p - Probability of a successful trial.
@@ -1593,10 +1588,8 @@ export type BernoulliProcess = BernoulliProcessNode;
 // ---------------------------------------------------------------------------
 
 /**
- * The intervals of the symbolic
- * times of the random indexed symbols given by Contains conditions, and the
- * replacement of each such symbol by the symbol at the length of its
- * interval.
+ * Extracts time intervals from membership conditions and substitutes process values indexed by the
+ * interval lengths.
  *
  * @param expr - Expression to evaluate.
  * @param condition - Condition on the random variables.
@@ -1644,28 +1637,28 @@ const disjoint = (intervals: readonly SetExpr[]): boolean =>
  */
 export abstract class CountingProcess extends ContinuousTimeStochasticProcess implements SimpleRv {
   /**
-   * The set of time indices of the process.
+   * Identifies the admissible time indices of the process.
    *
-   * @returns The set of time indices of the process.
+   * @returns The time index set.
    * @see SymPy `sympy.stats.stochastic_process_types.CountingProcess.index_set`
    */
   override get indexSet(): SetExpr {
     return interval(0, S.Infinity);
   }
   /**
-   * A random variable with the marginal law at the supplied time.
+   * Constructs the one-time marginal random variable of the process.
    *
    * @param rv - Random variable whose distribution is requested.
-   * @returns A random variable with the marginal law at the supplied time.
+   * @returns The random variable at the supplied time.
    */
   abstract simpleRv(rv: RandomIndexedSymbol): RandomSymbol;
   /**
-   * The expected value of the expression in this process.
+   * Computes the mean of the expression under the process law.
    *
    * @param exprIn - Expression to evaluate.
    * @param condition - Condition on the random variables.
    * @param opts - Evaluation controls for integrals, sums and compound distributions.
-   * @returns The expected value of the expression in this process.
+   * @returns The expectation.
    * @see SymPy `sympy.stats.stochastic_process_types.CountingProcess.expectation`
    */
   override expectation(exprIn: Expr, condition?: Expr, opts: ComputeOptions = {}): Expr {
@@ -1721,7 +1714,7 @@ export abstract class CountingProcess extends ContinuousTimeStochasticProcess im
     return mul(...result);
   }
   /**
-   * The probability that the event holds.
+   * Computes the probability assigned to the event.
    *
    * @param conditionIn - Condition on the random variables.
    * @param givenCondition - Additional event assumed to hold.
@@ -1788,25 +1781,25 @@ export class PoissonProcessNode extends CountingProcess {
     super(args, 'PoissonProcess');
   }
   /**
-   * The rate parameter of the process.
+   * Specifies the rate governing the process.
    *
-   * @returns The rate parameter of the process.
+   * @returns The rate parameter.
    * @see SymPy `sympy.stats.stochastic_process_types.PoissonProcess.lamda`
    */
   get lamda(): Expr {
     return at(this.args, 1);
   }
   /**
-   * The set of possible process values.
+   * Describes the values that the process can attain.
    *
-   * @returns The set of possible process values.
+   * @returns The state set.
    * @see SymPy `sympy.stats.stochastic_process_types.PoissonProcess.state_space`
    */
   override get stateSpace(): SetExpr {
     return Naturals0;
   }
   /**
-   * The Poisson distribution at a time (SymPy distribution(key)).
+   * Obtains the Poisson law of the process value at the specified time.
    *
    * @param key - Time or component index.
    * @returns The Poisson distribution at a time.
@@ -1817,10 +1810,10 @@ export class PoissonProcessNode extends CountingProcess {
     return new PoissonDistribution([mul(this.lamda, t)]);
   }
   /**
-   * The density of the random variable or expression.
+   * Computes the probability law of the supplied random variable or expression.
    *
    * @param x - Outcome at which to evaluate the density.
-   * @returns The density of the random variable or expression.
+   * @returns The resulting density.
    * @see SymPy `sympy.stats.stochastic_process_types.PoissonProcess.density`
    */
   override density(x: Expr): Expr {
@@ -1828,20 +1821,20 @@ export class PoissonProcessNode extends CountingProcess {
     return mul(pow(lt, x), pow(factorial(x), -1), exp(mul(-1, lt)));
   }
   /**
-   * A random variable with the marginal law at the supplied time.
+   * Constructs the one-time marginal random variable of the process.
    *
    * @param rv - Random variable whose distribution is requested.
-   * @returns A random variable with the marginal law at the supplied time.
+   * @returns The random variable at the supplied time.
    * @see SymPy `sympy.stats.stochastic_process_types.PoissonProcess.simple_rv`
    */
   simpleRv(rv: RandomIndexedSymbol): RandomSymbol {
     return Poisson(rv.name, mul(this.lamda, rv.indexKey));
   }
   /**
-   * The merged process, of rate the sum of the rates (SymPy X + Y).
+   * Superposes the two Poisson processes by adding their rates.
    *
    * @param other - Other operand.
-   * @returns The merged process, of rate the sum of the rates.
+   * @returns The combined Poisson process.
    * @throws RangeError when the other operand is not a Poisson process.
    */
   override add(other: ExprLike): PoissonProcessNode {
@@ -1849,11 +1842,11 @@ export class PoissonProcessNode extends CountingProcess {
     return new PoissonProcessNode([new Dummy(this.symbol.name + other.symbol.name), add(this.lamda, other.lamda)]);
   }
   /**
-   * The process split into two of rates l1 and l2.
+   * Splits the process into two processes with the specified rates.
    *
    * @param l1 - Rate of the first subprocess.
    * @param l2 - Rate of the second subprocess.
-   * @returns The process split into two of rates l1 and l2.
+   * @returns The two component processes.
    * @throws RangeError when the two rates do not sum to the original rate.
    * @see SymPy `sympy.stats.stochastic_process_types.PoissonProcess.split`
    */
@@ -1864,7 +1857,7 @@ export class PoissonProcessNode extends CountingProcess {
 }
 
 /**
- * A counting process with independent Poisson increments of rate lamda.
+ * Constructs a counting process with independent Poisson increments of rate lamda.
  *
  * @param sym - Name or symbol for the random variable.
  * @param lamda - Rate parameter.
@@ -1908,16 +1901,16 @@ export class WienerProcessNode extends CountingProcess {
     super(args, 'WienerProcess');
   }
   /**
-   * The set of possible process values.
+   * Describes the values that the process can attain.
    *
-   * @returns The set of possible process values.
+   * @returns The state set.
    * @see SymPy `sympy.stats.stochastic_process_types.WienerProcess.state_space`
    */
   override get stateSpace(): SetExpr {
     return Reals;
   }
   /**
-   * The normal distribution at a time (SymPy distribution(key)).
+   * Determines the normal law of the process at the supplied time.
    *
    * @param key - Time or component index.
    * @returns The normal distribution at a time.
@@ -1928,10 +1921,10 @@ export class WienerProcessNode extends CountingProcess {
     return new NormalDistribution([S.Zero, sqrt(t)]);
   }
   /**
-   * The density of the random variable or expression.
+   * Computes the probability law of the supplied random variable or expression.
    *
    * @param x - Outcome at which to evaluate the density.
-   * @returns The density of the random variable or expression.
+   * @returns The resulting density.
    * @see SymPy `sympy.stats.stochastic_process_types.WienerProcess.density`
    */
   override density(x: Expr): Expr {
@@ -1939,10 +1932,10 @@ export class WienerProcessNode extends CountingProcess {
     return mul(exp(mul(-1, pow(x, 2), pow(mul(2, t), -1))), pow(mul(sqrt(mul(2, S.Pi)), sqrt(t)), -1));
   }
   /**
-   * A random variable with the marginal law at the supplied time.
+   * Constructs the one-time marginal random variable of the process.
    *
    * @param rv - Random variable whose distribution is requested.
-   * @returns A random variable with the marginal law at the supplied time.
+   * @returns The random variable at the supplied time.
    * @see SymPy `sympy.stats.stochastic_process_types.WienerProcess.simple_rv`
    */
   simpleRv(rv: RandomIndexedSymbol): RandomSymbol {
@@ -1951,7 +1944,7 @@ export class WienerProcessNode extends CountingProcess {
 }
 
 /**
- * The Brownian motion, with independent normal increments.
+ * Constructs Brownian motion with independent normal increments.
  *
  * @param sym - Name or symbol for the random variable.
  * @returns The stochastic process.
@@ -1993,34 +1986,34 @@ export class GammaProcessNode extends CountingProcess {
     super(args, 'GammaProcess');
   }
   /**
-   * The rate parameter of the process.
+   * Specifies the rate governing the process.
    *
-   * @returns The rate parameter of the process.
+   * @returns The rate parameter.
    * @see SymPy `sympy.stats.stochastic_process_types.GammaProcess.lamda`
    */
   get lamda(): Expr {
     return at(this.args, 1);
   }
   /**
-   * The shape accumulated per unit time.
+   * Specifies the shape accrued by the process in one unit of time.
    *
-   * @returns The shape accumulated per unit time.
+   * @returns The shape rate.
    * @see SymPy `sympy.stats.stochastic_process_types.GammaProcess.gamma`
    */
   get gamma(): Expr {
     return at(this.args, 2);
   }
   /**
-   * The set of possible process values.
+   * Describes the values that the process can attain.
    *
-   * @returns The set of possible process values.
+   * @returns The state set.
    * @see SymPy `sympy.stats.stochastic_process_types.GammaProcess.state_space`
    */
   override get stateSpace(): SetExpr {
     return setConverter(interval(0, S.Infinity));
   }
   /**
-   * The gamma distribution at a time (SymPy distribution(key)).
+   * Determines the gamma law of the process at the supplied time.
    *
    * @param key - Time or component index.
    * @returns The gamma distribution at a time.
@@ -2031,10 +2024,10 @@ export class GammaProcessNode extends CountingProcess {
     return new GammaDistribution([mul(this.gamma, t), pow(this.lamda, -1)]);
   }
   /**
-   * The density of the random variable or expression.
+   * Computes the probability law of the supplied random variable or expression.
    *
    * @param x - Outcome at which to evaluate the density.
-   * @returns The density of the random variable or expression.
+   * @returns The resulting density.
    * @see SymPy `sympy.stats.stochastic_process_types.GammaProcess.density`
    */
   override density(x: Expr): Expr {
@@ -2043,10 +2036,10 @@ export class GammaProcessNode extends CountingProcess {
     return mul(pow(x, sub(k, 1)), exp(mul(-1, x, pow(theta, -1))), pow(mul(gammaFn(k), pow(theta, k)), -1));
   }
   /**
-   * A random variable with the marginal law at the supplied time.
+   * Constructs the one-time marginal random variable of the process.
    *
    * @param rv - Random variable whose distribution is requested.
-   * @returns A random variable with the marginal law at the supplied time.
+   * @returns The random variable at the supplied time.
    * @see SymPy `sympy.stats.stochastic_process_types.GammaProcess.simple_rv`
    */
   simpleRv(rv: RandomIndexedSymbol): RandomSymbol {
@@ -2055,7 +2048,7 @@ export class GammaProcessNode extends CountingProcess {
 }
 
 /**
- * A process with independent gamma increments.
+ * Constructs a process with independent gamma increments.
  *
  * @param sym - Name or symbol for the random variable.
  * @param lamda - Rate parameter.

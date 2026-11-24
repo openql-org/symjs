@@ -313,7 +313,8 @@ export interface RootOfOptions { /** Whether to express an indexed root in radic
 radicals?: boolean; }
 
 /**
- * Evaluated indexed root. Irreducible nontrivial factors remain CRootOf nodes.
+ * Selects an indexed polynomial root, retaining irreducible nontrivial factors as isolated-root
+ * expressions.
  *
  * @param f - Polynomial to operate on.
  * @param index - Zero-based index.
@@ -358,7 +359,8 @@ export function rootOf(f: ExprLike | Poly, index: number | Rational, opts: RootO
 }
 
 /**
- * Call to evaluate; new CRootOf constructs the unevaluated node for AST work.
+ * Selects a polynomial root by index, evaluating on a function call and preserving an unevaluated node
+ * with `new`.
  *
  * @param f - Polynomial to operate on.
  * @param index - Zero-based index.
@@ -375,12 +377,12 @@ export function rootOf(f: ExprLike | Poly, index: number | Rational, opts: RootO
 export const CRootOf = callableClass(CRootOfNode, (f: ExprLike | Poly, index: number | Rational, opts: RootOfOptions = {}): Expr => rootOf(f, index, { radicals: false, ...opts }));
 export type CRootOf = CRootOfNode;
 /**
- * An indexed real or complex root of a univariate polynomial.
+ * Selects a real or complex root of a univariate polynomial by index.
  *
  * @param f - Polynomial to operate on.
  * @param index - Zero-based index.
  * @param opts - Set `radicals` to allow explicit radical expressions.
- * @returns An indexed real or complex root of a univariate polynomial.
+ * @returns The indexed root.
  * @see SymPy `sympy.polys.rootoftools.ComplexRootOf`
  * @example
  * ```ts
@@ -392,12 +394,12 @@ export type CRootOf = CRootOfNode;
 export const ComplexRootOf = CRootOf;
 export type ComplexRootOf = CRootOfNode;
 /**
- * An indexed root of a univariate polynomial, expressed in radicals when available.
+ * Selects a polynomial root by index, using radicals when available.
  *
  * @param f - Polynomial to operate on.
  * @param index - Zero-based index.
  * @param opts - Set `radicals` to allow explicit radical expressions.
- * @returns An indexed root of a univariate polynomial, expressed in radicals when available.
+ * @returns The selected root expression.
  * @see SymPy `sympy.polys.rootoftools.RootOf`
  * @example
  * ```ts

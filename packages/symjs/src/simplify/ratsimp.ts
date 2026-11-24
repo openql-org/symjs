@@ -175,13 +175,13 @@ function minimalSolution(eqs: readonly Expr[], vars: readonly Sym[]): Map<string
 }
 
 /**
- * A simpler fraction equal to expr modulo the ideal of G (G a Groebner basis of a prime ideal).
+ * Simplifies a rational expression modulo the prime ideal represented by the given Gröbner basis.
  *
  * @param exprIn - The input expression.
  * @param G - A Gröbner basis of the prime ideal.
  * @param generators - The polynomial generators in order.
  * @param opts - `order` sets the monomial order, `domain` the coefficient domain and `quick` the search strategy.
- * @returns A simpler fraction equal to expr modulo the ideal of G (G a Groebner basis of a prime ideal).
+ * @returns An equivalent reduced fraction.
  * @throws RangeError when finite-field reduction requires a univariate basis or the ideal does not support the requested reduction.
  * @see SymPy `sympy.simplify.ratsimp.ratsimpmodprime`
  * @example

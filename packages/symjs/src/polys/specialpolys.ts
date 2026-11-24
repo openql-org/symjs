@@ -28,7 +28,7 @@ function finish(e: (v: Expr) => Expr, x: ExprLike | undefined, opts: NamedPolyOp
 }
 
 /**
- * The minimal polynomial of sqrt(2) + sqrt(3) + ... + sqrt(p_n).
+ * Constructs the minimal polynomial of the sum of the square roots of the first `n` primes.
  *
  * @param n - Nonnegative index of the polynomial family.
  * @param x - Variable or evaluation point of the polynomial.
@@ -60,7 +60,7 @@ export function swinnertonDyerPoly(n: number, x?: ExprLike, opts: NamedPolyOptio
 }
 
 /**
- * The n-th cyclotomic polynomial.
+ * Constructs the polynomial whose roots are the primitive nth roots of unity.
  *
  * @param n - Nonnegative index of the polynomial family.
  * @param x - Variable or evaluation point of the polynomial.
@@ -82,11 +82,11 @@ const isExprLike = (a: unknown): a is ExprLike => a instanceof Expr || typeof a 
 const isOptions = (a: unknown): a is NamedPolyOptions => !isExprLike(a) && !Array.isArray(a);
 
 /**
- * The n-th elementary symmetric polynomial of the generators.
+ * Sums products of `n` distinct generators to form the elementary symmetric polynomial.
  *
  * @param n - Order of the elementary symmetric polynomial.
  * @param args - Variables and an optional polynomial-output setting.
- * @returns The n-th elementary symmetric polynomial of the generators.
+ * @returns The degree-`n` symmetric polynomial.
  * @throws RangeError when the requested order is outside the range allowed by the number of generators.
  * @see SymPy `sympy.polys.specialpolys.symmetric_poly`
  */
@@ -121,7 +121,7 @@ export interface RandomPolyOptions extends NamedPolyOptions {
 }
 
 /**
- * a polynomial of degree n with random integer coefficients in [inf, sup].
+ * Generates a degree-`n` polynomial with integer coefficients in the supplied inclusive interval.
  *
  * @param x - Variable or evaluation point of the polynomial.
  * @param n - Nonnegative index of the polynomial family.
@@ -148,9 +148,8 @@ export function randomPoly(x: ExprLike, n: number, inf: number, sup: number, opt
 }
 
 /**
- * The Lagrange polynomial of degree
- * n - 1 through the points (X[i], Y[i]); X and Y given as strings are the
- * symbols X0, ..., X(n-1) and Y0, ..., Y(n-1).
+ * Interpolates the points with a polynomial of degree below their count, generating indexed coordinate
+ * symbols for string inputs.
  *
  * @param n - Number of interpolation nodes.
  * @param xIn - Variable or evaluation point of the polynomial.

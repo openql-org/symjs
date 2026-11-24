@@ -55,16 +55,16 @@ export class BaseScalarNode extends Sym {
   }
 
   /**
-   * The label used by the pretty printer.
+   * Supplies the label used in pretty-printed expressions.
    *
-   * @returns The label used by the pretty printer.
+   * @returns The display label.
    */
   override get prettyForm(): string {
     return this.#pretty;
   }
 
   /**
-   * LaTeX representation of this basis element.
+   * Formats the basis element as LaTeX.
    *
    * @returns The formatted text.
    */
@@ -73,7 +73,7 @@ export class BaseScalarNode extends Sym {
   }
 
   /**
-   * The printed name (R.x), as SymPy's BaseScalar repr is its str.
+   * Formats the base scalar as an attribute of its coordinate system.
    *
    * @returns The constructor representation.
    */
@@ -82,9 +82,9 @@ export class BaseScalarNode extends Sym {
   }
 
   /**
-   * Sorted as SymPy's class BaseScalar (before the symbols).
+   * Supplies the ordering class for a base scalar, which precedes symbols.
    *
-   * @returns The formatted text.
+   * @returns The canonical class name.
    */
   override get sortClass(): string {
     return 'BaseScalar';
@@ -97,7 +97,7 @@ export class BaseScalarNode extends Sym {
 }
 
 /**
- * A coordinate scalar of a three-dimensional coordinate system.
+ * Constructs a coordinate scalar belonging to a three-dimensional system.
  *
  * @param index - Zero-based index or indices selecting the desired component.
  * @param system - Coordinate system in which to express components.

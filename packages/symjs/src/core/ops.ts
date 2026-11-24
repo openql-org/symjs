@@ -84,7 +84,7 @@ export function splitCoeff(e: Expr): [Num, Expr] {
 }
 
 /**
- * Return [base, exponent] of e (exponent 1 for non-powers).
+ * Computes the base and exponent of a power, using one for the exponent of a non-power.
  *
  * @param e - The input expression.
  * @returns The base and exponent.
@@ -1260,8 +1260,8 @@ export function div(a: ExprLike, b: ExprLike): Expr {
 }
 
 /**
- * The principal square root, `x**(1/2)`. `sqrt(x**2)` is `x` only when `x` is
- * known to be nonnegative.
+ * Computes the principal square root, simplifying the square root of a square to its base when the base
+ * is known to be nonnegative.
  *
  * @param x - The argument.
  * @returns The square root.
@@ -1284,7 +1284,7 @@ export function sqrt(x: ExprLike): Expr {
 }
 
 /**
- * The exponential function `e**x`, represented as the power `E**x`.
+ * Represents the exponential function as a power of Euler's number.
  *
  * @param x - The exponent.
  * @returns `E**x`, evaluated where the value is known.
@@ -1309,8 +1309,7 @@ export function rational(p: bigint | number, q: bigint | number = 1): Rational {
 }
 
 /**
- * Heuristic: does the expression "look negative" (a leading minus sign could be
- * extracted)? Used to choose canonical signs, e.g. sin(-x) -> -sin(x).
+ * Tests whether the canonical form admits a leading minus sign.
  *
  * @param e - The input expression.
  * @returns Whether a leading minus sign can be canonically extracted.
@@ -1355,13 +1354,13 @@ impl.pow = pow;
 impl.couldExtractMinusSign = couldExtractMinusSign;
 
 /**
- * The k-th n-th root, x**(1/n)*(-1)**(2*k/n).
+ * Computes branch `k` of the nth root of the argument.
  *
  * @param x - The argument of the function.
  * @param n - The root degree.
  * @param k - The branch index, zero for the principal branch.
  * @param opts - Set `evaluate` to false to suppress automatic evaluation.
- * @returns The k-th n-th root, x**(1/n)*(-1)**(2*k/n).
+ * @returns The selected root.
  * @see SymPy `sympy.functions.elementary.miscellaneous.root`
  * @example
  * ```ts
@@ -1398,7 +1397,7 @@ export function cbrt(x: ExprLike): Expr {
 }
 
 /**
- * Real odd roots, or conversion of principal odd roots when n is omitted.
+ * Computes real odd roots or converts principal odd roots when the degree is omitted.
  *
  * @param xIn - The argument of the function.
  * @param nIn - The root degree.

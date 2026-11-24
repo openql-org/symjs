@@ -17,10 +17,10 @@ import type { DensityResult } from './rv';
 /** An expression representing a random matrix model with a density evaluator. */
 export interface RandomMatrixModel extends Expr {
   /**
-   * The density of a random matrix of the model.
+   * Computes the probability density of a matrix drawn from the model.
    *
    * @param expr - Expression to evaluate.
-   * @returns The density of a random matrix of the model.
+   * @returns The matrix density.
    */
   density(expr: Expr): Expr;
 }
@@ -43,15 +43,15 @@ export class RandomMatrixPSpace extends PSpace {
     super([symbolConverter(at(args, 0)), ...args.slice(1)], 'RandomMatrixPSpace');
   }
   /**
-   * The underlying symbol naming the random variable.
+   * Identifies the ordinary symbol that names the random variable.
    *
-   * @returns The underlying symbol naming the random variable.
+   * @returns The underlying symbol.
    */
   get symbol(): Sym {
     return symbolConverter(at(this.args, 0));
   }
   /**
-   * The space has a model (SymPy model is not None).
+   * Indicates whether the probability space has an ensemble model.
    *
    * @returns Whether the space specifies an ensemble model.
    */
@@ -59,9 +59,9 @@ export class RandomMatrixPSpace extends PSpace {
     return this.args.length > 1;
   }
   /**
-   * The ensemble model of the random matrices.
+   * Identifies the ensemble governing the random matrices.
    *
-   * @returns The ensemble model of the random matrices.
+   * @returns The ensemble model.
    * @throws TypeError when the stored model is not a random matrix ensemble.
    * @see SymPy `sympy.stats.random_matrix.RandomMatrixPSpace.model`
    */
@@ -71,23 +71,23 @@ export class RandomMatrixPSpace extends PSpace {
     return m;
   }
   /**
-   * Whether this space supplies a density for its random symbol.
+   * Indicates whether the space defines a density for its random symbol.
    *
-   * @returns Whether this space supplies a density for its random symbol.
+   * @returns The density-availability flag.
    */
   override get hasValueDensity(): boolean {
     return this.hasModel;
   }
   /**
-   * The density associated with the random symbol of the space.
+   * Identifies the probability density of the space's random symbol.
    *
-   * @returns The density associated with the random symbol of the space.
+   * @returns The value density.
    */
   override get valueDensity(): Expr {
     return this.model;
   }
   /**
-   * The distribution of the expression on this probability space.
+   * Computes the distribution induced by the expression on this space.
    *
    * @param expr - Expression to evaluate.
    * @returns The probability distribution of the expression.

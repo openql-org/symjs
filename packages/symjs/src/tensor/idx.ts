@@ -53,18 +53,18 @@ export class IdxNode extends Sym {
    */
   override readonly args: readonly Expr[];
   /**
-   * The top-level function in an expression.
+   * Identifies the constructor that rebuilds the index from its arguments.
    *
-   * @returns The top-level function in an expression.
+   * @returns The index constructor.
    * @see SymPy `sympy.tensor.indexed.Idx.func`
    */
   override get func(): typeof makeIdx {
     return makeIdx;
   }
   /**
-   * Whether the index behaves as an atomic expression.
+   * Indicates whether the index behaves as an atom in expressions.
    *
-   * @returns Whether the index behaves as an atomic expression.
+   * @returns The atomicity flag.
    */
   override get isAtom(): boolean {
     return true;
@@ -95,18 +95,18 @@ export class IdxNode extends Sym {
   }
 
   /**
-   * The lower bound, or NoMatch when the index has no range.
+   * Identifies the first value of the index range.
    *
-   * @returns The inclusive lower bound, or `NoMatch` for an unbounded index.
+   * @returns The lower bound or `NoMatch`.
    * @see SymPy `sympy.tensor.indexed.Idx.lower`
    */
   get lower(): Expr | NoMatchResult {
     return this.#bounds ? this.#bounds[0] : NoMatch;
   }
   /**
-   * The upper bound, or NoMatch when the index has no range.
+   * Identifies the last value of the index range.
    *
-   * @returns The inclusive upper bound, or `NoMatch` for an unbounded index.
+   * @returns The upper bound or `NoMatch`.
    * @see SymPy `sympy.tensor.indexed.Idx.upper`
    */
   get upper(): Expr | NoMatchResult {
@@ -124,8 +124,7 @@ export class IdxNode extends Sym {
   }
 
   /**
-   * LaTeX form like SymPy: the label with the range as a subscript (`{i}_{0\mathrel{..}\nobreak
-   * 3}`), or the label alone.
+   * Formats the index label with its range as a subscript when one is given.
    *
    * @returns The formatted text.
    */

@@ -297,7 +297,7 @@ export class CoordSys3DNode extends CoordSysBase {
   }
 
   /**
-   * The name, the transformation and the parent system.
+   * Formats the system's name, coordinate transformation, and parent in constructor form.
    *
    * @param repr - Formatter for expression arguments.
    * @returns The constructor representation.
@@ -310,41 +310,40 @@ export class CoordSys3DNode extends CoordSysBase {
   }
 
   /**
-   * The name of the coordinate system.
+   * Identifies the coordinate system by name.
    *
-   * @returns The name of the coordinate system.
+   * @returns The system name.
    */
   override get sysName(): string {
     return this.#name;
   }
   /**
-   * Names of the three basis vectors in axis order.
+   * Lists the names of the basis vectors in axis order.
    *
-   * @returns Names of the three basis vectors in axis order.
+   * @returns The three vector names.
    */
   override get vectorNames(): readonly string[] {
     return this.#vectorNames;
   }
   /**
-   * Names of the three coordinate scalars in axis order.
+   * Lists the coordinate scalar names in axis order.
    *
-   * @returns Names of the three coordinate scalars in axis order.
+   * @returns The three scalar names.
    */
   override get variableNames(): readonly string[] {
     return this.#variableNames;
   }
   /**
-   * The transformation that defines the system: the rotation matrix and location, the name of a
-   * predefined system, or the Lambda of the equations.
+   * Describes how the system is related to its parent.
    *
-   * @returns The transformation that defines the system: the rotation matrix and location, the name of a predefined system, or the Lambda of the equations.
+   * @returns A rotation and location, predefined transformation name, or coordinate lambda.
    */
   get transformation(): Expr | string {
     const f = this.#form;
     return f.kind === 'rect' ? new TupleNode([new TupleNode(f.rotation.data), f.location]) : f.kind === 'name' ? f.name : f.lambda;
   }
   /**
-   * The coordinate system from which this system was constructed. A root system has no parent.
+   * Identifies the coordinate system from which this one was constructed, when it has a parent.
    *
    * @returns The parent coordinate system, when present.
    * @see SymPy `sympy.vector.coordsysrect.CoordSys3D._parent`
@@ -353,36 +352,36 @@ export class CoordSys3DNode extends CoordSysBase {
     return this.#parent;
   }
   /**
-   * The root coordinate system in the parent chain.
+   * Follows the parent chain to the top-level coordinate system.
    *
-   * @returns The root coordinate system in the parent chain.
+   * @returns The root system.
    * @see SymPy `sympy.vector.coordsysrect.CoordSys3D._root`
    */
   override get rootSystem(): CoordSys3DNode {
     return this.#root;
   }
   /**
-   * The rotation matrix with respect to the parent.
+   * Describes the orientation of the axes relative to the parent system.
    *
-   * @returns The rotation matrix with respect to the parent.
+   * @returns The parent-relative rotation matrix.
    * @see SymPy `sympy.vector.coordsysrect.CoordSys3D._parent_rotation_matrix`
    */
   get parentRotationMatrix(): Matrix {
     return this.#rotation;
   }
   /**
-   * The origin point of the system.
+   * Locates the coordinate system's zero point.
    *
-   * @returns The origin point of the system.
+   * @returns The system origin.
    * @see SymPy `sympy.vector.coordsysrect.CoordSys3D.origin`
    */
   get origin(): VectorPointNode {
     return this.#origin;
   }
   /**
-   * The point at the origin of this coordinate system.
+   * Identifies the point from which positions in this system are measured.
    *
-   * @returns The point at the origin of this coordinate system.
+   * @returns The origin point.
    * @see SymPy `sympy.vector.coordsysrect.CoordSys3D.origin`
    */
   override get originPoint(): VectorPointNode {
@@ -390,10 +389,10 @@ export class CoordSys3DNode extends CoordSysBase {
   }
 
   /**
-   * The base vector or base scalar of the given name (SymPy getattr(system, name)).
+   * Looks up a coordinate basis object by its assigned name.
    *
    * @param name - Symbolic name.
-   * @returns The base vector or base scalar of the given name (SymPy getattr(system, name)).
+   * @returns The named base vector or scalar.
    * @throws TypeError when the coordinate system has no basis element of that name.
    */
   attr(name: string): BaseVectorNode | BaseScalarNode {
@@ -414,54 +413,54 @@ export class CoordSys3DNode extends CoordSysBase {
     return v;
   }
   /**
-   * The base vector named i (the first by default).
+   * Looks up the basis vector named `i`, normally the first axis.
    *
-   * @returns The base vector named i (the first by default).
+   * @returns The named base vector.
    * @see SymPy `sympy.vector.coordsysrect.CoordSys3D.i`
    */
   get i(): BaseVectorNode {
     return this.#vector('i');
   }
   /**
-   * The base vector named j (the second by default).
+   * Looks up the basis vector named `j`, normally the second axis.
    *
-   * @returns The base vector named j (the second by default).
+   * @returns The named base vector.
    * @see SymPy `sympy.vector.coordsysrect.CoordSys3D.j`
    */
   get j(): BaseVectorNode {
     return this.#vector('j');
   }
   /**
-   * The base vector named k (the third by default).
+   * Looks up the basis vector named `k`, normally the third axis.
    *
-   * @returns The base vector named k (the third by default).
+   * @returns The named base vector.
    * @see SymPy `sympy.vector.coordsysrect.CoordSys3D.k`
    */
   get k(): BaseVectorNode {
     return this.#vector('k');
   }
   /**
-   * The base scalar named x (the first by default).
+   * Looks up the coordinate scalar named `x`, normally the first coordinate.
    *
-   * @returns The base scalar named x (the first by default).
+   * @returns The named base scalar.
    * @see SymPy `sympy.vector.coordsysrect.CoordSys3D.x`
    */
   get x(): BaseScalarNode {
     return this.#scalar('x');
   }
   /**
-   * The base scalar named y (the second by default).
+   * Looks up the coordinate scalar named `y`, normally the second coordinate.
    *
-   * @returns The base scalar named y (the second by default).
+   * @returns The named base scalar.
    * @see SymPy `sympy.vector.coordsysrect.CoordSys3D.y`
    */
   get y(): BaseScalarNode {
     return this.#scalar('y');
   }
   /**
-   * The base scalar named z (the third by default).
+   * Looks up the coordinate scalar named `z`, normally the third coordinate.
    *
-   * @returns The base scalar named z (the third by default).
+   * @returns The named base scalar.
    * @see SymPy `sympy.vector.coordsysrect.CoordSys3D.z`
    */
   get z(): BaseScalarNode {
@@ -478,45 +477,45 @@ export class CoordSys3DNode extends CoordSysBase {
   }
 
   /**
-   * The basis vector fields in axis order.
+   * Lists the coordinate basis vectors in axis order.
    *
-   * @returns The basis vector fields in axis order.
+   * @returns The vector fields.
    * @see SymPy `sympy.vector.coordsysrect.CoordSys3D.base_vectors`
    */
   override baseVectors(): readonly [BaseVectorNode, BaseVectorNode, BaseVectorNode] {
     return this.#baseVectors;
   }
   /**
-   * The coordinate scalar fields in axis order.
+   * Lists the basis scalar fields in chart order.
    *
-   * @returns The coordinate scalar fields in axis order.
+   * @returns The coordinate fields.
    * @see SymPy `sympy.vector.coordsysrect.CoordSys3D.base_scalars`
    */
   override baseScalars(): readonly [BaseScalarNode, BaseScalarNode, BaseScalarNode] {
     return this.#baseScalars;
   }
   /**
-   * The scale factors of the three coordinate directions.
+   * Computes the Lamé scale factors along the three coordinate axes.
    *
-   * @returns The scale factors of the three coordinate directions.
+   * @returns The three scale factors.
    * @see SymPy `sympy.vector.coordsysrect.CoordSys3D.lame_coefficients`
    */
   override lameCoefficients(): readonly [Expr, Expr, Expr] {
     return this.#lame;
   }
   /**
-   * The parent's coordinates in terms of the base scalars.
+   * Expresses the parent coordinates in the base scalars of this system.
    *
-   * @returns The parent's coordinates in terms of the base scalars.
+   * @returns The parent coordinate triple.
    * @see SymPy `sympy.vector.coordsysrect.CoordSys3D.transformation_to_parent`
    */
   transformationToParent(): [Expr, Expr, Expr] {
     return this.#transformationLambda(...this.#baseScalars);
   }
   /**
-   * The base scalars in terms of the parent's coordinates.
+   * Expresses this system's base scalars in the coordinates of its parent.
    *
-   * @returns The base scalars in terms of the parent's coordinates.
+   * @returns The transformed coordinate triple.
    * @throws RangeError when the coordinate system has no parent to transform from.
    * @see SymPy `sympy.vector.coordsysrect.CoordSys3D.transformation_from_parent`
    */
@@ -525,10 +524,9 @@ export class CoordSys3DNode extends CoordSysBase {
     return this.transformationFromParentFunction()(...this.#parent.#baseScalars);
   }
   /**
-   * The inverse transformation as a function of the parent's coordinates (computed by solving the
-   * equations of a system defined by equations).
+   * Constructs the inverse coordinate map, solving the defining equations when necessary.
    *
-   * @returns The inverse transformation as a function of the parent's coordinates (computed by solving the equations of a system defined by equations).
+   * @returns A function of the parent coordinates.
    * @see SymPy `sympy.vector.coordsysrect.CoordSys3D.transformation_from_parent_function`
    */
   transformationFromParentFunction(): Equations {
@@ -551,20 +549,20 @@ export class CoordSys3DNode extends CoordSysBase {
     };
   }
   /**
-   * The simplified inverse of the rotation matrix with respect to the parent.
+   * Inverts and simplifies the rotation relative to the parent system.
    *
-   * @returns The simplified inverse of the rotation matrix with respect to the parent.
+   * @returns The inverse rotation matrix.
    */
   inverseRotationMatrix(): Matrix {
     return this.#rotation.inv().map((e) => simplify(e));
   }
 
   /**
-   * The direction cosine matrix of this system with respect to other (v_a = A.rotationMatrix(B) *
-   * v_b).
+   * Computes the direction cosine matrix mapping components in the other system to components in this
+   * one.
    *
    * @param other - Coordinate system in whose basis to express the rotation.
-   * @returns The direction cosine matrix of this system with respect to other (v_a = A.rotationMatrix(B) * v_b).
+   * @returns The relative rotation matrix.
    * @throws TypeError when a supplied coordinate system is not a `CoordSys3D`.
    * @see SymPy `sympy.vector.coordsysrect.CoordSys3D.rotation_matrix`
    */
@@ -586,10 +584,10 @@ export class CoordSys3DNode extends CoordSysBase {
   }
 
   /**
-   * The position of this system's origin with respect to a point or system.
+   * Measures the displacement from the reference point or system origin to this origin.
    *
    * @param other - Reference point or coordinate system origin.
-   * @returns The position of this system's origin with respect to a point or system.
+   * @returns The relative position vector.
    * @throws TypeError when the reference is neither a vector point nor a coordinate system.
    * @see SymPy `sympy.vector.coordsysrect.CoordSys3D.position_wrt`
    */
@@ -599,10 +597,10 @@ export class CoordSys3DNode extends CoordSysBase {
   }
 
   /**
-   * The base scalars of this system in terms of those of other.
+   * Expresses this system's coordinate scalars in those of the other system.
    *
    * @param other - Coordinate system whose base scalars will appear in the expressions.
-   * @returns The base scalars of this system in terms of those of other.
+   * @returns A map of scalar substitutions.
    * @see SymPy `sympy.vector.coordsysrect.CoordSys3D.scalar_map`
    */
   override scalarMap(other: CoordSysBase): ExprMap<Expr> {
@@ -613,12 +611,12 @@ export class CoordSys3DNode extends CoordSysBase {
   }
 
   /**
-   * A system located at position with respect to this one.
+   * Creates a child system with its origin displaced by the supplied position vector.
    *
    * @param name - Symbolic name.
    * @param position - Displacement from the reference point.
    * @param opts - Settings described by {@link NamesOptions}.
-   * @returns A system located at position with respect to this one.
+   * @returns The translated coordinate system.
    * @see SymPy `sympy.vector.coordsysrect.CoordSys3D.locate_new`
    */
   locateNew(name: string, position: Expr, opts: NamesOptions = {}): CoordSys3DNode {
@@ -626,13 +624,13 @@ export class CoordSys3DNode extends CoordSysBase {
   }
 
   /**
-   * A system oriented by an orienter (or by several, applied in order) with respect to this one.
+   * Creates a child system by applying one or more orienters in order.
    *
    * @param name - Symbolic name.
    * @param orienters - Rotations to apply in order.
    * @param location - Position of the new origin relative to the parent origin.
    * @param opts - Settings described by {@link NamesOptions}.
-   * @returns A system oriented by an orienter (or by several, applied in order) with respect to this one.
+   * @returns The oriented coordinate system.
    * @see SymPy `sympy.vector.coordsysrect.CoordSys3D.orient_new`
    */
   orientNew(name: string, orienters: Orienter | readonly Orienter[], location?: Expr, opts: NamesOptions = {}): CoordSys3DNode {
@@ -655,14 +653,14 @@ export class CoordSys3DNode extends CoordSysBase {
   }
 
   /**
-   * A system rotated about axis by angle.
+   * Rotates a child system through the given angle about the specified axis.
    *
    * @param name - Symbolic name.
    * @param angle - Rotation angle in radians.
    * @param axis - Vector defining the rotation axis.
    * @param location - Position of the new origin relative to the parent origin.
    * @param opts - Settings described by {@link NamesOptions}.
-   * @returns A system rotated about axis by angle.
+   * @returns The oriented coordinate system.
    * @see SymPy `sympy.vector.coordsysrect.CoordSys3D.orient_new_axis`
    * @example
    * ```ts
@@ -678,7 +676,7 @@ export class CoordSys3DNode extends CoordSysBase {
   }
 
   /**
-   * Three body-fixed rotations.
+   * Orients a child system using three successive rotations about body-fixed axes.
    *
    * @param name - Symbolic name.
    * @param angle1 - First rotation angle in radians.
@@ -695,7 +693,7 @@ export class CoordSys3DNode extends CoordSysBase {
   }
 
   /**
-   * Three space-fixed rotations.
+   * Orients a child system using three successive rotations about space-fixed axes.
    *
    * @param name - Symbolic name.
    * @param angle1 - First rotation angle in radians.
@@ -712,7 +710,7 @@ export class CoordSys3DNode extends CoordSysBase {
   }
 
   /**
-   * The rotation of a quaternion.
+   * Defines a child coordinate system using the supplied quaternion rotation.
    *
    * @param name - Symbolic name.
    * @param q0 - Scalar quaternion component.
@@ -721,7 +719,7 @@ export class CoordSys3DNode extends CoordSysBase {
    * @param q3 - Third vector quaternion component.
    * @param location - Position of the new origin relative to the parent origin.
    * @param opts - Settings described by {@link NamesOptions}.
-   * @returns The rotation of a quaternion.
+   * @returns The oriented coordinate system.
    * @see SymPy `sympy.vector.coordsysrect.CoordSys3D.orient_new_quaternion`
    */
   orientNewQuaternion(name: string, q0: ExprLike, q1: ExprLike, q2: ExprLike, q3: ExprLike, location?: Expr, opts: NamesOptions = {}): CoordSys3DNode {
@@ -729,12 +727,12 @@ export class CoordSys3DNode extends CoordSysBase {
   }
 
   /**
-   * A system connected to this one by a transformation.
+   * Creates a child coordinate system related by the specified transformation.
    *
    * @param name - Symbolic name.
    * @param transformation - Coordinate transformation to the parent system.
    * @param opts - Settings described by {@link NamesOptions}.
-   * @returns A system connected to this one by a transformation.
+   * @returns The new coordinate system.
    * @see SymPy `sympy.vector.coordsysrect.CoordSys3D.create_new`
    */
   createNew(name: string, transformation: Transformation, opts: NamesOptions = {}): CoordSys3DNode {
@@ -784,7 +782,8 @@ const SpaceOrienterFn = (a: ExprLike, b: ExprLike, c: ExprLike, order: string): 
 const QuaternionOrienterFn = (a: ExprLike, b: ExprLike, c: ExprLike, d: ExprLike): Orienter => new QuaternionOrienterNode(a, b, c, d);
 
 /**
- * A three-dimensional coordinate system with its origin, basis vectors and coordinate scalars.
+ * Constructs a three-dimensional coordinate system with its origin, basis vectors and coordinate
+ * scalars.
  *
  * @param name - Symbolic name.
  * @param transformationOrOpts - Coordinate transformation or coordinate-system construction options.

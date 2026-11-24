@@ -53,50 +53,50 @@ export class SeriesBase extends ExtensionExpr {
   }
 
   /**
-   * The interval of term indices, with both endpoints included.
+   * Specifies both inclusive endpoints of the series indices.
    *
-   * @returns The interval of term indices, with both endpoints included.
+   * @returns The index interval.
    * @throws NotImplementedError when the concrete series does not implement this operation.
    * @see SymPy `sympy.series.series_class.SeriesBase.interval`
    */
   get interval(): SetExpr { throw new NotImplementedError(`${this.name}.interval`); }
   /**
-   * The first index of the series or sequence.
+   * Identifies the first index at which a term is defined.
    *
-   * @returns The first index of the series or sequence.
+   * @returns The starting index.
    * @throws NotImplementedError when the concrete series does not implement this operation.
    * @see SymPy `sympy.series.series_class.SeriesBase.start`
    */
   get start(): Expr { throw new NotImplementedError(`${this.name}.start`); }
   /**
-   * The last index of the series or sequence.
+   * Identifies the final index in the series or sequence.
    *
-   * @returns The last index of the series or sequence.
+   * @returns The ending index.
    * @throws NotImplementedError when the concrete series does not implement this operation.
    * @see SymPy `sympy.series.series_class.SeriesBase.stop`
    */
   get stop(): Expr { throw new NotImplementedError(`${this.name}.stop`); }
   /**
-   * The number of terms, possibly infinite.
+   * Counts the terms in the index interval, allowing an infinite range.
    *
-   * @returns The number of terms, possibly infinite.
+   * @returns The term count or infinity.
    * @throws NotImplementedError when the concrete series does not implement this operation.
    * @see SymPy `sympy.series.series_class.SeriesBase.length`
    */
   get length(): Expr { throw new NotImplementedError(`${this.name}.length`); }
 
   /**
-   * Variables bound by the series.
+   * Lists the variables whose scope is the series.
    *
-   * @returns Variables bound by the series.
+   * @returns The bound symbols.
    * @see SymPy `sympy.series.series_class.SeriesBase.variables`
    */
   get variables(): Sym[] { return []; }
 
   /**
-   * The free symbols of the series after removing its bound variables.
+   * Collects symbols occurring freely after accounting for the series bindings.
    *
-   * @returns The free symbols of the series after removing its bound variables.
+   * @returns The free symbols.
    * @see SymPy `sympy.series.series_class.SeriesBase.free_symbols`
    */
   override freeSymbolsSelf(): ReadonlySet<Expr> {
@@ -107,7 +107,7 @@ export class SeriesBase extends ExtensionExpr {
   }
 
   /**
-   * The cached term at a point, checked against the inclusive bounds.
+   * Retrieves the term after checking that its index lies within the inclusive bounds.
    *
    * @param pt - Index of the requested term.
    * @returns The term at the specified index.
@@ -136,7 +136,7 @@ export class SeriesBase extends ExtensionExpr {
   }
 
   /**
-   * The term at an offset from the initial endpoint. A negative offset extends backwards from that endpoint.
+   * Selects a term by offset from the initial endpoint, extending backwards for negative offsets.
    *
    * @param i - Integer term offset.
    * @returns The term at the requested offset.
@@ -147,7 +147,7 @@ export class SeriesBase extends ExtensionExpr {
   }
 
   /**
-   * The terms at successive offsets, up to the exclusive stop.
+   * Collects terms at successive offsets up to the exclusive stopping index.
    *
    * @param start - First offset to include.
    * @param stop - Exclusive ending offset.

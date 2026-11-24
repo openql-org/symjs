@@ -45,11 +45,11 @@ function termDiv(a: readonly [Monom, Expr], b: readonly [Monom, Expr], ring: Pol
 }
 
 /**
- * The S-polynomial of two polynomials.
+ * Cancels the leading terms of two polynomials using their least common multiple.
  *
  * @param p1 - First polynomial.
  * @param p2 - Second polynomial.
- * @returns The S-polynomial of two polynomials.
+ * @returns The S-polynomial.
  * @see SymPy `sympy.polys.groebnertools.spoly`
  */
 export function spoly(p1: PolyElement, p2: PolyElement): PolyElement {
@@ -58,35 +58,35 @@ export function spoly(p1: PolyElement, p2: PolyElement): PolyElement {
 }
 
 /**
- * The signature of a labeled polynomial (lbpSign: core exports Num).
+ * Extracts the signature attached to a labeled polynomial.
  *
  * @param f - Labeled polynomial with its signature and sequence number.
- * @returns The signature of a labeled polynomial (lbpSign: core exports Num).
+ * @returns The monomial and input index.
  * @see SymPy `sympy.polys.groebnertools.Sign`
  */
 export const lbpSign = (f: LabeledPolynomial): Signature => f[0];
 /**
- * The polynomial of a labeled polynomial.
+ * Extracts the polynomial carried by an F5 label.
  *
  * @param f - Labeled polynomial with its signature and sequence number.
- * @returns The polynomial of a labeled polynomial.
+ * @returns The polynomial component.
  * @see SymPy `sympy.polys.groebnertools.Polyn`
  */
 export const lbpPolyn = (f: LabeledPolynomial): PolyElement => f[1];
 /**
- * The number of a labeled polynomial.
+ * Reads the sequence number assigned to a labeled polynomial.
  *
  * @param f - Labeled polynomial with its signature and sequence number.
- * @returns The number of a labeled polynomial.
+ * @returns The label number.
  * @see SymPy `sympy.polys.groebnertools.Num`
  */
 export const lbpNum = (f: LabeledPolynomial): number => f[2];
 /**
- * Pair a monomial with the index of its input polynomial.
+ * Forms a signature from a monomial and its input polynomial's index.
  *
  * @param monomial - Exponent vector of the monomial.
  * @param index - Zero-based index.
- * @returns Pair a monomial with the index of its input polynomial.
+ * @returns A monomial–index pair.
  * @see SymPy `sympy.polys.groebnertools.sig`
  */
 export const sig = (monomial: Monom, index: number): Signature => [monomial, index];
@@ -102,12 +102,12 @@ export const sig = (monomial: Monom, index: number): Signature => [monomial, ind
 export const lbp = (signature: Signature, polynomial: PolyElement, number: number): LabeledPolynomial => [signature, polynomial, number];
 
 /**
- * -1 when u < v (a larger index, or the same index and a smaller monomial), else 1.
+ * Compares signatures by decreasing input index, then by increasing monomial order.
  *
  * @param u - First signature to compare.
  * @param v - Second signature.
  * @param ring - Polynomial ring supplying the generators and coefficient domain.
- * @returns -1 when u < v (a larger index, or the same index and a smaller monomial), else 1.
+ * @returns `-1` if the first precedes the second, otherwise `1`.
  * @see SymPy `sympy.polys.groebnertools.sig_cmp`
  */
 export function sigCmp(u: Signature, v: Signature, ring: PolyRing): -1 | 1 {
@@ -117,31 +117,31 @@ export function sigCmp(u: Signature, v: Signature, ring: PolyRing): -1 | 1 {
 }
 
 /**
- * The monomial-order key for comparing signatures.
+ * Builds the comparison key for a signature in the ring's monomial order.
  *
  * @param s - Signature of the labeled polynomial.
  * @param ring - Polynomial ring supplying the generators and coefficient domain.
- * @returns The monomial-order key for comparing signatures.
+ * @returns The signature ordering key.
  * @see SymPy `sympy.polys.groebnertools.sig_key`
  */
 export const sigKey = (s: Signature, ring: PolyRing): MonomialKey => [-s[1], orderKey(ring, s[0])];
 
 /**
- * Multiply the monomial of a signature by an exponent vector.
+ * Multiplies the monomial part of a signature by the supplied monomial.
  *
  * @param s - Signature of the labeled polynomial.
  * @param m - Exponent vector multiplying the signature.
- * @returns Multiply the monomial of a signature by an exponent vector.
+ * @returns The updated signature.
  * @see SymPy `sympy.polys.groebnertools.sig_mult`
  */
 export const sigMult = (s: Signature, m: Monom): Signature => sig(monomialMul(s[0], m), s[1]);
 
 /**
- * The difference, labeled with the larger signature.
+ * Subtracts two labeled polynomials and retains the larger signature.
  *
  * @param f - Labeled polynomial with its signature and sequence number.
  * @param g - Second polynomial operand.
- * @returns The difference, labeled with the larger signature.
+ * @returns The labeled difference.
  * @see SymPy `sympy.polys.groebnertools.lbp_sub`
  */
 export function lbpSub(f: LabeledPolynomial, g: LabeledPolynomial): LabeledPolynomial {
@@ -150,21 +150,21 @@ export function lbpSub(f: LabeledPolynomial, g: LabeledPolynomial): LabeledPolyn
 }
 
 /**
- * Multiply a labeled polynomial and its signature by a term.
+ * Scales a labeled polynomial by a term and multiplies its signature by the term's monomial.
  *
  * @param f - Labeled polynomial with its signature and sequence number.
  * @param cx - Monomial and coefficient of the multiplier.
- * @returns Multiply a labeled polynomial and its signature by a term.
+ * @returns The labeled product.
  * @see SymPy `sympy.polys.groebnertools.lbp_mul_term`
  */
 export const lbpMulTerm = (f: LabeledPolynomial, cx: readonly [Monom, Expr]): LabeledPolynomial => lbp(sigMult(lbpSign(f), cx[0]), lbpPolyn(f).mulTerm(cx), lbpNum(f));
 
 /**
- * -1 when f < g (by signature, then by a larger number), else 1.
+ * Orders labeled polynomials by signature, breaking ties by decreasing label number.
  *
  * @param f - Labeled polynomial with its signature and sequence number.
  * @param g - Second polynomial operand.
- * @returns -1 when f < g (by signature, then by a larger number), else 1.
+ * @returns `-1` if the first precedes the second, otherwise `1`.
  * @see SymPy `sympy.polys.groebnertools.lbp_cmp`
  */
 export function lbpCmp(f: LabeledPolynomial, g: LabeledPolynomial): -1 | 1 {
@@ -174,21 +174,21 @@ export function lbpCmp(f: LabeledPolynomial, g: LabeledPolynomial): -1 | 1 {
 }
 
 /**
- * The ordering key of a labeled polynomial.
+ * Combines the signature key and label number for ordering.
  *
  * @param f - Labeled polynomial with its signature and sequence number.
- * @returns The ordering key of a labeled polynomial.
+ * @returns The labeled polynomial's comparison key.
  * @see SymPy `sympy.polys.groebnertools.lbp_key`
  */
 export const lbpKey = (f: LabeledPolynomial): MonomialKey => [sigKey(lbpSign(f), lbpPolyn(f).ring), -lbpNum(f)];
 
 /**
- * The critical pair of two labeled polynomials, the larger one first.
+ * Constructs the critical pair with the larger labeled multiple first.
  *
  * @param f - Labeled polynomial with its signature and sequence number.
  * @param g - Second polynomial operand.
  * @param ring - Polynomial ring supplying the generators and coefficient domain.
- * @returns The critical pair of two labeled polynomials, the larger one first.
+ * @returns The ordered critical pair.
  * @see SymPy `sympy.polys.groebnertools.critical_pair`
  */
 export function criticalPair(f: LabeledPolynomial, g: LabeledPolynomial, ring: PolyRing): CriticalPair {
@@ -203,11 +203,11 @@ export function criticalPair(f: LabeledPolynomial, g: LabeledPolynomial, ring: P
 }
 
 /**
- * Compare two critical pairs in signature order.
+ * Orders critical pairs by their leading labeled signatures.
  *
  * @param c - Critical pair to compare or order.
  * @param d - Critical pair to compare or order.
- * @returns Compare two critical pairs in signature order.
+ * @returns `-1` if the first precedes the second, otherwise `1`.
  * @see SymPy `sympy.polys.groebnertools.cp_cmp`
  */
 export function cpCmp(c: CriticalPair, d: CriticalPair): -1 | 1 {
@@ -218,31 +218,31 @@ export function cpCmp(c: CriticalPair, d: CriticalPair): -1 | 1 {
 }
 
 /**
- * The ordering key of a critical pair.
+ * Builds the comparison key for a critical pair.
  *
  * @param c - Critical pair to compare or order.
  * @param ring - Polynomial ring supplying the generators and coefficient domain.
- * @returns The ordering key of a critical pair.
+ * @returns The critical-pair ordering key.
  * @see SymPy `sympy.polys.groebnertools.cp_key`
  */
 export const cpKey = (c: CriticalPair, ring: PolyRing): MonomialKey => [lbpKey(lbp(c[0], ring.zero, lbpNum(c[2]))), lbpKey(lbp(c[3], ring.zero, lbpNum(c[5])))];
 
 /**
- * The S-polynomial of a critical pair.
+ * Combines the labeled multiples in a critical pair to cancel their leading terms.
  *
  * @param cp - Critical pair.
- * @returns The S-polynomial of a critical pair.
+ * @returns The labeled S-polynomial.
  * @see SymPy `sympy.polys.groebnertools.s_poly`
  */
 export const sPoly = (cp: CriticalPair): LabeledPolynomial => lbpSub(lbpMulTerm(cp[2], cp[1]), lbpMulTerm(cp[5], cp[4]));
 
 /**
- * Whether a signature can be rewritten or discarded by the F5 criteria.
+ * Applies the F5 rewriting and comparability criteria to a signature.
  *
  * @param sign - Signature to test.
  * @param num - Numerator.
  * @param B - Second exponent vector.
- * @returns Whether a signature can be rewritten or discarded by the F5 criteria.
+ * @returns True if the signature can be discarded.
  * @see SymPy `sympy.polys.groebnertools.is_rewritable_or_comparable`
  */
 export function isRewritableOrComparable(sign: Signature, num: number, B: readonly LabeledPolynomial[]): boolean {
@@ -254,11 +254,11 @@ export function isRewritableOrComparable(sign: Signature, num: number, B: readon
 }
 
 /**
- * f reduced by the labeled polynomials of B with smaller signatures.
+ * Reduces the labeled polynomial using only basis elements with smaller signatures.
  *
  * @param fIn - Labeled polynomial with its signature and sequence number.
  * @param B - Second exponent vector.
- * @returns F reduced by the labeled polynomials of B with smaller signatures.
+ * @returns The reduced labeled polynomial.
  * @see SymPy `sympy.polys.groebnertools.f5_reduce`
  * @remarks SymPy returns `(((1, 1, 1), 4), x, 3)` with tuples for the fixed-length groups.
  * @example
@@ -336,11 +336,11 @@ function buchberger(input: readonly PolyElement[], ring: PolyRing): PolyElement[
 }
 
 /**
- * The reduced Groebner basis of F (over a field) by the F5B algorithm.
+ * Computes a reduced Gröbner basis over a field using F5B.
  *
  * @param FIn - Input polynomials.
  * @param ring - Polynomial ring supplying the generators and coefficient domain.
- * @returns The reduced Groebner basis of F (over a field) by the F5B algorithm.
+ * @returns The reduced basis polynomials.
  * @see SymPy `sympy.polys.groebnertools._f5b`
  */
 export function f5b(FIn: readonly PolyElement[], ring: PolyRing): PolyElement[] {
@@ -387,10 +387,10 @@ export function f5b(FIn: readonly PolyElement[], ring: PolyRing): PolyElement[] 
 }
 
 /**
- * The reduced Groebner basis of a Groebner basis.
+ * Reduces a Gröbner basis to its canonical reduced basis.
  *
  * @param G - Polynomials of the candidate basis.
- * @returns The reduced Groebner basis of a Groebner basis.
+ * @returns The reduced basis polynomials.
  * @see SymPy `sympy.polys.groebnertools.red_groebner`
  */
 export function redGroebner(G: readonly PolyElement[]): PolyElement[] {
@@ -406,10 +406,10 @@ export function redGroebner(G: readonly PolyElement[]): PolyElement[] {
 }
 
 /**
- * Whether every S-polynomial reduces to zero.
+ * Checks the Gröbner basis criterion by reducing every S-polynomial.
  *
  * @param G - Polynomials of the candidate basis.
- * @returns Whether every S-polynomial reduces to zero.
+ * @returns True if all remainders vanish.
  * @see SymPy `sympy.polys.groebnertools.is_groebner`
  */
 export function isGroebner(G: readonly PolyElement[]): boolean {
@@ -418,7 +418,7 @@ export function isGroebner(G: readonly PolyElement[]): boolean {
 }
 
 /**
- * Monic leading coefficients and no leading monomial dividing another.
+ * Tests for monicity and pairwise nondivisibility of the leading monomials.
  *
  * @param GIn - Basis polynomials.
  * @param ring - Polynomial ring supplying the generators and coefficient domain.
@@ -431,7 +431,7 @@ export function isMinimal(GIn: readonly PolyElement[], ring: PolyRing): boolean 
 }
 
 /**
- * Monic and no monomial divisible by another leading monomial.
+ * Tests whether a monic basis has no term divisible by another basis element's leading monomial.
  *
  * @param GIn - Basis polynomials.
  * @param ring - Polynomial ring supplying the generators and coefficient domain.
@@ -444,11 +444,11 @@ export function isReduced(GIn: readonly PolyElement[], ring: PolyRing): boolean 
 }
 
 /**
- * The lcm of two polynomials by a Groebner basis of t*f, (1 - t)*g.
+ * Finds the LCM by eliminating the auxiliary variable from `t*f` and `(1 - t)*g`.
  *
  * @param f - Polynomial to operate on.
  * @param g - Second polynomial operand.
- * @returns The lcm of two polynomials by a Groebner basis of t*f, (1 - t)*g.
+ * @returns The polynomial LCM.
  * @throws RangeError when the operands belong to different polynomial rings.
  * @see SymPy `sympy.polys.groebnertools.groebner_lcm`
  */
@@ -471,11 +471,11 @@ export function groebnerLcm(f: PolyElement, g: PolyElement): PolyElement {
 }
 
 /**
- * The gcd of two polynomials as f*g / lcm(f, g).
+ * Obtains the GCD by dividing the product of the inputs by their LCM.
  *
  * @param fIn - Polynomial to operate on.
  * @param gIn - Second polynomial operand.
- * @returns The gcd of two polynomials as f*g / lcm(f, g).
+ * @returns The polynomial GCD.
  * @throws RangeError when the operands belong to different polynomial rings.
  * @see SymPy `sympy.polys.groebnertools.groebner_gcd`
  */
@@ -505,12 +505,12 @@ function groebnerOf(seq: readonly PolyElement[], ring: PolyRing): PolyElement[] 
 }
 
 /**
- * A reduced Groebner basis in a sparse polynomial ring, clearing denominators over rings.
+ * Computes a reduced basis in a sparse polynomial ring, clearing denominators for ring coefficients.
  *
  * @param seq - Sequence of polynomials.
  * @param ring - Polynomial ring supplying the generators and coefficient domain.
  * @param method - Algorithm to use.
- * @returns A reduced Groebner basis in a sparse polynomial ring, clearing denominators over rings.
+ * @returns The basis polynomials.
  * @throws RangeError when the algorithm name is unrecognized.
  * @see SymPy `sympy.polys.groebnertools.groebner`
  */
@@ -522,13 +522,13 @@ export function groebnerInRing(seq: readonly PolyElement[], ring: PolyRing, meth
 }
 
 /**
- * Reduced Gröbner basis with optional coefficient-domain arithmetic.
+ * Computes a reduced Gröbner basis using the supplied coefficient domain when specified.
  *
  * @param F - Input polynomials.
  * @param gens - Polynomial generators in the desired order.
  * @param order - Monomial order used to compare terms.
  * @param opts - Coefficient-domain settings, the basis `method`, and `polys` to yield polynomial objects.
- * @returns Reduced Gröbner basis with optional coefficient-domain arithmetic.
+ * @returns The basis polynomials.
  * @see SymPy `sympy.polys.polytools.groebner`
  * @example
  * ```ts

@@ -51,11 +51,11 @@ export function sortExtensionFactors<P extends { listterms(): [readonly number[]
 }
 
 /**
- * Determine factor multiplicities by repeated exact polynomial division.
+ * Counts how often each candidate factor divides the polynomial exactly.
  *
  * @param fIn - Dividend polynomial.
  * @param factors - Polynomial factors.
- * @returns Determine factor multiplicities by repeated exact polynomial division.
+ * @returns The factors paired with multiplicities.
  * @throws PolynomialError when the dividend is zero or a candidate factor is constant or a candidate factor does not divide the polynomial.
  * @see SymPy `sympy.polys.factortools.dup_trial_division`
  */
@@ -78,12 +78,12 @@ export function dupTrialDivision(fIn: PolyElement, factors: readonly PolyElement
 }
 
 /**
- * Factor a primitive square-free integer polynomial by Wang's algorithm.
+ * Uses Wang's algorithm to factor a primitive square-free integer polynomial.
  *
  * @param f - Polynomial to operate on.
  * @param modulus - Initial bound on the evaluation points.
  * @param seed - Seed for choosing evaluation points.
- * @returns Factor a primitive square-free integer polynomial by Wang's algorithm.
+ * @returns The integer polynomial factors.
  * @throws RangeError when all supplied evaluation points have been exhausted.
  * @see SymPy `sympy.polys.factortools.dmp_zz_wang`
  */
@@ -106,7 +106,7 @@ export function dmpZzWang(f: PolyElement, modulus?: number, seed?: readonly numb
 }
 
 /**
- * Mignotte's multivariate factor coefficient bound over the integers.
+ * Computes Mignotte's bound for coefficients of multivariate integer polynomial factors.
  *
  * @param f - Polynomial to operate on.
  * @returns An upper bound on the absolute coefficients of the integer factors.
@@ -122,7 +122,7 @@ export function dmpZzMignotteBound(f: PolyElement): Expr {
 }
 
 /**
- * Lift a factorization and its Bezout relation from modulus m to m squared.
+ * Lifts both polynomial factors and their Bézout coefficients from modulus `m` to `m**2`.
  *
  * @param m - Current lifting modulus.
  * @param f - Polynomial to operate on.
@@ -130,7 +130,7 @@ export function dmpZzMignotteBound(f: PolyElement): Expr {
  * @param h - Complementary factor modulo the lifting modulus.
  * @param s - Bézout coefficient of the first factor.
  * @param t - Bézout coefficient of the complementary factor.
- * @returns Lift a factorization and its Bezout relation from modulus m to m squared.
+ * @returns Two lifted factors and two lifted coefficients.
  * @see SymPy `sympy.polys.factortools.dup_zz_hensel_step`
  */
 export function dupZzHenselStep(m: bigint, f: PolyElement, g: PolyElement, h: PolyElement, s: PolyElement, t: PolyElement): [PolyElement, PolyElement, PolyElement, PolyElement] {
@@ -147,13 +147,13 @@ export function dupZzHenselStep(m: bigint, f: PolyElement, g: PolyElement, h: Po
 }
 
 /**
- * Multifactor Hensel lifting to the prime power p to the exponent l.
+ * Lifts a modular factorization to the prime power `p**l`.
  *
  * @param p - Prime used for lifting.
  * @param f - Polynomial to operate on.
  * @param factors - Polynomial factors.
  * @param l - Target lifting exponent.
- * @returns Multifactor Hensel lifting to the prime power p to the exponent l.
+ * @returns The lifted polynomial factors.
  * @throws RangeError when the lifting precision is nonpositive or the factor list is empty.
  * @see SymPy `sympy.polys.factortools.dup_zz_hensel_lift`
  */

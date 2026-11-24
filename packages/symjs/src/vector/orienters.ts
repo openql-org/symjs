@@ -27,11 +27,11 @@ import { Vector } from './vector';
  */
 export abstract class Orienter extends ExtensionExpr {
   /**
-   * The rotation matrix of this orientation (SymPy rotation_matrix); an AxisOrienter needs the
-   * system the axis is expressed in.
+   * Constructs the orientation's rotation matrix, using the supplied coordinate system to express an axis
+   * when needed.
    *
    * @param system - Coordinate system in which to express components.
-   * @returns The rotation matrix of this orientation (SymPy rotation_matrix); an AxisOrienter needs the system the axis is expressed in.
+   * @returns The rotation matrix.
    * @see SymPy `sympy.vector.orienters.Orienter.rotation_matrix`
    */
   abstract rotationMatrix(system?: CoordSysBase): Matrix;
@@ -64,28 +64,28 @@ export class AxisOrienterNode extends Orienter {
     return new AxisOrienterNode(at(args, 0), at(args, 1));
   }
   /**
-   * Rotation angle in radians.
+   * Measures the rotation about the orienter's axis.
    *
-   * @returns Rotation angle in radians.
+   * @returns The angle in radians.
    * @see SymPy `sympy.vector.orienters.AxisOrienter.angle`
    */
   get angle(): Expr {
     return at(this.args, 0);
   }
   /**
-   * Vector defining the rotation axis.
+   * Identifies the direction about which the rotation acts.
    *
-   * @returns Vector defining the rotation axis.
+   * @returns The axis vector.
    * @see SymPy `sympy.vector.orienters.AxisOrienter.axis`
    */
   get axis(): Vector {
     return cast(at(this.args, 1), Vector, 'axis');
   }
   /**
-   * The rotation with the axis expressed in system.
+   * Constructs the rotation with the axis expressed in the specified system.
    *
    * @param system - Coordinate system in which to express components.
-   * @returns The rotation with the axis expressed in system.
+   * @returns The rotation matrix.
    * @throws TypeError when the coordinate system of the rotation axis is missing.
    * @see SymPy `sympy.vector.orienters.AxisOrienter.rotation_matrix`
    */
@@ -154,36 +154,36 @@ export abstract class ThreeAngleOrienter extends Orienter {
     this.order = order;
   }
   /**
-   * First rotation angle in radians.
+   * Specifies the first angle in the rotation sequence.
    *
-   * @returns First rotation angle in radians.
+   * @returns The first angle in radians.
    * @see SymPy `sympy.vector.orienters.ThreeAngleOrienter.angle1`
    */
   get angle1(): Expr {
     return at(this.args, 0);
   }
   /**
-   * Second rotation angle in radians.
+   * Specifies the second angle in the rotation sequence.
    *
-   * @returns Second rotation angle in radians.
+   * @returns The second angle in radians.
    * @see SymPy `sympy.vector.orienters.ThreeAngleOrienter.angle2`
    */
   get angle2(): Expr {
     return at(this.args, 1);
   }
   /**
-   * Third rotation angle in radians.
+   * Specifies the third angle in the rotation sequence.
    *
-   * @returns Third rotation angle in radians.
+   * @returns The third angle in radians.
    * @see SymPy `sympy.vector.orienters.ThreeAngleOrienter.angle3`
    */
   get angle3(): Expr {
     return at(this.args, 2);
   }
   /**
-   * The rotation matrix corresponding to this orienter instance.
+   * Converts the orientation to its matrix representation.
    *
-   * @returns The rotation matrix corresponding to this orienter instance.
+   * @returns The rotation matrix.
    * @see SymPy `sympy.vector.orienters.ThreeAngleOrienter.rotation_matrix`
    */
   rotationMatrix(): Matrix {
@@ -296,45 +296,45 @@ export class QuaternionOrienterNode extends Orienter {
     return new QuaternionOrienterNode(at(args, 0), at(args, 1), at(args, 2), at(args, 3));
   }
   /**
-   * Scalar component of the rotation quaternion.
+   * Gives the real part of the rotation quaternion.
    *
-   * @returns Scalar component of the rotation quaternion.
+   * @returns The scalar component.
    * @see SymPy `sympy.vector.orienters.QuaternionOrienter.q0`
    */
   get q0(): Expr {
     return at(this.args, 0);
   }
   /**
-   * First vector component of the rotation quaternion.
+   * Gives the first coordinate of the quaternion's vector part.
    *
-   * @returns First vector component of the rotation quaternion.
+   * @returns The first vector component.
    * @see SymPy `sympy.vector.orienters.QuaternionOrienter.q1`
    */
   get q1(): Expr {
     return at(this.args, 1);
   }
   /**
-   * Second vector component of the rotation quaternion.
+   * Gives the second coordinate of the quaternion's vector part.
    *
-   * @returns Second vector component of the rotation quaternion.
+   * @returns The second vector component.
    * @see SymPy `sympy.vector.orienters.QuaternionOrienter.q2`
    */
   get q2(): Expr {
     return at(this.args, 2);
   }
   /**
-   * Third vector component of the rotation quaternion.
+   * Gives the third coordinate of the quaternion's vector part.
    *
-   * @returns Third vector component of the rotation quaternion.
+   * @returns The third vector component.
    * @see SymPy `sympy.vector.orienters.QuaternionOrienter.q3`
    */
   get q3(): Expr {
     return at(this.args, 3);
   }
   /**
-   * The rotation matrix corresponding to this orienter instance.
+   * Converts the orientation to its matrix representation.
    *
-   * @returns The rotation matrix corresponding to this orienter instance.
+   * @returns The rotation matrix.
    * @see SymPy `sympy.vector.orienters.QuaternionOrienter.rotation_matrix`
    */
   rotationMatrix(): Matrix {
@@ -343,7 +343,7 @@ export class QuaternionOrienterNode extends Orienter {
 }
 
 /**
- * Rotation about a specified vector axis through a given angle.
+ * Defines a rotation through the supplied angle about a vector axis.
  *
  * @param angle - Rotation angle in radians.
  * @param axis - Vector defining the rotation axis.
@@ -355,7 +355,7 @@ export const AxisOrienter = /* @__PURE__ */ callableClass(AxisOrienterNode, (ang
 export type AxisOrienter = AxisOrienterNode;
 
 /**
- * Three successive rotations about body-fixed axes in the specified order.
+ * Defines three successive rotations about body-fixed axes in the specified order.
  *
  * @param angle1 - First rotation angle in radians.
  * @param angle2 - Second rotation angle in radians.
@@ -371,7 +371,7 @@ export const BodyOrienter = /* @__PURE__ */ callableClass(
 export type BodyOrienter = BodyOrienterNode;
 
 /**
- * Three successive rotations about space-fixed axes in the specified order.
+ * Defines three successive rotations about space-fixed axes in the specified order.
  *
  * @param angle1 - First rotation angle in radians.
  * @param angle2 - Second rotation angle in radians.
@@ -387,7 +387,7 @@ export const SpaceOrienter = /* @__PURE__ */ callableClass(
 export type SpaceOrienter = SpaceOrienterNode;
 
 /**
- * Orientation specified by a quaternion with scalar component first.
+ * Defines an orientation by a quaternion with its scalar component first.
  *
  * @param q0 - Scalar quaternion component.
  * @param q1 - First vector quaternion component.

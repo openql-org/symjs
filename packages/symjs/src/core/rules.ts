@@ -38,7 +38,7 @@ export class Transform<K, V> {
    * Tests whether the filter accepts the key.
    *
    * @param key - The lookup key.
-   * @returns Whether the filter accepts the key.
+   * @returns True if the key passes the filter.
    */
   has(key: K): boolean {
     return this.filter(key);
@@ -57,12 +57,11 @@ export class Transform<K, V> {
   }
 
   /**
-   * The transformed key, or the default for a key outside the mapping
-   * (NoMatch when no default is given, SymPy None).
+   * Transforms the key when it satisfies the filter and uses the optional default otherwise.
    *
    * @param key - The lookup key.
    * @param defaultValue - The value to return for a missing key.
-   * @returns The transformed key, or the default for a key outside the mapping (NoMatch when no default is given, SymPy None).
+   * @returns The transformed value, the supplied default, or `NoMatch`.
    * @see SymPy `sympy.core.rules.Transform.get`
    */
   get(key: K): V | NoMatchResult;

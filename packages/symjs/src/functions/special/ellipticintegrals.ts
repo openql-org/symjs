@@ -37,10 +37,10 @@ const delta = (z: Expr, m: Expr): Expr => sqrt(sub(1, mul(m, pow(sin(z), 2))));
 // ---- constructors ---------------------------------------------------------------------
 
 /**
- * The complete elliptic integral of the first kind K(m).
+ * Evaluates the complete elliptic integral of the first kind at `m`.
  *
  * @param m - The elliptic parameter (the squared modulus).
- * @returns The complete elliptic integral of the first kind K(m).
+ * @returns The value of `K(m)`.
  * @see SymPy `sympy.functions.special.elliptic_integrals.elliptic_k`
  * @example
  * ```ts
@@ -51,11 +51,11 @@ const delta = (z: Expr, m: Expr): Expr => sqrt(sub(1, mul(m, pow(sin(z), 2))));
  */
 export const ellipticK = (m: ExprLike): Expr => fn('elliptic_k', [m]);
 /**
- * The incomplete elliptic integral of the first kind F(z|m).
+ * Evaluates the incomplete elliptic integral of the first kind with amplitude `z` and parameter `m`.
  *
  * @param z - The amplitude in radians.
  * @param m - The elliptic parameter (the squared modulus).
- * @returns The incomplete elliptic integral of the first kind F(z|m).
+ * @returns The elliptic integral expression.
  * @see SymPy `sympy.functions.special.elliptic_integrals.elliptic_f`
  * @example
  * ```ts
@@ -66,8 +66,8 @@ export const ellipticK = (m: ExprLike): Expr => fn('elliptic_k', [m]);
  */
 export const ellipticF = (z: ExprLike, m: ExprLike): Expr => fn('elliptic_f', [z, m]);
 /**
- * elliptic_e(m) is the complete elliptic integral of the
- * second kind E(m), elliptic_e(z, m) the incomplete one E(z|m).
+ * Evaluates the elliptic integral of the second kind, complete with one argument or incomplete with an
+ * amplitude and parameter.
  *
  * @param m - The elliptic parameter (the squared modulus).
  * @param z - The amplitude in radians.
@@ -86,8 +86,8 @@ export function ellipticE(a: ExprLike, b?: ExprLike): Expr {
   return fn('elliptic_e', b === undefined ? [a] : [a, b]);
 }
 /**
- * elliptic_pi(n, m) is the complete elliptic integral of
- * the third kind Pi(n|m), elliptic_pi(n, z, m) the incomplete one Pi(n; z|m).
+ * Evaluates the elliptic integral of the third kind, complete with two arguments or incomplete with an
+ * additional amplitude.
  *
  * @param n - The characteristic of the third-kind integral.
  * @param m - The elliptic parameter (the squared modulus).

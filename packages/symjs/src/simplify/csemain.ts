@@ -212,11 +212,11 @@ const BASIC_OPTIMIZATIONS: readonly CseOptimization[] = [
 ];
 
 /**
- * The preprocessors in order.
+ * Applies the common-subexpression preprocessing functions in their given order.
  *
  * @param expr - The input expression.
  * @param optimizations - The ordered preprocessing and postprocessing pairs.
- * @returns The preprocessors in order.
+ * @returns The preprocessed expression.
  * @see SymPy `sympy.simplify.cse_main.preprocess_for_cse`
  */
 export function preprocessForCse(expr: Expr, optimizations: readonly CseOptimization[]): Expr {
@@ -226,11 +226,11 @@ export function preprocessForCse(expr: Expr, optimizations: readonly CseOptimiza
 }
 
 /**
- * The postprocessors in reverse order.
+ * Applies the common-subexpression postprocessing functions in reverse order.
  *
  * @param expr - The input expression.
  * @param optimizations - The ordered preprocessing and postprocessing pairs.
- * @returns The postprocessors in reverse order.
+ * @returns The postprocessed expression.
  * @see SymPy `sympy.simplify.cse_main.postprocess_for_cse`
  */
 export function postprocessForCse(expr: Expr, optimizations: readonly CseOptimization[]): Expr {
@@ -616,21 +616,13 @@ function cseList(exprsIn: unknown, options: CseOptions): CseResult {
 const isCseResult = (v: unknown): v is CseResult => Array.isArray(v) && v.length === 2 && Array.isArray(v[0]);
 
 /**
- * SymPy `cse(exprs, symbols=None, optimizations=None, postprocess=None,
- * order='canonical', ignore=(), list=True)`: common subexpression
- * elimination. Returns the replacements `[symbol, subexpression]` (a
- * subexpression may use the symbols of earlier ones) and the reduced
- * expressions. A single expression gives a list of one reduced expression;
- * with `list: false` the reduced expressions have the type of the input (an
- * expression, an array, a Set, a Map of expressions, a matrix or a string).
- * Explicit matrices keep their mutability. `postprocess` receives the two
- * results and its value is returned instead.
+ * Eliminates subexpressions shared by the inputs and replaces them with fresh symbols.
  *
  * @remarks
  * For `cse(x)`, SymPy displays `([], [x])`. For `cse(x, list=False)`, SymPy displays `([], x)`.
  * @param exprs - The expressions to process.
  * @param options - The temporary symbols, ordering and output settings in {@link CseOptions}.
- * @returns The common-subexpression replacements and reduced input, or the postprocessor's return value.
+ * @returns The replacements and reduced expressions, or the postprocessor's result.
  * @see SymPy `sympy.simplify.cse_main.cse`
  * @example
  * ```ts
@@ -680,8 +672,7 @@ export function cse(
 // ---------------------------------------------------------------------------
 
 /**
- * The replacements ordered so that [k1, v1] comes
- * before [k2, v2] when k1 is a free symbol of v2.
+ * Orders replacements so that each symbol is defined before another replacement uses it.
  *
  * @param r - The replacement pairs.
  * @returns The replacement pairs in dependency order.
@@ -705,9 +696,7 @@ export function repsToposort(r: readonly (readonly [Expr, Expr])[]): [Expr, Expr
 }
 
 /**
- * SymPy cse_separate (a postprocess for {@link cse}): the reduced
- * expressions Eq(symbol, value) become replacements, all sorted by
- * {@link repsToposort}.
+ * Converts reduced equations with a symbol on the left into replacements and sorts them by dependency.
  *
  * @param r - The replacement pairs.
  * @param e - The reduced expression list.

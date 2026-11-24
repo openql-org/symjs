@@ -55,15 +55,16 @@ export class CompoundDistribution extends Distribution {
     super('CompoundDistribution', [cast(at(args, 0), Distribution, 'distribution')]);
   }
   /**
-   * The distribution with random parameters.
+   * Identifies the distribution whose parameters are themselves random.
    *
-   * @returns The distribution with random parameters.
+   * @returns The component distribution.
    */
   get dist(): Distribution {
     return cast(at(this.args, 0), Distribution);
   }
   /**
-   * Rebuilt like SymPy's constructor: the distribution itself once no parameter is random.
+   * Rebuilds the compound law, yielding the underlying distribution once all parameters are
+   * deterministic.
    *
    * @param args - Replacement operands in the original order.
    * @returns The rebuilt expression.
@@ -72,43 +73,43 @@ export class CompoundDistribution extends Distribution {
     return compoundDistribution(cast(at(args, 0), Distribution, 'distribution'));
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
-   * @returns The support of the distribution.
+   * @returns The distribution's support.
    * @see SymPy `sympy.stats.compound_rv.CompoundDistribution.set`
    */
   get set(): SetExpr {
     return this.dist.set;
   }
   /**
-   * Whether the distribution is continuous.
+   * Indicates whether the probability law is continuous.
    *
-   * @returns Whether the distribution is continuous.
+   * @returns The continuity flag.
    * @see SymPy `sympy.stats.compound_rv.CompoundDistribution.is_Continuous`
    */
   get isContinuous(): boolean {
     return this.dist instanceof ContinuousDistribution;
   }
   /**
-   * Whether the distribution is finite.
+   * Indicates whether the distribution has finite support.
    *
-   * @returns Whether the distribution is finite.
+   * @returns The finite-support flag.
    * @see SymPy `sympy.stats.compound_rv.CompoundDistribution.is_Finite`
    */
   override get isFinite(): boolean {
     return this.dist instanceof SingleFiniteDistribution;
   }
   /**
-   * Whether the distribution is discrete.
+   * Indicates whether the law is discrete.
    *
-   * @returns Whether the distribution is discrete.
+   * @returns The discreteness flag.
    * @see SymPy `sympy.stats.compound_rv.CompoundDistribution.is_Discrete`
    */
   get isDiscrete(): boolean {
     return this.dist instanceof DiscreteDistribution;
   }
   /**
-   * The density marginalised over the random parameters, evaluated or not (SymPy pdf(x, evaluate)).
+   * Marginalizes the density over the random parameters, optionally evaluating the resulting expression.
    *
    * @param x - Outcome at which to evaluate the probability mass.
    * @param evaluate - Whether to evaluate the expression.
@@ -173,7 +174,8 @@ export class CompoundPSpace extends PSpace {
     super([symbolConverter(at(args, 0)), cast(at(args, 1), CompoundDistribution, 'compound distribution')], 'CompoundPSpace');
   }
   /**
-   * Rebuilt like SymPy's constructor: the single space of its kind once the distribution is not compound.
+   * Rebuilds the probability space from its arguments, using a single space when the law is no longer
+   * compound.
    *
    * @param args - Replacement operands in the original order.
    * @returns The rebuilt expression.
@@ -182,7 +184,7 @@ export class CompoundPSpace extends PSpace {
     return compoundPSpace(symbolConverter(at(args, 0)), cast(at(args, 1), Distribution, 'distribution'));
   }
   /**
-   * Whether the probability space is compound.
+   * Checks whether the space has a distribution with random parameters.
    *
    * @returns `true` for this space.
    */
@@ -190,7 +192,7 @@ export class CompoundPSpace extends PSpace {
     return true;
   }
   /**
-   * Whether the probability space is single.
+   * Checks whether the probability space governs a single random variable.
    *
    * @returns `true` for this space.
    */
@@ -198,61 +200,61 @@ export class CompoundPSpace extends PSpace {
     return true;
   }
   /**
-   * The random symbol with this probability space.
+   * Constructs the random symbol associated with this probability space.
    *
-   * @returns The random symbol with this probability space.
+   * @returns The space's random variable.
    * @see SymPy `sympy.stats.compound_rv.CompoundPSpace.value`
    */
   get value(): RandomSymbol {
     return new RandomSymbol(this.symbol, this);
   }
   /**
-   * The underlying symbol naming the random variable.
+   * Identifies the ordinary symbol that names the random variable.
    *
-   * @returns The underlying symbol naming the random variable.
+   * @returns The underlying symbol.
    * @see SymPy `sympy.stats.compound_rv.CompoundPSpace.symbol`
    */
   get symbol(): Sym {
     return cast(at(this.args, 0), Sym);
   }
   /**
-   * The probability law governing the random variable.
+   * Identifies the law of the random variable in this space.
    *
-   * @returns The probability law governing the random variable.
+   * @returns The distribution object.
    * @see SymPy `sympy.stats.compound_rv.CompoundPSpace.distribution`
    */
   get distribution(): CompoundDistribution {
     return cast(at(this.args, 1), CompoundDistribution);
   }
   /**
-   * Whether the probability space is continuous.
+   * Indicates whether this probability space is continuous.
    *
-   * @returns Whether the probability space is continuous.
+   * @returns The continuity flag.
    * @see SymPy `sympy.stats.compound_rv.CompoundPSpace.is_Continuous`
    */
   override get isContinuous(): boolean {
     return this.distribution.isContinuous;
   }
   /**
-   * Whether the probability space is finite.
+   * Indicates whether this probability space has finitely many outcomes.
    *
-   * @returns Whether the probability space is finite.
+   * @returns The finiteness flag.
    * @see SymPy `sympy.stats.compound_rv.CompoundPSpace.is_Finite`
    */
   override get isFinite(): boolean {
     return this.distribution.isFinite;
   }
   /**
-   * Whether the probability space is discrete.
+   * Indicates whether this probability space is discrete.
    *
-   * @returns Whether the probability space is discrete.
+   * @returns The discreteness flag.
    * @see SymPy `sympy.stats.compound_rv.CompoundPSpace.is_Discrete`
    */
   override get isDiscrete(): boolean {
     return this.distribution.isDiscrete;
   }
   /**
-   * The probability mass at the supplied outcome.
+   * Evaluates the probability mass function at one outcome.
    *
    * @returns The joint density in the symbols of the space.
    * @see SymPy `sympy.stats.compound_rv.CompoundPSpace.pdf`
@@ -261,28 +263,28 @@ export class CompoundPSpace extends PSpace {
     return this.distribution.pdf(this.symbol);
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
-   * @returns The support of the distribution.
+   * @returns The distribution's support.
    * @see SymPy `sympy.stats.compound_rv.CompoundPSpace.set`
    */
   get set(): SetExpr {
     return this.distribution.set;
   }
   /**
-   * The domain of outcomes of this probability space.
+   * Describes the possible outcomes of this probability space.
    *
-   * @returns The domain of outcomes of this probability space.
+   * @returns The outcome domain.
    * @see SymPy `sympy.stats.compound_rv.CompoundPSpace.domain`
    */
   override get domain(): RandomDomain {
     return this.getNewPSpace().domain;
   }
   /**
-   * The space of the marginalised density.
+   * Constructs a probability space for the density after marginalizing over random parameters.
    *
    * @param evaluate - Whether to evaluate the expression.
-   * @returns The space of the marginalised density.
+   * @returns The marginal probability space.
    * @see SymPy `sympy.stats.compound_rv.CompoundPSpace._get_newpspace`
    */
   getNewPSpace(evaluate = false): PSpace {
@@ -292,7 +294,7 @@ export class CompoundPSpace extends PSpace {
     return transformPSpace(this.symbol, parentDist, func, evaluate);
   }
   /**
-   * The distribution of the expression on this probability space.
+   * Computes the distribution induced by the expression on this space.
    *
    * @param expr - Expression to evaluate.
    * @param opts - Evaluation controls for integrals, sums and compound distributions.
@@ -304,7 +306,7 @@ export class CompoundPSpace extends PSpace {
     return ps.computeDensity(expr.subs(this.value, valueOf(ps)), opts);
   }
   /**
-   * The cumulative distribution function of the expression.
+   * Computes the cumulative distribution of the expression.
    *
    * @param expr - Expression to evaluate.
    * @param opts - Evaluation controls for integrals, sums and compound distributions.
@@ -316,7 +318,7 @@ export class CompoundPSpace extends PSpace {
     return ps.computeCdf(expr.subs(this.value, valueOf(ps)), opts);
   }
   /**
-   * The expectation of the expression over the specified variables.
+   * Computes the expression's expectation over the specified variables.
    *
    * @param expr - Expression to evaluate.
    * @param rvs - Random variables to integrate or sum over.
@@ -332,7 +334,7 @@ export class CompoundPSpace extends PSpace {
     return ps.computeExpectation(e, rvs2, opts);
   }
   /**
-   * The probability that the event holds.
+   * Computes the probability assigned to the event.
    *
    * @param condition - Condition on the random variables.
    * @param opts - Evaluation controls for integrals, sums and compound distributions.
@@ -344,7 +346,7 @@ export class CompoundPSpace extends PSpace {
     return ps.probability(condition.subs(this.value, valueOf(ps)));
   }
   /**
-   * The probability space restricted to outcomes satisfying the condition.
+   * Restricts the probability space to outcomes that satisfy the condition.
    *
    * @param condition - Condition on the random variables.
    * @param opts - Evaluation controls for integrals, sums and compound distributions.

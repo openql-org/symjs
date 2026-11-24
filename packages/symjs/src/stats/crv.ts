@@ -123,7 +123,7 @@ export class SingleContinuousDomain extends SingleDomain {
     super(args, 'SingleContinuousDomain');
   }
   /**
-   * Whether the domain is continuous.
+   * Indicates whether the outcome domain is continuous.
    *
    * @returns `true` for this domain.
    * @see SymPy `sympy.stats.crv.SingleContinuousDomain.is_Continuous`
@@ -132,7 +132,7 @@ export class SingleContinuousDomain extends SingleDomain {
     return true;
   }
   /**
-   * The expectation of the expression over the specified variables.
+   * Computes the expression's expectation over the specified variables.
    *
    * @param expr - Expression to evaluate.
    * @param variables - Variables to integrate or sum over.
@@ -147,9 +147,9 @@ export class SingleContinuousDomain extends SingleDomain {
     return makeIntegral(expr, [limitOver(this.symbol, this.set)]);
   }
   /**
-   * The condition expressing membership in this domain.
+   * Expresses domain membership as a predicate on the outcome variables.
    *
-   * @returns The condition expressing membership in this domain.
+   * @returns A Boolean condition.
    * @see SymPy `sympy.stats.crv.SingleContinuousDomain.as_boolean`
    */
   override asBoolean(): Expr {
@@ -172,7 +172,7 @@ export class ProductContinuousDomain extends ProductDomain {
     super(args, 'ProductContinuousDomain');
   }
   /**
-   * Whether the domain is continuous.
+   * Indicates whether the outcome domain is continuous.
    *
    * @returns `true` for this domain.
    * @see SymPy `sympy.stats.crv.ProductContinuousDomain.is_Continuous`
@@ -181,7 +181,7 @@ export class ProductContinuousDomain extends ProductDomain {
     return true;
   }
   /**
-   * The expectation of the expression over the specified variables.
+   * Computes the expression's expectation over the specified variables.
    *
    * @param exprIn - Expression to evaluate.
    * @param variables - Variables to integrate or sum over.
@@ -214,7 +214,7 @@ export class ConditionalContinuousDomain extends ConditionalDomain {
     super('ConditionalContinuousDomain', [at(args, 0), conditionOnSymbols(at(args, 1))]);
   }
   /**
-   * Whether the domain is continuous.
+   * Indicates whether the outcome domain is continuous.
    *
    * @returns `true` for this domain.
    * @see SymPy `sympy.stats.crv.ConditionalContinuousDomain.is_Continuous`
@@ -223,7 +223,7 @@ export class ConditionalContinuousDomain extends ConditionalDomain {
     return true;
   }
   /**
-   * The expectation of the expression over the specified variables.
+   * Computes the expression's expectation over the specified variables.
    *
    * @param expr - Expression to evaluate.
    * @param variables - Variables to integrate or sum over.
@@ -264,9 +264,9 @@ export class ConditionalContinuousDomain extends ConditionalDomain {
     return makeIntegral(integrand, limits);
   }
   /**
-   * The set of outcomes in this domain.
+   * Collects the values admitted by the outcome domain.
    *
-   * @returns The set of outcomes in this domain.
+   * @returns The outcome set.
    * @throws NotImplementedError when the conditional domain has no implemented set representation.
    * @see SymPy `sympy.stats.crv.ConditionalContinuousDomain.set`
    */
@@ -311,9 +311,9 @@ export type ClosedForm = Expr | undefined;
  */
 export abstract class SingleContinuousDistribution extends ContinuousDistribution {
   /**
-   * The support of the distribution, by default the entire real line.
+   * Specifies the support of the continuous distribution, defaulting to the real line.
    *
-   * @returns The support of the distribution, by default the entire real line.
+   * @returns The support set.
    * @see SymPy `sympy.stats.crv.SingleContinuousDistribution.set`
    */
   get set(): SetExpr {
@@ -351,7 +351,7 @@ export abstract class SingleContinuousDistribution extends ContinuousDistributio
     return Lambda(z, piecewise([integrateFromLeft(doit(this.pdf(x)), x, left, z), Ge(z, left)], [0, true]));
   }
   /**
-   * The cumulative distribution function at x.
+   * Evaluates the cumulative distribution at the supplied value.
    *
    * @param xIn - Variable of the expansion.
    * @returns The cumulative probability at the argument.
@@ -362,9 +362,9 @@ export abstract class SingleContinuousDistribution extends ContinuousDistributio
     return this.cdfClosed(x) ?? this.computeCdf().call(x);
   }
   /**
-   * The characteristic function of the expression.
+   * Computes the Fourier transform of the probability law for the expression.
    *
-   * @returns The characteristic function of the expression.
+   * @returns The characteristic function.
    * @see SymPy `sympy.stats.crv.SingleContinuousDistribution.compute_characteristic_function`
    */
   computeCharacteristicFunction(): LambdaNode {
@@ -374,10 +374,10 @@ export abstract class SingleContinuousDistribution extends ContinuousDistributio
     return Lambda(t, integrate(mul(exp(mul(S.I, t, x)), this.pdf(x)), x, [a, b]));
   }
   /**
-   * The characteristic function at t.
+   * Evaluates the characteristic function at the specified argument.
    *
    * @param tIn - Argument of the transform.
-   * @returns The characteristic function at t.
+   * @returns The transform value at `t`.
    * @see SymPy `sympy.stats.crv.SingleContinuousDistribution.characteristic_function`
    */
   characteristicFunction(tIn: ExprLike): Expr {
@@ -385,9 +385,9 @@ export abstract class SingleContinuousDistribution extends ContinuousDistributio
     return this.characteristicFunctionClosed(t) ?? this.computeCharacteristicFunction().call(t);
   }
   /**
-   * The moment generating function of the expression.
+   * Computes the exponential moment transform of the expression's law.
    *
-   * @returns The moment generating function of the expression.
+   * @returns The moment generating function.
    * @see SymPy `sympy.stats.crv.SingleContinuousDistribution.compute_moment_generating_function`
    */
   computeMomentGeneratingFunction(): LambdaNode {
@@ -397,10 +397,10 @@ export abstract class SingleContinuousDistribution extends ContinuousDistributio
     return Lambda(t, integrate(mul(exp(mul(t, x)), this.pdf(x)), x, [a, b]));
   }
   /**
-   * The moment generating function at t.
+   * Evaluates the moment generating function at the specified argument.
    *
    * @param tIn - Argument of the transform.
-   * @returns The moment generating function at t.
+   * @returns The exponential moment at `t`.
    * @see SymPy `sympy.stats.crv.SingleContinuousDistribution.moment_generating_function`
    */
   momentGeneratingFunction(tIn: ExprLike): Expr {
@@ -408,14 +408,13 @@ export abstract class SingleContinuousDistribution extends ContinuousDistributio
     return this.momentGeneratingFunctionClosed(t) ?? this.computeMomentGeneratingFunction().call(t);
   }
   /**
-   * The expectation of expr, an expression of var (SymPy expectation): the
-   * moments of a polynomial come from the Taylor series of the moment
-   * generating function when it has a closed form; otherwise the integral.
+   * Computes expectation by using moments from the generating function when available and integrating
+   * otherwise.
    *
    * @param expr - Expression to evaluate.
    * @param v - Symbol distributed according to this law.
    * @param opts - Evaluation controls for integrals, sums and compound distributions.
-   * @returns The expectation of expr, an expression of var.
+   * @returns The expectation expression.
    * @see SymPy `sympy.stats.crv.SingleContinuousDistribution.expectation`
    */
   expectation(expr: Expr, v: Sym, opts: ComputeOptions = {}): Expr {
@@ -435,7 +434,7 @@ export abstract class SingleContinuousDistribution extends ContinuousDistributio
     return add(...terms);
   }
   /**
-   * The solutions of cdf(x) = p in the set.
+   * Solves the cumulative probability equation on the distribution's support.
    *
    * @returns The quantile function.
    * @see SymPy `sympy.stats.crv.SingleContinuousDistribution.compute_quantile`
@@ -449,10 +448,10 @@ export abstract class SingleContinuousDistribution extends ContinuousDistributio
     return Lambda(p, piecewise([q, and(Ge(p, 0), Le(p, 1))], [S.NaN, true]));
   }
   /**
-   * The quantile function at p.
+   * Finds the quantile corresponding to the given cumulative probability.
    *
    * @param pIn - Cumulative probability at which to evaluate the quantile.
-   * @returns The quantile function at p.
+   * @returns The quantile at `p`.
    * @see SymPy `sympy.stats.crv.SingleContinuousDistribution.quantile`
    */
   quantile(pIn: ExprLike): Expr {
@@ -487,7 +486,7 @@ export class ContinuousPSpace extends PSpace {
     super(args, name);
   }
   /**
-   * Whether the probability space is continuous.
+   * Indicates whether this probability space is continuous.
    *
    * @returns `true` for this space.
    * @see SymPy `sympy.stats.crv.ContinuousPSpace.is_Continuous`
@@ -496,7 +495,7 @@ export class ContinuousPSpace extends PSpace {
     return true;
   }
   /**
-   * Whether the probability space is real.
+   * Indicates whether the space is real-valued.
    *
    * @returns `true` for this space.
    * @see SymPy `sympy.stats.crv.ContinuousPSpace.is_real`
@@ -505,7 +504,7 @@ export class ContinuousPSpace extends PSpace {
     return true;
   }
   /**
-   * The density expressed in the underlying symbols of the space.
+   * Expresses the density in terms of the symbols underlying the space.
    *
    * @returns The joint density in the symbols of the space.
    * @see SymPy `sympy.stats.crv.ContinuousPSpace.pdf`
@@ -514,7 +513,7 @@ export class ContinuousPSpace extends PSpace {
     return cast(this.density, LambdaNode, 'density').call(...this.domain.symbols);
   }
   /**
-   * The expectation of the expression over the specified variables.
+   * Computes the expression's expectation over the specified variables.
    *
    * @param exprIn - Expression to evaluate.
    * @param rvsIn - Random variables to integrate or sum over.
@@ -528,7 +527,7 @@ export class ContinuousPSpace extends PSpace {
     return this.domain.computeExpectation(mul(this.pdf, expr), rvs.map((rv) => rv.symbol));
   }
   /**
-   * The distribution of the expression on this probability space.
+   * Computes the distribution induced by the expression on this space.
    *
    * @param expr - Expression to evaluate.
    * @param _opts - Evaluation options accepted by the probability-space interface.
@@ -545,7 +544,7 @@ export class ContinuousPSpace extends PSpace {
     return Lambda(z, this.computeExpectation(DiracDelta(add(expr, mul(-1, z)))));
   }
   /**
-   * The cumulative distribution function of the expression.
+   * Computes the cumulative distribution of the expression.
    *
    * @param expr - Expression to evaluate.
    * @returns The cumulative distribution function.
@@ -561,10 +560,10 @@ export class ContinuousPSpace extends PSpace {
     return Lambda(z, piecewise([integrateFromLeft(d(x), x, left, z), Ge(z, left)], [0, true]));
   }
   /**
-   * The characteristic function of the expression.
+   * Computes the Fourier transform of the probability law for the expression.
    *
    * @param expr - Expression to evaluate.
-   * @returns The characteristic function of the expression.
+   * @returns The characteristic function.
    * @throws NotImplementedError when the expression has several random variables.
    * @see SymPy `sympy.stats.crv.ContinuousPSpace.compute_characteristic_function`
    */
@@ -581,10 +580,10 @@ export class ContinuousPSpace extends PSpace {
     return Lambda(t, transform);
   }
   /**
-   * The moment generating function of the expression.
+   * Computes the exponential moment transform of the expression's law.
    *
    * @param expr - Expression to evaluate.
-   * @returns The moment generating function of the expression.
+   * @returns The moment generating function.
    * @throws NotImplementedError when the expression has several random variables.
    * @see SymPy `sympy.stats.crv.ContinuousPSpace.compute_moment_generating_function`
    */
@@ -596,7 +595,7 @@ export class ContinuousPSpace extends PSpace {
     return Lambda(t, integrate(mul(exp(mul(t, x)), d(x)), x, [S.NegativeInfinity, S.Infinity]));
   }
   /**
-   * The quantile function of the expression.
+   * Computes the quantile function of the supplied expression.
    *
    * @param expr - Expression to evaluate.
    * @returns The quantile function.
@@ -611,7 +610,7 @@ export class ContinuousPSpace extends PSpace {
     return Lambda(p, solveset(add(d(x), mul(-1, p)), x, this.domain.set));
   }
   /**
-   * The probability that the event holds.
+   * Computes the probability assigned to the event.
    *
    * @param conditionIn - Condition on the random variables.
    * @param opts - Evaluation controls for integrals, sums and compound distributions.
@@ -661,7 +660,7 @@ export class ContinuousPSpace extends PSpace {
     return condInv ? add(1, mul(-1, result)) : result;
   }
   /**
-   * The subset of the domain on which the condition holds.
+   * Restricts the domain to the subset satisfying the condition.
    *
    * @param condition - Condition on the random variables.
    * @returns The domain satisfying the condition.
@@ -677,7 +676,7 @@ export class ContinuousPSpace extends PSpace {
     return new SingleContinuousDomain([rv.symbol, iv]);
   }
   /**
-   * The probability space restricted to outcomes satisfying the condition.
+   * Restricts the probability space to outcomes that satisfy the condition.
    *
    * @param conditionIn - Condition on the random variables.
    * @returns The conditioned probability space.
@@ -715,7 +714,7 @@ export class SingleContinuousPSpace extends ContinuousPSpace {
     super([symbolConverter(at(args, 0)), cast(at(args, 1), Distribution, 'distribution')], 'SingleContinuousPSpace');
   }
   /**
-   * Whether the probability space is single.
+   * Checks whether the probability space governs a single random variable.
    *
    * @returns `true` for this space.
    */
@@ -723,34 +722,34 @@ export class SingleContinuousPSpace extends ContinuousPSpace {
     return true;
   }
   /**
-   * The underlying symbol naming the random variable.
+   * Identifies the ordinary symbol that names the random variable.
    *
-   * @returns The underlying symbol naming the random variable.
+   * @returns The underlying symbol.
    * @see SymPy `sympy.stats.crv.SingleContinuousPSpace.symbol`
    */
   get symbol(): Sym {
     return cast(at(this.args, 0), Sym);
   }
   /**
-   * The probability law governing the random variable.
+   * Identifies the law of the random variable in this space.
    *
-   * @returns The probability law governing the random variable.
+   * @returns The distribution object.
    * @see SymPy `sympy.stats.crv.SingleContinuousPSpace.distribution`
    */
   get distribution(): SingleContinuousDistribution {
     return cast(at(this.args, 1), SingleContinuousDistribution);
   }
   /**
-   * The random symbol with this probability space.
+   * Constructs the random symbol associated with this probability space.
    *
-   * @returns The random symbol with this probability space.
+   * @returns The space's random variable.
    * @see SymPy `sympy.stats.crv.SingleContinuousPSpace.value`
    */
   get value(): RandomSymbol {
     return new RandomSymbol(this.symbol, this);
   }
   /**
-   * The density expressed in the underlying symbols of the space.
+   * Expresses the density in terms of the symbols underlying the space.
    *
    * @returns The joint density in the symbols of the space.
    * @see SymPy `sympy.stats.crv.SingleContinuousPSpace.pdf`
@@ -759,34 +758,34 @@ export class SingleContinuousPSpace extends ContinuousPSpace {
     return this.distribution.pdf(this.symbol);
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
-   * @returns The support of the distribution.
+   * @returns The distribution's support.
    * @see SymPy `sympy.stats.crv.SingleContinuousPSpace.set`
    */
   get set(): SetExpr {
     return this.distribution.set;
   }
   /**
-   * The domain of outcomes of this probability space.
+   * Describes the possible outcomes of this probability space.
    *
-   * @returns The domain of outcomes of this probability space.
+   * @returns The outcome domain.
    * @see SymPy `sympy.stats.crv.SingleContinuousPSpace.domain`
    */
   override get domain(): RandomDomain {
     return new SingleContinuousDomain([this.symbol, this.set]);
   }
   /**
-   * The density of the random variable or expression.
+   * Expresses the density on the underlying probability space.
    *
-   * @returns The density of the random variable or expression.
+   * @returns The density expression.
    * @see SymPy `sympy.stats.crv.SingleContinuousPSpace.density`
    */
   override get density(): Expr {
     return this.distribution;
   }
   /**
-   * The expectation of the expression over the specified variables.
+   * Computes the expression's expectation over the specified variables.
    *
    * @param exprIn - Expression to evaluate.
    * @param rvsIn - Random variables to integrate or sum over.
@@ -802,7 +801,7 @@ export class SingleContinuousPSpace extends ContinuousPSpace {
     return this.distribution.expectation(expr, this.value.symbol, { evaluate: opts.evaluate ?? false });
   }
   /**
-   * The cumulative distribution function of the expression.
+   * Computes the cumulative distribution of the expression.
    *
    * @param expr - Expression to evaluate.
    * @returns The cumulative distribution function.
@@ -822,10 +821,10 @@ export class SingleContinuousPSpace extends ContinuousPSpace {
     return Lambda(z, this.distribution.cdf(z));
   }
   /**
-   * The characteristic function of the expression.
+   * Computes the Fourier transform of the probability law for the expression.
    *
    * @param expr - Expression to evaluate.
-   * @returns The characteristic function of the expression.
+   * @returns The characteristic function.
    * @see SymPy `sympy.stats.crv.SingleContinuousPSpace.compute_characteristic_function`
    */
   override computeCharacteristicFunction(expr: Expr): Expr {
@@ -834,10 +833,10 @@ export class SingleContinuousPSpace extends ContinuousPSpace {
     return Lambda(t, this.distribution.characteristicFunction(t));
   }
   /**
-   * The moment generating function of the expression.
+   * Computes the exponential moment transform of the expression's law.
    *
    * @param expr - Expression to evaluate.
-   * @returns The moment generating function of the expression.
+   * @returns The moment generating function.
    * @see SymPy `sympy.stats.crv.SingleContinuousPSpace.compute_moment_generating_function`
    */
   override computeMomentGeneratingFunction(expr: Expr): Expr {
@@ -846,7 +845,7 @@ export class SingleContinuousPSpace extends ContinuousPSpace {
     return Lambda(t, this.distribution.momentGeneratingFunction(t));
   }
   /**
-   * The distribution of the expression on this probability space.
+   * Computes the distribution induced by the expression on this space.
    *
    * @param expr - Expression to evaluate.
    * @returns The probability distribution of the expression.
@@ -863,7 +862,7 @@ export class SingleContinuousPSpace extends ContinuousPSpace {
     return Lambda(y, add(...gs.args.map((g) => mul(fx.pdf(g), abs(g.diff(y))))));
   }
   /**
-   * The quantile function of the expression.
+   * Computes the quantile function of the supplied expression.
    *
    * @param expr - Expression to evaluate.
    * @returns The quantile function.

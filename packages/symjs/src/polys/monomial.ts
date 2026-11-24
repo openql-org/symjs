@@ -39,7 +39,7 @@ export class Monomial {
   ) {}
 
   /**
-   * The monomial as an expression.
+   * Expresses the monomial as a product of generator powers.
    *
    * @param gens - Polynomial generators in the desired order.
    * @returns The symbolic expression.
@@ -52,7 +52,7 @@ export class Monomial {
     return mul(...zip(g, this.exponents).map(([x, k]) => pow(x, k)));
   }
   /**
-   * Product of monomials (exponents added).
+   * Multiplies monomials by adding their exponent vectors.
    *
    * @param o - Operand to combine or compare with this value.
    * @returns The product of the operands.
@@ -63,7 +63,7 @@ export class Monomial {
     return new Monomial(zip(this.exponents, e).map(([k, l]) => k + l), this.gens);
   }
   /**
-   * Greatest common divisor (minimum exponents).
+   * Computes the monomial GCD by taking componentwise minimum exponents.
    *
    * @param o - Operand to combine or compare with this value.
    * @returns The greatest common divisor.
@@ -74,7 +74,7 @@ export class Monomial {
     return new Monomial(zip(this.exponents, e).map(([k, l]) => Math.min(k, l)), this.gens);
   }
   /**
-   * Least common multiple (maximum exponents).
+   * Computes the monomial LCM by taking componentwise maximum exponents.
    *
    * @param o - Operand to combine or compare with this value.
    * @returns The least common multiple.
@@ -85,7 +85,7 @@ export class Monomial {
     return new Monomial(zip(this.exponents, e).map(([k, l]) => Math.max(k, l)), this.gens);
   }
   /**
-   * x**2*y**0, or Monomial((2, 0)) without generators.
+   * Prints the monomial with explicit powers when generators are given or as an exponent tuple otherwise.
    *
    * @returns The formatted text.
    * @see SymPy `sympy.polys.monomials.Monomial.__str__`
@@ -104,11 +104,11 @@ export class Monomial {
 export type ExponentVector = readonly number[];
 
 /**
- * The product of monomials, exponents added.
+ * Multiplies monomials by adding corresponding exponents.
  *
  * @param A - First exponent vector.
  * @param B - Second exponent vector.
- * @returns The product of monomials, exponents added.
+ * @returns The product exponent vector.
  * @see SymPy `sympy.polys.monomials.monomial_mul`
  * @remarks SymPy returns `(4, 6, 1)` with tuples for the fixed-length groups.
  * @example
@@ -123,11 +123,11 @@ export function monomialMul(A: ExponentVector, B: ExponentVector): number[] {
 }
 
 /**
- * The quotient A / B, or NoMatch when B does not divide A.
+ * Subtracts corresponding exponents if the divisor monomial divides the dividend.
  *
  * @param A - First exponent vector.
  * @param B - Second exponent vector.
- * @returns The quotient A / B, or NoMatch when B does not divide A.
+ * @returns The quotient exponent vector or `NoMatch`.
  * @see SymPy `sympy.polys.monomials.monomial_div`
  * @remarks SymPy returns `(2, 2, 1)` with tuples for the fixed-length groups.
  * @example
@@ -143,11 +143,11 @@ export function monomialDiv(A: ExponentVector, B: ExponentVector): number[] | No
 }
 
 /**
- * The quotient A / B with possibly negative exponents.
+ * Subtracts exponent vectors to divide monomials, allowing negative powers.
  *
  * @param A - First exponent vector.
  * @param B - Second exponent vector.
- * @returns The quotient A / B with possibly negative exponents.
+ * @returns The signed quotient exponents.
  * @see SymPy `sympy.polys.monomials.monomial_ldiv`
  * @remarks SymPy returns `(2, 2, 1)` with tuples for the fixed-length groups. The second result is `(2, 2, -1)` in SymPy.
  * @example
@@ -163,11 +163,11 @@ export function monomialLdiv(A: ExponentVector, B: ExponentVector): number[] {
 }
 
 /**
- * The power A**n.
+ * Raises the monomial to the given power by scaling its exponents.
  *
  * @param A - First exponent vector.
  * @param n - Nonnegative power of the monomial.
- * @returns The power A**n.
+ * @returns The resulting exponent vector.
  * @see SymPy `sympy.polys.monomials.monomial_pow`
  */
 export function monomialPow(A: ExponentVector, n: number): number[] {
@@ -175,11 +175,11 @@ export function monomialPow(A: ExponentVector, n: number): number[] {
 }
 
 /**
- * The greatest common divisor, minimum exponents.
+ * Takes the componentwise minimum of the exponents.
  *
  * @param A - First exponent vector.
  * @param B - Second exponent vector.
- * @returns The greatest common divisor, minimum exponents.
+ * @returns The monomial GCD.
  * @see SymPy `sympy.polys.monomials.monomial_gcd`
  * @remarks SymPy returns `(1, 2, 0)` with tuples for the fixed-length groups.
  * @example
@@ -194,11 +194,11 @@ export function monomialGcd(A: ExponentVector, B: ExponentVector): number[] {
 }
 
 /**
- * The least common multiple, maximum exponents.
+ * Takes the componentwise maximum of the exponents.
  *
  * @param A - First exponent vector.
  * @param B - Second exponent vector.
- * @returns The least common multiple, maximum exponents.
+ * @returns The monomial LCM.
  * @see SymPy `sympy.polys.monomials.monomial_lcm`
  * @remarks SymPy returns `(3, 4, 1)` with tuples for the fixed-length groups.
  * @example
@@ -213,11 +213,11 @@ export function monomialLcm(A: ExponentVector, B: ExponentVector): number[] {
 }
 
 /**
- * Whether A divides B.
+ * Tests whether each exponent of the divisor is at most the corresponding dividend exponent.
  *
  * @param A - First exponent vector.
  * @param B - Second exponent vector.
- * @returns Whether A divides B.
+ * @returns True if the first monomial divides the second.
  * @see SymPy `sympy.polys.monomials.monomial_divides`
  * @example
  * ```ts
@@ -232,10 +232,10 @@ export function monomialDivides(A: ExponentVector, B: ExponentVector): boolean {
 }
 
 /**
- * The exponentwise maximum of monomials.
+ * Finds the largest exponent of each variable among the monomials.
  *
  * @param monoms - Exponent vectors of the monomials.
- * @returns The exponentwise maximum of monomials.
+ * @returns The maximum exponent vector.
  * @see SymPy `sympy.polys.monomials.monomial_max`
  * @remarks SymPy returns `(6, 5, 9)` with tuples for the fixed-length groups.
  * @example
@@ -251,10 +251,10 @@ export function monomialMax(...monoms: ExponentVector[]): number[] {
 }
 
 /**
- * The exponentwise minimum of monomials.
+ * Finds the smallest exponent of each variable among the monomials.
  *
  * @param monoms - Exponent vectors of the monomials.
- * @returns The exponentwise minimum of monomials.
+ * @returns The minimum exponent vector.
  * @see SymPy `sympy.polys.monomials.monomial_min`
  * @remarks SymPy returns `(0, 3, 1)` with tuples for the fixed-length groups.
  * @example
@@ -270,7 +270,7 @@ export function monomialMin(...monoms: ExponentVector[]): number[] {
 }
 
 /**
- * The total degree.
+ * Adds the exponents of the monomial.
  *
  * @param M - Exponent vector.
  * @returns The total degree.
@@ -287,11 +287,11 @@ export function monomialDeg(M: ExponentVector): number {
 }
 
 /**
- * The number of monomials of total degree at most N in V variables, binomial(V + N, N).
+ * Counts monomials in `V` variables of degree at most `N`.
  *
  * @param V - Number of variables.
  * @param N - Maximum total degree to count.
- * @returns The number of monomials of total degree at most N in V variables, binomial(V + N, N).
+ * @returns The binomial coefficient `binomial(V + N, N)`.
  * @see SymPy `sympy.polys.monomials.monomial_count`
  * @example
  * ```ts

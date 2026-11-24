@@ -66,41 +66,41 @@ export abstract class SeqBase extends SeriesBase {
     return this.coeff(pt);
   }
   /**
-   * The interval on which the sequence is defined.
+   * Specifies the domain of sequence indices.
    *
-   * @returns The interval on which the sequence is defined.
+   * @returns The index interval.
    * @see SymPy `sympy.series.sequences.SeqBase.interval`
    */
   abstract override get interval(): SetExpr;
   /**
-   * The first point.
+   * Identifies the first point of the index interval.
    *
-   * @returns The first point.
+   * @returns The starting index.
    * @see SymPy `sympy.series.sequences.SeqBase.start`
    */
   override get start(): Expr {
     return inf(this.interval);
   }
   /**
-   * The last point.
+   * Identifies the final point of the index interval.
    *
-   * @returns The last point.
+   * @returns The ending index.
    * @see SymPy `sympy.series.sequences.SeqBase.stop`
    */
   override get stop(): Expr {
     return sup(this.interval);
   }
   /**
-   * The number of terms (stop - start + 1, oo for an infinite sequence).
+   * Counts the indices between the inclusive endpoints.
    *
-   * @returns The number of terms (stop - start + 1, oo for an infinite sequence).
+   * @returns The term count or `oo`.
    * @see SymPy `sympy.series.sequences.SeqBase.length`
    */
   override get length(): Expr {
     return add(sub(this.stop, this.start), 1);
   }
   /**
-   * The term at the point pt.
+   * Evaluates the sequence term at the specified index.
    *
    * @param pt - Index of the requested term.
    * @returns The term at the specified index.
@@ -114,10 +114,7 @@ export abstract class SeqBase extends SeriesBase {
     return p;
   }
   /**
-   * Every term multiplied by coeff. The operation is not
-   * defined for sequences in general: only SeqFormula, SeqPer and
-   * EmptySequence have it, and SymPy raises for the others (SeqAdd, SeqMul,
-   * RecursiveSeq), as for their negation.
+   * Multiplies every term by the coefficient for a sequence type that supports termwise scaling.
    *
    * @param coeff - Scalar multiplier of each term.
    * @returns The sequence of scaled terms.
@@ -128,7 +125,7 @@ export abstract class SeqBase extends SeriesBase {
     throw new TypeError(`cannot multiply ${this.name} and ${String(coeff)}`);
   }
   /**
-   * The term-wise sum (SymPy +).
+   * Adds the sequences term by term.
    *
    * @param other - Other operand.
    * @returns The term-wise sum.
@@ -139,7 +136,7 @@ export abstract class SeqBase extends SeriesBase {
     return SeqAdd(this, other);
   }
   /**
-   * The term-wise difference (SymPy -).
+   * Subtracts the other sequence term by term.
    *
    * @param other - Other operand.
    * @returns The term-wise difference.
@@ -150,15 +147,15 @@ export abstract class SeqBase extends SeriesBase {
     return SeqAdd(this, other.neg());
   }
   /**
-   * The sequence with every term negated.
+   * Negates each term of the sequence.
    *
-   * @returns The sequence with every term negated.
+   * @returns The termwise negative sequence.
    */
   override neg(): SeqBase {
     return this.coeffMul(-1);
   }
   /**
-   * The term-wise product (SymPy *).
+   * Multiplies the sequences term by term.
    *
    * @param other - Other operand.
    * @returns The term-wise product.
@@ -169,16 +166,13 @@ export abstract class SeqBase extends SeriesBase {
     return SeqMul(this, other);
   }
   /**
-   * The coefficients [c1, ..., ck]
-   * of the shortest linear recurrence a(m) = c1*a(m-1) + ... + ck*a(m-k) of
-   * order at most d satisfied by the first n terms ([] when there is none);
-   * with gfvar also the generating function in gfvar (NoMatch when there is
-   * no recurrence).
+   * Finds the shortest constant-coefficient recurrence of the specified maximum order fitting the initial
+   * terms.
    *
    * @param n - Number of terms to use.
    * @param d - Maximum order to try.
    * @param gfvar - Variable of the generating function.
-   * @returns The recurrence coefficients, paired with the generating function (or `NoMatch`) when `gfvar` is supplied.
+   * @returns The recurrence coefficients, or an empty list when none qualify.
    * @see SymPy `sympy.series.sequences.SeqBase.find_linear_recurrence`
    * @example
    * ```ts
@@ -251,36 +245,36 @@ export class EmptySequenceNode extends SeqBase {
     return EmptySequence;
   }
   /**
-   * The inclusive interval of term indices.
+   * Specifies the index range of the terms, including both endpoints.
    *
-   * @returns The inclusive interval of term indices.
+   * @returns The index interval.
    * @see SymPy `sympy.series.sequences.EmptySequence.interval`
    */
   override get interval(): SetExpr {
     return EmptySet;
   }
   /**
-   * The number of terms, possibly infinite.
+   * Counts the terms in the index interval, allowing an infinite range.
    *
-   * @returns The number of terms, possibly infinite.
+   * @returns The term count or infinity.
    * @see SymPy `sympy.series.sequences.EmptySequence.length`
    */
   override get length(): Expr {
     return S.Zero;
   }
   /**
-   * The first index of the series or sequence.
+   * Identifies the first index at which a term is defined.
    *
-   * @returns The first index of the series or sequence.
+   * @returns The starting index.
    * @see SymPy `sympy.series.sequences.EmptySequence.start`
    */
   override get start(): Expr {
     return S.Infinity;
   }
   /**
-   * The last index of the series or sequence.
+   * Identifies the final index in the series or sequence.
    *
-   * @returns The last index of the series or sequence.
+   * @returns The ending index.
    * @see SymPy `sympy.series.sequences.EmptySequence.stop`
    */
   override get stop(): Expr {
@@ -387,7 +381,7 @@ export class SeqExprNode extends SeqExprBase {
     return new SeqExprNode(at(args, 3), cast(at(args, 0), Sym), at(args, 1), at(args, 2));
   }
   /**
-   * The term at the given index.
+   * Obtains the term associated with the given index.
    *
    * @returns The term at the specified index.
    * @throws NotImplementedError when the base sequence has no term evaluation rule.
@@ -458,9 +452,9 @@ export class SeqFormulaNode extends SeqExprBase {
     super('SeqFormula', [x, start, stop, formula]);
   }
   /**
-   * The formula of the terms.
+   * Specifies how to compute a term from its index.
    *
-   * @returns The formula of the terms.
+   * @returns The term formula.
    * @see SymPy `sympy.series.sequences.SeqFormula.formula`
    */
   get formula(): Expr {
@@ -476,9 +470,9 @@ export class SeqFormulaNode extends SeqExprBase {
     return SeqFormula(at(args, 3), [cast(at(args, 0), Sym, 'sequence variable'), at(args, 1), at(args, 2)]);
   }
   /**
-   * The argument positions of bound variables and their scopes.
+   * Identifies bound variables by argument position and scope.
    *
-   * @returns The argument positions of bound variables and their scopes.
+   * @returns The variable bindings.
    */
   override bindings(): { variables: readonly number[]; scope: readonly number[] } {
     return { variables: [0], scope: [3] };
@@ -505,9 +499,9 @@ export class SeqFormulaNode extends SeqExprBase {
     return SeqFormula(mul(this.formula, sympify(coeff)), [this.variable, this.start, this.stop]);
   }
   /**
-   * The sequence of the expanded formula.
+   * Expands the symbolic formula that generates the sequence.
    *
-   * @returns The sequence of the expanded formula.
+   * @returns The expanded sequence.
    * @see SymPy `sympy.series.sequences.SeqFormula.expand`
    */
   expand(): SeqBase {
@@ -579,25 +573,25 @@ export class SeqPerNode extends SeqExprBase {
     super('SeqPer', [x, start, stop, ...periodical]);
   }
   /**
-   * The terms of one period.
+   * Lists the terms in a single cycle of the sequence.
    *
-   * @returns The terms of one period.
+   * @returns The repeating block.
    * @see SymPy `sympy.series.sequences.SeqPer.periodical`
    */
   get periodical(): Expr[] {
     return this.args.slice(3);
   }
   /**
-   * The expression generating the terms of the sequence.
+   * Identifies the expression used to generate sequence terms.
    *
-   * @returns The expression generating the terms of the sequence.
+   * @returns The generating expression.
    * @see SymPy `sympy.series.sequences.SeqPer.gen`
    */
   override get gen(): Expr { return Tuple(...this.periodical); }
   /**
-   * The length of the period.
+   * Counts the terms in one cycle of the sequence.
    *
-   * @returns The length of the period.
+   * @returns The period length.
    * @see SymPy `sympy.series.sequences.SeqPer.period`
    */
   get period(): number {
@@ -613,9 +607,9 @@ export class SeqPerNode extends SeqExprBase {
     return SeqPer(args.slice(3), [cast(at(args, 0), Sym, 'sequence variable'), at(args, 1), at(args, 2)]);
   }
   /**
-   * The argument positions of bound variables and their scopes.
+   * Identifies bound variables by argument position and scope.
    *
-   * @returns The argument positions of bound variables and their scopes.
+   * @returns The variable bindings.
    */
   override bindings(): { variables: readonly number[]; scope: readonly number[] } {
     return { variables: [0], scope: this.periodical.map((_, i) => 3 + i) };
@@ -746,25 +740,25 @@ export class RecursiveSeqNode extends SeqBase {
     this.terms = [...initial];
   }
   /**
-   * The equation y(n) = recurrence.
+   * Expresses the current term in terms of the recurrence.
    *
-   * @returns The equation y(n) = recurrence.
+   * @returns The recurrence equation.
    * @see SymPy `sympy.series.sequences.RecursiveSeq.recurrence`
    */
   get recurrence(): Expr {
     return Eq(this.yn, at(this.args, 0));
   }
   /**
-   * The term y(n).
+   * Identifies the dependent term at the current index.
    *
-   * @returns The term y(n).
+   * @returns The expression `y(n)`.
    * @see SymPy `sympy.series.sequences.RecursiveSeq.yn`
    */
   get yn(): UndefFn {
     return cast(at(this.args, 1), UndefFn, 'recurrence function');
   }
   /**
-   * The recurrence variable.
+   * Identifies the index that advances in the recurrence.
    *
    * @returns The recurrence variable.
    */
@@ -772,36 +766,36 @@ export class RecursiveSeqNode extends SeqBase {
     return cast(at(this.args, 2), Sym, 'recurrence variable');
   }
   /**
-   * The initial terms.
+   * Lists the terms that seed the recurrence.
    *
-   * @returns The initial terms.
+   * @returns The initial values.
    * @see SymPy `sympy.series.sequences.RecursiveSeq.initial`
    */
   get initial(): Expr[] {
     return this.args.slice(4);
   }
   /**
-   * The first index of the series or sequence.
+   * Identifies the first index at which a term is defined.
    *
-   * @returns The first index of the series or sequence.
+   * @returns The starting index.
    * @see SymPy `sympy.series.sequences.RecursiveSeq.start`
    */
   override get start(): Expr {
     return at(this.args, 3);
   }
   /**
-   * The last index of the series or sequence.
+   * Identifies the final index in the series or sequence.
    *
-   * @returns The last index of the series or sequence.
+   * @returns The ending index.
    * @see SymPy `sympy.series.sequences.RecursiveSeq.stop`
    */
   override get stop(): Expr {
     return S.Infinity;
   }
   /**
-   * The inclusive interval of term indices.
+   * Specifies the index range of the terms, including both endpoints.
    *
-   * @returns The inclusive interval of term indices.
+   * @returns The index interval.
    * @see SymPy `sympy.series.sequences.RecursiveSeq.interval`
    */
   override get interval(): SetExpr {
@@ -817,7 +811,7 @@ export class RecursiveSeqNode extends SeqBase {
     return RecursiveSeq(at(args, 0), at(args, 1), at(args, 2), args.slice(4), at(args, 3));
   }
   /**
-   * The term at the given index.
+   * Obtains the term associated with the given index.
    *
    * @param pt - Index of the requested term.
    * @returns The term at the specified index.
@@ -847,16 +841,15 @@ export class RecursiveSeqNode extends SeqBase {
 }
 
 /**
- * The sequence y(n)
- * with y(n) = recurrence for n >= start + degree and the initial terms
- * (Dummy symbols c_k when omitted) before.
+ * Constructs a sequence from initial values and a recurrence starting at `start + degree`, using dummy
+ * symbols for omitted initial values.
  *
  * @param recurrenceIn - Expression for a term in terms of earlier values.
  * @param yn - Sequence function evaluated at its index.
  * @param n - Index variable of the sequence.
  * @param initial - Consecutive initial terms.
  * @param startIn - First index.
- * @returns The sequence y(n) with y(n) = recurrence for n >= start + degree and the initial terms (Dummy symbols c_k when omitted) before.
+ * @returns The recursive sequence.
  * @throws TypeError when the recurrence has invalid shifts or does not define a recurrence for the given indexed function.
  * @throws RangeError when the number of initial values differs from the recurrence order.
  * @see SymPy `sympy.series.sequences.RecursiveSeq`
@@ -1030,7 +1023,7 @@ export class SeqExprOpNode extends SeqExprOpBase {
    */
   override withArgs(args: readonly Expr[]): Expr { return new SeqExprOpNode(args.map((a) => cast(a, SeqBase))); }
   /**
-   * The term at the given index.
+   * Obtains the term associated with the given index.
    *
    * @returns The term at the specified index.
    * @throws NotImplementedError when the operation has no term evaluation rule.
@@ -1090,7 +1083,7 @@ export class SeqAddNode extends SeqExprOpBase {
     return SeqAdd(...args.map((a) => cast(a, SeqBase, 'sequence')));
   }
   /**
-   * The term at the given index.
+   * Obtains the term associated with the given index.
    *
    * @param pt0 - Index of the requested term.
    * @returns The term at the specified index.
@@ -1135,7 +1128,7 @@ export class SeqMulNode extends SeqExprOpBase {
     return SeqMul(...args.map((a) => cast(a, SeqBase, 'sequence')));
   }
   /**
-   * The term at the given index.
+   * Obtains the term associated with the given index.
    *
    * @param pt0 - Index of the requested term.
    * @returns The term at the specified index.

@@ -445,10 +445,10 @@ export class HyperRep extends ExtensionExpr {
     return new HyperRep(this.rep, args);
   }
   /**
-   * The closed form: 'nonrepsmall' for |x| < 1, 'nonrep' with the branch for |x| > 1 as well.
+   * Constructs a closed form inside the unit circle, adding the exterior branch for `nonrep`.
    *
    * @param target - The target function or representation.
-   * @returns The closed form: 'nonrepsmall' for |x| < 1, 'nonrep' with the branch for |x| > 1 as well.
+   * @returns The selected closed-form expression.
    */
   closedForm(target: 'nonrep' | 'nonrepsmall'): Expr {
     const [x, n0] = extractBranchFactor(at(this.args, -1), true);
@@ -1116,8 +1116,7 @@ function denestPolarPow(t: Expr): Expr {
 }
 
 /**
- * polarify (the symbols replaced by polar dummies), unpolarify the
- * exponents, denest, then substitute the symbols back and unpolarify.
+ * Denests powers using polar variables and then restores the original symbols.
  *
  * @param e - The input expression.
  * @returns The expression with compatible nested powers combined.
@@ -1422,14 +1421,14 @@ export class Operator {
    * Constructs the operator that raises an upper parameter by one.
    *
    * @param a - The first operand.
-   * @returns The operator that raises an upper parameter by one.
+   * @returns An upper-parameter raising operator.
    */
   static shiftA(a: ExprLike): Operator { return publicOperator(shiftA(sympify(a))); }
   /**
    * Constructs the operator that lowers a lower parameter by one.
    *
    * @param b - The second operand.
-   * @returns The operator that lowers a lower parameter by one.
+   * @returns A lower-parameter lowering operator.
    */
   static shiftB(b: ExprLike): Operator { return publicOperator(shiftB(sympify(b))); }
   /**
@@ -1439,7 +1438,7 @@ export class Operator {
    * @param bq - The lower parameters.
    * @param i - The zero-based index.
    * @param z - The argument of the function.
-   * @returns The inverse shift that lowers a selected upper parameter.
+   * @returns An upper-parameter lowering operator.
    */
   static unShiftA(ap: readonly ExprLike[], bq: readonly ExprLike[], i: number, z: Expr): Operator {
     return publicOperator(unShiftA(ap.map(sympify), bq.map(sympify), i, z));
@@ -1451,7 +1450,7 @@ export class Operator {
    * @param bq - The lower parameters.
    * @param i - The zero-based index.
    * @param z - The argument of the function.
-   * @returns The inverse shift that raises a selected lower parameter.
+   * @returns A lower-parameter raising operator.
    */
   static unShiftB(ap: readonly ExprLike[], bq: readonly ExprLike[], i: number, z: Expr): Operator {
     return publicOperator(unShiftB(ap.map(sympify), bq.map(sympify), i, z));
@@ -1461,7 +1460,7 @@ export class Operator {
    *
    * @param a - The first operand.
    * @param b - The second operand.
-   * @returns The operator reducing a compatible pair of upper and lower parameters.
+   * @returns The order-reduction operator.
    */
   static reduceOrder(a: ExprLike, b: ExprLike): Operator | NoMatchResult {
     const op = reduceOrderOp(sympify(a), sympify(b));
@@ -1469,11 +1468,11 @@ export class Operator {
   }
 
   /**
-   * The operator applied to obj, where op applies the generator.
+   * Applies the operator to the object using the supplied action of its generator.
    *
    * @param obj - The object to transform.
    * @param op - The action of the generator on an operand.
-   * @returns The operator applied to obj, where op applies the generator.
+   * @returns The transformed object.
    * @see SymPy `sympy.simplify.hyperexpand.Operator.apply`
    */
   apply(obj: ExprLike, op: (e: Expr) => Expr): Expr {
@@ -1511,16 +1510,16 @@ export class Hyper_Function {
     this.bq = f.bq;
   }
   /**
-   * The upper and lower parameter tuples.
+   * Groups the parameters into their numerator and denominator rows.
    *
-   * @returns The upper and lower parameter tuples.
+   * @returns The upper and lower tuples.
    * @see SymPy `sympy.simplify.hyperexpand.Hyper_Function.args`
    */
   get args(): [Tuple, Tuple] { return [Tuple(...this.ap), Tuple(...this.bq)]; }
   /**
-   * The numbers of upper and lower parameters.
+   * Counts the parameters in each row.
    *
-   * @returns The numbers of upper and lower parameters.
+   * @returns The upper and lower counts.
    * @see SymPy `sympy.simplify.hyperexpand.Hyper_Function.sizes`
    */
   get sizes(): [number, number] { return [this.ap.length, this.bq.length]; }
@@ -1558,17 +1557,16 @@ export class Hyper_Function {
     return `Hyper_Function(${parameterTuple(this.ap)}, ${parameterTuple(this.bq)})`;
   }
   /**
-   * The number of negative integer numerator parameters.
+   * Counts negative integers in the numerator parameter row.
    *
-   * @returns The number of negative integer numerator parameters.
+   * @returns The negative-parameter count.
    * @see SymPy `sympy.simplify.hyperexpand.Hyper_Function.gamma`
    */
   get gamma(): number {
     return hfGamma({ ap: [...this.ap], bq: [...this.bq] });
   }
   /**
-   * [gamma, ((mod, count), ...) of ap, ((mod, count), ...) of bq], the
-   * parameters grouped by their residue mod 1 (sorted), which shift operators leave unchanged.
+   * Groups upper and lower parameters by residue modulo one to determine invariants under shifts.
    *
    * @returns The negative-integer count and the grouped parameter residues.
    * @see SymPy `sympy.simplify.hyperexpand.Hyper_Function.build_invariants`
@@ -1620,10 +1618,10 @@ export class G_Function {
     return `G_Function(${[this.an, this.ap, this.bm, this.bq].map(parameterTuple).join(', ')})`;
   }
   /**
-   * The parameters of an, ap, bm and bq grouped by their
-   * residue mod 1, each group sorted by real part (an and bq descending, ap and bm ascending).
+   * Groups each parameter row by residue modulo one and sorts each group by real part, descending for
+   * `an` and `bq` and ascending for the other rows.
    *
-   * @returns The parameters of an, ap, bm and bq grouped by their residue mod 1, each group sorted by real part (an and bq descending, ap and bm ascending).
+   * @returns Four maps from residues to parameters.
    * @see SymPy `sympy.simplify.hyperexpand.G_Function.compute_buckets`
    */
   computeBuckets(): [ExprMap<Expr[]>, ExprMap<Expr[]>, ExprMap<Expr[]>, ExprMap<Expr[]>] {
@@ -1642,7 +1640,7 @@ const publicOperator = (op: OpPoly): Operator => {
 };
 
 /**
- * Differential operators shifting an origin hypergeometric function to the target.
+ * Constructs a sequence of differential operators from the origin function to the target.
  *
  * @param target - The desired parameter configuration.
  * @param origin - The starting parameter configuration.
@@ -1661,7 +1659,7 @@ export function devisePlan(target: Hyper_Function, origin: Hyper_Function, z: Ex
 }
 
 /**
- * Differential operators shifting the parameters of a Meijer G-function.
+ * Constructs differential operators for the desired shifts of the Meijer G parameters.
  *
  * @param fro - The starting parameter configuration.
  * @param to - The desired parameter configuration.
@@ -1755,9 +1753,9 @@ export class Formula {
     this.M = M.map((row) => row.map(sympify));
   }
   /**
-   * The expression obtained by multiplying the coefficient row by the basis column.
+   * Multiplies the coefficient row by the column of basis functions.
    *
-   * @returns The expression obtained by multiplying the coefficient row by the basis column.
+   * @returns The closed-form expression.
    * @see SymPy `sympy.simplify.hyperexpand.Formula.closed_form`
    */
   get closedForm(): Expr {

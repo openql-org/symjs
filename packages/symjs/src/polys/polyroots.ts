@@ -22,12 +22,12 @@ import { PolyQuintic } from './polyquinticconst';
 import { cyclotomicPoly } from './specialpolys';
 
 /**
- * Linear root factors, with a residual factor when explicit roots are incomplete.
+ * Extracts linear factors from explicit roots and retains the residual factor when needed.
  *
  * @param f - Polynomial to operate on.
  * @param x - Polynomial generator.
  * @param filter - Domain restriction on the roots.
- * @returns Linear root factors, with a residual factor when explicit roots are incomplete.
+ * @returns The factors as polynomial objects.
  * @throws RangeError when the polynomial is not univariate.
  * @see SymPy `sympy.polys.polyroots.root_factors`
  * @example
@@ -40,12 +40,12 @@ import { cyclotomicPoly } from './specialpolys';
  */
 export function rootFactors(f: Poly, x?: Sym, filter?: RootOptions['filter']): Poly[];
 /**
- * Linear root factors, with a residual factor when explicit roots are incomplete.
+ * Extracts linear factors from explicit roots and retains the residual factor when needed.
  *
  * @param f - Polynomial to operate on.
  * @param x - Polynomial generator.
  * @param filter - Domain restriction on the roots.
- * @returns Linear root factors, with a residual factor when explicit roots are incomplete.
+ * @returns The factor expressions.
  * @throws RangeError when the polynomial is not univariate.
  * @see SymPy `sympy.polys.polyroots.root_factors`
  */
@@ -66,10 +66,10 @@ const numeric = (e: Expr): ComplexValue => toComplex(evalf(e, 40));
 const difference = (a: ComplexValue, b: ComplexValue): number => cabs(cadd(a, cneg(b)));
 
 /**
- * Exact radical roots of a solvable irreducible rational quintic; otherwise an empty list.
+ * Solves an irreducible rational quintic in radicals when possible.
  *
  * @param poly - Polynomial to represent or transform.
- * @returns Exact radical roots of a solvable irreducible rational quintic; otherwise an empty list.
+ * @returns The radical roots or an empty list.
  * @throws RangeError when the input is not a univariate quintic.
  * @see SymPy `sympy.polys.polyroots.roots_quintic`
  */
@@ -162,10 +162,10 @@ export function rootsQuintic(poly: Poly): Expr[] {
 polyHooks.quintic = (e, x) => rootsQuintic(Poly.from(e, [x]));
 
 /**
- * Roots of a binomial, repeated by multiplicity in canonical root order.
+ * Finds the roots of a binomial in canonical order, repeating them by multiplicity.
  *
  * @param f - Polynomial to operate on.
- * @returns Roots of a binomial, repeated by multiplicity in canonical root order.
+ * @returns The ordered root list.
  * @throws PolynomialError when the polynomial has no roots.
  * @see SymPy `sympy.polys.polyroots.roots_binomial`
  */
@@ -189,10 +189,10 @@ export function rootsBinomial(f: Poly): Expr[] {
 }
 
 /**
- * Roots of a quadratic, including repeated and zero roots.
+ * Solves a quadratic polynomial, preserving zero and repeated roots.
  *
  * @param f - Polynomial to operate on.
- * @returns Roots of a quadratic, including repeated and zero roots.
+ * @returns The two roots with multiplicity.
  * @see SymPy `sympy.polys.polyroots.roots_quadratic`
  */
 export function rootsQuadratic(f: Poly): Expr[] {
@@ -200,11 +200,11 @@ export function rootsQuadratic(f: Poly): Expr[] {
 }
 
 /**
- * Roots of a cubic, including repeated roots.
+ * Solves a cubic polynomial, preserving repeated roots.
  *
  * @param f - Polynomial to operate on.
  * @param trig - Use trigonometric forms for real roots when available.
- * @returns Roots of a cubic, including repeated roots.
+ * @returns The roots with multiplicity.
  * @throws PolynomialError when the polynomial is not cubic.
  * @see SymPy `sympy.polys.polyroots.roots_cubic`
  */
@@ -223,11 +223,11 @@ const rootDomainFacts = { Z: 'integer', Q: 'rational', I: 'imaginary' } as const
 polyHooks.matchRootDomain = (root, filter) => fact(root, rootDomainFacts[filter]) === true;
 
 /**
- * Roots of a cyclotomic polynomial, real parts followed by imaginary parts.
+ * Finds the cyclotomic roots in the order determined by their real and imaginary parts.
  *
  * @param f - Polynomial to operate on.
  * @param factor - Return one factor per root.
- * @returns Roots of a cyclotomic polynomial, real parts followed by imaginary parts.
+ * @returns The ordered root list.
  * @throws RangeError when the polynomial is not cyclotomic.
  * @see SymPy `sympy.polys.polyroots.roots_cyclotomic`
  */

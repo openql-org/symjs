@@ -84,9 +84,8 @@ export function find(x: string | Sym, equation: Expr): Sym {
 }
 
 /**
- * The entities common to all the given entities (SymPy intersection); with `pairwise: true`,
- * those common to any two of them. Floats are converted to Rationals for the computation and back
- * at their least precision.
+ * Finds the geometry shared by all operands, or by any pair when pairwise intersections are requested.
+ * Floating coordinates are converted to rationals for the computation and converted back afterward.
  *
  * @param args - Entities or sets to intersect. The trailing `pairwise` option collects intersections of every pair.
  * @returns The geometric intersections as a list, or the intersection set when only sets are supplied.
@@ -163,10 +162,10 @@ export function areSimilar(e1: GeometryEntity, e2: GeometryEntity): boolean {
 }
 
 /**
- * The centroid of points, segments (weighted by length) or polygons (weighted by area).
+ * Averages points or computes the centroid of segments weighted by length or polygons weighted by area.
  *
  * @param args - Points, segments or polygons of a single kind.
- * @returns The centroid of points, segments (weighted by length) or polygons (weighted by area).
+ * @returns The combined centroid.
  * @throws RangeError when no entities are supplied.
  * @throws TypeError when the inputs mix entity types or include an entity without a defined centroid.
  * @see SymPy `sympy.geometry.util.centroid`
@@ -235,10 +234,10 @@ const sameValue = (a: Expr | number, b: Expr | number): boolean => (typeof a ===
 const distinct2D = (args: readonly PointInput[]): PointNode[] => uniqPoints(args.map((a) => toPoint(a, { dim: 2 })));
 
 /**
- * The pairs of points at the smallest distance, as a set of [p, q] pairs.
+ * Finds every pair attaining the minimum distance among the points.
  *
  * @param args - Points whose pairwise distances are compared.
- * @returns The pairs of points at the smallest distance, as a set of [p, q] pairs.
+ * @returns A set of point pairs.
  * @throws RangeError when fewer than two distinct points are supplied.
  * @see SymPy `sympy.geometry.util.closest_points`
  * @example
@@ -338,10 +337,10 @@ export function convexHull(...args: (GeometryEntity | PointInput | { polygon?: b
 }
 
 /**
- * The pairs of points at the largest distance, as a set of [p, q] pairs.
+ * Finds every pair attaining the maximum distance among the points.
  *
  * @param args - Points whose pairwise distances are compared.
- * @returns The pairs of points at the largest distance, as a set of [p, q] pairs.
+ * @returns A set of point pairs.
  * @throws RangeError when fewer than two distinct points are supplied.
  * @see SymPy `sympy.geometry.util.farthest_points`
  * @example
@@ -393,7 +392,7 @@ export function farthestPoints(...args: PointInput[]): Set<[PointNode, PointNode
 }
 
 /**
- * The entities lie in one plane.
+ * Tests whether one plane contains all the entities.
  *
  * @param eIn - Geometric entities tested for a common plane.
  * @returns Whether one plane contains all the entities.
@@ -432,8 +431,8 @@ export function areCoplanar(...eIn: GeometryEntity[]): boolean {
 }
 
 /**
- * dy/dx (the n-th derivative) of y given implicitly by eq = 0 (SymPy idiff). y is a symbol, a
- * list of symbols that depend on x (the first one is differentiated), or a function of x.
+ * Computes the nth derivative by implicit differentiation of the equation, treating the specified
+ * dependent symbols or function as depending on the independent variable.
  *
  * @param eq - Expression assumed equal to zero.
  * @param yIn - Dependent variable, or dependent variables with the desired one first.

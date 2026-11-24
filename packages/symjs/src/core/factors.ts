@@ -128,16 +128,16 @@ export class Factors {
   }
 
   /**
-   * The bases (SymPy gens).
+   * Collects the bases occurring in the factorization.
    *
-   * @returns The bases (SymPy gens).
+   * @returns The set of factor bases.
    * @see SymPy `sympy.core.exprtools.Factors.gens`
    */
   get gens(): Set<Expr> {
     return new Set(this.factors.keys());
   }
   /**
-   * The product is zero.
+   * Checks whether the factor product is zero.
    *
    * @returns Whether the value is zero.
    * @see SymPy `sympy.core.exprtools.Factors.is_zero`
@@ -146,7 +146,7 @@ export class Factors {
     return this.factors.size === 1 && this.factors.has(S.Zero);
   }
   /**
-   * The product is one.
+   * Checks whether the factor product is one.
    *
    * @returns Whether the value equals one.
    * @see SymPy `sympy.core.exprtools.Factors.is_one`
@@ -156,7 +156,7 @@ export class Factors {
   }
 
   /**
-   * The product as an expression (SymPy as_expr).
+   * Reconstructs the symbolic product of the factors.
    *
    * @returns The product of the stored factors raised to their exponents.
    * @see SymPy `sympy.core.exprtools.Factors.as_expr`
@@ -199,8 +199,7 @@ export class Factors {
   }
 
   /**
-   * self and other with their common part removed (SymPy div): the
-   * quotient and the remaining factors of other.
+   * Cancels common factors from both operands and retains the residual numerator and denominator.
    *
    * @param other - The other operand.
    * @returns The numerator and denominator products after cancelling common factors.
@@ -293,7 +292,7 @@ export class Factors {
   }
 
   /**
-   * Common bases with the smaller provable exponent (SymPy gcd).
+   * Builds the common factor product using the smaller provable exponent for each shared base.
    *
    * @param other - The other operand.
    * @returns The common bases raised to their smaller exponents.
@@ -313,7 +312,7 @@ export class Factors {
   }
 
   /**
-   * Union of bases with their larger exponent (SymPy lcm).
+   * Builds the least common multiple using the larger exponent for each base.
    *
    * @param other - The other operand.
    * @returns The combined bases raised to their larger exponents.
@@ -337,20 +336,20 @@ export class Factors {
   }
 
   /**
-   * The numerator Factors of self / other (SymPy quo, the / operator).
+   * Cancels common factors and keeps the numerator of the ratio.
    *
    * @param other - The other operand.
-   * @returns The numerator Factors of self / other (SymPy quo, the / operator).
+   * @returns The numerator factors.
    * @see SymPy `sympy.core.exprtools.Factors.quo`
    */
   quo(other: Factors | ExprLike): Factors {
     return this.div(other)[0];
   }
   /**
-   * The denominator Factors of self / other (SymPy rem).
+   * Cancels common factors and keeps the denominator of the ratio.
    *
    * @param other - The other operand.
-   * @returns The denominator Factors of self / other (SymPy rem).
+   * @returns The denominator factors.
    * @see SymPy `sympy.core.exprtools.Factors.rem`
    */
   rem(other: Factors | ExprLike): Factors {
@@ -489,7 +488,7 @@ export class Term {
    * Computes the greatest common divisor of the two terms.
    *
    * @param other - The other operand.
-   * @returns The greatest common divisor of the two terms.
+   * @returns The term GCD.
    * @see SymPy `sympy.core.exprtools.Term.gcd`
    */
   gcd(other: Term): Term {
@@ -500,7 +499,7 @@ export class Term {
    * Computes the least common multiple of the two terms.
    *
    * @param other - The other operand.
-   * @returns The least common multiple of the two terms.
+   * @returns The term LCM.
    * @see SymPy `sympy.core.exprtools.Term.lcm`
    */
   lcm(other: Term): Term {

@@ -165,9 +165,9 @@ export class Patch extends ExtensionExpr {
     manifold.patches.push(this);
   }
   /**
-   * Dimension of the manifold.
+   * Counts the independent coordinates on the manifold.
    *
-   * @returns Dimension of the manifold.
+   * @returns The manifold dimension.
    * @see SymPy `sympy.diffgeom.diffgeom.Patch.dim`
    */
   get dim(): number {
@@ -294,27 +294,27 @@ export class CoordSystem extends ExtensionExpr {
     patch.coordSystems.push(this);
   }
   /**
-   * The manifold containing the patch.
+   * Identifies the manifold to which the patch belongs.
    *
-   * @returns The manifold containing the patch.
+   * @returns The parent manifold.
    * @see SymPy `sympy.diffgeom.diffgeom.CoordSystem.manifold`
    */
   get manifold(): Manifold {
     return this.patch.manifold;
   }
   /**
-   * Dimension of the manifold.
+   * Counts the independent coordinates on the manifold.
    *
-   * @returns Dimension of the manifold.
+   * @returns The manifold dimension.
    * @see SymPy `sympy.diffgeom.diffgeom.CoordSystem.dim`
    */
   get dim(): number {
     return this.patch.dim;
   }
   /**
-   * The coordinate symbols of the chart, in axis order.
+   * Lists the chart coordinates in axis order.
    *
-   * @returns The coordinate symbols of the chart, in axis order.
+   * @returns The coordinate symbols.
    * @see SymPy `sympy.diffgeom.diffgeom.CoordSystem.symbols`
    */
   get symbols(): CoordinateSymbol[] {
@@ -533,9 +533,9 @@ export class CoordSystem extends ExtensionExpr {
     return this.baseScalar(index);
   }
   /**
-   * The coordinate scalar fields in axis order.
+   * Lists the basis scalar fields in chart order.
    *
-   * @returns The coordinate scalar fields in axis order.
+   * @returns The coordinate fields.
    * @see SymPy `sympy.diffgeom.diffgeom.CoordSystem.base_scalars`
    */
   baseScalars(): BaseScalarField[] {
@@ -561,9 +561,9 @@ export class CoordSystem extends ExtensionExpr {
     return new BaseVectorField(this, index);
   }
   /**
-   * The basis vector fields in axis order.
+   * Lists the coordinate basis vectors in axis order.
    *
-   * @returns The basis vector fields in axis order.
+   * @returns The vector fields.
    * @see SymPy `sympy.diffgeom.diffgeom.CoordSystem.base_vectors`
    */
   baseVectors(): BaseVectorField[] {
@@ -580,9 +580,9 @@ export class CoordSystem extends ExtensionExpr {
     return Differential(this.baseScalar(index));
   }
   /**
-   * The basis one-forms dual to the coordinate vectors.
+   * Constructs the dual basis of the coordinate vector fields.
    *
-   * @returns The basis one-forms dual to the coordinate vectors.
+   * @returns The coordinate one-forms.
    * @see SymPy `sympy.diffgeom.diffgeom.CoordSystem.base_oneforms`
    */
   baseOneforms(): Expr[] {
@@ -652,9 +652,9 @@ export class CoordinateSymbol extends Sym {
     return `CoordinateSymbol:${this.coordSys.key}:${this.index}`;
   }
   /**
-   * The class name used for canonical ordering.
+   * Identifies the class used to sort this expression.
    *
-   * @returns The class name used for canonical ordering.
+   * @returns The ordering class name.
    */
   override get sortClass(): string {
     return 'CoordinateSymbol';
@@ -707,27 +707,27 @@ export class Point extends ExtensionExpr {
     this.coordinates = coords;
   }
   /**
-   * The coordinate patch containing this object.
+   * Identifies the patch on which this object is defined.
    *
-   * @returns The coordinate patch containing this object.
+   * @returns The coordinate patch.
    * @see SymPy `sympy.diffgeom.diffgeom.Point.patch`
    */
   get patch(): Patch {
     return this.coordSys.patch;
   }
   /**
-   * The manifold containing the patch.
+   * Identifies the manifold to which the patch belongs.
    *
-   * @returns The manifold containing the patch.
+   * @returns The parent manifold.
    * @see SymPy `sympy.diffgeom.diffgeom.Point.manifold`
    */
   get manifold(): Manifold {
     return this.coordSys.manifold;
   }
   /**
-   * Dimension of the manifold.
+   * Counts the independent coordinates on the manifold.
    *
-   * @returns Dimension of the manifold.
+   * @returns The manifold dimension.
    * @see SymPy `sympy.diffgeom.diffgeom.Point.dim`
    */
   get dim(): number {
@@ -808,27 +808,27 @@ export class BaseScalarField extends ExtensionExpr {
     at(coordSys.coordinateNames, index);
   }
   /**
-   * The coordinate patch containing this object.
+   * Identifies the patch on which this object is defined.
    *
-   * @returns The coordinate patch containing this object.
+   * @returns The coordinate patch.
    * @see SymPy `sympy.diffgeom.diffgeom.BaseScalarField.patch`
    */
   get patch(): Patch {
     return this.coordSys.patch;
   }
   /**
-   * The manifold containing the patch.
+   * Identifies the manifold to which the patch belongs.
    *
-   * @returns The manifold containing the patch.
+   * @returns The parent manifold.
    * @see SymPy `sympy.diffgeom.diffgeom.BaseScalarField.manifold`
    */
   get manifold(): Manifold {
     return this.coordSys.manifold;
   }
   /**
-   * Dimension of the manifold.
+   * Counts the independent coordinates on the manifold.
    *
-   * @returns Dimension of the manifold.
+   * @returns The manifold dimension.
    * @see SymPy `sympy.diffgeom.diffgeom.BaseScalarField.dim`
    */
   get dim(): number {
@@ -929,36 +929,36 @@ export class BaseVectorField extends ExtensionExpr {
     at(coordSys.coordinateNames, index);
   }
   /**
-   * The coordinate patch containing this object.
+   * Identifies the patch on which this object is defined.
    *
-   * @returns The coordinate patch containing this object.
+   * @returns The coordinate patch.
    * @see SymPy `sympy.diffgeom.diffgeom.BaseVectorField.patch`
    */
   get patch(): Patch {
     return this.coordSys.patch;
   }
   /**
-   * The manifold containing the patch.
+   * Identifies the manifold to which the patch belongs.
    *
-   * @returns The manifold containing the patch.
+   * @returns The parent manifold.
    * @see SymPy `sympy.diffgeom.diffgeom.BaseVectorField.manifold`
    */
   get manifold(): Manifold {
     return this.coordSys.manifold;
   }
   /**
-   * Dimension of the manifold.
+   * Counts the independent coordinates on the manifold.
    *
-   * @returns Dimension of the manifold.
+   * @returns The manifold dimension.
    * @see SymPy `sympy.diffgeom.diffgeom.BaseVectorField.dim`
    */
   get dim(): number {
     return this.manifold.dim;
   }
   /**
-   * Whether multiplication by this field commutes.
+   * Indicates whether the field commutes under multiplication.
    *
-   * @returns Whether multiplication by this field commutes.
+   * @returns Its commutativity flag.
    * @see SymPy `sympy.diffgeom.diffgeom.BaseVectorField.is_commutative`
    */
   override get isCommutative(): boolean {
@@ -1108,8 +1108,7 @@ class CommutatorNode extends ExtensionExpr {
   }
 }
 /**
- * The Lie bracket of two vector fields, acting on a scalar as the difference between their
- * successive derivatives.
+ * Computes the commutator of two vector fields by subtracting the two orders of differentiation.
  *
  * @param v1 - First vector field in the commutator.
  * @param v2 - Second vector field in the commutator.
@@ -1347,7 +1346,7 @@ class LieDerivativeNode extends ExtensionExpr {
   }
 }
 /**
- * Lie derivative with respect to a vector field.
+ * Computes the Lie derivative along the specified vector field.
  *
  * @param v - Vector field giving the direction of differentiation or flow.
  * @param expr - Symbolic expression on which to operate.
@@ -1461,7 +1460,7 @@ export class BaseCovarDerivativeOp extends ExtensionExpr {
    * Computes the covariant derivative in the chosen basis direction.
    *
    * @param field - Field to evaluate or differentiate.
-   * @returns The covariant derivative in the basis direction.
+   * @returns The differentiated field.
    * @throws NotImplementedError when the operand is a differential form of positive degree.
    * @see SymPy `sympy.diffgeom.diffgeom.BaseCovarDerivativeOp.__call__`
    */
@@ -1544,7 +1543,7 @@ export class CovarDerivativeOp extends ExtensionExpr {
    * Computes the covariant derivative of a field along the defining vector.
    *
    * @param field - Field to evaluate or differentiate.
-   * @returns The covariant derivative along the defining vector field.
+   * @returns The differentiated field.
    * @see SymPy `sympy.diffgeom.diffgeom.CovarDerivativeOp.__call__`
    */
   call(field: ExprLike): Expr {

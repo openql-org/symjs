@@ -61,23 +61,23 @@ export class DixonResultant {
     this.dummyVariables = variables.map((_, i) => alpha.at(i));
   }
   /**
-   * The number of variables.
+   * Counts the variables in the polynomial system.
    *
-   * @returns The number of variables.
+   * @returns The variable count.
    * @see SymPy `sympy.polys.multivariate_resultants.DixonResultant.n`
    */
   get n(): number { return this.variables.length; }
   /**
-   * The number of input polynomials.
+   * Counts the equations supplied as polynomials.
    *
-   * @returns The number of input polynomials.
+   * @returns The input polynomial count.
    * @see SymPy `sympy.polys.multivariate_resultants.DixonResultant.m`
    */
   get m(): number { return this.polynomials.length; }
   /**
-   * The maximal degree of each variable over the input polynomials.
+   * Finds the largest degree in each variable across all inputs.
    *
-   * @returns The maximal degree of each variable over the input polynomials.
+   * @returns The degrees in variable order.
    * @see SymPy `sympy.polys.multivariate_resultants.DixonResultant.max_degrees`
    */
   get maxDegrees(): number[] {
@@ -85,16 +85,16 @@ export class DixonResultant {
     return this.variables.map((_, i) => Math.max(...degrees.map((d) => at(d, i))));
   }
   /**
-   * The total degree of the product of the variables raised to their maximal degrees.
+   * Sums the maximal degrees across the variables.
    *
-   * @returns The total degree of the product of the variables raised to their maximal degrees.
+   * @returns The upper total degree.
    * @see SymPy `sympy.polys.multivariate_resultants.DixonResultant.get_upper_degree`
    */
   getUpperDegree(): number { return this.maxDegrees.reduce((a, d) => a + d, 0); }
   /**
-   * The Dixon polynomial obtained from the divided-difference determinant.
+   * Constructs the Dixon polynomial from the divided-difference determinant.
    *
-   * @returns The Dixon polynomial obtained from the divided-difference determinant.
+   * @returns The Dixon polynomial.
    * @throws RangeError when the number of polynomials is not one more than the number of variables.
    * @see SymPy `sympy.polys.multivariate_resultants.DixonResultant.get_dixon_polynomial`
    */
@@ -105,10 +105,10 @@ export class DixonResultant {
     return Poly.from(cancel(mul(matrix.det(), pow(denominator, -1))), this.dummyVariables);
   }
   /**
-   * The maximum exponent of each variable among the polynomial coefficients.
+   * Finds the largest exponent in each variable among the coefficient polynomials.
    *
    * @param polynomial - Polynomial to operate on.
-   * @returns The maximum exponent of each variable among the polynomial coefficients.
+   * @returns The maximum exponents.
    * @see SymPy `sympy.polys.multivariate_resultants.DixonResultant.get_max_degrees`
    */
   getMaxDegrees(polynomial: Poly): number[] {
@@ -116,10 +116,10 @@ export class DixonResultant {
     return this.variables.map((_, i) => Math.max(0, ...degrees.map((d) => at(d, i))));
   }
   /**
-   * The coefficient matrix of the Dixon polynomial.
+   * Extracts the Dixon polynomial's coefficients into a matrix.
    *
    * @param polynomial - Polynomial to operate on.
-   * @returns The coefficient matrix of the Dixon polynomial.
+   * @returns The Dixon matrix.
    * @see SymPy `sympy.polys.multivariate_resultants.DixonResultant.get_dixon_matrix`
    */
   getDixonMatrix(polynomial: Poly): Matrix {
@@ -134,9 +134,8 @@ export class DixonResultant {
     return Matrix.of(rows.map((r) => keep.map((i) => at(r, i))));
   }
   /**
-   * The Kapur-Saxena-Yang precondition: the column of the monomial 1 (the last
-   * one) is not a linear combination of the others, so the last nonzero row of
-   * the reduced row echelon form is [0, ..., 0, 1].
+   * Tests the Kapur–Saxena–Yang precondition that the constant-monomial column is independent of the
+   * other columns.
    *
    * @param matrix - Matrix to operate on.
    * @returns Whether the resultant matrix meets the KSY criterion.
@@ -150,10 +149,10 @@ export class DixonResultant {
     return last.every((e, j) => j === last.length - 1 ? e.equals(1) : e.equals(0));
   }
   /**
-   * The matrix without its zero rows and zero columns.
+   * Drops rows and columns whose entries are all zero.
    *
    * @param matrix - Matrix to operate on.
-   * @returns The matrix without its zero rows and zero columns.
+   * @returns The reduced matrix.
    * @see SymPy `sympy.polys.multivariate_resultants.DixonResultant.delete_zero_rows_and_columns`
    */
   deleteZeroRowsAndColumns(matrix: Matrix): Matrix {
@@ -162,20 +161,20 @@ export class DixonResultant {
     return matrix.slice(rows, cols);
   }
   /**
-   * The product of the first nonzero entry of every row.
+   * Multiplies the leading nonzero entries of the matrix rows.
    *
    * @param matrix - Matrix to operate on.
-   * @returns The product of the first nonzero entry of every row.
+   * @returns The leading-entry product.
    * @see SymPy `sympy.polys.multivariate_resultants.DixonResultant.product_leading_entries`
    */
   productLeadingEntries(matrix: Matrix): Expr {
     return mul(1, ...matrix.toArray().flatMap((row) => row.filter((e) => !e.equals(0)).slice(0, 1)));
   }
   /**
-   * The Kapur-Saxena-Yang Dixon resultant: the product of the leading entries of the reduced upper factor.
+   * Multiplies the leading entries of the reduced upper factor to obtain the Kapur–Saxena–Yang resultant.
    *
    * @param matrix - Matrix to operate on.
-   * @returns The Kapur-Saxena-Yang Dixon resultant: the product of the leading entries of the reduced upper factor.
+   * @returns The Dixon resultant.
    * @see SymPy `sympy.polys.multivariate_resultants.DixonResultant.get_KSY_Dixon_resultant`
    */
   getKSYDixonResultant(matrix: Matrix): Expr {
@@ -242,31 +241,31 @@ export class MacaulayResultant {
     this.monomialSet = this.powers.map((m) => monomial(m, variables));
   }
   /**
-   * The number of variables.
+   * Counts the variables in the polynomial system.
    *
-   * @returns The number of variables.
+   * @returns The variable count.
    * @see SymPy `sympy.polys.multivariate_resultants.MacaulayResultant.n`
    */
   get n(): number { return this.variables.length; }
   /**
-   * The number of monomials indexing the resultant matrix.
+   * Counts the indexing monomials of the resultant matrix.
    *
-   * @returns The number of monomials indexing the resultant matrix.
+   * @returns The monomial count.
    * @see SymPy `sympy.polys.multivariate_resultants.MacaulayResultant.monomials_size`
    */
   get monomialsSize(): number { return this.powers.length; }
   /**
-   * The number of columns of the Macaulay matrix.
+   * Determines the column count of the Macaulay matrix.
    *
-   * @returns The number of columns of the Macaulay matrix.
+   * @returns The matrix width.
    * @see SymPy `sympy.polys.multivariate_resultants.MacaulayResultant.get_size`
    */
   getSize(): number { return this.monomialsSize; }
   /**
-   * The monomials of the specified total degree.
+   * Enumerates monomials of the requested total degree.
    *
    * @param degree - Total degree of the monomials.
-   * @returns The monomials of the specified total degree.
+   * @returns The monomial list.
    * @throws RangeError when the degree is not a nonnegative integer.
    * @see SymPy `sympy.polys.multivariate_resultants.MacaulayResultant.get_monomials_of_certain_degree`
    */
@@ -278,16 +277,16 @@ export class MacaulayResultant {
     return this.degrees.map((d, i) => monomials(this.degreeM - d, this.n).filter((m) => m.slice(0, i).every((e, j) => e < at(this.degrees, j))));
   }
   /**
-   * The monomial multipliers used to build the Macaulay matrix rows.
+   * Finds the monomials multiplying each polynomial in the Macaulay matrix.
    *
-   * @returns The monomial multipliers used to build the Macaulay matrix rows.
+   * @returns The row multipliers grouped by polynomial.
    * @see SymPy `sympy.polys.multivariate_resultants.MacaulayResultant.get_row_coefficients`
    */
   getRowCoefficients(): Expr[][] { return this.rowPowers().map((rows) => rows.map((m) => monomial(m, this.variables))); }
   /**
-   * The numerator matrix of the Macaulay resultant.
+   * Builds the matrix whose determinant is the numerator of the Macaulay resultant.
    *
-   * @returns The numerator matrix of the Macaulay resultant.
+   * @returns The numerator matrix.
    * @see SymPy `sympy.polys.multivariate_resultants.MacaulayResultant.get_matrix`
    */
   getMatrix(): Matrix {
@@ -297,9 +296,9 @@ export class MacaulayResultant {
     })));
   }
   /**
-   * The indices of reduced and nonreduced monomials.
+   * Partitions the monomial positions into reduced and nonreduced classes.
    *
-   * @returns The indices of reduced and nonreduced monomials.
+   * @returns Two index lists.
    * @see SymPy `sympy.polys.multivariate_resultants.MacaulayResultant.get_reduced_nonreduced`
    */
   getReducedNonreduced(): [number[], number[]] {
@@ -310,10 +309,10 @@ export class MacaulayResultant {
     return [reduced, nonreduced];
   }
   /**
-   * The denominator submatrix of the Macaulay resultant.
+   * Extracts the submatrix whose determinant is the denominator of the Macaulay resultant.
    *
    * @param matrix - Matrix to operate on.
-   * @returns The denominator submatrix of the Macaulay resultant.
+   * @returns The denominator matrix.
    * @throws RangeError when the matrix does not have the dimensions of the Macaulay matrix.
    * @see SymPy `sympy.polys.multivariate_resultants.MacaulayResultant.get_submatrix`
    */

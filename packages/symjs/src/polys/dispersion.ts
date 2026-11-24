@@ -10,12 +10,12 @@ import { cancel } from '../simplify/rational';
 import { Poly } from './sympoly';
 
 /**
- * Nonnegative integer shifts a for which gcd(p(x),q(x+a)) has positive degree.
+ * Finds nonnegative shifts for which the two polynomials share a nonconstant factor.
  *
  * @param p - Polynomial to operate on.
  * @param q - Polynomial to shift. Defaults to the first polynomial.
  * @param x - Polynomial generator.
- * @returns Nonnegative integer shifts a for which gcd(p(x),q(x+a)) has positive degree.
+ * @returns The dispersion set.
  * @throws RangeError when the polynomial is not univariate or the generators differ.
  * @see SymPy `sympy.polys.dispersion.dispersionset`
  * @example
@@ -46,7 +46,7 @@ export function dispersionset(p: Poly | ExprLike, q: Poly | ExprLike = p, x?: Ex
 }
 
 /**
- * Largest dispersion shift; negative infinity when the dispersion set is empty.
+ * Finds the largest dispersion shift or negative infinity when there is none.
  *
  * @param p - Polynomial to operate on.
  * @param q - Polynomial to shift. Defaults to the first polynomial.

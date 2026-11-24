@@ -101,9 +101,9 @@ export class EllipseNode extends GeometrySet {
   }
 
   /**
-   * The number of coordinates in the surrounding space.
+   * Counts the coordinates needed to describe a point in the ambient space.
    *
-   * @returns The number of coordinates in the surrounding space.
+   * @returns The ambient dimension.
    * @see SymPy `sympy.geometry.ellipse.Ellipse.ambient_dimension`
    */
   get ambientDimension(): number {
@@ -111,27 +111,27 @@ export class EllipseNode extends GeometrySet {
   }
 
   /**
-   * The center.
+   * Locates the center of symmetry.
    *
-   * @returns The center.
+   * @returns The center point.
    * @see SymPy `sympy.geometry.ellipse.Ellipse.center`
    */
   get center(): Point2DNode {
     return as2D(at(this.args, 0));
   }
   /**
-   * The horizontal radius.
+   * Measures the radius along the horizontal axis.
    *
-   * @returns The horizontal radius.
+   * @returns The horizontal semiaxis.
    * @see SymPy `sympy.geometry.ellipse.Ellipse.hradius`
    */
   get hradius(): Expr {
     return at(this.args, 1);
   }
   /**
-   * The vertical radius.
+   * Measures the radius along the vertical axis.
    *
-   * @returns The vertical radius.
+   * @returns The vertical semiaxis.
    * @see SymPy `sympy.geometry.ellipse.Ellipse.vradius`
    */
   get vradius(): Expr {
@@ -139,7 +139,7 @@ export class EllipseNode extends GeometrySet {
   }
 
   /**
-   * A point on the ellipse, or the same ellipse.
+   * Tests whether the operand is a point on this ellipse or the ellipse itself.
    *
    * @param o - Point or entity tested for containment.
    * @returns Whether the operand belongs to the entity.
@@ -158,9 +158,9 @@ export class EllipseNode extends GeometrySet {
   }
 
   /**
-   * The greatest distance from a focus to the ellipse.
+   * Finds the greatest distance from a focus to a point on the ellipse.
    *
-   * @returns The greatest distance from a focus to the ellipse.
+   * @returns The apoapsis distance.
    * @see SymPy `sympy.geometry.ellipse.Ellipse.apoapsis`
    */
   get apoapsis(): Expr {
@@ -168,10 +168,10 @@ export class EllipseNode extends GeometrySet {
   }
 
   /**
-   * The point (cx + hradius*cos(t), cy + vradius*sin(t)) with a real parameter t.
+   * Parametrizes the ellipse by the cosine and sine of a real parameter.
    *
    * @param parameter - Symbol or name used for the parametrization.
-   * @returns The point (cx + hradius*cos(t), cy + vradius*sin(t)) with a real parameter t.
+   * @returns A point on the ellipse.
    * @throws RangeError when the requested parameter name already occurs in the entity.
    * @see SymPy `sympy.geometry.ellipse.Ellipse.arbitrary_point`
    */
@@ -184,9 +184,9 @@ export class EllipseNode extends GeometrySet {
   }
 
   /**
-   * The area pi*hradius*vradius.
+   * Computes the area enclosed by the ellipse from its two radii.
    *
-   * @returns The area pi*hradius*vradius.
+   * @returns The ellipse area.
    * @see SymPy `sympy.geometry.ellipse.Ellipse.area`
    */
   get area(): Expr {
@@ -194,9 +194,9 @@ export class EllipseNode extends GeometrySet {
   }
 
   /**
-   * The bounding rectangle as `[xmin, ymin, xmax, ymax]`.
+   * Finds the axis-aligned bounding rectangle.
    *
-   * @returns Return a tuple (xmin, ymin, xmax, ymax) representing the bounding rectangle for the geometric figure.
+   * @returns The bounds `[xmin, ymin, xmax, ymax]`.
    * @see SymPy `sympy.geometry.ellipse.Ellipse.bounds`
    */
   override get bounds(): [Expr, Expr, Expr, Expr] {
@@ -206,7 +206,7 @@ export class EllipseNode extends GeometrySet {
   }
 
   /**
-   * The perimeter.
+   * Computes the length of the boundary.
    *
    * @returns The perimeter.
    * @see SymPy `sympy.geometry.ellipse.Ellipse.circumference`
@@ -217,7 +217,7 @@ export class EllipseNode extends GeometrySet {
   }
 
   /**
-   * The eccentricity.
+   * Measures the displacement of the foci relative to the semimajor axis.
    *
    * @returns The eccentricity.
    * @see SymPy `sympy.geometry.ellipse.Ellipse.eccentricity`
@@ -227,10 +227,10 @@ export class EllipseNode extends GeometrySet {
   }
 
   /**
-   * The point lies inside the ellipse.
+   * Tests whether the point lies strictly inside the ellipse.
    *
    * @param pIn - Point used in the geometric construction or comparison.
-   * @returns The point lies inside the ellipse.
+   * @returns A truth value, possibly `'unknown'`.
    * @see SymPy `sympy.geometry.ellipse.Ellipse.encloses_point`
    */
   override enclosesPoint(pIn: PointInput): boolean | 'unknown' {
@@ -242,12 +242,12 @@ export class EllipseNode extends GeometrySet {
   }
 
   /**
-   * The equation of the ellipse in real symbols x and y.
+   * Forms the Cartesian equation for the ellipse using real coordinates.
    *
    * @param x - Symbol for the x coordinate.
    * @param y - Symbol for the y coordinate.
    * @param slope - Slope of the reflection axis.
-   * @returns The equation of the ellipse in real symbols x and y.
+   * @returns An expression that vanishes on the ellipse.
    * @see SymPy `sympy.geometry.ellipse.Ellipse.equation`
    */
   equation(x: string | Sym = 'x', y: string | Sym = 'y', slope?: ExprLike): Expr {
@@ -269,11 +269,11 @@ export class EllipseNode extends GeometrySet {
   }
 
   /**
-   * The evolute of the ellipse.
+   * Computes the locus of centers of curvature of the ellipse.
    *
    * @param x - Symbol for the x coordinate.
    * @param y - Symbol for the y coordinate.
-   * @returns The evolute of the ellipse.
+   * @returns The evolute expression.
    * @throws NotImplementedError when the evolute cannot be represented for the supplied ellipse.
    * @see SymPy `sympy.geometry.ellipse.Ellipse.evolute`
    */
@@ -287,9 +287,9 @@ export class EllipseNode extends GeometrySet {
   }
 
   /**
-   * The two foci.
+   * Locates both foci of the ellipse.
    *
-   * @returns The two foci.
+   * @returns The pair of focal points.
    * @see SymPy `sympy.geometry.ellipse.Ellipse.foci`
    */
   get foci(): [PointNode, PointNode] {
@@ -303,9 +303,9 @@ export class EllipseNode extends GeometrySet {
   }
 
   /**
-   * The distance from the center to a focus.
+   * Measures the separation of a focus from the center.
    *
-   * @returns The distance from the center to a focus.
+   * @returns The focal distance.
    * @see SymPy `sympy.geometry.ellipse.Ellipse.focus_distance`
    */
   get focusDistance(): Expr {
@@ -313,10 +313,10 @@ export class EllipseNode extends GeometrySet {
   }
 
   /**
-   * The points or entities common to the ellipse and o.
+   * Finds the geometric entities shared by the ellipse and the operand.
    *
    * @param o - Entity to intersect with this one.
-   * @returns The points or entities common to the ellipse and o.
+   * @returns The intersection entities.
    * @throws TypeError when a three-dimensional entity is supplied to a planar operation or the operand type has no supported intersection rule.
    * @see SymPy `sympy.geometry.ellipse.Ellipse.intersection`
    */
@@ -339,10 +339,10 @@ export class EllipseNode extends GeometrySet {
   }
 
   /**
-   * The entity is tangent to the ellipse.
+   * Tests whether the given entity is tangent to the ellipse.
    *
    * @param o - Entity tested for tangency.
-   * @returns The entity is tangent to the ellipse.
+   * @returns True if the entity is tangent.
    * @throws TypeError when a three-dimensional entity is supplied to a planar operation or tangency is undefined for the supplied entity.
    * @see SymPy `sympy.geometry.ellipse.Ellipse.is_tangent`
    */
@@ -376,7 +376,7 @@ export class EllipseNode extends GeometrySet {
   }
 
   /**
-   * The major radius.
+   * Identifies the larger semiaxis of the ellipse.
    *
    * @returns The major semiaxis length.
    * @see SymPy `sympy.geometry.ellipse.Ellipse.major`
@@ -390,7 +390,7 @@ export class EllipseNode extends GeometrySet {
   }
 
   /**
-   * The minor radius.
+   * Identifies the smaller semiaxis of the ellipse.
    *
    * @returns The minor semiaxis length.
    * @see SymPy `sympy.geometry.ellipse.Ellipse.minor`
@@ -404,12 +404,12 @@ export class EllipseNode extends GeometrySet {
   }
 
   /**
-   * The lines through p normal to the ellipse; with `prec`, the points and slopes evaluated to that
-   * many digits.
+   * Finds the normals to the ellipse through the point, using the requested precision for their points
+   * and slopes.
    *
    * @param pIn - Point used in the geometric construction or comparison.
    * @param prec - Numerical precision.
-   * @returns The lines through p normal to the ellipse; with `prec`, the points and slopes evaluated to that many digits.
+   * @returns The normal lines.
    * @throws NotImplementedError when the general ellipse intersection is unsupported.
    * @see SymPy `sympy.geometry.ellipse.Ellipse.normal_lines`
    */
@@ -444,9 +444,9 @@ export class EllipseNode extends GeometrySet {
   }
 
   /**
-   * The least distance from a focus to the ellipse.
+   * Finds the shortest distance from a focus to the ellipse.
    *
-   * @returns The least distance from a focus to the ellipse.
+   * @returns The periapsis distance.
    * @see SymPy `sympy.geometry.ellipse.Ellipse.periapsis`
    */
   get periapsis(): Expr {
@@ -454,7 +454,7 @@ export class EllipseNode extends GeometrySet {
   }
 
   /**
-   * The semi-latus rectum.
+   * Computes half the length of the focal chord perpendicular to the major axis.
    *
    * @returns The semi-latus rectum.
    * @see SymPy `sympy.geometry.ellipse.Ellipse.semilatus_rectum`
@@ -464,9 +464,9 @@ export class EllipseNode extends GeometrySet {
   }
 
   /**
-   * The circle with the larger radius as its radius.
+   * Constructs a concentric circle with the ellipse's larger radius.
    *
-   * @returns The circle with the larger radius as its radius.
+   * @returns The auxiliary circle.
    * @see SymPy `sympy.geometry.ellipse.Ellipse.auxiliary_circle`
    */
   auxiliaryCircle(): GeometryEntity {
@@ -474,9 +474,9 @@ export class EllipseNode extends GeometrySet {
   }
 
   /**
-   * The circle of the points from which two perpendicular tangents can be drawn.
+   * Finds the locus of intersections of perpendicular tangents to the ellipse.
    *
-   * @returns The circle of the points from which two perpendicular tangents can be drawn.
+   * @returns The director circle.
    * @see SymPy `sympy.geometry.ellipse.Ellipse.director_circle`
    */
   directorCircle(): GeometryEntity {
@@ -484,10 +484,10 @@ export class EllipseNode extends GeometrySet {
   }
 
   /**
-   * The parameter interval of the arbitrary point used for plotting.
+   * Specifies the parameter range used to plot a parametrized point.
    *
    * @param parameter - Symbol or name used for the parametrization.
-   * @returns The parameter interval of the arbitrary point used for plotting.
+   * @returns The plotting variable and endpoints.
    * @see SymPy `sympy.geometry.ellipse.Ellipse.plot_interval`
    */
   plotInterval(parameter: string | Sym = 't'): [Sym, Expr, Expr] {
@@ -495,10 +495,10 @@ export class EllipseNode extends GeometrySet {
   }
 
   /**
-   * A random point of the ellipse; the same for the same integer seed.
+   * Samples a point on the ellipse, reproducibly for a given integer seed.
    *
    * @param seed - Seed for reproducible sampling.
-   * @returns A random point of the ellipse; the same for the same integer seed.
+   * @returns The sampled point.
    * @see SymPy `sympy.geometry.ellipse.Ellipse.random_point`
    */
   randomPoint(seed?: number | bigint): PointNode {
@@ -512,10 +512,10 @@ export class EllipseNode extends GeometrySet {
   }
 
   /**
-   * The reflection in a horizontal or vertical line.
+   * Reflects the ellipse across a horizontal or vertical line.
    *
    * @param line - Line defining the direction or reflection axis.
-   * @returns The reflection in a horizontal or vertical line.
+   * @returns The reflected ellipse.
    * @throws NotImplementedError when the reflection produces a general rotated ellipse.
    * @see SymPy `sympy.geometry.ellipse.Ellipse.reflect`
    */
@@ -536,11 +536,11 @@ export class EllipseNode extends GeometrySet {
   }
 
   /**
-   * The ellipse rotated by a multiple of pi/2.
+   * Rotates the ellipse through a multiple of a quarter turn.
    *
    * @param angle - Rotation angle in radians.
    * @param pt - Center of rotation, defaulting to the origin.
-   * @returns The ellipse rotated by a multiple of pi/2.
+   * @returns The rotated ellipse.
    * @throws NotImplementedError when the rotation of a noncircular ellipse is not a multiple of a quarter turn.
    * @see SymPy `sympy.geometry.ellipse.Ellipse.rotate`
    */
@@ -553,12 +553,12 @@ export class EllipseNode extends GeometrySet {
   }
 
   /**
-   * The ellipse scaled by x and y about pt.
+   * Scales the ellipse about the given point along both axes.
    *
    * @param x - Scale factor along the x axis.
    * @param y - Scale factor along the y axis.
    * @param pt - Fixed point of the scaling, defaulting to the origin.
-   * @returns The ellipse scaled by x and y about pt.
+   * @returns The scaled entity.
    * @see SymPy `sympy.geometry.ellipse.Ellipse.scale`
    */
   override scale(x: ExprLike = 1, y: ExprLike = 1, pt?: PointInput | null): GeometryEntity {
@@ -567,10 +567,10 @@ export class EllipseNode extends GeometrySet {
   }
 
   /**
-   * The tangent lines through p.
+   * Finds the tangents to the ellipse that pass through the point.
    *
    * @param pIn - Point used in the geometric construction or comparison.
-   * @returns The tangent lines through p.
+   * @returns The tangent lines.
    * @see SymPy `sympy.geometry.ellipse.Ellipse.tangent_lines`
    */
   tangentLines(pIn: PointInput): Line2DNode[] {
@@ -599,10 +599,10 @@ export class EllipseNode extends GeometrySet {
   }
 
   /**
-   * The second moments of area (Ixx, Iyy, Ixy) about the centroid or a point.
+   * Computes the second moments of area about the centroid or the supplied point.
    *
    * @param point - Point at which to evaluate the operation.
-   * @returns The second moments of area (Ixx, Iyy, Ixy) about the centroid or a point.
+   * @returns The triple `[Ixx, Iyy, Ixy]`.
    * @see SymPy `sympy.geometry.ellipse.Ellipse.second_moment_of_area`
    */
   secondMomentOfArea(point?: PointInput): [Expr, Expr, Expr] {
@@ -618,9 +618,9 @@ export class EllipseNode extends GeometrySet {
   }
 
   /**
-   * The polar second moment of area.
+   * Computes the polar second moment of the enclosed area.
    *
-   * @returns The polar second moment of area.
+   * @returns The polar moment.
    * @see SymPy `sympy.geometry.ellipse.Ellipse.polar_second_moment_of_area`
    */
   polarSecondMomentOfArea(): Expr {
@@ -629,10 +629,10 @@ export class EllipseNode extends GeometrySet {
   }
 
   /**
-   * The section moduli (Sx, Sy) about the centroid or a point.
+   * Computes the section moduli about the centroid or the specified point.
    *
    * @param point - Point at which to evaluate the operation.
-   * @returns The section moduli (Sx, Sy) about the centroid or a point.
+   * @returns The pair `[Sx, Sy]`.
    * @see SymPy `sympy.geometry.ellipse.Ellipse.section_modulus`
    */
   sectionModulus(point?: PointInput): [Expr, Expr] {
@@ -713,9 +713,9 @@ export class CircleNode extends EllipseNode {
   }
 
   /**
-   * The radius.
+   * Gives the defining radius of the figure.
    *
-   * @returns The radius.
+   * @returns The radius expression.
    * @see SymPy `sympy.geometry.ellipse.Circle.radius`
    */
   get radius(): Expr {
@@ -723,9 +723,9 @@ export class CircleNode extends EllipseNode {
   }
 
   /**
-   * The radius along the horizontal axis.
+   * Gives the circle's horizontal extent as a radius.
    *
-   * @returns The radius along the horizontal axis.
+   * @returns The horizontal radius.
    * @see SymPy `sympy.geometry.ellipse.Circle.hradius`
    */
   override get hradius(): Expr {
@@ -733,9 +733,9 @@ export class CircleNode extends EllipseNode {
   }
 
   /**
-   * The vertical radius: the absolute value of the radius.
+   * Takes the absolute value of the circle's radius for its vertical semiaxis.
    *
-   * @returns The vertical radius: the absolute value of the radius.
+   * @returns The vertical radius.
    * @see SymPy `sympy.geometry.ellipse.Circle.vradius`
    */
   override get vradius(): Expr {
@@ -743,7 +743,7 @@ export class CircleNode extends EllipseNode {
   }
 
   /**
-   * Longer axis of the ellipse (if it can be determined) else hradius.
+   * Selects the longer semiaxis, defaulting to the horizontal radius if their order is undecidable.
    *
    * @returns The major semiaxis length.
    * @see SymPy `sympy.geometry.ellipse.Circle.major`
@@ -753,7 +753,7 @@ export class CircleNode extends EllipseNode {
   }
 
   /**
-   * Shorter axis of the ellipse (if it can be determined) else vradius.
+   * Selects the shorter semiaxis, defaulting to the vertical radius if their order is undecidable.
    *
    * @returns The minor semiaxis length.
    * @see SymPy `sympy.geometry.ellipse.Circle.minor`
@@ -763,7 +763,7 @@ export class CircleNode extends EllipseNode {
   }
 
   /**
-   * The center and radius evaluated numerically.
+   * Evaluates the center and radius numerically.
    *
    * @param evalfArg - Function that evaluates an operand numerically.
    * @param _dps - Decimal digits of numerical precision.
@@ -775,9 +775,9 @@ export class CircleNode extends EllipseNode {
   }
 
   /**
-   * The perimeter 2*pi*r.
+   * Computes the circumference from the circle's radius.
    *
-   * @returns The perimeter 2*pi*r.
+   * @returns The perimeter expression.
    * @see SymPy `sympy.geometry.ellipse.Circle.circumference`
    */
   override get circumference(): Expr {
@@ -785,11 +785,11 @@ export class CircleNode extends EllipseNode {
   }
 
   /**
-   * The equation of the circle in real symbols x and y.
+   * Forms the Cartesian equation for the circle using real coordinates.
    *
    * @param x - Symbol for the x coordinate.
    * @param y - Symbol for the y coordinate.
-   * @returns The equation of the circle in real symbols x and y.
+   * @returns An expression that vanishes on the circle.
    * @see SymPy `sympy.geometry.ellipse.Circle.equation`
    */
   override equation(x: string | Sym = 'x', y: string | Sym = 'y'): Expr {
@@ -800,10 +800,10 @@ export class CircleNode extends EllipseNode {
   }
 
   /**
-   * The point lies inside the circle.
+   * Tests whether the point lies strictly inside the circle.
    *
    * @param pIn - Point used in the geometric construction or comparison.
-   * @returns The point lies inside the circle.
+   * @returns A truth value, possibly `'unknown'`.
    * @see SymPy `sympy.geometry.ellipse.Circle.encloses_point`
    */
   override enclosesPoint(pIn: PointInput): boolean | 'unknown' {
@@ -813,10 +813,10 @@ export class CircleNode extends EllipseNode {
   }
 
   /**
-   * The reflection in a line: the reflected center with the radius negated.
+   * Reflects the center across the line and reverses the radius sign.
    *
    * @param line - Line defining the direction or reflection axis.
-   * @returns The reflection in a line: the reflected center with the radius negated.
+   * @returns The reflected circle.
    * @see SymPy `sympy.geometry.ellipse.Circle.reflect`
    */
   override reflect(line: Line2DNode): GeometryEntity {
@@ -825,12 +825,12 @@ export class CircleNode extends EllipseNode {
   }
 
   /**
-   * The circle scaled by x and y about pt: a circle or an ellipse.
+   * Scales the circle independently along each axis about the given point.
    *
    * @param xIn - Scale factor along the x axis.
    * @param yIn - Scale factor along the y axis.
    * @param pt - Fixed point of the scaling, defaulting to the origin.
-   * @returns The circle scaled by x and y about pt: a circle or an ellipse.
+   * @returns The resulting circle or ellipse.
    * @see SymPy `sympy.geometry.ellipse.Circle.scale`
    */
   override scale(xIn: ExprLike = 1, yIn: ExprLike = 1, pt?: PointInput | null): GeometryEntity {
@@ -944,7 +944,7 @@ function makeCircle(c: PointNode, r: Expr): GeometryEntity {
 type EllipseArg = PointInput | ExprLike | EllipseOptions | undefined;
 
 /**
- * An axis-aligned ellipse specified by its center and radii or eccentricity.
+ * Constructs an axis-aligned ellipse specified by its center and radii or eccentricity.
  *
  * @param args - Center and two of horizontal radius, vertical radius and eccentricity, supplied positionally or by options.
  * @returns The resulting geometric entity, including a lower-dimensional entity for degenerate input.
@@ -973,7 +973,7 @@ export const Ellipse = /* @__PURE__ */ callableClass(EllipseNode, (...args: Elli
 export type Ellipse = EllipseNode;
 
 /**
- * A circle specified by a center and radius, three points, or a circle equation.
+ * Constructs a circle specified by a center and radius, three points, or a circle equation.
  *
  * @param args - Center and radius, three points, or a circle equation and coordinate options.
  * @returns The resulting geometric entity, including a lower-dimensional entity for degenerate input.

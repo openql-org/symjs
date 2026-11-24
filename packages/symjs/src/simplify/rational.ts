@@ -84,11 +84,11 @@ export function fraction(ex: ExprLike, opts: { exact?: boolean } = {}): [Expr, E
 }
 
 /**
- * The numerator of fraction(expr).
+ * Extracts the numerator of the expression's fraction representation.
  *
  * @param ex - The expression to transform.
  * @param opts - `exact` preserves unevaluated factors when splitting numerator and denominator.
- * @returns The numerator of fraction(expr).
+ * @returns The numerator expression.
  * @see SymPy `sympy.simplify.radsimp.numer`
  */
 export function numer(ex: ExprLike, opts: { exact?: boolean } = {}): Expr {
@@ -96,11 +96,11 @@ export function numer(ex: ExprLike, opts: { exact?: boolean } = {}): Expr {
 }
 
 /**
- * The denominator of fraction(expr).
+ * Extracts the denominator of the expression's fraction representation.
  *
  * @param ex - The expression to transform.
  * @param opts - `exact` preserves unevaluated factors when splitting numerator and denominator.
- * @returns The denominator of fraction(expr).
+ * @returns The denominator expression.
  * @see SymPy `sympy.simplify.radsimp.denom`
  */
 export function denom(ex: ExprLike, opts: { exact?: boolean } = {}): Expr {
@@ -516,7 +516,7 @@ const lexGreater = (a: readonly number[], b: readonly number[]): boolean =>
 impl.fraction = fraction;
 
 /**
- * Polynomial part plus a cancelled remainder over a single denominator.
+ * Separates the polynomial part and puts the reduced remainder over a common denominator.
  *
  * @param ex - The expression to transform.
  * @returns The simplified rational expression.

@@ -52,8 +52,8 @@ const newOfClass = (a: NDimArray, it: ArrayInput, shape: readonly number[]): NDi
   a.newLike(it, shape);
 
 /**
- * The tensor (outer) product of arrays, matrices and scalars. With no argument it is 1, with
- * scalars only their product.
+ * Takes the outer product of the inputs, multiplying scalar factors and giving one for an empty
+ * product.
  *
  * @param args - Scalars, matrices or arrays in product order.
  * @returns The tensor (outer) product of arrays, matrices and scalars.
@@ -128,7 +128,7 @@ function productSums(lists: readonly (readonly number[])[]): number[] {
 }
 
 /**
- * The sum over equal indices of each group of axes. Contracting every axis gives a scalar.
+ * Sums over equal indices within each group of axes, yielding a scalar when all axes are contracted.
  *
  * @param arrayIn - Array whose axes are being combined.
  * @param axes - Groups of axes that share a common index.
@@ -156,11 +156,11 @@ export function tensorcontraction(arrayIn: TensorArg, ...axes: (readonly number[
 }
 
 /**
- * The diagonal over each group of axes, which become the last axes of the result.
+ * Takes a common diagonal over each group of axes and places the resulting axes last.
  *
  * @param arrayIn - Array whose axes are being combined.
  * @param axes - Groups of axes that share a common index.
- * @returns The diagonal over each group of axes, which become the last axes of the result.
+ * @returns The diagonal array expression.
  * @throws RangeError when an axis occurs more than once or axes in a diagonal group have different lengths or an index is outside the array bounds or a diagonal group contains fewer than two axes.
  * @throws TypeError when no axes are supplied.
  * @see SymPy `sympy.tensor.array.arrayop.tensordiagonal`
@@ -203,9 +203,7 @@ export interface PermutedimsOptions {
 }
 
 /**
- * The axes reordered so that axis i of the result is axis perm[i] of `expr` (for rank 2, the
- * transpose). The permutation can also be given by naming the axes, `permutedims(b, {
- * indexOrderOld: 'cba', indexOrderNew: 'abc' })`.
+ * Permutes the axes by position or by name so that each output axis takes its corresponding input axis.
  *
  * @param expr - Symbolic expression on which to operate.
  * @param perm - Permutation of the axes or their old and new labels.

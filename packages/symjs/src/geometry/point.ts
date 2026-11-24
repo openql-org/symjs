@@ -82,9 +82,9 @@ export class PointNode extends GeometryEntity {
   }
 
   /**
-   * Whether the entity is a point.
+   * Identifies this geometric entity as a point.
    *
-   * @returns Whether the entity is a point.
+   * @returns The point flag.
    * @see SymPy `sympy.geometry.point.Point.is_Point`
    */
   override get isPoint(): boolean {
@@ -102,9 +102,9 @@ export class PointNode extends GeometryEntity {
   }
 
   /**
-   * The number of coordinates.
+   * Counts the axes in the point's ambient space.
    *
-   * @returns The number of coordinates.
+   * @returns The coordinate count.
    * @see SymPy `sympy.geometry.point.Point.ambient_dimension`
    */
   get ambientDimension(): number {
@@ -112,7 +112,7 @@ export class PointNode extends GeometryEntity {
   }
 
   /**
-   * The coordinates.
+   * Lists the point's components in axis order.
    *
    * @returns The coordinates.
    */
@@ -121,10 +121,10 @@ export class PointNode extends GeometryEntity {
   }
 
   /**
-   * The coordinate i.
+   * Selects the component on the requested axis.
    *
    * @param i - Zero-based index.
-   * @returns The coordinate i.
+   * @returns The indexed coordinate.
    * @see SymPy `sympy.geometry.point.Point.__getitem__`
    */
   coordinate(i: number): Expr {
@@ -132,7 +132,7 @@ export class PointNode extends GeometryEntity {
   }
 
   /**
-   * Item is one of the coordinates (a Point2D or Point3D: item is the point).
+   * Tests coordinate membership or, for a point operand, equality with this point.
    *
    * @param item - Index, slice or array entry.
    * @returns Whether the operand belongs to the entity.
@@ -143,7 +143,7 @@ export class PointNode extends GeometryEntity {
   }
 
   /**
-   * The container encloses it.
+   * Tests whether the supplied entity encloses the point.
    *
    * @param container - Geometric entity tested for enclosure.
    * @returns Whether the supplied entity encloses this one.
@@ -155,10 +155,10 @@ export class PointNode extends GeometryEntity {
   // ---- arithmetic ----------------------------------------------------------
 
   /**
-   * The coordinatewise sum, simplified.
+   * Adds corresponding coordinates and simplifies the result.
    *
    * @param other - Other addend.
-   * @returns The coordinatewise sum, simplified.
+   * @returns The sum as a point.
    * @throws GeometryError when the other operand cannot be added to a point.
    * @see SymPy `sympy.geometry.point.Point.__add__`
    */
@@ -190,10 +190,10 @@ export class PointNode extends GeometryEntity {
   }
 
   /**
-   * The coordinates multiplied, simplified.
+   * Scales and simplifies every coordinate.
    *
    * @param factor - Scalar multiplying the coordinates.
-   * @returns The coordinates multiplied, simplified.
+   * @returns The scaled point.
    * @see SymPy `sympy.geometry.point.Point.__mul__`
    */
   override mul(factor: ExprLike): PointNode {
@@ -205,10 +205,10 @@ export class PointNode extends GeometryEntity {
   }
 
   /**
-   * The coordinates divided, simplified.
+   * Divides every coordinate by the divisor and simplifies.
    *
    * @param divisor - Scalar dividing the coordinates.
-   * @returns The coordinates divided, simplified.
+   * @returns The rescaled point.
    * @see SymPy `sympy.geometry.point.Point.__truediv__`
    */
   override div(divisor: ExprLike): PointNode {
@@ -233,9 +233,9 @@ export class PointNode extends GeometryEntity {
   }
 
   /**
-   * The distance from the origin.
+   * Measures the point's Euclidean distance from the origin.
    *
-   * @returns The distance from the origin.
+   * @returns The vector magnitude.
    * @see SymPy `sympy.geometry.point.Point.__abs__`
    */
   abs(): Expr {
@@ -245,9 +245,9 @@ export class PointNode extends GeometryEntity {
   // ---- properties ----------------------------------------------------------
 
   /**
-   * The length of a point is zero.
+   * Gives the length of a single point as a geometric entity.
    *
-   * @returns The length of a point is zero.
+   * @returns Zero.
    * @see SymPy `sympy.geometry.point.Point.length`
    */
   get length(): Expr {
@@ -255,9 +255,9 @@ export class PointNode extends GeometryEntity {
   }
 
   /**
-   * The origin of the space of the point.
+   * Constructs the origin in the same dimension as the point.
    *
-   * @returns The origin of the space of the point.
+   * @returns The point with all coordinates zero.
    * @see SymPy `sympy.geometry.point.Point.origin`
    */
   get origin(): PointNode {
@@ -268,9 +268,9 @@ export class PointNode extends GeometryEntity {
   }
 
   /**
-   * A nonzero vector orthogonal to the point as a vector.
+   * Finds a nonzero vector perpendicular to the position vector.
    *
-   * @returns A nonzero vector orthogonal to the point as a vector.
+   * @returns An orthogonal direction.
    * @see SymPy `sympy.geometry.point.Point.orthogonal_direction`
    */
   get orthogonalDirection(): PointNode {
@@ -282,9 +282,9 @@ export class PointNode extends GeometryEntity {
   }
 
   /**
-   * The vector of length 1 in the direction of the point.
+   * Normalizes the position vector to unit length.
    *
-   * @returns The vector of length 1 in the direction of the point.
+   * @returns A unit direction.
    * @see SymPy `sympy.geometry.point.Point.unit`
    */
   get unit(): PointNode {
@@ -292,7 +292,7 @@ export class PointNode extends GeometryEntity {
   }
 
   /**
-   * All coordinates are zero.
+   * Tests whether every coordinate equals zero.
    *
    * @returns The truth value, or `'unknown'` when the relation cannot be decided.
    * @see SymPy `sympy.geometry.point.Point.is_zero`
@@ -305,7 +305,7 @@ export class PointNode extends GeometryEntity {
   }
 
   /**
-   * Some coordinate is nonzero.
+   * Tests whether at least one coordinate is nonzero.
    *
    * @returns The truth value, or `'unknown'` when the relation cannot be decided.
    * @see SymPy `sympy.geometry.point.Point.is_nonzero`
@@ -318,10 +318,10 @@ export class PointNode extends GeometryEntity {
   // ---- metric --------------------------------------------------------------
 
   /**
-   * The Euclidean distance to a point or another entity.
+   * Measures Euclidean separation from another point or geometric entity.
    *
    * @param other - Entity to measure the distance to.
-   * @returns The Euclidean distance to a point or another entity.
+   * @returns The distance expression.
    * @see SymPy `sympy.geometry.point.Point.distance`
    */
   distance(other: PointInput): Expr {
@@ -334,10 +334,10 @@ export class PointNode extends GeometryEntity {
   }
 
   /**
-   * The dot product with p as vectors.
+   * Computes the scalar product of the two position vectors.
    *
    * @param p - Point used in the geometric construction or comparison.
-   * @returns The dot product with p as vectors.
+   * @returns The dot product.
    * @see SymPy `sympy.geometry.point.Point.dot`
    */
   dot(p: PointInput): Expr {
@@ -346,7 +346,7 @@ export class PointNode extends GeometryEntity {
   }
 
   /**
-   * The points are the same, with coordinates that may differ in form.
+   * Tests coordinatewise equality, allowing equivalent coordinate expressions.
    *
    * @param other - Object to compare with this one.
    * @returns Whether the operands are equal.
@@ -358,10 +358,10 @@ export class PointNode extends GeometryEntity {
   }
 
   /**
-   * The sum of the absolute differences of the coordinates.
+   * Measures the distance by summing absolute coordinate differences.
    *
    * @param p - Point used in the geometric construction or comparison.
-   * @returns The sum of the absolute differences of the coordinates.
+   * @returns The taxicab distance.
    * @see SymPy `sympy.geometry.point.Point.taxicab_distance`
    */
   taxicabDistance(p: PointInput): Expr {
@@ -370,10 +370,10 @@ export class PointNode extends GeometryEntity {
   }
 
   /**
-   * The Canberra distance to p.
+   * Measures coordinate differences relative to the sums of the absolute coordinates.
    *
    * @param p - Point used in the geometric construction or comparison.
-   * @returns The Canberra distance to p.
+   * @returns The Canberra distance.
    * @throws RangeError when the projection direction is the zero vector.
    * @see SymPy `sympy.geometry.point.Point.canberra_distance`
    */
@@ -384,10 +384,10 @@ export class PointNode extends GeometryEntity {
   }
 
   /**
-   * The midpoint of this point and p.
+   * Averages corresponding coordinates of the two points.
    *
    * @param p - Point used in the geometric construction or comparison.
-   * @returns The midpoint of this point and p.
+   * @returns Their midpoint.
    * @see SymPy `sympy.geometry.point.Point.midpoint`
    */
   midpoint(p: PointInput): PointNode {
@@ -396,10 +396,10 @@ export class PointNode extends GeometryEntity {
   }
 
   /**
-   * The intersection with another entity: [this] for the same point, [] for another one.
+   * Finds the intersections with another entity, including the point itself when both points coincide.
    *
    * @param other - Entity to intersect with this one.
-   * @returns The intersection with another entity: [this] for the same point, [] for another one.
+   * @returns The intersection list.
    * @see SymPy `sympy.geometry.point.Point.intersection`
    */
   override intersection(other: unknown): GeometryEntity[] {
@@ -414,10 +414,10 @@ export class PointNode extends GeometryEntity {
   }
 
   /**
-   * The point and the others lie on one line.
+   * Tests whether one line contains this point and all the others.
    *
    * @param args - Operands in their defining order.
-   * @returns The point and the others lie on one line.
+   * @returns True for collinearity.
    * @see SymPy `sympy.geometry.point.Point.is_collinear`
    */
   isCollinear(...args: PointInput[]): boolean {
@@ -426,10 +426,10 @@ export class PointNode extends GeometryEntity {
   }
 
   /**
-   * The point and the others lie on one circle.
+   * Tests whether one circle contains this point and all the others.
    *
    * @param args - Operands in their defining order.
-   * @returns The point and the others lie on one circle.
+   * @returns True for concyclicity.
    * @see SymPy `sympy.geometry.point.Point.is_concyclic`
    */
   isConcyclic(...args: PointInput[]): boolean {
@@ -443,10 +443,10 @@ export class PointNode extends GeometryEntity {
   }
 
   /**
-   * The point is a scalar multiple of p as vectors.
+   * Tests whether the two position vectors are scalar multiples.
    *
    * @param p - Point used in the geometric construction or comparison.
-   * @returns The point is a scalar multiple of p as vectors.
+   * @returns True for proportional vectors.
    * @throws Undecidable when scalar proportionality is undecidable.
    * @see SymPy `sympy.geometry.point.Point.is_scalar_multiple`
    */
@@ -461,7 +461,7 @@ export class PointNode extends GeometryEntity {
   }
 
   /**
-   * The point with its coordinates evaluated numerically.
+   * Evaluates the point's coordinates numerically.
    *
    * @param evalfArg - Function that evaluates an operand numerically.
    * @param _dps - Decimal digits of numerical precision.
@@ -475,10 +475,10 @@ export class PointNode extends GeometryEntity {
   // ---- static methods ------------------------------------------------------
 
   /**
-   * The affine rank of the points: the dimension of the smallest affine subspace containing them.
+   * Finds the dimension of the smallest affine subspace containing the points.
    *
    * @param args - Operands in their defining order.
-   * @returns The affine rank of the points: the dimension of the smallest affine subspace containing them.
+   * @returns The affine rank.
    * @see SymPy `sympy.geometry.point.Point.affine_rank`
    */
   static affineRank(...args: PointInput[]): number {
@@ -489,10 +489,10 @@ export class PointNode extends GeometryEntity {
   protected static readonly classDimension: number | undefined = undefined;
 
   /**
-   * The points lie in one plane.
+   * Tests whether all the points lie in one plane.
    *
    * @param points - Points to compare.
-   * @returns The points lie in one plane.
+   * @returns True for coplanarity.
    * @see SymPy `sympy.geometry.point.Point.are_coplanar`
    */
   static areCoplanar(...points: PointInput[]): boolean {
@@ -505,11 +505,11 @@ export class PointNode extends GeometryEntity {
   }
 
   /**
-   * The projection of the vector a on the line through the origin and b.
+   * Projects the first position vector onto the line spanned by the second.
    *
    * @param a - Point whose position vector is projected.
    * @param b - Point defining the projection direction.
-   * @returns The projection of the vector a on the line through the origin and b.
+   * @returns The projected vector as a point.
    * @throws RangeError when the projection direction is the zero vector.
    * @see SymPy `sympy.geometry.point.Point.project`
    */
@@ -554,7 +554,7 @@ export class Point2DNode extends PointNode {
   }
 
   /**
-   * The x coordinate.
+   * Selects the point's horizontal coordinate.
    *
    * @returns The x coordinate.
    * @see SymPy `sympy.geometry.point.Point2D.x`
@@ -563,7 +563,7 @@ export class Point2DNode extends PointNode {
     return at(this.args, 0);
   }
   /**
-   * The y coordinate.
+   * Selects the point's second coordinate.
    *
    * @returns The y coordinate.
    * @see SymPy `sympy.geometry.point.Point2D.y`
@@ -573,9 +573,9 @@ export class Point2DNode extends PointNode {
   }
 
   /**
-   * The bounding rectangle as `[xmin, ymin, xmax, ymax]`.
+   * Finds the axis-aligned bounding rectangle.
    *
-   * @returns Return a tuple (xmin, ymin, xmax, ymax) representing the bounding rectangle for the geometric figure.
+   * @returns The bounds `[xmin, ymin, xmax, ymax]`.
    * @see SymPy `sympy.geometry.point.Point2D.bounds`
    */
   override get bounds(): [Expr, Expr, Expr, Expr] {
@@ -583,11 +583,11 @@ export class Point2DNode extends PointNode {
   }
 
   /**
-   * The point rotated counterclockwise by angle about pt (the origin by default).
+   * Rotates the point counterclockwise about the specified center, defaulting to the origin.
    *
    * @param angle - Rotation angle in radians.
    * @param pt - Center of rotation, defaulting to the origin.
-   * @returns The point rotated counterclockwise by angle about pt (the origin by default).
+   * @returns The rotated point.
    * @see SymPy `sympy.geometry.point.Point2D.rotate`
    */
   override rotate(angle: ExprLike, pt?: PointInput | null): Point2DNode {
@@ -606,12 +606,12 @@ export class Point2DNode extends PointNode {
   }
 
   /**
-   * The point scaled by x and y about pt (the origin by default).
+   * Scales both coordinates about the specified center, defaulting to the origin.
    *
    * @param x - Scale factor along the x axis.
    * @param y - Scale factor along the y axis.
    * @param pt - Fixed point of the scaling, defaulting to the origin.
-   * @returns The point scaled by x and y about pt (the origin by default).
+   * @returns The scaled point.
    * @see SymPy `sympy.geometry.point.Point2D.scale`
    */
   override scale(x: ExprLike = 1, y: ExprLike = 1, pt?: PointInput | null): Point2DNode {
@@ -623,10 +623,10 @@ export class Point2DNode extends PointNode {
   }
 
   /**
-   * The point transformed by a 3x3 matrix acting on the row (x, y, 1).
+   * Applies a homogeneous transformation to the row vector `(x, y, 1)`.
    *
    * @param matrix - Matrix defining the linear or affine transformation.
-   * @returns The point transformed by a 3x3 matrix acting on the row (x, y, 1).
+   * @returns The transformed planar point.
    * @throws RangeError when the transformation matrix is not three by three.
    * @see SymPy `sympy.geometry.point.Point2D.transform`
    */
@@ -637,11 +637,11 @@ export class Point2DNode extends PointNode {
   }
 
   /**
-   * The point shifted by x and y.
+   * Adds the horizontal and vertical offsets to the point.
    *
    * @param x - Displacement along the x axis.
    * @param y - Displacement along the y axis.
-   * @returns The point shifted by x and y.
+   * @returns The translated point.
    * @see SymPy `sympy.geometry.point.Point2D.translate`
    */
   override translate(x: ExprLike = 0, y: ExprLike = 0): Point2DNode {
@@ -683,7 +683,7 @@ export class Point3DNode extends PointNode {
   }
 
   /**
-   * The x coordinate.
+   * Selects the point's horizontal coordinate.
    *
    * @returns The x coordinate.
    * @see SymPy `sympy.geometry.point.Point3D.x`
@@ -692,7 +692,7 @@ export class Point3DNode extends PointNode {
     return at(this.args, 0);
   }
   /**
-   * The y coordinate.
+   * Selects the point's second coordinate.
    *
    * @returns The y coordinate.
    * @see SymPy `sympy.geometry.point.Point3D.y`
@@ -701,7 +701,7 @@ export class Point3DNode extends PointNode {
     return at(this.args, 1);
   }
   /**
-   * The z coordinate.
+   * Selects the point's third coordinate.
    *
    * @returns The z coordinate.
    * @see SymPy `sympy.geometry.point.Point3D.z`
@@ -711,10 +711,10 @@ export class Point3DNode extends PointNode {
   }
 
   /**
-   * The points lie on one line.
+   * Tests whether all the supplied points lie on one line.
    *
    * @param points - Points to compare.
-   * @returns The points lie on one line.
+   * @returns True for collinearity.
    * @see SymPy `sympy.geometry.point.Point3D.are_collinear`
    */
   static areCollinear(...points: PointInput[]): boolean {
@@ -723,10 +723,10 @@ export class Point3DNode extends PointNode {
   }
 
   /**
-   * The direction cosines of the line from this point to point.
+   * Normalizes the direction from this point to the other point.
    *
    * @param point - Point at which to evaluate the operation.
-   * @returns The direction cosines of the line from this point to point.
+   * @returns The direction cosines.
    * @see SymPy `sympy.geometry.point.Point3D.direction_cosine`
    */
   directionCosine(point: Point3DNode): Expr[] {
@@ -736,10 +736,10 @@ export class Point3DNode extends PointNode {
   }
 
   /**
-   * The direction ratios of the line from this point to point.
+   * Computes coordinate differences along the line joining the two points.
    *
    * @param point - Point at which to evaluate the operation.
-   * @returns The direction ratios of the line from this point to point.
+   * @returns The direction ratios.
    * @see SymPy `sympy.geometry.point.Point3D.direction_ratio`
    */
   directionRatio(point: Point3DNode): Expr[] {
@@ -747,10 +747,10 @@ export class Point3DNode extends PointNode {
   }
 
   /**
-   * The intersection with another entity.
+   * Finds the geometry common to the point and another entity.
    *
    * @param other - Entity to intersect with this one.
-   * @returns The intersection with another entity.
+   * @returns The intersection list.
    * @see SymPy `sympy.geometry.point.Point3D.intersection`
    */
   override intersection(other: unknown): GeometryEntity[] {
@@ -760,13 +760,13 @@ export class Point3DNode extends PointNode {
   }
 
   /**
-   * The point scaled by x, y and z about pt (the origin by default).
+   * Scales the three coordinates about the specified center, defaulting to the origin.
    *
    * @param x - Scale factor along the x axis.
    * @param y - Scale factor along the y axis.
    * @param zOrPt - Third-axis scale factor or center of scaling.
    * @param pt - Fixed point of the scaling, defaulting to the origin.
-   * @returns The point scaled by x, y and z about pt (the origin by default).
+   * @returns The scaled point.
    * @see SymPy `sympy.geometry.point.Point3D.scale`
    */
   override scale(x: ExprLike = 1, y: ExprLike = 1, zOrPt?: ExprLike | PointInput | null, pt?: PointInput | null): Point3DNode {
@@ -782,10 +782,10 @@ export class Point3DNode extends PointNode {
   }
 
   /**
-   * The point transformed by a 4x4 matrix acting on the column (x, y, z, 1).
+   * Applies a homogeneous transformation to the column vector `(x, y, z, 1)`.
    *
    * @param matrix - Matrix defining the linear or affine transformation.
-   * @returns The point transformed by a 4x4 matrix acting on the column (x, y, z, 1).
+   * @returns The transformed spatial point.
    * @throws RangeError when the transformation matrix is not four by four.
    * @see SymPy `sympy.geometry.point.Point3D.transform`
    */
@@ -796,12 +796,12 @@ export class Point3DNode extends PointNode {
   }
 
   /**
-   * The point shifted by x, y and z.
+   * Adds the three coordinate offsets to the point.
    *
    * @param x - Displacement along the x axis.
    * @param y - Displacement along the y axis.
    * @param z - Displacement along the z axis.
-   * @returns The point shifted by x, y and z.
+   * @returns The translated point.
    * @see SymPy `sympy.geometry.point.Point3D.translate`
    */
   override translate(x: ExprLike = 0, y: ExprLike = 0, z: ExprLike = 0): Point3DNode {
@@ -885,8 +885,8 @@ const as2D = (p: PointNode): Point2DNode => cast(p, Point2DNode, 'Point2D');
 const as3D = (p: PointNode): Point3DNode => cast(p, Point3DNode, 'Point3D');
 
 /**
- * A point in Euclidean space. The number of coordinates determines its dimension unless `dim` is
- * supplied.
+ * Constructs a point in Euclidean space. The number of coordinates determines its dimension unless
+ * `dim` is supplied.
  *
  * @param args - Coordinates or a coordinate sequence, followed by optional dimension and evaluation settings.
  * @returns The point with the specified coordinates.
@@ -907,7 +907,7 @@ export const Point = /* @__PURE__ */ callableClass(PointNode, (...args: (ExprLik
 export type Point = PointNode;
 
 /**
- * A point in the plane.
+ * Constructs a point in the plane.
  *
  * @param args - Two coordinates or a coordinate sequence, followed by optional evaluation settings.
  * @returns The point with the specified coordinates.
@@ -928,7 +928,7 @@ export const Point2D = /* @__PURE__ */ callableClass(Point2DNode, (...args: (Exp
 export type Point2D = Point2DNode;
 
 /**
- * A point in space.
+ * Constructs a point in space.
  *
  * @param args - Three coordinates or a coordinate sequence, followed by optional evaluation settings.
  * @returns The point with the specified coordinates.

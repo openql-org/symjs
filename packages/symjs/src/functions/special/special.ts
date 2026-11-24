@@ -429,7 +429,6 @@ function sumRange(lo: number, hi: number, f: (k: number) => Expr): Expr {
 
 const isHalfInt = (a: Expr): a is Rational => a instanceof Rational && a.q === 2n;
 
-/** SymPy uppergamma.eval (without the branch-factor extraction). */
 /**
  * SymPy beta.eval (with beta.doit for two numbers): beta(x) = beta(x, x); zoo at a zero argument,
  * 1/x for y = 1 (and 1/y for x = 1), 1/(x*y*catalan(x)) for y = x + 1, and 0 when x + y is a
@@ -1528,7 +1527,7 @@ forEachEntry(SPECS, (name, spec) => {
  * Computes the factorial of a nonnegative integer.
  *
  * @param n - The index.
- * @returns The factorial of a nonnegative integer.
+ * @returns The factorial value.
  * @see SymPy `sympy.functions.combinatorial.factorials.factorial`
  * @example
  * ```ts
@@ -1543,7 +1542,7 @@ export const factorial = (n: ExprLike): Expr => fn('factorial', [n]);
  * Computes the double factorial by multiplying successive factors two apart.
  *
  * @param n - The index.
- * @returns The double factorial by multiplying successive factors two apart.
+ * @returns The double factorial value.
  * @see SymPy `sympy.functions.combinatorial.factorials.factorial2`
  * @example
  * ```ts
@@ -1559,7 +1558,7 @@ export const factorial2 = (n: ExprLike): Expr => fn('factorial2', [n]);
  *
  * @param n - The upper binomial argument.
  * @param k - The number selected.
- * @returns The binomial coefficient.
+ * @returns The number of selections, or a symbolic binomial.
  * @see SymPy `sympy.functions.combinatorial.factorials.binomial`
  * @example
  * ```ts
@@ -1574,7 +1573,7 @@ export const binomial = (n: ExprLike, k: ExprLike): Expr => fn('binomial', [n, k
  * Counts permutations of a set with no fixed points.
  *
  * @param n - The index.
- * @returns The number of permutations of a set with no fixed points.
+ * @returns The derangement count.
  * @see SymPy `sympy.functions.combinatorial.factorials.subfactorial`
  * @example
  * ```ts
@@ -1590,7 +1589,7 @@ export const subfactorial = (n: ExprLike): Expr => fn('subfactorial', [n]);
  *
  * @param n - The index.
  * @param m - The order, one for the ordinary harmonic number.
- * @returns An ordinary or generalized harmonic number.
+ * @returns The harmonic sum.
  * @see SymPy `sympy.functions.combinatorial.numbers.harmonic`
  * @example
  * ```ts
@@ -1605,7 +1604,7 @@ export const harmonic = (n: ExprLike, m?: ExprLike): Expr => (m === undefined ? 
  * Computes a Catalan number.
  *
  * @param n - The Catalan index.
- * @returns A Catalan number.
+ * @returns The indexed Catalan number.
  * @see SymPy `sympy.functions.combinatorial.numbers.catalan`
  * @example
  * ```ts
@@ -1622,7 +1621,7 @@ export function catalan(n: ExprLike): Expr {
  * Computes the gamma function, the meromorphic extension of the shifted factorial.
  *
  * @param x - The argument of the function.
- * @returns The gamma function, the meromorphic extension of the shifted factorial.
+ * @returns The gamma expression.
  * @see SymPy `sympy.functions.special.gamma_functions.gamma`
  * @example
  * ```ts
@@ -1637,7 +1636,7 @@ export const gamma = (x: ExprLike): Expr => fn('gamma', [x]);
  * Computes the principal branch of the logarithm of the gamma function.
  *
  * @param x - The argument of the function.
- * @returns The principal branch of the logarithm of the gamma function.
+ * @returns The log-gamma expression.
  * @see SymPy `sympy.functions.special.gamma_functions.loggamma`
  * @example
  * ```ts
@@ -1653,7 +1652,7 @@ export const loggamma = (x: ExprLike): Expr => fn('loggamma', [x]);
  *
  * @param n - The derivative order, zero for the digamma function.
  * @param x - The argument of the function.
- * @returns A derivative of the logarithmic derivative of the gamma function.
+ * @returns The polygamma expression.
  * @see SymPy `sympy.functions.special.gamma_functions.polygamma`
  * @example
  * ```ts
@@ -1705,7 +1704,7 @@ fnPartials.trigamma = (args) => fn('polygamma', [2, first(args)]);
  *
  * @param s - The shape parameter.
  * @param x - The integration endpoint.
- * @returns The lower incomplete gamma function.
+ * @returns The lower incomplete gamma integral.
  * @see SymPy `sympy.functions.special.gamma_functions.lowergamma`
  * @example
  * ```ts
@@ -1721,7 +1720,7 @@ export const lowergamma = (s: ExprLike, x: ExprLike): Expr => fn('lowergamma', [
  *
  * @param s - The shape parameter.
  * @param x - The integration endpoint.
- * @returns The upper incomplete gamma function.
+ * @returns The upper incomplete gamma integral.
  * @see SymPy `sympy.functions.special.gamma_functions.uppergamma`
  * @example
  * ```ts
@@ -1737,7 +1736,7 @@ export const uppergamma = (s: ExprLike, x: ExprLike): Expr => fn('uppergamma', [
  *
  * @param a - The beta-function shape parameter.
  * @param b - The beta-function shape parameter.
- * @returns Euler's beta function.
+ * @returns The beta expression.
  * @see SymPy `sympy.functions.special.beta_functions.beta`
  * @example
  * ```ts
@@ -1748,13 +1747,13 @@ export const uppergamma = (s: ExprLike, x: ExprLike): Expr => fn('uppergamma', [
  */
 export const beta = (a: ExprLike, b: ExprLike = a): Expr => fn('beta', [a, b]);
 /**
- * The generalized incomplete beta function, the integral of t**(a - 1)*(1 - t)**(b - 1) from x1 to x2.
+ * Integrates the beta density kernel between the two endpoints.
  *
  * @param a - The beta-function shape parameter.
  * @param b - The beta-function shape parameter.
  * @param x1 - The lower integration endpoint.
  * @param x2 - The upper integration endpoint.
- * @returns The generalized incomplete beta function, the integral of t**(a - 1)*(1 - t)**(b - 1) from x1 to x2.
+ * @returns The generalized incomplete beta integral.
  * @see SymPy `sympy.functions.special.beta_functions.betainc`
  * @example
  * ```ts
@@ -1766,7 +1765,7 @@ export const beta = (a: ExprLike, b: ExprLike = a): Expr => fn('beta', [a, b]);
  */
 export const betainc = (a: ExprLike, b: ExprLike, x1: ExprLike, x2: ExprLike): Expr => fn('betainc', [a, b, x1, x2]);
 /**
- * betainc(a, b, x1, x2)/beta(a, b).
+ * Normalizes the incomplete beta integral by the complete beta function.
  *
  * @param a - The beta-function shape parameter.
  * @param b - The beta-function shape parameter.
@@ -1803,7 +1802,7 @@ export const zeta = (s: ExprLike, a?: ExprLike): Expr => fn('zeta', a === undefi
  * Computes the Gaussian error function.
  *
  * @param z - The argument of the function.
- * @returns The Gaussian error function.
+ * @returns The erf expression.
  * @see SymPy `sympy.functions.special.error_functions.erf`
  * @example
  * ```ts
@@ -1818,7 +1817,7 @@ export const erf = (z: ExprLike): Expr => fn('erf', [z]);
  * Computes the complementary error function.
  *
  * @param z - The argument of the function.
- * @returns The complementary error function.
+ * @returns The erfc expression.
  * @see SymPy `sympy.functions.special.error_functions.erfc`
  * @example
  * ```ts
@@ -1833,7 +1832,7 @@ export const erfc = (z: ExprLike): Expr => fn('erfc', [z]);
  * Computes the imaginary error function.
  *
  * @param z - The argument of the function.
- * @returns The imaginary error function.
+ * @returns The erfi expression.
  * @see SymPy `sympy.functions.special.error_functions.erfi`
  * @example
  * ```ts
@@ -1849,7 +1848,7 @@ export const erfi = (z: ExprLike): Expr => fn('erfi', [z]);
  *
  * @param x - An endpoint of the error-function integral, lower for `x` and upper for `y`.
  * @param y - An endpoint of the error-function integral, lower for `x` and upper for `y`.
- * @returns The difference of the error function at two endpoints.
+ * @returns The error-function increment.
  * @see SymPy `sympy.functions.special.error_functions.erf2`
  * @example
  * ```ts
@@ -1864,7 +1863,7 @@ export const erf2 = (x: ExprLike, y: ExprLike): Expr => fn('erf2', [x, y]);
  * Computes the inverse error function.
  *
  * @param z - The argument of the function.
- * @returns The inverse error function.
+ * @returns The argument corresponding to the erf value.
  * @see SymPy `sympy.functions.special.error_functions.erfinv`
  * @example
  * ```ts
@@ -1879,7 +1878,7 @@ export const erfinv = (z: ExprLike): Expr => fn('erfinv', [z]);
  * Computes the inverse complementary error function.
  *
  * @param z - The argument of the function.
- * @returns The inverse complementary error function.
+ * @returns The argument corresponding to the erfc value.
  * @see SymPy `sympy.functions.special.error_functions.erfcinv`
  * @example
  * ```ts
@@ -1910,7 +1909,7 @@ export const erf2inv = (x: ExprLike, y: ExprLike): Expr => fn('erf2inv', [x, y])
  * Computes the exponential integral.
  *
  * @param z - The argument of the function.
- * @returns The exponential integral.
+ * @returns The Ei expression.
  * @see SymPy `sympy.functions.special.error_functions.Ei`
  * @example
  * ```ts
@@ -1926,7 +1925,7 @@ export const Ei = (z: ExprLike): Expr => fn('Ei', [z]);
  *
  * @param x - The argument of the function.
  * @param k - The branch index, zero for the principal branch.
- * @returns A branch of the inverse of `w*exp(w)`.
+ * @returns The selected Lambert W branch value.
  * @see SymPy `sympy.functions.elementary.exponential.LambertW`
  * @example
  * ```ts
@@ -1941,7 +1940,7 @@ impl.lambertW = (x, k) => LambertW(x, k);
  * Computes the logarithmic integral.
  *
  * @param z - The argument of the function.
- * @returns The logarithmic integral.
+ * @returns The logarithmic integral expression.
  * @see SymPy `sympy.functions.special.error_functions.li`
  * @example
  * ```ts
@@ -1956,7 +1955,7 @@ export const li = (z: ExprLike): Expr => fn('li', [z]);
  * Computes the offset logarithmic integral, normalized to vanish at two.
  *
  * @param z - The argument of the function.
- * @returns The offset logarithmic integral, normalized to vanish at two.
+ * @returns The integral measured from two.
  * @see SymPy `sympy.functions.special.error_functions.Li`
  * @example
  * ```ts
@@ -1970,7 +1969,7 @@ export const Li = (z: ExprLike): Expr => fn('Li', [z]);
  * Computes the sine integral.
  *
  * @param z - The argument of the function.
- * @returns The sine integral.
+ * @returns The Si expression.
  * @see SymPy `sympy.functions.special.error_functions.Si`
  * @example
  * ```ts
@@ -1985,7 +1984,7 @@ export const Si = (z: ExprLike): Expr => fn('Si', [z]);
  * Computes the cosine integral.
  *
  * @param z - The argument of the function.
- * @returns The cosine integral.
+ * @returns The Ci expression.
  * @see SymPy `sympy.functions.special.error_functions.Ci`
  * @example
  * ```ts
@@ -2000,7 +1999,7 @@ export const Ci = (z: ExprLike): Expr => fn('Ci', [z]);
  * Computes the hyperbolic sine integral.
  *
  * @param z - The argument of the function.
- * @returns The hyperbolic sine integral.
+ * @returns The Shi expression.
  * @see SymPy `sympy.functions.special.error_functions.Shi`
  * @example
  * ```ts
@@ -2015,7 +2014,7 @@ export const Shi = (z: ExprLike): Expr => fn('Shi', [z]);
  * Computes the hyperbolic cosine integral.
  *
  * @param z - The argument of the function.
- * @returns The hyperbolic cosine integral.
+ * @returns The Chi expression.
  * @see SymPy `sympy.functions.special.error_functions.Chi`
  * @example
  * ```ts
@@ -2031,7 +2030,7 @@ export const Chi = (z: ExprLike): Expr => fn('Chi', [z]);
  *
  * @param nu - The order of the function.
  * @param z - The argument of the function.
- * @returns The generalized exponential integral of a given order.
+ * @returns The exponential integral of the requested order.
  * @see SymPy `sympy.functions.special.error_functions.expint`
  * @example
  * ```ts
@@ -2046,7 +2045,7 @@ export const expint = (nu: ExprLike, z: ExprLike): Expr => fn('expint', [nu, z])
  * Computes the generalized exponential integral of order one.
  *
  * @param z - The argument of the function.
- * @returns The generalized exponential integral of order one.
+ * @returns The E1 expression.
  * @see SymPy `sympy.functions.special.error_functions.E1`
  * @example
  * ```ts
@@ -2061,7 +2060,7 @@ export const E1 = (z: ExprLike): Expr => fn('expint', [1, z]);
  * Computes the Fresnel sine integral.
  *
  * @param z - The argument of the function.
- * @returns The Fresnel sine integral.
+ * @returns The Fresnel S expression.
  * @see SymPy `sympy.functions.special.error_functions.fresnels`
  * @example
  * ```ts
@@ -2076,7 +2075,7 @@ export const fresnels = (z: ExprLike): Expr => fn('fresnels', [z]);
  * Computes the Fresnel cosine integral.
  *
  * @param z - The argument of the function.
- * @returns The Fresnel cosine integral.
+ * @returns The Fresnel C expression.
  * @see SymPy `sympy.functions.special.error_functions.fresnelc`
  * @example
  * ```ts
@@ -2091,7 +2090,7 @@ export const fresnelc = (z: ExprLike): Expr => fn('fresnelc', [z]);
  * Computes the sign of a real argument or the unit phase of a nonzero complex argument.
  *
  * @param x - The argument of the function.
- * @returns The sign of a real argument or the unit phase of a nonzero complex argument.
+ * @returns The sign or unit phase.
  * @see SymPy `sympy.functions.elementary.complexes.sign`
  * @example
  * ```ts
@@ -2119,11 +2118,11 @@ export const sign = (x: ExprLike): Expr => fn('sign', [x]);
 export const floor = (x: ExprLike): Expr => fn('floor', [x]);
 
 /**
- * The remainder of truncated division (sign of p); unevaluated for symbols.
+ * Computes the remainder after truncating the quotient toward zero.
  *
  * @param p - The dividend.
  * @param q - The divisor.
- * @returns The remainder of truncated division (sign of p); unevaluated for symbols.
+ * @returns The signed remainder or a symbolic remainder expression.
  * @see SymPy `sympy.functions.elementary.miscellaneous.Rem`
  * @example
  * ```ts
@@ -2158,7 +2157,7 @@ export const ceiling = (x: ExprLike): Expr => fn('ceiling', [x]);
  *
  * @param y - The vertical coordinate.
  * @param x - The horizontal coordinate.
- * @returns The quadrant-aware angle of the point `(x, y)` in radians.
+ * @returns The angle in radians.
  * @see SymPy `sympy.functions.elementary.trigonometric.atan2`
  * @example
  * ```ts
@@ -2173,7 +2172,7 @@ export const atan2 = (y: ExprLike, x: ExprLike): Expr => fn('atan2', [y, x]);
  * Computes the least of the arguments.
  *
  * @param xs - The operands, in order.
- * @returns The least of the arguments.
+ * @returns The minimum value.
  * @see SymPy `sympy.functions.elementary.miscellaneous.Min`
  * @example
  * ```ts
@@ -2188,7 +2187,7 @@ export const Min = (...xs: ExprLike[]): Expr => fn('Min', xs);
  * Computes the greatest of the arguments.
  *
  * @param xs - The operands, in order.
- * @returns The greatest of the arguments.
+ * @returns The maximum value.
  * @see SymPy `sympy.functions.elementary.miscellaneous.Max`
  * @example
  * ```ts

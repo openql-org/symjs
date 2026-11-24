@@ -79,9 +79,9 @@ export class GradientNode extends VectorOperator {
     return new GradientNode(at(args, 0));
   }
   /**
-   * A gradient is a vector.
+   * Identifies a gradient as vector-valued.
    *
-   * @returns A gradient is a vector.
+   * @returns `false`.
    * @see SymPy `sympy.vector.operators.Gradient.is_scalar`
    */
   override get isScalar(): boolean {
@@ -188,9 +188,9 @@ export class CurlNode extends VectorOperator {
     return new CurlNode(at(args, 0));
   }
   /**
-   * A curl is a vector.
+   * Identifies a curl as vector-valued.
    *
-   * @returns A curl is a vector.
+   * @returns `false`.
    * @see SymPy `sympy.vector.operators.Curl.is_scalar`
    */
   override get isScalar(): boolean {
@@ -265,7 +265,7 @@ export class LaplacianNode extends VectorOperator {
 }
 
 /**
- * An unevaluated gradient of a scalar field.
+ * Constructs an unevaluated gradient of a scalar field.
  *
  * @param expr - Symbolic expression on which to operate.
  * @returns The resulting `Gradient` expression.
@@ -281,7 +281,7 @@ export class LaplacianNode extends VectorOperator {
 export const Gradient = /* @__PURE__ */ callableClass(GradientNode, (expr: ExprLike): GradientNode => new GradientNode(expr));
 export type Gradient = GradientNode;
 /**
- * An unevaluated divergence of a vector field.
+ * Constructs an unevaluated divergence of a vector field.
  *
  * @param expr - Symbolic expression on which to operate.
  * @returns The resulting `Divergence` expression.
@@ -298,7 +298,7 @@ export type Gradient = GradientNode;
 export const Divergence = /* @__PURE__ */ callableClass(DivergenceNode, (expr: ExprLike): DivergenceNode => new DivergenceNode(expr));
 export type Divergence = DivergenceNode;
 /**
- * An unevaluated curl of a vector field.
+ * Constructs an unevaluated curl of a vector field.
  *
  * @param expr - Symbolic expression on which to operate.
  * @returns The resulting `Curl` expression.
@@ -315,7 +315,7 @@ export type Divergence = DivergenceNode;
 export const Curl = /* @__PURE__ */ callableClass(CurlNode, (expr: ExprLike): CurlNode => new CurlNode(expr));
 export type Curl = CurlNode;
 /**
- * An unevaluated Laplacian of a scalar or vector field.
+ * Constructs an unevaluated Laplacian of a scalar or vector field.
  *
  * @param expr - Symbolic expression on which to operate.
  * @returns The resulting `Laplacian` expression.
@@ -356,12 +356,12 @@ const only = (systems: CoordSysBase[]): CoordSysBase => defined(systems[0], 'coo
 const vectorSum = (terms: readonly Expr[]): Expr => basisAdd(vectorFamily, terms);
 
 /**
- * The curl of a vector field in the base scalars of its coordinate system (with Derivative
- * instances unless doit).
+ * Computes the curl in the field's base coordinates, retaining derivative expressions unless evaluation
+ * is requested.
  *
  * @param vectIn - Vector field to which the operator is applied.
  * @param opts - Settings described by {@link OperatorOptions}.
- * @returns The curl of a vector field in the base scalars of its coordinate system (with Derivative instances unless doit).
+ * @returns The curl vector.
  * @throws RangeError when the operand is unsuitable for the vector differential operator.
  * @see SymPy `sympy.vector.operators.curl`
  * @example
@@ -427,11 +427,11 @@ function diffConditional(expr: Expr, baseScalar: Expr, coeff1: Expr, coeff2: Exp
 }
 
 /**
- * The divergence of a vector field in the base scalars of its coordinate system.
+ * Computes the divergence in the field's base coordinates.
  *
  * @param vectIn - Vector field to which the operator is applied.
  * @param opts - Settings described by {@link OperatorOptions}.
- * @returns The divergence of a vector field in the base scalars of its coordinate system.
+ * @returns The scalar divergence.
  * @throws RangeError when the operand is unsuitable for the vector differential operator.
  * @see SymPy `sympy.vector.operators.divergence`
  * @example
@@ -489,11 +489,11 @@ function splitMulArgs(factors: readonly Expr[]): Expr[] {
 }
 
 /**
- * The gradient of a scalar field in the base scalars of its coordinate system.
+ * Computes the gradient in the field's base coordinates.
  *
  * @param fieldIn - Scalar or vector field on the region.
  * @param opts - Settings described by {@link OperatorOptions}.
- * @returns The gradient of a scalar field in the base scalars of its coordinate system.
+ * @returns The gradient vector.
  * @see SymPy `sympy.vector.operators.gradient`
  * @example
  * ```ts

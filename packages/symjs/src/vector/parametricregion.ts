@@ -73,16 +73,16 @@ export class ParametricRegionNode extends ExtensionExpr {
     return new ParametricRegionNode(at(args, 0), ...args.slice(1));
   }
   /**
-   * The base scalars in terms of the parameters.
+   * Expresses the region's coordinates in terms of its parameters.
    *
-   * @returns The base scalars in terms of the parameters.
+   * @returns The parametric coordinate expressions.
    * @see SymPy `sympy.vector.parametricregion.ParametricRegion.definition`
    */
   get definition(): Expr[] {
     return [...at(this.args, 0).args];
   }
   /**
-   * Parameter symbols or names.
+   * Lists the symbols or names used to parametrize the region.
    *
    * @returns The independent parameters in definition order.
    * @see SymPy `sympy.vector.parametricregion.ParametricRegion.parameters`
@@ -91,9 +91,9 @@ export class ParametricRegionNode extends ExtensionExpr {
     return this.args.slice(1).map((b) => (b instanceof TupleNode ? at(b.args, 0) : b));
   }
   /**
-   * The lower and upper bounds of the bounded parameters.
+   * Identifies the endpoints of each bounded parameter.
    *
-   * @returns The lower and upper bounds of the bounded parameters.
+   * @returns The parameter bounds.
    * @see SymPy `sympy.vector.parametricregion.ParametricRegion.limits`
    */
   get limits(): ExprMap<[Expr, Expr]> {
@@ -102,9 +102,9 @@ export class ParametricRegionNode extends ExtensionExpr {
     return m;
   }
   /**
-   * The number of bounded parameters (1 for a curve, 2 for a surface, 3 for a volume).
+   * Counts bounded parameters, giving one for a curve, two for a surface, and three for a volume.
    *
-   * @returns The number of bounded parameters (1 for a curve, 2 for a surface, 3 for a volume).
+   * @returns The region dimension.
    * @see SymPy `sympy.vector.parametricregion.ParametricRegion.dimensions`
    */
   get dimensions(): number {
@@ -113,7 +113,8 @@ export class ParametricRegionNode extends ExtensionExpr {
 }
 
 /**
- * A region described by coordinate functions of one or more parameters, optionally with bounds.
+ * Constructs a region described by coordinate functions of one or more parameters, optionally with
+ * bounds.
  *
  * @param definition - Coordinate expressions in the region parameters.
  * @param bounds - Parameters or triples of parameter, lower bound and upper bound.
@@ -136,8 +137,8 @@ export const ParametricRegion = /* @__PURE__ */ callableClass(
 export type ParametricRegion = ParametricRegionNode;
 
 /**
- * The parametric regions of a geometric entity (point, curve, ellipse, segment, polygon) or an
- * implicit region (with the parameters of its rational parametrization).
+ * Parametrizes a geometric or implicit region, using the rational parametrization for an implicit
+ * region.
  *
  * @param reg - Geometric or implicit region to parametrize.
  * @param parameter - Symbol or name used for the parametrization.

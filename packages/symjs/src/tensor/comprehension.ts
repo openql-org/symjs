@@ -75,18 +75,18 @@ export class ArrayComprehensionNode extends ExtensionExpr {
   }
 
   /**
-   * The expression of the elements.
+   * Identifies the expression evaluated at each combination of indices.
    *
-   * @returns The expression of the elements.
+   * @returns The element formula.
    * @see SymPy `sympy.tensor.array.array_comprehension.ArrayComprehension.function`
    */
   get function(): Expr {
     return at(this.args, 0);
   }
   /**
-   * The limits [variable, lower, upper].
+   * Lists each comprehension index with its inclusive bounds.
    *
-   * @returns The limits [variable, lower, upper].
+   * @returns The index and endpoint triples.
    * @see SymPy `sympy.tensor.array.array_comprehension.ArrayComprehension.limits`
    */
   get limits(): [Expr, Expr, Expr][] {
@@ -95,46 +95,45 @@ export class ArrayComprehensionNode extends ExtensionExpr {
     return out;
   }
   /**
-   * The index variables.
+   * Lists the variables bound by the array comprehension.
    *
-   * @returns The differentiation variables in their original order.
+   * @returns The index variables in limit order.
    * @see SymPy `sympy.tensor.array.array_comprehension.ArrayComprehension.variables`
    */
   get variables(): Expr[] {
     return this.limits.map(([v]) => v);
   }
   /**
-   * The shape upper - lower + 1 of each limit, possibly symbolic.
+   * Derives each axis length from its inclusive lower and upper limits.
    *
-   * @returns The shape upper - lower + 1 of each limit, possibly symbolic.
+   * @returns The possibly symbolic shape.
    * @see SymPy `sympy.tensor.array.array_comprehension.ArrayComprehension.shape`
    */
   get shape(): Expr[] {
     return this.limits.map(([, lo, hi]) => add(hi, mul(-1, lo), 1));
   }
   /**
-   * Whether no bound contains a symbol.
+   * Tests whether every bound is free of symbols.
    *
-   * @returns Whether no bound contains a symbol.
+   * @returns True for a numeric shape.
    * @see SymPy `sympy.tensor.array.array_comprehension.ArrayComprehension.is_shape_numeric`
    */
   get isShapeNumeric(): boolean {
     return this.limits.every(([, lo, hi]) => lo.freeSymbols().size === 0 && hi.freeSymbols().size === 0);
   }
   /**
-   * The number of dimensions (SymPy rank()).
+   * Counts the dimensions of the array comprehension.
    *
-   * @returns The number of dimensions (SymPy rank()).
+   * @returns The rank.
    * @see SymPy `sympy.tensor.array.array_comprehension.ArrayComprehension.rank`
    */
   rank(): number {
     return this.limits.length;
   }
   /**
-   * The number of elements (SymPy len; 1 for no limits, as for a rank-0 array); a symbolic shape
-   * has no length.
+   * Counts the elements for a numeric shape, including one element when no limits are supplied.
    *
-   * @returns The number of elements (SymPy len; 1 for no limits, as for a rank-0 array); a symbolic shape has no length.
+   * @returns The element count.
    * @throws RangeError when the length is symbolic.
    */
   get length(): number {
@@ -143,17 +142,17 @@ export class ArrayComprehensionNode extends ExtensionExpr {
     return Number(n.p);
   }
   /**
-   * Not a scalar: differentiating by it stays unevaluated.
+   * Marks the comprehension as array-valued, so differentiation by it stays unevaluated.
    *
-   * @returns Not a scalar: differentiating by it stays unevaluated.
+   * @returns `false`.
    */
   override get isScalar(): boolean {
     return false;
   }
   /**
-   * The bound indices and their inclusive iteration ranges.
+   * Describes the scope and inclusive iteration range of each bound index.
    *
-   * @returns The bound indices and their inclusive iteration ranges.
+   * @returns The index bindings.
    */
   override bindings(): { variables: readonly number[]; scope: readonly number[] } {
     const variables: number[] = [];
@@ -170,9 +169,9 @@ export class ArrayComprehensionNode extends ExtensionExpr {
   }
 
   /**
-   * The explicit ImmutableDenseNDimArray when the shape is numeric, else this node.
+   * Expands the comprehension when all axis lengths are numeric.
    *
-   * @returns The evaluated expression when the operation can be performed.
+   * @returns The explicit immutable array or this comprehension.
    * @see SymPy `sympy.tensor.array.array_comprehension.ArrayComprehension.doit`
    */
   doit(): Expr {
@@ -310,9 +309,9 @@ export class ArrayComprehensionMapNode extends ArrayComprehensionNode {
     if (!lambdaIds.has(fn)) lambdaIds.set(fn, ++lambdaCounter);
   }
   /**
-   * The JavaScript function of the elements.
+   * Identifies the JavaScript function that generates the elements.
    *
-   * @returns The JavaScript function of the elements.
+   * @returns The element callback.
    */
   get lambda(): ComprehensionLambda {
     return this.#fn;

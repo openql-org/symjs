@@ -57,9 +57,9 @@ const sum = (f: Expr, x: Sym, a: Expr, b: Expr): Expr => summation(f, [x, a, b])
  */
 export abstract class SingleDiscreteDistribution extends DiscreteDistribution {
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
-   * @returns The support of the distribution.
+   * @returns The distribution's support.
    * @see SymPy `sympy.stats.drv.SingleDiscreteDistribution.set`
    */
   get set(): SetExpr {
@@ -97,7 +97,7 @@ export abstract class SingleDiscreteDistribution extends DiscreteDistribution {
     return Lambda(z, piecewise([c, Ge(z, left)], [0, true]));
   }
   /**
-   * The cumulative distribution function at x.
+   * Evaluates the cumulative distribution at the supplied value.
    *
    * @param xIn - Variable of the expansion.
    * @returns The cumulative probability at the argument.
@@ -108,9 +108,9 @@ export abstract class SingleDiscreteDistribution extends DiscreteDistribution {
     return this.cdfClosed(x) ?? this.computeCdf().call(x);
   }
   /**
-   * The characteristic function of the expression.
+   * Computes the Fourier transform of the probability law for the expression.
    *
-   * @returns The characteristic function of the expression.
+   * @returns The characteristic function.
    * @see SymPy `sympy.stats.drv.SingleDiscreteDistribution.compute_characteristic_function`
    */
   computeCharacteristicFunction(): LambdaNode {
@@ -119,10 +119,10 @@ export abstract class SingleDiscreteDistribution extends DiscreteDistribution {
     return Lambda(t, sum(mul(exp(mul(S.I, t, x)), this.pdf(x)), x, inf(this.set), sup(this.set)));
   }
   /**
-   * The characteristic function at t.
+   * Evaluates the characteristic function at the specified argument.
    *
    * @param tIn - Argument of the transform.
-   * @returns The characteristic function at t.
+   * @returns The transform value at `t`.
    * @see SymPy `sympy.stats.drv.SingleDiscreteDistribution.characteristic_function`
    */
   characteristicFunction(tIn: ExprLike): Expr {
@@ -130,9 +130,9 @@ export abstract class SingleDiscreteDistribution extends DiscreteDistribution {
     return this.characteristicFunctionClosed(t) ?? this.computeCharacteristicFunction().call(t);
   }
   /**
-   * The moment generating function of the expression.
+   * Computes the exponential moment transform of the expression's law.
    *
-   * @returns The moment generating function of the expression.
+   * @returns The moment generating function.
    * @see SymPy `sympy.stats.drv.SingleDiscreteDistribution.compute_moment_generating_function`
    */
   computeMomentGeneratingFunction(): LambdaNode {
@@ -141,10 +141,10 @@ export abstract class SingleDiscreteDistribution extends DiscreteDistribution {
     return Lambda(t, sum(mul(exp(mul(t, x)), this.pdf(x)), x, inf(this.set), sup(this.set)));
   }
   /**
-   * The moment generating function at t.
+   * Evaluates the moment generating function at the specified argument.
    *
    * @param tIn - Argument of the transform.
-   * @returns The moment generating function at t.
+   * @returns The exponential moment at `t`.
    * @see SymPy `sympy.stats.drv.SingleDiscreteDistribution.moment_generating_function`
    */
   momentGeneratingFunction(tIn: ExprLike): Expr {
@@ -152,7 +152,7 @@ export abstract class SingleDiscreteDistribution extends DiscreteDistribution {
     return this.momentGeneratingFunctionClosed(t) ?? this.computeMomentGeneratingFunction().call(t);
   }
   /**
-   * The least x with p <= cdf(x).
+   * Finds the least outcome whose cumulative probability reaches the requested probability.
    *
    * @returns The quantile function.
    * @see SymPy `sympy.stats.drv.SingleDiscreteDistribution.compute_quantile`
@@ -165,10 +165,10 @@ export abstract class SingleDiscreteDistribution extends DiscreteDistribution {
     return Lambda(p, piecewise([x, Le(p, c)]));
   }
   /**
-   * The quantile function at p.
+   * Finds the quantile corresponding to the given cumulative probability.
    *
    * @param pIn - Cumulative probability at which to evaluate the quantile.
-   * @returns The quantile function at p.
+   * @returns The quantile at `p`.
    * @see SymPy `sympy.stats.drv.SingleDiscreteDistribution.quantile`
    */
   quantile(pIn: ExprLike): Expr {
@@ -176,14 +176,12 @@ export abstract class SingleDiscreteDistribution extends DiscreteDistribution {
     return this.quantileClosed(p) ?? this.computeQuantile().call(p);
   }
   /**
-   * The expectation of expr, an expression of var (SymPy expectation): the
-   * moments of a polynomial come from the Taylor series of the moment
-   * generating function; otherwise the sum.
+   * Computes expectation using moments from the generating function when available and summing otherwise.
    *
    * @param expr - Expression to evaluate.
    * @param v - Symbol distributed according to this law.
    * @param opts - Evaluation controls for integrals, sums and compound distributions.
-   * @returns The expectation of expr, an expression of var.
+   * @returns The expectation expression.
    * @see SymPy `sympy.stats.drv.SingleDiscreteDistribution.expectation`
    */
   expectation(expr: Expr, v: Sym, opts: ComputeOptions = {}): Expr {
@@ -223,7 +221,7 @@ export class SingleDiscreteDomain extends SingleDomain {
     super(args, 'SingleDiscreteDomain');
   }
   /**
-   * Whether the domain is discrete.
+   * Indicates whether the domain is discrete.
    *
    * @returns `true` for this domain.
    * @see SymPy `sympy.stats.drv.SingleDiscreteDomain.is_Discrete`
@@ -232,9 +230,9 @@ export class SingleDiscreteDomain extends SingleDomain {
     return true;
   }
   /**
-   * The condition expressing membership in this domain.
+   * Expresses domain membership as a predicate on the outcome variables.
    *
-   * @returns The condition expressing membership in this domain.
+   * @returns A Boolean condition.
    * @see SymPy `sympy.stats.drv.SingleDiscreteDomain.as_boolean`
    */
   override asBoolean(): Expr {
@@ -257,7 +255,7 @@ export class ConditionalDiscreteDomain extends ConditionalDomain {
     super('ConditionalDiscreteDomain', [at(args, 0), conditionOnSymbols(at(args, 1))]);
   }
   /**
-   * Whether the domain is discrete.
+   * Indicates whether the domain is discrete.
    *
    * @returns `true` for this domain.
    * @see SymPy `sympy.stats.drv.ConditionalDiscreteDomain.is_Discrete`
@@ -266,9 +264,9 @@ export class ConditionalDiscreteDomain extends ConditionalDomain {
     return true;
   }
   /**
-   * The set of outcomes in this domain.
+   * Collects the values admitted by the outcome domain.
    *
-   * @returns The set of outcomes in this domain.
+   * @returns The outcome set.
    * @throws NotImplementedError when the conditional domain is multivariate.
    * @see SymPy `sympy.stats.drv.ConditionalDiscreteDomain.set`
    */
@@ -294,7 +292,7 @@ export class DiscretePSpace extends PSpace {
     super(args, name);
   }
   /**
-   * Whether the probability space is real.
+   * Indicates whether the space is real-valued.
    *
    * @returns `true` for this space.
    * @see SymPy `sympy.stats.drv.DiscretePSpace.is_real`
@@ -303,7 +301,7 @@ export class DiscretePSpace extends PSpace {
     return true;
   }
   /**
-   * Whether the probability space is discrete.
+   * Indicates whether this probability space is discrete.
    *
    * @returns `true` for this space.
    * @see SymPy `sympy.stats.drv.DiscretePSpace.is_Discrete`
@@ -312,7 +310,7 @@ export class DiscretePSpace extends PSpace {
     return true;
   }
   /**
-   * The probability mass at the supplied outcome.
+   * Evaluates the probability mass function at one outcome.
    *
    * @returns The joint density in the symbols of the space.
    * @see SymPy `sympy.stats.drv.DiscretePSpace.pdf`
@@ -321,7 +319,7 @@ export class DiscretePSpace extends PSpace {
     return cast(this.density, LambdaNode, 'density').call(...this.symbols);
   }
   /**
-   * The subset of the domain on which the condition holds.
+   * Restricts the domain to the subset satisfying the condition.
    *
    * @param condition - Condition on the random variables.
    * @returns The domain satisfying the condition.
@@ -335,7 +333,7 @@ export class DiscretePSpace extends PSpace {
     return new SingleDiscreteDomain([first(rvs).symbol, conditionalDomain]);
   }
   /**
-   * The probability that the event holds.
+   * Computes the probability assigned to the event.
    *
    * @param conditionIn - Condition on the random variables.
    * @returns The probability of the event.
@@ -387,7 +385,7 @@ export class DiscretePSpace extends PSpace {
     return undefined;
   }
   /**
-   * The probability space restricted to outcomes satisfying the condition.
+   * Restricts the probability space to outcomes that satisfy the condition.
    *
    * @param conditionIn - Condition on the random variables.
    * @returns The conditioned probability space.
@@ -416,7 +414,7 @@ export class ProductDiscreteDomain extends ProductDomain {
     super(args, 'ProductDiscreteDomain');
   }
   /**
-   * Whether the domain is discrete.
+   * Indicates whether the domain is discrete.
    *
    * @returns `true` for this domain.
    * @see SymPy `sympy.stats.drv.ProductDiscreteDomain.is_Discrete`
@@ -441,7 +439,7 @@ export class SingleDiscretePSpace extends DiscretePSpace {
     super([symbolConverter(at(args, 0)), cast(at(args, 1), Distribution, 'distribution')], 'SingleDiscretePSpace');
   }
   /**
-   * Whether the probability space is single.
+   * Checks whether the probability space governs a single random variable.
    *
    * @returns `true` for this space.
    */
@@ -449,34 +447,34 @@ export class SingleDiscretePSpace extends DiscretePSpace {
     return true;
   }
   /**
-   * The underlying symbol naming the random variable.
+   * Identifies the ordinary symbol that names the random variable.
    *
-   * @returns The underlying symbol naming the random variable.
+   * @returns The underlying symbol.
    * @see SymPy `sympy.stats.drv.SingleDiscretePSpace.symbol`
    */
   get symbol(): Sym {
     return cast(at(this.args, 0), Sym);
   }
   /**
-   * The probability law governing the random variable.
+   * Identifies the law of the random variable in this space.
    *
-   * @returns The probability law governing the random variable.
+   * @returns The distribution object.
    * @see SymPy `sympy.stats.drv.SingleDiscretePSpace.distribution`
    */
   get distribution(): SingleDiscreteDistribution {
     return cast(at(this.args, 1), SingleDiscreteDistribution);
   }
   /**
-   * The random symbol with this probability space.
+   * Constructs the random symbol associated with this probability space.
    *
-   * @returns The random symbol with this probability space.
+   * @returns The space's random variable.
    * @see SymPy `sympy.stats.drv.SingleDiscretePSpace.value`
    */
   get value(): RandomSymbol {
     return new RandomSymbol(this.symbol, this);
   }
   /**
-   * The probability mass at the supplied outcome.
+   * Evaluates the probability mass function at one outcome.
    *
    * @returns The joint density in the symbols of the space.
    * @see SymPy `sympy.stats.drv.SingleDiscretePSpace.pdf`
@@ -485,34 +483,34 @@ export class SingleDiscretePSpace extends DiscretePSpace {
     return this.distribution.pdf(this.symbol);
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
-   * @returns The support of the distribution.
+   * @returns The distribution's support.
    * @see SymPy `sympy.stats.drv.SingleDiscretePSpace.set`
    */
   get set(): SetExpr {
     return this.distribution.set;
   }
   /**
-   * The domain of outcomes of this probability space.
+   * Describes the possible outcomes of this probability space.
    *
-   * @returns The domain of outcomes of this probability space.
+   * @returns The outcome domain.
    * @see SymPy `sympy.stats.drv.SingleDiscretePSpace.domain`
    */
   override get domain(): RandomDomain {
     return new SingleDiscreteDomain([this.symbol, this.set]);
   }
   /**
-   * The density of the random variable or expression.
+   * Expresses the density on the underlying probability space.
    *
-   * @returns The density of the random variable or expression.
+   * @returns The density expression.
    * @see SymPy `sympy.stats.drv.SingleDiscretePSpace.density`
    */
   override get density(): Expr {
     return this.distribution;
   }
   /**
-   * The expectation of the expression over the specified variables.
+   * Computes the expression's expectation over the specified variables.
    *
    * @param exprIn - Expression to evaluate.
    * @param rvsIn - Random variables to integrate or sum over.
@@ -533,7 +531,7 @@ export class SingleDiscretePSpace extends DiscretePSpace {
     }
   }
   /**
-   * The cumulative distribution function of the expression.
+   * Computes the cumulative distribution of the expression.
    *
    * @param expr - Expression to evaluate.
    * @returns The cumulative distribution function.
@@ -546,7 +544,7 @@ export class SingleDiscretePSpace extends DiscretePSpace {
     return Lambda(x, this.distribution.cdf(x));
   }
   /**
-   * The distribution of the expression on this probability space.
+   * Computes the distribution induced by the expression on this space.
    *
    * @param expr - Expression to evaluate.
    * @returns The probability distribution of the expression.
@@ -558,10 +556,10 @@ export class SingleDiscretePSpace extends DiscretePSpace {
     throw new NotImplementedError('density of a function of a discrete random variable');
   }
   /**
-   * The characteristic function of the expression.
+   * Computes the Fourier transform of the probability law for the expression.
    *
    * @param expr - Expression to evaluate.
-   * @returns The characteristic function of the expression.
+   * @returns The characteristic function.
    * @throws NotImplementedError when the expression is an unsupported transformation of the discrete variable.
    * @see SymPy `sympy.stats.drv.SingleDiscretePSpace.compute_characteristic_function`
    */
@@ -571,10 +569,10 @@ export class SingleDiscretePSpace extends DiscretePSpace {
     return Lambda(t, this.distribution.characteristicFunction(t));
   }
   /**
-   * The moment generating function of the expression.
+   * Computes the exponential moment transform of the expression's law.
    *
    * @param expr - Expression to evaluate.
-   * @returns The moment generating function of the expression.
+   * @returns The moment generating function.
    * @throws NotImplementedError when the expression is an unsupported transformation of the discrete variable.
    * @see SymPy `sympy.stats.drv.SingleDiscretePSpace.compute_moment_generating_function`
    */
@@ -584,7 +582,7 @@ export class SingleDiscretePSpace extends DiscretePSpace {
     return Lambda(t, this.distribution.momentGeneratingFunction(t));
   }
   /**
-   * The quantile function of the expression.
+   * Computes the quantile function of the supplied expression.
    *
    * @param expr - Expression to evaluate.
    * @returns The quantile function.

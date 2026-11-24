@@ -93,25 +93,25 @@ export class ContinuousDistributionHandmade extends SingleContinuousDistribution
     super('ContinuousDistributionHandmade', args.length === 1 ? [at(args, 0), realLine] : args);
   }
   /**
-   * The lambda expression defining the density.
+   * Expresses the density as a function of the outcome.
    *
-   * @returns The lambda expression defining the density.
+   * @returns A density lambda.
    * @see SymPy `sympy.stats.crv_types.ContinuousDistributionHandmade.pdf`
    */
   get pdfLambda(): Expr {
     return this.arg(0);
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
-   * @returns The support of the distribution.
+   * @returns The distribution's support.
    * @see SymPy `sympy.stats.crv_types.ContinuousDistributionHandmade.set`
    */
   override get set(): SetExpr {
     return cast(this.arg(1), SetExpr);
   }
   /**
-   * The probability density at the supplied value.
+   * Evaluates the probability density at the supplied outcome.
    *
    * @param x - Outcome at which to evaluate the density.
    * @returns The density evaluated at the supplied outcome.
@@ -176,25 +176,25 @@ export class ArcsinDistribution extends SingleContinuousDistribution {
     super('ArcsinDistribution', args);
   }
   /**
-   * Lower endpoint.
+   * Gives the lower endpoint of the distribution's interval.
    *
-   * @returns Lower endpoint.
+   * @returns The lower bound.
    * @see SymPy `sympy.stats.crv_types.ArcsinDistribution.a`
    */
   get a(): Expr {
     return this.arg(0);
   }
   /**
-   * Upper endpoint.
+   * Gives the upper endpoint of the distribution's interval.
    *
-   * @returns Upper endpoint.
+   * @returns The upper bound.
    * @see SymPy `sympy.stats.crv_types.ArcsinDistribution.b`
    */
   get b(): Expr {
     return this.arg(1);
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
    * @returns The interval `[a, b]`.
    * @see SymPy `sympy.stats.crv_types.ArcsinDistribution.set`
@@ -203,7 +203,7 @@ export class ArcsinDistribution extends SingleContinuousDistribution {
     return interval(this.a, this.b);
   }
   /**
-   * The probability density at the supplied value.
+   * Evaluates the probability density at the supplied outcome.
    *
    * @param xIn - Outcome at which to evaluate the density.
    * @returns The density evaluated at the supplied outcome.
@@ -220,7 +220,7 @@ export class ArcsinDistribution extends SingleContinuousDistribution {
 }
 
 /**
- * Arcsin distribution on [a, b].
+ * Constructs a random variable with the arcsin distribution on [a, b].
  *
  * @param name - Name of the symbol.
  * @param a - Lower endpoint.
@@ -267,7 +267,7 @@ export class BeniniDistribution extends SingleContinuousDistribution {
     valueCheck(Gt(sigma, 0), 'Scale parameter Sigma must be positive.');
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
    * @returns The interval `[sigma, oo)`.
    * @see SymPy `sympy.stats.crv_types.BeniniDistribution.set`
@@ -276,7 +276,7 @@ export class BeniniDistribution extends SingleContinuousDistribution {
     return interval(this.arg(2), S.Infinity);
   }
   /**
-   * The probability density at the supplied value.
+   * Evaluates the probability density at the supplied outcome.
    *
    * @param xIn - Outcome at which to evaluate the density.
    * @returns The density evaluated at the supplied outcome.
@@ -294,7 +294,7 @@ export class BeniniDistribution extends SingleContinuousDistribution {
 }
 
 /**
- * Benini distribution.
+ * Constructs a random variable with the Benini distribution.
  *
  * @param name - Name of the symbol.
  * @param alpha - Positive first shape parameter.
@@ -331,7 +331,7 @@ export class BetaDistribution extends SingleContinuousDistribution {
     super('BetaDistribution', args);
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
    * @returns The interval `[0, 1]`.
    * @see SymPy `sympy.stats.crv_types.BetaDistribution.set`
@@ -350,7 +350,7 @@ export class BetaDistribution extends SingleContinuousDistribution {
     valueCheck(Gt(this.arg(1), 0), 'Shape parameter Beta must be positive.');
   }
   /**
-   * The probability density at the supplied value.
+   * Evaluates the probability density at the supplied outcome.
    *
    * @param xIn - Outcome at which to evaluate the density.
    * @returns The density evaluated at the supplied outcome.
@@ -370,7 +370,7 @@ export class BetaDistribution extends SingleContinuousDistribution {
 }
 
 /**
- * Beta distribution.
+ * Constructs a random variable with the Beta distribution.
  *
  * @param name - Name of the symbol.
  * @param alpha - Positive first shape parameter.
@@ -406,7 +406,7 @@ export class BetaNoncentralDistribution extends SingleContinuousDistribution {
     super('BetaNoncentralDistribution', args);
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
    * @returns The interval `[0, 1]`.
    * @see SymPy `sympy.stats.crv_types.BetaNoncentralDistribution.set`
@@ -426,7 +426,7 @@ export class BetaNoncentralDistribution extends SingleContinuousDistribution {
     valueCheck(Ge(this.arg(2), 0), 'Noncentrality parameter Lambda must be positive');
   }
   /**
-   * The probability density at the supplied value.
+   * Evaluates the probability density at the supplied outcome.
    *
    * @param xIn - Outcome at which to evaluate the density.
    * @returns The density evaluated at the supplied outcome.
@@ -445,7 +445,7 @@ export class BetaNoncentralDistribution extends SingleContinuousDistribution {
 }
 
 /**
- * Noncentral Beta distribution.
+ * Constructs a random variable with the noncentral Beta distribution.
  *
  * @param name - Name of the symbol.
  * @param alpha - Positive first shape parameter.
@@ -493,7 +493,7 @@ export class BetaPrimeDistribution extends SingleContinuousDistribution {
     valueCheck(Gt(this.arg(1), 0), 'Shape parameter Beta must be positive.');
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
    * @returns The interval `[0, oo)`.
    * @see SymPy `sympy.stats.crv_types.BetaPrimeDistribution.set`
@@ -502,7 +502,7 @@ export class BetaPrimeDistribution extends SingleContinuousDistribution {
     return interval(0, S.Infinity);
   }
   /**
-   * The probability density at the supplied value.
+   * Evaluates the probability density at the supplied outcome.
    *
    * @param xIn - Outcome at which to evaluate the density.
    * @returns The density evaluated at the supplied outcome.
@@ -516,7 +516,7 @@ export class BetaPrimeDistribution extends SingleContinuousDistribution {
 }
 
 /**
- * Beta prime distribution.
+ * Constructs a random variable with the Beta prime distribution.
  *
  * @param name - Name of the symbol.
  * @param alpha - Positive first shape parameter.
@@ -552,7 +552,7 @@ export class BoundedParetoDistribution extends SingleContinuousDistribution {
     super('BoundedParetoDistribution', args);
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
    * @returns The interval `[left, right]`.
    * @see SymPy `sympy.stats.crv_types.BoundedParetoDistribution.set`
@@ -573,7 +573,7 @@ export class BoundedParetoDistribution extends SingleContinuousDistribution {
     valueCheck(Gt(right, left), 'Right should be greater than left.');
   }
   /**
-   * The probability density at the supplied value.
+   * Evaluates the probability density at the supplied outcome.
    *
    * @param xIn - Outcome at which to evaluate the density.
    * @returns The density evaluated at the supplied outcome.
@@ -589,7 +589,7 @@ export class BoundedParetoDistribution extends SingleContinuousDistribution {
 }
 
 /**
- * Bounded Pareto distribution.
+ * Constructs a random variable with the bounded Pareto distribution.
  *
  * @param name - Name of the symbol.
  * @param alpha - Positive shape parameter.
@@ -636,7 +636,7 @@ export class CauchyDistribution extends SingleContinuousDistribution {
     valueCheck(isReal(this.arg(0)), 'Location parameter must be real.');
   }
   /**
-   * The probability density at the supplied value.
+   * Evaluates the probability density at the supplied outcome.
    *
    * @param xIn - Outcome at which to evaluate the density.
    * @returns The density evaluated at the supplied outcome.
@@ -663,7 +663,7 @@ export class CauchyDistribution extends SingleContinuousDistribution {
 }
 
 /**
- * Cauchy distribution.
+ * Constructs a random variable with the Cauchy distribution.
  *
  * @param name - Name of the symbol.
  * @param x0 - Real location parameter.
@@ -714,7 +714,7 @@ export class ChiDistribution extends SingleContinuousDistribution {
     checkDegrees(this.arg(0));
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
    * @returns The interval `[0, oo)`.
    * @see SymPy `sympy.stats.crv_types.ChiDistribution.set`
@@ -723,7 +723,7 @@ export class ChiDistribution extends SingleContinuousDistribution {
     return interval(0, S.Infinity);
   }
   /**
-   * The probability density at the supplied value.
+   * Evaluates the probability density at the supplied outcome.
    *
    * @param xIn - Outcome at which to evaluate the density.
    * @returns The density evaluated at the supplied outcome.
@@ -751,7 +751,7 @@ export class ChiDistribution extends SingleContinuousDistribution {
 }
 
 /**
- * Chi distribution (SymPy Chi(name, k)); exported as `ChiRV` (`Chi` is the hyperbolic cosine integral).
+ * Constructs a random variable with the chi distribution with the given degrees of freedom.
  *
  * @param name - Name of the symbol.
  * @param k - Degrees of freedom.
@@ -796,7 +796,7 @@ export class ChiNoncentralDistribution extends SingleContinuousDistribution {
     valueCheck(Gt(this.arg(1), 0), 'Shift parameter Lambda must be positive.');
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
    * @returns The interval `[0, oo)`.
    * @see SymPy `sympy.stats.crv_types.ChiNoncentralDistribution.set`
@@ -805,7 +805,7 @@ export class ChiNoncentralDistribution extends SingleContinuousDistribution {
     return interval(0, S.Infinity);
   }
   /**
-   * The probability density at the supplied value.
+   * Evaluates the probability density at the supplied outcome.
    *
    * @param xIn - Outcome at which to evaluate the density.
    * @returns The density evaluated at the supplied outcome.
@@ -825,7 +825,7 @@ export class ChiNoncentralDistribution extends SingleContinuousDistribution {
 }
 
 /**
- * Noncentral Chi distribution.
+ * Constructs a random variable with the noncentral Chi distribution.
  *
  * @param name - Name of the symbol.
  * @param k - Degrees of freedom.
@@ -870,7 +870,7 @@ export class ChiSquaredDistribution extends SingleContinuousDistribution {
     checkDegrees(this.arg(0));
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
    * @returns The interval `[0, oo)`.
    * @see SymPy `sympy.stats.crv_types.ChiSquaredDistribution.set`
@@ -879,7 +879,7 @@ export class ChiSquaredDistribution extends SingleContinuousDistribution {
     return interval(0, S.Infinity);
   }
   /**
-   * The probability density at the supplied value.
+   * Evaluates the probability density at the supplied outcome.
    *
    * @param xIn - Outcome at which to evaluate the density.
    * @returns The density evaluated at the supplied outcome.
@@ -903,7 +903,7 @@ export class ChiSquaredDistribution extends SingleContinuousDistribution {
 }
 
 /**
- * Chi-squared distribution.
+ * Constructs a random variable with the Chi-squared distribution.
  *
  * @param name - Name of the symbol.
  * @param k - Degrees of freedom.
@@ -938,7 +938,7 @@ export class DagumDistribution extends SingleContinuousDistribution {
     super('DagumDistribution', args);
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
    * @returns The interval `[0, oo)`.
    * @see SymPy `sympy.stats.crv_types.DagumDistribution.set`
@@ -958,7 +958,7 @@ export class DagumDistribution extends SingleContinuousDistribution {
     valueCheck(Gt(this.arg(2), 0), 'Scale parameter b must be positive.');
   }
   /**
-   * The probability density at the supplied value.
+   * Evaluates the probability density at the supplied outcome.
    *
    * @param xIn - Outcome at which to evaluate the density.
    * @returns The density evaluated at the supplied outcome.
@@ -976,7 +976,7 @@ export class DagumDistribution extends SingleContinuousDistribution {
 }
 
 /**
- * Dagum distribution.
+ * Constructs a random variable with the Dagum distribution.
  *
  * @param name - Name of the symbol.
  * @param p - Positive first shape parameter.
@@ -1013,7 +1013,7 @@ export class DavisDistribution extends SingleContinuousDistribution {
     super('DavisDistribution', args);
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
    * @returns The interval `[0, oo)`.
    * @see SymPy `sympy.stats.crv_types.DavisDistribution.set`
@@ -1033,7 +1033,7 @@ export class DavisDistribution extends SingleContinuousDistribution {
     valueCheck(Gt(this.arg(2), 0), 'Location parameter mu must be positive.');
   }
   /**
-   * The probability density at the supplied value.
+   * Evaluates the probability density at the supplied outcome.
    *
    * @param xIn - Outcome at which to evaluate the density.
    * @returns The density evaluated at the supplied outcome.
@@ -1072,7 +1072,7 @@ export function Davis(name: string | Sym, b: ExprLike, n: ExprLike, mu: ExprLike
 }
 
 /**
- * Erlang distribution: a Gamma distribution with shape k and scale 1/l.
+ * Constructs a random variable with the Erlang distribution with shape k and scale 1/l.
  *
  * @param name - Name of the symbol.
  * @param k - Positive integer shape.
@@ -1119,7 +1119,7 @@ export class ExGaussianDistribution extends SingleContinuousDistribution {
     valueCheck(Gt(this.arg(2), 0), 'Rate of ExGaussian must be positive.');
   }
   /**
-   * The probability density at the supplied value.
+   * Evaluates the probability density at the supplied outcome.
    *
    * @param xIn - Outcome at which to evaluate the density.
    * @returns The density evaluated at the supplied outcome.
@@ -1152,7 +1152,7 @@ export class ExGaussianDistribution extends SingleContinuousDistribution {
 }
 
 /**
- * Exponentially modified Gaussian distribution.
+ * Constructs a random variable with the Exponentially modified Gaussian distribution.
  *
  * @param name - Name of the symbol.
  * @param mean - Mean of the normal component.
@@ -1189,7 +1189,7 @@ export class ExponentialDistribution extends SingleContinuousDistribution {
     super('ExponentialDistribution', args);
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
    * @returns The interval `[0, oo)`.
    * @see SymPy `sympy.stats.crv_types.ExponentialDistribution.set`
@@ -1207,7 +1207,7 @@ export class ExponentialDistribution extends SingleContinuousDistribution {
     valueCheck(Gt(this.arg(0), 0), 'Rate must be positive.');
   }
   /**
-   * The probability density at the supplied value.
+   * Evaluates the probability density at the supplied outcome.
    *
    * @param xIn - Outcome at which to evaluate the density.
    * @returns The density evaluated at the supplied outcome.
@@ -1234,7 +1234,7 @@ export class ExponentialDistribution extends SingleContinuousDistribution {
 }
 
 /**
- * Exponential distribution.
+ * Constructs a random variable with the exponential distribution.
  *
  * @param name - Name of the symbol.
  * @param rate - Positive rate.
@@ -1280,7 +1280,7 @@ export class ExponentialPowerDistribution extends SingleContinuousDistribution {
     valueCheck(Gt(this.arg(2), 0), 'Shape parameter beta must be positive.');
   }
   /**
-   * The probability density at the supplied value.
+   * Evaluates the probability density at the supplied outcome.
    *
    * @param xIn - Outcome at which to evaluate the density.
    * @returns The density evaluated at the supplied outcome.
@@ -1302,7 +1302,7 @@ export class ExponentialPowerDistribution extends SingleContinuousDistribution {
 }
 
 /**
- * Exponential power distribution.
+ * Constructs a random variable with the exponential power distribution.
  *
  * @param name - Name of the symbol.
  * @param mu - Location parameter.
@@ -1339,7 +1339,7 @@ export class FDistributionDistribution extends SingleContinuousDistribution {
     super('FDistributionDistribution', args);
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
    * @returns The interval `[0, oo)`.
    * @see SymPy `sympy.stats.crv_types.FDistributionDistribution.set`
@@ -1359,7 +1359,7 @@ export class FDistributionDistribution extends SingleContinuousDistribution {
     valueCheck([Gt(d2, 0), isIntegerValued(d2)], 'Degrees of freedom d2 must be positive integer.');
   }
   /**
-   * The probability density at the supplied value.
+   * Evaluates the probability density at the supplied outcome.
    *
    * @param xIn - Outcome at which to evaluate the density.
    * @returns The density evaluated at the supplied outcome.
@@ -1422,7 +1422,7 @@ export class FisherZDistribution extends SingleContinuousDistribution {
     valueCheck(Gt(this.arg(1), 0), 'Degree of freedom d2 must be positive.');
   }
   /**
-   * The probability density at the supplied value.
+   * Evaluates the probability density at the supplied outcome.
    *
    * @param xIn - Outcome at which to evaluate the density.
    * @returns The density evaluated at the supplied outcome.
@@ -1439,7 +1439,7 @@ export class FisherZDistribution extends SingleContinuousDistribution {
 }
 
 /**
- * Fisher's z distribution.
+ * Constructs a random variable with the Fisher's z distribution.
  *
  * @param name - Name of the symbol.
  * @param d1 - Degrees of freedom of the numerator.
@@ -1475,7 +1475,7 @@ export class FrechetDistribution extends SingleContinuousDistribution {
     super('FrechetDistribution', [at(args, 0), args[1] ?? S.One, args[2] ?? S.Zero]);
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
    * @returns The interval `[0, oo)`.
    * @see SymPy `sympy.stats.crv_types.FrechetDistribution.set`
@@ -1494,7 +1494,7 @@ export class FrechetDistribution extends SingleContinuousDistribution {
     valueCheck(Gt(this.arg(1), 0), 'Scale parameter s must be positive.');
   }
   /**
-   * The probability density at the supplied value.
+   * Evaluates the probability density at the supplied outcome.
    *
    * @param xIn - Outcome at which to evaluate the density.
    * @returns The density evaluated at the supplied outcome.
@@ -1512,7 +1512,7 @@ export class FrechetDistribution extends SingleContinuousDistribution {
 }
 
 /**
- * Frechet distribution.
+ * Constructs a random variable with the Frechet distribution.
  *
  * @param name - Name of the symbol.
  * @param a - Positive shape parameter.
@@ -1550,7 +1550,7 @@ export class GammaDistribution extends SingleContinuousDistribution {
     super('GammaDistribution', args);
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
    * @returns The interval `[0, oo)`.
    * @see SymPy `sympy.stats.crv_types.GammaDistribution.set`
@@ -1569,7 +1569,7 @@ export class GammaDistribution extends SingleContinuousDistribution {
     valueCheck(Gt(this.arg(1), 0), 'Theta must be positive');
   }
   /**
-   * The probability density at the supplied value.
+   * Evaluates the probability density at the supplied outcome.
    *
    * @param xIn - Outcome at which to evaluate the density.
    * @returns The density evaluated at the supplied outcome.
@@ -1593,7 +1593,7 @@ export class GammaDistribution extends SingleContinuousDistribution {
 }
 
 /**
- * Gamma distribution with shape k and scale theta.
+ * Constructs a random variable with the Gamma distribution with shape k and scale theta.
  *
  * @param name - Name of the symbol.
  * @param k - Positive shape parameter.
@@ -1630,7 +1630,7 @@ export class GammaInverseDistribution extends SingleContinuousDistribution {
     super('GammaInverseDistribution', args);
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
    * @returns The interval `[0, oo)`.
    * @see SymPy `sympy.stats.crv_types.GammaInverseDistribution.set`
@@ -1649,7 +1649,7 @@ export class GammaInverseDistribution extends SingleContinuousDistribution {
     valueCheck(Gt(this.arg(1), 0), 'beta must be positive');
   }
   /**
-   * The probability density at the supplied value.
+   * Evaluates the probability density at the supplied outcome.
    *
    * @param xIn - Outcome at which to evaluate the density.
    * @returns The density evaluated at the supplied outcome.
@@ -1674,7 +1674,7 @@ export class GammaInverseDistribution extends SingleContinuousDistribution {
 }
 
 /**
- * Inverse gamma distribution.
+ * Constructs a random variable with the inverse gamma distribution.
  *
  * @param name - Name of the symbol.
  * @param a - Positive shape parameter.
@@ -1724,7 +1724,7 @@ export class GumbelDistribution extends SingleContinuousDistribution {
     return piecewise([minForm, minimum], [maxForm, !(minimum instanceof BoolAtom && minimum.value)]);
   }
   /**
-   * The probability density at the supplied value.
+   * Evaluates the probability density at the supplied outcome.
    *
    * @param xIn - Outcome at which to evaluate the density.
    * @returns The density evaluated at the supplied outcome.
@@ -1758,7 +1758,8 @@ export class GumbelDistribution extends SingleContinuousDistribution {
 }
 
 /**
- * Gumbel distribution of the maximum, or of the minimum when `minimum` is true.
+ * Constructs a random variable with the Gumbel distribution of the maximum, or of the minimum when
+ * `minimum` is true.
  *
  * @param name - Name of the symbol.
  * @param beta - Positive scale parameter.
@@ -1795,7 +1796,7 @@ export class GompertzDistribution extends SingleContinuousDistribution {
     super('GompertzDistribution', args);
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
    * @returns The interval `[0, oo)`.
    * @see SymPy `sympy.stats.crv_types.GompertzDistribution.set`
@@ -1814,7 +1815,7 @@ export class GompertzDistribution extends SingleContinuousDistribution {
     valueCheck(Gt(this.arg(1), 0), 'eta must be positive');
   }
   /**
-   * The probability density at the supplied value.
+   * Evaluates the probability density at the supplied outcome.
    *
    * @param xIn - Outcome at which to evaluate the density.
    * @returns The density evaluated at the supplied outcome.
@@ -1836,7 +1837,7 @@ export class GompertzDistribution extends SingleContinuousDistribution {
 }
 
 /**
- * Gompertz distribution.
+ * Constructs a random variable with the Gompertz distribution.
  *
  * @param name - Name of the symbol.
  * @param b - Positive scale parameter.
@@ -1872,7 +1873,7 @@ export class KumaraswamyDistribution extends SingleContinuousDistribution {
     super('KumaraswamyDistribution', args);
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
    * @returns The interval `[0, oo)`.
    * @see SymPy `sympy.stats.crv_types.KumaraswamyDistribution.set`
@@ -1891,7 +1892,7 @@ export class KumaraswamyDistribution extends SingleContinuousDistribution {
     valueCheck(Gt(this.arg(1), 0), 'b must be positive');
   }
   /**
-   * The probability density at the supplied value.
+   * Evaluates the probability density at the supplied outcome.
    *
    * @param xIn - Outcome at which to evaluate the density.
    * @returns The density evaluated at the supplied outcome.
@@ -1909,7 +1910,7 @@ export class KumaraswamyDistribution extends SingleContinuousDistribution {
 }
 
 /**
- * Kumaraswamy distribution.
+ * Constructs a random variable with the Kumaraswamy distribution.
  *
  * @param name - Name of the symbol.
  * @param a - Positive first shape parameter.
@@ -1955,7 +1956,7 @@ export class LaplaceDistribution extends SingleContinuousDistribution {
     valueCheck(isReal(this.arg(0)), 'Location parameter mu should be real');
   }
   /**
-   * The probability density at the supplied value.
+   * Evaluates the probability density at the supplied outcome.
    *
    * @param xIn - Outcome at which to evaluate the density.
    * @returns The density evaluated at the supplied outcome.
@@ -1979,7 +1980,7 @@ export class LaplaceDistribution extends SingleContinuousDistribution {
 }
 
 /**
- * Laplace distribution.
+ * Constructs a random variable with the Laplace distribution.
  *
  * @param name - Name of the symbol.
  * @param mu - Location or location vector.
@@ -2018,7 +2019,7 @@ export class LevyDistribution extends SingleContinuousDistribution {
     super('LevyDistribution', args);
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
    * @returns The interval `[mu, oo)`.
    * @see SymPy `sympy.stats.crv_types.LevyDistribution.set`
@@ -2037,7 +2038,7 @@ export class LevyDistribution extends SingleContinuousDistribution {
     valueCheck(isReal(this.arg(0)), 'mu (location parameter) must be real');
   }
   /**
-   * The probability density at the supplied value.
+   * Evaluates the probability density at the supplied outcome.
    *
    * @param xIn - Outcome at which to evaluate the density.
    * @returns The density evaluated at the supplied outcome.
@@ -2062,7 +2063,7 @@ export class LevyDistribution extends SingleContinuousDistribution {
 }
 
 /**
- * Levy distribution.
+ * Constructs a random variable with the Levy distribution.
  *
  * @param name - Name of the symbol.
  * @param mu - Real location parameter.
@@ -2099,9 +2100,9 @@ export class LogCauchyDistribution extends SingleContinuousDistribution {
     super('LogCauchyDistribution', args);
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
-   * @returns The support of the distribution.
+   * @returns The distribution's support.
    * @see SymPy `sympy.stats.crv_types.LogCauchyDistribution.set`
    */
   override get set(): SetExpr {
@@ -2118,7 +2119,7 @@ export class LogCauchyDistribution extends SingleContinuousDistribution {
     valueCheck(isReal(this.arg(0)) !== false, 'Location parameter must be real.');
   }
   /**
-   * The probability density at the supplied value.
+   * Evaluates the probability density at the supplied outcome.
    *
    * @param xIn - Outcome at which to evaluate the density.
    * @returns The density evaluated at the supplied outcome.
@@ -2142,7 +2143,7 @@ export class LogCauchyDistribution extends SingleContinuousDistribution {
 }
 
 /**
- * Log-Cauchy distribution.
+ * Constructs a random variable with the Log-Cauchy distribution.
  *
  * @param name - Name of the symbol.
  * @param mu - Location of the underlying Cauchy variable.
@@ -2186,7 +2187,7 @@ export class LogisticDistribution extends SingleContinuousDistribution {
     valueCheck(Gt(this.arg(1), 0), 'Scale parameter s must be positive.');
   }
   /**
-   * The probability density at the supplied value.
+   * Evaluates the probability density at the supplied outcome.
    *
    * @param xIn - Outcome at which to evaluate the density.
    * @returns The density evaluated at the supplied outcome.
@@ -2216,7 +2217,7 @@ export class LogisticDistribution extends SingleContinuousDistribution {
 }
 
 /**
- * Logistic distribution.
+ * Constructs a random variable with the Logistic distribution.
  *
  * @param name - Name of the symbol.
  * @param mu - Location parameter.
@@ -2253,7 +2254,7 @@ export class LogLogisticDistribution extends SingleContinuousDistribution {
     super('LogLogisticDistribution', args);
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
    * @returns The interval `[0, oo)`.
    * @see SymPy `sympy.stats.crv_types.LogLogisticDistribution.set`
@@ -2272,7 +2273,7 @@ export class LogLogisticDistribution extends SingleContinuousDistribution {
     valueCheck(Gt(this.arg(1), 0), 'Shape parameter Beta must be positive.');
   }
   /**
-   * The probability density at the supplied value.
+   * Evaluates the probability density at the supplied outcome.
    *
    * @param xIn - Outcome at which to evaluate the density.
    * @returns The density evaluated at the supplied outcome.
@@ -2317,7 +2318,7 @@ export class LogLogisticDistribution extends SingleContinuousDistribution {
 }
 
 /**
- * Log-logistic distribution.
+ * Constructs a random variable with the Log-logistic distribution.
  *
  * @param name - Name of the symbol.
  * @param alpha - Positive scale parameter.
@@ -2353,9 +2354,9 @@ export class LogitNormalDistribution extends SingleContinuousDistribution {
     super('LogitNormalDistribution', args);
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
-   * @returns The support of the distribution.
+   * @returns The distribution's support.
    * @see SymPy `sympy.stats.crv_types.LogitNormalDistribution.set`
    */
   override get set(): SetExpr {
@@ -2375,7 +2376,7 @@ export class LogitNormalDistribution extends SingleContinuousDistribution {
     valueCheck(isReal(mu) !== false, 'Location parameter must be real');
   }
   /**
-   * The probability density at the supplied value.
+   * Evaluates the probability density at the supplied outcome.
    *
    * @param xIn - Outcome at which to evaluate the density.
    * @returns The density evaluated at the supplied outcome.
@@ -2394,7 +2395,7 @@ export class LogitNormalDistribution extends SingleContinuousDistribution {
 }
 
 /**
- * Logit-normal distribution.
+ * Constructs a random variable with the Logit-normal distribution.
  *
  * @param name - Name of the symbol.
  * @param mu - Mean on the logit scale.
@@ -2431,7 +2432,7 @@ export class LogNormalDistribution extends SingleContinuousDistribution {
     super('LogNormalDistribution', args);
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
    * @returns The interval `[0, oo)`.
    * @see SymPy `sympy.stats.crv_types.LogNormalDistribution.set`
@@ -2449,7 +2450,7 @@ export class LogNormalDistribution extends SingleContinuousDistribution {
     valueCheck(Gt(this.arg(1), 0), 'Parameter std must be positive.');
   }
   /**
-   * The probability density at the supplied value.
+   * Evaluates the probability density at the supplied outcome.
    *
    * @param xIn - Outcome at which to evaluate the density.
    * @returns The density evaluated at the supplied outcome.
@@ -2470,7 +2471,7 @@ export class LogNormalDistribution extends SingleContinuousDistribution {
 }
 
 /**
- * Log-normal distribution.
+ * Constructs a random variable with the Log-normal distribution.
  *
  * @param name - Name of the symbol.
  * @param mean - Mean of the logarithm.
@@ -2507,7 +2508,7 @@ export class LomaxDistribution extends SingleContinuousDistribution {
     super('LomaxDistribution', args);
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
    * @returns The interval `[0, oo)`.
    * @see SymPy `sympy.stats.crv_types.LomaxDistribution.set`
@@ -2529,7 +2530,7 @@ export class LomaxDistribution extends SingleContinuousDistribution {
     valueCheck(isPositive(lamda), 'Scale parameter should be positive.');
   }
   /**
-   * The probability density at the supplied value.
+   * Evaluates the probability density at the supplied outcome.
    *
    * @param xIn - Outcome at which to evaluate the density.
    * @returns The density evaluated at the supplied outcome.
@@ -2543,7 +2544,7 @@ export class LomaxDistribution extends SingleContinuousDistribution {
 }
 
 /**
- * Lomax distribution.
+ * Constructs a random variable with the Lomax distribution.
  *
  * @param name - Name of the symbol.
  * @param alpha - Positive shape parameter.
@@ -2579,7 +2580,7 @@ export class MaxwellDistribution extends SingleContinuousDistribution {
     super('MaxwellDistribution', args);
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
    * @returns The interval `[0, oo)`.
    * @see SymPy `sympy.stats.crv_types.MaxwellDistribution.set`
@@ -2597,7 +2598,7 @@ export class MaxwellDistribution extends SingleContinuousDistribution {
     valueCheck(Gt(this.arg(0), 0), 'Parameter a must be positive.');
   }
   /**
-   * The probability density at the supplied value.
+   * Evaluates the probability density at the supplied outcome.
    *
    * @param xIn - Outcome at which to evaluate the density.
    * @returns The density evaluated at the supplied outcome.
@@ -2615,7 +2616,7 @@ export class MaxwellDistribution extends SingleContinuousDistribution {
 }
 
 /**
- * Maxwell distribution.
+ * Constructs a random variable with the Maxwell distribution.
  *
  * @param name - Name of the symbol.
  * @param a - Positive scale parameter.
@@ -2663,7 +2664,7 @@ export class MoyalDistribution extends SingleContinuousDistribution {
     valueCheck(r === true ? Gt(sigma, 0) : r, 'Scale parameter must be real        and positive.');
   }
   /**
-   * The probability density at the supplied value.
+   * Evaluates the probability density at the supplied outcome.
    *
    * @param xIn - Outcome at which to evaluate the density.
    * @returns The density evaluated at the supplied outcome.
@@ -2692,7 +2693,7 @@ export class MoyalDistribution extends SingleContinuousDistribution {
 }
 
 /**
- * Moyal distribution.
+ * Constructs a random variable with the Moyal distribution.
  *
  * @param name - Name of the symbol.
  * @param mu - Real location parameter.
@@ -2729,7 +2730,7 @@ export class NakagamiDistribution extends SingleContinuousDistribution {
     super('NakagamiDistribution', args);
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
    * @returns The interval `[0, oo)`.
    * @see SymPy `sympy.stats.crv_types.NakagamiDistribution.set`
@@ -2748,7 +2749,7 @@ export class NakagamiDistribution extends SingleContinuousDistribution {
     valueCheck(Gt(this.arg(1), 0), 'Spread parameter omega must be positive.');
   }
   /**
-   * The probability density at the supplied value.
+   * Evaluates the probability density at the supplied outcome.
    *
    * @param xIn - Outcome at which to evaluate the density.
    * @returns The density evaluated at the supplied outcome.
@@ -2766,7 +2767,7 @@ export class NakagamiDistribution extends SingleContinuousDistribution {
 }
 
 /**
- * Nakagami distribution.
+ * Constructs a random variable with the Nakagami distribution.
  *
  * @param name - Name of the symbol.
  * @param mu - Shape parameter of at least one half.
@@ -2802,18 +2803,18 @@ export class NormalDistribution extends SingleContinuousDistribution {
     super('NormalDistribution', args);
   }
   /**
-   * Mean or mean vector.
+   * Specifies the center of the normal distribution.
    *
-   * @returns Mean or mean vector.
+   * @returns The mean or mean vector.
    * @see SymPy `sympy.stats.crv_types.NormalDistribution.mean`
    */
   get mean(): Expr {
     return this.arg(0);
   }
   /**
-   * Positive standard deviation or covariance matrix for a random vector.
+   * Specifies the dispersion of the normal distribution.
    *
-   * @returns Positive standard deviation or covariance matrix for a random vector.
+   * @returns The standard deviation or covariance matrix.
    * @see SymPy `sympy.stats.crv_types.NormalDistribution.std`
    */
   get std(): Expr {
@@ -2829,7 +2830,7 @@ export class NormalDistribution extends SingleContinuousDistribution {
     valueCheck(Gt(this.std, 0), 'Standard deviation must be positive');
   }
   /**
-   * The probability density at the supplied value.
+   * Evaluates the probability density at the supplied outcome.
    *
    * @param xIn - Outcome at which to evaluate the density.
    * @returns The density evaluated at the supplied outcome.
@@ -2854,7 +2855,7 @@ export class NormalDistribution extends SingleContinuousDistribution {
 }
 
 /**
- * Normal (Gaussian) distribution.
+ * Constructs a random variable with the normal (Gaussian) distribution.
  *
  * @param name - Name of the symbol.
  * @param mean - Mean or mean vector.
@@ -2896,7 +2897,7 @@ export class GaussianInverseDistribution extends SingleContinuousDistribution {
     super('GaussianInverseDistribution', args);
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
    * @returns The interval `[0, oo)`.
    * @see SymPy `sympy.stats.crv_types.GaussianInverseDistribution.set`
@@ -2915,7 +2916,7 @@ export class GaussianInverseDistribution extends SingleContinuousDistribution {
     valueCheck(Gt(this.arg(0), 0), 'Mean must be positive');
   }
   /**
-   * The probability density at the supplied value.
+   * Evaluates the probability density at the supplied outcome.
    *
    * @param xIn - Outcome at which to evaluate the density.
    * @returns The density evaluated at the supplied outcome.
@@ -2944,7 +2945,7 @@ export class GaussianInverseDistribution extends SingleContinuousDistribution {
 }
 
 /**
- * Inverse Gaussian distribution.
+ * Constructs a random variable with the inverse Gaussian distribution.
  *
  * @param name - Name of the symbol.
  * @param mean - Positive mean.
@@ -3000,7 +3001,7 @@ export class ParetoDistribution extends SingleContinuousDistribution {
     super('ParetoDistribution', args);
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
    * @returns The interval `[xm, oo)`.
    * @see SymPy `sympy.stats.crv_types.ParetoDistribution.set`
@@ -3019,7 +3020,7 @@ export class ParetoDistribution extends SingleContinuousDistribution {
     valueCheck(Gt(this.arg(1), 0), 'Alpha must be positive');
   }
   /**
-   * The probability density at the supplied value.
+   * Evaluates the probability density at the supplied outcome.
    *
    * @param xIn - Outcome at which to evaluate the density.
    * @returns The density evaluated at the supplied outcome.
@@ -3045,7 +3046,7 @@ export class ParetoDistribution extends SingleContinuousDistribution {
 }
 
 /**
- * Pareto distribution.
+ * Constructs a random variable with the Pareto distribution.
  *
  * @param name - Name of the symbol.
  * @param xm - Positive minimum value.
@@ -3081,7 +3082,7 @@ export class PowerFunctionDistribution extends SingleContinuousDistribution {
     super('PowerFunctionDistribution', args);
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
    * @returns The interval `[a, b]`.
    * @see SymPy `sympy.stats.crv_types.PowerFunctionDistribution.set`
@@ -3103,7 +3104,7 @@ export class PowerFunctionDistribution extends SingleContinuousDistribution {
     valueCheck(isPositive(alpha), 'Continuous Shape parameter should be positive.');
   }
   /**
-   * The probability density at the supplied value.
+   * Evaluates the probability density at the supplied outcome.
    *
    * @param xIn - Outcome at which to evaluate the density.
    * @returns The density evaluated at the supplied outcome.
@@ -3117,7 +3118,7 @@ export class PowerFunctionDistribution extends SingleContinuousDistribution {
 }
 
 /**
- * Power function distribution.
+ * Constructs a random variable with the power function distribution.
  *
  * @param name - Name of the symbol.
  * @param alpha - Positive shape parameter.
@@ -3154,7 +3155,7 @@ export class QuadraticUDistribution extends SingleContinuousDistribution {
     super('QuadraticUDistribution', args);
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
    * @returns The interval `[a, b]`.
    * @see SymPy `sympy.stats.crv_types.QuadraticUDistribution.set`
@@ -3173,7 +3174,7 @@ export class QuadraticUDistribution extends SingleContinuousDistribution {
     valueCheck(Gt(b, a), `Parameter b must be in range (${a.toString()}, oo).`);
   }
   /**
-   * The probability density at the supplied value.
+   * Evaluates the probability density at the supplied outcome.
    *
    * @param xIn - Outcome at which to evaluate the density.
    * @returns The density evaluated at the supplied outcome.
@@ -3207,7 +3208,7 @@ export class QuadraticUDistribution extends SingleContinuousDistribution {
 }
 
 /**
- * U-quadratic distribution on [a, b].
+ * Constructs a random variable with the U-quadratic distribution on [a, b].
  *
  * @param name - Name of the symbol.
  * @param a - Lower endpoint.
@@ -3245,7 +3246,7 @@ export class RaisedCosineDistribution extends SingleContinuousDistribution {
     super('RaisedCosineDistribution', args);
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
    * @returns The interval `[mu - s, mu + s]`.
    * @see SymPy `sympy.stats.crv_types.RaisedCosineDistribution.set`
@@ -3264,7 +3265,7 @@ export class RaisedCosineDistribution extends SingleContinuousDistribution {
     valueCheck(Gt(this.arg(1), 0), 's must be positive');
   }
   /**
-   * The probability density at the supplied value.
+   * Evaluates the probability density at the supplied outcome.
    *
    * @param xIn - Outcome at which to evaluate the density.
    * @returns The density evaluated at the supplied outcome.
@@ -3290,7 +3291,7 @@ export class RaisedCosineDistribution extends SingleContinuousDistribution {
 }
 
 /**
- * Raised cosine distribution.
+ * Constructs a random variable with the raised cosine distribution.
  *
  * @param name - Name of the symbol.
  * @param mu - Center of the support.
@@ -3327,7 +3328,7 @@ export class RayleighDistribution extends SingleContinuousDistribution {
     super('RayleighDistribution', args);
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
    * @returns The interval `[0, oo)`.
    * @see SymPy `sympy.stats.crv_types.RayleighDistribution.set`
@@ -3345,7 +3346,7 @@ export class RayleighDistribution extends SingleContinuousDistribution {
     valueCheck(Gt(this.arg(0), 0), 'Scale parameter sigma must be positive.');
   }
   /**
-   * The probability density at the supplied value.
+   * Evaluates the probability density at the supplied outcome.
    *
    * @param xIn - Outcome at which to evaluate the density.
    * @returns The density evaluated at the supplied outcome.
@@ -3371,7 +3372,7 @@ export class RayleighDistribution extends SingleContinuousDistribution {
 }
 
 /**
- * Rayleigh distribution.
+ * Constructs a random variable with the Rayleigh distribution.
  *
  * @param name - Name of the symbol.
  * @param sigma - Positive scale parameter.
@@ -3406,7 +3407,7 @@ export class ReciprocalDistribution extends SingleContinuousDistribution {
     super('ReciprocalDistribution', args);
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
    * @returns The interval `[a, b]`.
    * @see SymPy `sympy.stats.crv_types.ReciprocalDistribution.set`
@@ -3426,7 +3427,7 @@ export class ReciprocalDistribution extends SingleContinuousDistribution {
     valueCheck(Lt(a, b), `Parameter b must be in range (${a.toString()}, +oo]. b = ${b.toString()}`);
   }
   /**
-   * The probability density at the supplied value.
+   * Evaluates the probability density at the supplied outcome.
    *
    * @param xIn - Outcome at which to evaluate the density.
    * @returns The density evaluated at the supplied outcome.
@@ -3440,7 +3441,7 @@ export class ReciprocalDistribution extends SingleContinuousDistribution {
 }
 
 /**
- * Reciprocal distribution.
+ * Constructs a random variable with the reciprocal distribution.
  *
  * @param name - Name of the symbol.
  * @param a - Positive lower endpoint.
@@ -3476,7 +3477,7 @@ export class ShiftedGompertzDistribution extends SingleContinuousDistribution {
     super('ShiftedGompertzDistribution', args);
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
    * @returns The interval `[0, oo)`.
    * @see SymPy `sympy.stats.crv_types.ShiftedGompertzDistribution.set`
@@ -3495,7 +3496,7 @@ export class ShiftedGompertzDistribution extends SingleContinuousDistribution {
     valueCheck(Gt(this.arg(1), 0), 'eta must be positive');
   }
   /**
-   * The probability density at the supplied value.
+   * Evaluates the probability density at the supplied outcome.
    *
    * @param xIn - Outcome at which to evaluate the density.
    * @returns The density evaluated at the supplied outcome.
@@ -3510,7 +3511,7 @@ export class ShiftedGompertzDistribution extends SingleContinuousDistribution {
 }
 
 /**
- * Shifted Gompertz distribution.
+ * Constructs a random variable with the shifted Gompertz distribution.
  *
  * @param name - Name of the symbol.
  * @param b - Positive scale parameter.
@@ -3555,7 +3556,7 @@ export class StudentTDistribution extends SingleContinuousDistribution {
     valueCheck(Gt(this.arg(0), 0), 'Degrees of freedom nu must be positive.');
   }
   /**
-   * The probability density at the supplied value.
+   * Evaluates the probability density at the supplied outcome.
    *
    * @param xIn - Outcome at which to evaluate the density.
    * @returns The density evaluated at the supplied outcome.
@@ -3576,7 +3577,7 @@ export class StudentTDistribution extends SingleContinuousDistribution {
 }
 
 /**
- * Student's t distribution.
+ * Constructs a random variable with the Student's t distribution.
  *
  * @param name - Name of the symbol.
  * @param nu - Positive degrees of freedom.
@@ -3611,7 +3612,7 @@ export class TrapezoidalDistribution extends SingleContinuousDistribution {
     super('TrapezoidalDistribution', args);
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
    * @returns The interval `[a, d]`.
    * @see SymPy `sympy.stats.crv_types.TrapezoidalDistribution.set`
@@ -3634,7 +3635,7 @@ export class TrapezoidalDistribution extends SingleContinuousDistribution {
     valueCheck(Ge(d, c), `Upper bound parameter d > ${s(c)}. d = ${s(d)}`);
   }
   /**
-   * The probability density at the supplied value.
+   * Evaluates the probability density at the supplied outcome.
    *
    * @param xIn - Outcome at which to evaluate the density.
    * @returns The density evaluated at the supplied outcome.
@@ -3654,7 +3655,7 @@ export class TrapezoidalDistribution extends SingleContinuousDistribution {
 }
 
 /**
- * Trapezoidal distribution.
+ * Constructs a random variable with the trapezoidal distribution.
  *
  * @param name - Name of the symbol.
  * @param a - Lower endpoint.
@@ -3691,7 +3692,7 @@ export class TriangularDistribution extends SingleContinuousDistribution {
     super('TriangularDistribution', args);
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
    * @returns The interval `[a, b]`.
    * @see SymPy `sympy.stats.crv_types.TriangularDistribution.set`
@@ -3711,7 +3712,7 @@ export class TriangularDistribution extends SingleContinuousDistribution {
     valueCheck([Le(a, c), Le(c, b)], `Parameter c must be in range [${a.toString()}, ${b.toString()}]. c = ${c.toString()}`);
   }
   /**
-   * The probability density at the supplied value.
+   * Evaluates the probability density at the supplied outcome.
    *
    * @param xIn - Outcome at which to evaluate the density.
    * @returns The density evaluated at the supplied outcome.
@@ -3742,7 +3743,7 @@ export class TriangularDistribution extends SingleContinuousDistribution {
 }
 
 /**
- * Triangular distribution.
+ * Constructs a random variable with the triangular distribution.
  *
  * @param name - Name of the symbol.
  * @param a - Lower endpoint.
@@ -3778,25 +3779,25 @@ export class UniformDistribution extends SingleContinuousDistribution {
     super('UniformDistribution', args);
   }
   /**
-   * Lower endpoint.
+   * Gives the lower endpoint of the distribution's interval.
    *
-   * @returns Lower endpoint.
+   * @returns The lower bound.
    * @see SymPy `sympy.stats.crv_types.UniformDistribution.left`
    */
   get left(): Expr {
     return this.arg(0);
   }
   /**
-   * Upper endpoint.
+   * Gives the upper endpoint of the distribution's interval.
    *
-   * @returns Upper endpoint.
+   * @returns The upper bound.
    * @see SymPy `sympy.stats.crv_types.UniformDistribution.right`
    */
   get right(): Expr {
     return this.arg(1);
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
    * @returns The interval `[left, right]`.
    * @see SymPy `sympy.stats.crv_types.UniformDistribution.set`
@@ -3814,7 +3815,7 @@ export class UniformDistribution extends SingleContinuousDistribution {
     valueCheck(Lt(this.left, this.right), 'Lower limit should be less than Upper limit.');
   }
   /**
-   * The probability density at the supplied value.
+   * Evaluates the probability density at the supplied outcome.
    *
    * @param xIn - Outcome at which to evaluate the density.
    * @returns The density evaluated at the supplied outcome.
@@ -3838,12 +3839,12 @@ export class UniformDistribution extends SingleContinuousDistribution {
     return piecewise([div(sub(exp(mul(t, right)), exp(mul(t, left))), mul(t, sub(right, left))), Ne(t, 0)], [S.One, true]);
   }
   /**
-   * Evaluated, with Max(left, right) = right and Min(left, right) = left.
+   * Computes the uniform expectation using the ordering of the interval endpoints.
    *
    * @param expr - Expression to evaluate.
    * @param v - Symbol distributed according to this law.
    * @param opts - Evaluation controls for integrals, sums and compound distributions.
-   * @returns The expected value of the expression in this process.
+   * @returns The expected value.
    * @see SymPy `sympy.stats.crv_types.UniformDistribution.expectation`
    */
   override expectation(expr: Expr, v: Sym, opts: ComputeOptions = {}): Expr {
@@ -3856,7 +3857,7 @@ export class UniformDistribution extends SingleContinuousDistribution {
 }
 
 /**
- * Uniform distribution on [left, right].
+ * Constructs a random variable with the uniform distribution on [left, right].
  *
  * @param name - Name of the symbol.
  * @param left - Lower endpoint.
@@ -3893,7 +3894,7 @@ export class UniformSumDistribution extends SingleContinuousDistribution {
     super('UniformSumDistribution', args);
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
    * @returns The interval `[0, n]`.
    * @see SymPy `sympy.stats.crv_types.UniformSumDistribution.set`
@@ -3912,7 +3913,7 @@ export class UniformSumDistribution extends SingleContinuousDistribution {
     valueCheck([Gt(n, 0), isIntegerValued(n)], 'Parameter n must be positive integer.');
   }
   /**
-   * The probability density at the supplied value.
+   * Evaluates the probability density at the supplied outcome.
    *
    * @param xIn - Outcome at which to evaluate the density.
    * @returns The density evaluated at the supplied outcome.
@@ -3942,7 +3943,7 @@ export class UniformSumDistribution extends SingleContinuousDistribution {
 }
 
 /**
- * Uniform sum (Irwin-Hall) distribution.
+ * Constructs a random variable with the uniform sum (Irwin-Hall) distribution.
  *
  * @param name - Name of the symbol.
  * @param n - Number of independent standard uniform variables to sum.
@@ -3977,7 +3978,7 @@ export class VonMisesDistribution extends SingleContinuousDistribution {
     super('VonMisesDistribution', args);
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
    * @returns The interval `[0, 2*pi]`.
    * @see SymPy `sympy.stats.crv_types.VonMisesDistribution.set`
@@ -3995,7 +3996,7 @@ export class VonMisesDistribution extends SingleContinuousDistribution {
     valueCheck(Gt(this.arg(1), 0), 'k must be positive');
   }
   /**
-   * The probability density at the supplied value.
+   * Evaluates the probability density at the supplied outcome.
    *
    * @param xIn - Outcome at which to evaluate the density.
    * @returns The density evaluated at the supplied outcome.
@@ -4009,7 +4010,7 @@ export class VonMisesDistribution extends SingleContinuousDistribution {
 }
 
 /**
- * Von Mises distribution.
+ * Constructs a random variable with the Von Mises distribution.
  *
  * @param name - Name of the symbol.
  * @param mu - Mean direction in radians.
@@ -4045,7 +4046,7 @@ export class WeibullDistribution extends SingleContinuousDistribution {
     super('WeibullDistribution', args);
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
    * @returns The interval `[0, oo)`.
    * @see SymPy `sympy.stats.crv_types.WeibullDistribution.set`
@@ -4064,7 +4065,7 @@ export class WeibullDistribution extends SingleContinuousDistribution {
     valueCheck(Gt(this.arg(1), 0), 'Beta must be positive');
   }
   /**
-   * The probability density at the supplied value.
+   * Evaluates the probability density at the supplied outcome.
    *
    * @param xIn - Outcome at which to evaluate the density.
    * @returns The density evaluated at the supplied outcome.
@@ -4078,7 +4079,7 @@ export class WeibullDistribution extends SingleContinuousDistribution {
 }
 
 /**
- * Weibull distribution.
+ * Constructs a random variable with the Weibull distribution.
  *
  * @param name - Name of the symbol.
  * @param alpha - Positive scale parameter.
@@ -4114,7 +4115,7 @@ export class WignerSemicircleDistribution extends SingleContinuousDistribution {
     super('WignerSemicircleDistribution', args);
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
    * @returns The interval `[-R, R]`.
    * @see SymPy `sympy.stats.crv_types.WignerSemicircleDistribution.set`
@@ -4132,7 +4133,7 @@ export class WignerSemicircleDistribution extends SingleContinuousDistribution {
     valueCheck(Gt(this.arg(0), 0), 'Radius R must be positive.');
   }
   /**
-   * The probability density at the supplied value.
+   * Evaluates the probability density at the supplied outcome.
    *
    * @param xIn - Outcome at which to evaluate the density.
    * @returns The density evaluated at the supplied outcome.
@@ -4154,7 +4155,7 @@ export class WignerSemicircleDistribution extends SingleContinuousDistribution {
 }
 
 /**
- * Wigner semicircle distribution.
+ * Constructs a random variable with the Wigner semicircle distribution.
  *
  * @param name - Name of the symbol.
  * @param R - Positive radius of the support.

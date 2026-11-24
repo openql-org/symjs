@@ -41,9 +41,8 @@ function scalarSubstitution(e: Expr, system: CoordSysBase): [Expr, Expr][] {
 }
 
 /**
- * A vector, dyadic or scalar re-expressed in the coordinate system (a dyadic's second vectors in
- * system2). With `variables`, the base scalars of other systems are also expressed in those of
- * system.
+ * Resolves a vector, dyadic, or scalar in the specified coordinates, optionally transforming base
+ * scalars and choosing a second basis for a dyadic.
  *
  * @param exprIn - Expression to transform.
  * @param system - Coordinate system in which to express components.
@@ -100,12 +99,11 @@ const asVector = (e: Expr): Vector => cast(e, Vector, 'vector');
 const asSystem = (e: Expr): CoordSysBase => cast(e, CoordSysBase, 'CoordSys3D');
 
 /**
- * The directional derivative of a scalar or vector field along a vector, in the coordinate system
- * of the field.
+ * Differentiates a scalar or vector field along a direction in the field's coordinates.
  *
  * @param fieldIn - Scalar or vector field on the region.
  * @param directionVector - Vector specifying the differentiation direction.
- * @returns The directional derivative of a scalar or vector field along a vector, in the coordinate system of the field.
+ * @returns The directional derivative.
  * @see SymPy `sympy.vector.functions.directional_derivative`
  * @example
  * ```ts
@@ -133,10 +131,10 @@ export function directionalDerivative(fieldIn: ExprLike, directionVector: Expr):
 }
 
 /**
- * The Laplacian of a scalar or vector field in the base scalars of its coordinate system.
+ * Computes the Laplacian in the field's base coordinates.
  *
  * @param exprIn - Expression to transform.
- * @returns The Laplacian of a scalar or vector field in the base scalars of its coordinate system.
+ * @returns The scalar or vector Laplacian.
  * @see SymPy `sympy.vector.functions.laplacian`
  * @example
  * ```ts
@@ -153,7 +151,7 @@ export function laplacian(exprIn: ExprLike): Expr {
 }
 
 /**
- * The curl of the vector field vanishes.
+ * Tests whether the vector field has vanishing curl.
  *
  * @param field - Field to evaluate or differentiate.
  * @returns Whether the curl vanishes.
@@ -174,7 +172,7 @@ export function isConservative(field: Expr): boolean {
 }
 
 /**
- * The divergence of the vector field vanishes.
+ * Tests whether the vector field has vanishing divergence.
  *
  * @param field - Field to evaluate or differentiate.
  * @returns Whether the divergence vanishes.
@@ -195,11 +193,12 @@ export function isSolenoidal(field: Expr): boolean {
 }
 
 /**
- * The scalar potential of a conservative field in the coordinate system (without the constant).
+ * Recovers a potential for the conservative field in the chosen coordinates, omitting the additive
+ * constant.
  *
  * @param field - Field to evaluate or differentiate.
  * @param coordSys - Coordinate system defining the basis.
- * @returns The scalar potential of a conservative field in the coordinate system (without the constant).
+ * @returns The scalar potential.
  * @throws RangeError when the field is not conservative.
  * @throws TypeError when a supplied coordinate system is not a `CoordSys3D`.
  * @see SymPy `sympy.vector.functions.scalar_potential`
@@ -228,14 +227,14 @@ export function scalarPotential(field: Expr, coordSys: CoordSysBase): Expr {
 }
 
 /**
- * The potential at point2 minus the potential at point1, of a scalar field or of the scalar
- * potential of a conservative vector field.
+ * Subtracts the potential at the first point from that at the second, deriving the potential for a
+ * conservative vector field.
  *
  * @param fieldIn - Scalar or vector field on the region.
  * @param coordSys - Coordinate system defining the basis.
  * @param point1 - Starting point for the potential difference.
  * @param point2 - Ending point for the potential difference.
- * @returns The potential at point2 minus the potential at point1, of a scalar field or of the scalar potential of a conservative vector field.
+ * @returns The potential difference.
  * @throws TypeError when a supplied coordinate system is not a `CoordSys3D`.
  * @see SymPy `sympy.vector.functions.scalar_potential_difference`
  * @example
@@ -263,12 +262,11 @@ export function scalarPotentialDifference(fieldIn: ExprLike, coordSys: CoordSysB
 }
 
 /**
- * The vector whose measure numbers along the base vectors of system are the entries of the
- * matrix.
+ * Uses the matrix entries as components along the system's basis vectors.
  *
  * @param matrix - Column of components in basis order.
  * @param system - Coordinate system in which to express components.
- * @returns The vector whose measure numbers along the base vectors of system are the entries of the matrix.
+ * @returns The reconstructed vector.
  * @see SymPy `sympy.vector.functions.matrix_to_vector`
  * @example
  * ```ts
@@ -294,10 +292,10 @@ export interface OrthogonalizeOptions {
 }
 
 /**
- * The orthogonal (or orthonormal) vectors of independent vectors by the Gram-Schmidt process.
+ * Applies Gram–Schmidt to independent vectors, optionally normalizing each result.
  *
  * @param args - Linearly independent vectors and optional `orthonormal` flag for unit output vectors.
- * @returns The orthogonal (or orthonormal) vectors of independent vectors by the Gram-Schmidt process.
+ * @returns The orthogonal or orthonormal vectors.
  * @throws RangeError when the vectors are linearly dependent.
  * @throws TypeError when a field or vector operand is not a vector.
  * @see SymPy `sympy.vector.functions.orthogonalize`

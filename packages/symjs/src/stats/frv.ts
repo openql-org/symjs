@@ -81,7 +81,7 @@ const elementsBoolean = (els: readonly FiniteElement[]): Expr => or(...els.map((
  */
 export abstract class FiniteDomain extends RandomDomain {
   /**
-   * Whether the domain is finite.
+   * Indicates whether the outcome domain is finite.
    *
    * @returns `true` for this domain.
    * @see SymPy `sympy.stats.frv.FiniteDomain.is_Finite`
@@ -90,23 +90,23 @@ export abstract class FiniteDomain extends RandomDomain {
     return true;
   }
   /**
-   * The elements (SymPy iteration over the domain).
+   * Iterates over the elements of the domain.
    *
    * @returns The elements.
    * @see SymPy `sympy.stats.frv.FiniteDomain.elements`
    */
   abstract elements(): FiniteElement[];
   /**
-   * The elements as Dicts.
+   * Represents the finite domain's assignments as dictionaries.
    *
-   * @returns The elements as Dicts.
+   * @returns A set of assignment dictionaries.
    * @see SymPy `sympy.stats.frv.FiniteDomain.dict`
    */
   get dict(): SetExpr {
     return elementsDict(this.elements());
   }
   /**
-   * The element belongs to the domain.
+   * Tests whether the assignment belongs to the domain.
    *
    * @param other - Other operand.
    * @returns Whether the assignment is an element of this domain.
@@ -116,9 +116,9 @@ export abstract class FiniteDomain extends RandomDomain {
     return this.elements().some((e) => elementKey(e).key === k);
   }
   /**
-   * The condition expressing membership in this domain.
+   * Expresses domain membership as a predicate on the outcome variables.
    *
-   * @returns The condition expressing membership in this domain.
+   * @returns A Boolean condition.
    * @see SymPy `sympy.stats.frv.FiniteDomain.as_boolean`
    */
   override asBoolean(): Expr {
@@ -141,36 +141,36 @@ export class SingleFiniteDomain extends FiniteDomain {
     super('SingleFiniteDomain', [cast(at(args, 0), Sym, 'domain symbol'), cast(at(args, 1), SetExpr, 'domain set')]);
   }
   /**
-   * The underlying symbol naming the random variable.
+   * Identifies the ordinary symbol that names the random variable.
    *
-   * @returns The underlying symbol naming the random variable.
+   * @returns The underlying symbol.
    * @see SymPy `sympy.stats.frv.SingleFiniteDomain.symbol`
    */
   get symbol(): Sym {
     return cast(at(this.args, 0), Sym);
   }
   /**
-   * The symbols whose values form this domain or probability space.
+   * Identifies the symbols whose assignments determine an outcome.
    *
-   * @returns The symbols whose values form this domain or probability space.
+   * @returns The domain symbols.
    * @see SymPy `sympy.stats.frv.SingleFiniteDomain.symbols`
    */
   get symbols(): Sym[] {
     return [this.symbol];
   }
   /**
-   * The set of outcomes in this domain.
+   * Collects the values admitted by the outcome domain.
    *
-   * @returns The set of outcomes in this domain.
+   * @returns The outcome set.
    * @see SymPy `sympy.stats.frv.SingleFiniteDomain.set`
    */
   override get set(): SetExpr {
     return cast(at(this.args, 1), SetExpr);
   }
   /**
-   * The assignments of symbols to values in this finite domain.
+   * Enumerates the assignments of values to symbols in the finite domain.
    *
-   * @returns The assignments of symbols to values in this finite domain.
+   * @returns The possible assignments.
    * @see SymPy `sympy.stats.frv.SingleFiniteDomain.elements`
    */
   elements(): FiniteElement[] {
@@ -194,7 +194,7 @@ export class ProductFiniteDomain extends ProductDomain {
     super(args, name);
   }
   /**
-   * Whether the domain is finite.
+   * Indicates whether the outcome domain is finite.
    *
    * @returns `true` for this domain.
    * @see SymPy `sympy.stats.frv.ProductFiniteDomain.is_Finite`
@@ -203,9 +203,9 @@ export class ProductFiniteDomain extends ProductDomain {
     return true;
   }
   /**
-   * The elements: the unions of one element of each domain.
+   * Forms joint assignments by combining one assignment from each component domain.
    *
-   * @returns The elements: the unions of one element of each domain.
+   * @returns The product-domain elements.
    * @see SymPy `sympy.stats.frv.ProductFiniteDomain.elements`
    */
   elements(): FiniteElement[] {
@@ -217,18 +217,18 @@ export class ProductFiniteDomain extends ProductDomain {
     return out;
   }
   /**
-   * The elements as Dicts.
+   * Represents the finite domain's assignments as dictionaries.
    *
-   * @returns The elements as Dicts.
+   * @returns A set of assignment dictionaries.
    * @see SymPy `sympy.stats.frv.ProductFiniteDomain.dict`
    */
   get dict(): SetExpr {
     return elementsDict(this.elements());
   }
   /**
-   * The condition expressing membership in this domain.
+   * Expresses domain membership as a predicate on the outcome variables.
    *
-   * @returns The condition expressing membership in this domain.
+   * @returns A Boolean condition.
    * @see SymPy `sympy.stats.frv.ProductFiniteDomain.as_boolean`
    */
   override asBoolean(): Expr {
@@ -257,7 +257,7 @@ export class ConditionalFiniteDomain extends ConditionalDomain {
     super('ConditionalFiniteDomain', [at(args, 0), rvSubs(at(args, 1))]);
   }
   /**
-   * Whether the domain is finite.
+   * Indicates whether the outcome domain is finite.
    *
    * @returns `true` for this domain.
    * @see SymPy `sympy.stats.frv.ConditionalFiniteDomain.is_Finite`
@@ -266,7 +266,7 @@ export class ConditionalFiniteDomain extends ConditionalDomain {
     return true;
   }
   /**
-   * The condition holds at the element.
+   * Checks whether the assignment satisfies the conditioning event.
    *
    * @param elem - Domain element to test.
    * @returns Whether the assignment satisfies the condition.
@@ -279,27 +279,27 @@ export class ConditionalFiniteDomain extends ConditionalDomain {
     throw new RangeError(`Undecidable if ${val.toString()}`);
   }
   /**
-   * The assignments of symbols to values in this finite domain.
+   * Enumerates the assignments of values to symbols in the finite domain.
    *
-   * @returns The assignments of symbols to values in this finite domain.
+   * @returns The possible assignments.
    * @see SymPy `sympy.stats.frv.ConditionalFiniteDomain.elements`
    */
   elements(): FiniteElement[] {
     return finiteElements(this.fulldomain).filter((e) => this.test(e));
   }
   /**
-   * The elements as Dicts.
+   * Represents the finite domain's assignments as dictionaries.
    *
-   * @returns The elements as Dicts.
+   * @returns A set of assignment dictionaries.
    * @see SymPy `sympy.stats.frv.ConditionalFiniteDomain.dict`
    */
   get dict(): SetExpr {
     return elementsDict(this.elements());
   }
   /**
-   * The set of outcomes in this domain.
+   * Collects the values admitted by the outcome domain.
    *
-   * @returns The set of outcomes in this domain.
+   * @returns The outcome set.
    * @throws NotImplementedError when the conditional domain is multidimensional.
    * @see SymPy `sympy.stats.frv.ConditionalFiniteDomain.set`
    */
@@ -309,9 +309,9 @@ export class ConditionalFiniteDomain extends ConditionalDomain {
     throw new NotImplementedError('Not implemented on multi-dimensional conditional domain');
   }
   /**
-   * The condition expressing membership in this domain.
+   * Expresses domain membership as a predicate on the outcome variables.
    *
-   * @returns The condition expressing membership in this domain.
+   * @returns A Boolean condition.
    * @see SymPy `sympy.stats.frv.ConditionalFiniteDomain.as_boolean`
    */
   override asBoolean(): Expr {
@@ -343,7 +343,7 @@ export function conditionalFiniteDomain(domain: RandomDomain, condition: Expr): 
  */
 export abstract class SingleFiniteDistribution extends Distribution {
   /**
-   * Whether the distribution is finite.
+   * Indicates whether the distribution has finite support.
    *
    * @returns `true` for this distribution.
    */
@@ -357,7 +357,7 @@ export abstract class SingleFiniteDistribution extends Distribution {
    */
   check(): void {}
   /**
-   * The distribution has a symbolic number of values.
+   * Indicates whether the number of possible values is symbolic.
    *
    * @returns `false` for this distribution.
    * @see SymPy `sympy.stats.frv.SingleFiniteDistribution.is_symbolic`
@@ -366,32 +366,32 @@ export abstract class SingleFiniteDistribution extends Distribution {
     return false;
   }
   /**
-   * The lower bound used when the number of outcomes is symbolic.
+   * Specifies the lower outcome bound for a symbolic number of outcomes.
    *
-   * @returns The lower bound used when the number of outcomes is symbolic.
+   * @returns The lower bound.
    * @throws NotImplementedError when the distribution does not define a lower endpoint.
    */
   get low(): Expr {
     throw new NotImplementedError(`${this.name} has no low value`);
   }
   /**
-   * The upper bound used when the number of outcomes is symbolic.
+   * Specifies the upper outcome bound for a symbolic number of outcomes.
    *
-   * @returns The upper bound used when the number of outcomes is symbolic.
+   * @returns The upper bound.
    * @throws NotImplementedError when the distribution does not define an upper endpoint.
    */
   get high(): Expr {
     throw new NotImplementedError(`${this.name} has no high value`);
   }
   /**
-   * The values.
+   * Collects all possible outcomes of the distribution.
    *
-   * @returns The values.
+   * @returns The support set.
    * @see SymPy `sympy.stats.frv.SingleFiniteDistribution.set`
    */
   abstract override get set(): SetExpr;
   /**
-   * The probability mass function.
+   * Evaluates the probability mass at the specified outcome.
    *
    * @param x - Outcome at which to evaluate the probability mass.
    * @returns The probability of the supplied outcome.
@@ -399,18 +399,19 @@ export abstract class SingleFiniteDistribution extends Distribution {
    */
   abstract pmf(x: ExprLike): Expr;
   /**
-   * The probability mass at the supplied outcome.
+   * Evaluates the probability mass function at one outcome.
    *
    * @param x - Outcome at which to evaluate the probability mass.
-   * @returns The probability mass at the supplied outcome.
+   * @returns The outcome probability.
    */
   pdf(x: ExprLike): Expr {
     return this.pmf(x);
   }
   /**
-   * The values and their probabilities, or the unevaluated Density of a symbolic distribution.
+   * Associates values with probabilities, retaining a symbolic density when the outcomes cannot be
+   * enumerated.
    *
-   * @returns The values and their probabilities, or the unevaluated Density of a symbolic distribution.
+   * @returns The finite density or unevaluated density expression.
    * @see SymPy `sympy.stats.frv.SingleFiniteDistribution.dict`
    */
   override get dict(): DensityResult {
@@ -418,7 +419,7 @@ export abstract class SingleFiniteDistribution extends Distribution {
     return new FiniteDensity(cast(this.set, FiniteSet, 'values').args.map((k) => [k, this.pmf(k)] as const));
   }
   /**
-   * The value is one the distribution takes.
+   * Tests whether the value belongs to the distribution's support.
    *
    * @param other - Other operand.
    * @returns Whether the value is in the support.
@@ -456,7 +457,7 @@ export class FinitePSpace extends PSpace {
     super(args, name);
   }
   /**
-   * Whether the probability space is finite.
+   * Indicates whether this probability space has finitely many outcomes.
    *
    * @returns `true` for this space.
    * @see SymPy `sympy.stats.frv.FinitePSpace.is_Finite`
@@ -465,9 +466,9 @@ export class FinitePSpace extends PSpace {
     return true;
   }
   /**
-   * The density as (key, probability) pairs.
+   * Pairs each value of the distribution with its probability mass.
    *
-   * @returns The density as (key, probability) pairs.
+   * @returns The outcome–probability entries.
    */
   get densityItems(): (readonly [Expr, Expr])[] {
     const d = this.density;
@@ -475,10 +476,10 @@ export class FinitePSpace extends PSpace {
   }
   #probabilities?: { mass: FiniteDensity; elementKeys: boolean };
   /**
-   * Looks up the probability of an assignment of values to the symbols in the space.
+   * Retrieves the mass of the specified assignment of values to random symbols.
    *
    * @param elem - Domain element to test.
-   * @returns Looks up the probability of an assignment of values to the symbols in the space.
+   * @returns The assignment probability.
    * @see SymPy `sympy.stats.frv.FinitePSpace.prob_of`
    */
   probOf(elem: FiniteElement): Expr {
@@ -491,7 +492,7 @@ export class FinitePSpace extends PSpace {
     return mass.call(elementKeys ? elementKey(elem) : at(first(elem), 1));
   }
   /**
-   * The subset of the domain on which the condition holds.
+   * Restricts the domain to the subset satisfying the condition.
    *
    * @param condition - Condition on the random variables.
    * @returns The domain satisfying the condition.
@@ -501,7 +502,7 @@ export class FinitePSpace extends PSpace {
     return conditionalFiniteDomain(this.domain, condition);
   }
   /**
-   * The distribution of the expression on this probability space.
+   * Computes the distribution induced by the expression on this space.
    *
    * @param exprIn - Expression to evaluate.
    * @returns The probability distribution of the expression.
@@ -517,7 +518,7 @@ export class FinitePSpace extends PSpace {
     return d;
   }
   /**
-   * The cumulative distribution function of the expression.
+   * Computes the cumulative distribution of the expression.
    *
    * @param expr - Expression to evaluate.
    * @returns The cumulative distribution function.
@@ -534,10 +535,10 @@ export class FinitePSpace extends PSpace {
     return out;
   }
   /**
-   * The cdf items sorted by cumulative probability.
+   * Orders the cumulative distribution entries by cumulative probability.
    *
    * @param expr - Expression to evaluate.
-   * @returns The cdf items sorted by cumulative probability.
+   * @returns The sorted value–probability pairs.
    * @see SymPy `sympy.stats.frv.FinitePSpace.sorted_cdf`
    */
   sortedCdf(expr: Expr): (readonly [Expr, Expr])[] {
@@ -545,10 +546,10 @@ export class FinitePSpace extends PSpace {
     return items.sort((a, b) => defined(cmpReal(a[1], b[1])));
   }
   /**
-   * The characteristic function of the expression.
+   * Computes the Fourier transform of the probability law for the expression.
    *
    * @param expr - Expression to evaluate.
-   * @returns The characteristic function of the expression.
+   * @returns The characteristic function.
    * @see SymPy `sympy.stats.frv.FinitePSpace.compute_characteristic_function`
    */
   override computeCharacteristicFunction(expr: Expr): Expr {
@@ -557,10 +558,10 @@ export class FinitePSpace extends PSpace {
     return Lambda(t, add(...[...d].map(([k, v]) => mul(exp(mul(S.I, k, t)), v))));
   }
   /**
-   * The moment generating function of the expression.
+   * Computes the exponential moment transform of the expression's law.
    *
    * @param expr - Expression to evaluate.
-   * @returns The moment generating function of the expression.
+   * @returns The moment generating function.
    * @see SymPy `sympy.stats.frv.FinitePSpace.compute_moment_generating_function`
    */
   override computeMomentGeneratingFunction(expr: Expr): Expr {
@@ -569,7 +570,7 @@ export class FinitePSpace extends PSpace {
     return Lambda(t, add(...[...d].map(([k, v]) => mul(exp(mul(k, t)), v))));
   }
   /**
-   * The expectation of the expression over the specified variables.
+   * Computes the expression's expectation over the specified variables.
    *
    * @param exprIn - Expression to evaluate.
    * @param rvsIn - Random variables to integrate or sum over.
@@ -602,7 +603,7 @@ export class FinitePSpace extends PSpace {
     return add(Rational.of(numerator, denominator), ...terms);
   }
   /**
-   * The quantile function of the expression.
+   * Computes the quantile function of the supplied expression.
    *
    * @param expr - Expression to evaluate.
    * @returns The quantile function.
@@ -616,7 +617,7 @@ export class FinitePSpace extends PSpace {
     return Lambda(p, piecewise(...pairs));
   }
   /**
-   * The probability that the event holds.
+   * Computes the probability assigned to the event.
    *
    * @param condition - Condition on the random variables.
    * @returns The probability of the event.
@@ -639,7 +640,7 @@ export class FinitePSpace extends PSpace {
     return add(...finiteElements(this.where(condition)).map((elem) => this.probOf(elem)));
   }
   /**
-   * The probability space restricted to outcomes satisfying the condition.
+   * Restricts the probability space to outcomes that satisfy the condition.
    *
    * @param condition - Condition on the random variables.
    * @returns The conditioned probability space.
@@ -674,7 +675,7 @@ export class SingleFinitePSpace extends FinitePSpace {
     super([symbolConverter(at(args, 0)), cast(at(args, 1), SingleFiniteDistribution, 'distribution')], 'SingleFinitePSpace');
   }
   /**
-   * Whether the probability space is single.
+   * Checks whether the probability space governs a single random variable.
    *
    * @returns `true` for this space.
    */
@@ -682,43 +683,43 @@ export class SingleFinitePSpace extends FinitePSpace {
     return true;
   }
   /**
-   * The underlying symbol naming the random variable.
+   * Identifies the ordinary symbol that names the random variable.
    *
-   * @returns The underlying symbol naming the random variable.
+   * @returns The underlying symbol.
    * @see SymPy `sympy.stats.frv.SingleFinitePSpace.symbol`
    */
   get symbol(): Sym {
     return cast(at(this.args, 0), Sym);
   }
   /**
-   * The probability law governing the random variable.
+   * Identifies the law of the random variable in this space.
    *
-   * @returns The probability law governing the random variable.
+   * @returns The distribution object.
    * @see SymPy `sympy.stats.frv.SingleFinitePSpace.distribution`
    */
   get distribution(): SingleFiniteDistribution {
     return cast(at(this.args, 1), SingleFiniteDistribution);
   }
   /**
-   * The random symbol with this probability space.
+   * Constructs the random symbol associated with this probability space.
    *
-   * @returns The random symbol with this probability space.
+   * @returns The space's random variable.
    * @see SymPy `sympy.stats.frv.SingleFinitePSpace.value`
    */
   get value(): RandomSymbol {
     return new RandomSymbol(this.symbol, this);
   }
   /**
-   * The domain of outcomes of this probability space.
+   * Describes the possible outcomes of this probability space.
    *
-   * @returns The domain of outcomes of this probability space.
+   * @returns The outcome domain.
    * @see SymPy `sympy.stats.frv.SingleFinitePSpace.domain`
    */
   override get domain(): RandomDomain {
     return new SingleFiniteDomain([this.symbol, this.distribution.set]);
   }
   /**
-   * The probability mass at the supplied outcome.
+   * Evaluates the probability mass function at one outcome.
    *
    * @returns The joint density in the symbols of the space.
    * @see SymPy `sympy.stats.frv.SingleFinitePSpace.pdf`
@@ -727,7 +728,7 @@ export class SingleFinitePSpace extends FinitePSpace {
     return this.distribution.pmf(this.symbol);
   }
   /**
-   * The mass function at expr.
+   * Evaluates the probability mass function at the given expression.
    *
    * @param expr - Expression to evaluate.
    * @returns The probability of the supplied outcome.
@@ -737,9 +738,9 @@ export class SingleFinitePSpace extends FinitePSpace {
     return this.distribution.pmf(expr);
   }
   /**
-   * The outcome and probability pairs in this finite space.
+   * Lists the mass associated with each finite outcome.
    *
-   * @returns The outcome and probability pairs in this finite space.
+   * @returns The outcome–probability pairs.
    */
   override get densityItems(): (readonly [Expr, Expr])[] {
     return distItems(this.distribution).map(([val, prob]) => [elementKey([[this.symbol, val]]), prob] as const);
@@ -749,10 +750,10 @@ export class SingleFinitePSpace extends FinitePSpace {
     return new FinitePSpace([this.domain, this.distribution]);
   }
   /**
-   * The characteristic function of the expression.
+   * Computes the Fourier transform of the probability law for the expression.
    *
    * @param expr - Expression to evaluate.
-   * @returns The characteristic function of the expression.
+   * @returns The characteristic function.
    * @see SymPy `sympy.stats.frv.SingleFinitePSpace.compute_characteristic_function`
    */
   override computeCharacteristicFunction(expr: Expr): Expr {
@@ -765,10 +766,10 @@ export class SingleFinitePSpace extends FinitePSpace {
     return this.#plain().computeCharacteristicFunction(rvSubs(expr, this.values));
   }
   /**
-   * The moment generating function of the expression.
+   * Computes the exponential moment transform of the expression's law.
    *
    * @param expr - Expression to evaluate.
-   * @returns The moment generating function of the expression.
+   * @returns The moment generating function.
    * @see SymPy `sympy.stats.frv.SingleFinitePSpace.compute_moment_generating_function`
    */
   override computeMomentGeneratingFunction(expr: Expr): Expr {
@@ -781,7 +782,7 @@ export class SingleFinitePSpace extends FinitePSpace {
     return this.#plain().computeMomentGeneratingFunction(rvSubs(expr, this.values));
   }
   /**
-   * The quantile function of the expression.
+   * Computes the quantile function of the supplied expression.
    *
    * @param expr - Expression to evaluate.
    * @returns The quantile function.
@@ -797,7 +798,7 @@ export class SingleFinitePSpace extends FinitePSpace {
     return this.#plain().computeQuantile(rvSubs(expr, this.values));
   }
   /**
-   * The distribution of the expression on this probability space.
+   * Computes the distribution induced by the expression on this space.
    *
    * @param expr - Expression to evaluate.
    * @returns The probability distribution of the expression.
@@ -814,7 +815,7 @@ export class SingleFinitePSpace extends FinitePSpace {
     return this.#plain().computeDensity(rvSubs(expr, this.values));
   }
   /**
-   * The cumulative distribution function of the expression.
+   * Computes the cumulative distribution of the expression.
    *
    * @param expr - Expression to evaluate.
    * @returns The cumulative distribution function.
@@ -830,7 +831,7 @@ export class SingleFinitePSpace extends FinitePSpace {
     return this.#plain().computeCdf(rvSubs(expr, this.values));
   }
   /**
-   * The expectation of the expression over the specified variables.
+   * Computes the expression's expectation over the specified variables.
    *
    * @param exprIn - Expression to evaluate.
    * @param rvs - Random variables to integrate or sum over.
@@ -851,7 +852,7 @@ export class SingleFinitePSpace extends FinitePSpace {
     return this.#plain().computeExpectation(expr, rvs);
   }
   /**
-   * The probability that the event holds.
+   * Computes the probability assigned to the event.
    *
    * @param condition - Condition on the random variables.
    * @returns The probability of the event.
@@ -865,7 +866,7 @@ export class SingleFinitePSpace extends FinitePSpace {
     return this.#plain().probability(rvSubs(condition));
   }
   /**
-   * The probability space restricted to outcomes satisfying the condition.
+   * Restricts the probability space to outcomes that satisfy the condition.
    *
    * @param condition - Condition on the random variables.
    * @returns The conditioned probability space.
@@ -900,7 +901,7 @@ export class ProductFinitePSpace extends IndependentProductPSpace {
     super(args, 'ProductFinitePSpace');
   }
   /**
-   * Whether the probability space is finite.
+   * Indicates whether this probability space has finitely many outcomes.
    *
    * @returns `true` for this space.
    * @see SymPy `sympy.stats.frv.ProductFinitePSpace.is_Finite`
@@ -909,18 +910,18 @@ export class ProductFinitePSpace extends IndependentProductPSpace {
     return true;
   }
   /**
-   * The domain of outcomes of this probability space.
+   * Describes the possible outcomes of this probability space.
    *
-   * @returns The domain of outcomes of this probability space.
+   * @returns The outcome domain.
    * @see SymPy `sympy.stats.frv.ProductFinitePSpace.domain`
    */
   override get domain(): RandomDomain {
     return makeProductDomain(this.spaces.map((s) => s.domain));
   }
   /**
-   * The density of the elements.
+   * Pairs the elements of the space with their probability masses.
    *
-   * @returns The density of the elements.
+   * @returns The finite density entries.
    */
   get densityItems(): (readonly [Expr, Expr])[] {
     let out: [FiniteElement, Expr][] = [[[], S.One]];
@@ -932,16 +933,16 @@ export class ProductFinitePSpace extends IndependentProductPSpace {
     return out.map(([el, p]) => [elementKey(el), p] as const);
   }
   /**
-   * The density of the random variable or expression.
+   * Expresses the density on the underlying probability space.
    *
-   * @returns The density of the random variable or expression.
+   * @returns The density expression.
    * @see SymPy `sympy.stats.frv.ProductFinitePSpace.density`
    */
   override get density(): Expr {
     return Dict(this.densityItems);
   }
   /**
-   * The probability that the event holds.
+   * Computes the probability assigned to the event.
    *
    * @param condition - Condition on the random variables.
    * @returns The probability of the event.
@@ -951,7 +952,7 @@ export class ProductFinitePSpace extends IndependentProductPSpace {
     return this.#plain().probability(condition);
   }
   /**
-   * The distribution of the expression on this probability space.
+   * Computes the distribution induced by the expression on this space.
    *
    * @param expr - Expression to evaluate.
    * @returns The probability distribution of the expression.
@@ -965,7 +966,7 @@ export class ProductFinitePSpace extends IndependentProductPSpace {
     return new FinitePSpace([this.domain, this.density]);
   }
   /**
-   * The subset of the domain on which the condition holds.
+   * Restricts the domain to the subset satisfying the condition.
    *
    * @param condition - Condition on the random variables.
    * @returns The domain satisfying the condition.
@@ -975,27 +976,27 @@ export class ProductFinitePSpace extends IndependentProductPSpace {
     return conditionalFiniteDomain(this.domain, condition);
   }
   /**
-   * The characteristic function of the expression.
+   * Computes the Fourier transform of the probability law for the expression.
    *
    * @param expr - Expression to evaluate.
-   * @returns The characteristic function of the expression.
+   * @returns The characteristic function.
    * @see SymPy `sympy.stats.frv.ProductFinitePSpace.compute_characteristic_function`
    */
   override computeCharacteristicFunction(expr: Expr): Expr {
     return this.#plain().computeCharacteristicFunction(rvSubs(expr, this.values));
   }
   /**
-   * The moment generating function of the expression.
+   * Computes the exponential moment transform of the expression's law.
    *
    * @param expr - Expression to evaluate.
-   * @returns The moment generating function of the expression.
+   * @returns The moment generating function.
    * @see SymPy `sympy.stats.frv.ProductFinitePSpace.compute_moment_generating_function`
    */
   override computeMomentGeneratingFunction(expr: Expr): Expr {
     return this.#plain().computeMomentGeneratingFunction(rvSubs(expr, this.values));
   }
   /**
-   * The quantile function of the expression.
+   * Computes the quantile function of the supplied expression.
    *
    * @param expr - Expression to evaluate.
    * @returns The quantile function.

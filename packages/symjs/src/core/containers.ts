@@ -48,26 +48,26 @@ export class TupleNode extends ExtensionExpr {
     return new TupleNode(args);
   }
   /**
-   * The number of elements (SymPy len(Tuple)).
+   * Counts the elements in the tuple.
    *
-   * @returns The number of elements (SymPy len(Tuple)).
+   * @returns The tuple length.
    */
   get length(): number {
     return this.args.length;
   }
   /**
-   * The element at index i (negative indices count from the end).
+   * Selects a tuple element, counting negative indices from the end.
    *
    * @param i - The zero-based index.
-   * @returns The element at index i (negative indices count from the end).
+   * @returns The indexed expression.
    */
   at(i: number): Expr {
     return at(this.args, i < 0 ? this.args.length + i : i);
   }
   /**
-   * The elements as an array.
+   * Collects the tuple elements in their original order.
    *
-   * @returns The elements as an array.
+   * @returns An array of expressions.
    */
   toArray(): Expr[] {
     return [...this.args];
@@ -76,7 +76,7 @@ export class TupleNode extends ExtensionExpr {
     return this.args[Symbol.iterator]();
   }
   /**
-   * The number of elements equal to value.
+   * Counts occurrences of the supplied value in the tuple.
    *
    * @param value - The value to examine.
    * @returns The number of matching occurrences.
@@ -87,12 +87,12 @@ export class TupleNode extends ExtensionExpr {
     return this.args.filter((a) => a.key === k).length;
   }
   /**
-   * The first position of value (RangeError when absent).
+   * Locates the first occurrence of a value, raising `RangeError` if it is absent.
    *
    * @param value - The value to examine.
    * @param start - The starting value or index.
    * @param stop - The exclusive upper index.
-   * @returns The first position of value (RangeError when absent).
+   * @returns The zero-based position.
    * @throws RangeError when the requested element is absent from the search range.
    * @see SymPy `sympy.core.containers.Tuple.index`
    */
@@ -114,7 +114,7 @@ export class TupleNode extends ExtensionExpr {
     return new TupleNode([...this.args, ...(other instanceof TupleNode ? other.args : other.map(sympify))]);
   }
   /**
-   * Repeat the tuple like Python sequence multiplication.
+   * Repeats the tuple the specified number of times.
    *
    * @param count - The repetition count.
    * @returns The tuple repeated the requested number of times.
@@ -125,7 +125,7 @@ export class TupleNode extends ExtensionExpr {
     return new TupleNode(Array.from({ length: Math.max(0, count) }, () => this.args).flat());
   }
   /**
-   * (a, b), (a,) and ().
+   * Prints the tuple with parentheses and preserves the trailing comma for a single element.
    *
    * @param print - The printer to use for child expressions.
    * @returns The formatted string.
@@ -187,19 +187,20 @@ export class DictNode extends ExtensionExpr {
     return new DictNode(args.map((t) => cast(t, TupleNode, 'Dict item')));
   }
   /**
-   * The number of entries.
+   * Counts the entries in the dictionary.
    *
-   * @returns The number of entries.
+   * @returns The entry count.
    */
   get size(): number {
     return this.map.size;
   }
   /**
-   * The value of key, or `fallback` (SymPy Dict.get; undefined is never returned without a fallback: RangeError).
+   * Looks up a key and uses the supplied fallback for a missing entry. A missing key without a fallback
+   * raises `RangeError`.
    *
    * @param key - The lookup key.
    * @param fallback - The value to return for a missing key.
-   * @returns The value of key, or `fallback` (SymPy Dict.get; undefined is never returned without a fallback: RangeError).
+   * @returns The stored value or fallback.
    * @throws RangeError when the key is absent and no fallback was supplied.
    * @see SymPy `sympy.core.containers.Dict.get`
    */
@@ -213,7 +214,7 @@ export class DictNode extends ExtensionExpr {
    * Tests whether the key occurs in the dictionary.
    *
    * @param key - The lookup key.
-   * @returns Whether the key occurs in the dictionary.
+   * @returns True if the key is present.
    */
   containsKey(key: ExprLike): boolean {
     return this.map.has(sympify(key).key);
@@ -239,16 +240,16 @@ export class DictNode extends ExtensionExpr {
   /**
    * Lists the key-value pairs in canonical key order.
    *
-   * @returns The key-value pairs in canonical key order.
+   * @returns The ordered entry pairs.
    * @see SymPy `sympy.core.containers.Dict.items`
    */
   items(): (readonly [Expr, Expr])[] {
     return [...this.map.values()];
   }
   /**
-   * The entries as a Map keyed by expression.
+   * Copies the dictionary entries into an expression-keyed map.
    *
-   * @returns The entries as a Map keyed by expression.
+   * @returns A map of keys to values.
    */
   toMap(): Map<Expr, Expr> {
     return new Map(this.items());
@@ -258,7 +259,7 @@ export class DictNode extends ExtensionExpr {
     return [...this.args].sort((a, b) => compareKeys(sortKey(at(a.args, 0)), sortKey(at(b.args, 0))));
   }
   /**
-   * {k: v, ...} with the keys in default_sort_key order.
+   * Formats the dictionary with keys in canonical order.
    *
    * @param print - The printer to use for child expressions.
    * @returns The formatted string.
@@ -320,7 +321,7 @@ export function traversalArgs(e: Expr): readonly Expr[] {
 }
 
 /**
- * Visit the expression and its arguments breadth first.
+ * Traverses the expression tree breadth first.
  *
  * @param e - The input expression.
  * @returns An iterable visiting the selected expressions in breadth-first order.

@@ -49,8 +49,8 @@ export type Dimension = number | Expr;
 const hasShape = (x: unknown): x is { readonly shape: readonly Dimension[] } => typeof x === 'object' && x !== null && 'shape' in x && Array.isArray(x.shape);
 
 /**
- * The shape of a matrix, an N-dimensional array or a matrix expression, also inside an Integral;
- * a NoShapeError for other objects.
+ * Obtains the axis lengths of a matrix, array, or matrix expression, including one inside an integral.
+ * Other inputs raise `NoShapeError`.
  *
  * @param expr - Symbolic expression on which to operate.
  * @returns The lengths of the axes in order.
@@ -97,16 +97,16 @@ export class TensorProductNode extends ExtensionExpr {
    */
   withArgs(args: readonly Expr[]): Expr { return new TensorProductNode(args); }
   /**
-   * The lengths of the axes in order.
+   * Lists axis lengths in their declared order.
    *
-   * @returns The lengths of the axes in order.
+   * @returns The shape.
    * @see SymPy `sympy.tensor.functions.TensorProduct.shape`
    */
   get shape(): Dimension[] { return this.args.flatMap((arg) => hasShape(arg) ? [...arg.shape] : []); }
   /**
-   * The number of free index slots.
+   * Counts the unbound index slots.
    *
-   * @returns The number of free index slots.
+   * @returns The tensor rank.
    * @see SymPy `sympy.tensor.functions.TensorProduct.rank`
    */
   rank(): number { return this.shape.length; }

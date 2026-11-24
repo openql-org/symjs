@@ -71,7 +71,7 @@ const generic = (head: string) => (...args: ExprLike[]): Expr => new BasicNode(a
  */
 export const Atom = /* @__PURE__ */ withInstanceCheck(generic('Atom'), (v) => v instanceof Expr && v.args.length === 0);
 /**
- * like Atom, for expressions.
+ * Constructs a generic atomic expression and recognizes expression nodes without arguments.
  *
  * @param args - The arguments in positional order.
  * @returns The constructed symbolic node.
@@ -79,7 +79,7 @@ export const Atom = /* @__PURE__ */ withInstanceCheck(generic('Atom'), (v) => v 
  */
 export const AtomicExpr = /* @__PURE__ */ withInstanceCheck(generic('AtomicExpr'), (v) => v instanceof Expr && v.args.length === 0);
 /**
- * A generic Expr(*args) node (SymPy Expr(...) called directly).
+ * Constructs a generic expression node from the supplied arguments.
  *
  * @param args - The arguments in positional order.
  * @returns The constructed symbolic node.
@@ -161,7 +161,7 @@ export class UnevaluatedExpr extends ExtensionExpr {
    *
    * @param x - The differentiation variable.
    * @param d - The callback for differentiating a subexpression.
-   * @returns The derivative using the node's differentiation rule.
+   * @returns The derivative expression.
    */
   override diffSelf(x: Expr, d: (e: Expr, x: Expr) => Expr): Expr {
     return d(at(this.args, 0), x);
@@ -191,10 +191,10 @@ export class DeferredVector extends Sym {
     super(name, assumptions);
   }
   /**
-   * The component symbol X[i].
+   * Selects a component of the indexed symbol.
    *
    * @param i - The zero-based index.
-   * @returns The component symbol X[i].
+   * @returns The component symbol.
    * @throws RangeError when the component index is negative.
    */
   at(i: number): Sym {

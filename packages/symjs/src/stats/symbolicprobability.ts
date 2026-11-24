@@ -99,9 +99,9 @@ export class ProbabilityNode extends StatsNode {
     super('Probability', args);
   }
   /**
-   * The given condition, if any.
+   * Identifies the event on which the statistical expression is conditioned.
    *
-   * @returns The given condition, if any.
+   * @returns The conditioning expression, when supplied.
    */
   get condition(): Expr | undefined {
     return this.args[1];
@@ -116,10 +116,10 @@ export class ProbabilityNode extends StatsNode {
     return new ProbabilityNode(args);
   }
   /**
-   * The probability.
+   * Evaluates the probability of the event.
    *
    * @param hints - Evaluation controls, including whether to evaluate nested expressions.
-   * @returns The probability.
+   * @returns The probability expression.
    * @throws RangeError when the event or conditioning expression is not a boolean relation.
    * @see SymPy `sympy.stats.symbolic_probability.Probability.doit`
    */
@@ -162,7 +162,7 @@ export class ProbabilityNode extends StatsNode {
 }
 
 /**
- * The unevaluated probability of a condition.
+ * Constructs the unevaluated probability of a condition.
  *
  * @param prob - Event whose probability is requested.
  * @param condition - Condition on the random variables.
@@ -212,9 +212,9 @@ export class ExpectationNode extends StatsNode {
     super('Expectation', args);
   }
   /**
-   * The given condition, if any.
+   * Identifies the event on which the statistical expression is conditioned.
    *
-   * @returns The given condition, if any.
+   * @returns The conditioning expression, when supplied.
    */
   get condition(): Expr | undefined {
     return this.args[1];
@@ -232,9 +232,9 @@ export class ExpectationNode extends StatsNode {
     return at(this.args, 0).isCommutative;
   }
   /**
-   * The expectation of each term and of the random factors of products.
+   * Distributes expectation over a sum and extracts deterministic factors from products.
    *
-   * @returns The expectation of each term and of the random factors of products.
+   * @returns The expanded expectation.
    * @see SymPy `sympy.stats.symbolic_probability.Expectation.expand`
    */
   expand(): Expr {
@@ -251,15 +251,15 @@ export class ExpectationNode extends StatsNode {
     return this;
   }
   /**
-   * Expands the outer statistical operator using its algebraic rules.
+   * Applies the algebraic expansion rules to the outermost statistical operation.
    *
-   * @returns Expands the outer statistical operator using its algebraic rules.
+   * @returns The expanded expression.
    */
   override expandTop(): Expr {
     return this.expand();
   }
   /**
-   * The expected value.
+   * Computes the mean under the applicable probability law.
    *
    * @param hints - Evaluation controls, including whether to evaluate nested expressions.
    * @returns The expected value.
@@ -331,7 +331,7 @@ export function makeExpectation(exprIn: ExprLike, conditionIn?: ExprLike): Expr 
 }
 
 /**
- * The unevaluated expectation of a random expression.
+ * Constructs the unevaluated expectation of a random expression.
  *
  * @param exprIn - Expression to evaluate.
  * @param conditionIn - Condition on the random variables.
@@ -380,9 +380,9 @@ export class VarianceNode extends StatsNode {
     super('Variance', args);
   }
   /**
-   * The given condition, if any.
+   * Identifies the event on which the statistical expression is conditioned.
    *
-   * @returns The given condition, if any.
+   * @returns The conditioning expression, when supplied.
    */
   get condition(): Expr | undefined {
     return this.args[1];
@@ -400,9 +400,9 @@ export class VarianceNode extends StatsNode {
     return at(this.args, 0).isCommutative;
   }
   /**
-   * The variances and covariances of the terms.
+   * Expands the variance of a sum into variances and covariances of its terms.
    *
-   * @returns The variances and covariances of the terms.
+   * @returns The expanded variance.
    * @see SymPy `sympy.stats.symbolic_probability.Variance.expand`
    */
   expand(): Expr {
@@ -426,9 +426,9 @@ export class VarianceNode extends StatsNode {
     return this;
   }
   /**
-   * Expands the outer statistical operator using its algebraic rules.
+   * Applies the algebraic expansion rules to the outermost statistical operation.
    *
-   * @returns Expands the outer statistical operator using its algebraic rules.
+   * @returns The expanded expression.
    */
   override expandTop(): Expr {
     return this.expand();
@@ -459,7 +459,7 @@ export class VarianceNode extends StatsNode {
 }
 
 /**
- * The unevaluated variance of a random expression.
+ * Constructs the unevaluated variance of a random expression.
  *
  * @param argIn - Argument expression.
  * @param conditionIn - Condition on the random variables.
@@ -508,9 +508,9 @@ export class CovarianceNode extends StatsNode {
     super('Covariance', args);
   }
   /**
-   * The given condition, if any.
+   * Identifies the event on which the statistical expression is conditioned.
    *
-   * @returns The given condition, if any.
+   * @returns The conditioning expression, when supplied.
    */
   get condition(): Expr | undefined {
     return this.args[2];
@@ -528,9 +528,9 @@ export class CovarianceNode extends StatsNode {
     return at(this.args, 0).isCommutative;
   }
   /**
-   * The covariances of the random terms.
+   * Distributes covariance over the random terms of its operands.
    *
-   * @returns The covariances of the random terms.
+   * @returns The expanded covariance.
    * @see SymPy `sympy.stats.symbolic_probability.Covariance.expand`
    */
   expand(): Expr {
@@ -545,9 +545,9 @@ export class CovarianceNode extends StatsNode {
     return add(...list1.flatMap(([a, r1]) => list2.map(([b, r2]) => mul(a, b, cov(r1, r2, condition)))));
   }
   /**
-   * Expands the outer statistical operator using its algebraic rules.
+   * Applies the algebraic expansion rules to the outermost statistical operation.
    *
-   * @returns Expands the outer statistical operator using its algebraic rules.
+   * @returns The expanded expression.
    */
   override expandTop(): Expr {
     return this.expand();
@@ -604,7 +604,7 @@ function mulNonrvRv(m: Mul): [Expr, Expr] {
 }
 
 /**
- * The arguments are sorted unless evaluate is false.
+ * Constructs the covariance, ordering the arguments unless evaluation is disabled.
  *
  * @param arg1 - First random expression.
  * @param arg2 - Second random expression.
@@ -666,10 +666,10 @@ export class MomentNode extends StatsNode {
     return new MomentNode(args);
   }
   /**
-   * The moment (SymPy Moment.doit: the expectation, evaluated).
+   * Computes the moment by evaluating the defining expectation.
    *
    * @param hints - Evaluation controls, including whether to evaluate nested expressions.
-   * @returns The moment.
+   * @returns The moment value.
    * @see SymPy `sympy.stats.symbolic_probability.Moment.doit`
    */
   doit(hints: ProbabilityDoitHints = {}): Expr {
@@ -691,7 +691,7 @@ export class MomentNode extends StatsNode {
 }
 
 /**
- * The unevaluated n-th moment of X about c.
+ * Constructs the unevaluated n-th moment of X about c.
  *
  * @param X - Random expression.
  * @param n - Order of the moment.
@@ -745,10 +745,10 @@ export class CentralMomentNode extends StatsNode {
     return new CentralMomentNode(args);
   }
   /**
-   * The central moment.
+   * Evaluates the moment about the mean.
    *
    * @param hints - Evaluation controls, including whether to evaluate nested expressions.
-   * @returns The central moment.
+   * @returns The central moment expression.
    * @see SymPy `sympy.stats.symbolic_probability.CentralMoment.doit`
    */
   doit(hints: ProbabilityDoitHints = {}): Expr {
@@ -773,7 +773,7 @@ export class CentralMomentNode extends StatsNode {
 }
 
 /**
- * The unevaluated n-th moment of X about its mean.
+ * Constructs the unevaluated n-th moment of X about its mean.
  *
  * @param X - Random expression.
  * @param n - Order of the moment.

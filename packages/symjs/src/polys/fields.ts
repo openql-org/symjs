@@ -89,7 +89,7 @@ export class FracField {
   }
 
   /**
-   * The printable representation.
+   * Formats this object as text.
    *
    * @returns The formatted text.
    * @see SymPy `sympy.polys.fields.FracField.__str__`
@@ -98,7 +98,7 @@ export class FracField {
     return `Rational function field in ${this.symbols.map((s) => str(s)).join(', ')} over ${String(this.domain)} with ${String(this.order)} order`;
   }
   /**
-   * Whether the operand represents the same value.
+   * Checks whether both operands represent the same value.
    *
    * @param other - Operand to combine or compare with this value.
    * @returns Whether the comparison holds.
@@ -108,7 +108,7 @@ export class FracField {
     return other instanceof FracField && this.ring.equals(other.ring);
   }
   /**
-   * True if `element` is an element of this field. False otherwise.
+   * Tests whether the candidate belongs to this fraction field.
    *
    * @param element - Value to coerce into the domain.
    * @returns Whether the operand belongs to this ring or field.
@@ -118,10 +118,10 @@ export class FracField {
     return element instanceof FracElement && this.equals(element.field);
   }
   /**
-   * The position of a generator.
+   * Locates the generator in the ordered list of indeterminates.
    *
    * @param gen - Generator or its index.
-   * @returns The position of a generator.
+   * @returns The generator index.
    * @throws RangeError when the element belongs to a different field.
    * @see SymPy `sympy.polys.fields.FracField.index`
    */
@@ -130,14 +130,14 @@ export class FracField {
     return this.ring.index(gen.toPoly());
   }
   /**
-   * The additive identity.
+   * Represents zero in this ring.
    *
    * @returns The additive identity.
    * @see SymPy `sympy.polys.fields.FracField.zero`
    */
   get zero(): FracElement { return this.rawNew(this.ring.zero); }
   /**
-   * The multiplicative identity.
+   * Represents one in this ring.
    *
    * @returns The multiplicative identity.
    * @see SymPy `sympy.polys.fields.FracField.one`
@@ -170,16 +170,16 @@ export class FracField {
     return this.rawNew(...n.cancel(d));
   }
   /**
-   * Coerce a value into the coefficient domain.
+   * Converts a value to the coefficient domain.
    *
    * @param element - Value to coerce into the domain.
-   * @returns Coerce a value into the coefficient domain.
+   * @returns The ground element.
    * @see SymPy `sympy.polys.fields.FracField.domain_new`
    */
   domainNew(element: ExprLike): Expr { return this.ring.domainNew(element); }
 
   /**
-   * A ground element, including fractions of a non-field ground domain.
+   * Embeds a ground element or a fraction of ground elements in the field.
    *
    * @param element - Value to coerce into the domain.
    * @returns The corresponding constant element.
@@ -250,9 +250,9 @@ export class FracField {
   }
 
   /**
-   * The polynomial ring with the same generators and coefficient domain.
+   * Forms the polynomial ring underlying this fraction field.
    *
-   * @returns The polynomial ring with the same generators and coefficient domain.
+   * @returns A ring with the same generators and coefficient domain.
    * @see SymPy `sympy.polys.fields.FracField.to_ring`
    */
   toRing(): PolyRing { return this.ring; }
@@ -305,15 +305,15 @@ export class FracElement {
     if (this.denom.isZero) throw new RangeError('zero denominator');
   }
   /**
-   * Whether the element is zero.
+   * Tests for equality with the domain's additive identity.
    *
-   * @returns Whether the element is zero.
+   * @returns True for zero.
    */
   get isZero(): boolean { return this.numer.isZero; }
   /**
-   * The polynomial represented by a fraction with unit denominator.
+   * Extracts the polynomial from a fraction whose denominator is one.
    *
-   * @returns The polynomial represented by a fraction with unit denominator.
+   * @returns The numerator as a polynomial.
    * @throws RangeError when the reduced denominator is not one.
    * @see SymPy `sympy.polys.fields.FracElement.to_poly`
    */
@@ -322,16 +322,16 @@ export class FracElement {
     return this.numer;
   }
   /**
-   * The domain containing the element.
+   * Identifies the domain to which this element belongs.
    *
-   * @returns The domain containing the element.
+   * @returns The parent domain.
    * @see SymPy `sympy.polys.fields.FracElement.parent`
    */
   parent(): Domain { return this.field.toDomain(); }
   /**
-   * A copy of this element.
+   * Copies the data representing this element.
    *
-   * @returns A copy of this element.
+   * @returns An independent element.
    * @see SymPy `sympy.polys.fields.FracElement.copy`
    */
   copy(): FracElement { return this.rawNew(this.numer, this.denom); }
@@ -354,17 +354,17 @@ export class FracElement {
    */
   new(numer: PolyElement, denom: PolyElement): FracElement { return this.field.new(numer, denom); }
   /**
-   * Express the fraction in the specified field.
+   * Rewrites the fraction as an element of the requested field.
    *
    * @param field - The target coefficient field.
-   * @returns Express the fraction in the specified field.
+   * @returns The converted fraction.
    * @see SymPy `sympy.polys.fields.FracElement.set_field`
    */
   setField(field: FracField): FracElement {
     return this.field.equals(field) ? this : field.new(this.numer.setRing(field.ring), this.denom.setRing(field.ring));
   }
   /**
-   * The corresponding symbolic expression.
+   * Expresses the element in terms of its generators.
    *
    * @param symbols - Symbols naming the generators, in order.
    * @returns The symbolic expression.
@@ -372,7 +372,7 @@ export class FracElement {
    */
   asExpr(...symbols: Expr[]): Expr { return mul(this.numer.asExpr(...symbols), pow(this.denom.asExpr(...symbols), -1)); }
   /**
-   * Whether the operand represents the same value.
+   * Checks whether both operands represent the same value.
    *
    * @param other - Operand to combine or compare with this value.
    * @returns Whether the comparison holds.
@@ -384,7 +384,7 @@ export class FracElement {
       : this.denom.equals(1) && this.numer.equals(other);
   }
   /**
-   * The printable representation.
+   * Formats this object as text.
    *
    * @returns The formatted text.
    * @see SymPy `sympy.polys.fields.FracElement.__str__`
@@ -397,17 +397,17 @@ export class FracElement {
     return `${numerator}/${denominator}`;
   }
   /**
-   * The additive inverse.
+   * Negates the element with respect to addition.
    *
    * @returns The additive inverse.
    * @see SymPy `sympy.polys.fields.FracElement.__neg__`
    */
   neg(): FracElement { return this.rawNew(this.numer.neg(), this.denom); }
   /**
-   * The sum of the operands.
+   * Adds the two operands.
    *
    * @param other - Operand to combine or compare with this value.
-   * @returns The sum of the operands.
+   * @returns Their sum.
    * @see SymPy `sympy.polys.fields.FracElement.__add__`
    */
   add(other: FracInput): FracElement {
@@ -415,18 +415,18 @@ export class FracElement {
     return this.new(this.numer.mul(g.denom).add(g.numer.mul(this.denom)), this.denom.mul(g.denom));
   }
   /**
-   * The difference of the operands.
+   * Subtracts the second operand from the first.
    *
    * @param other - Operand to combine or compare with this value.
-   * @returns The difference of the operands.
+   * @returns Their difference.
    * @see SymPy `sympy.polys.fields.FracElement.__sub__`
    */
   sub(other: FracInput): FracElement { return this.add(this.field.fieldNew(other).neg()); }
   /**
-   * The product of the operands.
+   * Multiplies the two operands.
    *
    * @param other - Operand to combine or compare with this value.
-   * @returns The product of the operands.
+   * @returns Their product.
    * @see SymPy `sympy.polys.fields.FracElement.__mul__`
    */
   mul(other: FracInput): FracElement {
@@ -434,10 +434,10 @@ export class FracElement {
     return this.new(this.numer.mul(g.numer), this.denom.mul(g.denom));
   }
   /**
-   * The quotient of the operands.
+   * Divides this element by the supplied operand.
    *
    * @param other - Operand to combine or compare with this value.
-   * @returns The quotient of the operands.
+   * @returns Their quotient.
    * @see SymPy `sympy.polys.fields.FracElement.__truediv__`
    */
   div(other: FracInput): FracElement {
@@ -445,10 +445,10 @@ export class FracElement {
     return this.new(this.numer.mul(g.denom), this.denom.mul(g.numer));
   }
   /**
-   * The element raised to the specified exponent.
+   * Raises the element to the requested power.
    *
    * @param exponent - Power to which to raise the base.
-   * @returns The element raised to the specified exponent.
+   * @returns The exponentiated element.
    * @see SymPy `sympy.polys.fields.FracElement.__pow__`
    */
   pow(exponent: IntLike): FracElement {
@@ -456,10 +456,10 @@ export class FracElement {
     return n < 0 ? this.rawNew(this.denom.pow(-n), this.numer.pow(-n)) : this.rawNew(this.numer.pow(n), this.denom.pow(n));
   }
   /**
-   * Computes partial derivative in `x`.
+   * Differentiates the fraction with respect to the generator.
    *
    * @param gen - Generator or its index.
-   * @returns Partial derivative in `x`.
+   * @returns The partial derivative.
    * @see SymPy `sympy.polys.fields.FracElement.diff`
    */
   diff(gen: FracElement): FracElement {
@@ -480,11 +480,11 @@ export class FracElement {
     return this.new(this.numer.subs(pairs), this.denom.subs(pairs));
   }
   /**
-   * Evaluate ground values and remove their generators from the result field.
+   * Substitutes ground values for the selected generators and drops them from the field.
    *
    * @param gen - Generator or its index.
    * @param value - Value to convert.
-   * @returns Evaluate ground values and remove their generators from the result field.
+   * @returns A fraction in the remaining generators or a ground value.
    * @throws RangeError when the denominator is zero.
    * @see SymPy `sympy.polys.fields.FracElement.evaluate`
    */
@@ -499,10 +499,10 @@ export class FracElement {
     return this.field.domain.quo(n, denominator);
   }
   /**
-   * Evaluate the rational function at the supplied values.
+   * Substitutes the given values into the rational function.
    *
    * @param values - Values to substitute, in generator order.
-   * @returns Evaluate the rational function at the supplied values.
+   * @returns The evaluated fraction or ground value.
    * @throws RangeError when the number of evaluation values is outside the range from one to the number of generators.
    * @see SymPy `sympy.polys.fields.FracElement.__call__`
    */
@@ -543,12 +543,12 @@ export function field(symbols: RingSymbols, domain: DomainLike = ZZ, order: Orde
   return [F, ...F.gens];
 }
 /**
- * Construct a field and an array of its generators.
+ * Constructs a rational function field together with its ordered generators.
  *
  * @param symbols - Symbols naming the generators, in order.
  * @param domain - Coefficient domain.
  * @param order - Monomial order used to compare terms.
- * @returns The field and an ordered array of its generators.
+ * @returns The pair `[field, generators]`.
  * @see SymPy `sympy.polys.fields.xfield`
  */
 export function xfield(symbols: RingSymbols, domain: DomainLike = ZZ, order: OrderLike = lex): [FracField, FracElement[]] {

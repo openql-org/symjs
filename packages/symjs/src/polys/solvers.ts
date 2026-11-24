@@ -17,13 +17,13 @@ import { PolynomialRingBase } from './domains/oldpolynomialring';
 import { constructDomain } from './constructor';
 
 /**
- * Augmented matrix of equations sum(coeff[g]*g)+rhs=0, over the given domain.
+ * Collects the coefficients and constant terms of linear equations over the given domain.
  *
  * @param coeffs - Coefficients in generator order.
  * @param rhs - Constant terms of the equations.
  * @param gens - Polynomial generators in the desired order.
  * @param domain - Coefficient domain.
- * @returns Augmented matrix of equations sum(coeff[g]*g)+rhs=0, over the given domain.
+ * @returns The augmented matrix.
  * @throws RangeError when the coefficient rows and constant terms have different lengths or an equation contains an unknown generator.
  * @see SymPy `sympy.polys.solvers.eqs_to_matrix`
  * @example
