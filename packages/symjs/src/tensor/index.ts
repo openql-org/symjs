@@ -74,7 +74,11 @@ export type SparseNDimArray = SparseNDimArrayNode;
  * from nested lists, a flat list and a shape, a Matrix or another array.
  *
  * @example
- * ImmutableDenseNDimArray([0, 1, 2, 3, 4, 5], [2, 3]).toString() // '[[0, 1, 2], [3, 4, 5]]'
+ * ```ts
+ * import { ImmutableDenseNDimArray } from '@symjs/symjs';
+ *
+ * ImmutableDenseNDimArray([0, 1, 2, 3, 4, 5], [2, 3]).toString(); // => [[0, 1, 2], [3, 4, 5]]
+ * ```
  */
 export const ImmutableDenseNDimArray = /* @__PURE__ */ callableClass(
   ImmutableDenseNDimArrayNode,

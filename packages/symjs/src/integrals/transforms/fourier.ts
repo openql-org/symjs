@@ -470,7 +470,12 @@ export class InverseFourierTransform extends FourierTypeTransform {
  * FourierTransform.
  *
  * @example
- * fourierTransform(exp(-x**2), x, k)  // sqrt(pi)*exp(-pi**2*k**2)
+ * ```ts
+ * import { ex, fourierTransform, symbols } from '@symjs/symjs';
+ *
+ * const [x, k] = symbols('x k');
+ * fourierTransform(ex`exp(-x**2)`, x, k); // => sqrt(pi)*exp(-pi**2*k**2)
+ * ```
  */
 export function fourierTransform(f: ExprLike, x: Sym, k: ExprLike, hints: TransformHints = {}): TransformResult {
   return new FourierTransform(f, x, k).doit(hints);
@@ -621,7 +626,12 @@ export class InverseCosineTransform extends SineCosineTypeTransform {
  * (SymPy sine_transform).
  *
  * @example
- * sineTransform(x*exp(-a*x**2), x, k)  // sqrt(2)*k*exp(-k**2/(4*a))/(4*a**(3/2))
+ * ```ts
+ * import { ex, sineTransform, symbols } from '@symjs/symjs';
+ *
+ * const [x, k] = symbols('x k');
+ * sineTransform(ex`x*exp(-a*x**2)`, x, k); // => sqrt(2)*k*exp(-k**2/(4*a))/(4*a**(3/2))
+ * ```
  */
 export function sineTransform(f: ExprLike, x: Sym, k: ExprLike, hints: TransformHints = {}): TransformResult {
   return new SineTransform(f, x, k).doit(hints);
@@ -637,7 +647,12 @@ export function inverseSineTransform(F: ExprLike, k: Sym, x: ExprLike, hints: Tr
  * (SymPy cosine_transform).
  *
  * @example
- * cosineTransform(exp(-a*x), x, k)  // sqrt(2)*a/(sqrt(pi)*(a**2 + k**2))
+ * ```ts
+ * import { cosineTransform, ex, symbols } from '@symjs/symjs';
+ *
+ * const [x, k] = symbols('x k');
+ * cosineTransform(ex`exp(-a*x)`, x, k); // => sqrt(2)*a/(sqrt(pi)*(a**2 + k**2))
+ * ```
  */
 export function cosineTransform(f: ExprLike, x: Sym, k: ExprLike, hints: TransformHints = {}): TransformResult {
   return new CosineTransform(f, x, k).doit(hints);
@@ -717,7 +732,12 @@ export class InverseHankelTransform extends HankelTypeTransform {
  * is not known, as SymPy does.
  *
  * @example
- * hankelTransform(exp(-a*r), r, k, 0)  // a/(k**3*(a**2/k**2 + 1)**(3/2))
+ * ```ts
+ * import { ex, hankelTransform, symbols } from '@symjs/symjs';
+ *
+ * const [r, k] = symbols('r k');
+ * hankelTransform(ex`exp(-a*r)`, r, k, 0); // => a/(k**3*(a**2/k**2 + 1)**(3/2))
+ * ```
  */
 export function hankelTransform(f: ExprLike, r: Sym, k: ExprLike, nu: ExprLike, hints: TransformHints = {}): TransformResult {
   return new HankelTransform(f, r, k, nu).doit(hints);

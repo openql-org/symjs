@@ -125,11 +125,16 @@ function applyDefined(name: string, def: FunctionDefinition, args: readonly Expr
  * expansions (SymPy: subclassing Function).
  *
  * @example
+ * ```ts
+ * import { cos, defineFunction, fn, pi, sub, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
  * const mysin = defineFunction('mysin', {
  *   eval: (x) => (x.equals(0) ? 0 : undefined),
  *   fdiff: ([x]) => cos(x!),
  *   rewrite: { cos: (x) => fn('cos', [sub(pi.div(2), x)], { evaluate: false }) },
  * });
+ * ```
  *
  * @experimental May change in a minor release.
  */

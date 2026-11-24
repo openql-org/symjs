@@ -189,3 +189,11 @@ export { orderAt, orderAtOo } from './integrals/orders';
 export { Gruntz, gruntz } from './series/gruntz';
 
 export { richardson, shanks } from './series/acceleration';
+
+// Heaviside, DiracDelta and SingularityFunction in parsed strings: parsing may not import the calculus area
+import { parserHooks as _parserHooks_ } from './parsing/parser';
+import { DiracDelta as _DiracDelta_, Heaviside as _Heaviside_, SingularityFunction as _SingularityFunction_ } from './integrals/transforms/delta';
+import { at as _at_ } from './core/guard';
+_parserHooks_.constructors.set('Heaviside', (args) => _Heaviside_(_at_(args, 0), args[1]));
+_parserHooks_.constructors.set('DiracDelta', (args) => _DiracDelta_(_at_(args, 0), args[1]));
+_parserHooks_.constructors.set('SingularityFunction', (args) => _SingularityFunction_(_at_(args, 0), _at_(args, 1), _at_(args, 2)));

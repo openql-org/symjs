@@ -149,3 +149,13 @@ export { order, argument } from './functions/special/bessel';
 export { bsplineBasis, bsplineBasisSet, interpolatingSpline } from './functions/special/bsplines';
 
 export { ff, rf } from './functions/combinatorial/factorials';
+
+// Mod, KroneckerDelta and LeviCivita in parsed strings: parsing may not import the special functions
+import { parserHooks as _parserHooks_ } from './parsing/parser';
+import { Mod as _Mod_ } from './functions/mod';
+import { KroneckerDelta as _KroneckerDelta_ } from './functions/special/hyper';
+import { LeviCivita as _LeviCivita_ } from './functions/special/tensorfunctions';
+_parserHooks_.constructors.set('Mod', (args) => _Mod_(...args));
+_parserHooks_.constructors.set('KroneckerDelta', (args) => _KroneckerDelta_(_at_(args, 0), _at_(args, 1), args[2]));
+_parserHooks_.constructors.set('LeviCivita', (args) => _LeviCivita_(...args));
+import { at as _at_ } from './core/guard';

@@ -52,7 +52,12 @@ const binom = (n: number, k: number): Rational => {
  * when f has another form.
  *
  * @example
- * trigintegrate(parse('1/sin(x)'), x)  // log(cos(x) - 1)/2 - log(cos(x) + 1)/2
+ * ```ts
+ * import { parse, symbols, trigintegrate } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * trigintegrate(parse('1/sin(x)'), x); // => log(cos(x) - 1)/2 - log(cos(x) + 1)/2
+ * ```
  */
 export function trigintegrate(f: Expr, x: Sym): Expr | undefined {
   const match = matchSinCos(f, x);

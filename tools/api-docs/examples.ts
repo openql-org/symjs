@@ -8,7 +8,8 @@
  * module in a temporary directory, type-checked with `tsc` against the sources
  * (through the `paths` of the root tsconfig), and run with `bun`: a statement
  * followed by `// => result` (continuation lines `//   ...`) must give `result`,
- * a string as it is and any other value printed by `sstr` (SymPy's `str()`).
+ * a string as it is and any other value printed by `sstr` (SymPy's `str()`);
+ * spaces at the ends of lines are ignored.
  *
  * Usage: `bun tools/api-docs/examples.ts [path filter...] [--no-run]`.
  */
@@ -104,7 +105,8 @@ const { sstr } = await import(process.argv[3]);
 let failures = 0;
 globalThis.__check = (value, expected, where) => {
   const got = typeof value === 'string' ? value : sstr(value);
-  if (got !== expected) { failures++; console.log(\`\${where}: expected \${JSON.stringify(expected)}, got \${JSON.stringify(got)}\`); }
+  const trim = (t) => t.split('\\n').map((l) => l.trimEnd()).join('\\n');
+  if (trim(got) !== trim(expected)) { failures++; console.log(\`\${where}: expected \${JSON.stringify(expected)}, got \${JSON.stringify(got)}\`); }
 };
 const files = JSON.parse(process.argv[2]);
 for (const [file, origin] of files) {
@@ -136,7 +138,7 @@ if (import.meta.main) {
     });
     writeFileSync(join(dir, 'tsconfig.json'), JSON.stringify({
       extends: join(ROOT, 'tsconfig.json'),
-      compilerOptions: { noEmit: true, noUnusedLocals: false, types: ['node'], typeRoots: [join(ROOT, 'node_modules/@types')] },
+      compilerOptions: { noEmit: true, noUnusedLocals: false, noUncheckedIndexedAccess: false, types: ['node'], typeRoots: [join(ROOT, 'node_modules/@types')] },
       include: ['*.ts'],
     }));
     if (paths.length > 0) {

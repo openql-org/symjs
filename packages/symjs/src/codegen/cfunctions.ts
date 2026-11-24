@@ -503,8 +503,13 @@ function logBaseEval(base: Expr, a: Expr): Expr | undefined {
  * finite precision arithmetic when x is close to zero.
  *
  * @example
- * expm1(x).diff(x) // exp(x)
- * evalf(expm1(1e-10)) // 1.00000000005000e-10
+ * ```ts
+ * import { evalf, expm1, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * expm1(x).diff(x); // => exp(x)
+ * evalf(expm1(1e-10)); // => 1.00000000005000e-10
+ * ```
  */
 export const expm1: CFunctionClass = /* @__PURE__ */ defineClass('expm1', {
   nargs: 1,
@@ -530,7 +535,12 @@ export const expm1: CFunctionClass = /* @__PURE__ */ defineClass('expm1', {
  * finite precision arithmetic when x is close to zero.
  *
  * @example
- * log1p(x).diff(x) // 1/(x + 1)
+ * ```ts
+ * import { log1p, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * log1p(x).diff(x); // => 1/(x + 1)
+ * ```
  */
 export const log1p: CFunctionClass = /* @__PURE__ */ defineClass('log1p', {
   nargs: 1,
@@ -562,7 +572,12 @@ export const log1p: CFunctionClass = /* @__PURE__ */ defineClass('log1p', {
  * SymPy exp2(x): 2**x.
  *
  * @example
- * exp2(x).diff(x) // log(2)*exp2(x)
+ * ```ts
+ * import { exp2, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * exp2(x).diff(x); // => log(2)*exp2(x)
+ * ```
  */
 export const exp2: CFunctionClass = /* @__PURE__ */ defineClass('exp2', {
   nargs: 1,
@@ -580,8 +595,13 @@ export const exp2: CFunctionClass = /* @__PURE__ */ defineClass('exp2', {
  * SymPy log2(x): the logarithm of x to base 2.
  *
  * @example
- * log2(8) // 3
- * log2(x).diff(x) // 1/(x*log(2))
+ * ```ts
+ * import { log2, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * log2(8); // => 3
+ * log2(x).diff(x); // => 1/(x*log(2))
+ * ```
  */
 export const log2: CFunctionClass = /* @__PURE__ */ defineClass('log2', {
   nargs: 1,
@@ -601,7 +621,12 @@ export const log2: CFunctionClass = /* @__PURE__ */ defineClass('log2', {
  * SymPy fma(x, y, z): the fused multiply-add x*y + z.
  *
  * @example
- * fma(x, y, z).diff(x) // y
+ * ```ts
+ * import { fma, symbols } from '@symjs/symjs';
+ *
+ * const [x, y, z] = symbols('x y z');
+ * fma(x, y, z).diff(x); // => y
+ * ```
  */
 export const fma: CFunctionClass = /* @__PURE__ */ defineClass('fma', {
   nargs: 3,
@@ -615,8 +640,13 @@ export const fma: CFunctionClass = /* @__PURE__ */ defineClass('fma', {
  * SymPy log10(x): the logarithm of x to base 10.
  *
  * @example
- * log10(100) // 2
- * log10(x).diff(x) // 1/(x*log(10))
+ * ```ts
+ * import { log10, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * log10(100); // => 2
+ * log10(x).diff(x); // => 1/(x*log(10))
+ * ```
  */
 export const log10: CFunctionClass = /* @__PURE__ */ defineClass('log10', {
   nargs: 1,
@@ -636,7 +666,12 @@ export const log10: CFunctionClass = /* @__PURE__ */ defineClass('log10', {
  * x**(1/2)). Like SymPy, it stays unevaluated, also numerically.
  *
  * @example
- * Sqrt(x).diff(x) // 1/(2*sqrt(x))
+ * ```ts
+ * import { Sqrt, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * Sqrt(x).diff(x); // => 1/(2*sqrt(x))
+ * ```
  */
 export const Sqrt: CFunctionClass = /* @__PURE__ */ defineClass('Sqrt', {
   nargs: 1,
@@ -651,7 +686,12 @@ export const Sqrt: CFunctionClass = /* @__PURE__ */ defineClass('Sqrt', {
  * x**(1/3). Like SymPy, it stays unevaluated, also numerically.
  *
  * @example
- * Cbrt(x).diff(x) // 1/(3*x**(2/3))
+ * ```ts
+ * import { Cbrt, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * Cbrt(x).diff(x); // => 1/(3*x**(2/3))
+ * ```
  */
 export const Cbrt: CFunctionClass = /* @__PURE__ */ defineClass('Cbrt', {
   nargs: 1,
@@ -665,7 +705,12 @@ export const Cbrt: CFunctionClass = /* @__PURE__ */ defineClass('Cbrt', {
  * SymPy hypot(x, y): sqrt(x**2 + y**2).
  *
  * @example
- * hypot(x, y).diff(x) // x/hypot(x, y)
+ * ```ts
+ * import { hypot, symbols } from '@symjs/symjs';
+ *
+ * const [x, y] = symbols('x y');
+ * hypot(x, y).diff(x); // => x/hypot(x, y)
+ * ```
  */
 export const hypot: CFunctionClass = /* @__PURE__ */ defineClass('hypot', {
   nargs: 2,
@@ -684,7 +729,11 @@ export const hypot: CFunctionClass = /* @__PURE__ */ defineClass('hypot', {
  * SymPy isnan(x): true for nan, false for any other number.
  *
  * @example
- * isnan(S.NaN) // true
+ * ```ts
+ * import { isnan, S } from '@symjs/symjs';
+ *
+ * isnan(S.NaN); // => True
+ * ```
  */
 export const isnan: CBooleanFunctionClass = /* @__PURE__ */ defineClass('isnan', {
   nargs: 1,
@@ -696,7 +745,11 @@ export const isnan: CBooleanFunctionClass = /* @__PURE__ */ defineClass('isnan',
  * SymPy isinf(x): true for an infinite x, false for a finite one.
  *
  * @example
- * isinf(S.Infinity) // true
+ * ```ts
+ * import { isinf, S } from '@symjs/symjs';
+ *
+ * isinf(S.Infinity); // => True
+ * ```
  */
 export const isinf: CBooleanFunctionClass = /* @__PURE__ */ defineClass('isinf', {
   nargs: 1,

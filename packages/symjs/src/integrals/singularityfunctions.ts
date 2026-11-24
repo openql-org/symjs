@@ -29,7 +29,12 @@ const hasSingularity = (e: Expr): boolean => isSingularityFunction(e) || e.args.
  * functions; NoMatch (SymPy None) when the method does not apply.
  *
  * @example
- * singularityintegrate(SingularityFunction(x, a, 3), x)  // SingularityFunction(x, a, 4)/4
+ * ```ts
+ * import { SingularityFunction, singularityintegrate, symbols } from '@symjs/symjs';
+ *
+ * const [x, a] = symbols('x a');
+ * singularityintegrate(SingularityFunction(x, a, 3), x); // => SingularityFunction(x, a, 4)/4
+ * ```
  */
 export function singularityintegrate(f: ExprLike, x: Sym): Expr | NoMatchResult {
   const e = sympify(f);

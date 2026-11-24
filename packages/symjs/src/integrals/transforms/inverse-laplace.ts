@@ -634,7 +634,13 @@ export interface InverseLaplaceOptions extends TransformHints {
  * `noconds: false` the result is [f, cond].
  *
  * @example
- * inverseLaplaceTransform(exp(-a*s)/s, s, t)  // Heaviside(-a + t) for positive a
+ * ```ts
+ * import { ex, inverseLaplaceTransform, symbols } from '@symjs/symjs';
+ *
+ * const [s, t] = symbols('s t');
+ * const [a] = symbols('a', { positive: true });
+ * inverseLaplaceTransform(ex`exp(-${a}*s)/s`, s, t); // => Heaviside(-a + t)
+ * ```
  */
 export function inverseLaplaceTransform(F: ExprLike, s: Sym, t: ExprLike, plane: ExprLike | undefined, opts: InverseLaplaceOptions & { noconds: false }): InverseLaplacePair;
 export function inverseLaplaceTransform(F: ExprLike, s: Sym, t: ExprLike, plane?: ExprLike, opts?: InverseLaplaceOptions): Expr;

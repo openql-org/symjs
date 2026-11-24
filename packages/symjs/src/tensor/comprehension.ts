@@ -54,8 +54,13 @@ function checkLimits(limits: readonly ComprehensionLimit[]): Expr[] {
  * unevaluated until `doit()`, which needs numeric bounds.
  *
  * @example
+ * ```ts
+ * import { add, ArrayComprehension, mul, symbols } from '@symjs/symjs';
+ *
+ * const [i, j] = symbols('i j');
  * ArrayComprehension(add(mul(10, i), j), [i, 1, 4], [j, 1, 3]).doit()
  * // [[11, 12, 13], [21, 22, 23], [31, 32, 33], [41, 42, 43]]
+ * ```
  */
 export class ArrayComprehensionNode extends ExtensionExpr {
   /**
@@ -188,7 +193,12 @@ let lambdaCounter = 0;
  * function of none is a constant.
  *
  * @example
- * ArrayComprehensionMap((a: number) => a + 1, [j, 1, 4]).doit() // [2, 3, 4, 5]
+ * ```ts
+ * import { ArrayComprehensionMap, symbols } from '@symjs/symjs';
+ *
+ * const [number, a, j] = symbols('number a j');
+ * ArrayComprehensionMap((a: number) => a + 1, [j, 1, 4]).doit(); // => [2, 3, 4, 5]
+ * ```
  */
 export class ArrayComprehensionMapNode extends ArrayComprehensionNode {
   readonly #fn: ComprehensionLambda;

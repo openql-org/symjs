@@ -373,7 +373,11 @@ export function canonicalFree(base: readonly number[], gensIn: readonly PermLike
  * sign and are shared.
  *
  * @example
- * permAfDirectProduct([[1, 0, 2, 3], [0, 1, 3, 2]], [[1, 0]], false) // [[1, 0, 2, 3, 4, 5], [0, 1, 3, 2, 4, 5], [0, 1, 2, 3, 5, 4]]
+ * ```ts
+ * import { permAfDirectProduct } from '@symjs/symjs';
+ *
+ * permAfDirectProduct([[1, 0, 2, 3], [0, 1, 3, 2]], [[1, 0]], false); // => [[1, 0, 2, 3, 4, 5], [0, 1, 3, 2, 4, 5], [0, 1, 2, 3, 5, 4]]
+ * ```
  */
 export function permAfDirectProduct(gens1: readonly (readonly number[])[], gens2: readonly (readonly number[])[], signed = true): Af[] {
   const s = signed ? 2 : 0;
@@ -402,7 +406,11 @@ export function bsgsDirectProductAf(base1: readonly number[], gens1: readonly Af
  * by a BSGS.
  *
  * @example
- * bsgsDirectProduct([], [new Permutation([0, 1, 2])], [0], [new Permutation([1, 0, 2, 3])]) // [[1], [Permutation(4)(1, 2)]]
+ * ```ts
+ * import { bsgsDirectProduct, Permutation } from '@symjs/symjs';
+ *
+ * bsgsDirectProduct([], [new Permutation([0, 1, 2])], [0], [new Permutation([1, 0, 2, 3])]); // => [[1], [(4)(1 2)]]
+ * ```
  */
 export function bsgsDirectProduct(base1: readonly number[], gens1: readonly PermLike[], base2: readonly number[], gens2: readonly PermLike[], signed = true): [number[], Permutation[]] {
   const [base, gens] = bsgsDirectProductAf(base1, gens1.map(afOf), base2, gens2.map(afOf), signed);
@@ -415,7 +423,11 @@ export function bsgsDirectProduct(base1: readonly number[], gens1: readonly Perm
  * slots.
  *
  * @example
- * getSymmetricGroupSgs(3) // [[0, 1], [Permutation(4)(0, 1), Permutation(4)(1, 2)]]
+ * ```ts
+ * import { getSymmetricGroupSgs } from '@symjs/symjs';
+ *
+ * getSymmetricGroupSgs(3); // => [[0, 1], [(4)(0 1), (4)(1 2)]]
+ * ```
  */
 export function getSymmetricGroupSgs(n: number, antisym = false): [number[], Permutation[]] {
   const [base, gens] = getSymmetricGroupSgsAf(n, antisym);
@@ -498,7 +510,11 @@ function tensorGensAf(base: readonly number[], gens: readonly Af[], listFreeIndi
  * (`sym` 0), anticommuting (1) or without commutation symmetry (null).
  *
  * @example
- * tensorGens([0, 1], getSymmetricGroupSgs(3)[1], [[1], [0]]) // [8, [0, 4], [Permutation(7)(0, 2), Permutation(7)(4, 5)]]
+ * ```ts
+ * import { getSymmetricGroupSgs, tensorGens } from '@symjs/symjs';
+ *
+ * tensorGens([0, 1], getSymmetricGroupSgs(3)[1], [[1], [0]]); // => [8, [0, 4], [(7)(0 2), (7)(4 5)]]
+ * ```
  */
 export function tensorGens(base: readonly number[], gens: readonly PermLike[], listFreeIndices: readonly (readonly number[])[], sym: 0 | 1 | null = 0): [number, number[], Permutation[]] {
   const [size, resBase, resGens] = tensorGensAf(base, gens.map(afOf), listFreeIndices.map((f) => [...f]), sym);
@@ -510,7 +526,11 @@ export function tensorGens(base: readonly number[], gens: readonly PermLike[], l
  * product of the tensor components v = (base, gens, list_free_indices, sym).
  *
  * @example
- * gensProducts([[0], [new Permutation([1, 0, 2, 3])], [[1], []], 0]) // [6, [2], [Permutation(5)(2, 3)]]
+ * ```ts
+ * import { gensProducts, Permutation } from '@symjs/symjs';
+ *
+ * gensProducts([[0], [new Permutation([1, 0, 2, 3])], [[1], []], 0]); // => [6, [2], [(5)(2 3)]]
+ * ```
  */
 export function gensProducts(...v: [readonly number[], readonly PermLike[], readonly (readonly number[])[], 0 | 1 | null][]): [number, number[], Permutation[]] {
   const [size, base, gens] = gensProductsAf(v.map(([b, gs, f, s]): TensorGens => [[...b], gs.map(afOf), f.map((x) => [...x]), s]));
@@ -700,8 +720,12 @@ export function canonicalizeTensor(g: PermLike | Expr, dummies: readonly number[
  *
  * @see sympy.combinatorics.testutil.canonicalize_naive
  * @example
+ * ```ts
+ * import { canonicalizeNaive, getSymmetricGroupSgs } from '@symjs/symjs';
+ *
  * const [base2, gens2] = getSymmetricGroupSgs(2);
- * canonicalizeNaive([1, 3, 2, 0, 4, 5], [2, 3], 0, [base2, gens2, 2, 0]); // [0, 2, 1, 3, 4, 5]
+ * canonicalizeNaive([1, 3, 2, 0, 4, 5], [2, 3], 0, [base2, gens2, 2, 0]); // => [0, 2, 1, 3, 4, 5]
+ * ```
  */
 export function canonicalizeNaive(g: PermLike, dummies: readonly number[], sym: MetricSym, ...v: CanonComponent[]): Af | 0 {
   return canonicalizeNaiveAf(afOf(g), [[...dummies]], [sym], v.map(([base, gens, n, s]): [number[], Af[], number, MetricSym] => [[...base], gens.map(afOf), n, s]));
@@ -714,7 +738,11 @@ export function canonicalizeNaive(g: PermLike, dummies: readonly number[], sym: 
  *
  * @see sympy.combinatorics.testutil.graph_certificate
  * @example
- * graphCertificate(new Map([[0, [1]], [1, [0]]])); // [0, 1, 2, 3]
+ * ```ts
+ * import { graphCertificate } from '@symjs/symjs';
+ *
+ * graphCertificate(new Map([[0, [1]], [1, [0]]])); // => [0, 1, 2, 3]
+ * ```
  */
 export function graphCertificate(graph: ReadonlyMap<number, readonly number[]>): Af | 0 {
   // (a stable sort by decreasing degree, as Python's)

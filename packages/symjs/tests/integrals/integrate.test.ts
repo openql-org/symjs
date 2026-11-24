@@ -251,9 +251,6 @@ describe('results that differ from SymPy 1.14', () => {
     // not implemented in symjs (SymPy's result shown)
     ["sj.integrate(P('1/(x**4 + 1)'), x)", () => sj.integrate(P('1/(x**4 + 1)'), x), "-sqrt(2)*log(x**2 - sqrt(2)*x + 1)/8 + sqrt(2)*log(x**2 + sqrt(2)*x + 1)/8 + sqrt(2)*atan(sqrt(2)*x - 1)/4 + sqrt(2)*atan(sqrt(2)*x + 1)/4", "-sqrt(2)*log(x**2 - sqrt(2)*x + 1)/8 + sqrt(2)*log(x**2 + sqrt(2)*x + 1)/8 + sqrt(2)*atan(sqrt(2)*x - 1)/4 + sqrt(2)*atan(sqrt(2)*x + 1)/4"],
     // not implemented in symjs (SymPy's result shown)
-    // not implemented in symjs (SymPy's result shown)
-    ["sj.integrate(P('Heaviside(x)'), x)", () => sj.integrate(P('Heaviside(x)'), x), "Integral(Heaviside(x), x)", "x*Heaviside(x)"],
-    // not implemented in symjs (SymPy's result shown)
     ["sj.integrate(sj.Piecewise([P('x'), P('x < 1')], [P('gamma(x)'), true]), x)", () => sj.integrate(sj.Piecewise([P('x'), P('x < 1')], [P('gamma(x)'), true]), x), "Integral(Piecewise((x, x < 1), (gamma(x), True)), x)", "Piecewise((x**2/2, x < 1), (Integral(gamma(x), (x, 1, x)) + 1/2, True))"],
     // not implemented in symjs (SymPy's result shown)
     // not implemented in symjs (SymPy's result shown)

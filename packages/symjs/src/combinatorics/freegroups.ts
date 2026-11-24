@@ -75,8 +75,12 @@ function lettersToSyllables(letters: readonly number[]): Syllable[] {
  * SymPy, groups on the same symbols are the same object.
  *
  * @example
+ * ```ts
+ * import { freeGroup } from '@symjs/symjs';
+ *
  * const [F, x, y] = freeGroup('x, y');
- * String(x.pow(2).mul(y.inverse())) // 'x**2*y**-1'
+ * String(x.pow(2).mul(y.inverse())); // => x**2*y**-1
+ * ```
  */
 export class FreeGroup {
   readonly isAssociative = true;

@@ -45,8 +45,7 @@ import { isDiracDelta, isHeaviside } from './transforms/delta';
  * t = tan(u/2); integrate integrates the rational function of t. Undefined
  * when f has another form or the rational function is not integrated.
  *
- * @example
- * heurischTrig(parse('1/(sin(y) + 1)'), y, integrate)  // -2/(tan(y/2) + 1)
+ * For example, `1/(sin(y) + 1)` gives `-2/(tan(y/2) + 1)`.
  */
 export function heurischTrig(f: Expr, x: Sym, integrate: (g: Expr, t: Sym) => Expr | undefined): Expr | undefined {
   // the arguments of sin and cos, and whether x appears elsewhere
@@ -115,8 +114,7 @@ function addComponents(f: Expr, x: Sym, out: Map<string, Expr>): void {
  * function applications and non-integer powers (a rational power with its
  * minimal positive exponent).
  *
- * @example
- * componentsOf(parse('sin(x)*cos(x)**2'), x)  // [x, sin(x), cos(x)] (in some order)
+ * For example, the components of `sin(x)*cos(x)**2` in `x` are `x`, `sin(x)` and `cos(x)`.
  */
 export function componentsOf(f: Expr, x: Sym): Expr[] {
   const out = new Map<string, Expr>();
@@ -225,7 +223,12 @@ function splitI(e0: Expr): [Expr, Expr] {
  * Bessel derivatives use adjacent orders as an algebraically independent pair.
  *
  * @example
- * heurisch(parse('y*tan(x)'), x)  // y*log(tan(x)**2 + 1)/2
+ * ```ts
+ * import { heurisch, parse, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * heurisch(parse('y*tan(x)'), x); // => y*log(tan(x)**2 + 1)/2
+ * ```
  */
 export function heurisch(f: Expr, x: Sym, opts: HeurischOptions = {}): Expr | undefined {
   // A quadratic radical x/sqrt(a*x**2+b) has a primitive in the same
@@ -523,7 +526,12 @@ function solveDenominator(d: Expr, x: Sym): Solution[] {
  * heurisch finds no antiderivative.
  *
  * @example
- * heurischWrapper(parse('cos(n*x)'), x)  // Piecewise((sin(n*x)/n, Ne(n, 0)), (x, True))
+ * ```ts
+ * import { heurischWrapper, parse, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * heurischWrapper(parse('cos(n*x)'), x); // => Piecewise((sin(n*x)/n, Ne(n, 0)), (x, True))
+ * ```
  */
 export function heurischWrapper(f: Expr, x: Sym, opts: HeurischOptions = {}): Expr | undefined {
   if (!f.has(x)) return mul(f, x);

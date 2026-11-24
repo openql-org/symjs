@@ -77,10 +77,14 @@ const dupEval = (f: readonly bigint[], a: bigint): bigint => f.reduce((r, c) => 
  * epsilon.
  *
  * @example
+ * ```ts
+ * import { ex, Permutation, Resolvent, symbols } from '@symjs/symjs';
+ *
  * const X = symbols('X0 X1 X2 X3');
- * const R = new Resolvent(X[0]*X[2] + X[1]*X[3], X, [new Permutation([0, 1, 2, 3]),
+ * const R = new Resolvent(ex`X0*X2 + X1*X3`, X, [new Permutation([0, 1, 2, 3]),
  *   new Permutation([1, 0, 2, 3]), new Permutation([3, 1, 2, 0])]);
- * R.rootLambdas[1](...X); // X0*X3 + X1*X2
+ * R.rootLambdas[1](...X); // => X0*X3 + X1*X2
+ * ```
  */
 export class Resolvent {
   readonly F: Expr;

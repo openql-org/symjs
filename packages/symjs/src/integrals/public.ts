@@ -34,8 +34,13 @@ import { finiteSet } from '../sets/sets';
  * arctangents (by default they are when the other symbols are real).
  *
  * @example
- * ratint(parse('1/(x**2 + 1)'), x)  // atan(x)
- * ratint(parse('1/(x**2 + 1)'), x, { real: false })  // -I*log(x - I)/2 + I*log(x + I)/2
+ * ```ts
+ * import { parse, ratint, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * ratint(parse('1/(x**2 + 1)'), x); // => atan(x)
+ * ratint(parse('1/(x**2 + 1)'), x, { real: false }); // => -I*log(x - I)/2 + I*log(x + I)/2
+ * ```
  */
 export const ratint = (f: ExprLike | readonly [ExprLike, ExprLike], x: Sym, opts: { real?: boolean } = {}): Expr | NoMatchResult =>
   orNoMatch(RT.ratint(isPair(f) ? div(f[0], f[1]) : sympify(f), x, opts));
@@ -62,7 +67,12 @@ export const logToReal = (h: Poly, q: Poly, x: Sym, t: Sym): Expr | NoMatchResul
  * the functions rewritten to that form); NoMatch when f has another form.
  *
  * @example
- * trigintegrate(parse('sin(x)**2'), x)  // x/2 - sin(x)*cos(x)/2
+ * ```ts
+ * import { parse, symbols, trigintegrate } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * trigintegrate(parse('sin(x)**2'), x); // => x/2 - sin(x)*cos(x)/2
+ * ```
  */
 export const trigintegrate = (f: ExprLike, x: Sym): Expr | NoMatchResult => {
   const g = rewriteSinCos(sympify(f));
@@ -95,7 +105,12 @@ function rewriteSinCos(f: Expr): Expr {
  * DiracDelta; NoMatch when the method does not apply.
  *
  * @example
- * deltaintegrate(parse('x*DiracDelta(x - 1)'), x)  // Heaviside(x - 1)
+ * ```ts
+ * import { deltaintegrate, parse, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * deltaintegrate(parse('x*DiracDelta(x - 1)'), x); // => Heaviside(x - 1)
+ * ```
  */
 export const deltaintegrate = (f: ExprLike, x: Sym): Expr | NoMatchResult => orNoMatch(DF.deltaintegrate(sympify(f), x));
 
@@ -115,7 +130,12 @@ export function changeMul(node: ExprLike, x: Sym): [Expr | NoMatchResult, Expr |
  * be rewritten.
  *
  * @example
- * meijerintDefinite(parse('exp(-x**2)'), x, S.NegativeInfinity, S.Infinity)  // [sqrt(pi), True]
+ * ```ts
+ * import { meijerintDefinite, parse, S, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * meijerintDefinite(parse('exp(-x**2)'), x, S.NegativeInfinity, S.Infinity); // => [sqrt(pi), True]
+ * ```
  */
 export const meijerintDefinite = (f: ExprLike, x: Sym, a: ExprLike, b: ExprLike): [Expr, Expr] | NoMatchResult => orNoMatch(MI.meijerintDefinite(f, x, a, b));
 
@@ -124,7 +144,12 @@ export const meijerintDefinite = (f: ExprLike, x: Sym, a: ExprLike, b: ExprLike)
  * G-functions; NoMatch when f cannot be rewritten.
  *
  * @example
- * meijerintIndefinite(parse('sin(x)'), x)  // -cos(x)
+ * ```ts
+ * import { meijerintIndefinite, parse, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * meijerintIndefinite(parse('sin(x)'), x); // => -cos(x)
+ * ```
  */
 export const meijerintIndefinite = (f: ExprLike, x: Sym): Expr | NoMatchResult => orNoMatch(MI.meijerintIndefinite(f, x));
 
@@ -134,7 +159,12 @@ export const meijerintIndefinite = (f: ExprLike, x: Sym): Expr | NoMatchResult =
  * NoMatch when f cannot be rewritten or the condition is False.
  *
  * @example
- * meijerintInversion(parse('1/x'), x, t)  // Heaviside(t)
+ * ```ts
+ * import { meijerintInversion, parse, symbols } from '@symjs/symjs';
+ *
+ * const [x, t] = symbols('x t');
+ * meijerintInversion(parse('1/x'), x, t); // => Heaviside(t)
+ * ```
  */
 export function meijerintInversion(f: ExprLike, x: Sym, t: Sym): Expr | NoMatchResult {
   const fe = sympify(f);
@@ -149,7 +179,12 @@ export function meijerintInversion(f: ExprLike, x: Sym, t: Sym): Expr | NoMatchR
  * with its minimal positive exponent).
  *
  * @example
- * components(parse('sin(x)*cos(x)**2'), x)  // {x, cos(x), sin(x)}
+ * ```ts
+ * import { components, parse, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * components(parse('sin(x)*cos(x)**2'), x); // => {x, sin(x), cos(x)}
+ * ```
  */
 export const components = (f: ExprLike, x: Sym): SetExpr => finiteSet(...HE.componentsOf(sympify(f), x));
 
@@ -158,7 +193,12 @@ export const components = (f: ExprLike, x: Sym): SetExpr => finiteSet(...HE.comp
  * NoMatch when none is found (not a proof that none is elementary).
  *
  * @example
- * heurisch(parse('cos(n*x)'), x)  // sin(n*x)/n
+ * ```ts
+ * import { heurisch, parse, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * heurisch(parse('cos(n*x)'), x); // => sin(n*x)/n
+ * ```
  */
 export const heurisch = (f: ExprLike, x: Sym, opts: HeurischOptions = {}): Expr | NoMatchResult => orNoMatch(HE.heurisch(sympify(f), x, opts));
 
@@ -168,6 +208,11 @@ export const heurisch = (f: ExprLike, x: Sym, opts: HeurischOptions = {}): Expr 
  * heurisch finds no antiderivative.
  *
  * @example
- * heurischWrapper(parse('cos(n*x)'), x)  // Piecewise((sin(n*x)/n, Ne(n, 0)), (x, True))
+ * ```ts
+ * import { heurischWrapper, parse, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * heurischWrapper(parse('cos(n*x)'), x); // => Piecewise((sin(n*x)/n, Ne(n, 0)), (x, True))
+ * ```
  */
 export const heurischWrapper = (f: ExprLike, x: Sym, opts: HeurischOptions = {}): Expr | NoMatchResult => orNoMatch(HE.heurischWrapper(sympify(f), x, opts));

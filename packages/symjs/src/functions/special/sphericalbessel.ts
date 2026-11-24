@@ -224,7 +224,11 @@ export const hn2 = (n: ExprLike, z: ExprLike): Expr => fn('hn2', [n, z]);
  * Bessel function jn(n, z), i.e. of besselj(n + 1/2, z), as Floats with dps digits.
  * Only SymPy's default method ("sympy", by mpmath besseljzero) is available.
  * @example
- * jnZeros(2, 4, { dps: 5 })  // [5.7635, 9.0950, 12.323, 15.515]
+ * ```ts
+ * import { jnZeros } from '@symjs/symjs';
+ *
+ * jnZeros(2, 4, { dps: 5 }); // => [5.7635, 9.0950, 12.323, 15.515]
+ * ```
  */
 export function jnZeros(n: ExprLike, k: ExprLike, opts: { method?: string; dps?: ExprLike } = {}): Float[] {
   if ((opts.method ?? 'sympy') !== 'sympy') throw new NotImplementedError('Unknown method.');

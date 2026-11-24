@@ -1420,13 +1420,23 @@ export class PrettyPrinter {
 // ---------------------------------------------------------------------------
 
 /**
- * SymPy `pretty(expr, **settings)`: a string containing the 2D pretty form
- * of `expr` (unicode by default).
+ * Prints the two-dimensional pretty form of an expression as a string,
+ * with Unicode characters unless `useUnicode` is `false`.
  *
+ * @param expr - The value to print.
+ * @param options - The printer's settings, see {@link PrettyOptions}.
+ * @returns The lines of the drawing, joined by newlines.
+ * @see SymPy `sympy.printing.pretty.pretty.pretty`
  * @example
  * ```ts
- * pretty(parse('x**2 + 2*x + 1'));
- * // ' 2          \nx  + 2⋅x + 1'
+ * import { ex, pretty } from '@symjs/symjs';
+ *
+ * pretty(ex`x**2 + 2*x + 1`); // =>  2
+ * //   x  + 2⋅x + 1
+ * pretty(ex`sqrt(x)/2`, { useUnicode: false }); // =>   ___
+ * //   \/ x
+ * //   -----
+ * //     2
  * ```
  */
 export function pretty(expr: Printable, options: PrettyOptions = {}): string {

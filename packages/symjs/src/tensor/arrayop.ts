@@ -54,8 +54,12 @@ const newOfClass = (a: NDimArray, it: ArrayInput, shape: readonly number[]): NDi
  * product.
  *
  * @example
- * tensorproduct(Array([[1, 2], [3, 4]]), Array([x, y]))
- * // [[[x, y], [2*x, 2*y]], [[3*x, 3*y], [4*x, 4*y]]]
+ * ```ts
+ * import { Array, symbols, tensorproduct } from '@symjs/symjs';
+ *
+ * const [x, y] = symbols('x y');
+ * tensorproduct(Array([[1, 2], [3, 4]]), Array([x, y])); // => [[[x, y], [2*x, 2*y]], [[3*x, 3*y], [4*x, 4*y]]]
+ * ```
  */
 export function tensorproduct(...args: TensorArg[]): Expr {
   const hook = arrayOperationHooks.symbolic;
@@ -123,7 +127,12 @@ function productSums(lists: readonly (readonly number[])[]): number[] {
  * each group of axes. Contracting every axis gives a scalar.
  *
  * @example
- * tensorcontraction(Array([[x, y], [z, t]]), [0, 1]) // t + x
+ * ```ts
+ * import { Array, symbols, tensorcontraction } from '@symjs/symjs';
+ *
+ * const [x, y, z, t] = symbols('x y z t');
+ * tensorcontraction(Array([[x, y], [z, t]]), [0, 1]); // => t + x
+ * ```
  */
 export function tensorcontraction(arrayIn: TensorArg, ...axes: (readonly number[])[]): Expr {
   const hook = arrayOperationHooks.symbolic;
@@ -142,7 +151,12 @@ export function tensorcontraction(arrayIn: TensorArg, ...axes: (readonly number[
  * axes, which become the last axes of the result.
  *
  * @example
- * tensordiagonal(Matrix.of([[a, b], [c, d]]), [0, 1]) // [a, d]
+ * ```ts
+ * import { Matrix, symbols, tensordiagonal } from '@symjs/symjs';
+ *
+ * const [a, b, c, d] = symbols('a b c d');
+ * tensordiagonal(Matrix.of([[a, b], [c, d]]), [0, 1]); // => [a, d]
+ * ```
  */
 export function tensordiagonal(arrayIn: TensorArg, ...axes: (readonly number[])[]): Expr {
   const hook = arrayOperationHooks.symbolic;

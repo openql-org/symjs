@@ -58,9 +58,13 @@ export interface FpCosetOptions extends Omit<CosetEnumerationOptions, 'modified'
  * generators of a free group and these relators.
  *
  * @example
+ * ```ts
+ * import { FpGroup, freeGroup } from '@symjs/symjs';
+ *
  * const [F, x, y] = freeGroup('x, y');
  * const G = new FpGroup(F, [x.pow(2), y.pow(3), x.mul(y).pow(4)]);
- * String(G.order()) // '24'
+ * String(G.order()); // => 24
+ * ```
  */
 export class FpGroup {
   readonly isGroup = true;

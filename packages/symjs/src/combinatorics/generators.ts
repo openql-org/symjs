@@ -21,7 +21,11 @@ const rotateLeft = (a: readonly number[], k: number): number[] => [...a.slice(k)
  * in lexicographic order of their array forms.
  *
  * @example
- * [...symmetric(3)].map(String) // ['(2)', '(1 2)', '(2)(0 1)', '(0 1 2)', '(0 2 1)', '(0 2)']
+ * ```ts
+ * import { symmetric } from '@symjs/symjs';
+ *
+ * [...symmetric(3)].map(String); // => [(2), (1 2), (2)(0 1), (0 1 2), (0 2 1), (0 2)]
+ * ```
  */
 export function* symmetric(n: number): Generator<Permutation, void, undefined> {
   for (const perm of permutations(range(n))) yield new Permutation(perm);
@@ -32,7 +36,11 @@ export function* symmetric(n: number): Generator<Permutation, void, undefined> {
  * powers of the left rotation of [0, 1, ..., n - 1].
  *
  * @example
- * [...cyclic(3)].map(String) // ['(2)', '(0 1 2)', '(0 2 1)']
+ * ```ts
+ * import { cyclic } from '@symjs/symjs';
+ *
+ * [...cyclic(3)].map(String); // => [(2), (0 1 2), (0 2 1)]
+ * ```
  */
 export function* cyclic(n: number): Generator<Permutation, void, undefined> {
   let gen = range(n);
@@ -47,7 +55,11 @@ export function* cyclic(n: number): Generator<Permutation, void, undefined> {
  * alternating group of order n!/2.
  *
  * @example
- * [...alternating(3)].map(String) // ['(2)', '(0 1 2)', '(0 2 1)']
+ * ```ts
+ * import { alternating } from '@symjs/symjs';
+ *
+ * [...alternating(3)].map(String); // => [(2), (0 1 2), (0 2 1)]
+ * ```
  */
 export function* alternating(n: number): Generator<Permutation, void, undefined> {
   for (const perm of permutations(range(n))) {
@@ -62,7 +74,11 @@ export function* alternating(n: number): Generator<Permutation, void, undefined>
  * n = 2 the groups of order 2 and 4 on 2 and 4 points (as in SymPy).
  *
  * @example
- * [...dihedral(3)].map(String) // ['(2)', '(0 2)', '(0 1 2)', '(1 2)', '(0 2 1)', '(2)(0 1)']
+ * ```ts
+ * import { dihedral } from '@symjs/symjs';
+ *
+ * [...dihedral(3)].map(String); // => [(2), (0 2), (0 1 2), (1 2), (0 2 1), (2)(0 1)]
+ * ```
  */
 export function* dihedral(n: number): Generator<Permutation, void, undefined> {
   if (n === 1) {

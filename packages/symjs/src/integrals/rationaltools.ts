@@ -95,7 +95,12 @@ function polyCancel(f: Poly, g: Poly): [Expr, Poly, Poly] {
  * integral(f/g) = A/u + integral(B/v).
  *
  * @example
- * ratintRatpart(Poly.from(1, [x]), Poly.from('x**2 + 2*x + 1', [x]), x)  // [-1/(x + 1), 0]
+ * ```ts
+ * import { ex, Poly, ratintRatpart, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * ratintRatpart(Poly.from(1, [x]), Poly.from(ex`x**2 + 2*x + 1`, [x]), x); // => [-1/(x + 1), 0]
+ * ```
  */
 export function ratintRatpart(f: Poly, g: Poly, x: Sym): [Expr, Expr] {
   // A square-free denominator has no rational part. Avoid constructing and
@@ -133,7 +138,12 @@ export function ratintRatpart(f: Poly, g: Poly, x: Sym): [Expr, Expr] {
  * with integral(f/g) = sum over the roots a of q(t) of a*log(s(x, a)).
  *
  * @example
- * ratintLogpart(Poly.from(1, [x]), Poly.from('x**2 - 2', [x]), x, t)  // [[x**2 - 2*t*x... ]]
+ * ```ts
+ * import { ex, Poly, ratintLogpart, symbols } from '@symjs/symjs';
+ *
+ * const [x, t] = symbols('x t');
+ * ratintLogpart(Poly.from(1, [x]), Poly.from(ex`x**2 - 2`, [x]), x, t); // => [[Poly(x - 4*t, x, domain='ZZ[t]'), Poly(-8*t**2 + 1, t, domain='ZZ')]]
+ * ```
  */
 export function ratintLogpart(f: Poly, g: Poly, x: Sym, t: Sym): [Poly, Poly][] {
   // f = c*g': the resultant is a constant times (t - c)**deg(g), whose only factor gives c*log(g); the
@@ -188,7 +198,12 @@ export function ratintLogpart(f: Poly, g: Poly, x: Sym, t: Sym): [Poly, Poly][] 
  * arguments.
  *
  * @example
- * logToAtan(Poly.from('x', [x]), Poly.from(1, [x]))  // 2*atan(x)
+ * ```ts
+ * import { logToAtan, Poly, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * logToAtan(Poly.from(x, [x]), Poly.from(1, [x])); // => 2*atan(x)
+ * ```
  */
 export function logToAtan(f0: Poly, g0: Poly): Expr {
   let [f, g] = [f0, g0];
@@ -250,7 +265,12 @@ function splitI(e: Expr): [Expr, Expr] {
  * (SymPy log_to_real), or undefined when the real roots cannot be found.
  *
  * @example
- * logToReal(Poly.from('x - t', [x]), Poly.from('t**2 + 1', [t]), x, t)  // ...
+ * ```ts
+ * import { ex, logToReal, Poly, symbols } from '@symjs/symjs';
+ *
+ * const [x, t] = symbols('x t');
+ * logToReal(Poly.from(ex`x - t`, [x]), Poly.from(ex`t**2 + 1`, [t]), x, t); // => -2*atan(x)
+ * ```
  */
 export function logToReal(h: Poly, q: Poly, x: Sym, t: Sym): Expr | undefined {
   try {
@@ -307,7 +327,12 @@ function couldExtractMinusSign(e: Expr): boolean {
  * part cannot be written.
  *
  * @example
- * ratint(parse('1/(x**2 + 2*a*x + a**2)'), x)  // -1/(a + x)
+ * ```ts
+ * import { parse, ratint, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * ratint(parse('1/(x**2 + 2*a*x + a**2)'), x); // => -1/(a + x)
+ * ```
  */
 export function ratint(f: Expr, x: Sym, opts: { real?: boolean } = {}): Expr | undefined {
   const [pe, qe] = asNumerDenom(f);

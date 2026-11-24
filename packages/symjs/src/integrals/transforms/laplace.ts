@@ -862,7 +862,12 @@ export interface LaplaceOptions extends TransformHints {
  * transformed stay as unevaluated LaplaceTransform objects.
  *
  * @example
- * laplaceTransform(t**4, t, s)  // [24/s**5, 0, True]
+ * ```ts
+ * import { laplaceTransform, symbols } from '@symjs/symjs';
+ *
+ * const [t, s] = symbols('t s');
+ * laplaceTransform(t.pow(4), t, s); // => [24/s**5, 0, True]
+ * ```
  */
 export function laplaceTransform(f: ExprLike, t: Sym, s: ExprLike, opts: LaplaceOptions & { noconds: true }): Expr;
 export function laplaceTransform(f: ExprLike, t: Sym, s: ExprLike, opts?: LaplaceOptions): LaplaceTriple;

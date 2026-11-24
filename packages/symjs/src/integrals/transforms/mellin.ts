@@ -341,7 +341,12 @@ export class MellinTransform extends GenericIntegralTransform {
  * unevaluated MellinTransform.
  *
  * @example
- * mellinTransform(exp(-x), x, s)  // [gamma(s), [0, oo], True]
+ * ```ts
+ * import { exp, mellinTransform, symbols } from '@symjs/symjs';
+ *
+ * const [x, s] = symbols('x s');
+ * mellinTransform(exp(x.neg()), x, s); // => [gamma(s), [0, oo], True]
+ * ```
  */
 export function mellinTransform(f: ExprLike, x: Sym, s: ExprLike, hints: TransformHints = {}): TransformResult {
   return new MellinTransform(f, x, s).doit(hints);
@@ -811,7 +816,12 @@ export class InverseMellinTransform extends GenericIntegralTransform {
  * or an unevaluated InverseMellinTransform.
  *
  * @example
- * inverseMellinTransform(gamma(s), s, x, [0, oo])  // exp(-x)
+ * ```ts
+ * import { gamma, inverseMellinTransform, oo, symbols } from '@symjs/symjs';
+ *
+ * const [s, x] = symbols('s x');
+ * inverseMellinTransform(gamma(s), s, x, [0, oo]); // => exp(-x)
+ * ```
  */
 export function inverseMellinTransform(F: ExprLike, s: Sym, x: ExprLike, strip: readonly [ExprLike | undefined, ExprLike | undefined], hints: TransformHints = {}): TransformResult {
   return new InverseMellinTransform(F, s, x, strip[0], strip[1]).doit(hints);

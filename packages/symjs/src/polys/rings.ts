@@ -1440,8 +1440,12 @@ const greater = (a: Expr, b: Expr): boolean => a instanceof Rational && b instan
  * A polynomial ring and its generators: [R, x_1, ..., x_n] (SymPy ring).
  *
  * @example
+ * ```ts
+ * import { ring, ZZ } from '@symjs/symjs';
+ *
  * const [R, x, y] = ring('x,y', ZZ);
- * x.add(y).pow(2).toString(); // 'x**2 + 2*x*y + y**2'
+ * x.add(y).pow(2).toString(); // => x**2 + 2*x*y + y**2
+ * ```
  */
 export function ring(symbols: RingSymbols, domain: DomainLike = ZZ, order: OrderLike = lex): [PolyRing, ...PolyElement[]] {
   const R = new PolyRing(symbols, domain, order);

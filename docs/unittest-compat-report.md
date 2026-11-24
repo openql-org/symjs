@@ -4,7 +4,7 @@ Reference: SymPy 1.14.0. Independent of the doctest corpus and its ratchet.
 
 Measured **122663** cases: **120073 exact**, **2590 equivalent**, **0 failing**. Agreement: **100.00%**; exact: **97.89%**. The equivalent cases are listed in [unittest-equivalent-cases.md](unittest-equivalent-cases.md).
 
-Compatibility suite wall time: **205.33 s**. Sum of category replay times: **282.78 s** (projects run in parallel).
+Compatibility suite wall time: **200.49 s**. Sum of category replay times: **285.18 s** (projects run in parallel).
 
 Extraction wall time: **12.02 s**, 4 processes, 120 s per upstream test. Retained modules reuse established observations; their time covers loading and auditing, not re-execution.
 
@@ -18,39 +18,39 @@ Exact includes successful inequality, identity, boolean and exception assertions
 
 | Category | Measured | Exact | Equivalent | Failing | Agreement | Replay s |
 |---|---:|---:|---:|---:|---:|---:|
-| algebras | 133 | 133 | 0 | 0 | 100.00% | 0.46 |
-| assumptions | 2245 | 2208 | 37 | 0 | 100.00% | 1.64 |
-| calculus | 525 | 524 | 1 | 0 | 100.00% | 2.21 |
-| categories | 333 | 333 | 0 | 0 | 100.00% | 1.23 |
-| codegen | 71 | 67 | 4 | 0 | 100.00% | 0.47 |
-| combinatorics | 2196 | 2196 | 0 | 0 | 100.00% | 1.01 |
-| concrete | 937 | 880 | 57 | 0 | 100.00% | 8.58 |
-| core | 9291 | 9126 | 165 | 0 | 100.00% | 17.59 |
-| crypto | 5067 | 5067 | 0 | 0 | 100.00% | 0.64 |
-| diffgeom | 210 | 204 | 6 | 0 | 100.00% | 1.16 |
-| discrete | 192 | 191 | 1 | 0 | 100.00% | 0.72 |
-| functions | 10649 | 8899 | 1750 | 0 | 100.00% | 26.60 |
-| geometry | 1102 | 1096 | 6 | 0 | 100.00% | 3.77 |
-| holonomic | 190 | 186 | 4 | 0 | 100.00% | 2.70 |
-| integrals | 1424 | 1343 | 81 | 0 | 100.00% | 14.61 |
-| liealgebras | 93 | 88 | 5 | 0 | 100.00% | 0.06 |
-| logic | 7608 | 7606 | 2 | 0 | 100.00% | 1.95 |
-| matrices | 5093 | 5068 | 25 | 0 | 100.00% | 31.29 |
-| ntheory | 45168 | 45168 | 0 | 0 | 100.00% | 8.11 |
-| parsing | 868 | 801 | 67 | 0 | 100.00% | 0.44 |
+| algebras | 133 | 133 | 0 | 0 | 100.00% | 0.45 |
+| assumptions | 2245 | 2208 | 37 | 0 | 100.00% | 1.49 |
+| calculus | 525 | 524 | 1 | 0 | 100.00% | 2.00 |
+| categories | 333 | 333 | 0 | 0 | 100.00% | 1.24 |
+| codegen | 71 | 67 | 4 | 0 | 100.00% | 0.46 |
+| combinatorics | 2196 | 2196 | 0 | 0 | 100.00% | 1.00 |
+| concrete | 937 | 880 | 57 | 0 | 100.00% | 8.75 |
+| core | 9291 | 9126 | 165 | 0 | 100.00% | 17.79 |
+| crypto | 5067 | 5067 | 0 | 0 | 100.00% | 0.67 |
+| diffgeom | 210 | 204 | 6 | 0 | 100.00% | 1.09 |
+| discrete | 192 | 191 | 1 | 0 | 100.00% | 0.74 |
+| functions | 10649 | 8899 | 1750 | 0 | 100.00% | 27.02 |
+| geometry | 1102 | 1096 | 6 | 0 | 100.00% | 3.84 |
+| holonomic | 190 | 186 | 4 | 0 | 100.00% | 2.78 |
+| integrals | 1424 | 1343 | 81 | 0 | 100.00% | 15.04 |
+| liealgebras | 93 | 88 | 5 | 0 | 100.00% | 0.07 |
+| logic | 7608 | 7606 | 2 | 0 | 100.00% | 2.04 |
+| matrices | 5093 | 5068 | 25 | 0 | 100.00% | 30.73 |
+| ntheory | 45168 | 45168 | 0 | 0 | 100.00% | 8.23 |
+| parsing | 868 | 801 | 67 | 0 | 100.00% | 0.35 |
 | plotting | 49 | 49 | 0 | 0 | 100.00% | 0.04 |
-| polys | 12154 | 12052 | 102 | 0 | 100.00% | 53.00 |
-| printing | 2143 | 2141 | 2 | 0 | 100.00% | 0.63 |
-| series | 1674 | 1643 | 31 | 0 | 100.00% | 25.84 |
-| sets | 1858 | 1848 | 10 | 0 | 100.00% | 0.62 |
-| simplify | 1525 | 1483 | 42 | 0 | 100.00% | 5.43 |
-| solvers | 4618 | 4467 | 151 | 0 | 100.00% | 37.49 |
-| stats | 2021 | 1991 | 30 | 0 | 100.00% | 20.82 |
+| polys | 12154 | 12052 | 102 | 0 | 100.00% | 53.30 |
+| printing | 2143 | 2141 | 2 | 0 | 100.00% | 0.66 |
+| series | 1674 | 1643 | 31 | 0 | 100.00% | 26.08 |
+| sets | 1858 | 1848 | 10 | 0 | 100.00% | 0.66 |
+| simplify | 1525 | 1483 | 42 | 0 | 100.00% | 5.27 |
+| solvers | 4618 | 4467 | 151 | 0 | 100.00% | 37.87 |
+| stats | 2021 | 1991 | 30 | 0 | 100.00% | 21.42 |
 | strategies | 7 | 7 | 0 | 0 | 100.00% | 0.01 |
-| tensor | 1953 | 1953 | 0 | 0 | 100.00% | 2.62 |
+| tensor | 1953 | 1953 | 0 | 0 | 100.00% | 3.07 |
 | unify | 16 | 16 | 0 | 0 | 100.00% | 0.02 |
-| utilities | 556 | 549 | 7 | 0 | 100.00% | 8.67 |
-| vector | 694 | 690 | 4 | 0 | 100.00% | 2.34 |
+| utilities | 556 | 549 | 7 | 0 | 100.00% | 8.66 |
+| vector | 694 | 690 | 4 | 0 | 100.00% | 2.36 |
 
 ## Extraction audit
 

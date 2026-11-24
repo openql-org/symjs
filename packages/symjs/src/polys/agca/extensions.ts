@@ -161,8 +161,12 @@ export class ExtensionElement {
  * of a univariate polynomial f over K (made monic over a field).
  *
  * @example
+ * ```ts
+ * import { FiniteExtension, parse, Poly } from '@symjs/symjs';
+ *
  * const R = new FiniteExtension(Poly.from(parse('x**2 - 2')));
- * String(R.new(parse('1 + x')).mul(parse('3 - 2*x'))) // 'x - 1'
+ * String(R.new(parse('1 + x')).mul(parse('3 - 2*x'))); // => x - 1
+ * ```
  */
 export class FiniteExtension {
   readonly isFiniteExtension = true;

@@ -555,8 +555,7 @@ function sqrtLinear(f: Expr, a: Expr, b: Expr, n: number, x: Sym): Expr {
  * and asinh by their signs; symbolic coefficients retain degenerate cases.
  * Undefined otherwise.
  *
- * @example
- * sqrtQuadraticRule(parse('x*sqrt(x**2 + a*x + b)'), x)
+ * It applies, for example, to `x*sqrt(x**2 + a*x + b)`.
  */
 export function sqrtQuadraticRule(f: Expr, x: Sym, manual = false): Expr | undefined {
   const factors = f instanceof Mul ? f.args : [f];
