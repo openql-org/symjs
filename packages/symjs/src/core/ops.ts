@@ -1303,9 +1303,42 @@ export function exp(x: ExprLike): Expr {
   return pow(S.E, x);
 }
 
-/** Exact rational p/q. */
+/** The exact value of a finite double as numerator and denominator. */
+function exactDouble(v: bigint | number): [bigint, bigint] {
+  if (typeof v === 'bigint') return [v, 1n];
+  if (!Number.isFinite(v)) throw new RangeError(`rational: ${v} is not finite`);
+  let x = v, e = 0n;
+  // doubling is exact until the value is an integer (at most 1074 times)
+  while (!Number.isInteger(x)) {
+    x *= 2;
+    e += 1n;
+  }
+  return [BigInt(x), 2n ** e];
+}
+
+/**
+ * The exact rational number `p/q`. A JavaScript number that is not an integer
+ * stands for its exact binary value, as a Python float does in SymPy.
+ *
+ * @param p - The numerator.
+ * @param q - The denominator.
+ * @returns The rational number in lowest terms.
+ * @throws RangeError when `q` is zero or a number is not finite.
+ * @see SymPy `sympy.core.numbers.Rational`
+ * @example
+ * ```ts
+ * import { rational } from '@symjs/symjs';
+ *
+ * rational(3, 6); // => 1/2
+ * rational(0.5); // => 1/2
+ * rational(0.1); // => 3602879701896397/36028797018963968
+ * rational(1, 0.25); // => 4
+ * ```
+ */
 export function rational(p: bigint | number, q: bigint | number = 1): Rational {
-  return Rational.of(p, q);
+  if ((typeof p === 'bigint' || Number.isInteger(p)) && (typeof q === 'bigint' || Number.isInteger(q))) return Rational.of(p, q);
+  const [pn, pd] = exactDouble(p), [qn, qd] = exactDouble(q);
+  return Rational.of(pn * qd, pd * qn);
 }
 
 /**

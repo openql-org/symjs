@@ -477,3 +477,34 @@ it('reads Limit and limit with a direction given as a string (SymPy sympify)', (
   // a function of that name in the locals is called as given
   expect(String(sj.parse('Limit(x, 2)', { locals: { Limit: (a: sj.Expr, b: sj.Expr) => sj.add(a, b) } }))).toBe('x + 2');
 });
+
+describe('SymPy function names in parsed strings', () => {
+  it.each([
+    ['fibonacci(10)', '55'],
+    ['totient(12)', '4'],
+    ['bernoulli(4)', '-1/30'],
+    ['mobius(6)', '1'],
+    ['primepi(10)', '4'],
+    ['Rem(7, 3)', '1'],
+    ['jn(0, z)', 'jn(0, z)'],
+    ['Mod(5, 3)', '2'],
+    ['Heaviside(0)', '1/2'],
+    ['KroneckerDelta(1, 1)', '1'],
+    ['LeviCivita(1, 2, 3)', '1'],
+    ['hyper((1, 2), (3,), x)', 'hyper((1, 2), (3,), x)'],
+    ['LaplaceTransform(x, x, s)', 'LaplaceTransform(x, x, s)'],
+    ['InverseLaplaceTransform(1/s, s, t, 0)', 'InverseLaplaceTransform(1/s, s, t, 0)'],
+    ['chebyshevt_root(3, 0)', 'sqrt(3)/2'],
+    ['motzkin(4)', '4'],
+    ['adjoint(x)', 'conjugate(x)'],
+    ['transpose(x)', 'x'],
+  ])('%s', (src, expected) => {
+    const e = parse(src);
+    expect(e).not.toBeInstanceOf(sj.UndefFn);
+    expect(sstr(e)).toBe(expected);
+  });
+  it('expands the parsed spherical Bessel function', () => {
+    expect(sstr(sj.expandFunc(parse('jn(0, z)')))).toBe('sin(z)/z');
+    expect(() => parse('hyper((1, 2), (3,), (x, y))')).toThrow(SyntaxError);
+  });
+});

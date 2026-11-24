@@ -159,3 +159,22 @@ _parserHooks_.constructors.set('Mod', (args) => _Mod_(...args));
 _parserHooks_.constructors.set('KroneckerDelta', (args) => _KroneckerDelta_(_at_(args, 0), _at_(args, 1), args[2]));
 _parserHooks_.constructors.set('LeviCivita', (args) => _LeviCivita_(...args));
 import { at as _at_ } from './core/guard';
+// hyper, the Chebyshev roots and motzkin in parsed strings
+import { hyper as _hyper_ } from './functions/special/hyper';
+import { chebyshevtRoot as _chebyshevtRoot_, chebyshevuRoot as _chebyshevuRoot_ } from './functions/special/polynomials';
+import { motzkin as _motzkin_ } from './functions/combinatorial/numbers';
+import { Rational as _Rational_, type Expr as _ExprT_ } from './core/nodes';
+import { SymFunction as _SymFunction_ } from './core/undef';
+const _isTuple_ = (a: _ExprT_ | readonly _ExprT_[]): a is readonly _ExprT_[] => Array.isArray(a);
+const _tuple_ = (a: _ExprT_ | readonly _ExprT_[]): readonly _ExprT_[] => (_isTuple_(a) ? a : [a]);
+_parserHooks_.tupleConstructors.set('hyper', (args) => {
+  const z = _at_(args, 2);
+  if (_isTuple_(z)) throw new SyntaxError('hyper() takes an expression as its third argument');
+  return _hyper_(_tuple_(_at_(args, 0)), _tuple_(_at_(args, 1)), z);
+});
+_parserHooks_.constructors.set('chebyshevt_root', (args) => _chebyshevtRoot_(_at_(args, 0), _at_(args, 1)));
+_parserHooks_.constructors.set('chebyshevu_root', (args) => _chebyshevuRoot_(_at_(args, 0), _at_(args, 1)));
+_parserHooks_.constructors.set('motzkin', (args) => {
+  const n = _at_(args, 0);
+  return n instanceof _Rational_ && n.isInteger && n.p >= 0n ? _Rational_.of(_motzkin_(Number(n.p))) : _SymFunction_('motzkin')(n);
+});

@@ -186,6 +186,34 @@ const SPECIAL_NAMES: SpecialFnName[] = [
   'elliptic_f',
   'elliptic_pi',
   'appellf1',
+  'digamma',
+  'trigamma',
+  'bernoulli',
+  'euler',
+  'genocchi',
+  'andre',
+  'bell',
+  'fibonacci',
+  'lucas',
+  'tribonacci',
+  'partition',
+  'totient',
+  'reduced_totient',
+  'mobius',
+  'divisor_sigma',
+  'udivisor_sigma',
+  'legendre_symbol',
+  'jacobi_symbol',
+  'kronecker_symbol',
+  'primenu',
+  'primeomega',
+  'primepi',
+  'multigamma',
+  'frac',
+  'Rem',
+  'jn',
+  'yn',
+  'KroneckerDelta',
 ];
 
 /**
@@ -395,7 +423,9 @@ export const parserHooks: {
   limit?: (e: Expr, z: Sym, z0: Expr, dir: '+' | '-' | '+-') => Expr;
   /** Classes of higher layers called by name, e.g. Quaternion(1, 2, 3, 4) (SymPy sympify of the class name). */
   readonly constructors: Map<string, (args: readonly Expr[]) => Expr>;
-} = { constructors: new Map() };
+  /** Functions of higher layers whose arguments may be tuples, e.g. hyper((1, 2), (3,), x). */
+  readonly tupleConstructors: Map<string, (args: readonly (Expr | readonly Expr[])[]) => Expr>;
+} = { constructors: new Map(), tupleConstructors: new Map() };
 
 /** O(e), O(e, x), O(e, x, y), O(e, (x, p)), O(e, (x, p), (y, p)). */
 function order(args: readonly Arg[]): Expr {
@@ -810,7 +840,7 @@ class Parser {
           return t.v.split('').map((c) => this.symbolOf(c)).reduce((a, b) => this.mul2(a, b));
         }
         // with implicit multiplication a known symbol before '(' multiplies (x(y + 1))
-        const tupleFn = this.localFns.has(t.v) ? undefined : TUPLE_FUNCTIONS[t.v];
+        const tupleFn = this.localFns.has(t.v) ? undefined : TUPLE_FUNCTIONS[t.v] ?? parserHooks.tupleConstructors.get(t.v);
         const asSymbol = this.enabled('implicitMultiplication') && !knownFn && !tupleFn && !this.localFns.has(t.v) && this.isOp('(');
         if (this.isOp('(') && !asSymbol) {
           // unknown names applied to arguments are undefined functions (like SymPy's parse_expr)
