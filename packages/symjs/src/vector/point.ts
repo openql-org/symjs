@@ -50,12 +50,24 @@ export function treePath<T extends Expr>(from: T, to: T, parent: (t: T) => T | u
   return [index, fromPath];
 }
 
-/** SymPy Point(name, position=Vector.zero, parent_point=None): a point in 3-D space. */
+/**
+ * A point in 3-D space.
+ *
+ * @see SymPy `sympy.vector.point.Point`
+ */
 export class VectorPointNode extends ExtensionExpr {
-  /** The name of the point (SymPy _name). */
+  /** The name of the point. */
   readonly pointName: string;
   readonly #root: VectorPointNode;
 
+  /**
+   * Constructs an instance of `VectorPointNode`.
+   *
+   * @param name - Symbolic name.
+   * @param position - Displacement from the reference point.
+   * @param parentPoint - Reference point from which the displacement is measured.
+   * @throws TypeError when the reference point is not a vector-package point or the displacement is not a vector.
+   */
   constructor(name: string, position: Expr = Vector.zero, parentPoint?: VectorPointNode) {
     if (!(position instanceof Vector)) throw new TypeError(`position should be an instance of Vector, not ${String(position)}`);
     if (parentPoint !== undefined && !(parentPoint instanceof VectorPointNode)) {
@@ -65,27 +77,50 @@ export class VectorPointNode extends ExtensionExpr {
     this.pointName = String(name);
     this.#root = parentPoint === undefined ? this : parentPoint.root;
   }
+  /**
+   * Rebuilds the expression with replacement arguments in their original order.
+   *
+   * @param args - Replacement arguments in the same order as `args` on the original expression.
+   * @returns The rebuilt expression.
+   */
   withArgs(args: readonly Expr[]): Expr {
     const parent = args[1];
     return new VectorPointNode(this.pointName, at(args, 0), parent instanceof VectorPointNode ? parent : undefined);
   }
-  /** The position vector with respect to the parent point (SymPy _pos). */
+  /**
+   * The position vector with respect to the parent point.
+   *
+   * @returns The position vector with respect to the parent point.
+   */
   get position(): Vector {
     return cast(at(this.args, 0), Vector, 'position');
   }
-  /** The parent point (SymPy _parent), or undefined for a root point. */
+  /**
+   * The reference point for a displacement. A root point has no parent.
+   *
+   * @returns The reference point, when one is defined.
+   */
   get parent(): VectorPointNode | undefined {
     const p = this.args[1];
     return p instanceof VectorPointNode ? p : undefined;
   }
-  /** The root of the tree of points (SymPy _root). */
+  /**
+   * The root of the tree of points.
+   *
+   * @returns The root of the tree of points.
+   */
   get root(): VectorPointNode {
     return this.#root;
   }
 
   /**
-   * SymPy position_wrt(other): the position vector of this point with
-   * respect to another point, or to the origin of a coordinate system.
+   * The position vector of this point with respect to another point, or to the origin of a
+   * coordinate system.
+   *
+   * @param otherIn - Reference point or coordinate system origin.
+   * @returns The position vector of this point with respect to another point, or to the origin of a coordinate system.
+   * @throws TypeError when the reference is neither a vector point nor a coordinate system.
+   * @see SymPy `sympy.vector.point.Point.position_wrt`
    */
   positionWrt(otherIn: VectorPointNode | CoordSysBase): Expr {
     if (!(otherIn instanceof VectorPointNode) && !(otherIn instanceof CoordSysBase)) throw new TypeError(`${String(otherIn)}is not a Point or CoordSys3D`);
@@ -105,20 +140,43 @@ export class VectorPointNode extends ExtensionExpr {
     return result;
   }
 
-  /** SymPy locate_new(name, position): a new point at the given position with respect to this one. */
+  /**
+   * A new point at the given position with respect to this one.
+   *
+   * @param name - Symbolic name.
+   * @param position - Displacement from the reference point.
+   * @returns A new point at the given position with respect to this one.
+   * @see SymPy `sympy.vector.point.Point.locate_new`
+   */
   locateNew(name: string, position: Expr): VectorPointNode {
     return new VectorPointNode(name, position, this);
   }
 
-  /** SymPy express_coordinates(system): the coordinates of this point with respect to the origin of system. */
+  /**
+   * The coordinates of this point with respect to the origin of system.
+   *
+   * @param system - Coordinate system in which to express components.
+   * @returns The coordinates of this point with respect to the origin of system.
+   * @see SymPy `sympy.vector.point.Point.express_coordinates`
+   */
   expressCoordinates(system: CoordSysBase): [Expr, Expr, Expr] {
     const m = cast(this.positionWrt(system), Vector, 'position').toMatrix(system);
     return [m.get(0, 0), m.get(1, 0), m.get(2, 0)];
   }
 
+  /**
+   * Formats the expression in plain text.
+   *
+   * @returns The formatted expression.
+   */
   override printStr(): string {
     return this.pointName;
   }
+  /**
+   * Formats the expression as LaTeX.
+   *
+   * @returns The formatted LaTeX.
+   */
   override printLatex(): string {
     return this.pointName;
   }
@@ -128,8 +186,14 @@ export class VectorPointNode extends ExtensionExpr {
 }
 
 /**
- * SymPy sympy.vector.Point(name, position=Vector.zero, parent_point=None)
- * (exported as VectorPoint; Point is the geometric point).
+ * A named point with a vector displacement from its parent point.
+ *
+ * @param name - Symbolic name.
+ * @param position - Displacement from the reference point.
+ * @param parentPoint - Reference point from which the displacement is measured.
+ * @returns The resulting `VectorPoint` expression.
+ * @throws TypeError when the reference point is not a vector-package point or the displacement is not a vector.
+ * @see SymPy `sympy.vector.point.Point`
  */
 export const VectorPoint = /* @__PURE__ */ callableClass(
   VectorPointNode,

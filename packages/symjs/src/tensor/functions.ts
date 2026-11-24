@@ -18,8 +18,25 @@ import { NDimArray } from './ndimarray';
 import { tensorproduct, type TensorArg } from './arrayop';
 import { ArrayElement } from './array/expressions/arrayexpressions';
 
-/** SymPy NoShapeError: shape() of an object that is not array-like. */
+/**
+ * Shape() of an object that is not array-like.
+ *
+ * @see SymPy `sympy.tensor.functions.NoShapeError`
+ * @example
+ * ```ts
+ * import { NoShapeError, ex, shape } from '@symjs/symjs';
+ *
+ * let error: unknown;
+ * try { shape(ex`x`); } catch (cause) { error = cause; }
+ * error instanceof NoShapeError; // => True
+ * ```
+ */
 export class NoShapeError extends TypeError {
+  /**
+   * Constructs an instance of `NoShapeError`.
+   *
+   * @param message - Explanation of the error.
+   */
   constructor(message: string) {
     super(message);
     this.name = 'NoShapeError';
@@ -32,8 +49,20 @@ export type Dimension = number | Expr;
 const hasShape = (x: unknown): x is { readonly shape: readonly Dimension[] } => typeof x === 'object' && x !== null && 'shape' in x && Array.isArray(x.shape);
 
 /**
- * SymPy shape: the shape of a matrix, an N-dimensional array or a matrix
- * expression, also inside an Integral; a NoShapeError for other objects.
+ * The shape of a matrix, an N-dimensional array or a matrix expression, also inside an Integral;
+ * a NoShapeError for other objects.
+ *
+ * @param expr - Symbolic expression on which to operate.
+ * @returns The lengths of the axes in order.
+ * @throws NoShapeError when the index ranges do not specify all dimensions or the object has no registered shape.
+ * @see SymPy `sympy.tensor.functions.shape`
+ * @remarks SymPy prints the one-dimensional shape as `(2,)`.
+ * @example
+ * ```ts
+ * import { SymArray, shape } from '@symjs/symjs';
+ *
+ * shape(SymArray([1, 2])); // => [2]
+ * ```
  */
 export function shape(expr: unknown): Dimension[] {
   if (expr instanceof Matrix) return [expr.rows, expr.cols];
@@ -48,12 +77,47 @@ export function shape(expr: unknown): Dimension[] {
   throw new NoShapeError(`${s} does not have shape, or its type is not registered to shape().`);
 }
 
-/** Generic tensor product of explicit arrays and symbolic matrices. */
+/**
+ * Generic tensor product of explicit arrays and symbolic matrices.
+ *
+ * @see SymPy `sympy.tensor.functions.TensorProduct`
+ */
 export class TensorProductNode extends ExtensionExpr {
+  /**
+   * Constructs an instance of `TensorProductNode`.
+   *
+   * @param args - Operands in their defining order.
+   */
   constructor(args: readonly Expr[]) { super('TensorProduct', args); }
+  /**
+   * Rebuilds the expression with replacement arguments in their original order.
+   *
+   * @param args - Replacement arguments in the same order as `args` on the original expression.
+   * @returns The rebuilt expression.
+   */
   withArgs(args: readonly Expr[]): Expr { return new TensorProductNode(args); }
+  /**
+   * The lengths of the axes in order.
+   *
+   * @returns The lengths of the axes in order.
+   * @see SymPy `sympy.tensor.functions.TensorProduct.shape`
+   */
   get shape(): Dimension[] { return this.args.flatMap((arg) => hasShape(arg) ? [...arg.shape] : []); }
+  /**
+   * The number of free index slots.
+   *
+   * @returns The number of free index slots.
+   * @see SymPy `sympy.tensor.functions.TensorProduct.rank`
+   */
   rank(): number { return this.shape.length; }
+  /**
+   * Selects the entry at the given indices.
+   *
+   * @param indices - Indices in slot order.
+   * @returns The selected entry.
+   * @throws RangeError when the number of indices does not match the rank.
+   * @see SymPy `sympy.tensor.functions.TensorProduct.__getitem__`
+   */
   at(...indices: ExprLike[]): Expr {
     if (indices.length !== this.rank()) throw new RangeError('tensor product index rank does not match the shape');
     let offset = 0;
@@ -85,5 +149,11 @@ function createTensorProduct(...args: (TensorArg | { evaluate: boolean })[]): Ex
   return matrices.length ? new TensorProductNode(coefficient.key === S.One.key ? matrices : [coefficient, ...matrices]) : coefficient;
 }
 
-/** Generic tensor product, evaluated unless evaluate:false is supplied. */
+/**
+ * Forms the tensor product of scalar, matrix or array factors.
+ *
+ * @param args - Tensor factors, optionally followed by `{ evaluate: false }` to retain the product.
+ * @returns The tensor product of the factors.
+ * @see SymPy `sympy.tensor.functions.TensorProduct`
+ */
 export const TensorProduct = callableClass(TensorProductNode, createTensorProduct);

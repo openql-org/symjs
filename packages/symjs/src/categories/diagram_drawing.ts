@@ -37,10 +37,21 @@ export class GrowableGrid<T = Expr> {
 }
 
 /** Layout hints understood by DiagramGrid. */
-export interface DiagramHints { layout?: 'sequential'; transpose?: boolean; }
+export interface DiagramHints {
+  /** Use sequential placement to arrange the objects along connected arrows. */
+  layout?: 'sequential';
+  /** Exchange rows and columns after laying out the diagram. */
+  transpose?: boolean;
+}
+/** A single object or a group of objects to place together on a diagram grid. */
 export type DiagramGroup = Expr | readonly Expr[];
+/** Groups of diagram objects, optionally paired with layout hints. */
 export type DiagramGroups = SetExpr | readonly DiagramGroup[] | ReadonlyMap<DiagramGroup, DiagramHints>;
-export interface DiagramGridOptions extends DiagramHints { groups?: DiagramGroups; }
+/** Layout, grouping and transposition options for a diagram grid. */
+export interface DiagramGridOptions extends DiagramHints {
+  /** Objects to lay out together, optionally with their own layout hints. */
+  groups?: DiagramGroups;
+}
 
 const eq = (a: Expr, b: Expr): boolean => a.equals(b);
 const edgeKey = (a: Expr, b: Expr): string => JSON.stringify([a.key, b.key].sort());
@@ -186,11 +197,37 @@ function groupLayout(diagram: Diagram, groups: DiagramGroups, morphisms: readonl
   return result;
 }
 
-/** Deterministic grid layout of a category diagram, with optional groups and hints. */
+/**
+ * Deterministic grid layout of a category diagram, with optional groups and hints.
+ *
+ * @see SymPy `sympy.categories.diagram_drawing.DiagramGrid`
+ * @remarks SymPy displays the width and height as the tuple `(2, 1)`.
+ * @example
+ * ```ts
+ * import { Diagram, NamedMorphism, categoryObject } from '@symjs/symjs';
+ * import { DiagramGrid } from '@symjs/symjs/categories';
+ *
+ * const A = categoryObject('A'), B = categoryObject('B');
+ * const f = NamedMorphism(A, B, 'f');
+ * const grid = new DiagramGrid(Diagram([f]));
+ * [grid.width, grid.height]; // => [2, 1]
+ * ```
+ */
 export class DiagramGrid {
+  /**
+   * Returns those morphisms (and their properties) which are sufficiently meaningful to be drawn.
+   *
+   * @see SymPy `sympy.categories.diagram_drawing.DiagramGrid.morphisms`
+   */
   readonly morphisms: ExprMap<SetExpr>;
   /** Mutable cells support explicit placement before drawing. */
   readonly grid: GrowableGrid;
+  /**
+   * Constructs an instance of `DiagramGrid`.
+   *
+   * @param diagram - Diagram to lay out or draw.
+   * @param options - Settings described by {@link DiagramGridOptions}.
+   */
   constructor(diagram: Diagram, options: DiagramGridOptions = {}) {
     this.morphisms = new ExprMap();
     for (const dict of [diagram.premises, diagram.conclusions]) for (const [arrow, properties] of dict.items()) {
@@ -215,10 +252,34 @@ export class DiagramGrid {
     if (options.transpose) { const transposed = new GrowableGrid(g.height, g.width); for (let i = 0; i < g.height; i++) for (let j = 0; j < g.width; j++) transposed.set(j, i, g.get(i, j)); g = transposed; }
     this.grid = g;
   }
+  /**
+   * Returns the number of columns in this diagram layout.
+   *
+   * @returns The number of columns in this diagram layout.
+   * @see SymPy `sympy.categories.diagram_drawing.DiagramGrid.width`
+   */
   get width(): number { return this.grid.width; }
+  /**
+   * Returns the number of rows in this diagram layout.
+   *
+   * @returns The number of rows in this diagram layout.
+   * @see SymPy `sympy.categories.diagram_drawing.DiagramGrid.height`
+   */
   get height(): number { return this.grid.height; }
+  /**
+   * Finds the object at a grid position, or `NoMatch` for an empty cell.
+   *
+   * @param i - Zero-based row in the diagram grid.
+   * @param j - Zero-based column in the diagram grid.
+   * @returns The cell contents or `NoMatch` if the cell is empty.
+   * @see SymPy `sympy.categories.diagram_drawing.DiagramGrid.__getitem__`
+   */
   get(i: number, j: number): Cell { return this.grid.get(i, j); }
-  /** Matrix-style pretty form without enclosing brackets. */
+  /**
+   * Matrix-style pretty form without enclosing brackets.
+   *
+   * @returns The formatted text.
+   */
   toPretty(): string {
     const printer = new PrettyPrinter();
     const cells = Array.from({ length: this.height }, (_, i) => Array.from({ length: this.width }, (_, j) => { const c = this.get(i, j); return printer.print(c instanceof Expr ? new Sym(c instanceof Sym ? c.name : c.toString()) : ' '); }));
@@ -231,15 +292,71 @@ export class DiagramGrid {
     }
     return result.picture.join('\n');
   }
+  /**
+   * Formats this diagram grid as text.
+   *
+   * @returns The formatted text.
+   */
   toString(): string { return '[' + Array.from({ length: this.height }, (_, i) => '[' + Array.from({ length: this.width }, (_, j) => { const c = this.get(i, j); return c instanceof Expr ? c.toString() : 'None'; }).join(', ') + ']').join(', ') + ']'; }
 }
 
-/** Mutable Xy-pic arrow description supplied to property formatters. */
+/**
+ * Mutable Xy-pic arrow description supplied to property formatters.
+ *
+ * @see SymPy `sympy.categories.diagram_drawing.ArrowStringDescription`
+ * @example
+ * ```ts
+ * import { NoMatch } from '@symjs/symjs';
+ * import { ArrowStringDescription } from '@symjs/symjs/categories';
+ *
+ * const arrow = new ArrowStringDescription('mm', '', NoMatch, '', '', 'r', '', '^', 'f');
+ * arrow.toString(); // => \ar[r]^{f}
+ * ```
+ */
 export class ArrowStringDescription {
+  /** Xy-pic modifier shifting the label along the arrow. */
   labelDisplacement = '';
+  /** Xy-pic arrow style override. */
   arrowStyle = '';
+  /** Whether to preserve the chosen side of the arrow when placing its label. */
   forcedLabelPosition = false;
-  constructor(public unit: string, public curving: string, public curvingAmount: number | NoMatchResult, public loopingStart: string, public loopingEnd: string, public horizontalDirection: string, public verticalDirection: string, public labelPosition: string, public label: string) {}
+  /**
+   * Constructs an instance of `ArrowStringDescription`.
+   *
+   * @param unit - Length unit used for arrow curvature.
+   * @param curving - Direction of the bend in Xy-pic notation.
+   * @param curvingAmount - Amount of curvature in the selected length unit.
+   * @param loopingStart - Direction in which a loop leaves its object.
+   * @param loopingEnd - Direction from which a loop returns to its object.
+   * @param horizontalDirection - Horizontal grid steps of the arrow in Xy-pic notation.
+   * @param verticalDirection - Vertical grid steps of the arrow in Xy-pic notation.
+   * @param labelPosition - Side of the arrow on which to place the label.
+   * @param label - Symbolic label used to identify this object.
+   */
+  constructor(
+    /** Length unit used for arrow curvature. */
+    public unit: string,
+    /** Direction of the bend in Xy-pic notation. */
+    public curving: string,
+    /** Amount of curvature in the selected length unit. */
+    public curvingAmount: number | NoMatchResult,
+    /** Direction in which a loop leaves its object. */
+    public loopingStart: string,
+    /** Direction from which a loop returns to its object. */
+    public loopingEnd: string,
+    /** Horizontal grid steps of the arrow in Xy-pic notation. */
+    public horizontalDirection: string,
+    /** Vertical grid steps of the arrow in Xy-pic notation. */
+    public verticalDirection: string,
+    /** Side of the arrow on which to place the label. */
+    public labelPosition: string,
+    /** Symbolic label used to identify this object. */
+    public label: string) {}
+  /**
+   * Formats the arrow in Xy-pic notation.
+   *
+   * @returns The formatted text.
+   */
   toString(): string {
     const curve = this.curving ? `@/${this.curving}${String(this.curvingAmount)}${this.unit}/` : '';
     const loop = this.loopingStart && this.loopingEnd ? `@(${this.loopingStart},${this.loopingEnd})` : '';
@@ -247,8 +364,20 @@ export class ArrowStringDescription {
   }
 }
 
+/**
+ * Adjusts the drawing instructions for a single arrow before rendering.
+ *
+ * @param arrow - Mutable style, label and direction of the arrow.
+ */
 export type ArrowFormatter = (arrow: ArrowStringDescription) => void;
-export interface XypicDrawOptions { masked?: readonly Morphism[]; diagramFormat?: string; }
+/** Options for hiding morphisms and formatting an Xy-pic diagram. */
+export interface XypicDrawOptions {
+  /** Morphisms to omit from the drawing. */
+  masked?: readonly Morphism[];
+  /** Xy-pic directives controlling the matrix layout. */
+  diagramFormat?: string;
+}
+/** Options for laying out a diagram and rendering it in Xy-pic. */
 export interface XypicDiagramOptions extends XypicDrawOptions, DiagramGridOptions {}
 type ArrowInfo = Map<Morphism, ArrowStringDescription>;
 type Coordinates = ExprMap<Point>;
@@ -314,13 +443,43 @@ function freeSpace(p: Point, q: Point, g: DiagramGrid): [boolean, boolean, boole
   return [up, down, p[1] > q[1], '^', '_'];
 }
 
-/** Generate Xy-pic text without invoking TeX or a rendering backend. */
+/**
+ * Generate Xy-pic text without invoking TeX or a rendering backend.
+ *
+ * @see SymPy `sympy.categories.diagram_drawing.XypicDiagramDrawer`
+ * @example
+ * ```ts
+ * import { Diagram, NamedMorphism, categoryObject } from '@symjs/symjs';
+ * import { DiagramGrid, XypicDiagramDrawer } from '@symjs/symjs/categories';
+ *
+ * const A = categoryObject('A'), B = categoryObject('B');
+ * const f = NamedMorphism(A, B, 'f');
+ * const d = Diagram([f]);
+ * new XypicDiagramDrawer().draw(d, new DiagramGrid(d)).trim(); // => \xymatrix{
+ * //   A \ar[r]^{f} & B
+ * //   }
+ * ```
+ */
 export class XypicDiagramDrawer {
+  /** Length unit used for arrow curvature. */
   unit = 'mm';
+  /** Initial curvature applied to a bent arrow. */
   defaultCurvingAmount = 3;
+  /** Extra bend separating successive parallel arrows. */
   defaultCurvingStep = 4;
+  /** Arrow formatting callbacks keyed by morphism property. */
   arrowFormatters = new Map<string, ArrowFormatter>();
+  /** Formatting callback applied to every drawn arrow. */
   defaultArrowFormatter: ArrowFormatter | NoMatchResult = NoMatch;
+  /**
+   * Returns the Xy-pic representation of `diagram` laid out in `grid`.
+   *
+   * @param _diagram - Diagram to lay out or draw.
+   * @param grid - Placement of the diagram objects in rows and columns.
+   * @param options - Settings described by {@link XypicDrawOptions}.
+   * @returns The Xy-pic representation of `diagram` laid out in `grid`.
+   * @see SymPy `sympy.categories.diagram_drawing.XypicDiagramDrawer.draw`
+   */
   draw(_diagram: Diagram, grid: DiagramGrid, options: XypicDrawOptions = {}): string {
     const coords = new ExprMap<Point>();
     for (let i = 0; i < grid.height; i++) for (let j = 0; j < grid.width; j++) { const o = grid.get(i, j); if (o instanceof Expr) coords.set(o, [i, j]); }
@@ -365,7 +524,26 @@ export class XypicDiagramDrawer {
   }
 }
 
-/** Lay out a diagram and return its Xy-pic source. */
+/**
+ * Lays out the diagram and returns its Xy-pic source.
+ *
+ * @param diagram - Diagram to lay out or draw.
+ * @param options - Settings described by {@link XypicDiagramOptions}.
+ * @returns The Xy-pic source of the diagram.
+ * @see SymPy `sympy.categories.diagram_drawing.xypic_draw_diagram`
+ * @example
+ * ```ts
+ * import { Diagram, NamedMorphism, categoryObject } from '@symjs/symjs';
+ * import { xypicDrawDiagram } from '@symjs/symjs/categories';
+ *
+ * const A = categoryObject('A'), B = categoryObject('B');
+ * const f = NamedMorphism(A, B, 'f');
+ * const d = Diagram([f]);
+ * xypicDrawDiagram(d).trim(); // => \xymatrix{
+ * //   A \ar[r]^{f} & B
+ * //   }
+ * ```
+ */
 export function xypicDrawDiagram(diagram: Diagram, options: XypicDiagramOptions = {}): string {
   return new XypicDiagramDrawer().draw(diagram, new DiagramGrid(diagram, options), options);
 }

@@ -14,15 +14,35 @@ import { callableClass } from '../core/callable';
 const vectorKinds = new Map<Kind, VectorKindNode>();
 
 /**
- * SymPy VectorKind(element_kind): the kind of vectors whose components
- * have `elementKind`. Use `VectorKind(k)` (cached, so equal kinds are the
- * same object, as in SymPy).
+ * The kind of vectors whose components have `elementKind`. Use `VectorKind(k)` (cached, so equal
+ * kinds are the same object, as in SymPy).
+ *
+ * @see SymPy `sympy.vector.kind.VectorKind`
+ * @example
+ * ```ts
+ * import { CoordSys3D, VectorKind, kindOf } from '@symjs/symjs';
+ *
+ * const R = CoordSys3D('R');
+ * kindOf(R.i) === VectorKind(); // => True
+ * ```
  */
 export class VectorKindNode extends Kind {
-  constructor(readonly elementKind: Kind = NumberKind) {
+  /**
+   * Constructs an instance of `VectorKindNode`.
+   *
+   * @param elementKind - Kind of the component values.
+   */
+  constructor(
+    /** Kind of the component values. */
+    readonly elementKind: Kind = NumberKind) {
     super();
   }
-  /** The cached VectorKind of the given element kind. */
+  /**
+   * The cached VectorKind of the given element kind.
+   *
+   * @param elementKind - Kind of the component values.
+   * @returns The cached VectorKind of the given element kind.
+   */
   static of(elementKind: Kind = NumberKind): VectorKindNode {
     let k = vectorKinds.get(elementKind);
     if (!k) {
@@ -31,11 +51,29 @@ export class VectorKindNode extends Kind {
     }
     return k;
   }
+  /**
+   * Formats this vector kind as text.
+   *
+   * @returns The formatted text.
+   */
   toString(): string {
     return `VectorKind(${this.elementKind.toString()})`;
   }
 }
 
-/** SymPy VectorKind(element_kind): the kind of vectors (cached, VectorKind(NumberKind) by default). */
+/**
+ * The kind of vectors (cached, VectorKind(NumberKind) by default).
+ *
+ * @param elementKind - Kind of the component values.
+ * @returns The cached kind for vectors with components of the specified kind.
+ * @see SymPy `sympy.vector.kind.VectorKind`
+ * @example
+ * ```ts
+ * import { CoordSys3D, VectorKind, kindOf } from '@symjs/symjs';
+ *
+ * const R = CoordSys3D('R');
+ * kindOf(R.i) === VectorKind(); // => True
+ * ```
+ */
 export const VectorKind = /* @__PURE__ */ callableClass(VectorKindNode, (elementKind: Kind = NumberKind): VectorKindNode => VectorKindNode.of(elementKind));
 export type VectorKind = VectorKindNode;

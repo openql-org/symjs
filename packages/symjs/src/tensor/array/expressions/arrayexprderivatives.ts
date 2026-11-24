@@ -19,7 +19,15 @@ function product(...args: Expr[]): Expr {
   return new ArrayTensorProduct(...args).doit();
 }
 
-/** Derivative with variable axes first, then the expression's axes. */
+/**
+ * Derivative with variable axes first, then the expression's axes.
+ *
+ * @param expr - Symbolic expression on which to operate.
+ * @param variable - Variable of differentiation.
+ * @returns The derivative with variable axes preceding the expression axes.
+ * @throws NotImplementedError when the expression has no implemented array derivative or the applied function has array-dependent parameters or the differentiation variable is not an array or matrix symbol.
+ * @see SymPy `sympy.tensor.array.expressions.arrayexpr_derivatives.array_derive`
+ */
 export function arrayDerive(expr: Expr, variable: Expr): Expr {
   if (!(variable instanceof ArraySymbol || variable instanceof MatrixSymbolNode)) throw new NotImplementedError('array differentiation requires an array or matrix symbol');
   const shape = getShape(variable), rank = shape.length, prefix = Array.from({ length: rank }, (_, i) => i);

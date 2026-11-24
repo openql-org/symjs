@@ -15,8 +15,13 @@ import { Indexed } from '../core/indexed';
 import { some } from '../core/traverse';
 import { IdxNode } from './idx';
 
-/** The indices of the terms of a sum do not agree (SymPy IndexConformanceException). */
+/**
+ * Signals incompatible free indices in the terms of an indexed sum.
+ *
+ * @see SymPy `sympy.tensor.index_methods.IndexConformanceException`
+ */
 export class IndexConformanceException extends RangeError {
+  /** Symbolic name. */
   override readonly name = 'IndexConformanceException';
 }
 
@@ -92,9 +97,20 @@ function indicesOf(e: Expr): ExprSet {
 }
 
 /**
- * SymPy get_indices(expr): the set of outer indices of expr (repeated
- * indices are summed over and left out) and the symmetries (always empty,
- * as in SymPy); terms of a sum must have the same indices.
+ * The set of outer indices of expr (repeated indices are summed over and left out) and the
+ * symmetries (always empty, as in SymPy); terms of a sum must have the same indices.
+ *
+ * @param expr - Indexed expression to analyze.
+ * @returns The set of free indices and a map of index symmetries.
+ * @throws IndexConformanceException when terms of a sum have different free indices.
+ * @see SymPy `sympy.tensor.index_methods.get_indices`
+ * @example
+ * ```ts
+ * import { Idx, IndexedBase, getIndices } from '@symjs/symjs';
+ *
+ * const a = new IndexedBase('A'), i = Idx('i');
+ * getIndices(a.at(i, i))[0].size; // => 0
+ * ```
  */
 export function getIndices(expr: Expr): [Set<Expr>, Map<Expr, Expr>] {
   return [indicesOf(expr).toSet(), new Map()];
@@ -102,7 +118,10 @@ export function getIndices(expr: Expr): [Set<Expr>, Map<Expr, Expr>] {
 
 /** A key of the contraction structure: the contracted indices, or null for none. */
 export type ContractionKey = readonly Expr[] | null;
-/** The contraction structure: key -> terms, and nested structures under the expressions that contain them. */
+/**
+ * The contraction structure: key -> terms, and nested structures under the expressions that
+ * contain them.
+ */
 export type ContractionStructure = Map<ContractionKey | Expr, Set<Expr> | ContractionStructure[]>;
 
 const isKeyList = (k: ContractionKey | Expr): k is readonly Expr[] => Array.isArray(k);
@@ -168,10 +187,20 @@ function structure(e: Expr): ContractionStructure {
 }
 
 /**
- * SymPy get_contraction_structure(expr): the terms of expr grouped by the
- * indices they are summed over (null for none), with the structures of
- * nested factors and function arguments under the expressions containing
- * them.
+ * The terms of expr grouped by the indices they are summed over (null for none), with the
+ * structures of nested factors and function arguments under the expressions containing them.
+ *
+ * @param expr - Indexed expression to analyze.
+ * @returns Contraction groups mapped to their terms, including nested contractions.
+ * @see SymPy `sympy.tensor.index_methods.get_contraction_structure`
+ * @remarks SymPy prints this list of contracted index groups as `[(i,)]`.
+ * @example
+ * ```ts
+ * import { Idx, IndexedBase, getContractionStructure } from '@symjs/symjs';
+ *
+ * const a = new IndexedBase('A'), i = Idx('i');
+ * [...getContractionStructure(a.at(i, i)).keys()]; // => [[i]]
+ * ```
  */
 export function getContractionStructure(expr: Expr): ContractionStructure {
   return structure(expr);

@@ -46,8 +46,18 @@ export type { IdxRange } from './idx';
 export { BooleanKind, Kind, NumberKind, UndefinedKind } from '../core/kind';
 
 /**
- * SymPy NDimArray: the base class of N-dimensional arrays; calling it
- * builds an ImmutableDenseNDimArray.
+ * The base class of N-dimensional arrays; calling it builds an ImmutableDenseNDimArray.
+ *
+ * @param iterable - Elements or nested collections of elements to store.
+ * @param shape - Axis lengths in dimension order.
+ * @returns The resulting array.
+ * @see SymPy `sympy.tensor.array.ndim_array.NDimArray`
+ * @example
+ * ```ts
+ * import { NDimArray } from '@symjs/symjs';
+ *
+ * NDimArray([1, 2, 3, 4, 5, 6], [2, 3]); // => [[1, 2, 3], [4, 5, 6]]
+ * ```
  */
 export const NDimArray = /* @__PURE__ */ callableClass(
   NDimArrayNode,
@@ -55,14 +65,40 @@ export const NDimArray = /* @__PURE__ */ callableClass(
 );
 export type NDimArray = NDimArrayNode;
 
-/** SymPy DenseNDimArray: dense arrays; calling it builds an ImmutableDenseNDimArray. */
+/**
+ * Dense arrays; calling it builds an ImmutableDenseNDimArray.
+ *
+ * @param iterable - Elements or nested collections of elements to store.
+ * @param shape - Axis lengths in dimension order.
+ * @returns The resulting array.
+ * @see SymPy `sympy.tensor.array.dense_ndim_array.DenseNDimArray`
+ * @example
+ * ```ts
+ * import { DenseNDimArray } from '@symjs/symjs';
+ *
+ * DenseNDimArray([1, 2, 3, 4, 5, 6], [2, 3]); // => [[1, 2, 3], [4, 5, 6]]
+ * ```
+ */
 export const DenseNDimArray = /* @__PURE__ */ callableClass(
   DenseNDimArrayNode,
   (iterable: ArrayInput, shape?: ShapeInput): ImmutableDenseNDimArrayNode => new ImmutableDenseNDimArrayNode(iterable, shape),
 );
 export type DenseNDimArray = DenseNDimArrayNode;
 
-/** SymPy SparseNDimArray: sparse arrays; calling it builds an ImmutableSparseNDimArray. */
+/**
+ * Sparse arrays; calling it builds an ImmutableSparseNDimArray.
+ *
+ * @param iterable - Elements or nested collections of elements to store.
+ * @param shape - Axis lengths in dimension order.
+ * @returns The resulting array.
+ * @see SymPy `sympy.tensor.array.sparse_ndim_array.SparseNDimArray`
+ * @example
+ * ```ts
+ * import { SparseNDimArray } from '@symjs/symjs';
+ *
+ * SparseNDimArray([1, 2, 3, 4, 5, 6], [2, 3]); // => [[1, 2, 3], [4, 5, 6]]
+ * ```
+ */
 export const SparseNDimArray = /* @__PURE__ */ callableClass(
   SparseNDimArrayNode,
   (iterable: ArrayInput, shape?: ShapeInput): ImmutableSparseNDimArrayNode => new ImmutableSparseNDimArrayNode(iterable, shape),
@@ -70,9 +106,12 @@ export const SparseNDimArray = /* @__PURE__ */ callableClass(
 export type SparseNDimArray = SparseNDimArrayNode;
 
 /**
- * SymPy ImmutableDenseNDimArray(iterable, shape): an immutable dense array
- * from nested lists, a flat list and a shape, a Matrix or another array.
+ * An immutable dense array from nested lists, a flat list and a shape, a Matrix or another array.
  *
+ * @param iterable - Elements or nested collections of elements to store.
+ * @param shape - Axis lengths in dimension order.
+ * @returns The resulting array.
+ * @see SymPy `sympy.tensor.array.dense_ndim_array.ImmutableDenseNDimArray`
  * @example
  * ```ts
  * import { ImmutableDenseNDimArray } from '@symjs/symjs';
@@ -86,21 +125,60 @@ export const ImmutableDenseNDimArray = /* @__PURE__ */ callableClass(
 );
 export type ImmutableDenseNDimArray = ImmutableDenseNDimArrayNode;
 
-/** SymPy MutableDenseNDimArray(iterable, shape): a dense array changed in place with `set`. */
+/**
+ * A dense array changed in place with `set`.
+ *
+ * @param iterable - Elements or nested collections of elements to store.
+ * @param shape - Axis lengths in dimension order.
+ * @returns The resulting array.
+ * @see SymPy `sympy.tensor.array.dense_ndim_array.MutableDenseNDimArray`
+ * @example
+ * ```ts
+ * import { MutableDenseNDimArray } from '@symjs/symjs';
+ *
+ * MutableDenseNDimArray([1, 2, 3, 4, 5, 6], [2, 3]); // => [[1, 2, 3], [4, 5, 6]]
+ * ```
+ */
 export const MutableDenseNDimArray = /* @__PURE__ */ callableClass(
   MutableDenseNDimArrayNode,
   (iterable: ArrayInput, shape?: ShapeInput): MutableDenseNDimArrayNode => new MutableDenseNDimArrayNode(iterable, shape),
 );
 export type MutableDenseNDimArray = MutableDenseNDimArrayNode;
 
-/** SymPy ImmutableSparseNDimArray(iterable, shape): an immutable array storing its nonzero elements. */
+/**
+ * An immutable array storing its nonzero elements.
+ *
+ * @param iterable - Elements or nested collections of elements to store.
+ * @param shape - Axis lengths in dimension order.
+ * @returns The resulting array.
+ * @see SymPy `sympy.tensor.array.sparse_ndim_array.ImmutableSparseNDimArray`
+ * @example
+ * ```ts
+ * import { ImmutableSparseNDimArray } from '@symjs/symjs';
+ *
+ * ImmutableSparseNDimArray([1, 2, 3, 4, 5, 6], [2, 3]); // => [[1, 2, 3], [4, 5, 6]]
+ * ```
+ */
 export const ImmutableSparseNDimArray = /* @__PURE__ */ callableClass(
   ImmutableSparseNDimArrayNode,
   (iterable: ArrayInput, shape?: ShapeInput): ImmutableSparseNDimArrayNode => new ImmutableSparseNDimArrayNode(iterable, shape),
 );
 export type ImmutableSparseNDimArray = ImmutableSparseNDimArrayNode;
 
-/** SymPy MutableSparseNDimArray(iterable, shape): a sparse array changed in place with `set`. */
+/**
+ * A sparse array changed in place with `set`.
+ *
+ * @param iterable - Elements or nested collections of elements to store.
+ * @param shape - Axis lengths in dimension order.
+ * @returns The resulting array.
+ * @see SymPy `sympy.tensor.array.sparse_ndim_array.MutableSparseNDimArray`
+ * @example
+ * ```ts
+ * import { MutableSparseNDimArray } from '@symjs/symjs';
+ *
+ * MutableSparseNDimArray([1, 2, 3, 4, 5, 6], [2, 3]); // => [[1, 2, 3], [4, 5, 6]]
+ * ```
+ */
 export const MutableSparseNDimArray = /* @__PURE__ */ callableClass(
   MutableSparseNDimArrayNode,
   (iterable: ArrayInput, shape?: ShapeInput): MutableSparseNDimArrayNode => new MutableSparseNDimArrayNode(iterable, shape),
@@ -114,8 +192,19 @@ export type MutableSparseNDimArray = MutableSparseNDimArrayNode;
 export { ImmutableDenseNDimArray as SymArray };
 
 /**
- * SymPy ArrayComprehension(function, *limits): the array of `function`
- * over the index ranges [variable, lower, upper], evaluated by `doit()`.
+ * The array of `function` over the index ranges [variable, lower, upper], evaluated by `doit()`.
+ *
+ * @param fn - Function defining each array entry.
+ * @param limits - Bound variables and their inclusive limits.
+ * @returns The resulting `ArrayComprehension` expression.
+ * @throws RangeError when an index occurs in its own bounds or its lower bound exceeds its upper bound.
+ * @see SymPy `sympy.tensor.array.array_comprehension.ArrayComprehension`
+ * @example
+ * ```ts
+ * import { ArrayComprehension, ex } from '@symjs/symjs';
+ *
+ * ArrayComprehension(ex`10*i + j`, [ex`i`, 1, 4], [ex`j`, 1, 3]).doit(); // => [[11, 12, 13], [21, 22, 23], [31, 32, 33], [41, 42, 43]]
+ * ```
  */
 export const ArrayComprehension = /* @__PURE__ */ callableClass(
   ArrayComprehensionNode,
@@ -123,20 +212,60 @@ export const ArrayComprehension = /* @__PURE__ */ callableClass(
 );
 export type ArrayComprehension = ArrayComprehensionNode;
 
-/** SymPy ArrayComprehensionMap(lambda, *limits): ArrayComprehension with a JavaScript function. */
+/**
+ * ArrayComprehension with a JavaScript function.
+ *
+ * @param fn - Function defining each array entry.
+ * @param limits - Bound variables and their inclusive limits.
+ * @returns The resulting `ArrayComprehensionMap` expression.
+ * @throws RangeError when an index occurs in its own bounds or its lower bound exceeds its upper bound.
+ * @throws TypeError when the callback takes more than one argument.
+ * @see SymPy `sympy.tensor.array.array_comprehension.ArrayComprehensionMap`
+ * @example
+ * ```ts
+ * import { ArrayComprehensionMap, ex } from '@symjs/symjs';
+ *
+ * ArrayComprehensionMap(() => 1, [ex`i`, 1, 4]).doit(); // => [1, 1, 1, 1]
+ * ```
+ */
 export const ArrayComprehensionMap = /* @__PURE__ */ callableClass(
   ArrayComprehensionMapNode,
   (fn: ComprehensionLambda, ...limits: ComprehensionLimit[]): ArrayComprehensionMapNode => new ArrayComprehensionMapNode(fn, ...limits),
 );
 export type ArrayComprehensionMap = ArrayComprehensionMapNode;
 
-/** SymPy ArrayKind(element_kind): the kind of arrays (cached, ArrayKind(NumberKind) by default). */
+/**
+ * The kind of arrays (cached, ArrayKind(NumberKind) by default).
+ *
+ * @param elementKind - Kind of the component values.
+ * @returns The cached kind for arrays with elements of the specified kind.
+ * @see SymPy `sympy.tensor.array.ndim_array.ArrayKind`
+ * @example
+ * ```ts
+ * import { ArrayKind, NDimArray, NumberKind, kindOf } from '@symjs/symjs';
+ *
+ * kindOf(NDimArray([1, 2, 3])) === ArrayKind(NumberKind); // => True
+ * ```
+ */
 export const ArrayKind = /* @__PURE__ */ callableClass(ArrayKindNode, (elementKind: Kind = NumberKind): ArrayKindNode => ArrayKindNode.of(elementKind));
 export type ArrayKind = ArrayKindNode;
 
 /**
- * SymPy Idx(label, range): an integer index with an optional range (a
- * dimension n, or [lower, upper]); an integer label gives the integer.
+ * An integer index with an optional range (a dimension n, or [lower, upper]); an integer label
+ * gives the integer.
+ *
+ * @param label - Symbolic label used to identify this object.
+ * @param range - Dimension or pair of inclusive index bounds.
+ * @returns An integer index, or the integer itself for a literal integer label.
+ * @throws RangeError when a range does not contain exactly two bounds.
+ * @throws TypeError when the label, dimension or bounds are known to be nonintegral.
+ * @see SymPy `sympy.tensor.indexed.Idx`
+ * @example
+ * ```ts
+ * import { Idx } from '@symjs/symjs';
+ *
+ * Idx('qwerty'); // => qwerty
+ * ```
  */
 export const Idx = /* @__PURE__ */ callableClass(IdxNode, (label: string | Expr | number | bigint, range?: IdxRange): Expr => makeIdx(label, range));
 export type Idx = IdxNode;

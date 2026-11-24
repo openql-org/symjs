@@ -53,47 +53,84 @@ export function registerDyadicFamily(f: BasisFamily): void {
   registerFamily(f);
 }
 
-/** The options of Vector.projection (SymPy keyword arguments). */
+/** The options of Vector.projection. */
 export interface ProjectionOptions {
-  /** Return the scalar projection (SymPy scalar=True). */
+  /** Return the scalar projection. */
   readonly scalar?: boolean;
 }
 
-/** SymPy Vector: the super class of all vector classes. */
+/**
+ * The super class of all vector classes.
+ *
+ * @see SymPy `sympy.vector.vector.Vector`
+ */
 export abstract class Vector extends BasisDependent {
+  /**
+   * The operations shared by elements of this basis family.
+   *
+   * @returns The operations shared by elements of this basis family.
+   */
   override get family(): BasisFamily {
     return VECTOR;
   }
 
-  /** SymPy Vector.zero: the zero vector. */
+  /**
+   * The zero vector.
+   *
+   * @returns The zero vector.
+   * @see SymPy `sympy.vector.vector.Vector.zero`
+   */
   static get zero(): VectorZeroNode {
     return ZERO;
   }
 
-  /** SymPy is_Vector. */
+  /**
+   * Whether this expression is a vector.
+   *
+   * @returns Whether this expression is a vector.
+   * @see SymPy `sympy.vector.vector.Vector.is_Vector`
+   */
   get isVector(): boolean {
     return true;
   }
 
-  /** SymPy kind: VectorKind(NumberKind). */
+  /**
+   * VectorKind(NumberKind).
+   *
+   * @returns The kind of this expression.
+   * @see SymPy `sympy.vector.vector.Vector.kind`
+   */
   override kindSelf(): Kind {
     return VectorKind(NumberKind);
   }
 
-  /** SymPy magnitude: the length sqrt(v & v). */
+  /**
+   * The length sqrt(v & v).
+   *
+   * @returns The length sqrt(v & v).
+   * @see SymPy `sympy.vector.vector.Vector.magnitude`
+   */
   magnitude(): Expr {
     return sqrt(this.dot(this));
   }
 
-  /** SymPy normalize: the vector divided by its magnitude. */
+  /**
+   * The vector divided by its magnitude.
+   *
+   * @returns The vector divided by its magnitude.
+   * @see SymPy `sympy.vector.vector.Vector.normalize`
+   */
   normalize(): Expr {
     return this.div(this.magnitude());
   }
 
   /**
-   * SymPy Vector.equals: the vectors are equal for all values of the
-   * symbols (also across coordinate systems). An undecided comparison
-   * (SymPy None) is false.
+   * The vectors are equal for all values of the symbols (also across coordinate systems). An
+   * undecided comparison is false.
+   *
+   * @param other - Object to compare with this one.
+   * @returns Whether the operands are equal.
+   * @see SymPy `sympy.vector.vector.Vector.equals`
    */
   override equals(other: ExprLike): boolean {
     const d = this.sub(other);
@@ -101,9 +138,13 @@ export abstract class Vector extends BasisDependent {
   }
 
   /**
-   * SymPy Vector.dot (the operator &): the dot product with a vector (a
-   * scalar) or a dyadic (a vector). With a Del operator it is the
+   * The dot product with a vector (a scalar) or a dyadic (a vector). With a Del operator it is the
    * directional derivative operator, a function of a scalar field.
+   *
+   * @param other - Other operand of the inner product.
+   * @returns The inner product, or a directional derivative operator when `other` is `Del`.
+   * @throws TypeError when the operand is not a vector, dyadic or del operator.
+   * @see SymPy `sympy.vector.vector.Vector.dot`
    */
   dot(other: DelBase): (field: ExprLike) => Expr;
   dot(other: Expr): Expr;
@@ -119,7 +160,13 @@ export abstract class Vector extends BasisDependent {
     return dot(this, other);
   }
 
-  /** SymPy Vector.cross (the operator ^): the cross product with a vector (a vector) or a dyadic (a dyadic). */
+  /**
+   * The cross product with a vector (a vector) or a dyadic (a dyadic).
+   *
+   * @param other - Other operand of the cross product.
+   * @returns The cross product with a vector (a vector) or a dyadic (a dyadic).
+   * @see SymPy `sympy.vector.vector.Vector.cross`
+   */
   cross(other: Expr): Expr {
     if (isDyadic(other)) {
       let out = dyadicZero();
@@ -130,24 +177,48 @@ export abstract class Vector extends BasisDependent {
     return cross(this, other);
   }
 
-  /** SymPy Vector.outer (the operator |): the outer product, a dyadic. */
+  /**
+   * The outer product, a dyadic.
+   *
+   * @param other - Right operand of the outer product.
+   * @returns The outer product, a dyadic.
+   * @see SymPy `sympy.vector.vector.Vector.outer`
+   */
   outer(other: Expr): Expr {
     return outer(this, other);
   }
 
-  /** SymPy Vector.projection: the vector (or with `scalar`, scalar) projection of other on this vector. */
+  /**
+   * The vector (or with `scalar`, scalar) projection of other on this vector.
+   *
+   * @param other - Operand to project.
+   * @param opts - Settings described by {@link ProjectionOptions}.
+   * @returns The vector (or with `scalar`, scalar) projection of other on this vector.
+   * @see SymPy `sympy.vector.vector.Vector.projection`
+   */
   projection(other: Expr, opts: ProjectionOptions = {}): Expr {
     if (this.equals(ZERO)) return opts.scalar === true ? S.Zero : ZERO;
     const c = mul(dot(this, other), dot(this, this).pow(-1));
     return opts.scalar === true ? c : mul(c, this);
   }
 
-  /** SymPy to_matrix(system): the column of the components along the base vectors of system. */
+  /**
+   * The column of the components along the base vectors of system.
+   *
+   * @param system - Coordinate system in which to express components.
+   * @returns The column of the components along the base vectors of system.
+   * @see SymPy `sympy.vector.vector.Vector.to_matrix`
+   */
   toMatrix(system: CoordSysBase): Matrix {
     return Matrix.col(...system.baseVectors().map((u) => dot(this, u)));
   }
 
-  /** SymPy separate: the constituents of the vector in each coordinate system. */
+  /**
+   * The constituents of the vector in each coordinate system.
+   *
+   * @returns The constituents of the vector in each coordinate system.
+   * @see SymPy `sympy.vector.vector.Vector.separate`
+   */
   separate(): ExprMap<Expr> {
     const parts = new ExprMap<Expr>();
     for (const [k, v] of this.components) {
@@ -157,6 +228,12 @@ export abstract class Vector extends BasisDependent {
     return parts;
   }
 
+  /**
+   * Formats the expression as LaTeX.
+   *
+   * @param print - Formatter for a child expression.
+   * @returns The formatted LaTeX.
+   */
   override printLatex(print: (e: Expr) => string): string {
     if (this instanceof VectorZeroNode) return VECTOR_ZERO_LATEX;
     const items: [Expr, Expr][] = [];
@@ -211,14 +288,35 @@ function latexFormOf(k: Expr): string {
   return k.toLatex();
 }
 
-/** SymPy BaseVector(index, system, pretty_str, latex_str): a base vector of a coordinate system. */
+/**
+ * A base vector of a coordinate system.
+ *
+ * @see SymPy `sympy.vector.vector.BaseVector`
+ */
 export class BaseVectorNode extends Vector implements ScaledBase {
+  /** Zero-based index or indices selecting the desired component. */
   readonly index: number;
+  /**
+   * The coordinate system that supplies the basis.
+   *
+   * @see SymPy `sympy.vector.vector.BaseVector.system`
+   */
   readonly system: CoordSysBase;
   readonly #pretty: string;
+  /** LaTeX representation of this basis element. */
   readonly latexForm: string;
   #components: ExprMap<Expr> | undefined;
 
+  /**
+   * Constructs an instance of `BaseVectorNode`.
+   *
+   * @param index - Zero-based index or indices selecting the desired component.
+   * @param system - Coordinate system in which to express components.
+   * @param prettyStr - Label for the pretty printer.
+   * @param latexStr - Label for the LaTeX printer.
+   * @throws RangeError when the basis index is outside 0 through 2.
+   * @throws TypeError when a supplied coordinate system is not a `CoordSys3D`.
+   */
   constructor(index: number, system: CoordSysBase, prettyStr?: string, latexStr?: string) {
     if (!Number.isInteger(index) || index < 0 || index > 2) throw new RangeError('index must be 0, 1 or 2');
     if (!(system instanceof CoordSysBase)) throw new TypeError('system should be a CoordSys3D');
@@ -228,33 +326,78 @@ export class BaseVectorNode extends Vector implements ScaledBase {
     this.#pretty = prettyStr ?? `x${index}`;
     this.latexForm = latexStr ?? `x_${index}`;
   }
-  /** SymPy srepr: the base vector as an attribute of its system. */
+  /**
+   * The base vector as an attribute of its system.
+   *
+   * @param repr - Formatter for expression arguments.
+   * @returns The constructor representation.
+   */
   printRepr(repr: (e: Expr) => string): string {
     return `${repr(this.system)}.${at(this.system.vectorNames, this.index)}`;
   }
+  /**
+   * Rebuilds the expression with replacement arguments in their original order.
+   *
+   * @returns This expression.
+   */
   withArgs(): Expr {
     return this;
   }
-  /** SymPy _pretty_form. */
+  /**
+   * The label used by the pretty printer.
+   *
+   * @returns The label used by the pretty printer.
+   */
   override get prettyForm(): string {
     return this.#pretty;
   }
+  /**
+   * The scalar coefficients keyed by their basis vectors.
+   *
+   * @returns The scalar coefficients keyed by basis element.
+   * @see SymPy `sympy.vector.vector.BaseVector.components`
+   */
   override get components(): ExprMap<Expr> {
     return (this.#components ??= new ExprMap<Expr>([[this, S.One]]));
   }
+  /**
+   * The scalar coefficient multiplying the basis element.
+   *
+   * @returns The scalar coefficient multiplying the basis element.
+   */
   get measureNumber(): Expr {
     return S.One;
   }
+  /**
+   * The basis element carrying the scalar coefficient.
+   *
+   * @returns The basis element carrying the scalar coefficient.
+   */
   get baseInstance(): BaseVectorNode {
     return this;
   }
+  /**
+   * Formats the expression in plain text.
+   *
+   * @returns The formatted expression.
+   */
   override printStr(): string {
     return `${this.system.sysName}.${at(this.system.vectorNames, this.index)}`;
   }
+  /**
+   * Formats the expression as LaTeX.
+   *
+   * @returns The formatted LaTeX.
+   */
   override printLatex(): string {
     return this.latexForm;
   }
-  /** SymPy _eval_conjugate: a base vector is its own conjugate. */
+  /**
+   * A base vector is its own conjugate.
+   *
+   * @returns A base vector is its own conjugate.
+   * @see SymPy `sympy.vector.vector.BaseVector._eval_conjugate`
+   */
   override conjugateSelf(): Expr {
     return this;
   }
@@ -263,24 +406,63 @@ export class BaseVectorNode extends Vector implements ScaledBase {
   }
 }
 
-/** SymPy VectorMul: a scalar multiple of a base vector. */
+/**
+ * A scalar multiple of a base vector.
+ *
+ * @see SymPy `sympy.vector.vector.VectorMul`
+ */
 export class VectorMulNode extends Vector implements ScaledBase {
+  /**
+   * Constructs an instance of `VectorMulNode`.
+   *
+   * @param measureNumber - Scalar coefficient of the basis element.
+   * @param baseInstance - Basis element multiplied by the coefficient.
+   */
   constructor(
+    /**
+     * The scalar coefficient multiplying the basis element.
+     *
+     * @see SymPy `sympy.vector.vector.VectorMul.measure_number`
+     */
     readonly measureNumber: Expr,
+    /** The basis element carrying the scalar coefficient. */
     readonly baseInstance: BaseVectorNode,
   ) {
     super('VectorMul', [measureNumber, baseInstance]);
   }
+  /**
+   * Rebuilds the expression with replacement arguments in their original order.
+   *
+   * @param args - Replacement arguments in the same order as `args` on the original expression.
+   * @returns The rebuilt expression.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return basisMul(VECTOR, args);
   }
+  /**
+   * The scalar coefficients keyed by their basis vectors.
+   *
+   * @returns The scalar coefficients keyed by basis element.
+   * @see SymPy `sympy.vector.vector.VectorMul.components`
+   */
   override get components(): ExprMap<Expr> {
     return new ExprMap<Expr>([[this.baseInstance, this.measureNumber]]);
   }
-  /** SymPy base_vector: the base vector of the product. */
+  /**
+   * The base vector of the product.
+   *
+   * @returns The base vector of the product.
+   * @see SymPy `sympy.vector.vector.VectorMul.base_vector`
+   */
   get baseVector(): BaseVectorNode {
     return this.baseInstance;
   }
+  /**
+   * Formats the expression in plain text.
+   *
+   * @param print - Formatter for a child expression.
+   * @returns The formatted expression.
+   */
   override printStr(print: (e: Expr) => string): string {
     return mulStr(this.measureNumber, this.baseInstance, print);
   }
@@ -293,20 +475,47 @@ export function mulStr(measure: Expr, base: Expr, print: (e: Expr) => string): s
   return `${m}*${print(base)}`;
 }
 
-/** SymPy VectorAdd: a sum of multiples of base vectors. */
+/**
+ * A sum of multiples of base vectors.
+ *
+ * @see SymPy `sympy.vector.vector.VectorAdd`
+ */
 export class VectorAddNode extends Vector {
   readonly #components: ExprMap<Expr>;
+  /**
+   * Constructs an instance of `VectorAddNode`.
+   *
+   * @param terms - Terms of the sum.
+   * @param components - Coefficients indexed by basis elements.
+   */
   constructor(terms: readonly Expr[], components: ExprMap<Expr>) {
     super('VectorAdd', [...terms].sort((a, b) => compareKeys(sortKey(a), sortKey(b))));
     this.#components = components;
   }
+  /**
+   * Rebuilds the expression with replacement arguments in their original order.
+   *
+   * @param args - Replacement arguments in the same order as `args` on the original expression.
+   * @returns The rebuilt expression.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return basisAdd(VECTOR, args);
   }
+  /**
+   * The scalar coefficients keyed by their basis vectors.
+   *
+   * @returns The scalar coefficients keyed by basis element.
+   * @see SymPy `sympy.vector.vector.VectorAdd.components`
+   */
   override get components(): ExprMap<Expr> {
     return this.#components;
   }
-  /** SymPy VectorAdd._sympystr: the terms by system (in order of the names), then by base vector. */
+  /**
+   * The terms by system (in order of the names), then by base vector.
+   *
+   * @param print - Formatter for a child expression.
+   * @returns The formatted expression.
+   */
   override printStr(print: (e: Expr) => string): string {
     const items = [...this.separate()].sort((a, b) => compareStr(String(a[0]), String(b[0])));
     const out: string[] = [];
@@ -322,24 +531,56 @@ export class VectorAddNode extends Vector {
 
 const cast2sys = (e: Expr): CoordSysBase => cast(e, CoordSysBase, 'coordinate system');
 
-/** SymPy VectorZero: the zero vector. */
+/**
+ * The zero vector.
+ *
+ * @see SymPy `sympy.vector.vector.VectorZero`
+ */
 export class VectorZeroNode extends Vector {
+  /** Constructs an instance of `VectorZeroNode`. */
   constructor() {
     super('VectorZero', []);
   }
+  /**
+   * Rebuilds the expression with replacement arguments in their original order.
+   *
+   * @returns The rebuilt expression.
+   */
   withArgs(): Expr {
     return ZERO;
   }
+  /**
+   * The scalar coefficients keyed by their basis vectors.
+   *
+   * @returns The scalar coefficients keyed by basis element.
+   * @see SymPy `sympy.vector.vector.VectorZero.components`
+   */
   override get components(): ExprMap<Expr> {
     return new ExprMap<Expr>();
   }
+  /**
+   * Returns the zero vector.
+   *
+   * @returns The zero vector.
+   * @see SymPy `sympy.vector.vector.VectorZero.normalize`
+   */
   override normalize(): Expr {
     return this;
   }
+  /**
+   * Formats the expression in plain text.
+   *
+   * @returns The formatted expression.
+   */
   override printStr(): string {
     return '0';
   }
-  /** SymPy _pretty_form. */
+  /**
+   * The label used by the pretty printer.
+   *
+   * @returns The label used by the pretty printer.
+   * @see SymPy `sympy.vector.vector.VectorZero._pretty_form`
+   */
   override get prettyForm(): string {
     return '0';
   }
@@ -369,46 +610,124 @@ registerFamily(VECTOR);
 export const vectorFamily: BasisFamily = VECTOR;
 
 /**
- * SymPy Cross(expr1, expr2): the unevaluated cross product, with its
- * operands in canonical order (Cross(b, a) is -Cross(a, b)).
+ * The unevaluated cross product, with its operands in canonical order (Cross(b, a) is -Cross(a,
+ * b)).
+ *
+ * @see SymPy `sympy.vector.vector.Cross`
+ * @example
+ * ```ts
+ * import { CoordSys3D, Cross, doit } from '@symjs/symjs';
+ *
+ * const R = CoordSys3D('R');
+ * const v = R.i.add(R.j).add(R.k);
+ * const w = R.i.mul(R.x).add(R.j.mul(R.y)).add(R.k.mul(R.z));
+ * doit(Cross(v, w)); // => (-R.y + R.z)*R.i + (R.x - R.z)*R.j + (-R.x + R.y)*R.k
+ * ```
  */
 export class CrossNode extends Vector {
+  /**
+   * Constructs an instance of `CrossNode`.
+   *
+   * @param expr1 - First operand of the product.
+   * @param expr2 - Second operand of the product.
+   */
   constructor(expr1: Expr, expr2: Expr) {
     super('Cross', [expr1, expr2]);
   }
+  /**
+   * Rebuilds the expression with replacement arguments in their original order.
+   *
+   * @param args - Replacement arguments in the same order as `args` on the original expression.
+   * @returns The rebuilt expression.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new CrossNode(at(args, 0), at(args, 1));
   }
-  /** An unevaluated product has no components (SymPy raises AttributeError); doit evaluates it. */
+  /**
+   * Evaluate the cross product with `doit` before accessing its components.
+   *
+   * @returns Accessing components on an unevaluated cross product always throws a `TypeError`.
+   * @throws TypeError when components are requested before evaluating the cross product.
+   * @see SymPy `sympy.vector.vector.Cross.components`
+   */
   override get components(): ExprMap<Expr> {
     throw new TypeError('Cross has no components: evaluate it with doit()');
   }
+  /**
+   * Computes the derivative of this expression.
+   *
+   * @returns The specialized result when the hook handles the operands.
+   * @see SymPy `sympy.vector.vector.Cross._eval_derivative`
+   */
   override diffSelf(): Expr | undefined {
     return undefined;
   }
+  /**
+   * Simplifies the operands of the expression.
+   *
+   * @returns The specialized result when the hook handles the operands.
+   * @see SymPy `sympy.vector.vector.Cross._eval_simplify`
+   */
   override simplifySelf(): Expr | undefined {
     return undefined;
   }
+  /**
+   * Integrates the expression with respect to the given variable.
+   *
+   * @returns The specialized result when the hook handles the operands.
+   * @see SymPy `sympy.vector.vector.Cross._eval_Integral`
+   */
   override integrateSelf(): Expr | undefined {
     return undefined;
   }
+  /**
+   * Evaluates the components to the requested numerical precision.
+   *
+   * @returns The numerically evaluated expression.
+   * @see SymPy `sympy.vector.vector.Cross._eval_evalf`
+   */
   override evalfSelf(): Expr | undefined {
     return undefined;
   }
+  /**
+   * Computes the complex conjugate.
+   *
+   * @returns The specialized result when the hook handles the operands.
+   * @see SymPy `sympy.vector.vector.Cross._eval_conjugate`
+   */
   override conjugateSelf(): Expr | undefined {
     return undefined;
   }
-  /** SymPy Cross.doit: cross of the operands as they are (not deep). */
+  /**
+   * Cross of the operands as they are (not deep).
+   *
+   * @returns Cross of the operands as they are (not deep).
+   */
   override get doitDeep(): boolean {
     return false;
   }
+  /**
+   * Evaluates this node when expression evaluation reaches it.
+   *
+   * @returns The evaluated expression.
+   */
   override doitSelf(): Expr {
     return cross(at(this.args, 0), at(this.args, 1));
   }
+  /**
+   * Formats the expression as LaTeX.
+   *
+   * @param print - Formatter for a child expression.
+   * @returns The formatted LaTeX.
+   */
   override printLatex(print: (e: Expr) => string): string {
     return `${parenMul(at(this.args, 0), print)} \\times ${parenMul(at(this.args, 1), print)}`;
   }
-  /** SymPy PRECEDENCE_TRADITIONAL['Cross']. */
+  /**
+   * Binding strength used to insert parentheses when printing LaTeX.
+   *
+   * @returns The LaTeX printer’s precedence for this node.
+   */
   latexPrecedence(): number {
     return OPERATOR_PRECEDENCE;
   }
@@ -426,7 +745,23 @@ export const OPERATOR_PRECEDENCE = PREC.MUL - 1;
 /** The precedence of an operand: the one a node declares for LaTeX, else the str precedence. */
 const latexPrecedence = (e: Expr): number => declaredPrecedence(e, 'latexPrecedence') ?? precedence(e);
 
-/** SymPy Cross(v1, v2). */
+/**
+ * An unevaluated cross product with operands in canonical order.
+ *
+ * @param expr1In - First operand of the product.
+ * @param expr2In - Second operand of the product.
+ * @returns The resulting `Cross` expression.
+ * @see SymPy `sympy.vector.vector.Cross`
+ * @example
+ * ```ts
+ * import { CoordSys3D, Cross, doit } from '@symjs/symjs';
+ *
+ * const R = CoordSys3D('R');
+ * const v = R.i.add(R.j).add(R.k);
+ * const w = R.i.mul(R.x).add(R.j.mul(R.y)).add(R.k.mul(R.z));
+ * doit(Cross(v, w)); // => (-R.y + R.z)*R.i + (R.x - R.z)*R.j + (-R.x + R.y)*R.k
+ * ```
+ */
 export const Cross = /* @__PURE__ */ callableClass(CrossNode, (expr1In: ExprLike, expr2In: ExprLike): Expr => {
   const [a, b] = [sympify(expr1In), sympify(expr2In)];
   if (compareKeys(sortKey(a), sortKey(b)) > 0) return mul(-1, new CrossNode(b, a));
@@ -434,31 +769,91 @@ export const Cross = /* @__PURE__ */ callableClass(CrossNode, (expr1In: ExprLike
 });
 export type Cross = CrossNode;
 
-/** SymPy Dot(expr1, expr2): the unevaluated dot product, with its operands in canonical order. */
+/**
+ * The unevaluated dot product, with its operands in canonical order.
+ *
+ * @see SymPy `sympy.vector.vector.Dot`
+ * @example
+ * ```ts
+ * import { CoordSys3D, Dot, doit, ex } from '@symjs/symjs';
+ *
+ * const R = CoordSys3D('R');
+ * const v = R.i.add(R.j).add(R.k);
+ * const w = R.i.mul(ex`a`).add(R.j.mul(ex`b`)).add(R.k.mul(ex`c`));
+ * doit(Dot(v, w)); // => a + b + c
+ * ```
+ */
 export class DotNode extends ExtensionExpr {
+  /**
+   * Constructs an instance of `DotNode`.
+   *
+   * @param expr1 - First operand of the product.
+   * @param expr2 - Second operand of the product.
+   */
   constructor(expr1: Expr, expr2: Expr) {
     super('Dot', [expr1, expr2]);
   }
+  /**
+   * Rebuilds the expression with replacement arguments in their original order.
+   *
+   * @param args - Replacement arguments in the same order as `args` on the original expression.
+   * @returns The rebuilt expression.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new DotNode(at(args, 0), at(args, 1));
   }
-  /** SymPy Dot.doit: dot of the operands as they are (not deep). */
+  /**
+   * Dot of the operands as they are (not deep).
+   *
+   * @returns Dot of the operands as they are (not deep).
+   */
   override get doitDeep(): boolean {
     return false;
   }
+  /**
+   * Evaluates this node when expression evaluation reaches it.
+   *
+   * @returns The evaluated expression.
+   */
   override doitSelf(): Expr {
     return dot(at(this.args, 0), at(this.args, 1));
   }
+  /**
+   * Formats the expression as LaTeX.
+   *
+   * @param print - Formatter for a child expression.
+   * @returns The formatted LaTeX.
+   */
   override printLatex(print: (e: Expr) => string): string {
     return `${parenMul(at(this.args, 0), print)} \\cdot ${parenMul(at(this.args, 1), print)}`;
   }
-  /** SymPy PRECEDENCE_TRADITIONAL['Dot']. */
+  /**
+   * Binding strength used to insert parentheses when printing LaTeX.
+   *
+   * @returns The LaTeX printer’s precedence for this node.
+   */
   latexPrecedence(): number {
     return OPERATOR_PRECEDENCE;
   }
 }
 
-/** SymPy Dot(v1, v2). */
+/**
+ * An unevaluated dot product with operands in canonical order.
+ *
+ * @param expr1In - First operand of the product.
+ * @param expr2In - Second operand of the product.
+ * @returns The resulting `Dot` expression.
+ * @see SymPy `sympy.vector.vector.Dot`
+ * @example
+ * ```ts
+ * import { CoordSys3D, Dot, doit, ex } from '@symjs/symjs';
+ *
+ * const R = CoordSys3D('R');
+ * const v = R.i.add(R.j).add(R.k);
+ * const w = R.i.mul(ex`a`).add(R.j.mul(ex`b`)).add(R.k.mul(ex`c`));
+ * doit(Dot(v, w)); // => a + b + c
+ * ```
+ */
 export const Dot = /* @__PURE__ */ callableClass(DotNode, (expr1In: ExprLike, expr2In: ExprLike): DotNode => {
   const [a, b] = [sympify(expr1In), sympify(expr2In)].sort((x, y) => compareKeys(sortKey(x), sortKey(y)));
   return new DotNode(defined(a, 'operand'), defined(b, 'operand'));
@@ -564,22 +959,50 @@ export function projections(v: Expr): [Expr, Expr, Expr] {
   return [dot(v, i), dot(v, j), dot(v, k)];
 }
 
-/** SymPy BaseVector(index, system, pretty_str=None, latex_str=None). */
+/**
+ * A basis vector of a three-dimensional coordinate system.
+ *
+ * @param index - Zero-based index or indices selecting the desired component.
+ * @param system - Coordinate system in which to express components.
+ * @param prettyStr - Label for the pretty printer.
+ * @param latexStr - Label for the LaTeX printer.
+ * @returns The resulting `BaseVector` expression.
+ * @throws RangeError when the basis index is outside 0 through 2.
+ * @throws TypeError when a supplied coordinate system is not a `CoordSys3D`.
+ * @see SymPy `sympy.vector.vector.BaseVector`
+ */
 export const BaseVector = /* @__PURE__ */ callableClass(
   BaseVectorNode,
   (index: number, system: CoordSysBase, prettyStr?: string, latexStr?: string): BaseVectorNode => new BaseVectorNode(index, system, prettyStr, latexStr),
 );
 export type BaseVector = BaseVectorNode;
 
-/** SymPy VectorAdd(*args): the sum of vectors. */
+/**
+ * The sum of vectors.
+ *
+ * @param args - Operands in their defining order.
+ * @returns The resulting `VectorAdd` expression.
+ * @see SymPy `sympy.vector.vector.VectorAdd`
+ */
 export const VectorAdd = /* @__PURE__ */ callableClass(VectorAddNode, (...args: ExprLike[]): Expr => basisAdd(VECTOR, args.map(sympify)));
 export type VectorAdd = VectorAddNode;
 
-/** SymPy VectorMul(*args): the product of scalars and a vector. */
+/**
+ * The product of scalars and a vector.
+ *
+ * @param args - Operands in their defining order.
+ * @returns The resulting `VectorMul` expression.
+ * @see SymPy `sympy.vector.vector.VectorMul`
+ */
 export const VectorMul = /* @__PURE__ */ callableClass(VectorMulNode, (...args: ExprLike[]): Expr => basisMul(VECTOR, args.map(sympify)));
 export type VectorMul = VectorMulNode;
 
-/** SymPy VectorZero(): the zero vector. */
+/**
+ * The zero vector.
+ *
+ * @returns The resulting `VectorZero` expression.
+ * @see SymPy `sympy.vector.vector.VectorZero`
+ */
 export const VectorZero = /* @__PURE__ */ callableClass(VectorZeroNode, (): VectorZeroNode => ZERO);
 export type VectorZero = VectorZeroNode;
 

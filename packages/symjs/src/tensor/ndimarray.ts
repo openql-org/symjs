@@ -55,12 +55,12 @@ import { ArrayKindNode, BooleanKind, NumberKind, UndefinedKind } from '../core/k
 export type ArrayElementInput = ExprLike | boolean;
 
 /**
- * Input of the array constructors: a scalar, nested lists (any iterable),
- * a Matrix or another array. With an explicit shape, a flat list.
+ * Input of the array constructors: a scalar, nested lists (any iterable), a Matrix or another
+ * array. With an explicit shape, a flat list.
  */
 export type NestedArrayInput = ArrayElementInput | Matrix | NDimArray | Iterable<NestedArrayInput>;
 
-/** Sparse input: flat index or index tuple -> element (SymPy dict input; needs a shape). */
+/** Sparse input: flat index or index tuple -> element. */
 export type SparseArrayInput = ReadonlyMap<number | readonly number[], ArrayElementInput>;
 
 /** Input of the array constructors. */
@@ -70,21 +70,34 @@ export type ArrayInput = NestedArrayInput | SparseArrayInput;
 export type ShapeInput = number | readonly (number | bigint | Expr)[];
 
 /**
- * A Python slice start:stop:step for array indexing; `slice()` is the
- * full slice `:`. Strings in Python syntax (':', '1:', '::-1') are
- * accepted wherever a Slice is.
+ * A Python slice start:stop:step for array indexing; `slice()` is the full slice `:`. Strings in
+ * Python syntax (':', '1:', '::-1') are accepted wherever a Slice is.
  */
 export class Slice {
   readonly #start: number | undefined;
   readonly #stop: number | undefined;
   readonly #step: number | undefined;
+  /**
+   * Constructs an instance of `Slice`.
+   *
+   * @param start - First index of the slice.
+   * @param stop - Exclusive upper bound of the slice.
+   * @param step - Stride between successive indices.
+   * @throws TypeError when a slice bound or stride is not an integer.
+   */
   constructor(start?: number, stop?: number, step?: number) {
     for (const v of [start, stop, step]) if (v !== undefined && !Number.isInteger(v)) throw new TypeError('slice indices must be integers');
     this.#start = start;
     this.#stop = stop;
     this.#step = step;
   }
-  /** Python slice.indices(n): the normalized [start, stop, step] for a dimension of length n. */
+  /**
+   * Python slice.indices(n): the normalized [start, stop, step] for a dimension of length n.
+   *
+   * @param n - Length of the indexed axis.
+   * @returns The normalized start, stop and step.
+   * @throws RangeError when the slice stride is zero.
+   */
   indices(n: number): [number, number, number] {
     const step = this.#step ?? 1;
     if (step === 0) throw new RangeError('slice step cannot be zero');
@@ -97,24 +110,44 @@ export class Slice {
     };
     return [clip(this.#start, step < 0 ? upper : lower), clip(this.#stop, step < 0 ? lower : upper), step];
   }
-  /** The indices selected in a dimension of length n. */
+  /**
+   * The indices selected in a dimension of length n.
+   *
+   * @param n - Length of the indexed axis.
+   * @returns The selected integer positions.
+   */
   expand(n: number): number[] {
     const [start, stop, step] = this.indices(n);
     const len = Math.max(0, Math.ceil((stop - start) / step));
     return Array.from({ length: len }, (_, i) => start + i * step);
   }
+  /**
+   * Formats this slice as text.
+   *
+   * @returns The formatted text.
+   */
   toString(): string {
     const f = (v: number | undefined): string => (v === undefined ? '' : `${v}`);
     return `${f(this.#start)}:${f(this.#stop)}${this.#step === undefined ? '' : `:${this.#step}`}`;
   }
 }
 
-/** A Python slice start:stop:step (SymPy/Python `slice`). */
+/**
+ * A Python slice start:stop:step (SymPy/Python `slice`).
+ *
+ * @param start - First index of the slice.
+ * @param stop - Exclusive upper bound of the slice.
+ * @param step - Stride between successive indices.
+ * @returns A Python slice start:stop:step (SymPy/Python `slice`).
+ */
 export function slice(start?: number, stop?: number, step?: number): Slice {
   return new Slice(start, stop, step);
 }
 
-/** One position of an array index: an integer, a symbolic index, a Slice or a slice string such as ':'. */
+/**
+ * One position of an array index: an integer, a symbolic index, a Slice or a slice string such as
+ * ':'.
+ */
 export type IndexItem = number | bigint | Expr | Slice | string;
 
 function parseSliceString(s: string): Slice {
@@ -250,14 +283,27 @@ function checkSpecialBounds(n: number, shape: readonly number[]): void {
 // ---- NDimArray ------------------------------------------------------------------
 
 /**
- * SymPy NDimArray: the base class of N-dimensional arrays. `NDimArray(...)`
- * (like `Array(...)`) builds an ImmutableDenseNDimArray.
+ * The base class of N-dimensional arrays. `NDimArray(...)` (like `Array(...)`) builds an
+ * ImmutableDenseNDimArray.
+ *
+ * @see SymPy `sympy.tensor.array.ndim_array.NDimArray`
  */
 export abstract class NDimArray extends ExtensionExpr {
-  /** The dimensions (SymPy shape). */
+  /**
+   * The dimensions.
+   *
+   * @see SymPy `sympy.tensor.array.ndim_array.NDimArray.shape`
+   */
   readonly shape: readonly number[];
   readonly #loopSize: number;
 
+  /**
+   * Constructs an instance of `NDimArray`.
+   *
+   * @param name - Symbolic name.
+   * @param args - Operands in their defining order.
+   * @param shape - Axis lengths in dimension order.
+   */
   constructor(name: string, args: readonly Expr[], shape: readonly number[]) {
     super(name, args);
     this.shape = Object.freeze([...shape]);
@@ -267,34 +313,66 @@ export abstract class NDimArray extends ExtensionExpr {
   /** The element at a flat (row-major) position. */
   protected abstract item(k: number): Expr;
 
-  /** @internal All elements in row-major order (SymPy Flatten). */
+  /**
+   * The array entries in row-major order.
+   *
+   * @returns The array entries in row-major order.
+   * @internal
+   */
   flatElements(): Expr[] {
     return Array.from({ length: this.#loopSize }, (_, k) => this.item(k));
   }
 
-  /** @internal A new array of the same class (SymPy type(self)(iterable, shape)). */
+  /**
+   * Builds an array of the same concrete class with the supplied entries.
+   *
+   * @param iterable - Elements or nested collections of elements to store.
+   * @param shape - Axis lengths in dimension order.
+   * @returns An array of the same concrete class.
+   * @internal
+   */
   newLike(iterable: ArrayInput, shape?: readonly number[]): this {
     // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- every concrete array class has the (iterable, shape) constructor, and this.constructor is typed as Function
     const C = this.constructor as new (it: ArrayInput, sh?: ShapeInput) => this;
     return new C(iterable, shape);
   }
 
-  /** The number of dimensions (SymPy rank()). */
+  /**
+   * The number of dimensions (SymPy rank()).
+   *
+   * @returns The number of dimensions (SymPy rank()).
+   * @see SymPy `sympy.tensor.array.ndim_array.NDimArray.rank`
+   */
   rank(): number {
     return this.shape.length;
   }
 
-  /** The number of elements (SymPy len). */
+  /**
+   * The number of elements.
+   *
+   * @returns The number of elements.
+   */
   get length(): number {
     return this.#loopSize;
   }
 
-  /** SymPy is_scalar: an array is not a scalar. */
+  /**
+   * An array is not a scalar.
+   *
+   * @returns An array is not a scalar.
+   * @see SymPy `sympy.tensor.array.ndim_array.NDimArray.is_scalar`
+   */
   override get isScalar(): boolean {
     return false;
   }
 
-  /** SymPy _get_tuple_index: the index tuple of a flat position. */
+  /**
+   * The index tuple of a flat position.
+   *
+   * @param k - Flattened index.
+   * @returns The index tuple of a flat position.
+   * @see SymPy `sympy.tensor.array.ndim_array.NDimArray._get_tuple_index`
+   */
   tupleIndex(k: number): number[] {
     const out: number[] = [];
     let r = k;
@@ -306,7 +384,15 @@ export abstract class NDimArray extends ExtensionExpr {
     return out.reverse();
   }
 
-  /** @internal SymPy _parse_index: the flat position of an index tuple (negative indices count from the end). */
+  /**
+   * Converts an index tuple to its flat position.
+   *
+   * @param index - Zero-based index or indices selecting the desired component.
+   * @returns The flattened row-major index.
+   * @throws RangeError when the array is empty and an index is requested or the index is not a tuple of axis indices or the axis count does not match the array rank or an index is outside the array bounds.
+   * @see SymPy `sympy.tensor.array.ndim_array.NDimArray._parse_index`
+   * @internal
+   */
   parseIndex(index: number | readonly number[]): number {
     if (typeof index === 'number') {
       if (index >= this.#loopSize) throw new RangeError('Only a tuple index is accepted');
@@ -324,10 +410,23 @@ export abstract class NDimArray extends ExtensionExpr {
   }
 
   /**
-   * SymPy __getitem__: `a.get(1, 1)` is an element, `a.get(0)` (fewer
-   * indices than the rank) or slices (`a.get(':', 1)`, `a.get(slice(1))`)
-   * give a sub-array, and symbolic indices (`a.get(i, j)`) give the
+   * `a.get(1, 1)` is an element, `a.get(0)` (fewer indices than the rank) or slices (`a.get(':',
+   * 1)`, `a.get(slice(1))`) give a sub-array, and symbolic indices (`a.get(i, j)`) give the
    * unevaluated Indexed `a[i, j]`. A single list is an index tuple.
+   *
+   * @param indexIn - Index or slice along each addressed axis.
+   * @returns The selected entry or subarray.
+   * @throws RangeError when the index has more entries than the array has axes or an index is outside the array bounds.
+   * @throws TypeError when a slice is combined with a symbolic index.
+   * @see SymPy `sympy.tensor.array.ndim_array.NDimArray.__getitem__`
+   * @example
+   * ```ts
+   * import { SymArray, slice } from '@symjs/symjs';
+   *
+   * const a = SymArray([[1, 2], [3, 4]]);
+   * a.get(1, 0); // => 3
+   * a.get(slice(), 1); // => [2, 4]
+   * ```
    */
   get(...indexIn: (IndexItem | readonly IndexItem[])[]): Expr {
     const raw = normItems(indexIn);
@@ -353,7 +452,13 @@ export abstract class NDimArray extends ExtensionExpr {
     return this.item(this.parseIndex(index.map(intIndex)));
   }
 
-  /** SymPy tolist: nested lists of the elements. */
+  /**
+   * Nested lists of the elements.
+   *
+   * @returns The entries as a nested list in axis order.
+   * @throws RangeError when the array has rank zero.
+   * @see SymPy `sympy.tensor.array.ndim_array.NDimArray.tolist`
+   */
   tolist(): NestedList {
     if (this.rank() === 0) throw new RangeError('tolist: an array of rank 0 has no list form');
     const build = (d: number, offset: number, size: number): NestedList => {
@@ -366,7 +471,11 @@ export abstract class NDimArray extends ExtensionExpr {
     return build(0, 0, this.#loopSize);
   }
 
-  /** SymPy iteration: the sub-arrays along the first axis (the element for rank 0). */
+  /**
+   * The sub-arrays along the first axis (the element for rank 0).
+   *
+   * @returns An iterator over the entries in row-major order.
+   */
   *[Symbol.iterator](): Iterator<Expr> {
     if (this.rank() === 0) {
       yield this.item(0);
@@ -375,21 +484,49 @@ export abstract class NDimArray extends ExtensionExpr {
     for (let i = 0; i < at(this.shape, 0); i++) yield this.get(i);
   }
 
-  /** SymPy reshape(*newshape): the same elements with another shape. */
+  /**
+   * The same elements with another shape.
+   *
+   * @param newshape - New axis lengths with the same total number of entries.
+   * @returns An array with the requested dimensions and the original row-major entries.
+   * @see SymPy `sympy.tensor.array.dense_ndim_array.ImmutableDenseNDimArray.reshape`
+   */
   abstract reshape(...newshape: number[]): this;
 
-  /** SymPy tomatrix: the Matrix of a rank-2 array. */
+  /**
+   * The Matrix of a rank-2 array.
+   *
+   * @returns A matrix with the same rows and columns.
+   * @throws RangeError when the input does not have dimension two.
+   * @see SymPy `sympy.tensor.array.dense_ndim_array.ImmutableDenseNDimArray.tomatrix`
+   */
   tomatrix(): Matrix {
     if (this.rank() !== 2) throw new RangeError('Dimensions must be of size of 2');
     return Matrix.fromFunction(at(this.shape, 0), at(this.shape, 1), (i, j) => this.item(i * at(this.shape, 1) + j));
   }
 
-  /** SymPy as_immutable. */
+  /**
+   * An immutable array with the same entries and shape.
+   *
+   * @returns An immutable array with the same entries and shape.
+   * @see SymPy `sympy.tensor.array.dense_ndim_array.ImmutableDenseNDimArray.as_immutable`
+   */
   abstract asImmutable(): ImmutableDenseNDimArray | ImmutableSparseNDimArray;
-  /** SymPy as_mutable. */
+  /**
+   * A mutable copy with the same entries and shape.
+   *
+   * @returns A mutable copy with the same entries and shape.
+   * @see SymPy `sympy.tensor.array.dense_ndim_array.ImmutableDenseNDimArray.as_mutable`
+   */
   abstract asMutable(): MutableDenseNDimArray | MutableSparseNDimArray;
 
-  /** SymPy applyfunc(f): f applied to every element (a sparse array stays sparse when f(0) = 0). */
+  /**
+   * F applied to every element (a sparse array stays sparse when f(0) = 0).
+   *
+   * @param f - Function applied to each array entry.
+   * @returns An array of the same shape with transformed entries.
+   * @see SymPy `sympy.tensor.array.ndim_array.NDimArray.applyfunc`
+   */
   applyfunc(f: (e: Expr) => ExprLike): this {
     return this.newLike(this.flatElements().map((e) => sympify(f(e))), this.shape);
   }
@@ -405,34 +542,82 @@ export abstract class NDimArray extends ExtensionExpr {
       this.shape,
     );
   }
-  /** Elementwise sum of arrays of the same shape (the class of this array). */
+  /**
+   * Elementwise sum of arrays of the same shape (the class of this array).
+   *
+   * @param o - Other addend.
+   * @returns A same-shaped array of entrywise sums.
+   * @throws TypeError when the other operand is not an N-dimensional array.
+   * @throws RangeError when the arrays have different shapes.
+   * @see SymPy `sympy.tensor.array.ndim_array.NDimArray.__add__`
+   */
   override add(o: ExprLike): this {
     return this.#zip(o, (a, b) => add(a, b));
   }
-  /** Elementwise difference of arrays of the same shape. */
+  /**
+   * Elementwise difference of arrays of the same shape.
+   *
+   * @param o - Operand to subtract.
+   * @returns A same-shaped array of entrywise differences.
+   * @throws TypeError when the other operand is not an N-dimensional array.
+   * @throws RangeError when the arrays have different shapes.
+   * @see SymPy `sympy.tensor.array.ndim_array.NDimArray.__sub__`
+   */
   override sub(o: ExprLike): this {
     return this.#zip(o, (a, b) => add(a, mul(-1, b)));
   }
-  /** Multiplication by a scalar on the right (SymPy array*scalar); use tensorproduct for arrays. */
+  /**
+   * Multiplication by a scalar on the right (SymPy array*scalar); use tensorproduct for arrays.
+   *
+   * @param o - Second factor.
+   * @returns The array with each entry multiplied on the right by the scalar.
+   * @throws RangeError when the other operand is an array or a matrix.
+   * @see SymPy `sympy.tensor.array.ndim_array.NDimArray.__mul__`
+   */
   override mul(o: ExprLike): this {
     const s = scalarOperand(o, 'scalar expected, use tensorproduct(...) for tensorial product');
     return this.scaleBy((e) => mul(e, s), isZeroElement(s) ? 'zero' : 'sparse');
   }
-  /** Multiplication by a scalar on the left (SymPy scalar*array). */
+  /**
+   * Multiplication by a scalar on the left.
+   *
+   * @param o - Left-hand factor.
+   * @returns The array with each entry multiplied on the left by the scalar.
+   * @throws RangeError when the other operand is an array or a matrix.
+   * @see SymPy `sympy.tensor.array.ndim_array.NDimArray.__rmul__`
+   */
   rmul(o: ExprLike): this {
     const s = scalarOperand(o, 'scalar expected, use tensorproduct(...) for tensorial product');
     return this.scaleBy((e) => mul(s, e), isZeroElement(s) ? 'zero' : 'sparse');
   }
-  /** Division by a scalar. */
+  /**
+   * Division by a scalar.
+   *
+   * @param o - Divisor.
+   * @returns The entrywise quotient by the scalar.
+   * @throws RangeError when the other operand is an array or a matrix.
+   * @see SymPy `sympy.tensor.array.ndim_array.NDimArray.__truediv__`
+   */
   override div(o: ExprLike): this {
     const s = scalarOperand(o, 'scalar expected');
     return this.scaleBy((e) => mul(e, pow(s, -1)), isZeroElement(s) ? 'dense' : 'sparse');
   }
-  /** Elementwise negation. */
+  /**
+   * Elementwise negation.
+   *
+   * @returns The array of negated entries.
+   * @see SymPy `sympy.tensor.array.ndim_array.NDimArray.__neg__`
+   */
   override neg(): this {
     return this.scaleBy((e) => mul(-1, e), 'sparse');
   }
-  /** Arrays have no powers (SymPy raises TypeError). */
+  /**
+   * Array exponentiation is unsupported.
+   *
+   * @param _o - Exponent.
+   * @returns This operation always throws a `TypeError`.
+   * @throws TypeError when an array is used as the base of an unsupported power.
+   */
   override pow(_o: ExprLike): Expr {
     throw new TypeError('unsupported operand type(s) for ** or pow(): an array');
   }
@@ -448,7 +633,13 @@ export abstract class NDimArray extends ExtensionExpr {
 
   // ---- equality and structure -------------------------------------------------------
 
-  /** SymPy ==: the same shape and the same elements (dense and sparse, mutable and immutable arrays compare equal). */
+  /**
+   * The same shape and the same elements (dense and sparse, mutable and immutable arrays compare
+   * equal).
+   *
+   * @param other - Object to compare with this one.
+   * @returns Whether the operands are equal.
+   */
   override equals(other: ExprLike): boolean {
     if (!(other instanceof NDimArray)) return false;
     if (other.shape.join(',') !== this.shape.join(',')) return false;
@@ -456,34 +647,73 @@ export abstract class NDimArray extends ExtensionExpr {
     return this.flatElements().every((a, k) => a.key === at(b, k).key);
   }
 
-  /** SymPy transpose: the transpose of a rank-2 array. */
+  /**
+   * The transpose of a rank-2 array.
+   *
+   * @returns The transpose of a rank-2 array.
+   * @throws RangeError when the array does not have rank two.
+   * @see SymPy `sympy.tensor.array.ndim_array.NDimArray.transpose`
+   */
   transpose(): this {
     if (this.rank() !== 2) throw new RangeError('array rank not 2');
     return permuteArray(this, [1, 0]);
   }
-  /** Elementwise complex conjugate. */
+  /**
+   * Elementwise complex conjugate.
+   *
+   * @returns The array of complex conjugates of the entries.
+   * @see SymPy `sympy.tensor.array.ndim_array.NDimArray.conjugate`
+   */
   override conjugate(): this {
     return this.newLike(this.flatElements().map((e) => conjugateExpr(e)), this.shape);
   }
-  /** Conjugate transpose of a rank-2 array. */
+  /**
+   * Conjugate transpose of a rank-2 array.
+   *
+   * @returns The conjugate transpose of the array.
+   * @see SymPy `sympy.tensor.array.ndim_array.NDimArray.adjoint`
+   */
   adjoint(): this {
     return this.transpose().conjugate();
   }
+  /**
+   * Interchanges the two axes of the array.
+   *
+   * @returns The resulting expression.
+   * @see SymPy `sympy.tensor.array.ndim_array.NDimArray._eval_transpose`
+   */
   override transposeSelf(): Expr {
     return this.transpose();
   }
+  /**
+   * Computes the complex conjugate.
+   *
+   * @returns The resulting expression.
+   * @see SymPy `sympy.tensor.array.ndim_array.NDimArray._eval_conjugate`
+   */
   override conjugateSelf(): Expr {
     return this.conjugate();
   }
+  /**
+   * Computes the conjugate transpose.
+   *
+   * @returns The resulting expression.
+   * @see SymPy `sympy.tensor.array.ndim_array.NDimArray._eval_adjoint`
+   */
   override adjointSelf(): Expr {
     return this.adjoint();
   }
 
   /**
-   * SymPy diff(*symbols): the derivative of every element; a count after
-   * a variable repeats it (`a.diff(x, 2)`), and an array variable gives the
-   * derivative by each of its elements (derive_by_array). The result is
+   * The derivative of every element; a count after a variable repeats it (`a.diff(x, 2)`), and an
+   * array variable gives the derivative by each of its elements (derive_by_array). The result is
    * immutable.
+   *
+   * @param spec - Differentiation variables, optional repetition counts and evaluation options.
+   * @returns The array of partial derivatives, with axes of array variables first.
+   * @throws RangeError when a derivative count is not a nonnegative integer.
+   * @throws TypeError when a count precedes the first differentiation variable or no differentiation variable is supplied.
+   * @see SymPy `sympy.tensor.array.ndim_array.NDimArray.diff`
    */
   override diff(...spec: (Expr | number | undefined)[]): NDimArray {
     const pairs: [Expr, number][] = [];
@@ -504,11 +734,27 @@ export abstract class NDimArray extends ExtensionExpr {
     }
     return cur;
   }
+  /**
+   * Computes the derivative of this expression.
+   *
+   * @param x - Variable of differentiation.
+   * @param d - Derivative function for individual operands.
+   * @returns The resulting expression.
+   * @see SymPy `sympy.tensor.array.ndim_array.NDimArray._eval_derivative`
+   */
   override diffSelf(x: Expr, d: (e: Expr, x: Expr) => Expr): Expr {
     return this.asImmutable().applyfunc((e) => d(e, x));
   }
 
-  /** Substitution in every element (a Substitution, or `from` and `to`). */
+  /**
+   * Substitution in every element (a Substitution, or `from` and `to`).
+   *
+   * @param a - Expression to replace or collection of substitutions.
+   * @param b - Replacement for a single expression.
+   * @returns An array of the same class with the substitutions applied.
+   * @throws TypeError when the expression to substitute has no replacement.
+   * @see SymPy `sympy.tensor.array.dense_ndim_array.ImmutableDenseNDimArray.subs`
+   */
   override subs(a: Substitution | Expr | string, b?: ExprLike): this {
     let r: Expr;
     if (a instanceof Expr || typeof a === 'string') {
@@ -518,122 +764,284 @@ export abstract class NDimArray extends ExtensionExpr {
     // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- substitution rebuilds the array through withArgs/newLike, which keeps its class
     return r as this;
   }
-  /** Elementwise expand. */
+  /**
+   * Elementwise expand.
+   *
+   * @returns The array of expanded entries.
+   */
   override expand(): this {
     return this.applyfunc((e) => expandExpr(e));
   }
-  /** Elementwise simplify (SymPy simplify(array)). */
+  /**
+   * Elementwise simplify (SymPy simplify(array)).
+   *
+   * @returns The array of simplified entries.
+   * @see SymPy `sympy.tensor.array.dense_ndim_array.ImmutableDenseNDimArray.simplify`
+   */
   override simplify(): this {
     return this.applyfunc((e) => simplifyExpr(e));
   }
-  /** Elementwise numeric evaluation. */
+  /**
+   * Elementwise numeric evaluation.
+   *
+   * @param n - Requested number of decimal digits.
+   * @param opts - Settings described by {@link EvalfOptions}.
+   * @returns The array of numerically evaluated entries.
+   */
   override evalf(n?: number | NumericValues, opts?: EvalfOptions): this {
     return this.applyfunc((e) => evalfExpr(e, n, opts));
   }
-  /** Alias of evalf. */
+  /**
+   * Alias of evalf.
+   *
+   * @param n - Requested number of decimal digits.
+   * @param opts - Settings described by {@link EvalfOptions}.
+   * @returns The array of numerically evaluated entries.
+   */
   override n(n?: number | NumericValues, opts?: EvalfOptions): this {
     return this.evalf(n, opts);
   }
 
   // ---- SymPy Basic methods (aliases of the functions) ------------------------------
 
-  /** SymPy as_content_primitive: (1, self) for an array. */
+  /**
+   * Splits the array into scalar content one and the original array.
+   *
+   * @param opts - `clear`; `radical` extract radical content.
+   * @returns The scalar content and primitive part.
+   * @see SymPy `sympy.tensor.array.dense_ndim_array.ImmutableDenseNDimArray.as_content_primitive`
+   */
   asContentPrimitive(opts: { clear?: boolean; radical?: boolean } = {}): [Rational, Expr] {
     return asContentPrimitiveExpr(this, opts);
   }
-  /** SymPy as_dummy: an array binds no variables, so it is returned unchanged. */
+  /**
+   * An array binds no variables, so it is returned unchanged.
+   *
+   * @returns An array binds no variables, so it is returned unchanged.
+   * @see SymPy `sympy.tensor.array.dense_ndim_array.ImmutableDenseNDimArray.as_dummy`
+   */
   asDummy(): this {
     return this;
   }
-  /** SymPy atoms: the atoms of the elements (those satisfying `pred`). */
+  /**
+   * The atoms of the elements (those satisfying `pred`).
+   *
+   * @param pred - Predicate applied to expression nodes.
+   * @returns The atoms of the elements (those satisfying `pred`).
+   * @see SymPy `sympy.tensor.array.dense_ndim_array.ImmutableDenseNDimArray.atoms`
+   */
   atoms(pred?: (a: Expr) => boolean): Expr[] {
     return atomsExpr(this, pred);
   }
-  /** SymPy class_key. */
+  /**
+   * The class portion of the expression ordering key.
+   *
+   * @returns The class portion of the expression ordering key.
+   * @see SymPy `sympy.tensor.array.dense_ndim_array.ImmutableDenseNDimArray.class_key`
+   */
   classKey(): Key {
     return classKeyExpr(this);
   }
-  /** SymPy sort_key. */
+  /**
+   * The key for sorting this expression in canonical order.
+   *
+   * @returns The key for sorting this expression in canonical order.
+   * @see SymPy `sympy.tensor.array.dense_ndim_array.ImmutableDenseNDimArray.sort_key`
+   */
   sortKey(): Key {
     return sortKeyExpr(this);
   }
-  /** SymPy compare: -1, 0 or 1 in the canonical order of expressions. */
+  /**
+   * -1, 0 or 1 in the canonical order of expressions.
+   *
+   * @param other - Expression to compare in canonical order.
+   * @returns −1, 0 or 1 according to canonical order.
+   * @see SymPy `sympy.tensor.array.dense_ndim_array.ImmutableDenseNDimArray.compare`
+   */
   compare(other: ExprLike): number {
     return Math.sign(compareExpr(this, sympify(other)));
   }
-  /** SymPy copy: an array of the same class with the same elements. */
+  /**
+   * An array of the same class with the same elements.
+   *
+   * @returns An array of the same class with the same elements.
+   * @see SymPy `sympy.tensor.array.dense_ndim_array.ImmutableDenseNDimArray.copy`
+   */
   copy(): this {
     return this.newLike(this.flatElements(), this.shape);
   }
-  /** SymPy could_extract_minus_sign: false for an array. */
+  /**
+   * False for an array.
+   *
+   * @returns False for an array.
+   * @see SymPy `sympy.tensor.array.dense_ndim_array.ImmutableDenseNDimArray.could_extract_minus_sign`
+   */
   couldExtractMinusSign(): boolean {
     return couldExtractMinusSignExpr(this);
   }
-  /** SymPy count: the number of matching subexpressions. */
+  /**
+   * The number of matching subexpressions.
+   *
+   * @param query - Expression or predicate to match.
+   * @returns The number of matching subexpressions.
+   * @see SymPy `sympy.tensor.array.dense_ndim_array.ImmutableDenseNDimArray.count`
+   */
   count(query: Query): number {
     return countExpr(this, query);
   }
-  /** SymPy count_ops. */
+  /**
+   * Counts the operations in the array expression.
+   *
+   * @returns The number of operations in the expression.
+   * @see SymPy `sympy.tensor.array.dense_ndim_array.ImmutableDenseNDimArray.count_ops`
+   */
   countOps(): number {
     return countOpsExpr(this);
   }
-  /** SymPy doit: doit of every element. */
+  /**
+   * Evaluates each array entry.
+   *
+   * @returns The evaluated expression when the operation can be performed.
+   * @see SymPy `sympy.tensor.array.dense_ndim_array.ImmutableDenseNDimArray.doit`
+   */
   doit(): this {
     return this.applyfunc(defined(arrayHooks.doit, 'doit is registered by the tensor entry point'));
   }
-  /** SymPy dummy_eq. */
+  /**
+   * Tests equality up to renaming a dummy symbol.
+   *
+   * @param other - Expression compared up to dummy-variable renaming.
+   * @param symbol - Symbol against which a dummy variable is compared.
+   * @returns Whether the expressions agree up to dummy-variable renaming.
+   * @see SymPy `sympy.tensor.array.dense_ndim_array.ImmutableDenseNDimArray.dummy_eq`
+   */
   dummyEq(other: ExprLike, symbol?: Expr): boolean {
     return dummyEqExpr(this, other, symbol);
   }
-  /** SymPy find: the matching subexpressions. */
+  /**
+   * The matching subexpressions.
+   *
+   * @param query - Expression or predicate to match.
+   * @returns The matching subexpressions.
+   * @see SymPy `sympy.tensor.array.dense_ndim_array.ImmutableDenseNDimArray.find`
+   */
   find(query: Query): Expr[] {
     return findExpr(this, query);
   }
-  /** SymPy has_free. */
+  /**
+   * Tests whether a pattern occurs free in the expression.
+   *
+   * @param patterns - Patterns to search for.
+   * @returns Whether a pattern occurs free in the expression.
+   * @see SymPy `sympy.tensor.array.dense_ndim_array.ImmutableDenseNDimArray.has_free`
+   */
   hasFree(...patterns: (ExprLike | { fn: string })[]): boolean {
     return hasFreeExpr(this, ...patterns);
   }
-  /** SymPy has_xfree. */
+  /**
+   * Tests for exact free occurrences of the supplied expressions.
+   *
+   * @param items - Expressions sought as exact free subexpressions.
+   * @returns Whether an exact free occurrence is present.
+   * @see SymPy `sympy.tensor.array.dense_ndim_array.ImmutableDenseNDimArray.has_xfree`
+   */
   hasXfree(items: readonly Expr[]): boolean {
     return hasXfreeExpr(this, items);
   }
-  /** SymPy is_hypergeometric(k). */
+  /**
+   * Tests whether the ratio of successive terms in the given index is rational.
+   *
+   * @param k - Index variable.
+   * @returns Whether the ratio of successive terms is rational in `k`.
+   * @see SymPy `sympy.tensor.array.dense_ndim_array.ImmutableDenseNDimArray.is_hypergeometric`
+   */
   isHypergeometric(k: Expr): boolean {
     return isHypergeometricExpr(this, k);
   }
-  /** SymPy is_same. */
+  /**
+   * Tests structural equality, optionally comparing numeric values with a supplied function.
+   *
+   * @param other - Expression to compare structurally.
+   * @param approx - Optional numerical equality test for approximate values.
+   * @returns Whether the expressions have the same structure and numerical types.
+   * @see SymPy `sympy.tensor.array.dense_ndim_array.ImmutableDenseNDimArray.is_same`
+   */
   isSame(other: unknown, approx?: (x: Expr, y: Expr) => boolean): boolean {
     return isSameExpr(this, other, approx);
   }
-  /** SymPy match: this array matched against a pattern. */
+  /**
+   * This array matched against a pattern.
+   *
+   * @param pattern - Pattern to match.
+   * @param opts - `old`.
+   * @returns Bindings for the pattern symbols, or `NoMatch` if the match fails.
+   * @see SymPy `sympy.tensor.array.dense_ndim_array.ImmutableDenseNDimArray.match`
+   */
   match(pattern: ExprLike, opts: { old?: boolean } = {}): Map<Sym, Expr> | NoMatchResult {
     return matchExpr(this, pattern, opts);
   }
-  /** SymPy matches: `expr` matched against this array as the pattern. */
+  /**
+   * `expr` matched against this array as the pattern.
+   *
+   * @param expr - Symbolic expression on which to operate.
+   * @param opts - `old`.
+   * @returns Bindings for the wildcard matches, or `NoMatch` if the pattern fails.
+   * @see SymPy `sympy.tensor.array.dense_ndim_array.ImmutableDenseNDimArray.matches`
+   */
   matches(expr: ExprLike, opts: { old?: boolean } = {}): Map<Sym, Expr> | NoMatchResult {
     return matchExpr(expr, this, opts);
   }
-  /** SymPy rcall: the Lambda elements (and Lambdas inside elements) applied to the arguments. */
+  /**
+   * The Lambda elements (and Lambdas inside elements) applied to the arguments.
+   *
+   * @param args - Operands in their defining order.
+   * @returns The Lambda elements (and Lambdas inside elements) applied to the arguments.
+   * @see SymPy `sympy.tensor.array.dense_ndim_array.ImmutableDenseNDimArray.rcall`
+   */
   rcall(...args: ExprLike[]): this {
     const call = (e: Expr): Expr => (e instanceof LambdaNode ? e.call(...args) : e.args.length ? rebuild(e, e.args.map(call)) : e);
     return this.applyfunc(call);
   }
-  /** SymPy refine: every element refined under the assumptions. */
+  /**
+   * Every element refined under the assumptions.
+   *
+   * @param assumptions - Assumptions to attach to the symbol.
+   * @returns The array with each entry refined under the given assumptions.
+   * @see SymPy `sympy.tensor.array.dense_ndim_array.ImmutableDenseNDimArray.refine`
+   */
   refine(assumptions?: Assumption): this {
     return this.applyfunc((e) => refineExpr(e, assumptions));
   }
-  /** SymPy replace: replace in every element. */
+  /**
+   * Replace in every element.
+   *
+   * @param query - Expression or predicate to match.
+   * @param value - Replacement expression or function.
+   * @returns The array after pattern replacement in its entries.
+   * @see SymPy `sympy.tensor.array.dense_ndim_array.ImmutableDenseNDimArray.replace`
+   */
   replace(query: Query, value: Replacement): this {
     return this.applyfunc((e) => cast(replaceExpr(e, query, value), Expr));
   }
-  /** SymPy xreplace: exact replacement in every element. */
+  /**
+   * Exact replacement in every element.
+   *
+   * @param s - Map of exact substitutions.
+   * @returns The array after exact replacement of matching subexpressions.
+   * @see SymPy `sympy.tensor.array.dense_ndim_array.ImmutableDenseNDimArray.xreplace`
+   */
   xreplace(s: Substitution): this {
     return this.applyfunc((e) => xreplaceExpr(e, s));
   }
 
   // ---- printing -------------------------------------------------------------------
 
-  /** SymPy str: nested lists, `Class([], shape)` when empty, the element for rank 0. */
+  /**
+   * Nested lists, `Class([], shape)` when empty, the element for rank 0.
+   *
+   * @param print - Formatter for a child expression.
+   * @returns The formatted expression.
+   */
   override printStr(print: (e: Expr) => string): string {
     if (this.rank() === 0) return print(this.item(0));
     if (this.shape.includes(0)) return `${this.name}([], ${pyTuple(this.shape)})`;
@@ -646,7 +1054,12 @@ export abstract class NDimArray extends ExtensionExpr {
     return f(0, 0, this.#loopSize);
   }
 
-  /** SymPy LaTeX: nested `matrix` environments in brackets (`array` when the last dimension exceeds 10). */
+  /**
+   * Nested `matrix` environments in brackets (`array` when the last dimension exceeds 10).
+   *
+   * @param print - Formatter for a child expression.
+   * @returns The formatted LaTeX.
+   */
   override printLatex(print: (e: Expr) => string): string {
     if (this.rank() === 0) return print(this.item(0));
     const rank = this.rank();
@@ -678,7 +1091,7 @@ export abstract class NDimArray extends ExtensionExpr {
 /** @internal Late-bound functions of higher layers, installed by the tensor entry point. */
 export const arrayHooks: { doit?: (e: Expr) => Expr } = {};
 
-/** Nested lists of elements (SymPy tolist). */
+/** Nested lists of elements. */
 export type NestedList = (Expr | NestedList)[];
 
 function scalarOperand(o: unknown, message: string): Expr {
@@ -705,8 +1118,20 @@ function cartesian(factors: readonly (readonly number[])[]): number[][] {
 
 // ---- dense arrays -------------------------------------------------------------------
 
-/** SymPy DenseNDimArray: arrays storing every element. `DenseNDimArray(...)` builds an ImmutableDenseNDimArray. */
+/**
+ * Arrays storing every element. `DenseNDimArray(...)` builds an ImmutableDenseNDimArray.
+ *
+ * @see SymPy `sympy.tensor.array.dense_ndim_array.DenseNDimArray`
+ */
 export abstract class DenseNDimArray extends NDimArray {
+  /**
+   * Constructs an instance of `DenseNDimArray`.
+   *
+   * @param name - Symbolic name.
+   * @param iterable - Elements or nested collections of elements to store.
+   * @param shape - Axis lengths in dimension order.
+   * @throws RangeError when the number of supplied elements does not fit the shape.
+   */
   constructor(name: string, iterable: ArrayInput, shape?: ShapeInput) {
     const p = parseInput(iterable, shape);
     let flat: Expr[];
@@ -729,15 +1154,33 @@ export abstract class DenseNDimArray extends NDimArray {
   protected item(k: number): Expr {
     return at(this.args, k);
   }
+  /**
+   * The array entries in row-major order.
+   *
+   * @returns The array entries in row-major order.
+   */
   override flatElements(): Expr[] {
     return [...this.args];
   }
-  /** SymPy reshape(*newshape). */
+  /**
+   * Reorganizes the same entries into the requested dimensions.
+   *
+   * @param newshape - New axis lengths with the same total number of entries.
+   * @returns An array with the requested dimensions and the original row-major entries.
+   * @throws RangeError when the new dimensions would change the number of entries.
+   * @see SymPy `sympy.tensor.array.dense_ndim_array.DenseNDimArray.reshape`
+   */
   reshape(...newshape: number[]): this {
     const n = product(newshape);
     if (n !== this.length) throw new RangeError(`Expecting reshape size to ${this.length} but got prod(${pyTuple(newshape)}) = ${n}`);
     return this.newLike(this.args, newshape);
   }
+  /**
+   * Rebuilds the expression with replacement arguments in their original order.
+   *
+   * @param args - Replacement arguments in the same order as `args` on the original expression.
+   * @returns The rebuilt expression.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return this.newLike(args, this.shape);
   }
@@ -746,52 +1189,121 @@ export abstract class DenseNDimArray extends NDimArray {
   }
 }
 
-/** SymPy ImmutableDenseNDimArray (also `Array`): an immutable dense array. */
+/**
+ * An immutable dense array.
+ *
+ * @see SymPy `sympy.tensor.array.dense_ndim_array.ImmutableDenseNDimArray`
+ */
 export class ImmutableDenseNDimArray extends DenseNDimArray {
-  /** From nested lists, a flat list and a shape, a Matrix or another array (SymPy ImmutableDenseNDimArray(iterable, shape)). */
+  /**
+   * From nested lists, a flat list and a shape, a Matrix or another array (SymPy
+   * ImmutableDenseNDimArray(iterable, shape)).
+   *
+   * @param iterable - Elements or nested collections of elements to store.
+   * @param shape - Axis lengths in dimension order.
+   */
   constructor(iterable: ArrayInput, shape?: ShapeInput) {
     super('ImmutableDenseNDimArray', iterable, shape);
   }
   /** An array of zeros of the given shape. */
-  /** SymPy fromiter(args): the array of the constructor arguments (iterable, shape). */
+  /**
+   * The array of the constructor arguments (iterable, shape).
+   *
+   * @param args - Operands in their defining order.
+   * @returns The array of the constructor arguments (iterable, shape).
+   * @see SymPy `sympy.tensor.array.dense_ndim_array.ImmutableDenseNDimArray.fromiter`
+   */
   static fromiter(args: readonly [ArrayInput, ShapeInput?]): ImmutableDenseNDimArray {
     return new ImmutableDenseNDimArray(...args);
   }
+  /**
+   * Creates a zero-filled array of the requested shape.
+   *
+   * @param shape - Axis lengths in dimension order.
+   * @returns An array of the specified shape with every entry zero.
+   * @see SymPy `sympy.tensor.array.dense_ndim_array.ImmutableDenseNDimArray.zeros`
+   */
   static zeros(...shape: number[]): ImmutableDenseNDimArray {
     return new ImmutableDenseNDimArray(Array.from({ length: product(shape) }, () => 0), shape);
   }
+  /**
+   * An immutable array with the same entries and shape.
+   *
+   * @returns An immutable array with the same entries and shape.
+   * @see SymPy `sympy.tensor.array.dense_ndim_array.ImmutableDenseNDimArray.as_immutable`
+   */
   asImmutable(): ImmutableDenseNDimArray {
     return this;
   }
+  /**
+   * A mutable copy with the same entries and shape.
+   *
+   * @returns A mutable copy with the same entries and shape.
+   * @see SymPy `sympy.tensor.array.dense_ndim_array.ImmutableDenseNDimArray.as_mutable`
+   */
   asMutable(): MutableDenseNDimArray {
     return new MutableDenseNDimArray(this);
   }
 }
 
-/** SymPy MutableDenseNDimArray: a dense array changed in place with `set`. */
+/**
+ * A dense array changed in place with `set`.
+ *
+ * @see SymPy `sympy.tensor.array.dense_ndim_array.MutableDenseNDimArray`
+ */
 export class MutableDenseNDimArray extends DenseNDimArray {
-  /** From nested lists, a flat list and a shape, a Matrix or another array. */
+  /**
+   * From nested lists, a flat list and a shape, a Matrix or another array.
+   *
+   * @param iterable - Elements or nested collections of elements to store.
+   * @param shape - Axis lengths in dimension order.
+   */
   constructor(iterable: ArrayInput, shape?: ShapeInput) {
     super('MutableDenseNDimArray', iterable, shape);
   }
-  /** An array of zeros of the given shape. */
+  /**
+   * An array of zeros of the given shape.
+   *
+   * @param shape - Axis lengths in dimension order.
+   * @returns An array of the specified shape with every entry zero.
+   * @see SymPy `sympy.tensor.array.dense_ndim_array.MutableDenseNDimArray.zeros`
+   */
   static zeros(...shape: number[]): MutableDenseNDimArray {
     return new MutableDenseNDimArray(Array.from({ length: product(shape) }, () => 0), shape);
   }
-  /** The key follows the current contents. */
+  /**
+   * The key follows the current contents.
+   *
+   * @returns The key follows the current contents.
+   */
   override get key(): string {
     return this.computeKey();
   }
   /**
-   * SymPy __setitem__: `m.set(i, j, value)`; a single integer is a flat
-   * position, and slices assign a sub-array (`m.set(0, ':', [9, 8])`).
+   * `m.set(i, j, value)`; a single integer is a flat position, and slices assign a sub-array
+   * (`m.set(0, ':', [9, 8])`).
+   *
+   * @param args - Index or indices followed by the new entry or subarray.
+   * @see SymPy `sympy.tensor.array.dense_ndim_array.MutableDenseNDimArray.__setitem__`
    */
   set(...args: [...(IndexItem | readonly IndexItem[])[], ArrayInput]): void {
     assignItems(this, args, (k, v) => (this.cells[k] = v));
   }
+  /**
+   * An immutable array with the same entries and shape.
+   *
+   * @returns An immutable array with the same entries and shape.
+   * @see SymPy `sympy.tensor.array.dense_ndim_array.MutableDenseNDimArray.as_immutable`
+   */
   asImmutable(): ImmutableDenseNDimArray {
     return new ImmutableDenseNDimArray(this);
   }
+  /**
+   * A mutable copy with the same entries and shape.
+   *
+   * @returns A mutable copy with the same entries and shape.
+   * @see SymPy `sympy.tensor.array.dense_ndim_array.MutableDenseNDimArray.as_mutable`
+   */
   asMutable(): MutableDenseNDimArray {
     return this;
   }
@@ -799,9 +1311,21 @@ export class MutableDenseNDimArray extends DenseNDimArray {
 
 // ---- sparse arrays ------------------------------------------------------------------
 
-/** SymPy SparseNDimArray: arrays storing only their nonzero elements. `SparseNDimArray(...)` builds an ImmutableSparseNDimArray. */
+/**
+ * Arrays storing only their nonzero elements. `SparseNDimArray(...)` builds an
+ * ImmutableSparseNDimArray.
+ *
+ * @see SymPy `sympy.tensor.array.sparse_ndim_array.SparseNDimArray`
+ */
 export abstract class SparseNDimArray extends NDimArray {
   protected readonly sparse: Map<number, Expr>;
+  /**
+   * Constructs an instance of `SparseNDimArray`.
+   *
+   * @param name - Symbolic name.
+   * @param iterable - Elements or nested collections of elements to store.
+   * @param shape - Axis lengths in dimension order.
+   */
   constructor(name: string, iterable: ArrayInput, shape?: ShapeInput) {
     const p = parseInput(iterable, shape);
     let sparse: Map<number, Expr>;
@@ -829,16 +1353,35 @@ export abstract class SparseNDimArray extends NDimArray {
   protected item(k: number): Expr {
     return this.sparse.get(k) ?? S.Zero;
   }
-  /** @internal The nonzero elements by flat position (SymPy _sparse_array). */
+  /**
+   * Stored nonzero entries keyed by their flat positions.
+   *
+   * @returns The entries indexed by their flat positions.
+   * @internal
+   */
   get sparseArray(): ReadonlyMap<number, Expr> {
     return this.sparse;
   }
-  /** SymPy reshape(*newshape). */
+  /**
+   * Reorganizes the same entries into the requested dimensions.
+   *
+   * @param newshape - New axis lengths with the same total number of entries.
+   * @returns An array with the requested dimensions and the original row-major entries.
+   * @throws RangeError when a new dimension is invalid.
+   * @see SymPy `sympy.tensor.array.sparse_ndim_array.SparseNDimArray.reshape`
+   */
   reshape(...newshape: number[]): this {
     const n = product(newshape);
     if (n !== this.length) throw new RangeError(`Invalid reshape parameters ${pyTuple(newshape)}`);
     return this.newLike(new Map(this.sparse), newshape);
   }
+  /**
+   * Apply a function to each element of the N-dim array.
+   *
+   * @param f - Function applied to each array entry.
+   * @returns An array of the same shape with transformed entries.
+   * @see SymPy `sympy.tensor.array.sparse_ndim_array.SparseNDimArray.applyfunc`
+   */
   override applyfunc(f: (e: Expr) => ExprLike): this {
     if (!isZeroElement(sympify(f(S.Zero)))) return super.applyfunc(f);
     const m = new Map<number, Expr>();
@@ -855,6 +1398,12 @@ export abstract class SparseNDimArray extends NDimArray {
     for (const [k, v] of this.sparse) m.set(k, f(v));
     return this.newLike(m, this.shape);
   }
+  /**
+   * Tests equality of the entries and shape.
+   *
+   * @param other - Object to compare with this one.
+   * @returns Whether the operands are equal.
+   */
   override equals(other: ExprLike): boolean {
     if (other instanceof SparseNDimArray) {
       if (other.shape.join(',') !== this.shape.join(',') || other.sparse.size !== this.sparse.size) return false;
@@ -862,6 +1411,12 @@ export abstract class SparseNDimArray extends NDimArray {
     }
     return super.equals(other);
   }
+  /**
+   * Rebuilds the expression with replacement arguments in their original order.
+   *
+   * @param args - Replacement arguments in the same order as `args` on the original expression.
+   * @returns The rebuilt expression.
+   */
   withArgs(args: readonly Expr[]): Expr {
     const keys = [...this.sparse.keys()];
     return this.newLike(new Map(keys.map((k, i) => [k, at(args, i)])), this.shape);
@@ -871,41 +1426,92 @@ export abstract class SparseNDimArray extends NDimArray {
   }
 }
 
-/** SymPy ImmutableSparseNDimArray: an immutable sparse array. */
+/**
+ * An immutable sparse array.
+ *
+ * @see SymPy `sympy.tensor.array.sparse_ndim_array.ImmutableSparseNDimArray`
+ */
 export class ImmutableSparseNDimArray extends SparseNDimArray {
-  /** From nested lists, a flat list and a shape, a Map of nonzero elements and a shape, a Matrix or another array. */
+  /**
+   * From nested lists, a flat list and a shape, a Map of nonzero elements and a shape, a Matrix or
+   * another array.
+   *
+   * @param iterable - Elements or nested collections of elements to store.
+   * @param shape - Axis lengths in dimension order.
+   */
   constructor(iterable: ArrayInput, shape?: ShapeInput) {
     super('ImmutableSparseNDimArray', iterable, shape);
   }
-  /** An array of zeros of the given shape. */
+  /**
+   * An array of zeros of the given shape.
+   *
+   * @param shape - Axis lengths in dimension order.
+   * @returns An array of the specified shape with every entry zero.
+   * @see SymPy `sympy.tensor.array.sparse_ndim_array.ImmutableSparseNDimArray.zeros`
+   */
   static zeros(...shape: number[]): ImmutableSparseNDimArray {
     return new ImmutableSparseNDimArray(new Map(), shape);
   }
+  /**
+   * An immutable array with the same entries and shape.
+   *
+   * @returns An immutable array with the same entries and shape.
+   * @see SymPy `sympy.tensor.array.sparse_ndim_array.ImmutableSparseNDimArray.as_immutable`
+   */
   asImmutable(): ImmutableSparseNDimArray {
     return this;
   }
+  /**
+   * A mutable copy with the same entries and shape.
+   *
+   * @returns A mutable copy with the same entries and shape.
+   * @see SymPy `sympy.tensor.array.sparse_ndim_array.ImmutableSparseNDimArray.as_mutable`
+   */
   asMutable(): MutableSparseNDimArray {
     return new MutableSparseNDimArray(this);
   }
 }
 
-/** SymPy MutableSparseNDimArray: a sparse array changed in place with `set`. */
+/**
+ * A sparse array changed in place with `set`.
+ *
+ * @see SymPy `sympy.tensor.array.sparse_ndim_array.MutableSparseNDimArray`
+ */
 export class MutableSparseNDimArray extends SparseNDimArray {
-  /** From nested lists, a flat list and a shape, a Map of nonzero elements and a shape, a Matrix or another array. */
+  /**
+   * From nested lists, a flat list and a shape, a Map of nonzero elements and a shape, a Matrix or
+   * another array.
+   *
+   * @param iterable - Elements or nested collections of elements to store.
+   * @param shape - Axis lengths in dimension order.
+   */
   constructor(iterable: ArrayInput, shape?: ShapeInput) {
     super('MutableSparseNDimArray', iterable, shape);
   }
-  /** An array of zeros of the given shape. */
+  /**
+   * An array of zeros of the given shape.
+   *
+   * @param shape - Axis lengths in dimension order.
+   * @returns An array of the specified shape with every entry zero.
+   * @see SymPy `sympy.tensor.array.sparse_ndim_array.MutableSparseNDimArray.zeros`
+   */
   static zeros(...shape: number[]): MutableSparseNDimArray {
     return new MutableSparseNDimArray(new Map(), shape);
   }
-  /** The key follows the current contents. */
+  /**
+   * The key follows the current contents.
+   *
+   * @returns The key follows the current contents.
+   */
   override get key(): string {
     return this.computeKey();
   }
   /**
-   * SymPy __setitem__: `m.set(i, j, value)`; a single integer is a flat
-   * position, and slices assign a sub-array. Zeros are not stored.
+   * `m.set(i, j, value)`; a single integer is a flat position, and slices assign a sub-array. Zeros
+   * are not stored.
+   *
+   * @param args - Index or indices followed by the new entry or subarray.
+   * @see SymPy `sympy.tensor.array.sparse_ndim_array.MutableSparseNDimArray.__setitem__`
    */
   set(...args: [...(IndexItem | readonly IndexItem[])[], ArrayInput]): void {
     assignItems(this, args, (k, v) => {
@@ -919,9 +1525,21 @@ export class MutableSparseNDimArray extends SparseNDimArray {
     args2.length = 0;
     args2.push(...this.sparse.values());
   }
+  /**
+   * An immutable array with the same entries and shape.
+   *
+   * @returns An immutable array with the same entries and shape.
+   * @see SymPy `sympy.tensor.array.sparse_ndim_array.MutableSparseNDimArray.as_immutable`
+   */
   asImmutable(): ImmutableSparseNDimArray {
     return new ImmutableSparseNDimArray(this);
   }
+  /**
+   * A mutable copy with the same entries and shape.
+   *
+   * @returns A mutable copy with the same entries and shape.
+   * @see SymPy `sympy.tensor.array.sparse_ndim_array.MutableSparseNDimArray.as_mutable`
+   */
   asMutable(): MutableSparseNDimArray {
     return this;
   }
@@ -976,21 +1594,53 @@ class ArrayIndexed extends Indexed {
 
 // ---- Flatten, kinds, permutation and derive_by_array -----------------------------------
 
-/** SymPy Flatten(iterable): iterates the elements of an array, Matrix or nested list in row-major order. */
+/**
+ * Iterates the elements of an array, Matrix or nested list in row-major order.
+ *
+ * @see SymPy `sympy.tensor.array.arrayop.Flatten`
+ * @example
+ * ```ts
+ * import { Flatten, SymArray } from '@symjs/symjs';
+ *
+ * const a = SymArray([0, 1, 2, 3, 4, 5], [2, 3]);
+ * [...new Flatten(a)]; // => [0, 1, 2, 3, 4, 5]
+ * ```
+ */
 export class Flatten implements Iterable<Expr> {
   readonly #source: NDimArray | Matrix;
+  /**
+   * Constructs an instance of `Flatten`.
+   *
+   * @param iterable - Elements or nested collections of elements to store.
+   */
   constructor(iterable: NDimArray | Matrix | readonly NestedArrayInput[]) {
     this.#source = iterable instanceof NDimArray || iterable instanceof Matrix ? iterable : new ImmutableDenseNDimArray(iterable);
   }
+  /**
+   * Iterates over the individual array entries.
+   *
+   * @returns An iterator over the entries in row-major order.
+   */
   *[Symbol.iterator](): Iterator<Expr> {
     yield* this.#source instanceof Matrix ? this.#source.data : this.#source.flatElements();
   }
+  /**
+   * Formats this flatten as text.
+   *
+   * @returns The formatted text.
+   */
   toString(): string {
     return `Flatten(${this.#source.toString()})`;
   }
 }
 
-/** The kind of an expression (SymPy `expr.kind`): ArrayKind for arrays, MatrixKind for matrices, BooleanKind, NumberKind or UndefinedKind. */
+/**
+ * The mathematical kind of an expression or matrix, including the element kind of an array.
+ *
+ * @param e - Expression to inspect.
+ * @returns The mathematical kind of an expression or matrix, including the element kind of an array.
+ * @see SymPy `sympy.core.basic.Basic.kind`
+ */
 export function kindOf(e: Expr | Matrix): Kind {
   if (e instanceof ImmutableMatrixNode) return kindOf(e.matrix);
   if (e instanceof Matrix) {
@@ -1037,9 +1687,20 @@ const diffWrt = (e: Expr): boolean =>
   (e instanceof ExtensionExpr && (e.name === 'MatrixElement' || e.name === 'ArrayElement'));
 
 /**
- * SymPy derive_by_array(expr, dx): the derivative of an expression or
- * array by a symbol or by every element of an array; the result has shape
- * dx.shape + expr.shape.
+ * The derivative of an expression or array by a symbol or by every element of an array; the
+ * result has shape dx.shape + expr.shape.
+ *
+ * @param expr - Symbolic expression on which to operate.
+ * @param dx - Scalar or array of differentiation variables.
+ * @returns The derivative of an expression or array by a symbol or by every element of an array; the result has shape dx.shape + expr.shape.
+ * @throws RangeError when the differentiation array contains an invalid variable.
+ * @see SymPy `sympy.tensor.array.arrayop.derive_by_array`
+ * @example
+ * ```ts
+ * import { cos, deriveByArray, ex } from '@symjs/symjs';
+ *
+ * deriveByArray(ex`cos(x*t)`, ex`x`); // => -t*sin(t*x)
+ * ```
  */
 export function deriveByArray(expr: ExprLike | Matrix | readonly NestedArrayInput[], dx: ExprLike | Matrix | readonly NestedArrayInput[]): Expr {
   if (isArrayLike(dx)) {

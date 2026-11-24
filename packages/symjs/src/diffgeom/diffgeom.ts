@@ -66,10 +66,35 @@ function singleSystem(e: Expr): CoordSystem {
   return at(cs, 0);
 }
 
+/**
+ * A named manifold of a specified dimension.
+ *
+ * @see SymPy `sympy.diffgeom.diffgeom.Manifold`
+ * @example
+ * ```ts
+ * import { Manifold } from '@symjs/symjs/diffgeom';
+ *
+ * const m = new Manifold('M', 2);
+ * m.dim; // => 2
+ * ```
+ */
 export class Manifold extends ExtensionExpr {
+  /** The patches registered on the manifold. */
   readonly patches: Patch[] = [];
+  /**
+   * Constructs an instance of `Manifold`.
+   *
+   * @param name - Symbolic name.
+   * @param dim - Dimension of the space.
+   * @throws RangeError when the manifold dimension is invalid.
+   */
   constructor(
     name: string,
+    /**
+     * Dimension of the manifold.
+     *
+     * @see SymPy `sympy.diffgeom.diffgeom.Manifold.dim`
+     */
     readonly dim: number,
   ) {
     super(name, [sympify(dim)]);
@@ -78,45 +103,110 @@ export class Manifold extends ExtensionExpr {
   protected override computeKey(): string {
     return `Manifold:${this.name}:${this.dim}`;
   }
+  /**
+   * Rebuilds the expression with replacement arguments in their original order.
+   *
+   * @param args - Replacement arguments in the same order as `args` on the original expression.
+   * @returns The rebuilt expression.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new Manifold(this.name, indexValue(at(args, 0)));
   }
+  /**
+   * Formats the expression in plain text.
+   *
+   * @returns The formatted expression.
+   */
   override printStr(): string {
     return this.name;
   }
+  /**
+   * Formats the expression as LaTeX.
+   *
+   * @returns The formatted LaTeX.
+   */
   override printLatex(): string {
     const [name, supers, subs] = splitSuperSub(this.name);
     return `\\text{${name}}` + (supers.length ? `^{${supers.join(' ')}}` : '') + (subs.length ? `_{${subs.join(' ')}}` : '');
   }
 }
 
+/**
+ * A coordinate neighborhood on a manifold.
+ *
+ * @see SymPy `sympy.diffgeom.diffgeom.Patch`
+ * @example
+ * ```ts
+ * import { Manifold, Patch } from '@symjs/symjs/diffgeom';
+ *
+ * const p = new Patch('P', new Manifold('M', 2));
+ * p.dim; // => 2
+ * ```
+ */
 export class Patch extends ExtensionExpr {
+  /** The coordinate systems registered on the patch. */
   readonly coordSystems: CoordSystem[] = [];
+  /**
+   * Constructs an instance of `Patch`.
+   *
+   * @param name - Symbolic name.
+   * @param manifold - The manifold containing the patch.
+   */
   constructor(
     name: string,
+    /**
+     * The manifold containing the patch.
+     *
+     * @see SymPy `sympy.diffgeom.diffgeom.Patch.manifold`
+     */
     readonly manifold: Manifold,
   ) {
     super(name, [manifold]);
     manifold.patches.push(this);
   }
+  /**
+   * Dimension of the manifold.
+   *
+   * @returns Dimension of the manifold.
+   * @see SymPy `sympy.diffgeom.diffgeom.Patch.dim`
+   */
   get dim(): number {
     return this.manifold.dim;
   }
   protected override computeKey(): string {
     return `Patch:${this.name}:${this.manifold.key}`;
   }
+  /**
+   * Rebuilds the expression with replacement arguments in their original order.
+   *
+   * @param args - Replacement arguments in the same order as `args` on the original expression.
+   * @returns The rebuilt expression.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new Patch(this.name, instance(at(args, 0), Manifold));
   }
+  /**
+   * Formats the expression in plain text.
+   *
+   * @returns The formatted expression.
+   */
   override printStr(): string {
     return this.name;
   }
+  /**
+   * Formats the expression as LaTeX.
+   *
+   * @param print - Formatter for a child expression.
+   * @returns The formatted LaTeX.
+   */
   override printLatex(print: (e: Expr) => string): string {
     return `\\text{${print(new Sym(this.name))}}_{${print(this.manifold)}}`;
   }
 }
 
+/** A transformation given by source symbols and target coordinate expressions, or by a lambda. */
 export type CoordinateRelation = readonly [readonly Sym[], readonly ExprLike[]] | Lambda;
+/** Transformations indexed by pairs of source and target chart names. */
 export type CoordinateRelations = ReadonlyMap<readonly [string, string], CoordinateRelation>;
 
 /** A coordinate transformation with a Matrix-valued body. */
@@ -135,12 +225,50 @@ class Transformation {
   }
 }
 
+/**
+ * A coordinate chart with named coordinates and transformations to other charts on its patch.
+ *
+ * @see SymPy `sympy.diffgeom.diffgeom.CoordSystem`
+ * @remarks SymPy prints the coordinate symbols as `(x, y)`.
+ * @example
+ * ```ts
+ * import { CoordSystem, Manifold, Patch } from '@symjs/symjs/diffgeom';
+ *
+ * const p = new Patch('P', new Manifold('M', 2));
+ * const chart = new CoordSystem('Car2D', p, ['x', 'y']);
+ * chart.symbols; // => [x, y]
+ * ```
+ */
 export class CoordSystem extends ExtensionExpr {
+  /** The symbols used to name the coordinates. */
   readonly coordinateNames: readonly Sym[];
+  /**
+   * The coordinate transformations keyed by source and target chart names.
+   *
+   * @see SymPy `sympy.diffgeom.diffgeom.CoordSystem.relations`
+   */
   readonly relations: Map<readonly [string, string], readonly [readonly Sym[], readonly Expr[]]>;
+  /**
+   * Explicitly registered transformations to other coordinate systems.
+   *
+   * @see SymPy `sympy.diffgeom.diffgeom.CoordSystem.transforms`
+   */
   readonly transforms = new Map<CoordSystem, readonly [readonly Sym[], readonly Expr[]]>();
+  /**
+   * Constructs an instance of `CoordSystem`.
+   *
+   * @param name - Symbolic name.
+   * @param patch - The coordinate patch containing this object.
+   * @param symbols - Coordinate names or symbols in axis order.
+   * @param relations - Coordinate changes keyed by the names of the source and target charts.
+   */
   constructor(
     name: string,
+    /**
+     * The coordinate patch containing this object.
+     *
+     * @see SymPy `sympy.diffgeom.diffgeom.CoordSystem.patch`
+     */
     readonly patch: Patch,
     symbols?: readonly (Sym | string)[],
     relations: CoordinateRelations = new Map(),
@@ -165,18 +293,42 @@ export class CoordSystem extends ExtensionExpr {
     this.relations = rel;
     patch.coordSystems.push(this);
   }
+  /**
+   * The manifold containing the patch.
+   *
+   * @returns The manifold containing the patch.
+   * @see SymPy `sympy.diffgeom.diffgeom.CoordSystem.manifold`
+   */
   get manifold(): Manifold {
     return this.patch.manifold;
   }
+  /**
+   * Dimension of the manifold.
+   *
+   * @returns Dimension of the manifold.
+   * @see SymPy `sympy.diffgeom.diffgeom.CoordSystem.dim`
+   */
   get dim(): number {
     return this.patch.dim;
   }
+  /**
+   * The coordinate symbols of the chart, in axis order.
+   *
+   * @returns The coordinate symbols of the chart, in axis order.
+   * @see SymPy `sympy.diffgeom.diffgeom.CoordSystem.symbols`
+   */
   get symbols(): CoordinateSymbol[] {
     return this.coordinateNames.map((_, i) => new CoordinateSymbol(this, i));
   }
   protected override computeKey(): string {
     return `CoordSystem:${this.name}(${this.args.map((a) => a.key).join(',')})`;
   }
+  /**
+   * Rebuilds the expression with replacement arguments in their original order.
+   *
+   * @param args - Replacement arguments in the same order as `args` on the original expression.
+   * @returns The rebuilt expression.
+   */
   withArgs(args: readonly Expr[]): Expr {
     const end = 1 + this.coordinateNames.length;
     const relations = new Map<readonly [string, string], CoordinateRelation>();
@@ -193,15 +345,50 @@ export class CoordSystem extends ExtensionExpr {
       relations,
     );
   }
+  /**
+   * Formats the expression in plain text.
+   *
+   * @returns The formatted expression.
+   */
   override printStr(): string {
     return this.name;
   }
+  /**
+   * Formats the expression as LaTeX.
+   *
+   * @param print - Formatter for a child expression.
+   * @returns The formatted LaTeX.
+   */
   override printLatex(print: (e: Expr) => string): string {
     return `\\text{${print(new Sym(this.name))}}^{\\text{${print(new Sym(this.patch.name))}}}_{${print(this.manifold)}}`;
   }
+  /**
+   * Builds the coordinate transformation from this chart to the target chart.
+   *
+   * @param to - Target coordinate system.
+   * @returns The resulting transformation.
+   * @see SymPy `sympy.diffgeom.diffgeom.CoordSystem.transformation`
+   */
   transformation(to: CoordSystem): Transformation {
     return new Transformation(this.coordinateNames, this.transform(to, this.coordinateNames));
   }
+  /**
+   * Expresses coordinates from this chart in a target chart.
+   *
+   * @param to - Target coordinate system.
+   * @param values - Coordinate values in chart order.
+   * @returns The target coordinate values as a column matrix.
+   * @throws RangeError when the coordinate count disagrees with the chart dimension or the coordinate systems are disconnected.
+   * @see SymPy `sympy.diffgeom.diffgeom.CoordSystem.transform`
+   * @example
+   * ```ts
+   * import { R2P, R2R } from '@symjs/symjs/diffgeom';
+   *
+   * const polar = R2R.transform(R2P, [0, 1]);
+   * polar.get(0, 0); // => 1
+   * polar.get(1, 0); // => pi/2
+   * ```
+   */
   transform(to: CoordSystem, values: readonly ExprLike[] | Matrix = this.symbols): Matrix {
     const input = coordinates(values);
     if (input.length !== this.coordinateNames.length) throw new RangeError('Incorrect number of coordinates');
@@ -233,6 +420,15 @@ export class CoordSystem extends ExtensionExpr {
     }
     throw new RangeError('Two coordinate systems are not connected');
   }
+  /**
+   * Registers a coordinate transformation from this chart to another.
+   *
+   * @param to - Target coordinate system.
+   * @param from - Symbols used for the source coordinates.
+   * @param expressions - Target coordinates expressed in terms of the source symbols.
+   * @param options - `inverse` registers the reverse transformation by default. Intermediate charts can be traversed on demand with `fillInGaps`.
+   * @see SymPy `sympy.diffgeom.diffgeom.CoordSystem.connect_to`
+   */
   connectTo(
     to: CoordSystem,
     from: readonly Sym[],
@@ -246,9 +442,26 @@ export class CoordSystem extends ExtensionExpr {
     if (options.inverse !== false) to.transforms.set(this, [to.coordinateNames, back]);
     // Connected paths are composed on demand, including when fillInGaps is requested.
   }
+  /**
+   * Transforms a coordinate tuple from this chart to the target chart.
+   *
+   * @param to - Target coordinate system.
+   * @param values - Coordinate values in chart order.
+   * @returns The target coordinates in a column matrix.
+   * @see SymPy `sympy.diffgeom.diffgeom.CoordSystem.coord_tuple_transform_to`
+   */
   coordTupleTransformTo(to: CoordSystem, values: readonly ExprLike[] | Matrix): Matrix {
     return this.transform(to, values);
   }
+  /**
+   * Computes the matrix of partial derivatives of the target coordinates with respect to the source
+   * coordinates.
+   *
+   * @param to - Target coordinate system.
+   * @param values - Coordinate values in chart order.
+   * @returns The Jacobian with target coordinates indexing rows and source coordinates indexing columns.
+   * @see SymPy `sympy.diffgeom.diffgeom.CoordSystem.jacobian`
+   */
   jacobian(to: CoordSystem, values: readonly ExprLike[] | Matrix = this.symbols): Matrix {
     const xs = this.symbols;
     const transformed = this.transform(to);
@@ -257,39 +470,121 @@ export class CoordSystem extends ExtensionExpr {
       xreplace(diff(transformed.get(i, 0), at(xs, j)), pairs),
     );
   }
+  /**
+   * Computes the Jacobian matrix of the change from this chart to the target chart.
+   *
+   * @param to - Target coordinate system.
+   * @param values - Coordinate values in chart order.
+   * @returns The matrix of target-coordinate derivatives with respect to the source coordinates.
+   * @see SymPy `sympy.diffgeom.diffgeom.CoordSystem.jacobian_matrix`
+   */
   jacobianMatrix(to: CoordSystem, values?: readonly ExprLike[] | Matrix): Matrix {
     return this.jacobian(to, values);
   }
+  /**
+   * Computes the determinant of the Jacobian of the change from this chart to the target chart.
+   *
+   * @param to - Target coordinate system.
+   * @param values - Coordinate values in chart order.
+   * @returns The signed local scale factor for the coordinate transformation.
+   * @see SymPy `sympy.diffgeom.diffgeom.CoordSystem.jacobian_determinant`
+   */
   jacobianDeterminant(to: CoordSystem, values?: readonly ExprLike[] | Matrix): Expr {
     return this.jacobian(to, values).det();
   }
+  /**
+   * Creates a point with the supplied coordinates in this chart.
+   *
+   * @param values - Coordinate values in chart order.
+   * @returns A point in this coordinate system.
+   * @see SymPy `sympy.diffgeom.diffgeom.CoordSystem.point`
+   */
   point(values: readonly ExprLike[] | Matrix): Point {
     return new Point(this, values);
   }
+  /**
+   * Expresses the coordinates of a point in this chart.
+   *
+   * @param point - Point at which to evaluate the operation.
+   * @returns The coordinate column in this chart.
+   * @see SymPy `sympy.diffgeom.diffgeom.CoordSystem.point_to_coords`
+   */
   pointToCoords(point: Point): Matrix {
     return point.coords(this);
   }
+  /**
+   * Selects the scalar field that reads one coordinate of a point.
+   *
+   * @param index - Zero-based index or indices selecting the desired component.
+   * @returns The resulting base scalar field.
+   * @see SymPy `sympy.diffgeom.diffgeom.CoordSystem.base_scalar`
+   */
   baseScalar(index: number): BaseScalarField {
     return new BaseScalarField(this, index);
   }
+  /**
+   * Selects the scalar field for one coordinate direction.
+   *
+   * @param index - Zero-based index or indices selecting the desired component.
+   * @returns The resulting base scalar field.
+   * @see SymPy `sympy.diffgeom.diffgeom.CoordSystem.coord_function`
+   */
   coordFunction(index: number): BaseScalarField {
     return this.baseScalar(index);
   }
+  /**
+   * The coordinate scalar fields in axis order.
+   *
+   * @returns The coordinate scalar fields in axis order.
+   * @see SymPy `sympy.diffgeom.diffgeom.CoordSystem.base_scalars`
+   */
   baseScalars(): BaseScalarField[] {
     return this.coordinateNames.map((_, i) => this.baseScalar(i));
   }
+  /**
+   * Lists the coordinate scalar fields in chart order.
+   *
+   * @returns The resulting list in axis order.
+   * @see SymPy `sympy.diffgeom.diffgeom.CoordSystem.coord_functions`
+   */
   coordFunctions(): BaseScalarField[] {
     return this.baseScalars();
   }
+  /**
+   * Selects the vector field that differentiates along one coordinate.
+   *
+   * @param index - Zero-based index or indices selecting the desired component.
+   * @returns The resulting base vector field.
+   * @see SymPy `sympy.diffgeom.diffgeom.CoordSystem.base_vector`
+   */
   baseVector(index: number): BaseVectorField {
     return new BaseVectorField(this, index);
   }
+  /**
+   * The basis vector fields in axis order.
+   *
+   * @returns The basis vector fields in axis order.
+   * @see SymPy `sympy.diffgeom.diffgeom.CoordSystem.base_vectors`
+   */
   baseVectors(): BaseVectorField[] {
     return this.coordinateNames.map((_, i) => this.baseVector(i));
   }
+  /**
+   * Selects the basis one-form dual to the indexed coordinate vector.
+   *
+   * @param index - Zero-based index or indices selecting the desired component.
+   * @returns The one-form dual to the selected basis vector.
+   * @see SymPy `sympy.diffgeom.diffgeom.CoordSystem.base_oneform`
+   */
   baseOneform(index: number): Expr {
     return Differential(this.baseScalar(index));
   }
+  /**
+   * The basis one-forms dual to the coordinate vectors.
+   *
+   * @returns The basis one-forms dual to the coordinate vectors.
+   * @see SymPy `sympy.diffgeom.diffgeom.CoordSystem.base_oneforms`
+   */
   baseOneforms(): Expr[] {
     return this.coordinateNames.map((_, i) => this.baseOneform(i));
   }
@@ -324,9 +619,30 @@ function inverse(xs: readonly Sym[], expressions: readonly Expr[], targets: read
   return at(branches, 0).values;
 }
 
+/**
+ * A symbol representing one of a chart’s coordinates and carrying its assumptions.
+ *
+ * @see SymPy `sympy.diffgeom.diffgeom.CoordinateSymbol`
+ * @example
+ * ```ts
+ * import { CoordinateSymbol, R2R } from '@symjs/symjs/diffgeom';
+ *
+ * const x = new CoordinateSymbol(R2R, 0);
+ * x.name; // => x
+ * x.index; // => 0
+ * ```
+ */
 export class CoordinateSymbol extends Sym {
+  /**
+   * Constructs an instance of `CoordinateSymbol`.
+   *
+   * @param coordSys - Coordinate system defining the basis.
+   * @param index - Zero-based index or indices selecting the desired component.
+   */
   constructor(
+    /** The coordinate system in which this object is defined. */
     readonly coordSys: CoordSystem,
+    /** Zero-based coordinate direction in the chart. */
     readonly index: number,
   ) {
     const symbol = at(coordSys.coordinateNames, index);
@@ -335,17 +651,53 @@ export class CoordinateSymbol extends Sym {
   protected override computeKey(): string {
     return `CoordinateSymbol:${this.coordSys.key}:${this.index}`;
   }
+  /**
+   * The class name used for canonical ordering.
+   *
+   * @returns The class name used for canonical ordering.
+   */
   override get sortClass(): string {
     return 'CoordinateSymbol';
   }
+  /**
+   * Expresses this coordinate in another chart.
+   *
+   * @param to - Target coordinate system or representation.
+   * @returns The coordinate expressed in the requested chart when a transformation exists.
+   * @see SymPy `sympy.diffgeom.diffgeom.CoordinateSymbol.rewrite`
+   */
   override rewrite(to: string | CoordSystem): Expr {
     return to instanceof CoordSystem ? to.transform(this.coordSys).get(this.index, 0) : super.rewrite(to);
   }
 }
 
+/**
+ * A point on a manifold specified by a chart and its coordinates.
+ *
+ * @see SymPy `sympy.diffgeom.diffgeom.Point`
+ * @remarks SymPy prints this coordinate column as `Matrix([[-sqrt(2)], [sqrt(2)]])`.
+ * @example
+ * ```ts
+ * import { ex } from '@symjs/symjs';
+ * import { Point, R2P, R2R } from '@symjs/symjs/diffgeom';
+ *
+ * const p = new Point(R2P, [2, ex`3*pi/4`]);
+ * p.coords(R2R); // => Matrix([
+ * //   [-sqrt(2)],
+ * //   [ sqrt(2)]])
+ * ```
+ */
 export class Point extends ExtensionExpr {
+  /** The coordinates of the point as a column matrix. */
   readonly coordinates: readonly Expr[];
+  /**
+   * Constructs an instance of `Point`.
+   *
+   * @param coordSys - Coordinate system defining the basis.
+   * @param values - Coordinate values in chart order.
+   */
   constructor(
+    /** The coordinate system in which this object is defined. */
     readonly coordSys: CoordSystem,
     values: readonly ExprLike[] | Matrix,
   ) {
@@ -354,61 +706,185 @@ export class Point extends ExtensionExpr {
     super('Point', [coordSys, ...coords]);
     this.coordinates = coords;
   }
+  /**
+   * The coordinate patch containing this object.
+   *
+   * @returns The coordinate patch containing this object.
+   * @see SymPy `sympy.diffgeom.diffgeom.Point.patch`
+   */
   get patch(): Patch {
     return this.coordSys.patch;
   }
+  /**
+   * The manifold containing the patch.
+   *
+   * @returns The manifold containing the patch.
+   * @see SymPy `sympy.diffgeom.diffgeom.Point.manifold`
+   */
   get manifold(): Manifold {
     return this.coordSys.manifold;
   }
+  /**
+   * Dimension of the manifold.
+   *
+   * @returns Dimension of the manifold.
+   * @see SymPy `sympy.diffgeom.diffgeom.Point.dim`
+   */
   get dim(): number {
     return this.manifold.dim;
   }
+  /**
+   * Coordinates of the point in given coordinate system. If coordinate system is not passed, it
+   * returns the coordinates in the coordinate system in which the point was defined.
+   *
+   * @param to - Target coordinate system.
+   * @returns The coordinate column in the selected chart.
+   * @see SymPy `sympy.diffgeom.diffgeom.Point.coords`
+   */
   coords(to: CoordSystem = this.coordSys): Matrix {
     return this.coordSys.transform(to, this.coordinates);
   }
+  /**
+   * Rebuilds the expression with replacement arguments in their original order.
+   *
+   * @param args - Replacement arguments in the same order as `args` on the original expression.
+   * @returns The rebuilt expression.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new Point(instance(at(args, 0), CoordSystem), args.slice(1));
   }
+  /**
+   * Collects the free symbols of this expression.
+   *
+   * @returns The set of free symbols.
+   * @see SymPy `sympy.diffgeom.diffgeom.Point.free_symbols`
+   */
   override freeSymbolsSelf(): ReadonlySet<Expr> {
     return column(this.coordinates).freeSymbols();
   }
+  /**
+   * Formats the expression in plain text.
+   *
+   * @returns The formatted expression.
+   */
   override printStr(): string {
     return `Point(${String(this.coordSys)}, ${String(column(this.coordinates))})`;
   }
 }
 
+/**
+ * Base scalar field over a manifold for a given coordinate system.
+ *
+ * @see SymPy `sympy.diffgeom.diffgeom.BaseScalarField`
+ * @example
+ * ```ts
+ * import { BaseScalarField, R2R } from '@symjs/symjs/diffgeom';
+ *
+ * new BaseScalarField(R2R, 1).call(R2R.point([2, 3])); // => 3
+ * ```
+ */
 export class BaseScalarField extends ExtensionExpr {
+  /**
+   * Constructs an instance of `BaseScalarField`.
+   *
+   * @param coordSys - Coordinate system defining the basis.
+   * @param index - Zero-based index or indices selecting the desired component.
+   */
   constructor(
+    /**
+     * The coordinate system in which this object is defined.
+     *
+     * @see SymPy `sympy.diffgeom.diffgeom.BaseScalarField.coord_sys`
+     */
     readonly coordSys: CoordSystem,
+    /**
+     * Zero-based coordinate direction in the chart.
+     *
+     * @see SymPy `sympy.diffgeom.diffgeom.BaseScalarField.index`
+     */
     readonly index: number,
   ) {
     super('BaseScalarField', [coordSys, sympify(index)]);
     at(coordSys.coordinateNames, index);
   }
+  /**
+   * The coordinate patch containing this object.
+   *
+   * @returns The coordinate patch containing this object.
+   * @see SymPy `sympy.diffgeom.diffgeom.BaseScalarField.patch`
+   */
   get patch(): Patch {
     return this.coordSys.patch;
   }
+  /**
+   * The manifold containing the patch.
+   *
+   * @returns The manifold containing the patch.
+   * @see SymPy `sympy.diffgeom.diffgeom.BaseScalarField.manifold`
+   */
   get manifold(): Manifold {
     return this.coordSys.manifold;
   }
+  /**
+   * Dimension of the manifold.
+   *
+   * @returns Dimension of the manifold.
+   * @see SymPy `sympy.diffgeom.diffgeom.BaseScalarField.dim`
+   */
   get dim(): number {
     return this.manifold.dim;
   }
+  /**
+   * Rebuilds the expression with replacement arguments in their original order.
+   *
+   * @param args - Replacement arguments in the same order as `args` on the original expression.
+   * @returns The rebuilt expression.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new BaseScalarField(instance(at(args, 0), CoordSystem), indexValue(at(args, 1)));
   }
+  /**
+   * Formats the expression in plain text.
+   *
+   * @param print - Formatter for a child expression.
+   * @returns The formatted expression.
+   */
   override printStr(print: (e: Expr) => string): string {
     return print(at(this.coordSys.coordinateNames, this.index));
   }
+  /**
+   * Formats the expression as LaTeX.
+   *
+   * @param print - Formatter for a child expression.
+   * @returns The formatted LaTeX.
+   */
   override printLatex(print: (e: Expr) => string): string {
     return `\\mathbf{${print(at(this.coordSys.coordinateNames, this.index))}}`;
   }
+  /**
+   * Collects the free symbols of this expression.
+   *
+   * @returns The set of free symbols.
+   * @see SymPy `sympy.diffgeom.diffgeom.BaseScalarField.free_symbols`
+   */
   override freeSymbolsSelf(): ReadonlySet<Expr> {
     return new Set();
   }
+  /**
+   * Computes the derivative of this expression.
+   *
+   * @returns Zero for ordinary symbolic differentiation of the coordinate field.
+   */
   override diffSelf(): Expr {
     return S.Zero;
   }
+  /**
+   * Evaluates the coordinate scalar at the given point.
+   *
+   * @param args - Point on which to evaluate the coordinate field.
+   * @returns The coordinate value at the point, or the scalar field when no point is supplied.
+   * @see SymPy `sympy.diffgeom.diffgeom.BaseScalarField.__call__`
+   */
   call(...args: (ExprLike | null)[]): Expr {
     const point = args[0];
     return args.length === 1 && point instanceof Point
@@ -417,35 +893,112 @@ export class BaseScalarField extends ExtensionExpr {
   }
 }
 
+/**
+ * Base vector field over a manifold for a given coordinate system.
+ *
+ * @see SymPy `sympy.diffgeom.diffgeom.BaseVectorField`
+ * @example
+ * ```ts
+ * import { BaseVectorField, R2R } from '@symjs/symjs/diffgeom';
+ *
+ * new BaseVectorField(R2R, 1).call(R2R.y.pow(2)); // => 2*y
+ * ```
+ */
 export class BaseVectorField extends ExtensionExpr {
+  /**
+   * Constructs an instance of `BaseVectorField`.
+   *
+   * @param coordSys - Coordinate system defining the basis.
+   * @param index - Zero-based index or indices selecting the desired component.
+   */
   constructor(
+    /**
+     * The coordinate system in which this object is defined.
+     *
+     * @see SymPy `sympy.diffgeom.diffgeom.BaseVectorField.coord_sys`
+     */
     readonly coordSys: CoordSystem,
+    /**
+     * Zero-based coordinate direction in the chart.
+     *
+     * @see SymPy `sympy.diffgeom.diffgeom.BaseVectorField.index`
+     */
     readonly index: number,
   ) {
     super('BaseVectorField', [coordSys, sympify(index)]);
     at(coordSys.coordinateNames, index);
   }
+  /**
+   * The coordinate patch containing this object.
+   *
+   * @returns The coordinate patch containing this object.
+   * @see SymPy `sympy.diffgeom.diffgeom.BaseVectorField.patch`
+   */
   get patch(): Patch {
     return this.coordSys.patch;
   }
+  /**
+   * The manifold containing the patch.
+   *
+   * @returns The manifold containing the patch.
+   * @see SymPy `sympy.diffgeom.diffgeom.BaseVectorField.manifold`
+   */
   get manifold(): Manifold {
     return this.coordSys.manifold;
   }
+  /**
+   * Dimension of the manifold.
+   *
+   * @returns Dimension of the manifold.
+   * @see SymPy `sympy.diffgeom.diffgeom.BaseVectorField.dim`
+   */
   get dim(): number {
     return this.manifold.dim;
   }
+  /**
+   * Whether multiplication by this field commutes.
+   *
+   * @returns Whether multiplication by this field commutes.
+   * @see SymPy `sympy.diffgeom.diffgeom.BaseVectorField.is_commutative`
+   */
   override get isCommutative(): boolean {
     return false;
   }
+  /**
+   * Rebuilds the expression with replacement arguments in their original order.
+   *
+   * @param args - Replacement arguments in the same order as `args` on the original expression.
+   * @returns The rebuilt expression.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new BaseVectorField(instance(at(args, 0), CoordSystem), indexValue(at(args, 1)));
   }
+  /**
+   * Formats the expression in plain text.
+   *
+   * @param print - Formatter for a child expression.
+   * @returns The formatted expression.
+   */
   override printStr(print: (e: Expr) => string): string {
     return `e_${print(at(this.coordSys.coordinateNames, this.index))}`;
   }
+  /**
+   * Formats the expression as LaTeX.
+   *
+   * @param print - Formatter for a child expression.
+   * @returns The formatted LaTeX.
+   */
   override printLatex(print: (e: Expr) => string): string {
     return `\\partial_{${print(at(this.coordSys.coordinateNames, this.index))}}`;
   }
+  /**
+   * Differentiates the scalar field along this coordinate direction.
+   *
+   * @param field - Field to evaluate or differentiate.
+   * @returns The directional derivative of the scalar field.
+   * @throws RangeError when the argument of the vector field is not scalar.
+   * @see SymPy `sympy.diffgeom.diffgeom.BaseVectorField.__call__`
+   */
   call(field: ExprLike | null = null): Expr {
     if (field === null) return this;
     const f = sympify(field);
@@ -490,9 +1043,43 @@ function order(e: Expr, contra: boolean, strict: boolean): number {
   if (e instanceof LieDerivativeNode) return order(e.expr, contra, false);
   return !strict || atoms(e, BaseScalarField).length > 0 ? 0 : -1;
 }
+/**
+ * Counts the contravariant slots of a tensor field.
+ *
+ * @param expr - Symbolic expression on which to operate.
+ * @param strict - Return -1 for a scalar expression without a coordinate field.
+ * @returns The computed contravariant order.
+ * @throws RangeError when terms have incompatible tensor orders or the expression contains an ambiguous tensor product.
+ * @see SymPy `sympy.diffgeom.diffgeom.contravariant_order`
+ * @example
+ * ```ts
+ * import { ex } from '@symjs/symjs';
+ * import { R2, contravariantOrder } from '@symjs/symjs/diffgeom';
+ *
+ * contravariantOrder(ex`a`); // => 0
+ * contravariantOrder(R2.eX); // => 1
+ * ```
+ */
 export function contravariantOrder(expr: ExprLike, strict = false): number {
   return order(sympify(expr), true, strict);
 }
+/**
+ * Counts the covariant slots of a tensor field.
+ *
+ * @param expr - Symbolic expression on which to operate.
+ * @param strict - Return -1 for a scalar expression without a coordinate field.
+ * @returns The computed covariant order.
+ * @throws RangeError when terms have incompatible tensor orders or the expression contains an ambiguous tensor product.
+ * @see SymPy `sympy.diffgeom.diffgeom.covariant_order`
+ * @example
+ * ```ts
+ * import { ex } from '@symjs/symjs';
+ * import { R2, covariantOrder } from '@symjs/symjs/diffgeom';
+ *
+ * covariantOrder(ex`a`); // => 0
+ * covariantOrder(R2.dx); // => 1
+ * ```
+ */
 export function covariantOrder(expr: ExprLike, strict = false): number {
   return order(sympify(expr), false, strict);
 }
@@ -520,6 +1107,22 @@ class CommutatorNode extends ExtensionExpr {
     return sub(apply(this.v1, [apply(this.v2, [field])]), apply(this.v2, [apply(this.v1, [field])]));
   }
 }
+/**
+ * The Lie bracket of two vector fields, acting on a scalar as the difference between their
+ * successive derivatives.
+ *
+ * @param v1 - First vector field in the commutator.
+ * @param v2 - Second vector field in the commutator.
+ * @returns The vector-field commutator, or zero for commuting fields.
+ * @throws RangeError when either input is not a vector field.
+ * @see SymPy `sympy.diffgeom.diffgeom.Commutator`
+ * @example
+ * ```ts
+ * import { Commutator, R2R } from '@symjs/symjs/diffgeom';
+ *
+ * Commutator(R2R.eX, R2R.eY); // => 0
+ * ```
+ */
 export function Commutator(v1: ExprLike, v2: ExprLike): Expr {
   const a = sympify(v1),
     b = sympify(v2);
@@ -595,6 +1198,23 @@ class DifferentialNode extends ExtensionExpr {
     );
   }
 }
+/**
+ * Return the differential (exterior derivative) of a form field.
+ *
+ * @param form - Scalar field or differential form to differentiate.
+ * @returns The exterior derivative, or zero for a repeated exterior derivative.
+ * @throws RangeError when the operand has contravariant slots.
+ * @see SymPy `sympy.diffgeom.diffgeom.Differential`
+ * @example
+ * ```ts
+ * import { rcall } from '@symjs/symjs';
+ * import { Differential, R2R } from '@symjs/symjs/diffgeom';
+ *
+ * const dx = Differential(R2R.x);
+ * rcall(dx, R2R.eX); // => 1
+ * Differential(dx); // => 0
+ * ```
+ */
 export function Differential(form: ExprLike): Expr {
   const f = sympify(form);
   if (contravariantOrder(f)) throw new RangeError('Differential requires a form field');
@@ -653,9 +1273,41 @@ function product(args: readonly ExprLike[], alternating: boolean): Expr {
   args.map(sympify).forEach((a) => (covariantOrder(a) + contravariantOrder(a) === 0 ? scalar : tensors).push(a));
   return mul(...scalar, ...(tensors.length < 2 ? tensors : [new TensorProductNode(tensors, alternating)]));
 }
+/**
+ * Forms the ordered tensor product of vector fields and differential forms.
+ *
+ * @param args - Factors in tensor-product order.
+ * @returns The tensor product of the factors.
+ * @see SymPy `sympy.diffgeom.diffgeom.TensorProduct`
+ * @example
+ * ```ts
+ * import { rcall } from '@symjs/symjs';
+ * import { R2, TensorProduct } from '@symjs/symjs/diffgeom';
+ *
+ * const form = TensorProduct(R2.dx, R2.dy);
+ * rcall(form, R2.eX, R2.eY); // => 1
+ * rcall(form, R2.eY, R2.eX); // => 0
+ * ```
+ */
 export function TensorProduct(...args: ExprLike[]): Expr {
   return product(args, false);
 }
+/**
+ * Forms the alternating tensor product of the supplied fields.
+ *
+ * @param args - Factors in alternating-product order.
+ * @returns The alternating product of the factors.
+ * @see SymPy `sympy.diffgeom.diffgeom.WedgeProduct`
+ * @example
+ * ```ts
+ * import { rcall } from '@symjs/symjs';
+ * import { R2, WedgeProduct } from '@symjs/symjs/diffgeom';
+ *
+ * const form = WedgeProduct(R2.dx, R2.dy);
+ * rcall(form, R2.eX, R2.eY); // => 1
+ * rcall(form, R2.eY, R2.eX); // => -1
+ * ```
+ */
 export function WedgeProduct(...args: ExprLike[]): Expr {
   return product(args, true);
 }
@@ -694,6 +1346,22 @@ class LieDerivativeNode extends ExtensionExpr {
     );
   }
 }
+/**
+ * Lie derivative with respect to a vector field.
+ *
+ * @param v - Vector field giving the direction of differentiation or flow.
+ * @param expr - Symbolic expression on which to operate.
+ * @returns The derivative of the field or tensor along the vector field.
+ * @throws RangeError when the differentiation direction is not a vector field.
+ * @see SymPy `sympy.diffgeom.diffgeom.LieDerivative`
+ * @example
+ * ```ts
+ * import { LieDerivative, R2R } from '@symjs/symjs/diffgeom';
+ *
+ * LieDerivative(R2R.eX, R2R.y); // => 0
+ * LieDerivative(R2R.eX, R2R.x); // => 1
+ * ```
+ */
 export function LieDerivative(v: ExprLike, expr: ExprLike): Expr {
   const field = sympify(v),
     e = sympify(expr);
@@ -702,6 +1370,21 @@ export function LieDerivative(v: ExprLike, expr: ExprLike): Expr {
   return contravariantOrder(e) > 0 ? Commutator(field, e) : apply(field, [e]);
 }
 
+/**
+ * Rewrites the basis vectors in the target chart while keeping scalar coefficients in their
+ * original coordinates.
+ *
+ * @param expr - Symbolic expression on which to operate.
+ * @param to - Target coordinate system.
+ * @returns The same field in the requested vector basis, with its scalar coefficients preserved.
+ * @see SymPy `sympy.diffgeom.diffgeom.vectors_in_basis`
+ * @example
+ * ```ts
+ * import { R2P, R2R, vectorsInBasis } from '@symjs/symjs/diffgeom';
+ *
+ * vectorsInBasis(R2P.eR, R2R); // => sin(theta)*e_y + cos(theta)*e_x
+ * ```
+ */
 export function vectorsInBasis(expr: ExprLike, to: CoordSystem): Expr {
   const e = sympify(expr);
   return xreplace(
@@ -713,10 +1396,46 @@ export function vectorsInBasis(expr: ExprLike, to: CoordSystem): Expr {
   );
 }
 
+/**
+ * Covariant differentiation along one coordinate basis vector using the supplied connection
+ * coefficients.
+ *
+ * @see SymPy `sympy.diffgeom.diffgeom.BaseCovarDerivativeOp`
+ * @example
+ * ```ts
+ * import { BaseCovarDerivativeOp, R2, R2R, TensorProduct, metricToChristoffel2nd } from '@symjs/symjs/diffgeom';
+ *
+ * const metric = TensorProduct(R2.dx, R2.dx).add(TensorProduct(R2.dy, R2.dy));
+ * const deriv = new BaseCovarDerivativeOp(R2R, 0, metricToChristoffel2nd(metric));
+ * deriv.call(R2.x); // => 1
+ * ```
+ */
 export class BaseCovarDerivativeOp extends ExtensionExpr {
+  /**
+   * The connection coefficients indexed by the output and two input directions.
+   *
+   * @see SymPy `sympy.diffgeom.diffgeom.BaseCovarDerivativeOp.christoffel`
+   */
   readonly christoffel: NDimArray;
+  /**
+   * Constructs an instance of `BaseCovarDerivativeOp`.
+   *
+   * @param coordSys - Coordinate system defining the basis.
+   * @param index - Zero-based index or indices selecting the desired component.
+   * @param christoffel - Christoffel symbols of the second kind, indexed by three coordinate directions.
+   */
   constructor(
+    /**
+     * The coordinate system in which this object is defined.
+     *
+     * @see SymPy `sympy.diffgeom.diffgeom.BaseCovarDerivativeOp.coord_sys`
+     */
     readonly coordSys: CoordSystem,
+    /**
+     * Zero-based coordinate direction in the chart.
+     *
+     * @see SymPy `sympy.diffgeom.diffgeom.BaseCovarDerivativeOp.index`
+     */
     readonly index: number,
     christoffel: NDimArray | readonly (readonly (readonly ExprLike[])[])[],
   ) {
@@ -725,6 +1444,12 @@ export class BaseCovarDerivativeOp extends ExtensionExpr {
     at(coordSys.coordinateNames, index);
     this.christoffel = ch;
   }
+  /**
+   * Rebuilds the expression with replacement arguments in their original order.
+   *
+   * @param args - Replacement arguments in the same order as `args` on the original expression.
+   * @returns The rebuilt expression.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new BaseCovarDerivativeOp(
       instance(at(args, 0), CoordSystem),
@@ -732,6 +1457,14 @@ export class BaseCovarDerivativeOp extends ExtensionExpr {
       instance(at(args, 2), NDimArray),
     );
   }
+  /**
+   * Computes the covariant derivative in the chosen basis direction.
+   *
+   * @param field - Field to evaluate or differentiate.
+   * @returns The covariant derivative in the basis direction.
+   * @throws NotImplementedError when the operand is a differential form of positive degree.
+   * @see SymPy `sympy.diffgeom.diffgeom.BaseCovarDerivativeOp.__call__`
+   */
   call(field: ExprLike): Expr {
     const f = vectorsInBasis(field, this.coordSys),
       basis = this.coordSys.baseVector(this.index);
@@ -756,9 +1489,39 @@ export class BaseCovarDerivativeOp extends ExtensionExpr {
     return expand(derive(f));
   }
 }
+/**
+ * Covariant differentiation along a vector field using the supplied connection coefficients.
+ *
+ * @see SymPy `sympy.diffgeom.diffgeom.CovarDerivativeOp`
+ * @example
+ * ```ts
+ * import { CovarDerivativeOp, R2, TensorProduct, metricToChristoffel2nd } from '@symjs/symjs/diffgeom';
+ *
+ * const metric = TensorProduct(R2.dx, R2.dx).add(TensorProduct(R2.dy, R2.dy));
+ * const deriv = new CovarDerivativeOp(R2.x.mul(R2.eX), metricToChristoffel2nd(metric));
+ * deriv.call(R2.x); // => x
+ * ```
+ */
 export class CovarDerivativeOp extends ExtensionExpr {
+  /**
+   * The vector field giving the differentiation direction.
+   *
+   * @see SymPy `sympy.diffgeom.diffgeom.CovarDerivativeOp.wrt`
+   */
   readonly wrt: Expr;
+  /**
+   * The connection coefficients indexed by the output and two input directions.
+   *
+   * @see SymPy `sympy.diffgeom.diffgeom.CovarDerivativeOp.christoffel`
+   */
   readonly christoffel: NDimArray;
+  /**
+   * Constructs an instance of `CovarDerivativeOp`.
+   *
+   * @param wrt - The vector field giving the differentiation direction.
+   * @param christoffel - Christoffel symbols of the second kind, indexed by three coordinate directions.
+   * @throws NotImplementedError when the direction uses more than one coordinate system.
+   */
   constructor(wrt: ExprLike, christoffel: NDimArray | readonly (readonly (readonly ExprLike[])[])[]) {
     const v = sympify(wrt);
     vector(v);
@@ -768,9 +1531,22 @@ export class CovarDerivativeOp extends ExtensionExpr {
     this.wrt = v;
     this.christoffel = ch;
   }
+  /**
+   * Rebuilds the expression with replacement arguments in their original order.
+   *
+   * @param args - Replacement arguments in the same order as `args` on the original expression.
+   * @returns The rebuilt expression.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new CovarDerivativeOp(at(args, 0), instance(at(args, 1), NDimArray));
   }
+  /**
+   * Computes the covariant derivative of a field along the defining vector.
+   *
+   * @param field - Field to evaluate or differentiate.
+   * @returns The covariant derivative along the defining vector field.
+   * @see SymPy `sympy.diffgeom.diffgeom.CovarDerivativeOp.__call__`
+   */
   call(field: ExprLike): Expr {
     return add(
       ...atoms(this.wrt, BaseVectorField).map((v) =>
@@ -780,6 +1556,30 @@ export class CovarDerivativeOp extends ExtensionExpr {
   }
 }
 
+/**
+ * Expands the coordinates of an integral curve in powers of its parameter about the starting
+ * point.
+ *
+ * @param v - Vector field giving the direction of differentiation or flow.
+ * @param param - Parameter along the integral curve.
+ * @param start - Point on the curve at parameter zero.
+ * @param n - Number of series terms.
+ * @param options - `coordSys` selects the chart and `coeffs` requests the separate Taylor terms.
+ * @returns The coordinate Taylor polynomial, or the individual Taylor terms when `coeffs` is true.
+ * @throws RangeError when the number of terms is not a nonnegative safe integer.
+ * @see SymPy `sympy.diffgeom.diffgeom.intcurve_series`
+ * @remarks SymPy prints the series column as `Matrix([[t + x], [y]])`.
+ * @example
+ * ```ts
+ * import { ex } from '@symjs/symjs';
+ * import { R2R, intcurveSeries } from '@symjs/symjs/diffgeom';
+ *
+ * const p = R2R.point([ex`x`, ex`y`]);
+ * intcurveSeries(R2R.eX, ex`t`, p, 3); // => Matrix([
+ * //   [t + x],
+ * //   [    y]])
+ * ```
+ */
 export function intcurveSeries(
   v: ExprLike,
   param: ExprLike,
@@ -816,6 +1616,27 @@ export function intcurveSeries(
     ? coefficients
     : column(cs.baseScalars().map((_, j) => add(...coefficients.map((c) => c.get(j, 0)))));
 }
+/**
+ * Builds the coordinate differential equations and initial conditions for an integral curve.
+ *
+ * @param v - Vector field giving the direction of differentiation or flow.
+ * @param param - Parameter along the integral curve.
+ * @param start - Point on the curve at parameter zero.
+ * @param coordSys - Coordinate system defining the basis.
+ * @returns The differential equations and initial conditions, each expressed with zero right-hand side.
+ * @see SymPy `sympy.diffgeom.diffgeom.intcurve_diffequ`
+ * @remarks The second result contains the initial conditions, each expressed as a quantity that vanishes at parameter zero.
+ * @example
+ * ```ts
+ * import { symbols } from '@symjs/symjs';
+ * import { R2, R2R, intcurveDiffequ } from '@symjs/symjs/diffgeom';
+ *
+ * const [t] = symbols('t');
+ * const rotation = R2.x.mul(R2.eY).sub(R2.y.mul(R2.eX));
+ * const [equations, initial] = intcurveDiffequ(rotation, t, R2R.point([0, 1]));
+ * initial; // => [f_0(0), f_1(0) - 1]
+ * ```
+ */
 export function intcurveDiffequ(
   v: ExprLike,
   param: Sym,
@@ -834,12 +1655,45 @@ export function intcurveDiffequ(
   ];
 }
 
+/**
+ * Evaluates a covariant two-tensor on pairs of coordinate basis vectors to obtain its matrix.
+ *
+ * @param expr - Symbolic expression on which to operate.
+ * @returns The matrix of the tensor in the coordinate basis.
+ * @throws RangeError when the operand is not a covariant two-tensor.
+ * @see SymPy `sympy.diffgeom.diffgeom.twoform_to_matrix`
+ * @remarks SymPy prints the matrix as `Matrix([[1, 0], [0, 1]])`.
+ * @example
+ * ```ts
+ * import { R2, TensorProduct, twoformToMatrix } from '@symjs/symjs/diffgeom';
+ *
+ * const metric = TensorProduct(R2.dx, R2.dx).add(TensorProduct(R2.dy, R2.dy));
+ * twoformToMatrix(metric); // => Matrix([
+ * //   [1, 0],
+ * //   [0, 1]])
+ * ```
+ */
 export function twoformToMatrix(expr: ExprLike): Matrix {
   const e = sympify(expr);
   if (covariantOrder(e) !== 2 || contravariantOrder(e) !== 0) throw new RangeError('Expected a two-form');
   const vs = singleSystem(e).baseVectors();
   return Matrix.fromFunction(vs.length, vs.length, (i, j) => expand(apply(e, [at(vs, j), at(vs, i)])));
 }
+/**
+ * Computes the Christoffel symbols of the first kind for the given metric.
+ *
+ * @param expr - Symbolic expression on which to operate.
+ * @returns The array of components in the coordinate basis of the metric.
+ * @throws RangeError when the metric is not symmetric.
+ * @see SymPy `sympy.diffgeom.diffgeom.metric_to_Christoffel_1st`
+ * @example
+ * ```ts
+ * import { R2, TensorProduct, metricToChristoffel1st } from '@symjs/symjs/diffgeom';
+ *
+ * const metric = TensorProduct(R2.dx, R2.dx).add(TensorProduct(R2.dy, R2.dy));
+ * metricToChristoffel1st(metric).get(0, 0, 0); // => 0
+ * ```
+ */
 export function metricToChristoffel1st(expr: ExprLike): ImmutableDenseNDimArray {
   const e = sympify(expr),
     matrix = twoformToMatrix(e),
@@ -859,6 +1713,20 @@ export function metricToChristoffel1st(expr: ExprLike): ImmutableDenseNDimArray 
     ),
   );
 }
+/**
+ * Computes the Christoffel symbols of the second kind of the Levi-Civita connection.
+ *
+ * @param expr - Symbolic expression on which to operate.
+ * @returns The array of components in the coordinate basis of the metric.
+ * @see SymPy `sympy.diffgeom.diffgeom.metric_to_Christoffel_2nd`
+ * @example
+ * ```ts
+ * import { R2, TensorProduct, metricToChristoffel2nd } from '@symjs/symjs/diffgeom';
+ *
+ * const metric = TensorProduct(R2.dx, R2.dx).add(TensorProduct(R2.dy, R2.dy));
+ * metricToChristoffel2nd(metric).get(0, 0, 0); // => 0
+ * ```
+ */
 export function metricToChristoffel2nd(expr: ExprLike): ImmutableDenseNDimArray {
   const e = sympify(expr),
     ch = metricToChristoffel1st(e),
@@ -870,6 +1738,20 @@ export function metricToChristoffel2nd(expr: ExprLike): ImmutableDenseNDimArray 
     ),
   );
 }
+/**
+ * Computes the Riemann curvature components of a metric in its coordinate basis.
+ *
+ * @param expr - Symbolic expression on which to operate.
+ * @returns The array of components in the coordinate basis of the metric.
+ * @see SymPy `sympy.diffgeom.diffgeom.metric_to_Riemann_components`
+ * @example
+ * ```ts
+ * import { R2, TensorProduct, metricToRiemannComponents } from '@symjs/symjs/diffgeom';
+ *
+ * const metric = TensorProduct(R2.dx, R2.dx).add(TensorProduct(R2.dy, R2.dy));
+ * metricToRiemannComponents(metric).get(0, 0, 0, 0); // => 0
+ * ```
+ */
 export function metricToRiemannComponents(expr: ExprLike): ImmutableDenseNDimArray {
   const e = sympify(expr),
     ch = metricToChristoffel2nd(e),
@@ -892,6 +1774,20 @@ export function metricToRiemannComponents(expr: ExprLike): ImmutableDenseNDimArr
     ),
   );
 }
+/**
+ * Contracts the curvature of a metric to obtain its Ricci tensor components.
+ *
+ * @param expr - Symbolic expression on which to operate.
+ * @returns The array of components in the coordinate basis of the metric.
+ * @see SymPy `sympy.diffgeom.diffgeom.metric_to_Ricci_components`
+ * @example
+ * ```ts
+ * import { R2, TensorProduct, metricToRicciComponents } from '@symjs/symjs/diffgeom';
+ *
+ * const metric = TensorProduct(R2.dx, R2.dx).add(TensorProduct(R2.dy, R2.dy));
+ * metricToRicciComponents(metric).get(0, 0); // => 0
+ * ```
+ */
 export function metricToRicciComponents(expr: ExprLike): ImmutableDenseNDimArray {
   const e = sympify(expr),
     riemann = metricToRiemannComponents(e),

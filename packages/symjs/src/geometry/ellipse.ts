@@ -58,7 +58,7 @@ export const ellipseHooks: {
   circumcircle?: (a: PointNode, b: PointNode, c: PointNode) => GeometryEntity | [PointNode, Expr];
 } = {};
 
-/** Options of Ellipse (SymPy keyword arguments). */
+/** Options of Ellipse. */
 export interface EllipseOptions {
   /** The horizontal radius. */
   hradius?: ExprLike;
@@ -68,34 +68,83 @@ export interface EllipseOptions {
   eccentricity?: ExprLike;
 }
 
-/** SymPy Ellipse: an ellipse with axes parallel to the coordinate axes. */
+/**
+ * An ellipse with axes parallel to the coordinate axes.
+ *
+ * @see SymPy `sympy.geometry.ellipse.Ellipse`
+ * @example
+ * ```ts
+ * import { Ellipse } from '@symjs/symjs';
+ *
+ * Ellipse([0, 0], 5, 1); // => Ellipse(Point2D(0, 0), 5, 1)
+ * ```
+ */
 export class EllipseNode extends GeometrySet {
+  /**
+   * Constructs an instance of `EllipseNode`.
+   *
+   * @param args - Operands in their defining order.
+   * @param name - Symbolic name.
+   */
   constructor(args: readonly Expr[], name = 'Ellipse') {
     super(name, args);
   }
 
+  /**
+   * Rebuilds the expression with replacement arguments in their original order.
+   *
+   * @param args - Replacement arguments in the same order as `args` on the original expression.
+   * @returns The rebuilt expression.
+   */
   override withArgs(args: readonly Expr[]): Expr {
     return newEllipse(at(args, 0), at(args, 1), at(args, 2));
   }
 
+  /**
+   * The number of coordinates in the surrounding space.
+   *
+   * @returns The number of coordinates in the surrounding space.
+   * @see SymPy `sympy.geometry.ellipse.Ellipse.ambient_dimension`
+   */
   get ambientDimension(): number {
     return 2;
   }
 
-  /** The center (SymPy center). */
+  /**
+   * The center.
+   *
+   * @returns The center.
+   * @see SymPy `sympy.geometry.ellipse.Ellipse.center`
+   */
   get center(): Point2DNode {
     return as2D(at(this.args, 0));
   }
-  /** The horizontal radius (SymPy hradius). */
+  /**
+   * The horizontal radius.
+   *
+   * @returns The horizontal radius.
+   * @see SymPy `sympy.geometry.ellipse.Ellipse.hradius`
+   */
   get hradius(): Expr {
     return at(this.args, 1);
   }
-  /** The vertical radius (SymPy vradius). */
+  /**
+   * The vertical radius.
+   *
+   * @returns The vertical radius.
+   * @see SymPy `sympy.geometry.ellipse.Ellipse.vradius`
+   */
   get vradius(): Expr {
     return at(this.args, 2);
   }
 
-  /** SymPy `o in ellipse`: a point on the ellipse, or the same ellipse. */
+  /**
+   * A point on the ellipse, or the same ellipse.
+   *
+   * @param o - Point or entity tested for containment.
+   * @returns Whether the operand belongs to the entity.
+   * @see SymPy `sympy.geometry.ellipse.Ellipse.contains`
+   */
   override contains(o: unknown): boolean {
     if (o instanceof PointNode) {
       const res = subs(this.equation(ex, ey), [
@@ -108,12 +157,24 @@ export class EllipseNode extends GeometrySet {
     return false;
   }
 
-  /** The greatest distance from a focus to the ellipse (SymPy apoapsis). */
+  /**
+   * The greatest distance from a focus to the ellipse.
+   *
+   * @returns The greatest distance from a focus to the ellipse.
+   * @see SymPy `sympy.geometry.ellipse.Ellipse.apoapsis`
+   */
   get apoapsis(): Expr {
     return mul(this.major, add(1, this.eccentricity));
   }
 
-  /** The point (cx + hradius*cos(t), cy + vradius*sin(t)) with a real parameter t (SymPy arbitrary_point). */
+  /**
+   * The point (cx + hradius*cos(t), cy + vradius*sin(t)) with a real parameter t.
+   *
+   * @param parameter - Symbol or name used for the parametrization.
+   * @returns The point (cx + hradius*cos(t), cy + vradius*sin(t)) with a real parameter t.
+   * @throws RangeError when the requested parameter name already occurs in the entity.
+   * @see SymPy `sympy.geometry.ellipse.Ellipse.arbitrary_point`
+   */
   override arbitraryPoint(parameter: string | Sym | null = 't'): Point2DNode {
     const t = realSymbol(parameter ?? 't');
     if ([...this.freeSymbols()].filter((s) => s instanceof Sym).some((f) => f.name === t.name)) {
@@ -122,29 +183,56 @@ export class EllipseNode extends GeometrySet {
     return as2D(newPoint([add(this.center.x, mul(this.hradius, cos(t))), add(this.center.y, mul(this.vradius, sin(t)))]));
   }
 
-  /** The area pi*hradius*vradius (SymPy area). */
+  /**
+   * The area pi*hradius*vradius.
+   *
+   * @returns The area pi*hradius*vradius.
+   * @see SymPy `sympy.geometry.ellipse.Ellipse.area`
+   */
   get area(): Expr {
     return simplify(mul(S.Pi, this.hradius, this.vradius));
   }
 
+  /**
+   * The bounding rectangle as `[xmin, ymin, xmax, ymax]`.
+   *
+   * @returns Return a tuple (xmin, ymin, xmax, ymax) representing the bounding rectangle for the geometric figure.
+   * @see SymPy `sympy.geometry.ellipse.Ellipse.bounds`
+   */
   override get bounds(): [Expr, Expr, Expr, Expr] {
     const [h, v] = [this.hradius, this.vradius];
     const { x, y } = this.center;
     return [add(x, mul(-1, h)), add(y, mul(-1, v)), add(x, h), add(y, v)];
   }
 
-  /** The perimeter (SymPy circumference). */
+  /**
+   * The perimeter.
+   *
+   * @returns The perimeter.
+   * @see SymPy `sympy.geometry.ellipse.Ellipse.circumference`
+   */
   get circumference(): Expr {
     // (SymPy's cases e == 1 and e == 0 are a Segment and a Circle, never an Ellipse)
     return mul(4, this.major, ellipticE(pow(this.eccentricity, 2)));
   }
 
-  /** The eccentricity (SymPy eccentricity). */
+  /**
+   * The eccentricity.
+   *
+   * @returns The eccentricity.
+   * @see SymPy `sympy.geometry.ellipse.Ellipse.eccentricity`
+   */
   get eccentricity(): Expr {
     return mul(this.focusDistance, pow(this.major, -1));
   }
 
-  /** The point lies inside the ellipse (SymPy encloses_point; 'unknown' when undecided). */
+  /**
+   * The point lies inside the ellipse.
+   *
+   * @param pIn - Point used in the geometric construction or comparison.
+   * @returns The point lies inside the ellipse.
+   * @see SymPy `sympy.geometry.ellipse.Ellipse.encloses_point`
+   */
   override enclosesPoint(pIn: PointInput): boolean | 'unknown' {
     const p = toPoint(pIn, { dim: 2 });
     if (this.contains(p)) return false;
@@ -153,7 +241,15 @@ export class EllipseNode extends GeometrySet {
     return isPositive(test) ?? 'unknown';
   }
 
-  /** The equation of the ellipse in real symbols x and y (SymPy equation). */
+  /**
+   * The equation of the ellipse in real symbols x and y.
+   *
+   * @param x - Symbol for the x coordinate.
+   * @param y - Symbol for the y coordinate.
+   * @param slope - Slope of the reflection axis.
+   * @returns The equation of the ellipse in real symbols x and y.
+   * @see SymPy `sympy.geometry.ellipse.Ellipse.equation`
+   */
   equation(x: string | Sym = 'x', y: string | Sym = 'y', slope?: ExprLike): Expr {
     const [X, Y] = [realSymbol(x), realSymbol(y)];
     const dx = add(X, mul(-1, this.center.x));
@@ -172,7 +268,15 @@ export class EllipseNode extends GeometrySet {
     return add(t1, t2, -1);
   }
 
-  /** The evolute of the ellipse (SymPy evolute). */
+  /**
+   * The evolute of the ellipse.
+   *
+   * @param x - Symbol for the x coordinate.
+   * @param y - Symbol for the y coordinate.
+   * @returns The evolute of the ellipse.
+   * @throws NotImplementedError when the evolute cannot be represented for the supplied ellipse.
+   * @see SymPy `sympy.geometry.ellipse.Ellipse.evolute`
+   */
   evolute(x: string | Sym = 'x', y: string | Sym = 'y'): Expr {
     if (this.args.length !== 3) throw new NotImplementedError('Evolute of arbitrary Ellipse is not supported.');
     const [X, Y] = [realSymbol(x), realSymbol(y)];
@@ -182,7 +286,12 @@ export class EllipseNode extends GeometrySet {
     return add(t1, t2, mul(-1, pow(add(pow(this.hradius, 2), mul(-1, pow(this.vradius, 2))), twoThirds)));
   }
 
-  /** The two foci (SymPy foci). */
+  /**
+   * The two foci.
+   *
+   * @returns The two foci.
+   * @see SymPy `sympy.geometry.ellipse.Ellipse.foci`
+   */
   get foci(): [PointNode, PointNode] {
     const c = this.center;
     const [hr, vr] = [this.hradius, this.vradius];
@@ -193,12 +302,24 @@ export class EllipseNode extends GeometrySet {
     return [c.add([mul(-1, fd), 0]), c.add([fd, 0])];
   }
 
-  /** The distance from the center to a focus (SymPy focus_distance). */
+  /**
+   * The distance from the center to a focus.
+   *
+   * @returns The distance from the center to a focus.
+   * @see SymPy `sympy.geometry.ellipse.Ellipse.focus_distance`
+   */
   get focusDistance(): Expr {
     return this.center.distance(this.foci[0]);
   }
 
-  /** The points or entities common to the ellipse and o (SymPy intersection). */
+  /**
+   * The points or entities common to the ellipse and o.
+   *
+   * @param o - Entity to intersect with this one.
+   * @returns The points or entities common to the ellipse and o.
+   * @throws TypeError when a three-dimensional entity is supplied to a planar operation or the operand type has no supported intersection rule.
+   * @see SymPy `sympy.geometry.ellipse.Ellipse.intersection`
+   */
   override intersection(o: unknown): GeometryEntity[] {
     if (o instanceof PointNode) return this.contains(o) ? [o] : [];
     if (o instanceof Segment2DNode || o instanceof Ray2DNode) {
@@ -217,7 +338,14 @@ export class EllipseNode extends GeometrySet {
     throw new TypeError(`Intersection not handled for ${o instanceof GeometryEntity ? o.name : typeof o}`);
   }
 
-  /** The entity is tangent to the ellipse (SymPy is_tangent). */
+  /**
+   * The entity is tangent to the ellipse.
+   *
+   * @param o - Entity tested for tangency.
+   * @returns The entity is tangent to the ellipse.
+   * @throws TypeError when a three-dimensional entity is supplied to a planar operation or tangency is undefined for the supplied entity.
+   * @see SymPy `sympy.geometry.ellipse.Ellipse.is_tangent`
+   */
   isTangent(o: GeometryEntity): boolean {
     if (o instanceof Point2DNode) return false;
     if (o instanceof EllipseNode) {
@@ -247,7 +375,12 @@ export class EllipseNode extends GeometrySet {
     throw new TypeError(`Is_tangent not handled for ${o.name}`);
   }
 
-  /** The major radius (SymPy major; the hradius when the order cannot be decided). */
+  /**
+   * The major radius.
+   *
+   * @returns The major semiaxis length.
+   * @see SymPy `sympy.geometry.ellipse.Ellipse.major`
+   */
   get major(): Expr {
     const [a, b] = [this.hradius, at(this.args, 2)];
     const o = decided(Lt(add(b, mul(-1, a)), 0));
@@ -256,7 +389,12 @@ export class EllipseNode extends GeometrySet {
     return this.hradius;
   }
 
-  /** The minor radius (SymPy minor; the vradius when the order cannot be decided). */
+  /**
+   * The minor radius.
+   *
+   * @returns The minor semiaxis length.
+   * @see SymPy `sympy.geometry.ellipse.Ellipse.minor`
+   */
   get minor(): Expr {
     const [a, b] = [this.hradius, at(this.args, 2)];
     const o = decided(Lt(add(a, mul(-1, b)), 0));
@@ -266,8 +404,14 @@ export class EllipseNode extends GeometrySet {
   }
 
   /**
-   * The lines through p normal to the ellipse; with `prec`, the points
-   * and slopes evaluated to that many digits (SymPy normal_lines).
+   * The lines through p normal to the ellipse; with `prec`, the points and slopes evaluated to that
+   * many digits.
+   *
+   * @param pIn - Point used in the geometric construction or comparison.
+   * @param prec - Numerical precision.
+   * @returns The lines through p normal to the ellipse; with `prec`, the points and slopes evaluated to that many digits.
+   * @throws NotImplementedError when the general ellipse intersection is unsupported.
+   * @see SymPy `sympy.geometry.ellipse.Ellipse.normal_lines`
    */
   normalLines(pIn: PointInput, prec?: number): Line2DNode[] {
     const p = toPoint(pIn, { dim: 2 });
@@ -299,32 +443,64 @@ export class EllipseNode extends GeometrySet {
     return points.map((pt, i) => as2DLine(Line(pt, { slope: at(slopes, i) })));
   }
 
-  /** The least distance from a focus to the ellipse (SymPy periapsis). */
+  /**
+   * The least distance from a focus to the ellipse.
+   *
+   * @returns The least distance from a focus to the ellipse.
+   * @see SymPy `sympy.geometry.ellipse.Ellipse.periapsis`
+   */
   get periapsis(): Expr {
     return mul(this.major, add(1, mul(-1, this.eccentricity)));
   }
 
-  /** The semi-latus rectum (SymPy semilatus_rectum). */
+  /**
+   * The semi-latus rectum.
+   *
+   * @returns The semi-latus rectum.
+   * @see SymPy `sympy.geometry.ellipse.Ellipse.semilatus_rectum`
+   */
   get semilatusRectum(): Expr {
     return mul(this.major, add(1, mul(-1, pow(this.eccentricity, 2))));
   }
 
-  /** The circle with the larger radius as its radius (SymPy auxiliary_circle). */
+  /**
+   * The circle with the larger radius as its radius.
+   *
+   * @returns The circle with the larger radius as its radius.
+   * @see SymPy `sympy.geometry.ellipse.Ellipse.auxiliary_circle`
+   */
   auxiliaryCircle(): GeometryEntity {
     return newCircle(this.center, Max(this.hradius, this.vradius));
   }
 
-  /** The circle of the points from which two perpendicular tangents can be drawn (SymPy director_circle). */
+  /**
+   * The circle of the points from which two perpendicular tangents can be drawn.
+   *
+   * @returns The circle of the points from which two perpendicular tangents can be drawn.
+   * @see SymPy `sympy.geometry.ellipse.Ellipse.director_circle`
+   */
   directorCircle(): GeometryEntity {
     return newCircle(this.center, sqrt(add(pow(this.hradius, 2), pow(this.vradius, 2))));
   }
 
-  /** The parameter interval of the arbitrary point used for plotting (SymPy plot_interval). */
+  /**
+   * The parameter interval of the arbitrary point used for plotting.
+   *
+   * @param parameter - Symbol or name used for the parametrization.
+   * @returns The parameter interval of the arbitrary point used for plotting.
+   * @see SymPy `sympy.geometry.ellipse.Ellipse.plot_interval`
+   */
   plotInterval(parameter: string | Sym = 't'): [Sym, Expr, Expr] {
     return [realSymbol(parameter), mul(-1, S.Pi), S.Pi];
   }
 
-  /** A random point of the ellipse; the same for the same integer seed (SymPy random_point). */
+  /**
+   * A random point of the ellipse; the same for the same integer seed.
+   *
+   * @param seed - Seed for reproducible sampling.
+   * @returns A random point of the ellipse; the same for the same integer seed.
+   * @see SymPy `sympy.geometry.ellipse.Ellipse.random_point`
+   */
   randomPoint(seed?: number | bigint): PointNode {
     const t = realSymbol('t');
     const [x, y] = this.arbitraryPoint(t).args;
@@ -335,7 +511,14 @@ export class EllipseNode extends GeometrySet {
     return toPoint([subs(defd(x), [[cos(t), c]]), subs(defd(y), [[sin(t), s]])]);
   }
 
-  /** The reflection in a horizontal or vertical line (SymPy reflect). */
+  /**
+   * The reflection in a horizontal or vertical line.
+   *
+   * @param line - Line defining the direction or reflection axis.
+   * @returns The reflection in a horizontal or vertical line.
+   * @throws NotImplementedError when the reflection produces a general rotated ellipse.
+   * @see SymPy `sympy.geometry.ellipse.Ellipse.reflect`
+   */
   override reflect(line: Line2DNode): GeometryEntity {
     if (same(line.slope, 0) || same(line.slope, S.Infinity)) {
       const c = this.center.reflect(line);
@@ -352,7 +535,15 @@ export class EllipseNode extends GeometrySet {
     throw new NotImplementedError(`General Ellipse is not supported but the equation of the reflected Ellipse is given by the zeros of: f(${x.name}, ${y.name}) = ${String(result)}`);
   }
 
-  /** The ellipse rotated by a multiple of pi/2 (SymPy rotate). */
+  /**
+   * The ellipse rotated by a multiple of pi/2.
+   *
+   * @param angle - Rotation angle in radians.
+   * @param pt - Center of rotation, defaulting to the origin.
+   * @returns The ellipse rotated by a multiple of pi/2.
+   * @throws NotImplementedError when the rotation of a noncircular ellipse is not a multiple of a quarter turn.
+   * @see SymPy `sympy.geometry.ellipse.Ellipse.rotate`
+   */
   override rotate(angle: ExprLike = 0, pt?: PointInput | null): GeometryEntity {
     if (same(this.hradius, this.vradius)) return newEllipse(this.center.rotate(angle, pt), this.hradius, this.vradius);
     const a = sympify(angle);
@@ -361,13 +552,27 @@ export class EllipseNode extends GeometrySet {
     throw new NotImplementedError('Only rotations of pi/2 are currently supported for Ellipse.');
   }
 
-  /** The ellipse scaled by x and y about pt (SymPy scale). */
+  /**
+   * The ellipse scaled by x and y about pt.
+   *
+   * @param x - Scale factor along the x axis.
+   * @param y - Scale factor along the y axis.
+   * @param pt - Fixed point of the scaling, defaulting to the origin.
+   * @returns The ellipse scaled by x and y about pt.
+   * @see SymPy `sympy.geometry.ellipse.Ellipse.scale`
+   */
   override scale(x: ExprLike = 1, y: ExprLike = 1, pt?: PointInput | null): GeometryEntity {
     if (pt !== undefined && pt !== null) return super.scale(x, y, pt);
     return newEllipse(this.center.scale(x, y), mul(this.hradius, x), mul(this.vradius, y));
   }
 
-  /** The tangent lines through p (SymPy tangent_lines). */
+  /**
+   * The tangent lines through p.
+   *
+   * @param pIn - Point used in the geometric construction or comparison.
+   * @returns The tangent lines through p.
+   * @see SymPy `sympy.geometry.ellipse.Ellipse.tangent_lines`
+   */
   tangentLines(pIn: PointInput): Line2DNode[] {
     const p = toPoint(pIn, { dim: 2 });
     if (this.enclosesPoint(p) === true) return [];
@@ -393,7 +598,13 @@ export class EllipseNode extends GeometrySet {
     return [as2DLine(Line(p, at(tangentPoints, 0))), as2DLine(Line(p, at(tangentPoints, 1)))];
   }
 
-  /** The second moments of area (Ixx, Iyy, Ixy) about the centroid or a point (SymPy second_moment_of_area). */
+  /**
+   * The second moments of area (Ixx, Iyy, Ixy) about the centroid or a point.
+   *
+   * @param point - Point at which to evaluate the operation.
+   * @returns The second moments of area (Ixx, Iyy, Ixy) about the centroid or a point.
+   * @see SymPy `sympy.geometry.ellipse.Ellipse.second_moment_of_area`
+   */
   secondMomentOfArea(point?: PointInput): [Expr, Expr, Expr] {
     let Ixx = mul(S.Pi, this.hradius, pow(this.vradius, 3), S.Half, S.Half);
     let Iyy = mul(S.Pi, pow(this.hradius, 3), this.vradius, S.Half, S.Half);
@@ -406,13 +617,24 @@ export class EllipseNode extends GeometrySet {
     return [Ixx, Iyy, Ixy];
   }
 
-  /** The polar second moment of area (SymPy polar_second_moment_of_area). */
+  /**
+   * The polar second moment of area.
+   *
+   * @returns The polar second moment of area.
+   * @see SymPy `sympy.geometry.ellipse.Ellipse.polar_second_moment_of_area`
+   */
   polarSecondMomentOfArea(): Expr {
     const [a, b] = this.secondMomentOfArea();
     return add(a, b);
   }
 
-  /** The section moduli (Sx, Sy) about the centroid or a point (SymPy section_modulus). */
+  /**
+   * The section moduli (Sx, Sy) about the centroid or a point.
+   *
+   * @param point - Point at which to evaluate the operation.
+   * @returns The section moduli (Sx, Sy) about the centroid or a point.
+   * @see SymPy `sympy.geometry.ellipse.Ellipse.section_modulus`
+   */
   sectionModulus(point?: PointInput): [Expr, Expr] {
     const { x: xc, y: yc } = this.center;
     let x: Expr, y: Expr;
@@ -430,7 +652,12 @@ export class EllipseNode extends GeometrySet {
     return [mul(sx, pow(y, -1)), mul(sy, pow(x, -1))];
   }
 
-  /** SymPy GeometryEntity.encloses for an ellipse. */
+  /**
+   * Tests whether the given entity encloses this entity.
+   *
+   * @param container - Geometric entity tested for enclosure.
+   * @returns Whether the supplied entity encloses this one.
+   */
   override enclosedBy(container: GeometryEntity): boolean {
     return (
       container.enclosesPoint(this.center) === true &&
@@ -452,49 +679,119 @@ const sortedPoints = (ps: readonly PointNode[]): PointNode[] => ordered(ps).filt
 
 const sharedRandom = new Random();
 
-/** SymPy Circle: a circle with a center and a radius. */
+/**
+ * A circle with a center and a radius.
+ *
+ * @see SymPy `sympy.geometry.ellipse.Circle`
+ * @example
+ * ```ts
+ * import { Circle, ex } from '@symjs/symjs';
+ *
+ * Circle([0, 0], 5); // => Circle(Point2D(0, 0), 5)
+ * Circle(ex`x**2 + y**2 - 25`); // => Circle(Point2D(0, 0), 5)
+ * ```
+ */
 export class CircleNode extends EllipseNode {
+  /**
+   * Constructs an instance of `CircleNode`.
+   *
+   * @param center - Center of the figure.
+   * @param radius - Distance from the center to the circumference.
+   */
   constructor(center: Point2DNode, radius: Expr) {
     super([center, radius], 'Circle');
   }
 
+  /**
+   * Rebuilds the expression with replacement arguments in their original order.
+   *
+   * @param args - Replacement arguments in the same order as `args` on the original expression.
+   * @returns The rebuilt expression.
+   */
   override withArgs(args: readonly Expr[]): Expr {
     return newCircle(at(args, 0), at(args, 1));
   }
 
-  /** The radius (SymPy radius). */
+  /**
+   * The radius.
+   *
+   * @returns The radius.
+   * @see SymPy `sympy.geometry.ellipse.Circle.radius`
+   */
   get radius(): Expr {
     return at(this.args, 1);
   }
 
+  /**
+   * The radius along the horizontal axis.
+   *
+   * @returns The radius along the horizontal axis.
+   * @see SymPy `sympy.geometry.ellipse.Circle.hradius`
+   */
   override get hradius(): Expr {
     return this.radius;
   }
 
-  /** The vertical radius: the absolute value of the radius (SymPy vradius). */
+  /**
+   * The vertical radius: the absolute value of the radius.
+   *
+   * @returns The vertical radius: the absolute value of the radius.
+   * @see SymPy `sympy.geometry.ellipse.Circle.vradius`
+   */
   override get vradius(): Expr {
     return abs(this.radius);
   }
 
+  /**
+   * Longer axis of the ellipse (if it can be determined) else hradius.
+   *
+   * @returns The major semiaxis length.
+   * @see SymPy `sympy.geometry.ellipse.Circle.major`
+   */
   override get major(): Expr {
     return this.radius;
   }
 
+  /**
+   * Shorter axis of the ellipse (if it can be determined) else vradius.
+   *
+   * @returns The minor semiaxis length.
+   * @see SymPy `sympy.geometry.ellipse.Circle.minor`
+   */
   override get minor(): Expr {
     return this.radius;
   }
 
-  /** The center and radius evaluated numerically (SymPy _eval_evalf). */
+  /**
+   * The center and radius evaluated numerically.
+   *
+   * @param evalfArg - Function that evaluates an operand numerically.
+   * @param _dps - Decimal digits of numerical precision.
+   * @returns The numerically evaluated expression.
+   * @see SymPy `sympy.geometry.ellipse.Circle._eval_evalf`
+   */
   override evalfSelf(evalfArg: (e: Expr) => Expr, _dps: number): Expr {
     return newCircle(evalfArg(this.center), evalfArg(this.radius), { evaluate: false });
   }
 
-  /** The perimeter 2*pi*r (SymPy circumference). */
+  /**
+   * The perimeter 2*pi*r.
+   *
+   * @returns The perimeter 2*pi*r.
+   * @see SymPy `sympy.geometry.ellipse.Circle.circumference`
+   */
   override get circumference(): Expr {
     return mul(2, S.Pi, this.radius);
   }
 
-  /** The equation of the circle in real symbols x and y (SymPy equation). */
+  /**
+   * The equation of the circle in real symbols x and y.
+   *
+   * @param x - Symbol for the x coordinate.
+   * @param y - Symbol for the y coordinate.
+   * @returns The equation of the circle in real symbols x and y.
+   * @see SymPy `sympy.geometry.ellipse.Circle.equation`
+   */
   override equation(x: string | Sym = 'x', y: string | Sym = 'y'): Expr {
     const [X, Y] = [realSymbol(x), realSymbol(y)];
     const t1 = pow(add(X, mul(-1, this.center.x)), 2);
@@ -502,20 +799,40 @@ export class CircleNode extends EllipseNode {
     return add(t1, t2, mul(-1, pow(this.major, 2)));
   }
 
-  /** The point lies inside the circle (SymPy encloses_point). */
+  /**
+   * The point lies inside the circle.
+   *
+   * @param pIn - Point used in the geometric construction or comparison.
+   * @returns The point lies inside the circle.
+   * @see SymPy `sympy.geometry.ellipse.Circle.encloses_point`
+   */
   override enclosesPoint(pIn: PointInput): boolean | 'unknown' {
     const p = toPoint(pIn, { dim: 2 });
     if (this.contains(p)) return false;
     return isPositive(add(this.radius, mul(-1, this.center.distance(p)))) ?? 'unknown';
   }
 
-  /** The reflection in a line: the reflected center with the radius negated (SymPy Circle.reflect). */
+  /**
+   * The reflection in a line: the reflected center with the radius negated.
+   *
+   * @param line - Line defining the direction or reflection axis.
+   * @returns The reflection in a line: the reflected center with the radius negated.
+   * @see SymPy `sympy.geometry.ellipse.Circle.reflect`
+   */
   override reflect(line: Line2DNode): GeometryEntity {
     const c = this.center.reflect(line);
     return newCircle(c, mul(-1, this.radius));
   }
 
-  /** The circle scaled by x and y about pt: a circle or an ellipse (SymPy Circle.scale). */
+  /**
+   * The circle scaled by x and y about pt: a circle or an ellipse.
+   *
+   * @param xIn - Scale factor along the x axis.
+   * @param yIn - Scale factor along the y axis.
+   * @param pt - Fixed point of the scaling, defaulting to the origin.
+   * @returns The circle scaled by x and y about pt: a circle or an ellipse.
+   * @see SymPy `sympy.geometry.ellipse.Circle.scale`
+   */
   override scale(xIn: ExprLike = 1, yIn: ExprLike = 1, pt?: PointInput | null): GeometryEntity {
     if (pt !== undefined && pt !== null) return GeometryEntity.prototype.scale.call(this, xIn, yIn, pt);
     const c = this.center.scale(xIn, yIn);
@@ -627,9 +944,19 @@ function makeCircle(c: PointNode, r: Expr): GeometryEntity {
 type EllipseArg = PointInput | ExprLike | EllipseOptions | undefined;
 
 /**
- * SymPy Ellipse(center, hradius, vradius, eccentricity): an Ellipse, a
- * Circle (equal radii) or a Segment (a zero radius). The radii and the
- * eccentricity can also be given as options.
+ * An axis-aligned ellipse specified by its center and radii or eccentricity.
+ *
+ * @param args - Center and two of horizontal radius, vertical radius and eccentricity, supplied positionally or by options.
+ * @returns The resulting geometric entity, including a lower-dimensional entity for degenerate input.
+ * @throws RangeError when the center is not two-dimensional or the radii and eccentricity do not supply exactly two parameters.
+ * @throws GeometryError when the supplied eccentricity or derived radii are invalid.
+ * @see SymPy `sympy.geometry.ellipse.Ellipse`
+ * @example
+ * ```ts
+ * import { Ellipse } from '@symjs/symjs';
+ *
+ * Ellipse([0, 0], 5, 1); // => Ellipse(Point2D(0, 0), 5, 1)
+ * ```
  */
 export const Ellipse = /* @__PURE__ */ callableClass(EllipseNode, (...args: EllipseArg[]): GeometryEntity => {
   const last = args[args.length - 1];
@@ -646,8 +973,19 @@ export const Ellipse = /* @__PURE__ */ callableClass(EllipseNode, (...args: Elli
 export type Ellipse = EllipseNode;
 
 /**
- * SymPy Circle(center, radius), Circle(p1, p2, p3) or Circle(equation,
- * {x, y}): a Circle (or the point for a zero radius).
+ * A circle specified by a center and radius, three points, or a circle equation.
+ *
+ * @param args - Center and radius, three points, or a circle equation and coordinate options.
+ * @returns The resulting geometric entity, including a lower-dimensional entity for degenerate input.
+ * @throws GeometryError when the inputs do not define a circle or its radius would be imaginary.
+ * @see SymPy `sympy.geometry.ellipse.Circle`
+ * @example
+ * ```ts
+ * import { Circle, ex } from '@symjs/symjs';
+ *
+ * Circle([0, 0], 5); // => Circle(Point2D(0, 0), 5)
+ * Circle(ex`x**2 + y**2 - 25`); // => Circle(Point2D(0, 0), 5)
+ * ```
  */
 export const Circle = /* @__PURE__ */ callableClass(CircleNode, (...args: unknown[]): GeometryEntity => newCircle(...args));
 export type Circle = CircleNode;

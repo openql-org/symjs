@@ -34,7 +34,7 @@ import type { PointInput } from './entity';
 import { GeometryError, Undecidable } from './exceptions';
 import { BasicNode } from '../core/basic';
 
-/** Options of the Point constructors (SymPy keyword arguments). */
+/** Options of the Point constructors. */
 export interface PointOptions {
   /** Convert Floats to Rationals (default true). */
   evaluate?: boolean;
@@ -58,51 +58,110 @@ const isNumberExpr = (e: Expr): boolean => e.freeSymbols().size === 0;
 const isNotExpr = (e: Expr): boolean => e instanceof GeometryEntity || e instanceof TupleNode || e instanceof BasicNode || e instanceof BoolAtom || e instanceof Rel || e.kind === 'Set';
 
 /**
- * SymPy Point: a point in n-dimensional Euclidean space. Point2D and
- * Point3D are its subclasses for two and three dimensions.
+ * A point in n-dimensional Euclidean space. Point2D and Point3D are its subclasses for two and
+ * three dimensions.
+ *
+ * @see SymPy `sympy.geometry.point.Point`
+ * @example
+ * ```ts
+ * import { Point, ex } from '@symjs/symjs';
+ *
+ * Point([1, 2]); // => Point2D(1, 2)
+ * Point(0, ex`x`); // => Point2D(0, x)
+ * ```
  */
 export class PointNode extends GeometryEntity {
+  /**
+   * Constructs an instance of `PointNode`.
+   *
+   * @param coords - Coordinates in axis order.
+   * @param name - Symbolic name.
+   */
   constructor(coords: readonly Expr[], name = 'Point') {
     super(name, coords);
   }
 
+  /**
+   * Whether the entity is a point.
+   *
+   * @returns Whether the entity is a point.
+   * @see SymPy `sympy.geometry.point.Point.is_Point`
+   */
   override get isPoint(): boolean {
     return true;
   }
 
+  /**
+   * Rebuilds the expression with replacement arguments in their original order.
+   *
+   * @param args - Replacement arguments in the same order as `args` on the original expression.
+   * @returns The rebuilt expression.
+   */
   override withArgs(args: readonly Expr[]): Expr {
     return newPoint(args);
   }
 
-  /** The number of coordinates (SymPy ambient_dimension). */
+  /**
+   * The number of coordinates.
+   *
+   * @returns The number of coordinates.
+   * @see SymPy `sympy.geometry.point.Point.ambient_dimension`
+   */
   get ambientDimension(): number {
     return this.args.length;
   }
 
-  /** The coordinates (SymPy coordinates, the arguments). */
+  /**
+   * The coordinates.
+   *
+   * @returns The coordinates.
+   */
   get coordinates(): readonly Expr[] {
     return this.args;
   }
 
-  /** The coordinate i (SymPy p[i]). */
+  /**
+   * The coordinate i.
+   *
+   * @param i - Zero-based index.
+   * @returns The coordinate i.
+   * @see SymPy `sympy.geometry.point.Point.__getitem__`
+   */
   coordinate(i: number): Expr {
     return at(this.args, i < 0 ? this.args.length + i : i);
   }
 
-  /** SymPy `item in p`: item is one of the coordinates (a Point2D or Point3D: item is the point). */
+  /**
+   * Item is one of the coordinates (a Point2D or Point3D: item is the point).
+   *
+   * @param item - Index, slice or array entry.
+   * @returns Whether the operand belongs to the entity.
+   */
   override contains(item: unknown): boolean {
     if (this instanceof Point2DNode || this instanceof Point3DNode) return item instanceof Expr && item.key === this.key;
     return item instanceof Expr && this.args.some((a) => a.key === item.key);
   }
 
-  /** SymPy GeometryEntity.encloses for a point: the container encloses it. */
+  /**
+   * The container encloses it.
+   *
+   * @param container - Geometric entity tested for enclosure.
+   * @returns Whether the supplied entity encloses this one.
+   */
   override enclosedBy(container: GeometryEntity): boolean {
     return container.enclosesPoint(this) === true;
   }
 
   // ---- arithmetic ----------------------------------------------------------
 
-  /** SymPy p + q: the coordinatewise sum, simplified. */
+  /**
+   * The coordinatewise sum, simplified.
+   *
+   * @param other - Other addend.
+   * @returns The coordinatewise sum, simplified.
+   * @throws GeometryError when the other operand cannot be added to a point.
+   * @see SymPy `sympy.geometry.point.Point.__add__`
+   */
   override add(other: ExprLike | PointInput): PointNode {
     let s: PointNode, o: PointNode;
     try {
@@ -117,14 +176,26 @@ export class PointNode extends GeometryEntity {
     );
   }
 
-  /** SymPy p - q. */
+  /**
+   * Subtracts the corresponding coordinates of the other point.
+   *
+   * @param other - Operand to subtract.
+   * @returns The resulting point.
+   * @see SymPy `sympy.geometry.point.Point.__sub__`
+   */
   override sub(other: ExprLike | PointInput): PointNode {
     const o = toInput(other);
     const coords = o instanceof Expr ? o.args : o;
     return this.add(coords.map((c) => mul(-1, c)));
   }
 
-  /** SymPy p*factor: the coordinates multiplied, simplified. */
+  /**
+   * The coordinates multiplied, simplified.
+   *
+   * @param factor - Scalar multiplying the coordinates.
+   * @returns The coordinates multiplied, simplified.
+   * @see SymPy `sympy.geometry.point.Point.__mul__`
+   */
   override mul(factor: ExprLike): PointNode {
     const f = sympify(factor);
     return newPoint(
@@ -133,7 +204,13 @@ export class PointNode extends GeometryEntity {
     );
   }
 
-  /** SymPy p/divisor: the coordinates divided, simplified. */
+  /**
+   * The coordinates divided, simplified.
+   *
+   * @param divisor - Scalar dividing the coordinates.
+   * @returns The coordinates divided, simplified.
+   * @see SymPy `sympy.geometry.point.Point.__truediv__`
+   */
   override div(divisor: ExprLike): PointNode {
     const d = sympify(divisor);
     return newPoint(
@@ -142,7 +219,12 @@ export class PointNode extends GeometryEntity {
     );
   }
 
-  /** SymPy -p. */
+  /**
+   * Negates all coordinates of the point.
+   *
+   * @returns The resulting point.
+   * @see SymPy `sympy.geometry.point.Point.__neg__`
+   */
   override neg(): PointNode {
     return newPoint(
       this.args.map((x) => mul(-1, x)),
@@ -150,19 +232,34 @@ export class PointNode extends GeometryEntity {
     );
   }
 
-  /** SymPy abs(p): the distance from the origin. */
+  /**
+   * The distance from the origin.
+   *
+   * @returns The distance from the origin.
+   * @see SymPy `sympy.geometry.point.Point.__abs__`
+   */
   abs(): Expr {
     return newPoint(this.args.map(() => S.Zero)).distance(this);
   }
 
   // ---- properties ----------------------------------------------------------
 
-  /** The length of a point is zero (SymPy length). */
+  /**
+   * The length of a point is zero.
+   *
+   * @returns The length of a point is zero.
+   * @see SymPy `sympy.geometry.point.Point.length`
+   */
   get length(): Expr {
     return S.Zero;
   }
 
-  /** The origin of the space of the point (SymPy origin). */
+  /**
+   * The origin of the space of the point.
+   *
+   * @returns The origin of the space of the point.
+   * @see SymPy `sympy.geometry.point.Point.origin`
+   */
   get origin(): PointNode {
     return newPoint(
       this.args.map(() => S.Zero),
@@ -170,7 +267,12 @@ export class PointNode extends GeometryEntity {
     );
   }
 
-  /** A nonzero vector orthogonal to the point as a vector (SymPy orthogonal_direction). */
+  /**
+   * A nonzero vector orthogonal to the point as a vector.
+   *
+   * @returns A nonzero vector orthogonal to the point as a vector.
+   * @see SymPy `sympy.geometry.point.Point.orthogonal_direction`
+   */
   get orthogonalDirection(): PointNode {
     const dim = this.ambientDimension;
     const zeros = (n: number): Expr[] => Array.from({ length: n }, () => S.Zero);
@@ -179,12 +281,22 @@ export class PointNode extends GeometryEntity {
     return newPoint([mul(-1, this.coordinate(1)), this.coordinate(0), ...zeros(dim - 2)]);
   }
 
-  /** The vector of length 1 in the direction of the point (SymPy unit). */
+  /**
+   * The vector of length 1 in the direction of the point.
+   *
+   * @returns The vector of length 1 in the direction of the point.
+   * @see SymPy `sympy.geometry.point.Point.unit`
+   */
   get unit(): PointNode {
     return this.div(this.abs());
   }
 
-  /** All coordinates are zero (SymPy is_zero; 'unknown' when undecided). */
+  /**
+   * All coordinates are zero.
+   *
+   * @returns The truth value, or `'unknown'` when the relation cannot be decided.
+   * @see SymPy `sympy.geometry.point.Point.is_zero`
+   */
   get isZero(): Truth {
     const nonzero = this.args.map(isNonZero);
     if (nonzero.some((v) => v === true)) return false;
@@ -192,7 +304,12 @@ export class PointNode extends GeometryEntity {
     return true;
   }
 
-  /** Some coordinate is nonzero (SymPy is_nonzero; 'unknown' when undecided). */
+  /**
+   * Some coordinate is nonzero.
+   *
+   * @returns The truth value, or `'unknown'` when the relation cannot be decided.
+   * @see SymPy `sympy.geometry.point.Point.is_nonzero`
+   */
   get isNonzero(): Truth {
     const z = this.isZero;
     return z === 'unknown' ? z : !z;
@@ -200,7 +317,13 @@ export class PointNode extends GeometryEntity {
 
   // ---- metric --------------------------------------------------------------
 
-  /** The Euclidean distance to a point or another entity (SymPy distance). */
+  /**
+   * The Euclidean distance to a point or another entity.
+   *
+   * @param other - Entity to measure the distance to.
+   * @returns The Euclidean distance to a point or another entity.
+   * @see SymPy `sympy.geometry.point.Point.distance`
+   */
   distance(other: PointInput): Expr {
     const o = other instanceof GeometryEntity ? other : toPoint(other, { dim: this.ambientDimension });
     if (o instanceof PointNode) {
@@ -210,38 +333,75 @@ export class PointNode extends GeometryEntity {
     return o.distance(this);
   }
 
-  /** The dot product with p as vectors (SymPy dot). */
+  /**
+   * The dot product with p as vectors.
+   *
+   * @param p - Point used in the geometric construction or comparison.
+   * @returns The dot product with p as vectors.
+   * @see SymPy `sympy.geometry.point.Point.dot`
+   */
   dot(p: PointInput): Expr {
     const q = toPoint(p);
     return add(...this.args.map((a, i) => mul(a, q.coordinate(i))));
   }
 
-  /** The points are the same, with coordinates that may differ in form (SymPy equals). */
+  /**
+   * The points are the same, with coordinates that may differ in form.
+   *
+   * @param other - Object to compare with this one.
+   * @returns Whether the operands are equal.
+   * @see SymPy `sympy.geometry.point.Point.equals`
+   */
   override equals(other: ExprLike): boolean {
     if (!(other instanceof PointNode) || this.args.length !== other.args.length) return false;
     return this.args.every((a, i) => exprEquals(a, at(other.args, i)) === true);
   }
 
-  /** The sum of the absolute differences of the coordinates (SymPy taxicab_distance). */
+  /**
+   * The sum of the absolute differences of the coordinates.
+   *
+   * @param p - Point used in the geometric construction or comparison.
+   * @returns The sum of the absolute differences of the coordinates.
+   * @see SymPy `sympy.geometry.point.Point.taxicab_distance`
+   */
   taxicabDistance(p: PointInput): Expr {
     const [s, q] = pair2(normalizeDimension([this, toPoint(p)]));
     return add(...s.args.map((a, i) => abs(add(a, mul(-1, at(q.args, i))))));
   }
 
-  /** The Canberra distance to p (SymPy canberra_distance). */
+  /**
+   * The Canberra distance to p.
+   *
+   * @param p - Point used in the geometric construction or comparison.
+   * @returns The Canberra distance to p.
+   * @throws RangeError when the projection direction is the zero vector.
+   * @see SymPy `sympy.geometry.point.Point.canberra_distance`
+   */
   canberraDistance(p: PointInput): Expr {
     const [s, q] = pair2(normalizeDimension([this, toPoint(p)]));
     if (this.isZero === true && q.isZero === true) throw new RangeError('Cannot project to the zero vector.');
     return add(...s.args.map((a, i) => mul(abs(add(a, mul(-1, at(q.args, i)))), pow(add(abs(a), abs(at(q.args, i))), -1))));
   }
 
-  /** The midpoint of this point and p (SymPy midpoint). */
+  /**
+   * The midpoint of this point and p.
+   *
+   * @param p - Point used in the geometric construction or comparison.
+   * @returns The midpoint of this point and p.
+   * @see SymPy `sympy.geometry.point.Point.midpoint`
+   */
   midpoint(p: PointInput): PointNode {
     const [s, q] = pair2(normalizeDimension([this, toPoint(p)]));
     return newPoint(s.args.map((a, i) => simplify(mul(add(a, at(q.args, i)), S.Half))));
   }
 
-  /** The intersection with another entity: [this] for the same point, [] for another one (SymPy intersection). */
+  /**
+   * The intersection with another entity: [this] for the same point, [] for another one.
+   *
+   * @param other - Entity to intersect with this one.
+   * @returns The intersection with another entity: [this] for the same point, [] for another one.
+   * @see SymPy `sympy.geometry.point.Point.intersection`
+   */
   override intersection(other: unknown): GeometryEntity[] {
     const o = other instanceof GeometryEntity ? other : toPoint(toInput(other));
     if (o instanceof PointNode) {
@@ -253,13 +413,25 @@ export class PointNode extends GeometryEntity {
     return o.intersection(this);
   }
 
-  /** The point and the others lie on one line (SymPy is_collinear). */
+  /**
+   * The point and the others lie on one line.
+   *
+   * @param args - Operands in their defining order.
+   * @returns The point and the others lie on one line.
+   * @see SymPy `sympy.geometry.point.Point.is_collinear`
+   */
   isCollinear(...args: PointInput[]): boolean {
     const points = uniqPoints(normalizeDimension([this, ...args].map((a) => toPoint(a))));
     return affineRank(...points) <= 1;
   }
 
-  /** The point and the others lie on one circle (SymPy is_concyclic). */
+  /**
+   * The point and the others lie on one circle.
+   *
+   * @param args - Operands in their defining order.
+   * @returns The point and the others lie on one circle.
+   * @see SymPy `sympy.geometry.point.Point.is_concyclic`
+   */
   isConcyclic(...args: PointInput[]): boolean {
     let points = uniqPoints(normalizeDimension([this, ...args].map((a) => toPoint(a))));
     if (!(affineRank(...points) <= 2)) return false;
@@ -270,7 +442,14 @@ export class PointNode extends GeometryEntity {
     return !pivots.includes(origin.args.length);
   }
 
-  /** The point is a scalar multiple of p as vectors (SymPy is_scalar_multiple). */
+  /**
+   * The point is a scalar multiple of p as vectors.
+   *
+   * @param p - Point used in the geometric construction or comparison.
+   * @returns The point is a scalar multiple of p as vectors.
+   * @throws Undecidable when scalar proportionality is undecidable.
+   * @see SymPy `sympy.geometry.point.Point.is_scalar_multiple`
+   */
   isScalarMultiple(p: PointInput): boolean {
     const [s, o] = pair2(normalizeDimension([this, toPoint(p)]));
     if (s.ambientDimension === 2) {
@@ -281,7 +460,14 @@ export class PointNode extends GeometryEntity {
     return matrixRank([s.args, o.args], (x) => isZeroQ(x)) < 2;
   }
 
-  /** The point with its coordinates evaluated numerically (SymPy _eval_evalf). */
+  /**
+   * The point with its coordinates evaluated numerically.
+   *
+   * @param evalfArg - Function that evaluates an operand numerically.
+   * @param _dps - Decimal digits of numerical precision.
+   * @returns The numerically evaluated expression.
+   * @see SymPy `sympy.geometry.point.Point._eval_evalf`
+   */
   override evalfSelf(evalfArg: (e: Expr) => Expr, _dps: number): Expr {
     return newPoint(this.args.map(evalfArg), { evaluate: false });
   }
@@ -289,8 +475,11 @@ export class PointNode extends GeometryEntity {
   // ---- static methods ------------------------------------------------------
 
   /**
-   * The affine rank of the points: the dimension of the smallest affine
-   * subspace containing them (SymPy affine_rank).
+   * The affine rank of the points: the dimension of the smallest affine subspace containing them.
+   *
+   * @param args - Operands in their defining order.
+   * @returns The affine rank of the points: the dimension of the smallest affine subspace containing them.
+   * @see SymPy `sympy.geometry.point.Point.affine_rank`
    */
   static affineRank(...args: PointInput[]): number {
     return affineRank(...args.map((a) => toPoint(a)));
@@ -299,7 +488,13 @@ export class PointNode extends GeometryEntity {
   /** The ambient dimension of the class (SymPy _ambient_dimension): undefined for Point. */
   protected static readonly classDimension: number | undefined = undefined;
 
-  /** The points lie in one plane (SymPy are_coplanar). */
+  /**
+   * The points lie in one plane.
+   *
+   * @param points - Points to compare.
+   * @returns The points lie in one plane.
+   * @see SymPy `sympy.geometry.point.Point.are_coplanar`
+   */
   static areCoplanar(...points: PointInput[]): boolean {
     if (points.length <= 1) return true;
     // (called on Point2D or Point3D, the points are taken in the dimension of that class)
@@ -309,7 +504,15 @@ export class PointNode extends GeometryEntity {
     return affineRank(...uniqPoints(ps)) <= 2;
   }
 
-  /** The projection of the vector a on the line through the origin and b (SymPy project). */
+  /**
+   * The projection of the vector a on the line through the origin and b.
+   *
+   * @param a - Point whose position vector is projected.
+   * @param b - Point defining the projection direction.
+   * @returns The projection of the vector a on the line through the origin and b.
+   * @throws RangeError when the projection direction is the zero vector.
+   * @see SymPy `sympy.geometry.point.Point.project`
+   */
   static project(a: PointInput, b: PointInput): PointNode {
     const [p, q] = pair2(normalizeDimension([toPoint(a), toPoint(b)]));
     if (q.isZero === true) throw new RangeError('Cannot project to the zero vector.');
@@ -317,31 +520,76 @@ export class PointNode extends GeometryEntity {
   }
 }
 
-/** SymPy Point2D: a point in the plane. */
+/**
+ * A point in the plane.
+ *
+ * @see SymPy `sympy.geometry.point.Point2D`
+ * @example
+ * ```ts
+ * import { Point2D, ex } from '@symjs/symjs';
+ *
+ * Point2D([1, 2]); // => Point2D(1, 2)
+ * Point2D(0, ex`x`); // => Point2D(0, x)
+ * ```
+ */
 export class Point2DNode extends PointNode {
   protected static override readonly classDimension: number | undefined = 2;
+  /**
+   * Constructs an instance of `Point2DNode`.
+   *
+   * @param coords - Coordinates in axis order.
+   */
   constructor(coords: readonly Expr[]) {
     super(coords, 'Point2D');
   }
 
+  /**
+   * Rebuilds the expression with replacement arguments in their original order.
+   *
+   * @param args - Replacement arguments in the same order as `args` on the original expression.
+   * @returns The rebuilt expression.
+   */
   override withArgs(args: readonly Expr[]): Expr {
     return newPoint(args, { dim: 2 });
   }
 
-  /** The x coordinate. */
+  /**
+   * The x coordinate.
+   *
+   * @returns The x coordinate.
+   * @see SymPy `sympy.geometry.point.Point2D.x`
+   */
   get x(): Expr {
     return at(this.args, 0);
   }
-  /** The y coordinate. */
+  /**
+   * The y coordinate.
+   *
+   * @returns The y coordinate.
+   * @see SymPy `sympy.geometry.point.Point2D.y`
+   */
   get y(): Expr {
     return at(this.args, 1);
   }
 
+  /**
+   * The bounding rectangle as `[xmin, ymin, xmax, ymax]`.
+   *
+   * @returns Return a tuple (xmin, ymin, xmax, ymax) representing the bounding rectangle for the geometric figure.
+   * @see SymPy `sympy.geometry.point.Point2D.bounds`
+   */
   override get bounds(): [Expr, Expr, Expr, Expr] {
     return [this.x, this.y, this.x, this.y];
   }
 
-  /** The point rotated counterclockwise by angle about pt (the origin by default) (SymPy rotate). */
+  /**
+   * The point rotated counterclockwise by angle about pt (the origin by default).
+   *
+   * @param angle - Rotation angle in radians.
+   * @param pt - Center of rotation, defaulting to the origin.
+   * @returns The point rotated counterclockwise by angle about pt (the origin by default).
+   * @see SymPy `sympy.geometry.point.Point2D.rotate`
+   */
   override rotate(angle: ExprLike, pt?: PointInput | null): Point2DNode {
     const c = cos(angle);
     const s = sin(angle);
@@ -357,7 +605,15 @@ export class Point2DNode extends PointNode {
     return as2D(rv);
   }
 
-  /** The point scaled by x and y about pt (the origin by default) (SymPy scale). */
+  /**
+   * The point scaled by x and y about pt (the origin by default).
+   *
+   * @param x - Scale factor along the x axis.
+   * @param y - Scale factor along the y axis.
+   * @param pt - Fixed point of the scaling, defaulting to the origin.
+   * @returns The point scaled by x and y about pt (the origin by default).
+   * @see SymPy `sympy.geometry.point.Point2D.scale`
+   */
   override scale(x: ExprLike = 1, y: ExprLike = 1, pt?: PointInput | null): Point2DNode {
     if (pt !== undefined && pt !== null) {
       const p = toPoint(pt, { dim: 2 });
@@ -366,69 +622,153 @@ export class Point2DNode extends PointNode {
     return as2D(newPoint([mul(this.x, x), mul(this.y, y)]));
   }
 
-  /** The point transformed by a 3x3 matrix acting on the row (x, y, 1) (SymPy transform). */
+  /**
+   * The point transformed by a 3x3 matrix acting on the row (x, y, 1).
+   *
+   * @param matrix - Matrix defining the linear or affine transformation.
+   * @returns The point transformed by a 3x3 matrix acting on the row (x, y, 1).
+   * @throws RangeError when the transformation matrix is not three by three.
+   * @see SymPy `sympy.geometry.point.Point2D.transform`
+   */
   transform(matrix: Matrix): Point2DNode {
     if (!(matrix instanceof Matrix) || matrix.rows !== 3 || matrix.cols !== 3) throw new RangeError('matrix must be a 3x3 matrix');
     const r = Matrix.of([[this.x, this.y, 1]]).mul(matrix);
     return as2D(newPoint([r.get(0, 0), r.get(0, 1)]));
   }
 
-  /** The point shifted by x and y (SymPy translate). */
+  /**
+   * The point shifted by x and y.
+   *
+   * @param x - Displacement along the x axis.
+   * @param y - Displacement along the y axis.
+   * @returns The point shifted by x and y.
+   * @see SymPy `sympy.geometry.point.Point2D.translate`
+   */
   override translate(x: ExprLike = 0, y: ExprLike = 0): Point2DNode {
     return as2D(newPoint([add(this.x, x), add(this.y, y)]));
   }
 }
 
-/** SymPy Point3D: a point in three-dimensional space. */
+/**
+ * A point in three-dimensional space.
+ *
+ * @see SymPy `sympy.geometry.point.Point3D`
+ * @example
+ * ```ts
+ * import { Point3D, ex } from '@symjs/symjs';
+ *
+ * Point3D([1, 2, 3]); // => Point3D(1, 2, 3)
+ * Point3D(0, ex`x`, 3); // => Point3D(0, x, 3)
+ * ```
+ */
 export class Point3DNode extends PointNode {
   protected static override readonly classDimension: number | undefined = 3;
+  /**
+   * Constructs an instance of `Point3DNode`.
+   *
+   * @param coords - Coordinates in axis order.
+   */
   constructor(coords: readonly Expr[]) {
     super(coords, 'Point3D');
   }
 
+  /**
+   * Rebuilds the expression with replacement arguments in their original order.
+   *
+   * @param args - Replacement arguments in the same order as `args` on the original expression.
+   * @returns The rebuilt expression.
+   */
   override withArgs(args: readonly Expr[]): Expr {
     return newPoint(args, { dim: 3 });
   }
 
-  /** The x coordinate. */
+  /**
+   * The x coordinate.
+   *
+   * @returns The x coordinate.
+   * @see SymPy `sympy.geometry.point.Point3D.x`
+   */
   get x(): Expr {
     return at(this.args, 0);
   }
-  /** The y coordinate. */
+  /**
+   * The y coordinate.
+   *
+   * @returns The y coordinate.
+   * @see SymPy `sympy.geometry.point.Point3D.y`
+   */
   get y(): Expr {
     return at(this.args, 1);
   }
-  /** The z coordinate. */
+  /**
+   * The z coordinate.
+   *
+   * @returns The z coordinate.
+   * @see SymPy `sympy.geometry.point.Point3D.z`
+   */
   get z(): Expr {
     return at(this.args, 2);
   }
 
-  /** The points lie on one line (SymPy Point3D.are_collinear). */
+  /**
+   * The points lie on one line.
+   *
+   * @param points - Points to compare.
+   * @returns The points lie on one line.
+   * @see SymPy `sympy.geometry.point.Point3D.are_collinear`
+   */
   static areCollinear(...points: PointInput[]): boolean {
     const [p, ...rest] = points.map((a) => toPoint(a));
     return p === undefined ? true : p.isCollinear(...rest);
   }
 
-  /** The direction cosines of the line from this point to point (SymPy direction_cosine). */
+  /**
+   * The direction cosines of the line from this point to point.
+   *
+   * @param point - Point at which to evaluate the operation.
+   * @returns The direction cosines of the line from this point to point.
+   * @see SymPy `sympy.geometry.point.Point3D.direction_cosine`
+   */
   directionCosine(point: Point3DNode): Expr[] {
     const a = this.directionRatio(point);
     const b = sqrt(add(...a.map((i) => pow(i, 2))));
     return a.map((i) => mul(i, pow(b, -1)));
   }
 
-  /** The direction ratios of the line from this point to point (SymPy direction_ratio). */
+  /**
+   * The direction ratios of the line from this point to point.
+   *
+   * @param point - Point at which to evaluate the operation.
+   * @returns The direction ratios of the line from this point to point.
+   * @see SymPy `sympy.geometry.point.Point3D.direction_ratio`
+   */
   directionRatio(point: Point3DNode): Expr[] {
     return [add(point.x, mul(-1, this.x)), add(point.y, mul(-1, this.y)), add(point.z, mul(-1, this.z))];
   }
 
-  /** The intersection with another entity (SymPy Point3D.intersection). */
+  /**
+   * The intersection with another entity.
+   *
+   * @param other - Entity to intersect with this one.
+   * @returns The intersection with another entity.
+   * @see SymPy `sympy.geometry.point.Point3D.intersection`
+   */
   override intersection(other: unknown): GeometryEntity[] {
     const o = other instanceof GeometryEntity ? other : toPoint(toInput(other), { dim: 3 });
     if (o instanceof Point3DNode) return o.key === this.key ? [this] : [];
     return o.intersection(this);
   }
 
-  /** The point scaled by x, y and z about pt (the origin by default) (SymPy scale). */
+  /**
+   * The point scaled by x, y and z about pt (the origin by default).
+   *
+   * @param x - Scale factor along the x axis.
+   * @param y - Scale factor along the y axis.
+   * @param zOrPt - Third-axis scale factor or center of scaling.
+   * @param pt - Fixed point of the scaling, defaulting to the origin.
+   * @returns The point scaled by x, y and z about pt (the origin by default).
+   * @see SymPy `sympy.geometry.point.Point3D.scale`
+   */
   override scale(x: ExprLike = 1, y: ExprLike = 1, zOrPt?: ExprLike | PointInput | null, pt?: PointInput | null): Point3DNode {
     // SymPy scale(x=1, y=1, z=1, pt=None)
     const zIsPoint = isCoordSequence(zOrPt) || zOrPt instanceof PointNode;
@@ -441,14 +781,29 @@ export class Point3DNode extends PointNode {
     return as3D(newPoint([mul(this.x, x), mul(this.y, y), mul(this.z, z)]));
   }
 
-  /** The point transformed by a 4x4 matrix acting on the column (x, y, z, 1) (SymPy transform). */
+  /**
+   * The point transformed by a 4x4 matrix acting on the column (x, y, z, 1).
+   *
+   * @param matrix - Matrix defining the linear or affine transformation.
+   * @returns The point transformed by a 4x4 matrix acting on the column (x, y, z, 1).
+   * @throws RangeError when the transformation matrix is not four by four.
+   * @see SymPy `sympy.geometry.point.Point3D.transform`
+   */
   transform(matrix: Matrix): Point3DNode {
     if (!(matrix instanceof Matrix) || matrix.rows !== 4 || matrix.cols !== 4) throw new RangeError('matrix must be a 4x4 matrix');
     const r = Matrix.of([[this.x, this.y, this.z, 1]]).mul(matrix.transpose());
     return as3D(newPoint([r.get(0, 0), r.get(0, 1), r.get(0, 2)]));
   }
 
-  /** The point shifted by x, y and z (SymPy translate). */
+  /**
+   * The point shifted by x, y and z.
+   *
+   * @param x - Displacement along the x axis.
+   * @param y - Displacement along the y axis.
+   * @param z - Displacement along the z axis.
+   * @returns The point shifted by x, y and z.
+   * @see SymPy `sympy.geometry.point.Point3D.translate`
+   */
   override translate(x: ExprLike = 0, y: ExprLike = 0, z: ExprLike = 0): Point3DNode {
     return as3D(newPoint([add(this.x, x), add(this.y, y), add(this.z, z)]));
   }
@@ -530,9 +885,20 @@ const as2D = (p: PointNode): Point2DNode => cast(p, Point2DNode, 'Point2D');
 const as3D = (p: PointNode): Point3DNode => cast(p, Point3DNode, 'Point3D');
 
 /**
- * SymPy Point(*coords, evaluate=True, dim=None, on_morph='ignore'): a
- * Point2D, Point3D or Point. Coordinates are given as arguments or as one
- * sequence; a trailing options object holds the keywords.
+ * A point in Euclidean space. The number of coordinates determines its dimension unless `dim` is
+ * supplied.
+ *
+ * @param args - Coordinates or a coordinate sequence, followed by optional dimension and evaluation settings.
+ * @returns The point with the specified coordinates.
+ * @throws RangeError when a nonzero coordinate would be removed or a numeric coordinate is nonreal.
+ * @see SymPy `sympy.geometry.point.Point`
+ * @example
+ * ```ts
+ * import { Point, ex } from '@symjs/symjs';
+ *
+ * Point([1, 2]); // => Point2D(1, 2)
+ * Point(0, ex`x`); // => Point2D(0, x)
+ * ```
  */
 export const Point = /* @__PURE__ */ callableClass(PointNode, (...args: (ExprLike | PointInput | PointOptions)[]): PointNode => {
   const [coords, opts] = pointCall(args);
@@ -540,14 +906,42 @@ export const Point = /* @__PURE__ */ callableClass(PointNode, (...args: (ExprLik
 });
 export type Point = PointNode;
 
-/** SymPy Point2D(*coords, evaluate=True): a point in the plane. */
+/**
+ * A point in the plane.
+ *
+ * @param args - Two coordinates or a coordinate sequence, followed by optional evaluation settings.
+ * @returns The point with the specified coordinates.
+ * @throws RangeError when a nonzero coordinate would be removed or a numeric coordinate is nonreal.
+ * @see SymPy `sympy.geometry.point.Point2D`
+ * @example
+ * ```ts
+ * import { Point2D, ex } from '@symjs/symjs';
+ *
+ * Point2D([1, 2]); // => Point2D(1, 2)
+ * Point2D(0, ex`x`); // => Point2D(0, x)
+ * ```
+ */
 export const Point2D = /* @__PURE__ */ callableClass(Point2DNode, (...args: (ExprLike | PointInput | PointOptions)[]): Point2DNode => {
   const [coords, opts] = pointCall(args);
   return as2D(newPoint(coords, { ...opts, dim: 2 }));
 });
 export type Point2D = Point2DNode;
 
-/** SymPy Point3D(*coords, evaluate=True): a point in space. */
+/**
+ * A point in space.
+ *
+ * @param args - Three coordinates or a coordinate sequence, followed by optional evaluation settings.
+ * @returns The point with the specified coordinates.
+ * @throws RangeError when a nonzero coordinate would be removed or a numeric coordinate is nonreal.
+ * @see SymPy `sympy.geometry.point.Point3D`
+ * @example
+ * ```ts
+ * import { Point3D, ex } from '@symjs/symjs';
+ *
+ * Point3D([1, 2, 3]); // => Point3D(1, 2, 3)
+ * Point3D(0, ex`x`, 3); // => Point3D(0, x, 3)
+ * ```
+ */
 export const Point3D = /* @__PURE__ */ callableClass(Point3DNode, (...args: (ExprLike | PointInput | PointOptions)[]): Point3DNode => {
   const [coords, opts] = pointCall(args);
   return as3D(newPoint(coords, { ...opts, dim: 3 }));

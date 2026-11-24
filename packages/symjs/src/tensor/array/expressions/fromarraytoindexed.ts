@@ -14,7 +14,15 @@ import { NDimArray } from '../../ndimarray';
 import { ArrayExpr, ArrayElement, ArrayTensorProduct, ArrayContraction, ArrayDiagonal, ArrayAdd, ArrayElementwiseApplyFunc, OneArray, ZeroArray, PermuteDims, Reshape, getShape, getRank, remainingAxes } from './arrayexpressions';
 import { applyPermutationToList } from './utils';
 
-/** Convert array operations to scalar entries and explicit, capture-free sums. */
+/**
+ * Convert array operations to scalar entries and explicit, capture-free sums.
+ *
+ * @param expression - Expression to transform.
+ * @param indices - Indices in slot order.
+ * @returns The indexed entry, including explicit sums for contracted axes.
+ * @throws RangeError when the number of indices does not match the rank.
+ * @see SymPy `sympy.tensor.array.expressions.from_array_to_indexed.convert_array_to_indexed`
+ */
 export function convertArrayToIndexed(expression: ExprLike | Matrix, indices: readonly ExprLike[]): Expr {
   let dummyCount = 0;
   function convert(expr: Expr, ind: readonly Expr[]): Expr {

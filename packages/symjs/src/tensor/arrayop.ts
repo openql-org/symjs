@@ -15,7 +15,10 @@ import { Matrix } from '../matrices/matrix';
 import type { ArrayInput, NestedArrayInput } from './ndimarray';
 import { ImmutableDenseNDimArray, ImmutableSparseNDimArray, NDimArray, SparseNDimArray, permuteArray } from './ndimarray';
 
-/** An argument of the array operations: an array, a Matrix, nested lists or (for tensorproduct) a scalar. */
+/**
+ * An argument of the array operations: an array, a Matrix, nested lists or (for tensorproduct) a
+ * scalar.
+ */
 export type TensorArg = NDimArray | Matrix | readonly NestedArrayInput[] | ExprLike;
 
 /** Lazy array-expression dispatch, registered by the tensor entry. @internal */
@@ -49,10 +52,12 @@ const newOfClass = (a: NDimArray, it: ArrayInput, shape: readonly number[]): NDi
   a.newLike(it, shape);
 
 /**
- * SymPy tensorproduct(*args): the tensor (outer) product of arrays,
- * matrices and scalars. With no argument it is 1, with scalars only their
- * product.
+ * The tensor (outer) product of arrays, matrices and scalars. With no argument it is 1, with
+ * scalars only their product.
  *
+ * @param args - Scalars, matrices or arrays in product order.
+ * @returns The tensor (outer) product of arrays, matrices and scalars.
+ * @see SymPy `sympy.tensor.array.arrayop.tensorproduct`
  * @example
  * ```ts
  * import { Array, symbols, tensorproduct } from '@symjs/symjs';
@@ -123,9 +128,13 @@ function productSums(lists: readonly (readonly number[])[]): number[] {
 }
 
 /**
- * SymPy tensorcontraction(array, *axes): the sum over equal indices of
- * each group of axes. Contracting every axis gives a scalar.
+ * The sum over equal indices of each group of axes. Contracting every axis gives a scalar.
  *
+ * @param arrayIn - Array whose axes are being combined.
+ * @param axes - Groups of axes that share a common index.
+ * @returns The sum over equal indices of each group of axes.
+ * @throws RangeError when an axis is repeated or a contraction group has unequal dimensions.
+ * @see SymPy `sympy.tensor.array.arrayop.tensorcontraction`
  * @example
  * ```ts
  * import { Array, symbols, tensorcontraction } from '@symjs/symjs';
@@ -147,9 +156,14 @@ export function tensorcontraction(arrayIn: TensorArg, ...axes: (readonly number[
 }
 
 /**
- * SymPy tensordiagonal(array, *axes): the diagonal over each group of
- * axes, which become the last axes of the result.
+ * The diagonal over each group of axes, which become the last axes of the result.
  *
+ * @param arrayIn - Array whose axes are being combined.
+ * @param axes - Groups of axes that share a common index.
+ * @returns The diagonal over each group of axes, which become the last axes of the result.
+ * @throws RangeError when an axis occurs more than once or axes in a diagonal group have different lengths or an index is outside the array bounds or a diagonal group contains fewer than two axes.
+ * @throws TypeError when no axes are supplied.
+ * @see SymPy `sympy.tensor.array.arrayop.tensordiagonal`
  * @example
  * ```ts
  * import { Matrix, symbols, tensordiagonal } from '@symjs/symjs';
@@ -180,7 +194,7 @@ export function tensordiagonal(arrayIn: TensorArg, ...axes: (readonly number[])[
 /** A permutation given as a list of positions or as a Permutation (anything with an `arrayForm`). */
 export type PermutationLike = readonly number[] | { readonly arrayForm: readonly number[] };
 
-/** Options of permutedims: the axes named before and after (SymPy index_order_old, index_order_new). */
+/** Options of permutedims: the axes named before and after. */
 export interface PermutedimsOptions {
   /** Names of the axes in the given order (a string of one-letter names or a list). */
   indexOrderOld?: string | readonly unknown[];
@@ -189,10 +203,22 @@ export interface PermutedimsOptions {
 }
 
 /**
- * SymPy permutedims(expr, perm): the axes reordered so that axis i of the
- * result is axis perm[i] of `expr` (for rank 2, the transpose). The
- * permutation can also be given by naming the axes,
- * `permutedims(b, { indexOrderOld: 'cba', indexOrderNew: 'abc' })`.
+ * The axes reordered so that axis i of the result is axis perm[i] of `expr` (for rank 2, the
+ * transpose). The permutation can also be given by naming the axes, `permutedims(b, {
+ * indexOrderOld: 'cba', indexOrderNew: 'abc' })`.
+ *
+ * @param expr - Symbolic expression on which to operate.
+ * @param perm - Permutation of the axes or their old and new labels.
+ * @param opts - Settings described by {@link PermutedimsOptions}.
+ * @returns The axes reordered so that axis i of the result is axis perm[i] of `expr` (for rank 2, the transpose).
+ * @throws RangeError when a permutation is supplied together with index-order labels.
+ * @see SymPy `sympy.tensor.array.arrayop.permutedims`
+ * @example
+ * ```ts
+ * import { permutedims } from '@symjs/symjs';
+ *
+ * permutedims([[1, 2], [3, 4]], [1, 0]); // => [[1, 3], [2, 4]]
+ * ```
  */
 export function permutedims(expr: NDimArray | Matrix | readonly NestedArrayInput[], perm?: PermutationLike | PermutedimsOptions, opts?: PermutedimsOptions): NDimArray;
 export function permutedims(expr: TensorArg, perm?: PermutationLike | PermutedimsOptions, opts?: PermutedimsOptions): Expr;

@@ -35,7 +35,13 @@ function labeledFactors(product: ArrayTensorProduct, groups: readonly (readonly 
   }));
 }
 
-/** Eliminate identities inside a summation and split a repeated diagonal-matrix index. */
+/**
+ * Eliminate identities inside a summation and split a repeated diagonal-matrix index.
+ *
+ * @param expr - Symbolic expression on which to operate.
+ * @returns The contraction after eliminating removable identity factors.
+ * @see SymPy `sympy.tensor.array.expressions.from_array_to_matrix.identify_removable_identity_matrices`
+ */
 export function identifyRemovableIdentityMatrices(expr: ArrayContraction): Expr {
   if (!(expr.expr instanceof ArrayTensorProduct)) return expr;
   const factors = labeledFactors(expr.expr, expr.contractionIndices);
@@ -327,6 +333,22 @@ function squeeze(expr: Expr): [Expr, number[]] {
   return [recognizeMatrixProduct(factors.map((f) => f.value)), factors.flatMap((f) => f.axes)];
 }
 
+/**
+ * Recognizes matrix operations represented by tensor products, contractions and axis
+ * permutations.
+ *
+ * @param expr - Symbolic expression on which to operate.
+ * @returns The equivalent expression with recognized matrix operations.
+ * @see SymPy `sympy.tensor.array.expressions.from_array_to_matrix.convert_array_to_matrix`
+ * @example
+ * ```ts
+ * import { ArrayContraction, ArrayTensorProduct, MatrixSymbol, convertArrayToMatrix } from '@symjs/symjs';
+ *
+ * const A = MatrixSymbol('A', 3, 3), B = MatrixSymbol('B', 3, 3);
+ * const product = new ArrayTensorProduct(A, B);
+ * convertArrayToMatrix(new ArrayContraction(product, [1, 2])); // => A*B
+ * ```
+ */
 export function convertArrayToMatrix(expr: Expr): Expr {
   return squeeze(recognizeMatrix(expr))[0];
 }
