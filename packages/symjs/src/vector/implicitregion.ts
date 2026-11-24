@@ -35,7 +35,12 @@ import { diophantine } from '../solvers/diophantine';
 import { GeometryEntity } from '../geometry/entity';
 import { realSymbol } from '../geometry/entity';
 
-/** SymPy total_degree(expr): the total degree in the free symbols (0 for a constant). */
+/**
+ * Computes a polynomial's total degree in its free symbols, taking the degree of a constant to
+ * be zero.
+ *
+ * @see SymPy `sympy.polys.polytools.total_degree`
+ */
 export function totalDegree(e: Expr): number {
   const gens = ordered([...freeSymbols(e)].filter((s) => s instanceof Sym));
   return gens.length === 0 ? 0 : Poly.from(e, gens).totalDegree();
@@ -49,7 +54,12 @@ function elements(s: SetExpr): Expr[] {
 
 const isZero = (e: Expr): boolean => isNum(e) && e.isZero;
 
-/** SymPy conic_coeff(variables, equation): the coefficients a, b, c, d, e, f of a*x**2 + b*x*y + c*y**2 + d*x + e*y + f. */
+/**
+ * Extracts the coefficients `[a, b, c, d, e, f]` of a conic in the form `a*x**2 + b*x*y + c*y**2
+ * + d*x + e*y + f`.
+ *
+ * @see SymPy `sympy.vector.implicitregion.conic_coeff`
+ */
 export function conicCoeff(variables: readonly Expr[], equationIn: Expr): [Expr, Expr, Expr, Expr, Expr, Expr] {
   if (totalDegree(equationIn) !== 2) throw new RangeError('the equation of a conic has degree 2');
   const [x, y] = [at(variables, 0), at(variables, 1)];

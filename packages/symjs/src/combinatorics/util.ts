@@ -20,7 +20,10 @@ export const includesPerm = (list: readonly Permutation[], p: Permutation): bool
 
 const sameArray = (a: readonly number[], b: readonly number[]): boolean => a.length === b.length && a.every((x, i) => x === b[i]);
 
-/** SymPy _base_ordering(base, degree): the position of each point when the base comes first. */
+/**
+ * Returns each point's position in the ordering that lists the base first, followed by the
+ * remaining points in increasing order.
+ */
 export function baseOrdering(base: readonly number[], degree: number): number[] {
   const ordering = new Array<number>(degree).fill(0);
   base.forEach((b, i) => (ordering[b] = i));
@@ -29,7 +32,7 @@ export function baseOrdering(base: readonly number[], degree: number): number[] 
   return ordering;
 }
 
-/** SymPy _check_cycles_alt_sym(perm): whether perm has a cycle of prime length p with n/2 < p < n-2. */
+/** Tests whether a permutation of size `n` contains a cycle of prime length `p` with `n/2 < p < n-2`. */
 export function checkCyclesAltSym(perm: Permutation): boolean {
   const n = perm.size;
   const af = perm.arrayForm;
@@ -52,7 +55,7 @@ export function checkCyclesAltSym(perm: Permutation): boolean {
   return false;
 }
 
-/** SymPy _distribute_gens_by_base(base, gens): the strong generators of each basic stabilizer. */
+/** Groups the strong generators by the basic stabilizers to which they belong. */
 export function distributeGensByBase(base: readonly number[], gens: readonly Permutation[]): Permutation[][] {
   const baseLen = base.length;
   const degree = at(gens, 0).size;
@@ -70,9 +73,8 @@ export function distributeGensByBase(base: readonly number[], gens: readonly Per
 }
 
 /**
- * SymPy _orbit_transversal(degree, generators, alpha, pairs=True, slp=True):
- * the orbit points with their representatives (in breadth-first order) and
- * the straight-line programs (generator indices) that give them.
+ * Enumerates the orbit of `alpha` in breadth-first order, pairing each point with a
+ * representative and recording the generator indices that produce it.
  */
 export function orbitTransversalPairs(degree: number, generators: readonly Permutation[], alpha: number): { tr: [number, number[]][]; slp: Map<number, number[]> } {
   const tr: [number, number[]][] = [[alpha, Array.from({ length: degree }, (_, i) => i)]];
@@ -96,7 +98,10 @@ export function orbitTransversalPairs(degree: number, generators: readonly Permu
   return { tr, slp };
 }
 
-/** SymPy _orbits_transversals_from_bsgs(base, strong_gens_distr): the basic orbits and transversals. */
+/**
+ * Computes the basic orbits, transversals, and straight-line programs from a base and the strong
+ * generators of each stabilizer.
+ */
 export function orbitsTransversalsFromBsgs(base: readonly number[], strongGensDistr: readonly (readonly Permutation[])[]): { basicOrbits: number[][]; transversals: Transversal[]; slps: Map<number, number[]>[] } {
   const degree = at(at(strongGensDistr, 0), 0).size;
   const basicOrbits: number[][] = [];
@@ -111,7 +116,10 @@ export function orbitsTransversalsFromBsgs(base: readonly number[], strongGensDi
   return { basicOrbits, transversals, slps };
 }
 
-/** SymPy _handle_precomputed_bsgs: the transversals, basic orbits and distributed generators of a BSGS. */
+/**
+ * Completes the basic orbits, transversals, and generator lists for a base and strong generating
+ * set, using precomputed data when supplied.
+ */
 export function handlePrecomputedBsgs(base: readonly number[], strongGens: readonly Permutation[], transversalsIn?: readonly Transversal[], basicOrbitsIn?: readonly number[][], strongGensDistrIn?: readonly Permutation[][]): { transversals: Transversal[]; basicOrbits: number[][]; strongGensDistr: Permutation[][] } {
   const strongGensDistr = strongGensDistrIn ? strongGensDistrIn.map((x) => [...x]) : distributeGensByBase(base, strongGens);
   if (transversalsIn === undefined) {
@@ -143,7 +151,7 @@ export function orbitList(degree: number, generators: readonly Permutation[], al
 
 const sameSet = (a: readonly number[], b: readonly number[]): boolean => a.length === b.length && new Set([...a, ...b]).size === a.length;
 
-/** SymPy _remove_gens(base, strong_gens): a strong generating set without redundant generators. */
+/** Removes redundant generators while preserving a strong generating set for the given base. */
 export function removeGens(base: readonly number[], strongGens: readonly Permutation[], basicOrbitsIn?: readonly number[][], strongGensDistrIn?: readonly Permutation[][]): Permutation[] {
   const degree = at(strongGens, 0).size;
   const strongGensDistr = strongGensDistrIn ? strongGensDistrIn.map((x) => [...x]) : distributeGensByBase(base, strongGens);
@@ -169,7 +177,10 @@ export function removeGens(base: readonly number[], strongGens: readonly Permuta
   return res;
 }
 
-/** SymPy _strip(g, base, orbits, transversals): the residue of sifting g and the level where it stopped. */
+/**
+ * Sifts a permutation through the stabilizer chain and returns the residue and the level where
+ * sifting stopped.
+ */
 export function strip(g: Permutation, base: readonly number[], orbits: readonly (readonly number[])[], transversals: readonly Transversal[]): [Permutation, number] {
   let h = g.arrayForm;
   for (let i = 0; i < base.length; i++) {
@@ -182,10 +193,10 @@ export function strip(g: Permutation, base: readonly number[], orbits: readonly 
 }
 
 /**
- * SymPy _strip_af(h, base, orbits, transversals, j, slp, slps) on array
- * forms, starting after level j; the residue is false when it becomes the
- * identity at a transversal element. The straight-line program is tracked
- * as in SymPy: entries [level, index] or [level, [index]] for an inverse.
+ * Sifts an array-form permutation starting after level `j`, returning the residue, stopping
+ * level, and straight-line program. A residue of `false` marks an exact transversal match.
+ * Program entries `[level, index]` and `[level, [index]]` denote a generator and its inverse,
+ * respectively.
  */
 export function stripAf(hIn: number[], base: readonly number[], orbits: readonly (readonly number[])[], transversals: readonly (ReadonlyMap<number, number[]>)[], j: number, slpIn: SlpEntry[], slps: readonly (ReadonlyMap<number, number[]>)[]): [number[] | false, number, SlpEntry[]] {
   let h = hIn;
@@ -206,7 +217,7 @@ export function stripAf(hIn: number[], base: readonly number[], orbits: readonly
 /** A straight-line program step: generator `index` of basic stabilizer `level`, or its inverse ([index]). */
 export type SlpEntry = [number, number | [number]];
 
-/** SymPy _strong_gens_from_distr(strong_gens_distr): the strong generators of the first two levels, in order. */
+/** Collects the distinct strong generators from the first two stabilizer levels in their original order. */
 export function strongGensFromDistr(strongGensDistr: readonly (readonly Permutation[])[]): Permutation[] {
   const result = [...at(strongGensDistr, 0)];
   if (strongGensDistr.length === 1) return result;

@@ -159,8 +159,10 @@ function parseRange(range: IdxRange | undefined): readonly [Expr, Expr] | undefi
 }
 
 /**
- * SymPy Idx(label, range) as a function: an integer label gives the
- * integer itself, any other label an Idx.
+ * Constructs a symbolic index with an optional range. An integer label yields the integer
+ * itself.
+ *
+ * @see SymPy `sympy.tensor.indexed.Idx`
  */
 export function makeIdx(label: string | ExprLike, range?: IdxRange): Expr {
   const lab = typeof label === 'string' ? label : sympify(label);

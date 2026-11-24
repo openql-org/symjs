@@ -13,8 +13,10 @@ import { expectType, first, getOrThrow } from '../core/guard';
 import { separatevars } from '../simplify/separatevars';
 
 /**
- * SymPy homogeneous_order(eq, *symbols): n such that eq(t*x, t*y, ...) = t**n * eq(x, y, ...),
- * or undefined when eq is not homogeneous in the symbols.
+ * Finds the degree `n` for which scaling all supplied symbols by `t` multiplies the expression
+ * by `t**n`. The public solver returns `NoMatch` when it cannot identify a scaling degree.
+ *
+ * @see SymPy `sympy.solvers.ode.ode.homogeneous_order`
  */
 export function homogeneousOrder(eqIn: ExprLike, ...symbols: Expr[]): Expr | undefined {
   if (!symbols.length) throw new RangeError('homogeneousOrder requires at least one symbol');

@@ -1514,7 +1514,12 @@ function classifyExtra(p: OdeProblem): Set<string> {
   return out;
 }
 
-/** SymPy classify_ode(eq, f(x)): the names of the matching hints in SymPy's order, with their _Integral variants. */
+/**
+ * Lists the solution hints that match an ordinary differential equation in solver preference
+ * order, including the applicable `_Integral` variants.
+ *
+ * @see SymPy `sympy.solvers.ode.ode.classify_ode`
+ */
 export function classifyOde(eqIn: ExprLike, fx: UndefFn): string[] {
   const eq = toZeroForm(sympify(eqIn));
   const p: OdeProblem = { eq, fx, x: independentVariable(fx), order: orderOf(eq, fx) };
@@ -1527,7 +1532,12 @@ export function classifyOde(eqIn: ExprLike, fx: UndefFn): string[] {
   return ALL_HINTS.filter((h) => matched.has(h));
 }
 
-/** SymPy's all meta-hint evaluates each classified method and identifies the simplest family. */
+/**
+ * Applies every matching ODE solution hint and returns the results by hint, together with the
+ * simplest solution, its hint, the default hint, and the equation's order.
+ *
+ * @see SymPy `sympy.solvers.ode.ode.dsolve`
+ */
 export function allOdeHints(eq: Expr, fx: UndefFn): Map<string, Expr | Expr[] | string | number | typeof Unsolved> {
   const hints = classifyOde(eq, fx);
   const results = new Map<string, Expr | Expr[] | string | number | typeof Unsolved>();

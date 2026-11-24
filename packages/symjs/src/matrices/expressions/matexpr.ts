@@ -86,7 +86,7 @@ export function toMatrix(x: MatArg, message?: string): MatrixExpr {
   return e;
 }
 
-/** SymPy MatrixExpr._check_dim: a dimension must be a nonnegative integer when that is known. */
+/** Validates a matrix dimension, rejecting values known to be negative or nonintegral. */
 export function checkDim(d: Expr): Expr {
   let bad = d instanceof Float;
   if (d instanceof Rational) bad = !d.isInteger || d.isNegative;
@@ -101,13 +101,21 @@ const dim = (x: ExprLike): Expr => checkDim(sympify(x));
 // Printing helpers
 // ---------------------------------------------------------------------------
 
-/** SymPy precedence() of an expression that may be a matrix expression. */
+/**
+ * Returns the precedence used to print a scalar or matrix expression as text.
+ *
+ * @see SymPy `sympy.printing.precedence.precedence`
+ */
 export function strPrecedence(e: Expr): number {
   if (e instanceof MatrixExpr || e instanceof MatScalar) return e.strPrecedence();
   return scalarPrecedence(e);
 }
 
-/** SymPy precedence_traditional() of an expression that may be a matrix expression. */
+/**
+ * Returns the precedence used to print a scalar or matrix expression in LaTeX.
+ *
+ * @see SymPy `sympy.printing.precedence.precedence_traditional`
+ */
 export function latexPrecedence(e: Expr): number {
   if (e instanceof MatrixExpr || e instanceof MatScalar) return e.latexPrecedence();
   return scalarPrecTraditional(e);
@@ -140,7 +148,11 @@ function mulCouldExtractMinus(e: Expr): boolean {
 
 const ONE_KEY: Key = [[1, 0, 'Number'], [0, []], [], 1];
 
-/** SymPy default_sort_key of an expression that may contain matrix expressions. */
+/**
+ * Builds a sort key for an expression that can contain matrix sums and products.
+ *
+ * @see SymPy `sympy.core.sorting.default_sort_key`
+ */
 export function matSortKey(e: Expr): Key {
   if (e instanceof Str) return [[2, 0, 'Str'], [1, [e.value]], ONE_KEY, 1];
   if (e instanceof MatMulNode) {
@@ -165,7 +177,11 @@ export function matSortKey(e: Expr): Key {
   return sortKey(e);
 }
 
-/** SymPy Expr.as_ordered_terms() of the terms of a MatAdd (lex order of SymPy's printers). */
+/**
+ * Orders the terms of a matrix sum lexicographically for printing.
+ *
+ * @see SymPy `sympy.core.expr.Expr.as_ordered_terms`
+ */
 export function orderedTerms(terms: readonly Expr[]): Expr[] {
   const gens = new Map<string, Expr>();
   const parsed = terms.map((term) => {
@@ -228,7 +244,11 @@ export function hasNode(e: Expr, pred: (x: Expr) => boolean): boolean {
 
 const doitable = (e: Expr): boolean => e instanceof MatrixExpr || e instanceof MatScalar || e instanceof Concrete || e.args.some(doitable);
 
-/** SymPy doit of an argument: matrix nodes evaluate themselves, sums are carried out. */
+/**
+ * Evaluates matrix subexpressions and carries out sums and products within an argument.
+ *
+ * @see SymPy `sympy.core.basic.Basic.doit`
+ */
 export function doitArg(a: Expr, hints: DoitHints = {}): Expr {
   if (a instanceof MatrixExpr || a instanceof MatScalar) return a.doit(hints);
   if (!doitable(a)) return a;
@@ -2200,7 +2220,11 @@ export class MatAddNode extends MatrixExpr {
   }
 }
 
-/** SymPy transpose() of a matrix expression or a scalar. */
+/**
+ * Transposes a matrix expression or a scalar.
+ *
+ * @see SymPy `sympy.functions.elementary.complexes.transpose`
+ */
 export function transposeOf(e: Expr): Expr {
   return e instanceof MatrixExpr ? e.transpose() : transposeFn(e);
 }
@@ -2254,7 +2278,11 @@ function rmId(e: Expr, isId: (a: Expr) => boolean, raw: (args: readonly Expr[]) 
 
 const unpackRule = (e: Expr): Expr => (e.args.length === 1 && (e instanceof MatAddNode || e instanceof MatMulNode) ? at(e.args, 0) : e);
 
-/** SymPy unpack of a single-argument MatMul. */
+/**
+ * Returns the sole factor of a one-factor matrix product and leaves other expressions intact.
+ *
+ * @see SymPy `sympy.strategies.rl.unpack`
+ */
 export const unpackMat = (e: Expr): Expr => (e instanceof MatMulNode && e.args.length === 1 ? at(e.args, 0) : e);
 
 const flattenAdd = (e: Expr): Expr => new MatAddNode(e.args.flatMap((a) => (a instanceof MatAddNode ? a.args : [a])));
@@ -2291,7 +2319,12 @@ const sortAdd = (e: Expr): Expr =>
       .map((x) => x.a),
   );
 
-/** SymPy matadd.canonicalize. */
+/**
+ * Simplifies a matrix sum to canonical form by flattening nested sums, collecting like terms,
+ * removing zeros, and ordering the terms.
+ *
+ * @see SymPy `sympy.matrices.expressions.matadd.canonicalize`
+ */
 export const canonicalizeMatAdd: Rule = exhaustWhile(
   (e) => e instanceof MatAddNode,
   [(e) => rmId(e, (a) => same(a, S.Zero) || (a instanceof MatrixExpr && a.isZeroMatrix), (args) => new MatAddNode(args)), unpackRule, flattenAdd, glomAdd, mergeExplicitAdd, sortAdd],
@@ -2823,7 +2856,12 @@ function combinePermutations(e: Expr): Expr {
   return MatMulNode.create(result);
 }
 
-/** SymPy matmul.canonicalize. */
+/**
+ * Simplifies a matrix product to canonical form by flattening nested products, removing
+ * identities, and combining factors while respecting matrix multiplication order.
+ *
+ * @see SymPy `sympy.matrices.expressions.matmul.canonicalize`
+ */
 export const canonicalizeMatMul: Rule = exhaustWhile(
   (e) => e instanceof MatMulNode,
   // SymPy's rm_id(lambda x: x == 1) is omitted: combineOneMatrices already drops the unit factor

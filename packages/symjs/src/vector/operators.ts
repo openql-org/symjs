@@ -34,7 +34,7 @@ export interface OperatorOptions {
 
 /** An unevaluated operator applied to one expression (SymPy Gradient, Divergence, Curl, Laplacian). */
 abstract class VectorOperator extends ExtensionExpr {
-  /** SymPy doit: the operator applied to the operand as it is (not deep). */
+  /** Indicates that the operator acts on its operand without first evaluating the operand recursively. */
   override get doitDeep(): boolean {
     return false;
   }
@@ -42,7 +42,7 @@ abstract class VectorOperator extends ExtensionExpr {
   get expr(): Expr {
     return at(this.args, 0);
   }
-  /** SymPy PRECEDENCE_TRADITIONAL of the operators: just below a product. */
+  /** Returns the operator's LaTeX precedence, one level below multiplication. */
   latexPrecedence(): number {
     return OPERATOR_PRECEDENCE;
   }

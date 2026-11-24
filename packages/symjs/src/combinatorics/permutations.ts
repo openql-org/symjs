@@ -555,9 +555,19 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
    * @param options - The settings described by {@link PermutationOptions}.
    */
   constructor(...cycle: (number | bigint | Expr)[]);
-  /** SymPy Permutation(*cycle, size=...). */
+  /**
+   * Constructs a permutation from the points of a single cycle. The trailing size option sets
+   * the degree, including any additional fixed points.
+   *
+   * @see SymPy `sympy.combinatorics.permutations.Permutation`
+   */
   constructor(...args: [...cycle: (number | bigint | Expr)[], options: PermutationOptions]);
-  /** SymPy Permutation(arg, size=...) from an array form, cyclic form, Cycle or Permutation. */
+  /**
+   * Constructs a permutation from an array form, cycles, a `Cycle`, or another `Permutation`,
+   * with an optional size.
+   *
+   * @see SymPy `sympy.combinatorics.permutations.Permutation`
+   */
   constructor(arg: PermutationInput, options?: PermutationOptions);
   constructor(...input: readonly unknown[]) {
     const af = pendingAf;
@@ -928,11 +938,25 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
    * @see SymPy `sympy.combinatorics.permutations.Permutation.__call__`
    */
   call(i: number | bigint): number;
-  /** SymPy p(seq): the items of seq rearranged, [seq[p(0)], seq[p(1)], ...]. */
+  /**
+   * Rearranges a sequence by the permutation's array form. The item at position `i` in the
+   * result is the input item at the image of `i`.
+   *
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.__call__`
+   */
   call<T>(seq: readonly T[]): T[];
-  /** SymPy p(seq) for a string: the rearranged characters. */
+  /**
+   * Returns the characters of a string in the order given by the permutation's array form.
+   *
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.__call__`
+   */
   call(seq: string): string[];
-  /** SymPy p(a, b, ...): p followed by the cycle (a b ...), i.e. p*Permutation(a, b, ..., size=p.size). */
+  /**
+   * Composes this permutation with the cycle through the supplied points, applying the cycle
+   * second.
+   *
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.__call__`
+   */
   call(...cycle: (number | bigint)[]): Permutation;
   call(...i: readonly unknown[]): unknown {
     if (i.length === 1) {

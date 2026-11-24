@@ -16,12 +16,21 @@ import { stdout } from '../core';
 /** A branching rule: a function from a value to the values it may become. */
 export type BranchRule<T> = (x: T) => Iterable<T>;
 
-/** SymPy `identity(x)`: the branching rule that yields its input. */
+/**
+ * Yields the input once.
+ *
+ * @see SymPy `sympy.strategies.branch.core.identity`
+ */
 export function* identity<T>(x: T): Generator<T, void, undefined> {
   yield x;
 }
 
-/** SymPy `exhaust(brule)`: apply a branching rule repeatedly until it has no effect. */
+/**
+ * Builds a branching rule that repeatedly applies the given rule and yields each branch's result
+ * when no further change is possible.
+ *
+ * @see SymPy `sympy.strategies.branch.core.exhaust`
+ */
 export function exhaust<T>(brule: BranchRule<T>): BranchRule<T> {
   return function* exhaustBrl(expr: T): Generator<T, void, undefined> {
     const start = valueKey(expr);
@@ -37,7 +46,12 @@ export function exhaust<T>(brule: BranchRule<T>): BranchRule<T> {
   };
 }
 
-/** SymPy `onaction(brule, fn)`: call `fn(brule, expr, result)` for each result that differs from the input. */
+/**
+ * Wraps a branching rule to call `fn(brule, expr, result)` for each result that differs from its
+ * input.
+ *
+ * @see SymPy `sympy.strategies.branch.core.onaction`
+ */
 export function onaction<T>(brule: BranchRule<T>, fn: (brule: BranchRule<T>, expr: T, result: T) => void): BranchRule<T> {
   return function* onactionBrl(expr: T): Generator<T, void, undefined> {
     for (const result of brule(expr)) {
@@ -47,7 +61,12 @@ export function onaction<T>(brule: BranchRule<T>, fn: (brule: BranchRule<T>, exp
   };
 }
 
-/** SymPy `debug(brule, file=None)`: write the input and output expressions at each rule application. */
+/**
+ * Wraps a branching rule to write the rule name, input, and result whenever the rule changes an
+ * expression.
+ *
+ * @see SymPy `sympy.strategies.branch.core.debug`
+ */
 export function debug<T>(brule: BranchRule<T>, file: Writer = stdout()): BranchRule<T> {
   const write = (brl: BranchRule<T>, expr: T, result: T): void => {
     file.write(`Rule: ${brl.name}\n`);
@@ -56,7 +75,11 @@ export function debug<T>(brule: BranchRule<T>, file: Writer = stdout()): BranchR
   return onaction(brule, write);
 }
 
-/** SymPy `multiplex(*brules)`: multiplex many branching rules into one (each result once). */
+/**
+ * Combines branching rules into one rule that yields each distinct result once.
+ *
+ * @see SymPy `sympy.strategies.branch.core.multiplex`
+ */
 export function multiplex<T>(...brules: BranchRule<T>[]): BranchRule<T> {
   return function* multiplexBrl(expr: T): Generator<T, void, undefined> {
     const seen = new Set<string>();
@@ -72,21 +95,33 @@ export function multiplex<T>(...brules: BranchRule<T>[]): BranchRule<T> {
   };
 }
 
-/** SymPy `condition(cond, brule)`: only apply the branching rule if the condition is true. */
+/**
+ * Builds a branching rule that applies the given rule only to inputs satisfying the condition.
+ *
+ * @see SymPy `sympy.strategies.branch.core.condition`
+ */
 export function condition<T>(cond: (x: T) => boolean, brule: BranchRule<T>): BranchRule<T> {
   return function* conditionedBrl(expr: T): Generator<T, void, undefined> {
     if (cond(expr)) yield* brule(expr);
   };
 }
 
-/** SymPy `sfilter(pred, brule)`: yield only the results that satisfy the predicate. */
+/**
+ * Filters the results of a branching rule through a predicate.
+ *
+ * @see SymPy `sympy.strategies.branch.core.sfilter`
+ */
 export function sfilter<T>(pred: (x: T) => boolean, brule: BranchRule<T>): BranchRule<T> {
   return function* filteredBrl(expr: T): Generator<T, void, undefined> {
     for (const x of brule(expr)) if (pred(x)) yield x;
   };
 }
 
-/** SymPy `notempty(brule)`: the input itself when the branching rule yields nothing. */
+/**
+ * Wraps a branching rule to yield its input when the rule produces no results.
+ *
+ * @see SymPy `sympy.strategies.branch.core.notempty`
+ */
 export function notempty<T>(brule: BranchRule<T>): BranchRule<T> {
   return function* notemptyBrl(expr: T): Generator<T, void, undefined> {
     let yielded = false;
@@ -98,7 +133,11 @@ export function notempty<T>(brule: BranchRule<T>): BranchRule<T> {
   };
 }
 
-/** SymPy `do_one(*brules)`: the results of the first branching rule that yields any. */
+/**
+ * Builds a rule that yields all results of the first branching rule that produces any.
+ *
+ * @see SymPy `sympy.strategies.branch.core.do_one`
+ */
 export function doOne<T>(...brules: BranchRule<T>[]): BranchRule<T> {
   return function* doOneBrl(expr: T): Generator<T, void, undefined> {
     for (const brl of brules) {
@@ -112,7 +151,11 @@ export function doOne<T>(...brules: BranchRule<T>[]): BranchRule<T> {
   };
 }
 
-/** SymPy `chain(*brules)`: compose branching rules so that they apply one after the other. */
+/**
+ * Composes branching rules in order, passing each result of one rule to the next.
+ *
+ * @see SymPy `sympy.strategies.branch.core.chain`
+ */
 export function chain<T>(...brules: BranchRule<T>[]): BranchRule<T> {
   return function* chainBrl(expr: T): Generator<T, void, undefined> {
     const [head, ...tail] = brules;
@@ -124,7 +167,11 @@ export function chain<T>(...brules: BranchRule<T>[]): BranchRule<T> {
   };
 }
 
-/** SymPy `yieldify(rl)`: turn a rule into a branching rule. */
+/**
+ * Converts a rule into a branching rule that yields its result once.
+ *
+ * @see SymPy `sympy.strategies.branch.core.yieldify`
+ */
 export function yieldify<T>(rl: Rule<T>): BranchRule<T> {
   return function* brl(expr: T): Generator<T, void, undefined> {
     yield rl(expr);

@@ -67,7 +67,11 @@ abstract class StatsNode extends ExtensionExpr {
   evaluateIntegral(): Expr {
     return doit(rewrite(this, 'Integral'));
   }
-  /** SymPy evaluate_sum (the same as evaluate_integral). */
+  /**
+   * Evaluates the expression by rewriting it as a sum or integral, as in `evaluateIntegral`.
+   *
+   * @see SymPy `sympy.stats.symbolic_probability.Expectation.evaluate_sum`
+   */
   evaluateSum(): Expr {
     return this.evaluateIntegral();
   }
@@ -322,7 +326,12 @@ const doitExpectation = (e: Expr, hints: ProbabilityDoitHints): Expr => (e insta
 /** The expression contains an Expectation (SymPy expr.atoms(Expectation)). */
 const hasExpectation = (e: Expr): boolean => e instanceof ExpectationNode || e.args.some(hasExpectation);
 
-/** SymPy Expectation(expr, condition=None): a value that is not random is its own expectation. */
+/**
+ * Constructs the symbolic expectation of an expression, using a matrix expectation for matrix
+ * arguments. With no conditioning event, a deterministic expression is its own expectation.
+ *
+ * @see SymPy `sympy.stats.symbolic_probability.Expectation`
+ */
 export function makeExpectation(exprIn: ExprLike, conditionIn?: ExprLike): Expr {
   const e = sympify(exprIn);
   if (e instanceof MatrixExpr) return defined(statsClasses.expectationMatrix, 'stats symbolic_multivariate_probability')(e, conditionIn === undefined ? undefined : sympify(conditionIn));

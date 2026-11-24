@@ -186,8 +186,9 @@ export const MutableSparseNDimArray = /* @__PURE__ */ callableClass(
 export type MutableSparseNDimArray = MutableSparseNDimArrayNode;
 
 /**
- * SymPy Array (ImmutableDenseNDimArray), named `SymArray` so that it does
- * not shadow JavaScript's Array where it is imported.
+ * Represents an immutable, dense multidimensional array.
+ *
+ * @see SymPy `sympy.tensor.array.Array`
  */
 export { ImmutableDenseNDimArray as SymArray };
 

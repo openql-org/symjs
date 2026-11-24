@@ -1494,7 +1494,15 @@ export function permanent(mIn: Matrix): Expr {
   return visit(0, 0n);
 }
 
-/** SymPy connected_components / strongly_connected_components of a graph or of a matrix's nonzero pattern (one definition, in utilities). */
+/**
+ * Finds connected or strongly connected components of a graph or of the graph defined by a
+ * matrix's nonzero entries.
+ *
+ * @see SymPy `sympy.utilities.iterables.connected_components`
+ * @see SymPy `sympy.utilities.iterables.strongly_connected_components`
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.connected_components`
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.strongly_connected_components`
+ */
 export { connectedComponents, stronglyConnectedComponents } from '../utilities/iterables';
 
 /**
@@ -2155,7 +2163,11 @@ function qrSolve(M: Matrix, b: Matrix): Matrix {
   return first(x).vstack(...x.slice(1));
 }
 
-/** SymPy Matrix.LUsolve(rhs) for a square matrix: forward and back substitution with the LU factors. */
+/**
+ * Solves a square matrix system by forward and back substitution using its LU factors.
+ *
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.LUsolve`
+ */
 export function luSolve(M: Matrix, rhs: Matrix): Matrix {
   if (rhs.rows !== M.rows) throw new ShapeError('``M`` and ``rhs`` must have the same number of rows.');
   if (!M.isSquare) throw new NotImplementedError('LUsolve: only square systems are supported');

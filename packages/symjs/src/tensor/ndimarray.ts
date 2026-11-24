@@ -1584,7 +1584,10 @@ class ArrayIndexed extends Indexed {
     if (indices.every((i) => i.isNumber)) return base.get(...indices);
     return new ArrayIndexed(args);
   }
-  /** SymPy: the derivative of the array, indexed the same way (diff itself handles x == this). */
+  /**
+   * Differentiates the underlying array with respect to the given variable and indexes the
+   * derivative with the original indices.
+   */
   override diffSelf(x: Expr): Expr {
     return new ArrayIndexed([cast(this.base, NDimArray).diff(x), ...this.indices]);
   }

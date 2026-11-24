@@ -24,7 +24,11 @@ const word = (e: GroupElement): FreeGroupElement => cast(e, FreeGroupElement, 'w
 const perm = (e: GroupElement): Permutation => cast(e, Permutation, 'permutation');
 const sameSet = (a: ReadonlySet<number>, b: ReadonlySet<number>): boolean => a.size === b.size && [...a].every((x) => b.has(x));
 
-/** SymPy PermutationGroup.presentation(eliminate_gens): a presentation on one generator x_i per generator of G. */
+/**
+ * Computes a finite presentation from the permutation group's generators and their relations.
+ *
+ * @see SymPy `sympy.combinatorics.perm_groups.PermutationGroup.presentation`
+ */
 export function presentationOf(G: PermutationGroupNode, _eliminateGens = true): FpGroup {
   if (G.fpPresentation) return G.fpPresentation;
   const gens = G.generators;
@@ -150,7 +154,12 @@ function verify(H: PermutationGroupNode, K: PermutationGroupNode, phi: GroupHomo
   return rels;
 }
 
-/** SymPy PermutationGroup.strong_presentation(): a presentation on the strong generators x_0, x_1, ... of G. */
+/**
+ * Computes a presentation on the permutation group's strong generators, named `x_0`, `x_1`, and
+ * so on.
+ *
+ * @see SymPy `sympy.combinatorics.perm_groups.PermutationGroup.strong_presentation`
+ */
 export function strongPresentationOf(G: PermutationGroupNode): FpGroup {
   const strongGens = G.strongGens;
   const stabs = G.basicStabilizers;

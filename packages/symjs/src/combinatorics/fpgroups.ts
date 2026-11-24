@@ -1520,9 +1520,11 @@ export class GroupHomomorphism {
 }
 
 /**
- * SymPy homomorphism(domain, codomain, gens, images, check): the
- * homomorphism sending gens to images (the other generators to the
- * identity); with `check`, verify that it is well defined.
+ * Constructs the group homomorphism that sends the specified generators to their images and all
+ * remaining generators to the identity. By default, it checks that the images satisfy the
+ * domain's relators.
+ *
+ * @see SymPy `sympy.combinatorics.homomorphisms.homomorphism`
  */
 export function homomorphismOf(domain: HomomorphismGroup, codomain: HomomorphismGroup, gensIn: readonly GroupElement[], imagesIn: readonly GroupElement[] = [], check = true): GroupHomomorphism {
   if (!(domain instanceof PermutationGroupNode || domain instanceof FpGroup || domain instanceof FreeGroup)) throw new TypeError('The domain must be a group');
@@ -1542,7 +1544,7 @@ export function homomorphismOf(domain: HomomorphismGroup, codomain: Homomorphism
   return new GroupHomomorphism(domain, codomain, map.entries());
 }
 
-/** SymPy _check_homomorphism(domain, codomain, images): whether the images satisfy the relators of the domain's presentation. */
+/** Checks whether the generator images satisfy the relators of the domain's presentation. */
 export function checkHomomorphism(domain: HomomorphismGroup, codomain: HomomorphismGroup, images: ElementMap<GroupElement> | ReadonlyMap<GroupElement, GroupElement>): boolean {
   const map = images instanceof ElementMap ? images : (() => {
     const m = new ElementMap<GroupElement>();

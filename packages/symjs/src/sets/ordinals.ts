@@ -282,9 +282,10 @@ export class OrdinalNode {
     return new OrdinalNode([new OmegaPowerNode(other, 1)]);
   }
   /**
-   * SymPy's str: `w**(w + 1) + w**3*2`, `ord0` for zero.
+   * Formats the ordinal in Cantor normal form, using `w` for omega and `ord0` for zero.
    *
    * @returns The formatted text.
+   * @see SymPy `sympy.sets.ordinals.Ordinal.__str__`
    */
   toString(): string {
     if (this.isZero) return 'ord0';

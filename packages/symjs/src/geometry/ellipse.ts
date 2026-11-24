@@ -844,7 +844,12 @@ export class CircleNode extends EllipseNode {
 
 }
 
-/** SymPy Ellipse.__new__(center, hradius, vradius, eccentricity). */
+/**
+ * Constructs an ellipse from its center and two of its horizontal radius, vertical radius, and
+ * eccentricity. Equal radii give a circle, and a zero radius can give a segment or point.
+ *
+ * @see SymPy `sympy.geometry.ellipse.Ellipse`
+ */
 export function newEllipse(centerIn?: PointInput, hIn?: ExprLike, vIn?: ExprLike, eIn?: ExprLike): GeometryEntity {
   let hradius = hIn === undefined ? undefined : sympify(hIn);
   let vradius = vIn === undefined ? undefined : sympify(vIn);
@@ -889,7 +894,12 @@ function circleCoeffs(eq: Expr, x: Sym, y: Sym): [Expr, Expr, Expr, Expr, Expr] 
   return [c(2, 0), c(0, 2), c(1, 0), c(0, 1), c(0, 0)];
 }
 
-/** SymPy Circle.__new__: a circle from an equation, three points, or a center and a radius. */
+/**
+ * Constructs a circle from its equation, three points on its circumference, or its center and
+ * radius.
+ *
+ * @see SymPy `sympy.geometry.ellipse.Circle`
+ */
 export function newCircle(...argsIn: unknown[]): GeometryEntity {
   const last = argsIn[argsIn.length - 1];
   const opts = isOptions(last) ? last : {};

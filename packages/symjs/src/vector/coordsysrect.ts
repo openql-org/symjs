@@ -126,10 +126,7 @@ function lameOfLambda(l: LambdaNode): Equations {
   };
 }
 
-/**
- * SymPy CoordSys3D._check_orthogonality: the transformation equations
- * define an orthogonal coordinate system.
- */
+/** Tests whether the coordinate transformation defines an orthogonal system. */
 export function checkOrthogonality(equations: LambdaNode): boolean {
   const xs = [new Dummy('x1'), new Dummy('x2'), new Dummy('x3')];
   const eqs = applyLambda(equations, at(xs, 0), at(xs, 1), at(xs, 2));
@@ -142,7 +139,7 @@ export function checkOrthogonality(equations: LambdaNode): boolean {
   return isZero(dotv(defined(a, 'a'), defined(b, 'b'))) && isZero(dotv(defined(b, 'b'), defined(c, 'c'))) && isZero(dotv(defined(c, 'c'), defined(a, 'a')));
 }
 
-/** SymPy CoordSys3D._rotation_trans_equations: the matrix times the column of the equations. */
+/** Rotates the transformation equations by multiplying their coordinate column by the given matrix. */
 export function rotationTransEquations(matrix: Matrix, equations: readonly ExprLike[]): Expr[] {
   return [...matMul(matrix, Matrix.col(...equations)).data];
 }

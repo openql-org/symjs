@@ -22,9 +22,8 @@ import { CoordSysBase } from './basisdependent';
 import { Vector } from './vector';
 
 /**
- * SymPy _path(from_object, to_object): the path from one node of a tree of
- * points (or coordinate systems) to another through their first common
- * ancestor, and the index of that ancestor in the path.
+ * Finds the path between two points or coordinate systems through their nearest common ancestor.
+ * Returns the ancestor's index followed by the full path.
  */
 export function treePath<T extends Expr>(from: T, to: T, parent: (t: T) => T | undefined, root: (t: T) => T): [number, T[]] {
   if (root(from).key !== root(to).key) throw new RangeError(`No connecting path found between ${String(from)} and ${String(to)}`);

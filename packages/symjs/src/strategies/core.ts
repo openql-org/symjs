@@ -28,7 +28,11 @@ export function stdout(): Writer {
   return { write: (text) => write.call(proc?.stdout, text) };
 }
 
-/** SymPy `identity(x)`: the rule that returns its input. */
+/**
+ * Returns its input unchanged.
+ *
+ * @see SymPy `sympy.strategies.core.identity`
+ */
 export function identity<T>(x: T): T {
   return x;
 }

@@ -305,9 +305,11 @@ export function normalizeThetaSet(theta: SetExpr): SetExpr {
 }
 
 /**
- * SymPy ComplexRegion(sets, polar=False): the region of the complex plane;
- * Reals x Reals is Complexes, and a product of two finite sets in
- * rectangular form is the finite set of its points.
+ * Constructs a region of the complex plane in rectangular or polar coordinates. In rectangular
+ * coordinates, two real lines give the whole plane and two finite coordinate sets give a finite
+ * set of complex points.
+ *
+ * @see SymPy `sympy.sets.fancysets.ComplexRegion`
  */
 export function complexRegion(sets: SetExpr, polar = false): SetExpr {
   if (typeof polar !== 'boolean') throw new RangeError('polar must be a boolean');

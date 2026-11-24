@@ -150,7 +150,12 @@ function combineExponentials(body: Expr, rv: RandomSymbol): Expr {
   return mul(...body.args.filter((g) => !exponentials.some((h) => h === g)), exp(expand(add(...exponentials.map((g) => g.exp)))));
 }
 
-/** SymPy CompoundDistribution(dist): the distribution itself when no parameter is random. */
+/**
+ * Wraps a distribution with random parameters in a compound distribution and returns the
+ * original law when all parameters are deterministic.
+ *
+ * @see SymPy `sympy.stats.compound_rv.CompoundDistribution`
+ */
 export function compoundDistribution(dist: Distribution): Distribution {
   if (!(dist instanceof ContinuousDistribution || dist instanceof SingleFiniteDistribution || dist instanceof DiscreteDistribution)) {
     throw new NotImplementedError(`Compound Distribution for ${dist.toString()} is not implemented yet`);
@@ -376,8 +381,10 @@ function transformPSpace(sym: Sym, dist: Distribution, pdfIn: LambdaNode, evalua
 }
 
 /**
- * SymPy CompoundPSpace(s, distribution): a compound distribution gives a
- * CompoundPSpace, any other the single space of its kind.
+ * Creates a probability space for a symbol and its law, using a compound space for a compound
+ * law or the corresponding single-variable space otherwise.
+ *
+ * @see SymPy `sympy.stats.compound_rv.CompoundPSpace`
  */
 export function compoundPSpace(s: string | Sym, distribution: Distribution): PSpace {
   const sym = symbolConverter(s);

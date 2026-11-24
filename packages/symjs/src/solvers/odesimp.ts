@@ -320,8 +320,10 @@ export function constantRenumber(expr: Expr, variables?: readonly Expr[], newcon
 }
 
 /**
- * SymPy odesimp: evaluate integrals, simplify constants, solve for f(x) when
- * possible and renumber the constants.
+ * Simplifies an ODE solution by evaluating integrals as directed by the hint, simplifying and
+ * renumbering arbitrary constants, and solving for the dependent function when possible.
+ *
+ * @see SymPy `sympy.solvers.ode.ode.odesimp`
  */
 export function odesimp(ode: Expr, solIn: Expr, fx: UndefFn, hint: string): Expr[] {
   const x = cast(first(fx.args), Sym);

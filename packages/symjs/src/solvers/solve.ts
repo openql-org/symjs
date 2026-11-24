@@ -55,7 +55,10 @@ const isZeroE = (e: Expr): boolean => {
   return s instanceof Rational && s.isZero;
 };
 
-/** lhs - rhs for an equation given as Eq(lhs, rhs) or an expression (= 0). */
+/**
+ * Expresses an equation in zero form by subtracting its right side from its left. A single
+ * expression already represents a left side equated to zero.
+ */
 export function asEquation(e: ExprLike): Expr {
   const x = sympify(e);
   if (x instanceof Rel && x.op === 'Eq') return add(x.lhs, mul(-1, x.rhs));
@@ -1989,8 +1992,8 @@ const cplx = (z: { re: number; im: number }): Expr =>
 
 
 /**
- * SymPy solvers._invert: reduce eq = 0 to lhs = rhs with lhs containing the
- * symbols in its simplest form. Returns [rhs, lhs].
+ * Rewrites an equation in zero form as `lhs = rhs`, isolating the part containing the specified
+ * symbols where possible. Returns the pair in the order `[rhs, lhs]`.
  */
 export function invertEquation(eqIn: ExprLike, symbols: readonly Sym[] = [], opts: { integerPower?: boolean } = {}): [Expr, Expr] {
   const eq = sympify(eqIn);
