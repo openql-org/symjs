@@ -26,11 +26,28 @@ import { Poly, resultant } from '../sympoly';
 import { GaloisGroupException, Resolvent, defineResolvents, getResolventByLookup } from './galoisresolvents';
 import { coeffSearch } from './utilities';
 
-export interface GaloisGroupOptions { byName?: boolean; maxTries?: number; randomize?: boolean }
+/** Controls how the Galois group is computed and represented. */
+export interface GaloisGroupOptions {
+  /** The choice of a transitive-subgroup name in place of a permutation group. */
+  byName?: boolean;
+  /** The maximum number of resolvent-search attempts. */
+  maxTries?: number;
+  /** The choice of random Tschirnhausen transformations. */
+  randomize?: boolean
+}
+/**
+ * Pairs the group or its transitive-subgroup name with a flag for containment in the alternating
+ * group.
+ */
 export type GaloisGroupResult = [TransitiveSubgroup | PermutationGroupNode, boolean];
 type NamedGroup = [TransitiveSubgroup, boolean];
 
-/** No suitable Tschirnhausen transformation or resolvent was found within the allowed number of tries. */
+/**
+ * No suitable Tschirnhausen transformation or resolvent was found within the allowed number of
+ * tries.
+ *
+ * @see SymPy `sympy.polys.numberfields.galoisgroups.MaxTriesException`
+ */
 export class MaxTriesException extends GaloisGroupException {}
 
 /** @internal The key of a polynomial in a Tschirnhausen history: its dense coefficients joined by commas (SymPy Poly.rep). */
@@ -59,11 +76,16 @@ export interface TschirnhausenOptions {
 }
 
 /**
- * Another monic irreducible integer polynomial U defining the same number
- * field as the monic irreducible integer polynomial T (Cohen, Alg. 6.3.4):
- * returns [A, U], where the polynomial A maps the roots of T to those of U.
- * Throws MaxTriesException when no square-free U outside the history is
- * found in maxTries attempts.
+ * Another monic irreducible integer polynomial U defining the same number field as the monic
+ * irreducible integer polynomial T (Cohen, Alg. 6.3.4): returns [A, U], where the polynomial A maps
+ * the roots of T to those of U. Throws MaxTriesException when no square-free U outside the history
+ * is found in maxTries attempts.
+ *
+ * @param T - Monic irreducible integer polynomial.
+ * @param options - Coefficient bounds, candidate order, history and trial limit.
+ * @returns The transformation polynomial and the transformed defining polynomial.
+ * @throws MaxTriesException when no admissible transformation is found within the trial limit.
+ * @see SymPy `sympy.polys.numberfields.galoisgroups.tschirnhausen_transformation`
  */
 export function tschirnhausenTransformation(T: Poly, options: TschirnhausenOptions = {}): [Poly, Poly] {
   const { maxCoeff = 10, maxTries = 30, history = new Set<string>(), fixedOrder = true, random = Math.random } = options;
@@ -104,7 +126,14 @@ export function tschirnhausenTransformation(T: Poly, options: TschirnhausenOptio
   throw new MaxTriesException('no Tschirnhausen transformation found');
 }
 
-/** Whether the discriminant of a polynomial, or of a dense integer polynomial, is a rational square. */
+/**
+ * Tests whether the discriminant of a polynomial, or of a dense integer polynomial, is a rational
+ * square.
+ *
+ * @param T - Polynomial or its dense integer coefficients.
+ * @returns Whether the discriminant is a rational square.
+ * @see SymPy `sympy.polys.numberfields.galoisgroups.has_square_disc`
+ */
 export function hasSquareDisc(T: Poly | readonly (bigint | Rational)[]): boolean {
   const p = T instanceof Poly ? T : dense(T);
   const d = expectType(p.discriminant(), (e): e is Rational => e instanceof Rational, 'rational discriminant');
@@ -267,12 +296,26 @@ export function galoisGroupDegree6Lookup(T0: Poly, maxTries = 30, randomize = fa
 }
 
 /**
- * The Galois group of an irreducible polynomial over ZZ or QQ of degree at
- * most six: [G, alt], with G a PermutationGroup, or with byName the member of
- * S1TransitiveSubgroups ... S6TransitiveSubgroups naming it, and alt whether
- * G is contained in the alternating group A_n. maxTries bounds the
- * Tschirnhausen transformations tried (MaxTriesException beyond it), and
- * randomize chooses their coefficients at random instead of in a fixed order.
+ * The Galois group of an irreducible polynomial over ZZ or QQ of degree at most six: [G, alt], with
+ * G a PermutationGroup, or with byName the member of S1TransitiveSubgroups... S6TransitiveSubgroups
+ * naming it, and alt whether G is contained in the alternating group A_n. maxTries bounds the
+ * Tschirnhausen transformations tried (MaxTriesException beyond it), and randomize chooses their
+ * coefficients at random instead of in a fixed order.
+ *
+ * @param f - Irreducible univariate polynomial of degree at most six.
+ * @param x - Polynomial variable, or the group options.
+ * @param options - Group representation and resolvent-search settings.
+ * @returns The group or its name and a flag for containment in the alternating group.
+ * @throws RangeError when the polynomial is constant, reducible, multivariate, outside the rational
+ *   or integer domains, or has degree greater than six.
+ * @see SymPy `sympy.polys.numberfields.galoisgroups.galois_group`
+ * @example
+ * ```ts
+ * import { ex, galoisGroup } from '@symjs/symjs';
+ *
+ * const [, alternating] = galoisGroup(ex`x**4 + 1`);
+ * alternating; // => True
+ * ```
  */
 export function galoisGroup(f: Poly | ExprLike, x?: Sym | GaloisGroupOptions, options: GaloisGroupOptions = {}): GaloisGroupResult {
   const opts = x !== undefined && !(x instanceof Sym) ? x : options;

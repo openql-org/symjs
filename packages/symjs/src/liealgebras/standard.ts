@@ -10,7 +10,7 @@ import type { Expr } from '../core/nodes';
 import { Rational } from '../core/nodes';
 import { Matrix } from '../matrices/matrix';
 
-/** A coordinate of a root: an integer, a rational or (in SymPy's E series simple roots) a float. */
+/** Represents one coordinate of a root as an integer, a rational number or a floating-point value. */
 export type RootCoordinate = number | Rational;
 /** A root: its coordinates in the standard basis. */
 export type Root = RootCoordinate[];
@@ -37,33 +37,90 @@ export const labels = (from: number, to: number): string => Array.from({ length:
 /** n nodes joined by single bonds. */
 export const chain = (n: number): string => Array<string>(n).fill('0').join('---');
 
-/** SymPy Standard_Cartan: a Cartan type of series A-G and rank n. */
+/**
+ * A Cartan type of series A-G and rank n.
+ *
+ * @see SymPy `sympy.liealgebras.cartan_type.Standard_Cartan`
+ */
 export abstract class StandardCartan {
+  /**
+   * Records the series and rank of a Cartan type.
+   *
+   * @param series - Letter identifying the Cartan family.
+   * @param n - Rank of the Cartan type.
+   */
   constructor(
-    /** The series letter (A, B, C, D, E, F or G). */
+    /**
+     * The series letter (A, B, C, D, E, F or G).
+     *
+     * @see SymPy `sympy.liealgebras.cartan_type.Standard_Cartan.series`
+     */
     readonly series: string,
-    /** The rank. */
+    /**
+     * The rank.
+     *
+     * @see SymPy `sympy.liealgebras.cartan_type.Standard_Cartan.n`
+     */
     readonly n: number,
   ) {}
-  /** SymPy rank: the rank of the Lie algebra. */
+  /**
+   * The rank of the Lie algebra.
+   *
+   * @returns The number of simple roots.
+   * @see SymPy `sympy.liealgebras.cartan_type.Standard_Cartan.rank`
+   */
   rank(): number {
     return this.n;
   }
-  /** SymPy dimension: the dimension of the vector space of the root system. */
+  /**
+   * Gives the dimension of the vector space used for the root coordinates.
+   *
+   * @returns The dimension of the ambient root space.
+   */
   abstract dimension(): number;
-  /** SymPy simple_root(i): the i-th simple root (1-based). */
+  /**
+   * Selects a simple root by its position in the Dynkin diagram.
+   *
+   * @param i - One-based simple-root index.
+   * @returns The coordinates of the indexed simple root.
+   */
   abstract simpleRoot(i: number): Root;
-  /** SymPy positive_roots: the positive roots, numbered from 1. */
+  /**
+   * Enumerates the positive roots in standard coordinates.
+   *
+   * @returns The positive roots indexed from one.
+   */
   abstract positiveRoots(): Map<number, Root>;
-  /** SymPy roots: the number of roots. */
+  /**
+   * Counts both positive and negative roots.
+   *
+   * @returns The total number of roots.
+   */
   abstract roots(): number;
-  /** SymPy cartan_matrix: the Cartan matrix. */
+  /**
+   * Builds the matrix of pairings between simple roots and coroots.
+   *
+   * @returns The matrix of Cartan integers.
+   */
   abstract cartanMatrix(): Matrix;
-  /** SymPy basis: the number of independent generators of the Lie algebra. */
+  /**
+   * Counts the independent generators of the Lie algebra.
+   *
+   * @returns The dimension of the Lie algebra.
+   */
   abstract basis(): RootCoordinate;
-  /** SymPy dynkin_diagram: the Dynkin diagram as text. */
+  /**
+   * Draws the bonds and labels of the Dynkin diagram.
+   *
+   * @returns The labeled Dynkin diagram as text.
+   */
   abstract dynkinDiagram(): string;
-  /** SymPy str: the series and rank, e.g. A3. */
+  /**
+   * Formats the value as text.
+   *
+   * @returns The printable representation.
+   * @see SymPy `sympy.liealgebras.cartan_type.Standard_Cartan.__str__`
+   */
   toString(): string {
     return `${this.series}${this.n}`;
   }

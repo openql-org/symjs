@@ -32,7 +32,7 @@ import { PREC, precedence } from '../printing/str';
 import { trigsimp } from '../simplify/trigsimp';
 import { parserHooks } from '../parsing/parser';
 
-/** Options of the Quaternion constructor (SymPy real_field and norm). */
+/** Controls the coefficient field and prescribed norm of a quaternion. */
 export interface QuaternionOptions {
   /** The coefficients are real (default true): a complex scalar added or multiplied is split into a + b*i. */
   realField?: boolean;
@@ -40,7 +40,7 @@ export interface QuaternionOptions {
   norm?: ExprLike;
 }
 
-/** Options of Quaternion.toEuler (SymPy angle_addition and avoid_square_root). */
+/** Controls the trigonometric form of the Euler angles. */
 export interface ToEulerOptions {
   /** First and third angles as a sum and difference of two atan2 (default true). */
   angleAddition?: boolean;
@@ -48,7 +48,7 @@ export interface ToEulerOptions {
   avoidSquareRoot?: boolean;
 }
 
-/** Options of Quaternion.toRotationMatrix (SymPy homogeneous). */
+/** Controls the diagonal form of a quaternion rotation matrix. */
 export interface ToRotationMatrixOptions {
   /** The homogeneous form of the diagonal (default true). */
   homogeneous?: boolean;
@@ -122,14 +122,30 @@ function latexPrecedence(e: Expr): number {
 }
 
 /**
- * SymPy Quaternion: a + b*i + c*j + d*k as an expression node with the four
- * coefficients as arguments. The pre-defined norm and the real_field flag
- * are attributes, not arguments (as in SymPy, equality ignores them).
+ * Represents the quaternion `a + b*i + c*j + d*k` as an expression with four coefficients.
+ *
+ * @see SymPy `sympy.algebras.quaternion.Quaternion`
+ * @example
+ * ```ts
+ * import { Quaternion } from '@symjs/symjs';
+ *
+ * Quaternion(1, 2, 3, 4).norm(); // => sqrt(30)
+ * ```
  */
 export class QuaternionNode extends ExtensionExpr {
   #realField: boolean;
   #norm: Expr | undefined;
 
+  /**
+   * Builds a quaternion from scalar and vector coefficients and optional norm data.
+   *
+   * @param a - The scalar coefficient of the quaternion.
+   * @param b - The coefficient of the quaternion unit `i`.
+   * @param c - The coefficient of the quaternion unit `j`.
+   * @param d - The coefficient of the quaternion unit `k`.
+   * @param opts - Coefficient field and optional prescribed norm.
+   * @throws RangeError when any coefficient is noncommutative.
+   */
   constructor(a: ExprLike = 0, b: ExprLike = 0, c: ExprLike = 0, d: ExprLike = 0, opts: QuaternionOptions = {}) {
     const args = [a, b, c, d].map(sympify);
     if (args.some((i) => !i.isCommutative)) throw new RangeError('arguments have to be commutative');
@@ -140,8 +156,11 @@ export class QuaternionNode extends ExtensionExpr {
   }
 
   /**
-   * Set the pre-defined norm (SymPy set_norm); undefined removes it. Like
-   * SymPy, this changes the quaternion in place.
+   * Sets the norm used by this quaternion in place. Pass `undefined` to restore calculation from the
+   * coefficients.
+   *
+   * @param norm - Prescribed norm, or `undefined` to clear it.
+   * @see SymPy `sympy.algebras.quaternion.Quaternion.set_norm`
    */
   setNorm(norm: ExprLike | undefined): void {
     const n = norm === undefined ? undefined : sympify(norm);
@@ -149,23 +168,58 @@ export class QuaternionNode extends ExtensionExpr {
     this.#norm = n;
   }
 
+  /**
+   * Reads the scalar component of the quaternion.
+   *
+   * @returns The scalar coefficient of the quaternion.
+   * @see SymPy `sympy.algebras.quaternion.Quaternion.a`
+   */
   get a(): Expr {
     return at(this.args, 0);
   }
+  /**
+   * Reads the component along the first imaginary basis unit.
+   *
+   * @returns The coefficient of the quaternion unit `i`.
+   * @see SymPy `sympy.algebras.quaternion.Quaternion.b`
+   */
   get b(): Expr {
     return at(this.args, 1);
   }
+  /**
+   * Reads the component along the second imaginary basis unit.
+   *
+   * @returns The coefficient of the quaternion unit `j`.
+   * @see SymPy `sympy.algebras.quaternion.Quaternion.c`
+   */
   get c(): Expr {
     return at(this.args, 2);
   }
+  /**
+   * Reads the component along the third imaginary basis unit.
+   *
+   * @returns The coefficient of the quaternion unit `k`.
+   * @see SymPy `sympy.algebras.quaternion.Quaternion.d`
+   */
   get d(): Expr {
     return at(this.args, 3);
   }
-  /** The coefficients are real (SymPy real_field). */
+  /**
+   * The coefficients are real.
+   *
+   * @returns Whether the scalar field is real.
+   * @see SymPy `sympy.algebras.quaternion.Quaternion.real_field`
+   */
   get realField(): boolean {
     return this.#realField;
   }
 
+  /**
+   * Builds a quaternion from four replacement coefficients.
+   *
+   * @param args - Replacement scalar and vector coefficients in quaternion basis order.
+   * @returns A quaternion built from the replacement coefficients.
+   */
   override withArgs(args: readonly Expr[]): Expr {
     // SymPy func(*args): a new quaternion over the real field, without the pre-defined norm
     return fromArgs(args);
@@ -174,7 +228,12 @@ export class QuaternionNode extends ExtensionExpr {
     return false;
   }
 
-  /** SymPy product_matrix_left: the 4x4 matrix of q*p acting on the column of p. */
+  /**
+   * The 4x4 matrix of q*p acting on the column of p.
+   *
+   * @returns The four-dimensional multiplication matrix.
+   * @see SymPy `sympy.algebras.quaternion.Quaternion.product_matrix_left`
+   */
   get productMatrixLeft(): Matrix {
     const { a, b, c, d } = this;
     const n = (x: Expr): Expr => mul(-1, x);
@@ -185,7 +244,12 @@ export class QuaternionNode extends ExtensionExpr {
       [d, n(c), b, a],
     ]);
   }
-  /** SymPy product_matrix_right: the 4x4 matrix of p*q acting on the column of p. */
+  /**
+   * The 4x4 matrix of p*q acting on the column of p.
+   *
+   * @returns The four-dimensional multiplication matrix.
+   * @see SymPy `sympy.algebras.quaternion.Quaternion.product_matrix_right`
+   */
   get productMatrixRight(): Matrix {
     const { a, b, c, d } = this;
     const n = (x: Expr): Expr => mul(-1, x);
@@ -196,18 +260,39 @@ export class QuaternionNode extends ExtensionExpr {
       [d, c, n(b), a],
     ]);
   }
-  /** The coefficients as a column (SymPy to_Matrix); only b, c, d with vectorOnly. */
+  /**
+   * The coefficients as a column; only b, c, d with vectorOnly.
+   *
+   * @param vectorOnly - Omit the scalar part.
+   * @returns The matrix of expression entries.
+   * @see SymPy `sympy.algebras.quaternion.Quaternion.to_Matrix`
+   */
   toMatrix(vectorOnly = false): Matrix {
     return Matrix.col(...(vectorOnly ? this.args.slice(1) : this.args));
   }
-  /** A quaternion from 4 elements, or 3 with a zero real part (SymPy from_Matrix). */
+  /**
+   * A quaternion from 4 elements, or 3 with a zero real part.
+   *
+   * @param elements - Three vector coefficients or four quaternion coefficients, in basis order.
+   * @returns The value reconstructed from the matrix entries.
+   * @throws RangeError when the input has neither three nor four components.
+   * @see SymPy `sympy.algebras.quaternion.Quaternion.from_Matrix`
+   */
   static fromMatrix(elements: Matrix | readonly ExprLike[]): QuaternionNode {
     const es: readonly ExprLike[] = elements instanceof Matrix ? elements.data : elements;
     if (es.length !== 3 && es.length !== 4) throw new RangeError(`Input elements must have length 3 or 4, got ${es.length} elements`);
     return fromArgs((es.length === 3 ? [0, ...es] : es).map(sympify));
   }
 
-  /** The rotation quaternion of the Euler angles in the sequence seq (SymPy from_euler). */
+  /**
+   * The rotation quaternion of the Euler angles in the sequence seq.
+   *
+   * @param angles - Three Euler angles in radians.
+   * @param seq - Axis sequence defining the Euler convention.
+   * @returns The quaternion for the specified rotation.
+   * @throws RangeError when the input does not contain three angles.
+   * @see SymPy `sympy.algebras.quaternion.Quaternion.from_euler`
+   */
   static fromEuler(angles: Matrix | readonly ExprLike[], seq: string): Expr {
     const as: readonly ExprLike[] = angles instanceof Matrix ? angles.data : angles;
     if (as.length !== 3) throw new RangeError('3 angles must be given.');
@@ -224,9 +309,14 @@ export class QuaternionNode extends ExtensionExpr {
   }
 
   /**
-   * The Euler angles of the same rotation in the sequence seq (SymPy
-   * to_euler, after doi:10.1371/journal.pone.0276302). In gimbal lock the
-   * third angle is zero.
+   * The Euler angles of the same rotation in the sequence seq. In gimbal lock the third angle is
+   * zero.
+   *
+   * @param seq - Axis sequence defining the Euler convention.
+   * @param opts - Angle addition and square-root conventions.
+   * @returns The three angles in the requested axis order.
+   * @throws RangeError when the quaternion has zero norm.
+   * @see SymPy `sympy.algebras.quaternion.Quaternion.to_euler`
    */
   toEuler(seq: string, opts: ToEulerOptions = {}): [Expr, Expr, Expr] {
     const angleAddition = opts.angleAddition ?? true;
@@ -286,7 +376,14 @@ export class QuaternionNode extends ExtensionExpr {
     return extrinsic ? [z, y, x] : [x, y, z];
   }
 
-  /** The rotation quaternion of an axis and an angle (SymPy from_axis_angle); normalized by construction. */
+  /**
+   * The rotation quaternion of an axis and an angle; normalized by construction.
+   *
+   * @param vector - Axis of rotation.
+   * @param angle - Rotation angle in radians.
+   * @returns The quaternion for the specified rotation.
+   * @see SymPy `sympy.algebras.quaternion.Quaternion.from_axis_angle`
+   */
   static fromAxisAngle(vector: Vector3, angle: ExprLike): QuaternionNode {
     const v = [sympify(vector[0]), sympify(vector[1]), sympify(vector[2])];
     const norm = sqrt(add(...v.map((t) => pow(t, 2))));
@@ -296,8 +393,11 @@ export class QuaternionNode extends ExtensionExpr {
   }
 
   /**
-   * The quaternion of a rotation matrix (SymPy from_rotation_matrix); it is
-   * normalized when the matrix is special orthogonal.
+   * The quaternion of a rotation matrix; it is normalized when the matrix is special orthogonal.
+   *
+   * @param M - Input matrix.
+   * @returns The quaternion for the specified rotation.
+   * @see SymPy `sympy.algebras.quaternion.Quaternion.from_rotation_matrix`
    */
   static fromRotationMatrix(M: Matrix): QuaternionNode {
     const absQ = pow(M.det(), Rational.of(1n, 3n));
@@ -313,15 +413,22 @@ export class QuaternionNode extends ExtensionExpr {
 
   // ---- arithmetic (SymPy __add__, __mul__, __pow__, ...) --------------------
 
-  /** Negation (SymPy __neg__). */
+  /**
+   * Reverses the sign of the value.
+   *
+   * @returns The additive inverse.
+   * @see SymPy `sympy.algebras.quaternion.Quaternion.__neg__`
+   */
   override neg(): QuaternionNode {
     return new QuaternionNode(mul(-1, this.a), mul(-1, this.b), mul(-1, this.c), mul(-1, this.d));
   }
 
   /**
-   * The Hamilton product of q1 and q2 when either is a quaternion, else
-   * q1*q2 (SymPy Quaternion._generic_mul).
+   * The Hamilton product of q1 and q2 when either is a quaternion, else q1*q2.
    *
+   * @param q1In - First quaternion operand.
+   * @param q2In - Second quaternion operand.
+   * @returns The ordered product.
    * @internal
    */
   static genericMul(q1In: ExprLike, q2In: ExprLike): Expr {
@@ -332,7 +439,13 @@ export class QuaternionNode extends ExtensionExpr {
     return mul(q1, q2);
   }
 
-  /** The Hamilton product (the norm is pre-defined when either factor has one). */
+  /**
+   * The Hamilton product (the norm is pre-defined when either factor has one).
+   *
+   * @param q1 - First quaternion operand.
+   * @param q2 - Second quaternion operand.
+   * @returns The ordered product.
+   */
   static hamilton(q1: QuaternionNode, q2: QuaternionNode): QuaternionNode {
     const norm = q1.#norm === undefined && q2.#norm === undefined ? undefined : mul(q1.norm(), q2.norm());
     const [a1, b1, c1, d1] = [q1.a, q1.b, q1.c, q1.d];
@@ -346,7 +459,14 @@ export class QuaternionNode extends ExtensionExpr {
     );
   }
 
-  /** The sum with a quaternion or a scalar (SymPy add); a complex scalar adds to a and b when realField. */
+  /**
+   * The sum with a quaternion or a scalar; a complex scalar adds to a and b when realField.
+   *
+   * @param other - Scalar or quaternion to add.
+   * @returns The sum of the operands.
+   * @throws RangeError when the scalar operand is noncommutative.
+   * @see SymPy `sympy.algebras.quaternion.Quaternion.add`
+   */
   addQuaternion(other: ExprLike): QuaternionNode {
     const q2 = sympify(other);
     if (!(q2 instanceof QuaternionNode)) {
@@ -357,7 +477,14 @@ export class QuaternionNode extends ExtensionExpr {
     return new QuaternionNode(add(this.a, q2.a), add(this.b, q2.b), add(this.c, q2.c), add(this.d, q2.d));
   }
 
-  /** The p-th power for an integer p, the inverse power for p < 0 (SymPy pow). */
+  /**
+   * The p-th power for an integer p, the inverse power for p < 0.
+   *
+   * @param pIn - Exponent to which to raise the value.
+   * @returns The value raised to the given exponent.
+   * @throws TypeError when the exponent is not an integer.
+   * @see SymPy `sympy.algebras.quaternion.Quaternion.pow`
+   */
   override pow(pIn: ExprLike): QuaternionNode {
     const p0 = sympify(pIn);
     if (!(p0 instanceof Rational && p0.isInteger)) throw new TypeError(`unsupported operand type for Quaternion power: ${p0.toString()}`);
@@ -377,29 +504,55 @@ export class QuaternionNode extends ExtensionExpr {
     return res;
   }
 
-  /** The conjugate a - b*i - c*j - d*k, keeping a pre-defined norm (SymPy _eval_conjugate; real_field is not kept). */
+  /**
+   * The conjugate a - b*i - c*j - d*k, keeping a pre-defined norm.
+   *
+   * @returns The conjugate.
+   * @see SymPy `sympy.algebras.quaternion.Quaternion._eval_conjugate`
+   */
   override conjugateSelf(): QuaternionNode {
     return new QuaternionNode(this.a, mul(-1, this.b), mul(-1, this.c), mul(-1, this.d), { norm: this.#norm });
   }
 
-  /** The norm sqrt(a**2 + b**2 + c**2 + d**2), or the pre-defined one (SymPy norm). */
+  /**
+   * The norm sqrt(a**2 + b**2 + c**2 + d**2), or the pre-defined one.
+   *
+   * @returns The norm of the element.
+   * @see SymPy `sympy.algebras.quaternion.Quaternion.norm`
+   */
   norm(): Expr {
     if (this.#norm !== undefined) return this.#norm;
     // trigsimp simplifies the sin(x)**2 + cos(x)**2 that from_axis_angle gives
     return sqrt(trigsimp(add(...this.args.map((x) => pow(x, 2)))));
   }
-  /** q / |q| (SymPy normalize). */
+  /**
+   * Divides the quaternion by its norm.
+   *
+   * @returns The normalized value.
+   * @see SymPy `sympy.algebras.quaternion.Quaternion.normalize`
+   */
   normalize(): QuaternionNode {
     return qmul(this, pow(this.norm(), -1));
   }
-  /** conjugate(q) / |q|**2 (SymPy inverse). */
+  /**
+   * Divides the conjugate by the squared norm.
+   *
+   * @returns The multiplicative inverse.
+   * @throws RangeError when the quaternion has zero norm.
+   * @see SymPy `sympy.algebras.quaternion.Quaternion.inverse`
+   */
   inverse(): QuaternionNode {
     const n = this.norm();
     if (zeroTruth(n) === true) throw new RangeError('Cannot compute inverse for a quaternion with zero norm');
     return qmul(this.conjugateSelf(), pow(n, -2));
   }
 
-  /** e**q = e**a*(cos|v| + v/|v|*sin|v|) (SymPy exp). */
+  /**
+   * Computes the quaternion exponential using the scalar and vector parts.
+   *
+   * @returns The quaternion exponential.
+   * @see SymPy `sympy.algebras.quaternion.Quaternion.exp`
+   */
   exp(): QuaternionNode {
     const { a, b, c, d } = this;
     const vn = sqrt(add(pow(b, 2), pow(c, 2), pow(d, 2)));
@@ -407,7 +560,12 @@ export class QuaternionNode extends ExtensionExpr {
     const f = (x: Expr): Expr => mul(ea, sin(vn), x, pow(vn, -1));
     return new QuaternionNode(mul(ea, cos(vn)), f(b), f(c), f(d));
   }
-  /** log q = log|q| + v/|v|*acos(a/|q|) (SymPy log). */
+  /**
+   * Computes the quaternion logarithm from the norm and direction of its vector part.
+   *
+   * @returns The quaternion logarithm.
+   * @see SymPy `sympy.algebras.quaternion.Quaternion.log`
+   */
   log(): QuaternionNode {
     const { a, b, c, d } = this;
     const vn = sqrt(add(pow(b, 2), pow(c, 2), pow(d, 2)));
@@ -416,40 +574,95 @@ export class QuaternionNode extends ExtensionExpr {
     const f = (x: Expr): Expr => mul(x, t, pow(vn, -1));
     return new QuaternionNode(log(qn), f(b), f(c), f(d));
   }
-  /** The p-th power in the cos-sin form |q|**p*(cos(p*t) + u*sin(p*t)) (SymPy pow_cos_sin). */
+  /**
+   * The p-th power in the cos-sin form |q|**p*(cos(p*t) + u*sin(p*t)).
+   *
+   * @param p - Exponent to which to raise the value.
+   * @returns The power in polar form.
+   * @see SymPy `sympy.algebras.quaternion.Quaternion.pow_cos_sin`
+   */
   powCosSin(p: ExprLike): QuaternionNode {
     const [v, angle] = this.toAxisAngle();
     const q2 = QuaternionNode.fromAxisAngle(v, mul(p, angle));
     return qmul(q2, pow(this.norm(), p));
   }
 
-  /** SymPy _eval_subs: the coefficients and the pre-defined norm substituted (real_field is not kept). */
+  /**
+   * The coefficients and the pre-defined norm substituted (real_field is not kept).
+   *
+   * @param _old - Expression being replaced.
+   * @param _nw - Replacement expression.
+   * @param subs - Substitution applied to each coefficient.
+   * @returns The quaternion with substitutions applied.
+   * @see SymPy `sympy.algebras.quaternion.Quaternion._eval_subs`
+   */
   override subsSelf(_old: Expr, _nw: Expr, subs: (e: Expr) => Expr): QuaternionNode {
     const norm = this.#norm === undefined ? undefined : subs(this.#norm);
     return fromArgs(this.args.map(subs), { norm });
   }
-  /** SymPy simplify: each coefficient simplified (simplify maps over the arguments of the node). */
+  /**
+   * Applies the supplied simplification to the quaternion coefficients.
+   *
+   * @param simplify - Simplification applied to each coefficient.
+   * @returns The quaternion with simplified coefficients.
+   * @see SymPy `sympy.algebras.quaternion.Quaternion.simplify`
+   */
   override simplifySelf(simplify: (e: Expr) => Expr): QuaternionNode {
     return fromArgs(this.args.map(simplify));
   }
-  /** The derivative of each coefficient (SymPy Quaternion.diff). */
+  /**
+   * The derivative of each coefficient.
+   *
+   * @param x - Variable of differentiation.
+   * @param n - Order of differentiation.
+   * @returns The derivative.
+   * @see SymPy `sympy.algebras.quaternion.Quaternion.diff`
+   */
   override diff(x: Expr, n = 1): QuaternionNode {
     return fromArgs(this.args.map((e) => impl.diff(e, x, n)));
   }
+  /**
+   * Differentiates the four coefficients individually.
+   *
+   * @param x - Independent variable.
+   * @param dd - Derivative applied to each coefficient.
+   * @returns The derivative.
+   * @see SymPy `sympy.algebras.quaternion.Quaternion.diff`
+   */
   override diffSelf(x: Expr, dd: (e: Expr, x: Expr) => Expr): Expr {
     return fromArgs(this.args.map((e) => dd(e, x)));
   }
-  /** The integral of each coefficient, between the limits when given (SymPy Quaternion.integrate). */
+  /**
+   * The integral of each coefficient, between the limits when given.
+   *
+   * @param x - Independent variable.
+   * @param limits - Integration variable or endpoints of integration.
+   * @returns The integral.
+   * @see SymPy `sympy.algebras.quaternion.Quaternion.integrate`
+   */
   override integrate(x: Sym, limits?: [ExprLike, ExprLike]): QuaternionNode {
     return fromArgs(this.args.map((e) => impl.integrate(e, x, limits)));
   }
+  /**
+   * Integrates each of the four coefficients.
+   *
+   * @param _x - Independent variable.
+   * @param _limits - Integration variable or endpoints of integration.
+   * @param integrate - Integration applied to each coefficient.
+   * @returns The integral.
+   * @see SymPy `sympy.algebras.quaternion.Quaternion._eval_Integral`
+   */
   override integrateSelf(_x: Sym, _limits: readonly [Expr, Expr] | undefined, integrate: (e: Expr) => Expr): Expr {
     return fromArgs(this.args.map(integrate));
   }
 
   /**
-   * The point pin rotated by r, a quaternion (normalized first) or an
-   * [axis, angle] pair (SymPy rotate_point).
+   * The point pin rotated by r, a quaternion (normalized first) or an [axis, angle] pair.
+   *
+   * @param pin - Point to rotate.
+   * @param r - Rotation quaternion or axis-angle pair.
+   * @returns The rotated coordinates.
+   * @see SymPy `sympy.algebras.quaternion.Quaternion.rotate_point`
    */
   static rotatePoint(pin: Vector3, r: QuaternionNode | readonly [Vector3, ExprLike]): [Expr, Expr, Expr] {
     const q = r instanceof QuaternionNode ? r.normalize() : QuaternionNode.fromAxisAngle(r[0], r[1]);
@@ -457,7 +670,19 @@ export class QuaternionNode extends ExtensionExpr {
     return [pout.b, pout.c, pout.d];
   }
 
-  /** The axis and angle of the rotation (SymPy to_axis_angle). */
+  /**
+   * The axis and angle of the rotation.
+   *
+   * @remarks SymPy returns the axis and angle as `((1, 0, 0), pi/2)`.
+   * @returns The rotation axis and angle.
+   * @see SymPy `sympy.algebras.quaternion.Quaternion.to_axis_angle`
+   * @example
+   * ```ts
+   * import { Quaternion } from '@symjs/symjs';
+   *
+   * Quaternion(1, 1, 0, 0).toAxisAngle(); // => [[1, 0, 0], pi/2]
+   * ```
+   */
   toAxisAngle(): [[Expr, Expr, Expr], Expr] {
     let q: QuaternionNode = this;
     if (isNegative(q.a) === true) q = qmul(q, -1);
@@ -470,8 +695,13 @@ export class QuaternionNode extends ExtensionExpr {
   }
 
   /**
-   * The rotation matrix of the quaternion about the origin, or the 4x4
-   * transformation about the point v (SymPy to_rotation_matrix).
+   * The rotation matrix of the quaternion about the origin, or the 4x4 transformation about the point
+   * v.
+   *
+   * @param v - Center of the rotation.
+   * @param opts - Use `homogeneous` to choose the diagonal formula.
+   * @returns The rotation or homogeneous transformation matrix.
+   * @see SymPy `sympy.algebras.quaternion.Quaternion.to_rotation_matrix`
    */
   toRotationMatrix(v?: Vector3, opts: ToRotationMatrixOptions = {}): Matrix {
     const homogeneous = opts.homogeneous ?? true;
@@ -505,71 +735,157 @@ export class QuaternionNode extends ExtensionExpr {
     return Matrix.of([[m00, m01, m02, m03], [m10, m11, m12, m13], [m20, m21, m22, m23], [0, 0, 0, 1]]);
   }
 
-  /** The scalar part a (SymPy scalar_part). */
+  /**
+   * Selects the coefficient of the identity quaternion.
+   *
+   * @returns The real-axis coefficient.
+   * @see SymPy `sympy.algebras.quaternion.Quaternion.scalar_part`
+   */
   scalarPart(): Expr {
     return this.a;
   }
-  /** The vector part 0 + b*i + c*j + d*k (SymPy vector_part). */
+  /**
+   * Clears the scalar component and keeps the three imaginary components.
+   *
+   * @returns The pure vector component.
+   * @see SymPy `sympy.algebras.quaternion.Quaternion.vector_part`
+   */
   vectorPart(): QuaternionNode {
     return new QuaternionNode(0, this.b, this.c, this.d);
   }
-  /** The versor of the vector part, an imaginary unit (SymPy axis). */
+  /**
+   * The versor of the vector part, an imaginary unit.
+   *
+   * @returns The unit vector quaternion along the axis.
+   * @see SymPy `sympy.algebras.quaternion.Quaternion.axis`
+   */
   axis(): QuaternionNode {
     const ax = this.vectorPart().normalize();
     return new QuaternionNode(0, ax.b, ax.c, ax.d);
   }
-  /** The scalar part is zero (SymPy is_pure). */
+  /**
+   * Tests whether this quaternion has zero scalar part.
+   *
+   * @returns Whether the scalar component vanishes, or `"unknown"` if the symbolic coefficients do
+   *   not decide the result.
+   * @see SymPy `sympy.algebras.quaternion.Quaternion.is_pure`
+   */
   isPure(): Truth {
     return toTruth(zeroTruth(this.a));
   }
-  /** The norm is zero (SymPy is_zero_quaternion). */
+  /**
+   * Tests whether the quaternion has zero norm.
+   *
+   * @returns Whether the quaternion vanishes, or `"unknown"` if the symbolic coefficients do not
+   *   decide the result.
+   * @see SymPy `sympy.algebras.quaternion.Quaternion.is_zero_quaternion`
+   */
   isZeroQuaternion(): Truth {
     return toTruth(zeroTruth(this.norm()));
   }
-  /** The angle 2*atan2(|v|, a) measured in the real-axis plane (SymPy angle). */
+  /**
+   * The angle 2*atan2(|v|, a) measured in the real-axis plane.
+   *
+   * @returns The rotation angle in radians.
+   * @see SymPy `sympy.algebras.quaternion.Quaternion.angle`
+   */
   angle(): Expr {
     return mul(2, atan2(this.vectorPart().norm(), this.scalarPart()));
   }
-  /** The rotation arcs of the two quaternions lie in the same plane: their axes are parallel (SymPy arc_coplanar). */
+  /**
+   * The rotation arcs of the two quaternions lie in the same plane: their axes are parallel.
+   *
+   * @param other - Quaternion defining the second arc.
+   * @returns The truth value of the geometric relation, or `"unknown"` if the symbolic coefficients
+   *   do not decide the result.
+   * @throws RangeError when either quaternion is zero.
+   * @see SymPy `sympy.algebras.quaternion.Quaternion.arc_coplanar`
+   */
   arcCoplanar(other: QuaternionNode): Truth {
     if (this.isZeroQuaternion() === true || other.isZeroQuaternion() === true) throw new RangeError('Neither of the given quaternions can be 0');
     const a1 = this.axis();
     const a2 = other.axis();
     return truthOr(a1.addQuaternion(a2.neg()).isZeroQuaternion(), a1.addQuaternion(a2).isZeroQuaternion());
   }
-  /** The three pure quaternions, seen as 3D vectors, are coplanar (SymPy vector_coplanar). */
+  /**
+   * The three pure quaternions, seen as 3D vectors, are coplanar.
+   *
+   * @param q1 - First quaternion operand.
+   * @param q2 - Second quaternion operand.
+   * @param q3 - Third quaternion operand.
+   * @returns The truth value of the geometric relation, or `"unknown"` if the symbolic coefficients
+   *   do not decide the result.
+   * @throws RangeError when an input quaternion is not pure.
+   * @see SymPy `sympy.algebras.quaternion.Quaternion.vector_coplanar`
+   */
   static vectorCoplanar(q1: QuaternionNode, q2: QuaternionNode, q3: QuaternionNode): Truth {
     if ([q1, q2, q3].some((q) => q.isPure() === false)) throw new RangeError('The given quaternions must be pure');
     const M = Matrix.of([q1, q2, q3].map((q) => [q.b, q.c, q.d]));
     return toTruth(zeroTruth(M.det()));
   }
-  /** The two pure quaternions, seen as 3D vectors, are parallel: their product commutes (SymPy parallel). */
+  /**
+   * The two pure quaternions, seen as 3D vectors, are parallel: their product commutes.
+   *
+   * @param other - Quaternion whose direction to compare.
+   * @returns The truth value of the geometric relation, or `"unknown"` if the symbolic coefficients
+   *   do not decide the result.
+   * @throws RangeError when an input quaternion is not pure.
+   * @see SymPy `sympy.algebras.quaternion.Quaternion.parallel`
+   */
   parallel(other: QuaternionNode): Truth {
     if (this.isPure() === false || other.isPure() === false) throw new RangeError('The provided quaternions must be pure');
     return qmul(this, other).addQuaternion(qmul(other, this).neg()).isZeroQuaternion();
   }
-  /** The two pure quaternions, seen as 3D vectors, are orthogonal: their product anticommutes (SymPy orthogonal). */
+  /**
+   * The two pure quaternions, seen as 3D vectors, are orthogonal: their product anticommutes.
+   *
+   * @param other - Quaternion to test for orthogonality.
+   * @returns The truth value of the geometric relation, or `"unknown"` if the symbolic coefficients
+   *   do not decide the result.
+   * @throws RangeError when an input quaternion is not pure.
+   * @see SymPy `sympy.algebras.quaternion.Quaternion.orthogonal`
+   */
   orthogonal(other: QuaternionNode): Truth {
     if (this.isPure() === false || other.isPure() === false) throw new RangeError('The given quaternions must be pure');
     return qmul(this, other).addQuaternion(qmul(other, this)).isZeroQuaternion();
   }
-  /** The norm times the axis (SymPy index_vector). */
+  /**
+   * The norm times the axis.
+   *
+   * @returns The axis scaled by the norm.
+   * @see SymPy `sympy.algebras.quaternion.Quaternion.index_vector`
+   */
   indexVector(): QuaternionNode {
     return qmul(this.axis(), this.norm());
   }
-  /** The natural logarithm of the norm (SymPy mensor). */
+  /**
+   * The natural logarithm of the norm.
+   *
+   * @returns The logarithm of the norm.
+   * @see SymPy `sympy.algebras.quaternion.Quaternion.mensor`
+   */
   mensor(): Expr {
     return log(this.norm());
   }
 
   // ---- printing ------------------------------------------------------------
 
-  /** SymPy StrPrinter._print_Quaternion: a + b*i + c*j + d*k, a coefficient binding weaker than Mul parenthesized. */
+  /**
+   * A + b*i + c*j + d*k, a coefficient binding weaker than Mul parenthesized.
+   *
+   * @param print - Formatter for a coefficient.
+   * @returns The formatted quaternion.
+   */
   override printStr(print: (e: Expr) => string): string {
     const s = this.args.map((e) => (precedence(e) < PREC.MUL ? `(${print(e)})` : print(e)));
     return [at(s, 0), ...s.slice(1).map((x, i) => `${x}*${at('ijk', i)}`)].join(' + ');
   }
-  /** SymPy LatexPrinter._print_Quaternion. */
+  /**
+   * Formats the four components in the quaternion basis for LaTeX.
+   *
+   * @param print - Formatter for a coefficient.
+   * @returns The LaTeX representation.
+   */
   override printLatex(print: (e: Expr) => string): string {
     const s = this.args.map((e) => (latexPrecedence(e) < PREC.MUL ? `\\left(${print(e)}\\right)` : print(e)));
     return [at(s, 0), ...s.slice(1).map((x, i) => `${x} ${at('ijk', i)}`)].join(' + ');
@@ -628,13 +944,28 @@ registerArithmetic((op, args) => {
 });
 
 /**
- * SymPy Quaternion(a, b, c, d, real_field=True, norm=None), callable and
- * usable with instanceof.
+ * Constructs a quaternion with scalar part `a` and vector coefficients `b`, `c` and `d`.
+ *
+ * @param a - The scalar coefficient of the quaternion.
+ * @param b - The coefficient of the quaternion unit `i`.
+ * @param c - The coefficient of the quaternion unit `j`.
+ * @param d - The coefficient of the quaternion unit `k`.
+ * @param opts - Coefficient field and prescribed norm.
+ * @returns The quaternion with the supplied coefficients.
+ * @see SymPy `sympy.algebras.quaternion.Quaternion`
+ * @example
+ * ```ts
+ * import { Quaternion, ex } from '@symjs/symjs';
+ *
+ * Quaternion(1, 2, 3, 4); // => 1 + 2*i + 3*j + 4*k
+ * Quaternion(ex`x`, ex`x**3`, ex`x`, ex`x**2`, { realField: false }); // => x + x**3*i + x*j + x**2*k
+ * ```
  */
 export const Quaternion = /* @__PURE__ */ callableClass(
   QuaternionNode,
   (a: ExprLike = 0, b: ExprLike = 0, c: ExprLike = 0, d: ExprLike = 0, opts: QuaternionOptions = {}): QuaternionNode => new QuaternionNode(a, b, c, d, opts),
 );
+/** The expression type of a quaternion. */
 export type Quaternion = QuaternionNode;
 
 /** SymPy sympify('Quaternion(a, b, c, d, real_field, norm)'): positional arguments, real_field by truth value. */

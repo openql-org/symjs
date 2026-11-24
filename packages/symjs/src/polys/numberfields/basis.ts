@@ -52,9 +52,14 @@ function powerAtLeast(p: bigint, n: number): bigint {
 }
 
 /**
- * The nilradical modulo p of an order H (the elements some power of which
- * is in pH), as the kernel of x -> x**q over GF(p) for a power q of p at
- * least the degree (SymPy nilradical_mod_p; Cohen, Lemma 6.1.6).
+ * The nilradical modulo p of an order H (the elements some power of which is in pH), as the kernel
+ * of x -> x**q over GF(p) for a power q of p at least the degree.
+ *
+ * @param H - Order in which to compute the radical.
+ * @param pIn - Rational prime.
+ * @param qIn - Power of the prime at least the degree of the field.
+ * @returns The submodule representing the nilradical.
+ * @see SymPy `sympy.polys.numberfields.basis.nilradical_mod_p`
  */
 export function nilradicalModP(H: Submodule, pIn: IntLike, qIn?: IntLike): Submodule {
   const p = asInt(pIn, 'p');
@@ -75,23 +80,36 @@ function secondEnlargement(H: Submodule, p: bigint, q: bigint): [Submodule, Subm
   return [G.add(H), Ip];
 }
 
-/** Options of roundTwo. */
+/** Configures the collection of nilradicals while computing the maximal order. */
 export interface RoundTwoOptions {
-  /** A map that receives the nilradical modulo p of the maximal order for a prime p it was computed for (SymPy radicals). */
+  /**
+   * A map that receives the nilradical modulo p of the maximal order for a prime p it was computed
+   * for.
+   */
   radicals?: Map<bigint, Submodule>;
 }
 
 /**
- * The maximal order (ring of integers) ZK of the number field of an
- * irreducible polynomial T over ZZ or QQ, or of an algebraic field, and the
- * field's discriminant (SymPy round_two): [ZK, dK]. ZK is a submodule of the
- * power basis of T (made monic over ZZ by scaling its roots).
+ * Computes the ring of integers and discriminant of the number field defined by an irreducible
+ * polynomial. Its basis is expressed relative to the corresponding integral power basis.
  *
- * SymPy stores in `radicals` the last nilradical computed under the last
- * prime of the loop, which may be another prime than the one it was
- * computed for (or computed before the order was enlarged at a later
- * prime); here a nilradical is recorded only under its own prime and only
- * when the order was not enlarged after it was computed.
+ * @remarks A nilradical is recorded under its prime only when it is still valid for the final
+ *   maximal order.
+ * @param TIn - Irreducible defining polynomial or algebraic field.
+ * @param opts - Supply `radicals` to collect the computed nilradicals by prime.
+ * @returns The maximal order and field discriminant.
+ * @throws RangeError when the input does not define an irreducible univariate polynomial over the
+ *   integers or rationals.
+ * @see SymPy `sympy.polys.numberfields.basis.round_two`
+ * @example
+ * ```ts
+ * import { Poly, ex, roundTwo } from '@symjs/symjs';
+ *
+ * const T = Poly.from(ex`x**3 + x**2 - 2*x + 8`);
+ * const [order, disc] = roundTwo(T);
+ * order.toString(); // => Submodule[[2, 0, 0], [0, 2, 0], [0, 1, 1]]/2
+ * disc; // => -503
+ * ```
  */
 export function roundTwo(TIn: Poly | AlgebraicField, opts: RoundTwoOptions = {}): [Submodule, Rational] {
   const K = TIn instanceof Poly ? undefined : TIn;

@@ -14,23 +14,54 @@ import { StandardCartan, cartanFrom, chain, filled } from './standard';
 const HALF = Rational.of(1n, 2n);
 const NEG_HALF = Rational.of(-1n, 2n);
 
-/** SymPy TypeE: the exceptional Cartan types E_6, E_7 and E_8 (roots in an 8-dimensional space). */
+/**
+ * The exceptional Cartan types E_6, E_7 and E_8 (roots in an 8-dimensional space).
+ *
+ * @see SymPy `sympy.liealgebras.type_e.TypeE`
+ */
 export class TypeE extends StandardCartan {
+  /**
+   * Constructs the Cartan type of series E with the specified rank.
+   *
+   * @param n - Rank of the Cartan type.
+   * @throws RangeError when the rank is outside the range supported by this Cartan family.
+   */
   constructor(n: number) {
     if (n < 6 || n > 8) throw new RangeError('Invalid value of n');
     super('E', n);
   }
+  /**
+   * Gives the dimension of the vector space used for the root coordinates.
+   *
+   * @returns The dimension of the ambient root space.
+   * @see SymPy `sympy.liealgebras.type_e.TypeE.dimension`
+   */
   dimension(): number {
     return 8;
   }
-  /** SymPy basic_root: -1 at i and 1 at j. */
+  /**
+   * Constructs the root with coefficient −1 at the first index and 1 at the second.
+   *
+   * @param i - First zero-based coordinate index.
+   * @param j - Second zero-based coordinate index.
+   * @returns The root specified by the two coordinate indices.
+   * @see SymPy `sympy.liealgebras.type_e.TypeE.basic_root`
+   */
   basicRoot(i: number, j: number): Root {
     const root = filled(8, 0);
     root[i] = -1;
     root[j] = 1;
     return root;
   }
-  /** The i-th simple root (the first one has the float coordinates +-0.5, as in SymPy). */
+  /**
+   * Constructs the simple root at the given one-based index. The first root has half-integer
+   * coordinates.
+   *
+   * @param i - One-based simple-root index.
+   * @returns The coordinates of the indexed simple root.
+   * @throws RangeError when the simple-root index is outside the series.
+   * @see SymPy `sympy.liealgebras.type_e.TypeE.simple_root`
+   */
   simpleRoot(i: number): Root {
     if (i === 1) {
       const root = filled(8, -0.5);
@@ -48,9 +79,10 @@ export class TypeE extends StandardCartan {
     return this.basicRoot(i - 3, i - 2);
   }
   /**
-   * The positive roots: +-e_i + e_j and the half-integer roots
-   * (1/2)(+-e_1 ... +-e_8) of the series (SymPy reuses one list for the
-   * half-integer roots, so that several of them coincide; here each is built anew).
+   * Enumerates the positive integer and half-integer roots of the exceptional root system.
+   *
+   * @returns The positive roots indexed from one.
+   * @see SymPy `sympy.liealgebras.type_e.TypeE.positive_roots`
    */
   positiveRoots(): Map<number, Root> {
     const n = this.n;
@@ -78,9 +110,21 @@ export class TypeE extends StandardCartan {
     }
     return out;
   }
+  /**
+   * Counts both positive and negative roots.
+   *
+   * @returns The total number of roots.
+   * @see SymPy `sympy.liealgebras.type_e.TypeE.roots`
+   */
   roots(): number {
     return at([72, 126, 240], this.n - 6);
   }
+  /**
+   * Builds the matrix of pairings between simple roots and coroots.
+   *
+   * @returns The matrix of Cartan integers.
+   * @see SymPy `sympy.liealgebras.type_e.TypeE.cartan_matrix`
+   */
   cartanMatrix(): Matrix {
     const n = this.n;
     const e: [number, number, number][] = [];
@@ -88,9 +132,21 @@ export class TypeE extends StandardCartan {
     e.push([0, 2, -1], [2, 0, -1], [1, 3, -1], [3, 1, -1], [2, 3, -1], [n - 1, n - 2, -1]);
     return cartanFrom(n, e);
   }
+  /**
+   * Counts the independent generators of the Lie algebra.
+   *
+   * @returns The dimension of the Lie algebra.
+   * @see SymPy `sympy.liealgebras.type_e.TypeE.basis`
+   */
   basis(): number {
     return at([78, 133, 248], this.n - 6);
   }
+  /**
+   * Draws the bonds and labels of the Dynkin diagram.
+   *
+   * @returns The labeled Dynkin diagram as text.
+   * @see SymPy `sympy.liealgebras.type_e.TypeE.dynkin_diagram`
+   */
   dynkinDiagram(): string {
     const pad = ' '.repeat(8);
     const rest = Array.from({ length: this.n - 2 }, (_x, i) => String(i + 3)).join('   ');

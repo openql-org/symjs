@@ -10,31 +10,79 @@ import type { Root } from './standard';
 import { StandardCartan, basicRoot, cartanFrom, chain, filled, labels } from './standard';
 import { longShortRoots } from './typeb';
 
-/** SymPy TypeC: the Cartan type C_n, n >= 3. */
+/**
+ * The Cartan type C_n, n >= 3.
+ *
+ * @see SymPy `sympy.liealgebras.type_c.TypeC`
+ */
 export class TypeC extends StandardCartan {
+  /**
+   * Constructs the Cartan type of series C with the specified rank.
+   *
+   * @param n - Rank of the Cartan type.
+   * @throws RangeError when the rank is outside the range supported by this Cartan family.
+   */
   constructor(n: number) {
     if (n < 3) throw new RangeError('n cannot be less than 3');
     super('C', n);
   }
+  /**
+   * Gives the dimension of the vector space used for the root coordinates.
+   *
+   * @returns The dimension of the ambient root space.
+   * @see SymPy `sympy.liealgebras.type_c.TypeC.dimension`
+   */
   dimension(): number {
     return this.n;
   }
-  /** SymPy basic_root: 1 at i and -1 at j. */
+  /**
+   * Constructs the root with coefficient 1 at the first index and −1 at the second.
+   *
+   * @param i - First zero-based coordinate index.
+   * @param j - Second zero-based coordinate index.
+   * @returns The root specified by the two coordinate indices.
+   * @see SymPy `sympy.liealgebras.type_c.TypeC.basic_root`
+   */
   basicRoot(i: number, j: number): Root {
     return basicRoot(this.n, i, j);
   }
+  /**
+   * Selects a simple root by its position in the Dynkin diagram.
+   *
+   * @param i - One-based simple-root index.
+   * @returns The coordinates of the indexed simple root.
+   * @see SymPy `sympy.liealgebras.type_c.TypeC.simple_root`
+   */
   simpleRoot(i: number): Root {
     if (i < this.n) return this.basicRoot(i - 1, i);
     const root = filled(this.n, 0);
     root[this.n - 1] = 2;
     return root;
   }
+  /**
+   * Enumerates the positive roots in standard coordinates.
+   *
+   * @returns The positive roots indexed from one.
+   * @see SymPy `sympy.liealgebras.type_c.TypeC.positive_roots`
+   */
   positiveRoots(): Map<number, Root> {
     return longShortRoots(this.n, 2);
   }
+  /**
+   * Counts both positive and negative roots.
+   *
+   * @returns The total number of roots.
+   * @see SymPy `sympy.liealgebras.type_c.TypeC.roots`
+   */
   roots(): number {
     return 2 * this.n ** 2;
   }
+  /**
+   * Builds the matrix of pairings between simple roots and coroots.
+   *
+   * @returns The matrix of Cartan integers.
+   * @see SymPy `sympy.liealgebras.type_c.TypeC.cartan_matrix`
+   */
   cartanMatrix(): Matrix {
     const n = this.n;
     const e: [number, number, number][] = [];
@@ -42,14 +90,30 @@ export class TypeC extends StandardCartan {
     e.push([n - 1, n - 2, -2]);
     return cartanFrom(n, e);
   }
-  /** The dimension n*(2*n + 1) of sp(2n). */
+  /**
+   * Counts the independent generators of the Lie algebra.
+   *
+   * @returns The dimension of the Lie algebra.
+   * @see SymPy `sympy.liealgebras.type_c.TypeC.basis`
+   */
   basis(): number {
     return this.n * (2 * this.n + 1);
   }
-  /** SymPy lie_algebra: sp(2n). */
+  /**
+   * Names the symplectic Lie algebra associated with this rank.
+   *
+   * @returns The name of the corresponding Lie algebra.
+   * @see SymPy `sympy.liealgebras.type_c.TypeC.lie_algebra`
+   */
   lieAlgebra(): string {
     return `sp(${2 * this.n})`;
   }
+  /**
+   * Draws the bonds and labels of the Dynkin diagram.
+   *
+   * @returns The labeled Dynkin diagram as text.
+   * @see SymPy `sympy.liealgebras.type_c.TypeC.dynkin_diagram`
+   */
   dynkinDiagram(): string {
     return `${chain(this.n - 1)}=<=0\n${labels(1, this.n)}`;
   }

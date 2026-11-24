@@ -13,7 +13,21 @@ import type { IntLike } from './intutil';
 import { asInt, fdiv, gcdN, gcdext, pmod, prod } from './intutil';
 import { isprime } from './primetest';
 
-/** The residue of a modulo m in (-m/2, m/2] (SymPy symmetric_residue); a is a residue in [0, m). */
+/**
+ * The residue of a modulo m in (-m/2, m/2]; a is a residue in [0, m).
+ *
+ * @param aIn - Residue between zero and the modulus (exclusive).
+ * @param mIn - Positive modulus.
+ * @returns The representative nearest zero, choosing the positive one at a tie.
+ * @see SymPy `sympy.ntheory.modular.symmetric_residue`
+ * @example
+ * ```ts
+ * import { symmetricResidue } from '@symjs/symjs';
+ *
+ * symmetricResidue(1, 6); // => 1
+ * symmetricResidue(4, 6); // => -2
+ * ```
+ */
 export function symmetricResidue(aIn: IntLike, mIn: IntLike): bigint {
   const a = asInt(aIn);
   const m = asInt(mIn);
@@ -55,9 +69,22 @@ export function gfCrt2(U: readonly bigint[], M: readonly bigint[], p: bigint, E:
 }
 
 /**
- * The integer x with x = v[i] (mod m[i]) and the product of the moduli,
- * [x, M] (SymPy crt); NoMatch when the congruences are inconsistent.
- * `check: false` skips the check for non-coprime moduli.
+ * Combines simultaneous congruences by the Chinese remainder theorem, checking consistency by
+ * default.
+ *
+ * @remarks SymPy represents the results as tuples, `(639985, 912285)` and `(954, 1224)`.
+ * @param m - Moduli of the congruences.
+ * @param v - Remainders in the same order.
+ * @param opts - Use `symmetric` for a centered representative or `check: false` to skip validation.
+ * @returns A representative and modulus, or `NoMatch` for inconsistent residues.
+ * @see SymPy `sympy.ntheory.modular.crt`
+ * @example
+ * ```ts
+ * import { crt } from '@symjs/symjs';
+ *
+ * crt([99, 97, 95], [49, 76, 65]); // => [639985, 912285]
+ * crt([12, 6, 17], [3, 4, 2], { check: false }); // => [954, 1224]
+ * ```
  */
 export function crt(m: readonly IntLike[], v: readonly IntLike[], opts: { symmetric?: boolean; check?: boolean } = {}): [bigint, bigint] | NoMatchResult {
   const symmetric = opts.symmetric ?? false;
@@ -80,12 +107,47 @@ export function crt(m: readonly IntLike[], v: readonly IntLike[], opts: { symmet
 /** An [r, m] pair (not the options object). */
 const isCongruence = (a: Congruence | SolveCongruenceOptions): a is Congruence => Array.isArray(a);
 
-/** The tuple [prod(m), E, S] for repeated use in crt2 (SymPy crt1). */
+/**
+ * Precomputes the products and modular inverses for repeated CRT combinations with the same moduli.
+ *
+ * @remarks SymPy returns `(639985, 912285)` from the final combination.
+ * @param m - Moduli to reuse with different remainder vectors.
+ * @returns The product of the moduli and the two correction arrays for `crt2`.
+ * @see SymPy `sympy.ntheory.modular.crt1`
+ * @example
+ * ```ts
+ * import { crt1, crt2 } from '@symjs/symjs';
+ *
+ * const moduli = [99, 97, 95];
+ * const [product, e, s] = crt1(moduli);
+ * crt2(moduli, [49, 76, 65], product, e, s); // => [639985, 912285]
+ * ```
+ */
 export function crt1(m: readonly IntLike[]): [bigint, bigint[], bigint[]] {
   return gfCrt1(m.map((x) => asInt(x)));
 }
 
-/** crt with the precomputed values of crt1 (SymPy crt2). */
+/**
+ * Combines a new vector of residues using the precomputed CRT data for its moduli.
+ *
+ * @remarks SymPy returns the tuple `(0, 4536)`.
+ * @param m - Moduli supplied to `crt1`.
+ * @param v - Remainders in the same order.
+ * @param mmIn - Product returned by `crt1`.
+ * @param e - Partial products returned by `crt1`.
+ * @param s - Modular inverses returned by `crt1`.
+ * @param symmetric - Choose a centered representative.
+ * @returns The combined residue and modulus.
+ * @see SymPy `sympy.ntheory.modular.crt2`
+ * @example
+ * ```ts
+ * import { crt1, crt2 } from '@symjs/symjs';
+ *
+ * const m = [18, 42, 6];
+ * const [product, e, s] = crt1(m);
+ * crt2(m, [0, 0, 0], product, e, s); // => [0, 4536]
+ * ```
+ */
 export function crt2(m: readonly IntLike[], v: readonly IntLike[], mmIn: IntLike, e: readonly IntLike[], s: readonly IntLike[], symmetric = false): [bigint, bigint] {
   const ints = (xs: readonly IntLike[]): bigint[] => xs.map((x) => asInt(x));
   const mm = asInt(mmIn);
@@ -105,12 +167,19 @@ export interface SolveCongruenceOptions {
 }
 
 /**
- * The solution [n, m] of the congruences n = r (mod m), each given as an
- * [r, m] pair, followed by the options (SymPy
- * `solve_congruence(*remainder_modulus_pairs, **hint)`); NoMatch when there
- * is none.
+ * Solves simultaneous congruences, including systems whose moduli share factors.
  *
- * `solveCongruence([2, 3], [3, 5], [2, 7])` is `[23n, 105n]`.
+ * @remarks SymPy represents the solutions as tuples, `(23, 105)` and `(5, 6)`.
+ * @param args - Remainder-modulus pairs followed by optional `symmetric` and `check` settings.
+ * @returns The solution and its modulus, or `NoMatch` if none exists.
+ * @see SymPy `sympy.ntheory.modular.solve_congruence`
+ * @example
+ * ```ts
+ * import { solveCongruence } from '@symjs/symjs';
+ *
+ * solveCongruence([2, 3], [3, 5], [2, 7]); // => [23, 105]
+ * solveCongruence([2, 3], [5, 6]); // => [5, 6]
+ * ```
  */
 export function solveCongruence(...args: readonly (Congruence | SolveCongruenceOptions)[]): [bigint, bigint] | NoMatchResult {
   const pairs = args.filter(isCongruence);

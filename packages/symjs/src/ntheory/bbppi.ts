@@ -41,11 +41,21 @@ function series(j: bigint, n: bigint, prec: bigint): bigint {
 }
 
 /**
- * The prec (default 14) hexadecimal digits of pi starting at the nth one
- * (SymPy pi_hex_digits): the digit 0 is the integral part 3, the digit 1
- * the first one after the point.
+ * Computes a run of hexadecimal digits of π starting at the given zero-based position. Position
+ * zero is the digit before the radix point.
  *
- * Example: piHexDigits(0) is '3243f6a8885a30'; piHexDigits(0, 3) is '324'.
+ * @param nIn - Index of the first digit, counting the integer part as digit zero.
+ * @param precIn - Number of digits to return.
+ * @returns The requested hexadecimal digits as a string.
+ * @throws RangeError when the offset or precision is negative.
+ * @see SymPy `sympy.ntheory.bbp_pi.pi_hex_digits`
+ * @example
+ * ```ts
+ * import { piHexDigits } from '@symjs/symjs';
+ *
+ * piHexDigits(0); // => 3243f6a8885a30
+ * piHexDigits(0, 3); // => 324
+ * ```
  */
 export function piHexDigits(nIn: IntLike, precIn: IntLike = 14): string {
   const n0 = asInt(nIn, 'n');

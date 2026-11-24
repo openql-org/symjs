@@ -19,20 +19,39 @@ import { DomainMatrix } from '../matrices/domainmatrix';
 import { DMRankError } from '../matrices/exceptions';
 import { rat } from '../matrices/domainops';
 
-/** A rational number as the number-field modules take it: an integer, a Rational or a QQ element (SymPy is_rat). */
+/** A rational number as the number-field modules take it: an integer, a Rational or a QQ element. */
 export type RationalLike = number | bigint | Rational | PythonMPQ;
 
-/** An integer or a rational number (SymPy is_rat): a JavaScript integer, a bigint, a Rational or a QQ element. */
+/**
+ * Tests whether the input is an exact rational value accepted by the number-field operations.
+ *
+ * @param c - Value to classify.
+ * @returns Whether the input represents an exact rational number.
+ * @see SymPy `sympy.polys.numberfields.utilities.is_rat`
+ */
 export function isRat(c: unknown): c is RationalLike {
   return (typeof c === 'number' && Number.isInteger(c)) || typeof c === 'bigint' || c instanceof Rational || c instanceof PythonMPQ;
 }
 
-/** An integer (SymPy is_int): a JavaScript integer, a bigint or an integer Rational. */
+/**
+ * Tests whether the input represents an integer exactly.
+ *
+ * @param c - Value to classify.
+ * @returns Whether the value represents an integer.
+ * @see SymPy `sympy.polys.numberfields.utilities.is_int`
+ */
 export function isInt(c: unknown): boolean {
   return (typeof c === 'number' && Number.isInteger(c)) || typeof c === 'bigint' || (c instanceof Rational && c.q === 1n);
 }
 
-/** The numerator and the (positive) denominator of a rational number (SymPy get_num_denom). */
+/**
+ * The numerator and the (positive) denominator of a rational number.
+ *
+ * @param c - Rational value to decompose.
+ * @returns The reduced numerator and positive denominator.
+ * @throws TypeError when the value is not rational.
+ * @see SymPy `sympy.polys.numberfields.utilities.get_num_denom`
+ */
 export function getNumDenom(c: RationalLike): [bigint, bigint] {
   if (c instanceof Rational) return [c.p, c.q];
   if (c instanceof PythonMPQ) return [c.numerator, c.denominator];
@@ -40,7 +59,21 @@ export function getNumDenom(c: RationalLike): [bigint, bigint] {
   return [BigInt(c), 1n];
 }
 
-/** Factorizations of d and f with a=d*f**2 and d a fundamental discriminant or 1. */
+/**
+ * Separates a discriminant into a fundamental discriminant and a square factor.
+ *
+ * @remarks SymPy prints the pair as `({3: 1, -1: 1}, {2: 2, 3: 1})`.
+ * @param aIn - Integer discriminant to decompose.
+ * @returns Prime factorizations of the fundamental part and square factor.
+ * @throws RangeError when the integer is neither zero nor one modulo four.
+ * @see SymPy `sympy.polys.numberfields.utilities.extract_fundamental_discriminant`
+ * @example
+ * ```ts
+ * import { extractFundamentalDiscriminant } from '@symjs/symjs';
+ *
+ * extractFundamentalDiscriminant(-432); // => [{3: 1, -1: 1}, {2: 2, 3: 1}]
+ * ```
+ */
 export function extractFundamentalDiscriminant(aIn: IntLike): [Map<bigint, number>, Map<bigint, number>] {
   const a = asInt(aIn), residue = pmod(a, 4n);
   if (residue !== 0n && residue !== 1n) throw new RangeError('discriminant must be 0 or 1 mod 4');
@@ -64,7 +97,23 @@ export function extractFundamentalDiscriminant(aIn: IntLike): [Map<bigint, numbe
   return [D, F];
 }
 
-/** Rational isolating interval of a real algebraic number, optionally narrowed to eps. */
+/**
+ * Bounds a real algebraic number between two rational endpoints.
+ *
+ * @remarks SymPy returns the intervals as tuples, `(1, 2)` and `(24/17, 17/12)`.
+ * @param algIn - Real algebraic value.
+ * @param eps - Maximum interval width.
+ * @returns The rational interval enclosing the real algebraic number.
+ * @throws NotImplementedError when the algebraic number is nonreal.
+ * @see SymPy `sympy.polys.numberfields.utilities.isolate`
+ * @example
+ * ```ts
+ * import { Rational, ex, isolate } from '@symjs/symjs';
+ *
+ * isolate(ex`sqrt(2)`); // => [1, 2]
+ * isolate(ex`sqrt(2)`, Rational.of(1n, 100n)); // => [24/17, 17/12]
+ * ```
+ */
 export function isolate(algIn: ExprLike, eps?: Rational): [Rational, Rational] {
   const alg = sympify(algIn);
   if (alg instanceof Rational) return [alg, alg];
@@ -85,17 +134,48 @@ export function isolate(algIn: ExprLike, eps?: Rational): [Rational, Rational] {
 }
 
 /**
- * The powers of the root theta of a monic polynomial T, each written in the
- * power basis 1, theta, ..., theta**(n-1) as a list of n integers, lowest
- * power first, optionally reduced modulo an integer (SymPy AlgIntPowers).
- * Powers from theta**n on are computed by the recurrence of T and cached.
+ * The powers of the root theta of a monic polynomial T, each written in the power basis 1,
+ * theta,..., theta**(n-1) as a list of n integers, lowest power first, optionally reduced modulo an
+ * integer. Powers from theta**n on are computed by the recurrence of T and cached.
+ *
+ * @see SymPy `sympy.polys.numberfields.utilities.AlgIntPowers`
+ * @example
+ * ```ts
+ * import { AlgIntPowers, Poly, ex } from '@symjs/symjs';
+ *
+ * const powers = new AlgIntPowers(Poly.from(ex`x**4 + x**3 + x**2 + x + 1`));
+ * powers.get(1); // => [0, 1, 0, 0]
+ * powers.get(4); // => [-1, -1, -1, -1]
+ * ```
  */
 export class AlgIntPowers {
+  /**
+   * The defining polynomial of the algebraic generator.
+   *
+   * @see SymPy `sympy.polys.numberfields.utilities.AlgIntPowers.T`
+   */
   readonly T: Poly;
+  /**
+   * The optional modulus for reducing the power-basis coefficients.
+   *
+   * @see SymPy `sympy.polys.numberfields.utilities.AlgIntPowers.modulus`
+   */
   readonly modulus: bigint | undefined;
+  /**
+   * The number of basis coordinates.
+   *
+   * @see SymPy `sympy.polys.numberfields.utilities.AlgIntPowers.n`
+   */
   readonly n: number;
   private readonly powersNAndUp: bigint[][];
   private maxSoFar: number;
+  /**
+   * Prepares to evaluate powers of an algebraic integer in the power basis, optionally modulo an
+   * integer.
+   *
+   * @param T - Polynomial defining the algebraic roots.
+   * @param modulus - Modulus used for the arithmetic.
+   */
   constructor(T: Poly, modulus?: IntLike) {
     this.T = T;
     this.modulus = modulus === undefined ? undefined : asInt(modulus, 'modulus');
@@ -105,11 +185,22 @@ export class AlgIntPowers {
     this.powersNAndUp = [coeffs.slice(0, -1).map((c) => this.red(-c))];
     this.maxSoFar = this.n;
   }
-  /** The integer reduced modulo the modulus, if any. */
+  /**
+   * The integer reduced modulo the modulus, if any.
+   *
+   * @param exp - Integer coefficient to reduce.
+   * @returns The coefficient reduced modulo the optional modulus.
+   * @see SymPy `sympy.polys.numberfields.utilities.AlgIntPowers.red`
+   */
   red(exp: bigint): bigint {
     return this.modulus === undefined ? exp : pmod(exp, this.modulus);
   }
-  /** Compute the powers up to theta**e. */
+  /**
+   * Compute the powers up to theta**e.
+   *
+   * @param e - Exponent of the power.
+   * @see SymPy `sympy.polys.numberfields.utilities.AlgIntPowers.compute_up_through`
+   */
   computeUpThrough(e: number): void {
     const m = this.maxSoFar;
     if (e <= m) return;
@@ -123,7 +214,14 @@ export class AlgIntPowers {
     }
     this.maxSoFar = e;
   }
-  /** theta**e as its n coefficients, lowest power first (SymPy get and __getitem__). */
+  /**
+   * Theta**e as its n coefficients, lowest power first.
+   *
+   * @param e - Nonnegative exponent of the algebraic generator.
+   * @returns The power-basis coefficients of the requested power.
+   * @throws RangeError when the exponent is negative.
+   * @see SymPy `sympy.polys.numberfields.utilities.AlgIntPowers.get`
+   */
   get(e: number): bigint[] {
     const n = this.n;
     if (e < 0) throw new RangeError('Exponent must be non-negative.');
@@ -134,10 +232,22 @@ export class AlgIntPowers {
 }
 
 /**
- * The coefficient vectors of length m with entries in [-R, R], then [-R-1,
- * R+1], and so on: each vector of the next "shell" contains an entry of
- * absolute value R, and the zero vector is skipped (SymPy coeff_search).
+ * The coefficient vectors of length m with entries in [-R, R], then [-R-1, R+1], and so on: each
+ * vector of the next "shell" contains an entry of absolute value R, and the zero vector is skipped.
  * An infinite generator.
+ *
+ * @param m - Number of coordinates.
+ * @param RIn - Initial coefficient bound.
+ * @returns An iterator of coefficient vectors in successive shells.
+ * @see SymPy `sympy.polys.numberfields.utilities.coeff_search`
+ * @example
+ * ```ts
+ * import { coeffSearch } from '@symjs/symjs';
+ *
+ * const vectors = coeffSearch(2, 1);
+ * vectors.next().value; // => [1, 1]
+ * vectors.next().value; // => [1, 0]
+ * ```
  */
 export function* coeffSearch(m: number, RIn: number): Generator<number[], never, unknown> {
   let R = RIn;
@@ -157,9 +267,19 @@ export function* coeffSearch(m: number, RIn: number): Generator<number[], never,
 }
 
 /**
- * For an n x r matrix M of rank r over a field, an invertible n x n matrix B
- * whose first r columns are those of M (SymPy supplement_a_subspace).
- * Throws DMRankError when M is not of maximal rank.
+ * Extends linearly independent columns over a field to a basis of the whole space.
+ *
+ * @param M - Matrix of independent basis columns.
+ * @returns An invertible matrix extending the given columns.
+ * @throws DMRankError when the supplied columns are linearly dependent.
+ * @see SymPy `sympy.polys.numberfields.utilities.supplement_a_subspace`
+ * @example
+ * ```ts
+ * import { DM, QQ, supplementASubspace } from '@symjs/symjs';
+ *
+ * const A = DM([[1, 7, 0], [2, 3, 4]], QQ).transpose();
+ * supplementASubspace(A).transpose().toList(); // => [[1, 7, 0], [2, 3, 4], [1, 0, 0]]
+ * ```
  */
 export function supplementASubspace(M: DomainMatrix): DomainMatrix {
   const [n, r] = M.shape;

@@ -32,19 +32,62 @@ const keySet = (r: ReadonlyMap<number, unknown>): Set<number> => new Set(r.keys(
 const inter = (a: Set<number>, b: Set<number>): number[] => [...a].filter((x) => b.has(x));
 const minus = (a: Set<number>, b: Set<number>): number[] => [...a].filter((x) => !b.has(x));
 
-/** SymPy SDM: a sparse matrix over a domain. */
+/**
+ * A sparse matrix over a domain.
+ *
+ * @see SymPy `sympy.polys.matrices.sdm.SDM`
+ * @example
+ * ```ts
+ * import { QQ, S, SDM, ex } from '@symjs/symjs';
+ *
+ * const A = SDM.fromList([[S.Zero, ex`1/2`], [S.Zero, S.Zero]], [2, 2], QQ);
+ * A.toList(); // => [[0, 1/2], [0, 0]]
+ * ```
+ */
 export class SDM {
-  /** The format name (SymPy fmt). */
+  /**
+   * The format name.
+   *
+   * @see SymPy `sympy.polys.matrices.sdm.SDM.fmt`
+   */
   readonly fmt = 'sparse';
+  /**
+   * The ordered pair of row and column counts.
+   *
+   * @see SymPy `sympy.polys.matrices.sdm.SDM.shape`
+   */
   readonly shape: Shape;
+  /**
+   * The number of rows.
+   *
+   * @see SymPy `sympy.polys.matrices.sdm.SDM.rows`
+   */
   readonly rows: number;
+  /**
+   * The number of columns.
+   *
+   * @see SymPy `sympy.polys.matrices.sdm.SDM.cols`
+   */
   readonly cols: number;
   /** The nonzero rows. */
   readonly data: SdmRows;
 
+  /**
+   * Builds a sparse matrix from row and column indices and the corresponding nonzero values.
+   *
+   * @param elemsdict - Nonzero entries keyed by row and then by column.
+   * @param shape - Row and column counts.
+   * @param domain - Coefficient domain for the values.
+   * @throws DMBadInputError when a stored index is outside the declared shape.
+   */
   constructor(
     elemsdict: ReadonlyMap<number, ReadonlyMap<number, Expr>>,
     shape: Shape,
+    /**
+     * The coefficient domain.
+     *
+     * @see SymPy `sympy.polys.matrices.sdm.SDM.domain`
+     */
     readonly domain: Domain,
   ) {
     const [m, n] = shape;
@@ -56,13 +99,29 @@ export class SDM {
     if (![...this.data.values()].every((row) => [...row.keys()].every((c) => c >= 0 && c < n))) throw new DMBadInputError('Column out of range');
   }
 
-  /** The element at (i, j) (negative indices count from the end). */
+  /**
+   * The element at (i, j) (negative indices count from the end).
+   *
+   * @param i - Row index.
+   * @param j - Column index.
+   * @returns The entry at the given row and column.
+   * @throws RangeError when a row or column index is out of bounds.
+   * @see SymPy `sympy.polys.matrices.sdm.SDM.getitem`
+   */
   getitem(i: number, j: number): Expr {
     const [m, n] = this.shape;
     if (!(-m <= i && i < m && -n <= j && j < n)) throw new RangeError('index out of range');
     return this.data.get((i + m) % m)?.get((j + n) % n) ?? this.domain.zero;
   }
-  /** Set the element at (i, j) in place (a zero removes it). */
+  /**
+   * Set the element at (i, j) in place (a zero removes it).
+   *
+   * @param iIn - Row index.
+   * @param jIn - Column index.
+   * @param value - Replacement entry in the coefficient domain.
+   * @throws RangeError when a row or column index is out of bounds.
+   * @see SymPy `sympy.polys.matrices.sdm.SDM.setitem`
+   */
   setitem(iIn: number, jIn: number, value: Expr): void {
     const [m, n] = this.shape;
     if (!(-m <= iIn && iIn < m && -n <= jIn && jIn < n)) throw new RangeError('index out of range');
@@ -76,7 +135,14 @@ export class SDM {
     const row = this.data.get(i);
     if (row?.delete(j) && !row.size) this.data.delete(i);
   }
-  /** The submatrix of a row slice and a column slice. */
+  /**
+   * The submatrix of a row slice and a column slice.
+   *
+   * @param slice1 - Row index or slice.
+   * @param slice2 - Column index or slice.
+   * @returns The selected submatrix.
+   * @see SymPy `sympy.polys.matrices.sdm.SDM.extract_slice`
+   */
   extractSlice(slice1: Slice, slice2: Slice): SDM {
     const ri = sliceIndices(slice1, this.rows);
     const ci = sliceIndices(slice2, this.cols);
@@ -89,7 +155,15 @@ export class SDM {
     }
     return new SDM(sdm, [ri.length, ci.length], this.domain);
   }
-  /** The submatrix of the given rows and columns (repeated and negative indices allowed). */
+  /**
+   * The submatrix of the given rows and columns (repeated and negative indices allowed).
+   *
+   * @param rows - Row indices in the requested order.
+   * @param cols - Column indices in the requested order.
+   * @returns The selected submatrix.
+   * @throws RangeError when a row or column index is out of bounds.
+   * @see SymPy `sympy.polys.matrices.sdm.SDM.extract`
+   */
   extract(rows: readonly number[], cols: readonly number[]): SDM {
     if (!(this.data.size && rows.length && cols.length)) return SDM.zeros([rows.length, cols.length], this.domain);
     const [m, n] = this.shape;
@@ -108,22 +182,55 @@ export class SDM {
     }
     return new SDM(sdm2, [rows.length, cols.length], this.domain);
   }
-  /** SymPy str(): the dict of rows. */
+  /**
+   * Formats the value as text.
+   *
+   * @returns The printable representation.
+   * @see SymPy `sympy.polys.matrices.sdm.SDM.__str__`
+   */
   toString(): string {
     return dodString(this.data, (e) => elemStr(this.domain, e));
   }
-  /** SymPy repr(): SDM({...}, (m, n), K). */
+  /**
+   * Includes the sparse rows, matrix dimensions and domain in the representation.
+   *
+   * @returns The constructor-style representation.
+   * @see SymPy `sympy.polys.matrices.sdm.SDM.__repr__`
+   */
   repr(): string {
     return `SDM(${dodString(this.data, (e) => elemRepr(this.domain, e))}, (${this.rows}, ${this.cols}), ${this.domain.toString()})`;
   }
-  /** A new SDM of the same class (SymPy SDM.new). */
+  /**
+   * A new SDM of the same class.
+   *
+   * @param sdm - Nonzero entries keyed by row and then by column.
+   * @param shape - Row and column counts.
+   * @param domain - Coefficient domain for the values.
+   * @returns The newly constructed element.
+   * @see SymPy `sympy.polys.matrices.sdm.SDM.new`
+   */
   static new(sdm: ReadonlyMap<number, ReadonlyMap<number, Expr>>, shape: Shape, domain: Domain): SDM {
     return new SDM(sdm, shape, domain);
   }
+  /**
+   * Copies the matrix so its entries can be updated independently.
+   *
+   * @returns An independent copy of the matrix.
+   * @see SymPy `sympy.polys.matrices.sdm.SDM.copy`
+   */
   copy(): SDM {
     return new SDM(copyRows(this.data), this.shape, this.domain);
   }
-  /** The sparse matrix of a list of rows. */
+  /**
+   * Builds a matrix from entries grouped by row.
+   *
+   * @param ddm - Dense matrix to convert.
+   * @param shape - Row and column counts.
+   * @param domain - Coefficient domain for the values.
+   * @returns The matrix with the given rows.
+   * @throws DMBadInputError when the entries do not match the specified matrix shape.
+   * @see SymPy `sympy.polys.matrices.sdm.SDM.from_list`
+   */
   static fromList(ddm: readonly (readonly Expr[])[], shape: Shape, domain: Domain): SDM {
     const [m, n] = shape;
     if (!(ddm.length === m && ddm.every((row) => row.length === n))) throw new DMBadInputError('Inconsistent row-list/shape');
@@ -135,19 +242,46 @@ export class SDM {
     });
     return new SDM(sdm, shape, domain);
   }
+  /**
+   * Builds a matrix from a dense domain-matrix representation.
+   *
+   * @param ddm - Dense matrix to convert.
+   * @returns The matrix represented by the dense rows.
+   * @see SymPy `sympy.polys.matrices.sdm.SDM.from_ddm`
+   */
   static fromDdm(ddm: DDM): SDM {
     return SDM.fromList(ddm.data, ddm.shape, ddm.domain);
   }
-  /** The list of rows (zeros filled in). */
+  /**
+   * The list of rows (zeros filled in).
+   *
+   * @returns The entries grouped into rows.
+   * @see SymPy `sympy.polys.matrices.sdm.SDM.to_list`
+   */
   toList(): Expr[][] {
     const out = Array.from({ length: this.rows }, () => Array.from({ length: this.cols }, () => this.domain.zero));
     for (const [i, row] of this.data) for (const [j, e] of row) at(out, i)[j] = e;
     return out;
   }
-  /** The elements row by row. */
+  /**
+   * The elements row by row.
+   *
+   * @returns The entries in row-major order.
+   * @see SymPy `sympy.polys.matrices.sdm.SDM.to_list_flat`
+   */
   toListFlat(): Expr[] {
     return this.toList().flat();
   }
+  /**
+   * Fills the matrix row by row from a flat sequence.
+   *
+   * @param elements - Entries in their given order.
+   * @param shape - Row and column counts.
+   * @param domain - Coefficient domain for the values.
+   * @returns The matrix filled in row-major order.
+   * @throws DMBadInputError when the entries do not match the specified matrix shape.
+   * @see SymPy `sympy.polys.matrices.sdm.SDM.from_list_flat`
+   */
   static fromListFlat(elements: readonly Expr[], shape: Shape, domain: Domain): SDM {
     const [m, n] = shape;
     if (elements.length !== m * n) throw new DMBadInputError('Inconsistent flat-list shape');
@@ -161,19 +295,47 @@ export class SDM {
     });
     return new SDM(sdm, shape, domain);
   }
-  /** The nonzero elements and the data to rebuild the matrix from them. */
+  /**
+   * The nonzero elements and the data to rebuild the matrix from them.
+   *
+   * @returns The nonzero entries with their positions and matrix shape.
+   * @see SymPy `sympy.polys.matrices.sdm.SDM.to_flat_nz`
+   */
   toFlatNz(): [Expr[], [[number, number][], Shape]] {
     const dok = this.toDok();
     return [[...dok.values()], [[...dok.keys()], this.shape]];
   }
+  /**
+   * Restores nonzero entries to their original positions.
+   *
+   * @param elements - Entries in their given order.
+   * @param data - Positions and shape returned by `toFlatNz`.
+   * @param domain - Coefficient domain for the values.
+   * @returns The matrix reconstructed from its nonzero entries and their positions.
+   * @see SymPy `sympy.polys.matrices.sdm.SDM.from_flat_nz`
+   */
   static fromFlatNz(elements: readonly Expr[], data: readonly [readonly (readonly [number, number])[], Shape], domain: Domain): SDM {
     const [indices, shape] = data;
     return SDM.fromDok(new Map(indices.map((ij, k) => [ij, at(elements, k)] as const)), shape, domain);
   }
-  /** The nonzero elements as row -> column -> element. */
+  /**
+   * The nonzero elements as row -> column -> element.
+   *
+   * @returns The nonzero entries indexed first by row, then by column.
+   * @see SymPy `sympy.polys.matrices.sdm.SDM.to_dod`
+   */
   toDod(): Map<number, Map<number, Expr>> {
     return copyRows(this.data);
   }
+  /**
+   * Builds a matrix from nested row and column maps.
+   *
+   * @param dod - Nonzero entries keyed by row and then by column.
+   * @param shape - Row and column counts.
+   * @param domain - Coefficient domain for the values.
+   * @returns The matrix with the specified sparse rows.
+   * @see SymPy `sympy.polys.matrices.sdm.SDM.from_dod`
+   */
   static fromDod(dod: ReadonlyMap<number, ReadonlyMap<number, Expr>>, shape: Shape, domain: Domain): SDM {
     const sdm: SdmRows = new Map();
     for (const [i, row] of dod) {
@@ -186,12 +348,26 @@ export class SDM {
     }
     return new SDM(sdm, shape, domain);
   }
-  /** The nonzero elements by position. */
+  /**
+   * The nonzero elements by position.
+   *
+   * @returns The nonzero entries indexed by coordinate pair.
+   * @see SymPy `sympy.polys.matrices.sdm.SDM.to_dok`
+   */
   toDok(): Map<[number, number], Expr> {
     const dok = new Map<[number, number], Expr>();
     for (const [i, row] of this.data) for (const [j, e] of row) dok.set([i, j], e);
     return dok;
   }
+  /**
+   * Builds a matrix from a map of index pairs to entries.
+   *
+   * @param dok - Nonzero entries keyed by coordinate pair.
+   * @param shape - Row and column counts.
+   * @param domain - Coefficient domain for the values.
+   * @returns The matrix with the specified nonzero entries.
+   * @see SymPy `sympy.polys.matrices.sdm.SDM.from_dok`
+   */
   static fromDok(dok: ReadonlyMap<readonly [number, number], Expr>, shape: Shape, domain: Domain): SDM {
     const sdm: SdmRows = new Map();
     for (const [[i, j], e] of dok) {
@@ -202,48 +378,120 @@ export class SDM {
     }
     return new SDM(sdm, shape, domain);
   }
-  /** The nonzero elements. */
+  /**
+   * Collects the stored nonzero values of the matrix.
+   *
+   * @returns The nonzero entries.
+   * @see SymPy `sympy.polys.matrices.sdm.SDM.iter_values`
+   */
   iterValues(): Expr[] {
     return [...this.data.values()].flatMap((row) => [...row.values()]);
   }
-  /** The nonzero elements with their positions. */
+  /**
+   * The nonzero elements with their positions.
+   *
+   * @returns The index pairs and values of the nonzero entries.
+   * @see SymPy `sympy.polys.matrices.sdm.SDM.iter_items`
+   */
   iterItems(): [[number, number], Expr][] {
     return [...this.toDok()];
   }
-  /** The dense form. */
+  /**
+   * Exposes the entries as a dense domain matrix.
+   *
+   * @returns The dense domain-matrix representation.
+   * @see SymPy `sympy.polys.matrices.sdm.SDM.to_ddm`
+   */
   toDdm(): DDM {
     return new DDM(this.toList(), this.shape, this.domain);
   }
+  /**
+   * Exposes the entries as a sparse domain matrix.
+   *
+   * @returns The sparse domain-matrix representation.
+   * @see SymPy `sympy.polys.matrices.sdm.SDM.to_sdm`
+   */
   toSdm(): SDM {
     return this;
   }
-  /** The dense form (SymPy to_dfm_or_ddm: python-flint matrices are not used, so a DDM). */
+  /**
+   * Returns the dense matrix representation over the coefficient domain.
+   *
+   * @returns The dense domain-matrix representation.
+   * @see SymPy `sympy.polys.matrices.sdm.SDM.to_dfm_or_ddm`
+   */
   toDfmOrDdm(): DDM {
     return this.toDdm();
   }
+  /**
+   * Constructs a rectangular matrix in which every entry is the additive identity.
+   *
+   * @param shape - Row and column counts.
+   * @param domain - Coefficient domain for the values.
+   * @returns A zero matrix of the specified shape.
+   * @see SymPy `sympy.polys.matrices.sdm.SDM.zeros`
+   */
   static zeros(shape: Shape, domain: Domain): SDM {
     return new SDM(new Map(), shape, domain);
   }
+  /**
+   * Constructs a rectangular matrix in which every entry is the multiplicative identity.
+   *
+   * @param shape - Row and column counts.
+   * @param domain - Coefficient domain for the values.
+   * @returns A matrix filled with ones.
+   * @see SymPy `sympy.polys.matrices.sdm.SDM.ones`
+   */
   static ones(shape: Shape, domain: Domain): SDM {
     const [m, n] = shape;
     const row = () => new Map(Array.from({ length: n }, (_, j) => [j, domain.one] as const));
     return new SDM(new Map(Array.from({ length: m }, (_, i) => [i, row()] as const)), shape, domain);
   }
-  /** The identity matrix of a size or shape. */
+  /**
+   * The identity matrix of a size or shape.
+   *
+   * @param shape - Row and column counts.
+   * @param domain - Coefficient domain for the values.
+   * @returns An identity matrix of the given shape.
+   * @see SymPy `sympy.polys.matrices.sdm.SDM.eye`
+   */
   static eye(shape: number | Shape, domain: Domain): SDM {
     const [rows, cols] = typeof shape === 'number' ? [shape, shape] : shape;
     const sdm: SdmRows = new Map(Array.from({ length: Math.min(rows, cols) }, (_, i) => [i, new Map([[i, domain.one]])] as const));
     return new SDM(sdm, [rows, cols], domain);
   }
-  /** The diagonal matrix of the given elements (square unless a shape is given). */
+  /**
+   * The diagonal matrix of the given elements (square unless a shape is given).
+   *
+   * @param diagonal - Entries on the main diagonal.
+   * @param domain - Coefficient domain for the values.
+   * @param shape - Row and column counts.
+   * @returns The matrix with the specified diagonal.
+   * @see SymPy `sympy.polys.matrices.sdm.SDM.diag`
+   */
   static diag(diagonal: readonly Expr[], domain: Domain, shape?: Shape): SDM {
     const sdm: SdmRows = new Map();
     diagonal.forEach((v, i) => !domain.isZero(v) && sdm.set(i, new Map([[i, v]])));
     return new SDM(sdm, shape ?? [diagonal.length, diagonal.length], domain);
   }
+  /**
+   * Interchanges the rows and columns.
+   *
+   * @returns The matrix with its rows and columns interchanged.
+   * @see SymPy `sympy.polys.matrices.sdm.SDM.transpose`
+   */
   transpose(): SDM {
     return new SDM(sdmTranspose(this.data), [this.cols, this.rows], this.domain);
   }
+  /**
+   * Multiplies the rows of this matrix by the columns of the right operand.
+   *
+   * @param B - Matrix on the right.
+   * @returns The matrix product.
+   * @throws DMDomainError when the coefficient domains are incompatible with the operation.
+   * @throws DMShapeError when the matrix dimensions are incompatible with the operation.
+   * @see SymPy `sympy.polys.matrices.sdm.SDM.matmul`
+   */
   matmul(B: SDM): SDM {
     if (!this.domain.equals(B.domain)) throw new DMDomainError();
     const [m, n] = this.shape;
@@ -256,7 +504,13 @@ export class SDM {
     }
     return new SDM(sdmMatmul(this.data, B.data, this.domain), [m, o], this.domain);
   }
-  /** Multiplication by a domain element on the right. */
+  /**
+   * Multiplication by a domain element on the right.
+   *
+   * @param b - Factor on the right.
+   * @returns The product in operand order.
+   * @see SymPy `sympy.polys.matrices.sdm.SDM.mul`
+   */
   mul(b: Expr): SDM {
     const scalar = this.domain.fromSympy(b);
     return new SDM(
@@ -265,7 +519,13 @@ export class SDM {
       this.domain,
     );
   }
-  /** Multiplication by a domain element on the left. */
+  /**
+   * Multiplication by a domain element on the left.
+   *
+   * @param b - Factor on the left.
+   * @returns The product in operand order.
+   * @see SymPy `sympy.polys.matrices.sdm.SDM.rmul`
+   */
   rmul(b: Expr): SDM {
     return new SDM(
       unopDict(this.data, (a) => this.domain.mul(b, a), this.domain),
@@ -273,7 +533,15 @@ export class SDM {
       this.domain,
     );
   }
-  /** The elementwise (Hadamard) product. */
+  /**
+   * The elementwise (Hadamard) product.
+   *
+   * @param B - Matrix with matching dimensions.
+   * @returns The entrywise product.
+   * @throws DMDomainError when the coefficient domains are incompatible with the operation.
+   * @throws DMShapeError when the matrix dimensions are incompatible with the operation.
+   * @see SymPy `sympy.polys.matrices.sdm.SDM.mul_elementwise`
+   */
   mulElementwise(B: SDM): SDM {
     if (!this.domain.equals(B.domain)) throw new DMDomainError();
     if (String(this.shape) !== String(B.shape)) throw new DMShapeError();
@@ -281,6 +549,13 @@ export class SDM {
     const zero = () => K.zero;
     return new SDM(binopDict(this.data, B.data, (a, b) => K.mul(a, b), zero, zero, K), this.shape, K);
   }
+  /**
+   * Adds the other operand to this value.
+   *
+   * @param B - Addend.
+   * @returns The sum of the operands.
+   * @see SymPy `sympy.polys.matrices.sdm.SDM.add`
+   */
   add(B: SDM): SDM {
     const K = this.domain;
     return new SDM(
@@ -289,6 +564,13 @@ export class SDM {
       K,
     );
   }
+  /**
+   * Subtracts the other operand from this value.
+   *
+   * @param B - Value to subtract.
+   * @returns The difference in operand order.
+   * @see SymPy `sympy.polys.matrices.sdm.SDM.sub`
+   */
   sub(B: SDM): SDM {
     const K = this.domain;
     return new SDM(
@@ -297,6 +579,12 @@ export class SDM {
       K,
     );
   }
+  /**
+   * Reverses the sign of the value.
+   *
+   * @returns The additive inverse.
+   * @see SymPy `sympy.polys.matrices.sdm.SDM.neg`
+   */
   neg(): SDM {
     return new SDM(
       unopDict(this.data, (a) => this.domain.neg(a), this.domain),
@@ -304,7 +592,13 @@ export class SDM {
       this.domain,
     );
   }
-  /** The matrix over another domain. */
+  /**
+   * The matrix over another domain.
+   *
+   * @param K - Coefficient domain for the values.
+   * @returns The value over the target domain.
+   * @see SymPy `sympy.polys.matrices.sdm.SDM.convert_to`
+   */
   convertTo(K: Domain): SDM {
     const K0 = this.domain;
     if (K.equals(K0)) return this.copy();
@@ -314,62 +608,124 @@ export class SDM {
       K,
     );
   }
-  /** The number of nonzero elements. */
+  /**
+   * The number of nonzero elements.
+   *
+   * @returns The number of nonzero entries.
+   * @see SymPy `sympy.polys.matrices.sdm.SDM.nnz`
+   */
   nnz(): number {
     return [...this.data.values()].reduce((s, row) => s + row.size, 0);
   }
-  /** The strongly connected components of the graph of the nonzero elements. */
+  /**
+   * The strongly connected components of the graph of the nonzero elements.
+   *
+   * @returns The strongly connected components of the nonzero pattern.
+   * @see SymPy `sympy.polys.matrices.sdm.SDM.scc`
+   */
   scc(): number[][] {
     const V = Array.from({ length: this.rows }, (_, i) => i);
     const E: [number, number][] = V.flatMap((v) => [...(this.data.get(v)?.keys() ?? [])].map((w): [number, number] => [v, w]));
     return stronglyConnectedComponents([V, E]);
   }
-  /** Reduced row echelon form over a field: [rref, pivots]. */
+  /**
+   * Reduced row echelon form over a field: [rref, pivots].
+   *
+   * @returns The reduced matrix and pivot indices.
+   * @see SymPy `sympy.polys.matrices.sdm.SDM.rref`
+   */
   rref(): [SDM, number[]] {
     if (hasAssocField(this.domain)) return this.convertTo(this.domain.getField()).rref();
     const [B, pivots] = sdmIrref(this.data, this.domain);
     return [new SDM(B, this.shape, this.domain), pivots];
   }
-  /** Fraction-free reduced row echelon form: [rref, denominator, pivots]. */
+  /**
+   * Fraction-free reduced row echelon form: [rref, denominator, pivots].
+   *
+   * @returns The reduced numerator matrix, denominator and pivot indices.
+   * @see SymPy `sympy.polys.matrices.sdm.SDM.rref_den`
+   */
   rrefDen(): [SDM, Expr, number[]] {
     const [B, den, pivots] = sdmRrefDen(this.data, this.domain);
     return [new SDM(B, this.shape, this.domain), den, pivots];
   }
-  /** The inverse over a field. */
+  /**
+   * The inverse over a field.
+   *
+   * @returns The multiplicative inverse.
+   * @see SymPy `sympy.polys.matrices.sdm.SDM.inv`
+   */
   inv(): SDM {
     return SDM.fromDdm(this.toDdm().inv());
   }
-  /** The determinant. */
+  /**
+   * Computes the determinant of a square matrix over its coefficient domain.
+   *
+   * @returns The determinant.
+   * @see SymPy `sympy.polys.matrices.sdm.SDM.det`
+   */
   det(): Expr {
     return this.toDdm().det();
   }
-  /** LU decomposition over a field: [L, U, swaps]. */
+  /**
+   * LU decomposition over a field: [L, U, swaps].
+   *
+   * @returns The lower and upper factors and row interchanges.
+   * @see SymPy `sympy.polys.matrices.sdm.SDM.lu`
+   */
   lu(): [SDM, SDM, [number, number][]] {
     const [L, U, swaps] = this.toDdm().lu();
     return [SDM.fromDdm(L), SDM.fromDdm(U), swaps];
   }
-  /** QR decomposition over a field: [Q, R]. */
+  /**
+   * QR decomposition over a field: [Q, R].
+   *
+   * @returns The orthogonal and upper triangular factors.
+   * @see SymPy `sympy.polys.matrices.sdm.SDM.qr`
+   */
   qr(): [SDM, SDM] {
     const [Q, R] = this.toDdm().qr();
     return [SDM.fromDdm(Q), SDM.fromDdm(R)];
   }
-  /** Solve self*x = b over a field by LU decomposition. */
+  /**
+   * Solve self*x = b over a field by LU decomposition.
+   *
+   * @param b - Right-hand side of the matrix equation.
+   * @returns The solution of the matrix equation.
+   * @see SymPy `sympy.polys.matrices.sdm.SDM.lu_solve`
+   */
   luSolve(b: SDM): SDM {
     return SDM.fromDdm(this.toDdm().luSolve(b.toDdm()));
   }
-  /** Fraction-free LU decomposition: [P, L, D, U]. */
+  /**
+   * Fraction-free LU decomposition: [P, L, D, U].
+   *
+   * @returns The permutation, lower, diagonal and upper factors.
+   * @see SymPy `sympy.polys.matrices.sdm.SDM.fflu`
+   */
   fflu(): [SDM, SDM, SDM, SDM] {
     const [P, L, D, U] = this.toDdm().fflu();
     return [SDM.fromDdm(P), SDM.fromDdm(L), SDM.fromDdm(D), SDM.fromDdm(U)];
   }
-  /** A basis of the nullspace (as rows) and the nonpivot columns. */
+  /**
+   * A basis of the nullspace (as rows) and the nonpivot columns.
+   *
+   * @returns A matrix of basis rows and the corresponding free column indices.
+   * @see SymPy `sympy.polys.matrices.sdm.SDM.nullspace`
+   */
   nullspace(): [SDM, number[]] {
     const ncols = this.cols;
     const [B, pivots, nzcols] = sdmIrref(this.data, this.domain);
     const [K, nonpivots] = sdmNullspaceFromRref(B, this.domain.one, ncols, pivots, nzcols, this.domain);
     return [new SDM(new Map(K.map((r, i) => [i, r] as const)), [K.length, ncols], this.domain), nonpivots];
   }
-  /** The nullspace of a matrix in (fraction-free) reduced row echelon form. */
+  /**
+   * The nullspace of a matrix in (fraction-free) reduced row echelon form.
+   *
+   * @param pivotsIn - Indices of the pivot columns.
+   * @returns A matrix of basis rows and the corresponding free column indices.
+   * @see SymPy `sympy.polys.matrices.sdm.SDM.nullspace_from_rref`
+   */
   nullspaceFromRref(pivotsIn?: readonly number[]): [SDM, number[]] {
     const [, n] = this.shape;
     const K = this.domain;
@@ -390,14 +746,25 @@ export class SDM {
     }
     return [new SDM(new Map(basis.map((r, i) => [i, r] as const)), [basis.length, n], K), nonpivots];
   }
-  /** A particular solution of an augmented system (the last column is the right-hand side). */
+  /**
+   * A particular solution of an augmented system (the last column is the right-hand side).
+   *
+   * @returns A particular solution of the augmented system.
+   * @see SymPy `sympy.polys.matrices.sdm.SDM.particular`
+   */
   particular(): SDM {
     const ncols = this.cols;
     const [B, pivots] = sdmIrref(this.data, this.domain);
     const P = sdmParticularFromRref(B, ncols, pivots, this.domain);
     return new SDM(P.size ? new Map([[0, P]]) : new Map(), [1, ncols - 1], this.domain);
   }
-  /** The matrices side by side. */
+  /**
+   * The matrices side by side.
+   *
+   * @param B - Matrix to combine with this one.
+   * @returns The horizontal concatenation.
+   * @see SymPy `sympy.polys.matrices.sdm.SDM.hstack`
+   */
   hstack(...B: SDM[]): SDM {
     const Anew = copyRows(this.data);
     let cols = this.cols;
@@ -412,7 +779,13 @@ export class SDM {
     }
     return new SDM(Anew, [this.rows, cols], this.domain);
   }
-  /** The matrices one above the other. */
+  /**
+   * The matrices one above the other.
+   *
+   * @param B - Matrix to combine with this one.
+   * @returns The vertical concatenation.
+   * @see SymPy `sympy.polys.matrices.sdm.SDM.vstack`
+   */
   vstack(...B: SDM[]): SDM {
     const Anew = copyRows(this.data);
     let rows = this.rows;
@@ -423,34 +796,80 @@ export class SDM {
     }
     return new SDM(Anew, [rows, this.cols], this.domain);
   }
-  /** The matrix of func applied to each nonzero element, over the given domain. */
+  /**
+   * The matrix of func applied to each nonzero element, over the given domain.
+   *
+   * @param func - Function applied to each entry.
+   * @param domain - Coefficient domain for the values.
+   * @returns The matrix of transformed entries.
+   * @see SymPy `sympy.polys.matrices.sdm.SDM.applyfunc`
+   */
   applyfunc(func: (e: Expr) => Expr, domain: Domain): SDM {
     return new SDM(new Map([...this.data].map(([i, row]) => [i, new Map([...row].map(([j, e]) => [j, func(e)] as const))] as const)), this.shape, domain);
   }
-  /** The characteristic polynomial coefficients (sparse Berkowitz). */
+  /**
+   * The characteristic polynomial coefficients (sparse Berkowitz).
+   *
+   * @returns The characteristic coefficients in descending degree.
+   * @see SymPy `sympy.polys.matrices.sdm.SDM.charpoly`
+   */
   charpoly(): Expr[] {
     const K = this.domain;
     const n = this.rows;
     const pdict = sdmBerk(this.data, n, K);
     return Array.from({ length: n + 1 }, (_, i) => pdict.get(i) ?? K.zero);
   }
+  /**
+   * Checks all matrix entries for zero.
+   *
+   * @returns Whether all entries vanish.
+   * @see SymPy `sympy.polys.matrices.sdm.SDM.is_zero_matrix`
+   */
   isZeroMatrix(): boolean {
     return this.data.size === 0;
   }
+  /**
+   * Checks that the subdiagonal entries vanish.
+   *
+   * @returns Whether all entries below the diagonal vanish.
+   * @see SymPy `sympy.polys.matrices.sdm.SDM.is_upper`
+   */
   isUpper(): boolean {
     return [...this.data].every(([i, row]) => [...row.keys()].every((j) => i <= j));
   }
+  /**
+   * Checks that the superdiagonal entries vanish.
+   *
+   * @returns Whether all entries above the diagonal vanish.
+   * @see SymPy `sympy.polys.matrices.sdm.SDM.is_lower`
+   */
   isLower(): boolean {
     return [...this.data].every(([i, row]) => [...row.keys()].every((j) => i >= j));
   }
+  /**
+   * Checks that only diagonal entries can be nonzero.
+   *
+   * @returns Whether all off-diagonal entries vanish.
+   * @see SymPy `sympy.polys.matrices.sdm.SDM.is_diagonal`
+   */
   isDiagonal(): boolean {
     return [...this.data].every(([i, row]) => [...row.keys()].every((j) => i === j));
   }
-  /** The diagonal elements of the nonzero rows (SymPy SDM.diagonal). */
+  /**
+   * The diagonal elements of the nonzero rows.
+   *
+   * @returns The entries on the main diagonal.
+   * @see SymPy `sympy.polys.matrices.sdm.SDM.diagonal`
+   */
   diagonal(): Expr[] {
     return [...this.data].filter(([i]) => i < this.cols).map(([i, row]) => row.get(i) ?? this.domain.zero);
   }
-  /** Equal elements over the same domain. */
+  /**
+   * Equal elements over the same domain.
+   *
+   * @param other - Value to compare against.
+   * @returns Whether the operands are equal.
+   */
   equals(other: unknown): boolean {
     if (!(other instanceof SDM) || !this.domain.equals(other.domain) || String(this.shape) !== String(other.shape)) return false;
     return this.nnz() === other.nnz() && [...this.data].every(([i, row]) => [...row].every(([j, e]) => elemEq(e, other.getitem(i, j))));
@@ -469,7 +888,19 @@ function dodString(A: ReadonlyMap<number, ReadonlyMap<number, Expr>>, s: (e: Exp
   return `{${[...A].map(([i, row]) => `${i}: {${[...row].map(([j, e]) => `${j}: ${s(e)}`).join(', ')}}`).join(', ')}}`;
 }
 
-/** SymPy binop_dict: an elementwise operation of two sparse matrices (fa and fb for elements present in one of them). */
+/**
+ * Combines corresponding sparse entries, applying separate functions where only one operand has a
+ * value.
+ *
+ * @param A - First sparse matrix.
+ * @param B - Second sparse matrix.
+ * @param fab - Operation where both operands have entries.
+ * @param fa - Operation on entries found only on the left.
+ * @param fb - Operation on entries found only on the right.
+ * @param K - Coefficient domain.
+ * @returns The nonzero entries of the resulting sparse matrix.
+ * @see SymPy `sympy.polys.matrices.sdm.binop_dict`
+ */
 export function binopDict(A: ReadonlyMap<number, ReadonlyMap<number, Expr>>, B: ReadonlyMap<number, ReadonlyMap<number, Expr>>, fab: (a: Expr, b: Expr) => Expr, fa: (a: Expr) => Expr, fb: (b: Expr) => Expr, K: Domain): SdmRows {
   const C: SdmRows = new Map();
   const put = (Ci: SdmRow, j: number, v: Expr) => !K.isZero(v) && Ci.set(j, v);
@@ -493,7 +924,15 @@ export function binopDict(A: ReadonlyMap<number, ReadonlyMap<number, Expr>>, B: 
   return C;
 }
 
-/** SymPy unop_dict: f applied to each element, zeros dropped. */
+/**
+ * Maps a function over the stored entries and discards zero results.
+ *
+ * @param A - Sparse rows to transform.
+ * @param f - Function applied to each stored coefficient.
+ * @param K - Coefficient domain.
+ * @returns The transformed nonzero entries.
+ * @see SymPy `sympy.polys.matrices.sdm.unop_dict`
+ */
 export function unopDict(A: ReadonlyMap<number, ReadonlyMap<number, Expr>>, f: (a: Expr) => Expr, K: Domain): SdmRows {
   const B: SdmRows = new Map();
   for (const [i, Ai] of A) {
@@ -507,7 +946,13 @@ export function unopDict(A: ReadonlyMap<number, ReadonlyMap<number, Expr>>, f: (
   return B;
 }
 
-/** SymPy sdm_transpose. */
+/**
+ * Transposes a sparse matrix by exchanging its row and column indices.
+ *
+ * @param M - Sparse rows to transpose.
+ * @returns The sparse rows with row and column indices exchanged.
+ * @see SymPy `sympy.polys.matrices.sdm.sdm_transpose`
+ */
 export function sdmTranspose(M: ReadonlyMap<number, ReadonlyMap<number, Expr>>): SdmRows {
   const MT: SdmRows = new Map();
   for (const [i, Mi] of M) {
@@ -520,7 +965,15 @@ export function sdmTranspose(M: ReadonlyMap<number, ReadonlyMap<number, Expr>>):
   return MT;
 }
 
-/** SymPy sdm_dotvec: the dot product of two sparse vectors. */
+/**
+ * The dot product of two sparse vectors.
+ *
+ * @param A - First sparse vector.
+ * @param B - Second sparse vector.
+ * @param K - Coefficient domain.
+ * @returns The scalar inner product.
+ * @see SymPy `sympy.polys.matrices.sdm.sdm_dotvec`
+ */
 export function sdmDotvec(A: ReadonlyMap<number, Expr>, B: ReadonlyMap<number, Expr>, K: Domain): Expr {
   let s = K.zero;
   for (const j of A.keys()) {
@@ -530,7 +983,15 @@ export function sdmDotvec(A: ReadonlyMap<number, Expr>, B: ReadonlyMap<number, E
   return s;
 }
 
-/** SymPy sdm_matvecmul: a sparse matrix times a sparse vector. */
+/**
+ * A sparse matrix times a sparse vector.
+ *
+ * @param A - Sparse matrix.
+ * @param B - Sparse column vector.
+ * @param K - Coefficient domain.
+ * @returns The nonzero entries of the product vector.
+ * @see SymPy `sympy.polys.matrices.sdm.sdm_matvecmul`
+ */
 export function sdmMatvecmul(A: ReadonlyMap<number, ReadonlyMap<number, Expr>>, B: ReadonlyMap<number, Expr>, K: Domain): SdmRow {
   const C: SdmRow = new Map();
   for (const [i, Ai] of A) {
@@ -540,7 +1001,15 @@ export function sdmMatvecmul(A: ReadonlyMap<number, ReadonlyMap<number, Expr>>, 
   return C;
 }
 
-/** SymPy sdm_matmul: the product of two sparse matrices. */
+/**
+ * The product of two sparse matrices.
+ *
+ * @param A - Left sparse matrix.
+ * @param B - Right sparse matrix.
+ * @param K - Coefficient domain.
+ * @returns The sparse rows of the product.
+ * @see SymPy `sympy.polys.matrices.sdm.sdm_matmul`
+ */
 export function sdmMatmul(A: ReadonlyMap<number, ReadonlyMap<number, Expr>>, B: ReadonlyMap<number, ReadonlyMap<number, Expr>>, K: Domain): SdmRows {
   const C: SdmRows = new Map();
   for (const [i, Ai] of A) {
@@ -561,9 +1030,19 @@ export function sdmMatmul(A: ReadonlyMap<number, ReadonlyMap<number, Expr>>, B: 
 }
 
 /**
- * SymPy sdm_irref: reduced row echelon form of a sparse matrix over a
- * field; returns [rref rows, pivots, the rows (by pivot index) in which
- * each non-pivot column is nonzero].
+ * Computes the reduced row echelon form of a sparse matrix over a field.
+ *
+ * @param A - Sparse rows to reduce.
+ * @param K - Coefficient field.
+ * @returns The reduced rows, pivot columns and nonpivot-column row indices.
+ * @see SymPy `sympy.polys.matrices.sdm.sdm_irref`
+ * @example
+ * ```ts
+ * import { DM, QQ, sdmIrref } from '@symjs/symjs';
+ *
+ * const A = DM([[1, 2], [3, 4]], QQ).toDod();
+ * sdmIrref(A, QQ)[0]; // => {0: {0: 1}, 1: {1: 1}}
+ * ```
  */
 export function sdmIrref(A: ReadonlyMap<number, ReadonlyMap<number, Expr>>, K: Domain): [SdmRows, number[], Map<number, Set<number>>] {
   // the rows sorted by their leading column, processed from the last
@@ -639,8 +1118,20 @@ export function sdmIrref(A: ReadonlyMap<number, ReadonlyMap<number, Expr>>, K: D
 }
 
 /**
- * SymPy sdm_rref_den: fraction-free reduced row echelon form of a sparse
- * matrix; returns [rref rows, denominator, pivots].
+ * Computes a fraction-free reduced row echelon form for sparse rows.
+ *
+ * @remarks SymPy returns `({0: {0: -2}, 1: {1: -2}}, -2, [0, 1])`.
+ * @param A - Sparse rows to reduce.
+ * @param K - Coefficient domain.
+ * @returns The reduced rows, common denominator and pivot columns.
+ * @see SymPy `sympy.polys.matrices.sdm.sdm_rref_den`
+ * @example
+ * ```ts
+ * import { DM, ZZ, sdmRrefDen } from '@symjs/symjs';
+ *
+ * const A = DM([[1, 2], [3, 4]], ZZ).toDod();
+ * sdmRrefDen(A, ZZ); // => [{0: {0: -2}, 1: {1: -2}}, -2, [0, 1]]
+ * ```
  */
 export function sdmRrefDen(A: ReadonlyMap<number, ReadonlyMap<number, Expr>>, K: Domain): [SdmRows, Expr, number[]] {
   if (!A.size) return [new Map(), K.one, []];
@@ -727,7 +1218,18 @@ export function sdmRrefDen(A: ReadonlyMap<number, ReadonlyMap<number, Expr>>, K:
   return [new Map(withCols.map(([, Ai], i) => [i, Ai] as const)), den, pivots];
 }
 
-/** SymPy sdm_nullspace_from_rref: the nullspace basis rows of a reduced matrix. */
+/**
+ * The nullspace basis rows of a reduced matrix.
+ *
+ * @param A - Reduced sparse rows.
+ * @param one - Multiplicative identity of the domain.
+ * @param ncols - Number of columns.
+ * @param pivots - Pivot column indices.
+ * @param nonzeroCols - Rows containing each nonpivot column.
+ * @param K - Coefficient domain for the reduced rows.
+ * @returns The sparse basis vectors and their free column indices.
+ * @see SymPy `sympy.polys.matrices.sdm.sdm_nullspace_from_rref`
+ */
 export function sdmNullspaceFromRref(A: ReadonlyMap<number, ReadonlyMap<number, Expr>>, one: Expr, ncols: number, pivots: readonly number[], nonzeroCols: ReadonlyMap<number, ReadonlySet<number>>, K: Domain): [SdmRow[], number[]] {
   const nonpivots = Array.from({ length: ncols }, (_, j) => j).filter((j) => !pivots.includes(j));
   const out: SdmRow[] = [];
@@ -739,7 +1241,16 @@ export function sdmNullspaceFromRref(A: ReadonlyMap<number, ReadonlyMap<number, 
   return [out, nonpivots];
 }
 
-/** SymPy sdm_particular_from_rref: a particular solution of a reduced augmented system. */
+/**
+ * A particular solution of a reduced augmented system.
+ *
+ * @param A - Reduced augmented matrix.
+ * @param ncols - Number of columns including the augmentation.
+ * @param pivots - Pivot column indices.
+ * @param K - Coefficient domain.
+ * @returns One solution in sparse coordinates.
+ * @see SymPy `sympy.polys.matrices.sdm.sdm_particular_from_rref`
+ */
 export function sdmParticularFromRref(A: ReadonlyMap<number, ReadonlyMap<number, Expr>>, ncols: number, pivots: readonly number[], K: Domain): SdmRow {
   const P: SdmRow = new Map();
   pivots.forEach((j, i) => {
@@ -750,7 +1261,22 @@ export function sdmParticularFromRref(A: ReadonlyMap<number, ReadonlyMap<number,
   return P;
 }
 
-/** SymPy sdm_berk: the characteristic polynomial coefficients by degree (sparse Berkowitz algorithm). */
+/**
+ * Computes the characteristic polynomial of a sparse square matrix using Berkowitz’s algorithm.
+ *
+ * @param M - Sparse square matrix.
+ * @param n - Matrix dimension.
+ * @param K - Coefficient domain.
+ * @returns A sparse map of characteristic coefficients, starting at the leading coefficient.
+ * @see SymPy `sympy.polys.matrices.sdm.sdm_berk`
+ * @example
+ * ```ts
+ * import { DM, ZZ, sdmBerk } from '@symjs/symjs';
+ *
+ * const A = DM([[1, 2], [3, 4]], ZZ).toDod();
+ * sdmBerk(A, 2, ZZ); // => {0: 1, 1: -5, 2: -2}
+ * ```
+ */
 export function sdmBerk(M: ReadonlyMap<number, ReadonlyMap<number, ExprLike>>, n: number, K: Domain): Map<number, Expr> {
   return berk(new Map([...M].map(([i, r]) => [i, new Map([...r].map(([j, e]) => [j, e instanceof Expr ? e : K.fromSympy(e)] as const))] as const)), n, K);
 }

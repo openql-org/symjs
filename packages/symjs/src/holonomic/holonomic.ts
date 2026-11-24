@@ -55,8 +55,20 @@ import { evalfHolonomic } from './numerical';
 export type DifferentialOperand = DifferentialOperator | DMP | ExprLike;
 
 /**
- * The algebra of differential operators over a base polynomial ring and the
- * operator `Dx` (SymPy DifferentialOperators).
+ * The algebra of differential operators over a base polynomial ring and the operator `Dx`.
+ *
+ * @param base - Coefficient ring of the operators.
+ * @param generator - Name or symbol for the operator.
+ * @returns The operator algebra and its generator.
+ * @see SymPy `sympy.holonomic.holonomic.DifferentialOperators`
+ * @example
+ * ```ts
+ * import { DifferentialOperators, ZZ, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * const [, Dx] = DifferentialOperators(ZZ.oldPolyRing(x), 'Dx');
+ * Dx.mul(x).toString(); // => (1) + (x)*Dx
+ * ```
  */
 export function DifferentialOperators(base: GlobalPolynomialRing, generator?: string | Sym): [DifferentialOperatorAlgebra, DifferentialOperator] {
   const ring = new DifferentialOperatorAlgebra(base, generator);
@@ -64,41 +76,111 @@ export function DifferentialOperators(base: GlobalPolynomialRing, generator?: st
 }
 
 /**
- * The Weyl algebra: noncommutative polynomials in `Dx` with coefficients in
- * a base polynomial ring, with Dx*a = a*Dx + a' (SymPy
- * DifferentialOperatorAlgebra).
+ * The Weyl algebra: noncommutative polynomials in `Dx` with coefficients in a base polynomial ring,
+ * with Dx*a = a*Dx + a'.
+ *
+ * @see SymPy `sympy.holonomic.holonomic.DifferentialOperatorAlgebra`
+ * @example
+ * ```ts
+ * import { DifferentialOperators, ZZ, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * const [ring] = DifferentialOperators(ZZ.oldPolyRing(x), 'Dx');
+ * ring.toString(); // => Univariate Differential Operator Algebra in intermediate Dx over the base ring ZZ[x]
+ * ```
  */
 export class DifferentialOperatorAlgebra {
-  /** The operator `Dx` (SymPy derivative_operator). */
+  /**
+   * The operator `Dx`.
+   *
+   * @see SymPy `sympy.holonomic.holonomic.DifferentialOperatorAlgebra.derivative_operator`
+   */
   readonly derivativeOperator: DifferentialOperator;
-  /** The generator symbol (SymPy gen_symbol). */
+  /**
+   * The generator symbol.
+   *
+   * @see SymPy `sympy.holonomic.holonomic.DifferentialOperatorAlgebra.gen_symbol`
+   */
   readonly genSymbol: Sym;
+  /**
+   * Defines a differential operator algebra over the given polynomial ring.
+   *
+   * @param base - Polynomial coefficient ring.
+   * @param generator - Name or symbol of the algebra generator.
+   */
   constructor(
+    /**
+     * The base polynomial ring of the operator algebra.
+     *
+     * @see SymPy `sympy.holonomic.holonomic.DifferentialOperatorAlgebra.base`
+     */
     readonly base: GlobalPolynomialRing,
     generator?: string | Sym,
   ) {
     this.derivativeOperator = new DifferentialOperator([base.zero, base.one], this);
     this.genSymbol = generator instanceof Sym ? generator : new Sym(generator ?? 'Dx', { commutative: false });
   }
+  /**
+   * Formats the value as text.
+   *
+   * @returns The printable representation.
+   * @see SymPy `sympy.holonomic.holonomic.DifferentialOperatorAlgebra.__str__`
+   */
   toString(): string {
     return `Univariate Differential Operator Algebra in intermediate ${str(this.genSymbol)} over the base ring ${this.base.toString()}`;
   }
+  /**
+   * Compares the two operands for equality.
+   *
+   * @param o - Value to compare against.
+   * @returns Whether the operands are equal.
+   * @see SymPy `sympy.holonomic.holonomic.DifferentialOperatorAlgebra.__eq__`
+   */
   equals(o: DifferentialOperatorAlgebra): boolean {
     return this.base.equals(o.base) && this.genSymbol.key === o.genSymbol.key;
   }
 }
 
 /**
- * A differential operator: a list of polynomials of the base ring, one for
- * each power of `Dx` (SymPy DifferentialOperator).
+ * A differential operator: a list of polynomials of the base ring, one for each power of `Dx`.
+ *
+ * @see SymPy `sympy.holonomic.holonomic.DifferentialOperator`
+ * @example
+ * ```ts
+ * import { DifferentialOperator, DifferentialOperators, ZZ, ex, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * const [ring] = DifferentialOperators(ZZ.oldPolyRing(x), 'Dx');
+ * new DifferentialOperator([0, 1, ex`x**2`], ring).toString(); // => (1)*Dx + (x**2)*Dx**2
+ * ```
  */
 export class DifferentialOperator {
-  /** The coefficients of Dx**0, Dx**1, ... (SymPy listofpoly). */
+  /**
+   * The polynomial coefficients in ascending powers of the derivative operator.
+   *
+   * @see SymPy `sympy.holonomic.holonomic.DifferentialOperator.listofpoly`
+   */
   readonly listofpoly: DMP[];
-  /** The variable of the base ring. */
+  /**
+   * The variable of the base ring.
+   *
+   * @see SymPy `sympy.holonomic.holonomic.DifferentialOperator.x`
+   */
   readonly x: Sym;
+  /**
+   * Builds a differential operator from coefficients in ascending derivative order.
+   *
+   * @param listOfPoly - Polynomial coefficients, in increasing operator degree.
+   * @param parent - Parent algebra or module.
+   * @throws TypeError when a coefficient is itself a differential operator.
+   */
   constructor(
     listOfPoly: readonly DifferentialOperand[] | readonly (DMP | ExprLike)[],
+    /**
+     * The algebra or domain containing this element.
+     *
+     * @see SymPy `sympy.holonomic.holonomic.DifferentialOperator.parent`
+     */
     readonly parent: DifferentialOperatorAlgebra,
   ) {
     const base = parent.base;
@@ -109,14 +191,25 @@ export class DifferentialOperator {
       return base.fromSympy(sympify(j));
     });
   }
-  /** The highest power of `Dx`. */
+  /**
+   * The highest power of `Dx`.
+   *
+   * @returns The highest generator degree.
+   * @see SymPy `sympy.holonomic.holonomic.DifferentialOperator.order`
+   */
   get order(): number {
     return this.listofpoly.length - 1;
   }
   private poly(o: DMP | ExprLike): DMP {
     return o instanceof DMP ? o : this.parent.base.fromSympy(sympify(o));
   }
-  /** self*other with Dx*a = a*Dx + a' (SymPy __mul__). */
+  /**
+   * Multiplies operators using the Leibniz rule when a derivative passes a coefficient.
+   *
+   * @param other - Factor on the right.
+   * @returns The product in operand order.
+   * @see SymPy `sympy.holonomic.holonomic.DifferentialOperator.__mul__`
+   */
   mul(other: DifferentialOperand): DifferentialOperator {
     const listofself = this.listofpoly;
     let listofother = other instanceof DifferentialOperator ? other.listofpoly : [this.poly(other)];
@@ -134,7 +227,13 @@ export class DifferentialOperator {
     }
     return new DifferentialOperator(sol, this.parent);
   }
-  /** other*self for a polynomial or expression (SymPy __rmul__). */
+  /**
+   * Multiplies this value by the factor on its left.
+   *
+   * @param other - Factor on the left.
+   * @returns The product in operand order.
+   * @see SymPy `sympy.holonomic.holonomic.DifferentialOperator.__rmul__`
+   */
   rmul(other: DMP | ExprLike): DifferentialOperator {
     const o = this.poly(other);
     return new DifferentialOperator(
@@ -142,28 +241,63 @@ export class DifferentialOperator {
       this.parent,
     );
   }
-  /** self + other (SymPy __add__ and __radd__). */
+  /**
+   * Adds the other operand to this value.
+   *
+   * @param other - Addend.
+   * @returns The sum of the operands.
+   * @see SymPy `sympy.holonomic.holonomic.DifferentialOperator.__add__`
+   */
   add(other: DifferentialOperand): DifferentialOperator {
     if (other instanceof DifferentialOperator) return new DifferentialOperator(addLists(this.listofpoly, other.listofpoly), this.parent);
     return new DifferentialOperator([first(this.listofpoly).add(this.poly(other)), ...this.listofpoly.slice(1)], this.parent);
   }
-  /** self - other. */
+  /**
+   * Subtracts the other operand from this value.
+   *
+   * @param other - Value to subtract.
+   * @returns The difference in operand order.
+   * @see SymPy `sympy.holonomic.holonomic.DifferentialOperator.__sub__`
+   */
   sub(other: DifferentialOperand): DifferentialOperator {
     return this.add(other instanceof DifferentialOperator ? other.rmul(-1) : this.poly(other).neg());
   }
-  /** other - self. */
+  /**
+   * Subtracts this operator from the left operand.
+   *
+   * @param other - Left operand of the subtraction.
+   * @returns The difference in operand order.
+   * @see SymPy `sympy.holonomic.holonomic.DifferentialOperator.__rsub__`
+   */
   rsub(other: DMP | ExprLike): DifferentialOperator {
     return this.rmul(-1).add(other);
   }
-  /** -self. */
+  /**
+   * Reverses the sign of the value.
+   *
+   * @returns The additive inverse.
+   * @see SymPy `sympy.holonomic.holonomic.DifferentialOperator.__neg__`
+   */
   neg(): DifferentialOperator {
     return this.rmul(-1);
   }
-  /** self/other for a constant other (SymPy __truediv__). */
+  /**
+   * Divides by the supplied divisor.
+   *
+   * @param other - Divisor.
+   * @returns The quotient.
+   * @see SymPy `sympy.holonomic.holonomic.DifferentialOperator.__truediv__`
+   */
   div(other: ExprLike): DifferentialOperator {
     return this.mul(pow(other, -1));
   }
-  /** self**n for an integer n >= 0 (SymPy __pow__). */
+  /**
+   * Raises the value to the specified power.
+   *
+   * @param nIn - Exponent to which to raise the value.
+   * @returns The value raised to the given exponent.
+   * @see SymPy `sympy.holonomic.holonomic.DifferentialOperator.__pow__`
+   */
   pow(nIn: number): DifferentialOperator {
     if (nIn === 1) return this;
     let result = new DifferentialOperator([this.parent.base.one], this.parent);
@@ -182,6 +316,12 @@ export class DifferentialOperator {
     }
     return result;
   }
+  /**
+   * Formats the value as text.
+   *
+   * @returns The printable representation.
+   * @see SymPy `sympy.holonomic.holonomic.DifferentialOperator.__str__`
+   */
   toString(): string {
     let printStr = '';
     const g = str(this.parent.genSymbol);
@@ -198,16 +338,24 @@ export class DifferentialOperator {
     return printStr;
   }
   /**
-   * Equality with an operator, or with a polynomial or expression (the
-   * operator of order 0). SymPy compares the higher coefficients with the
-   * zero element by identity, so an operator with zero higher coefficients
-   * never equals a polynomial there; here they are compared by value.
+   * Compares coefficients in the operator algebra, treating polynomials and expressions as order-zero
+   * operators.
+   *
+   * @param other - Value to compare against.
+   * @returns Whether the operands are equal.
+   * @see SymPy `sympy.holonomic.holonomic.DifferentialOperator.__eq__`
    */
   equals(other: DifferentialOperand): boolean {
     if (other instanceof DifferentialOperator) return listsEqual(this.listofpoly, other.listofpoly) && this.parent.equals(other.parent);
     return first(this.listofpoly).equals(other instanceof DMP ? other : sympify(other)) && this.listofpoly.slice(1).every((p) => p.isZero);
   }
-  /** Whether the differential equation is singular at x0 (SymPy is_singular). */
+  /**
+   * Tests whether the leading coefficient vanishes at the specified point.
+   *
+   * @param x0 - Point for the initial conditions.
+   * @returns Whether the leading coefficient vanishes at the point.
+   * @see SymPy `sympy.holonomic.holonomic.DifferentialOperator.is_singular`
+   */
   isSingular(x0: ExprLike): boolean {
     return vanishesAt(last(this.listofpoly).toSympy(), this.x, sympify(x0));
   }
@@ -618,19 +766,56 @@ function recurrenceFrom(dict1: PairDict, dom: Domain): [RecurrenceOperator, numb
 // ---------------------------------------------------------------------------
 
 /**
- * A holonomic function: a solution of L.f = 0 for an annihilator L (a
- * DifferentialOperator) with optional initial conditions at x0, either the
- * values [f(x0), f'(x0), ...] at an ordinary point or, at a regular singular
- * point, a map from the roots of the indicial equation to the first series
- * coefficients (SymPy HolonomicFunction).
+ * A holonomic function: a solution of L.f = 0 for an annihilator L (a DifferentialOperator) with
+ * optional initial conditions at x0, either the values [f(x0), f'(x0),...] at an ordinary point or,
+ * at a regular singular point, a map from the roots of the indicial equation to the first series
+ * coefficients.
+ *
+ * @see SymPy `sympy.holonomic.holonomic.HolonomicFunction`
+ * @example
+ * ```ts
+ * import { DifferentialOperators, HolonomicFunction, QQ, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * const [, Dx] = DifferentialOperators(QQ.oldPolyRing(x), 'Dx');
+ * const p = new HolonomicFunction(Dx.sub(1), x, 0, [1]);
+ * const q = new HolonomicFunction(Dx.pow(2).add(1), x, 0, [0, 1]);
+ * p.mul(q).toString(); // => HolonomicFunction((2) + (-2)*Dx + (1)*Dx**2, x, 0, [0, 1])
+ * ```
  */
 export class HolonomicFunction {
-  /** The initial conditions (SymPy y0), undefined when none are given. */
+  /**
+   * The initial values or exponent-indexed series data, when supplied.
+   *
+   * @see SymPy `sympy.holonomic.holonomic.HolonomicFunction.y0`
+   */
   y0: InitialConditions | undefined;
-  /** The point of the initial conditions. */
+  /**
+   * The point of the initial conditions.
+   *
+   * @see SymPy `sympy.holonomic.holonomic.HolonomicFunction.x0`
+   */
   x0: Expr;
+  /**
+   * Specifies a solution of a differential equation by its annihilator and optional initial data.
+   *
+   * @param annihilator - Differential operator defining the function.
+   * @param x - Independent variable.
+   * @param x0 - Point for the initial conditions.
+   * @param y0 - Ordinary initial values or singular series coefficients.
+   */
   constructor(
+    /**
+     * The differential operator that annihilates the function.
+     *
+     * @see SymPy `sympy.holonomic.holonomic.HolonomicFunction.annihilator`
+     */
     readonly annihilator: DifferentialOperator,
+    /**
+     * The independent variable.
+     *
+     * @see SymPy `sympy.holonomic.holonomic.HolonomicFunction.x`
+     */
     readonly x: Sym,
     x0: ExprLike = 0,
     y0?: InitialConditionsLike,
@@ -638,11 +823,23 @@ export class HolonomicFunction {
     this.x0 = sympify(x0);
     this.y0 = toIcs(y0);
   }
+  /**
+   * Formats the value as text.
+   *
+   * @returns The printable representation.
+   * @see SymPy `sympy.holonomic.holonomic.HolonomicFunction.__str__`
+   */
   toString(): string {
     if (this.haveInitCond()) return `HolonomicFunction(${this.annihilator.toString()}, ${str(this.x)}, ${str(this.x0)}, ${strIcs(defined(this.y0))})`;
     return `HolonomicFunction(${this.annihilator.toString()}, ${str(this.x)})`;
   }
-  /** The two functions over a common base ring (SymPy unify). */
+  /**
+   * Expresses the two annihilators over a common coefficient ring.
+   *
+   * @param other - Operand to convert to a common module or coefficient domain.
+   * @returns The functions over a common coefficient domain.
+   * @see SymPy `sympy.holonomic.holonomic.HolonomicFunction.unify`
+   */
   unify(other: HolonomicFunction): [HolonomicFunction, HolonomicFunction] {
     const R1 = this.annihilator.parent.base;
     const R2 = other.annihilator.parent.base;
@@ -659,12 +856,23 @@ export class HolonomicFunction {
     );
     return [new HolonomicFunction(sol1, this.x, this.x0, this.y0), new HolonomicFunction(sol2, other.x, other.x0, other.y0)];
   }
-  /** Whether the initial conditions are singular (a map): true, false for a list, 'unknown' without initial conditions (SymPy is_singularics, None). */
+  /**
+   * Tests whether the initial data are specified using series exponents at a regular singular point.
+   *
+   * @returns Whether the data are indexed by Frobenius exponent, or `'unknown'` when no initial
+   *   values were supplied.
+   * @see SymPy `sympy.holonomic.holonomic.HolonomicFunction.is_singularics`
+   */
   isSingularics(): Truth {
     if (this.y0 === undefined) return 'unknown';
     return this.y0 instanceof ExprMap;
   }
-  /** Whether initial conditions are given (SymPy _have_init_cond). */
+  /**
+   * Tests whether initial conditions are given.
+   *
+   * @returns Whether initial values are specified.
+   * @see SymPy `sympy.holonomic.holonomic.HolonomicFunction._have_init_cond`
+   */
   haveInitCond(): boolean {
     return this.y0 !== undefined && (this.y0 instanceof ExprMap ? this.y0.size > 0 : this.y0.length > 0);
   }
@@ -681,7 +889,13 @@ export class HolonomicFunction {
     }
     return undefined;
   }
-  /** self + other (SymPy __add__). */
+  /**
+   * Adds the other operand to this value.
+   *
+   * @param other - Addend.
+   * @returns The sum of the operands.
+   * @see SymPy `sympy.holonomic.holonomic.HolonomicFunction.__add__`
+   */
   add(other: HolonomicFunction): HolonomicFunction {
     if (!this.annihilator.parent.base.equals(other.annihilator.parent.base)) {
       const [a, b] = this.unify(other);
@@ -754,10 +968,16 @@ export class HolonomicFunction {
     return [conv(this), conv(other)];
   }
   /**
-   * The integral (SymPy integrate): an indefinite integral for a symbol, a
-   * function for limits (x, a, x) and a value for limits (x, a, b) with a
-   * number b. With `initcond` an indefinite integral without initial
+   * The integral: an indefinite integral for a symbol, a function for limits (x, a, x) and a value
+   * for limits (x, a, b) with a number b. With `initcond` an indefinite integral without initial
    * conditions gets the condition 0 at x0.
+   *
+   * @param limits - Integration variable or endpoints of integration.
+   * @param initcond - Carry the initial conditions through integration.
+   * @returns The integral.
+   * @throws NotImplementedError when the series has logarithmic terms or definite integration
+   *   requires singular initial conditions.
+   * @see SymPy `sympy.holonomic.holonomic.HolonomicFunction.integrate`
    */
   integrate(limits: Sym | readonly [Sym, ExprLike, ExprLike], initcond = false): HolonomicFunction | Expr {
     const D = this.annihilator.parent.derivativeOperator;
@@ -814,8 +1034,12 @@ export class HolonomicFunction {
     return new HolonomicFunction(annD, this.x);
   }
   /**
-   * The derivative (SymPy diff): diff() or diff(x) once, diff(x, n) n times;
-   * 0 for another variable.
+   * Differentiates the holonomic function, carrying its initial values through differentiation.
+   *
+   * @param x - Variable of differentiation.
+   * @param n - Order of differentiation.
+   * @returns The derivative.
+   * @see SymPy `sympy.holonomic.holonomic.HolonomicFunction.diff`
    */
   diff(x?: Expr, n?: number): HolonomicFunction | Expr {
     if (x !== undefined) {
@@ -844,17 +1068,25 @@ export class HolonomicFunction {
     const y0 = extendList(this, solAnn.order + 1).slice(1);
     return new HolonomicFunction(solAnn, this.x, this.x0, y0);
   }
-  /** Equal annihilators and variables, and equal initial conditions when both have them (SymPy __eq__). */
+  /**
+   * Equal annihilators and variables, and equal initial conditions when both have them.
+   *
+   * @param other - Value to compare against.
+   * @returns Whether the operands are equal.
+   * @see SymPy `sympy.holonomic.holonomic.HolonomicFunction.__eq__`
+   */
   equals(other: HolonomicFunction): boolean {
     if (!this.annihilator.equals(other.annihilator) || this.x.key !== other.x.key) return false;
     if (this.haveInitCond() && other.haveInitCond()) return this.x0.key === other.x0.key && icsEqual(defined(this.y0), defined(other.y0));
     return true;
   }
   /**
-   * self*other for a holonomic function or a constant (SymPy __mul__ and
-   * __rmul__). SymPy fails on a constant factor of a function with initial
-   * conditions (it builds a Poly from each value); here the values are
-   * multiplied by the constant.
+   * Multiplies two holonomic functions or scales the function by a constant.
+   *
+   * @param otherIn - Factor on the right.
+   * @returns The product in operand order.
+   * @throws NotImplementedError when the expression multiplier depends on the independent variable.
+   * @see SymPy `sympy.holonomic.holonomic.HolonomicFunction.__mul__`
    */
   mul(otherIn: HolonomicFunction | ExprLike): HolonomicFunction {
     const annSelf = this.annihilator;
@@ -970,21 +1202,45 @@ export class HolonomicFunction {
     }
     return new HolonomicFunction(solAnn, this.x, this.x0, y0);
   }
-  /** self - other (SymPy __sub__). */
+  /**
+   * Subtracts the other operand from this value.
+   *
+   * @param other - Value to subtract.
+   * @returns The difference in operand order.
+   * @see SymPy `sympy.holonomic.holonomic.HolonomicFunction.__sub__`
+   */
   sub(other: HolonomicFunction): HolonomicFunction {
     return this.add(other.mul(-1));
   }
-  /** -self (SymPy __neg__). */
+  /**
+   * Reverses the sign of the value.
+   *
+   * @returns The additive inverse.
+   * @see SymPy `sympy.holonomic.holonomic.HolonomicFunction.__neg__`
+   */
   neg(): HolonomicFunction {
     return this.mul(-1);
   }
-  /** self/other for a constant other (SymPy __truediv__). */
+  /**
+   * Divides by the supplied divisor.
+   *
+   * @param other - Divisor.
+   * @returns The quotient.
+   * @see SymPy `sympy.holonomic.holonomic.HolonomicFunction.__truediv__`
+   */
   div(other: ExprLike): HolonomicFunction {
     return this.mul(pow(other, -1));
   }
   /**
-   * self**n (SymPy __pow__): any exponent (also symbolic) for an annihilator
-   * of order 1, otherwise an integer n >= 0.
+   * Raises the function to a power. An order-one annihilator permits general exponents, while higher
+   * orders require a nonnegative integer.
+   *
+   * @param nIn - Exponent to which to raise the value.
+   * @returns The value raised to the given exponent.
+   * @throws NotImplementedError when an operator of order greater than one has a nonintegral
+   *   exponent.
+   * @throws NotHolonomicError when a negative exponent is unsupported for the given annihilator.
+   * @see SymPy `sympy.holonomic.holonomic.HolonomicFunction.__pow__`
    */
   pow(nIn: ExprLike): HolonomicFunction {
     const n = sympify(nIn);
@@ -1018,13 +1274,24 @@ export class HolonomicFunction {
     }
     return result;
   }
-  /** The highest power of x in the annihilator (SymPy degree). */
+  /**
+   * The highest power of x in the annihilator.
+   *
+   * @returns The largest degree of an annihilator coefficient.
+   * @see SymPy `sympy.holonomic.holonomic.HolonomicFunction.degree`
+   */
   degree(): number {
     return Math.max(...this.annihilator.listofpoly.map((i) => i.degree()));
   }
   /**
-   * The composition with a rational function (SymPy composition); initial
-   * conditions of the result can be given as x0 and y0.
+   * The composition with a rational function; initial conditions of the result can be given as x0 and
+   * y0.
+   *
+   * @param exprIn - Expression to substitute for the independent variable.
+   * @param x0 - Point for the initial conditions.
+   * @param y0 - Ordinary initial values or singular series coefficients.
+   * @returns The composite function with the given initial conditions.
+   * @see SymPy `sympy.holonomic.holonomic.HolonomicFunction.composition`
    */
   composition(exprIn: ExprLike, x0?: ExprLike, y0?: InitialConditionsLike): HolonomicFunction {
     const expr = sympify(exprIn);
@@ -1075,10 +1342,13 @@ export class HolonomicFunction {
     return new HolonomicFunction(ann, this.x);
   }
   /**
-   * The recurrence of the series coefficients about x0 (SymPy to_sequence):
-   * [(R, n0)] at an ordinary point, [(R, p, n0), ...] for the roots p of the
-   * indicial equation at a regular singular point; n0 is left out when `lb`
-   * is false. Unknown initial values are symbols C_j.
+   * The recurrence of the series coefficients about x0: [(R, n0)] at an ordinary point, [(R, p,
+   * n0),...] for the roots p of the indicial equation at a regular singular point; n0 is left out
+   * when `lb` is false. Unknown initial values are symbols C_j.
+   *
+   * @param lb - Include the lower bound for the recurrence index.
+   * @returns The recurrences for the series coefficients.
+   * @see SymPy `sympy.holonomic.holonomic.HolonomicFunction.to_sequence`
    */
   toSequence(lb = true): SequenceSolution[] {
     return this.recurrences().map((r): SequenceSolution => {
@@ -1183,9 +1453,13 @@ export class HolonomicFunction {
     return finalsol;
   }
   /**
-   * The power series about x0 up to (x - x0)**n (SymPy series); a list of
-   * series for several roots of the indicial equation. With `coefficient`
-   * the list of coefficients, with `order: false` no O term.
+   * The power series about x0 up to (x - x0)**n; a list of series for several roots of the indicial
+   * equation. With `coefficient` the list of coefficients, with `order: false` no O term.
+   *
+   * @param n - Truncation order at the expansion point.
+   * @param opts - Set `coefficient` for a coefficient list or `order: false` to omit the order term.
+   * @returns The truncated expansion about the initial point.
+   * @see SymPy `sympy.holonomic.holonomic.HolonomicFunction.series`
    */
   series(n = 6, opts: { coefficient?: boolean; order?: boolean } = {}): Expr | Expr[] {
     const recs = this.recurrences();
@@ -1219,7 +1493,12 @@ export class HolonomicFunction {
     // (SymPy substitutes x - x0 for x in the series, which moves the O term to x0)
     return order ? add(ser, O(pow(t, n), x, this.x0)) : ser;
   }
-  /** The roots of the indicial equation (SymPy _indicial). */
+  /**
+   * Finds the exponents of a Frobenius series by solving the indicial equation at the initial point.
+   *
+   * @returns A map from indicial roots to their multiplicities.
+   * @see SymPy `sympy.holonomic.holonomic.HolonomicFunction._indicial`
+   */
   indicial(): ExprMap<number> {
     if (!zeroE(this.x0)) return this.shiftX(this.x0).indicial();
     const listCoeff = this.annihilator.listofpoly;
@@ -1246,13 +1525,52 @@ export class HolonomicFunction {
     return rootsOf(s.toSympy(), x);
   }
   /**
-   * Numerical values by integration along a path of points (SymPy evalf):
-   * RK4 (default) or 'Euler'. For a single point the path goes from x0 in
-   * steps of h and the value at the point is returned.
+   * Numerical values by integration along a path of points: RK4 (default) or 'Euler'. For a single
+   * point the path goes from x0 in steps of h and the value at the point is returned.
+   *
+   * @param point - Point at which to evaluate.
+   * @param opts - Choose `method` (RK4 or Euler) and step size `h`.
+   * @returns The numerical solution at the requested points.
+   * @throws NotImplementedError when the evaluation point is symbolic.
+   * @throws SingularityError when the path includes a singular point.
+   * @see SymPy `sympy.holonomic.holonomic.HolonomicFunction.evalf`
    */
   evalf(point: ExprLike, opts?: EvalfOptions & { derivatives?: false }): Expr;
+  /**
+   * Numerical values by integration along a path of points: RK4 (default) or 'Euler'. For a single
+   * point the path goes from x0 in steps of h and the value at the point is returned.
+   *
+   * @param point - Point at which to evaluate.
+   * @param opts - Choose `method` (RK4 or Euler) and step size `h`.
+   * @returns The numerical solution at the requested points.
+   * @throws NotImplementedError when the evaluation point is symbolic.
+   * @throws SingularityError when the path includes a singular point.
+   * @see SymPy `sympy.holonomic.holonomic.HolonomicFunction.evalf`
+   */
   evalf(point: ExprLike, opts: EvalfOptions & { derivatives: true }): Expr[];
+  /**
+   * Numerical values by integration along a path of points: RK4 (default) or 'Euler'. For a single
+   * point the path goes from x0 in steps of h and the value at the point is returned.
+   *
+   * @param points - Successive points on the path of evaluation.
+   * @param opts - Choose `method` (RK4 or Euler) and step size `h`.
+   * @returns The numerical solution at the requested points.
+   * @throws NotImplementedError when the evaluation point is symbolic.
+   * @throws SingularityError when the path includes a singular point.
+   * @see SymPy `sympy.holonomic.holonomic.HolonomicFunction.evalf`
+   */
   evalf(points: readonly ExprLike[], opts?: EvalfOptions & { derivatives?: false }): Expr[];
+  /**
+   * Numerical values by integration along a path of points: RK4 (default) or 'Euler'. For a single
+   * point the path goes from x0 in steps of h and the value at the point is returned.
+   *
+   * @param points - Successive points on the path of evaluation.
+   * @param opts - Choose `method` (RK4 or Euler) and step size `h`.
+   * @returns The numerical solution at the requested points.
+   * @throws NotImplementedError when the evaluation point is symbolic.
+   * @throws SingularityError when the path includes a singular point.
+   * @see SymPy `sympy.holonomic.holonomic.HolonomicFunction.evalf`
+   */
   evalf(points: readonly ExprLike[], opts: EvalfOptions & { derivatives: true }): Expr[][];
   evalf(points: ExprLike | readonly ExprLike[], opts: EvalfOptions & { derivatives?: boolean } = {}): Expr | Expr[] | Expr[][] {
     const method = opts.method ?? 'RK4';
@@ -1288,7 +1606,13 @@ export class HolonomicFunction {
   private evalfAt(b: Expr): Expr {
     return this.evalf(b);
   }
-  /** The same function of another variable (SymPy change_x). */
+  /**
+   * The same function of another variable.
+   *
+   * @param z - Replacement independent variable.
+   * @returns The function in the replacement variable.
+   * @see SymPy `sympy.holonomic.holonomic.HolonomicFunction.change_x`
+   */
   changeX(z: Sym): HolonomicFunction {
     const dom = this.annihilator.parent.base.dom;
     const R = dom.oldPolyRing(z);
@@ -1299,7 +1623,13 @@ export class HolonomicFunction {
     );
     return new HolonomicFunction(sol, z, this.x0, this.y0);
   }
-  /** Substitute x + a for x (SymPy shift_x). */
+  /**
+   * Translates the independent variable by the given offset.
+   *
+   * @param aIn - Translation added to the independent variable.
+   * @returns The holonomic representation of the translated function.
+   * @see SymPy `sympy.holonomic.holonomic.HolonomicFunction.shift_x`
+   */
   shiftX(aIn: ExprLike): HolonomicFunction {
     const a = sympify(aIn);
     const x = this.x;
@@ -1312,11 +1642,24 @@ export class HolonomicFunction {
     return new HolonomicFunction(sol, x, x0, this.y0);
   }
   /**
-   * A hypergeometric function (or a linear combination of them) representing
-   * the function (SymPy to_hyper); with `asList` the terms as pairs
-   * (coefficient*x**k, hyper) or singletons for polynomial terms.
+   * A hypergeometric function (or a linear combination of them) representing the function; with
+   * `asList` the terms as pairs (coefficient*x**k, hyper) or singletons for polynomial terms.
+   *
+   * @param asList - Return the hypergeometric terms separately.
+   * @returns The hypergeometric representation.
+   * @throws NotHyperSeriesError when the series is not hypergeometric.
+   * @see SymPy `sympy.holonomic.holonomic.HolonomicFunction.to_hyper`
    */
   toHyper(asList: true): HyperTerm[];
+  /**
+   * A hypergeometric function (or a linear combination of them) representing the function; with
+   * `asList` the terms as pairs (coefficient*x**k, hyper) or singletons for polynomial terms.
+   *
+   * @param asList - Return the hypergeometric terms separately.
+   * @returns The hypergeometric representation.
+   * @throws NotHyperSeriesError when the series is not hypergeometric.
+   * @see SymPy `sympy.holonomic.holonomic.HolonomicFunction.to_hyper`
+   */
   toHyper(asList?: false): Expr;
   toHyper(asList = false): Expr | HyperTerm[] {
     const recs = this.recurrences();
@@ -1379,11 +1722,23 @@ export class HolonomicFunction {
     }
     return [shift(mul(sol, pow(x, constantpower))), listofsol];
   }
-  /** The function as an expression: hyperexpand of to_hyper, simplified (SymPy to_expr). */
+  /**
+   * The function as an expression: hyperexpand of to_hyper, simplified.
+   *
+   * @returns A symbolic expression for the solution.
+   * @see SymPy `sympy.holonomic.holonomic.HolonomicFunction.to_expr`
+   */
   toExpr(): Expr {
     return simplify(hyperexpand(this.toHyper()));
   }
-  /** The same function with initial conditions at b (SymPy change_ics). */
+  /**
+   * The same function with initial conditions at b.
+   *
+   * @param bIn - New point for the initial conditions.
+   * @param lenicsIn - Number of initial conditions to compute.
+   * @returns The function with initial data at the new point.
+   * @see SymPy `sympy.holonomic.holonomic.HolonomicFunction.change_ics`
+   */
   changeIcs(bIn: ExprLike, lenicsIn?: number): HolonomicFunction {
     const b = sympify(bIn);
     let lenics = lenicsIn;
@@ -1402,7 +1757,12 @@ export class HolonomicFunction {
     const y0 = this.evalf(b, { derivatives: true });
     return new HolonomicFunction(this.annihilator, this.x, b, y0);
   }
-  /** A linear combination of Meijer G-functions representing the function (SymPy to_meijerg). */
+  /**
+   * A linear combination of Meijer G-functions representing the function.
+   *
+   * @returns The Meijer G representation.
+   * @see SymPy `sympy.holonomic.holonomic.HolonomicFunction.to_meijerg`
+   */
   toMeijerg(): Expr {
     let sol: Expr = S.Zero;
     for (const i of this.toHyper(true)) {
@@ -1448,9 +1808,21 @@ function argSymbol(z: Expr): Sym {
 }
 
 /**
- * A hypergeometric function as a holonomic function (SymPy from_hyper); x0
- * is the point for the initial conditions, `evalf` evaluates them
- * numerically when the function has no closed form.
+ * A hypergeometric function as a holonomic function; x0 is the point for the initial conditions,
+ * `evalf` evaluates them numerically when the function has no closed form.
+ *
+ * @param funcIn - Hypergeometric function to convert.
+ * @param x0In - Point for the initial conditions.
+ * @param evalf - Evaluate the initial values numerically.
+ * @returns The holonomic representation of the hypergeometric function.
+ * @throws TypeError when the expression is not a hypergeometric function.
+ * @see SymPy `sympy.holonomic.holonomic.from_hyper`
+ * @example
+ * ```ts
+ * import { ex, fromHyper, hyper } from '@symjs/symjs';
+ *
+ * fromHyper(hyper([], [ex`3/2`], ex`x**2/4`)).toString(); // => HolonomicFunction((-x) + (2)*Dx + (x)*Dx**2, x, 1, [sinh(1), -sinh(1) + cosh(1)])
+ * ```
  */
 export function fromHyper(funcIn: ExprLike, x0In: ExprLike = 0, evalf = false): HolonomicFunction {
   const func = sympify(funcIn);
@@ -1477,9 +1849,22 @@ export function fromHyper(funcIn: ExprLike, x0In: ExprLike = 0, evalf = false): 
 }
 
 /**
- * A Meijer G-function as a holonomic function (SymPy from_meijerg); x0 is
- * the point for the initial conditions, `evalf` evaluates them numerically
- * when the function has no closed form, `initcond: false` leaves them out.
+ * A Meijer G-function as a holonomic function; x0 is the point for the initial conditions, `evalf`
+ * evaluates them numerically when the function has no closed form, `initcond: false` leaves them
+ * out.
+ *
+ * @param funcIn - Meijer G-function to convert.
+ * @param opts - Use `x0` for the expansion point, `domain` for coefficients, `initcond` to request
+ *   initial conditions and `evalf` for numerical initial values.
+ * @returns The holonomic representation of the G-function.
+ * @throws TypeError when the expression is not a Meijer G-function.
+ * @see SymPy `sympy.holonomic.holonomic.from_meijerg`
+ * @example
+ * ```ts
+ * import { ex, fromMeijerg, meijerg } from '@symjs/symjs';
+ *
+ * fromMeijerg(meijerg([], [], [ex`1/2`], [0], ex`x**2/4`)).toString(); // => HolonomicFunction((1) + (1)*Dx**2, x, 0, [0, 1/sqrt(pi)])
+ * ```
  */
 export function fromMeijerg(funcIn: ExprLike, opts: { x0?: ExprLike; evalf?: boolean; initcond?: boolean; domain?: Domain } = {}): HolonomicFunction {
   const func = sympify(funcIn);
@@ -1581,10 +1966,22 @@ export interface ExprToHolonomicOptions {
 }
 
 /**
- * An expression as a holonomic function (SymPy expr_to_holonomic): built
- * from polynomials, rational and algebraic functions, the functions of a
- * table (sin, cos, exp, log, erf, ...) and Meijer G-function
- * representations, by sums, products, powers and composition.
+ * Constructs a differential annihilator for an expression and, when requested, computes initial
+ * conditions.
+ *
+ * @param funcIn - Expression to represent.
+ * @param opts - Variable, coefficient domain and initial conditions for the representation.
+ * @returns The annihilator and initial data as a holonomic function.
+ * @throws TypeError when the independent variable cannot be inferred.
+ * @throws NotImplementedError when no holonomic conversion is available for the expression.
+ * @see SymPy `sympy.holonomic.holonomic.expr_to_holonomic`
+ * @example
+ * ```ts
+ * import { ex, exprToHolonomic } from '@symjs/symjs';
+ *
+ * exprToHolonomic(ex`sin(x)`).toString(); // => HolonomicFunction((1) + (1)*Dx**2, x, 0, [0, 1])
+ * exprToHolonomic(ex`exp(x)`).toString(); // => HolonomicFunction((-1) + (1)*Dx, x, 0, [1])
+ * ```
  */
 export function exprToHolonomic(funcIn: ExprLike, opts: ExprToHolonomicOptions = {}): HolonomicFunction {
   const func = sympify(funcIn);
