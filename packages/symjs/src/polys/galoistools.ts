@@ -507,7 +507,7 @@ const shoup = (f: P, p: bigint): P[] => {
   return sortPolys(ddfShoup(f, p).flatMap(([g, n]) => edfShoup(g, n, p, next)));
 };
 
-/** The factorization methods of gfFactorSqf (SymPy GF_FACTOR_METHOD). */
+/** The factorization methods of gfFactorSqf. */
 export type GFFactorMethod = 'berlekamp' | 'zassenhaus' | 'shoup';
 const FACTOR_METHODS: Readonly<Record<GFFactorMethod, (f: P, p: bigint) => P[]>> = { berlekamp, zassenhaus, shoup };
 
@@ -522,7 +522,21 @@ function factorSqf(fIn: P, p: bigint, method: string = 'zassenhaus'): [bigint, P
 // public API (SymPy names)
 // ---------------------------------------------------------------------------
 
-/** Chinese remainder theorem: the integer congruent to U[i] modulo M[i] (SymPy gf_crt). */
+/**
+ * Chinese remainder theorem: the integer congruent to U[i] modulo M[i].
+ *
+ * @param U - Residues to combine.
+ * @param M - Pairwise coprime moduli.
+ * @param _K - Integer coefficient domain, normally `ZZ`.
+ * @returns Chinese remainder theorem: the integer congruent to U[i] modulo M[i].
+ * @see SymPy `sympy.polys.galoistools.gf_crt`
+ * @example
+ * ```ts
+ * import { ZZ, gfCrt } from '@symjs/symjs';
+ *
+ * gfCrt([49, 76, 65], [99, 97, 95], ZZ); // => 639985
+ * ```
+ */
 export function gfCrt(U: readonly IntLike[], M: readonly IntLike[], _K: Domain = ZZ): bigint {
   const ms = ints(M);
   const p = ms.reduce((a, b) => a * b, 1n);
@@ -535,7 +549,21 @@ export function gfCrt(U: readonly IntLike[], M: readonly IntLike[], _K: Domain =
   return mod(v, p);
 }
 
-/** The first part of the Chinese remainder theorem: [p, E, S] (SymPy gf_crt1). */
+/**
+ * The first part of the Chinese remainder theorem: [p, E, S].
+ *
+ * @param M - Pairwise coprime moduli.
+ * @param _K - Integer coefficient domain, normally `ZZ`.
+ * @returns The first part of the Chinese remainder theorem: [p, E, S].
+ * @see SymPy `sympy.polys.galoistools.gf_crt1`
+ * @remarks SymPy returns `(912285, [9215, 9405, 9603], [62, 24, 12])` with tuples for the fixed-length groups.
+ * @example
+ * ```ts
+ * import { ZZ, gfCrt1 } from '@symjs/symjs';
+ *
+ * gfCrt1([99, 97, 95], ZZ); // => [912285, [9215, 9405, 9603], [62, 24, 12]]
+ * ```
+ */
 export function gfCrt1(M: readonly IntLike[], _K: Domain = ZZ): [bigint, bigint[], bigint[]] {
   const ms = ints(M);
   const p = ms.reduce((a, b) => a * b, 1n);
@@ -544,7 +572,24 @@ export function gfCrt1(M: readonly IntLike[], _K: Domain = ZZ): [bigint, bigint[
   return [p, E, S];
 }
 
-/** The second part of the Chinese remainder theorem (SymPy gf_crt2). */
+/**
+ * The second part of the Chinese remainder theorem.
+ *
+ * @param U - Residues to combine.
+ * @param M - Pairwise coprime moduli.
+ * @param p - Product of the pairwise coprime moduli.
+ * @param E - Partial products of the moduli.
+ * @param S - Modular inverses of the partial products.
+ * @param _K - Integer coefficient domain, normally `ZZ`.
+ * @returns The second part of the Chinese remainder theorem.
+ * @see SymPy `sympy.polys.galoistools.gf_crt2`
+ * @example
+ * ```ts
+ * import { ZZ, gfCrt2 } from '@symjs/symjs';
+ *
+ * gfCrt2([49, 76, 65], [99, 97, 95], 912285, [9215, 9405, 9603], [62, 24, 12], ZZ); // => 639985
+ * ```
+ */
 export function gfCrt2(U: readonly IntLike[], M: readonly IntLike[], p: IntLike, E: readonly IntLike[], S: readonly IntLike[], _K: Domain = ZZ): bigint {
   const [us, ms, es, ss] = [ints(U), ints(M), ints(E), ints(S)];
   let v = 0n;
@@ -552,43 +597,149 @@ export function gfCrt2(U: readonly IntLike[], M: readonly IntLike[], p: IntLike,
   return mod(v, asInt(p));
 }
 
-/** The symmetric representative of a modulo p, in (-p/2, p/2] (SymPy gf_int). */
+/**
+ * The symmetric representative of a modulo p, in (-p/2, p/2].
+ *
+ * @param a - Ground coefficient.
+ * @param p - Prime modulus of the coefficient field.
+ * @returns The symmetric representative of a modulo p, in (-p/2, p/2].
+ * @see SymPy `sympy.polys.galoistools.gf_int`
+ * @example
+ * ```ts
+ * import { gfInt } from '@symjs/symjs';
+ *
+ * gfInt(2, 7); // => 2
+ * gfInt(5, 7); // => -2
+ * ```
+ */
 export function gfInt(a: IntLike, p: IntLike): bigint {
   const [x, m] = [asInt(a), asInt(p)];
   return x <= m / 2n ? x : x - m;
 }
 
-/** The degree of f; -1 for the zero polynomial (SymPy gf_degree). */
+/**
+ * The degree of f; -1 for the zero polynomial.
+ *
+ * @param f - Polynomial as coefficients in descending degree.
+ * @returns The degree of f.
+ * @see SymPy `sympy.polys.galoistools.gf_degree`
+ * @example
+ * ```ts
+ * import { gfDegree } from '@symjs/symjs';
+ *
+ * gfDegree([1, 1, 2, 0]); // => 3
+ * gfDegree([]); // => -1
+ * ```
+ */
 export function gfDegree(f: readonly IntLike[]): number {
   return f.length - 1;
 }
 
-/** The leading coefficient (SymPy gf_LC). */
+/**
+ * The leading coefficient.
+ *
+ * @param f - Polynomial as coefficients in descending degree.
+ * @param _K - Integer coefficient domain, normally `ZZ`.
+ * @returns The leading coefficient.
+ * @see SymPy `sympy.polys.galoistools.gf_LC`
+ * @example
+ * ```ts
+ * import { ZZ, gfLC } from '@symjs/symjs';
+ *
+ * gfLC([3, 0, 1], ZZ); // => 3
+ * ```
+ */
 export function gfLC(f: readonly IntLike[], _K: Domain = ZZ): bigint {
   return f.length ? asInt(at(f, 0)) : 0n;
 }
 
-/** The trailing coefficient (SymPy gf_TC). */
+/**
+ * The trailing coefficient.
+ *
+ * @param f - Polynomial as coefficients in descending degree.
+ * @param _K - Integer coefficient domain, normally `ZZ`.
+ * @returns The trailing coefficient.
+ * @see SymPy `sympy.polys.galoistools.gf_TC`
+ * @example
+ * ```ts
+ * import { ZZ, gfTC } from '@symjs/symjs';
+ *
+ * gfTC([3, 0, 1], ZZ); // => 1
+ * ```
+ */
 export function gfTC(f: readonly IntLike[], _K: Domain = ZZ): bigint {
   return f.length ? asInt(at(f, -1)) : 0n;
 }
 
-/** f without leading zeros (SymPy gf_strip). */
+/**
+ * f without leading zeros.
+ *
+ * @param f - Polynomial as coefficients in descending degree.
+ * @returns The coefficient list, leading coefficient first.
+ * @see SymPy `sympy.polys.galoistools.gf_strip`
+ * @example
+ * ```ts
+ * import { gfStrip } from '@symjs/symjs';
+ *
+ * gfStrip([0, 0, 0, 3, 0, 1]); // => [3, 0, 1]
+ * ```
+ */
 export function gfStrip(f: readonly IntLike[]): bigint[] {
   return strip(ints(f));
 }
 
-/** f with its coefficients reduced modulo p (SymPy gf_trunc). */
+/**
+ * f with its coefficients reduced modulo p.
+ *
+ * @param f - Polynomial as coefficients in descending degree.
+ * @param p - Prime modulus of the coefficient field.
+ * @returns The coefficient list, leading coefficient first.
+ * @see SymPy `sympy.polys.galoistools.gf_trunc`
+ * @example
+ * ```ts
+ * import { gfTrunc } from '@symjs/symjs';
+ *
+ * gfTrunc([7, -2, 3], 5); // => [2, 3, 3]
+ * ```
+ */
 export function gfTrunc(f: readonly IntLike[], p: IntLike): bigint[] {
   return trunc(ints(f), asInt(p));
 }
 
-/** f with its coefficients converted to K and reduced modulo p (SymPy gf_normal). */
+/**
+ * f with its coefficients converted to K and reduced modulo p.
+ *
+ * @param f - Polynomial as coefficients in descending degree.
+ * @param p - Prime modulus of the coefficient field.
+ * @param _K - Integer coefficient domain, normally `ZZ`.
+ * @returns The coefficient list, leading coefficient first.
+ * @see SymPy `sympy.polys.galoistools.gf_normal`
+ * @example
+ * ```ts
+ * import { ZZ, gfNormal } from '@symjs/symjs';
+ *
+ * gfNormal([5, 10, 21, -3], 5, ZZ); // => [1, 2]
+ * ```
+ */
 export function gfNormal(f: readonly IntLike[], p: IntLike, _K: Domain = ZZ): bigint[] {
   return trunc(ints(f), asInt(p));
 }
 
-/** The polynomial of a {degree: coefficient} map, reduced modulo p (SymPy gf_from_dict). */
+/**
+ * The polynomial of a {degree: coefficient} map, reduced modulo p.
+ *
+ * @param f - Polynomial as coefficients in descending degree.
+ * @param p - Prime modulus of the coefficient field.
+ * @param _K - Integer coefficient domain, normally `ZZ`.
+ * @returns The polynomial of a {degree: coefficient} map, reduced modulo p.
+ * @see SymPy `sympy.polys.galoistools.gf_from_dict`
+ * @example
+ * ```ts
+ * import { ZZ, gfFromDict } from '@symjs/symjs';
+ *
+ * gfFromDict(new Map([[10, 4], [4, 33], [0, -1]]), 5, ZZ); // => [4, 0, 0, 0, 0, 0, 3, 0, 0, 0, 4]
+ * ```
+ */
 export function gfFromDict(f: ReadonlyMap<IntLike | readonly IntLike[], IntLike>, p: IntLike, _K: Domain = ZZ): bigint[] {
   const m = asInt(p);
   // a key is a degree or a 1-tuple of it
@@ -599,7 +750,22 @@ export function gfFromDict(f: ReadonlyMap<IntLike | readonly IntLike[], IntLike>
   return trunc(h, m);
 }
 
-/** The {degree: coefficient} map of f, with symmetric coefficients by default (SymPy gf_to_dict). */
+/**
+ * The {degree: coefficient} map of f, with symmetric coefficients by default.
+ *
+ * @param f - Polynomial as coefficients in descending degree.
+ * @param p - Prime modulus of the coefficient field.
+ * @param symmetric - Use signed representatives of residue classes.
+ * @returns The {degree: coefficient} map of f, with symmetric coefficients by default.
+ * @see SymPy `sympy.polys.galoistools.gf_to_dict`
+ * @example
+ * ```ts
+ * import { gfToDict } from '@symjs/symjs';
+ *
+ * gfToDict([4, 0, 0, 0, 0, 0, 3, 0, 0, 0, 4], 5); // => {0: -1, 4: -2, 10: -1}
+ * gfToDict([4, 0, 0, 0, 0, 0, 3, 0, 0, 0, 4], 5, false); // => {0: 4, 4: 3, 10: 4}
+ * ```
+ */
 export function gfToDict(f: readonly IntLike[], p: IntLike, symmetric = true): Map<number, bigint> {
   const cs = ints(f);
   const n = cs.length - 1;
@@ -611,74 +777,282 @@ export function gfToDict(f: readonly IntLike[], p: IntLike, symmetric = true): M
   return out;
 }
 
-/** An integer polynomial reduced modulo p (SymPy gf_from_int_poly). */
+/**
+ * An integer polynomial reduced modulo p.
+ *
+ * @param f - Polynomial as coefficients in descending degree.
+ * @param p - Prime modulus of the coefficient field.
+ * @returns An integer polynomial reduced modulo p.
+ * @see SymPy `sympy.polys.galoistools.gf_from_int_poly`
+ * @example
+ * ```ts
+ * import { gfFromIntPoly } from '@symjs/symjs';
+ *
+ * gfFromIntPoly([7, -2, 3], 5); // => [2, 3, 3]
+ * ```
+ */
 export function gfFromIntPoly(f: readonly IntLike[], p: IntLike): bigint[] {
   return trunc(ints(f), asInt(p));
 }
 
-/** The integer polynomial of f, with symmetric coefficients by default (SymPy gf_to_int_poly). */
+/**
+ * The integer polynomial of f, with symmetric coefficients by default.
+ *
+ * @param f - Polynomial as coefficients in descending degree.
+ * @param p - Prime modulus of the coefficient field.
+ * @param symmetric - Use signed representatives of residue classes.
+ * @returns The integer polynomial of f, with symmetric coefficients by default.
+ * @see SymPy `sympy.polys.galoistools.gf_to_int_poly`
+ * @example
+ * ```ts
+ * import { gfToIntPoly } from '@symjs/symjs';
+ *
+ * gfToIntPoly([2, 3, 3], 5); // => [2, -2, -2]
+ * gfToIntPoly([2, 3, 3], 5, false); // => [2, 3, 3]
+ * ```
+ */
 export function gfToIntPoly(f: readonly IntLike[], p: IntLike, symmetric = true): bigint[] {
   return symmetric ? f.map((c) => gfInt(c, p)) : ints(f);
 }
 
-/** -f (SymPy gf_neg). */
+/**
+ * -f.
+ *
+ * @param f - Polynomial as coefficients in descending degree.
+ * @param p - Prime modulus of the coefficient field.
+ * @param _K - Integer coefficient domain, normally `ZZ`.
+ * @returns The coefficient list, leading coefficient first.
+ * @see SymPy `sympy.polys.galoistools.gf_neg`
+ * @example
+ * ```ts
+ * import { ZZ, gfNeg } from '@symjs/symjs';
+ *
+ * gfNeg([3, 2, 1, 0], 5, ZZ); // => [2, 3, 4, 0]
+ * ```
+ */
 export function gfNeg(f: readonly IntLike[], p: IntLike, _K: Domain = ZZ): bigint[] {
   return neg(ints(f), asInt(p));
 }
 
-/** f + a for a ground element a (SymPy gf_add_ground). */
+/**
+ * f + a for a ground element a.
+ *
+ * @param f - Polynomial as coefficients in descending degree.
+ * @param a - Ground coefficient.
+ * @param p - Prime modulus of the coefficient field.
+ * @param _K - Integer coefficient domain, normally `ZZ`.
+ * @returns The coefficient list, leading coefficient first.
+ * @see SymPy `sympy.polys.galoistools.gf_add_ground`
+ * @example
+ * ```ts
+ * import { ZZ, gfAddGround } from '@symjs/symjs';
+ *
+ * gfAddGround([3, 2, 4], 2, 5, ZZ); // => [3, 2, 1]
+ * ```
+ */
 export function gfAddGround(f: readonly IntLike[], a: IntLike, p: IntLike, _K: Domain = ZZ): bigint[] {
   return addGround(ints(f), asInt(a), asInt(p));
 }
 
-/** f - a for a ground element a (SymPy gf_sub_ground). */
+/**
+ * f - a for a ground element a.
+ *
+ * @param f - Polynomial as coefficients in descending degree.
+ * @param a - Ground coefficient.
+ * @param p - Prime modulus of the coefficient field.
+ * @param _K - Integer coefficient domain, normally `ZZ`.
+ * @returns The coefficient list, leading coefficient first.
+ * @see SymPy `sympy.polys.galoistools.gf_sub_ground`
+ * @example
+ * ```ts
+ * import { ZZ, gfSubGround } from '@symjs/symjs';
+ *
+ * gfSubGround([3, 2, 4], 2, 5, ZZ); // => [3, 2, 2]
+ * ```
+ */
 export function gfSubGround(f: readonly IntLike[], a: IntLike, p: IntLike, _K: Domain = ZZ): bigint[] {
   return subGround(ints(f), asInt(a), asInt(p));
 }
 
-/** f * a for a ground element a (SymPy gf_mul_ground). */
+/**
+ * f * a for a ground element a.
+ *
+ * @param f - Polynomial as coefficients in descending degree.
+ * @param a - Ground coefficient.
+ * @param p - Prime modulus of the coefficient field.
+ * @param _K - Integer coefficient domain, normally `ZZ`.
+ * @returns The coefficient list, leading coefficient first.
+ * @see SymPy `sympy.polys.galoistools.gf_mul_ground`
+ * @example
+ * ```ts
+ * import { ZZ, gfMulGround } from '@symjs/symjs';
+ *
+ * gfMulGround([3, 2, 4], 2, 5, ZZ); // => [1, 4, 3]
+ * ```
+ */
 export function gfMulGround(f: readonly IntLike[], a: IntLike, p: IntLike, _K: Domain = ZZ): bigint[] {
   return mulGround(ints(f), asInt(a), asInt(p));
 }
 
-/** f / a for a ground element a (SymPy gf_quo_ground). */
+/**
+ * f / a for a ground element a.
+ *
+ * @param f - Polynomial as coefficients in descending degree.
+ * @param a - Ground coefficient.
+ * @param p - Prime modulus of the coefficient field.
+ * @param _K - Integer coefficient domain, normally `ZZ`.
+ * @returns The coefficient list, leading coefficient first.
+ * @throws NotInvertible when the ground divisor is not invertible modulo the characteristic.
+ * @see SymPy `sympy.polys.galoistools.gf_quo_ground`
+ * @example
+ * ```ts
+ * import { ZZ, gfQuoGround } from '@symjs/symjs';
+ *
+ * gfQuoGround([3, 2, 4], 2, 5, ZZ); // => [4, 1, 2]
+ * ```
+ */
 export function gfQuoGround(f: readonly IntLike[], a: IntLike, p: IntLike, _K: Domain = ZZ): bigint[] {
   return quoGround(ints(f), asInt(a), asInt(p));
 }
 
-/** f + g (SymPy gf_add). */
+/**
+ * f + g.
+ *
+ * @param f - Polynomial as coefficients in descending degree.
+ * @param g - Polynomial operand as coefficients in descending degree.
+ * @param p - Prime modulus of the coefficient field.
+ * @param _K - Integer coefficient domain, normally `ZZ`.
+ * @returns The coefficient list, leading coefficient first.
+ * @see SymPy `sympy.polys.galoistools.gf_add`
+ * @example
+ * ```ts
+ * import { ZZ, gfAdd } from '@symjs/symjs';
+ *
+ * gfAdd([3, 2, 4], [2, 2, 2], 5, ZZ); // => [4, 1]
+ * ```
+ */
 export function gfAdd(f: readonly IntLike[], g: readonly IntLike[], p: IntLike, _K: Domain = ZZ): bigint[] {
   return add(ints(f), ints(g), asInt(p));
 }
 
-/** f - g (SymPy gf_sub). */
+/**
+ * f - g.
+ *
+ * @param f - Polynomial as coefficients in descending degree.
+ * @param g - Polynomial operand as coefficients in descending degree.
+ * @param p - Prime modulus of the coefficient field.
+ * @param _K - Integer coefficient domain, normally `ZZ`.
+ * @returns The coefficient list, leading coefficient first.
+ * @see SymPy `sympy.polys.galoistools.gf_sub`
+ * @example
+ * ```ts
+ * import { ZZ, gfSub } from '@symjs/symjs';
+ *
+ * gfSub([3, 2, 4], [2, 2, 2], 5, ZZ); // => [1, 0, 2]
+ * ```
+ */
 export function gfSub(f: readonly IntLike[], g: readonly IntLike[], p: IntLike, _K: Domain = ZZ): bigint[] {
   return sub(ints(f), ints(g), asInt(p));
 }
 
-/** f * g (SymPy gf_mul). */
+/**
+ * f * g.
+ *
+ * @param f - Polynomial as coefficients in descending degree.
+ * @param g - Polynomial operand as coefficients in descending degree.
+ * @param p - Prime modulus of the coefficient field.
+ * @param _K - Integer coefficient domain, normally `ZZ`.
+ * @returns The coefficient list, leading coefficient first.
+ * @see SymPy `sympy.polys.galoistools.gf_mul`
+ * @example
+ * ```ts
+ * import { ZZ, gfMul } from '@symjs/symjs';
+ *
+ * gfMul([3, 2, 4], [2, 2, 2], 5, ZZ); // => [1, 0, 3, 2, 3]
+ * ```
+ */
 export function gfMul(f: readonly IntLike[], g: readonly IntLike[], p: IntLike, _K: Domain = ZZ): bigint[] {
   return mul(ints(f), ints(g), asInt(p));
 }
 
-/** f**2 (SymPy gf_sqr). */
+/**
+ * f**2.
+ *
+ * @param f - Polynomial as coefficients in descending degree.
+ * @param p - Prime modulus of the coefficient field.
+ * @param _K - Integer coefficient domain, normally `ZZ`.
+ * @returns The coefficient list, leading coefficient first.
+ * @see SymPy `sympy.polys.galoistools.gf_sqr`
+ * @example
+ * ```ts
+ * import { ZZ, gfSqr } from '@symjs/symjs';
+ *
+ * gfSqr([3, 2, 4], 5, ZZ); // => [4, 2, 3, 1, 1]
+ * ```
+ */
 export function gfSqr(f: readonly IntLike[], p: IntLike, _K: Domain = ZZ): bigint[] {
   return sqr(ints(f), asInt(p));
 }
 
-/** f + g*h (SymPy gf_add_mul). */
+/**
+ * f + g*h.
+ *
+ * @param f - Polynomial as coefficients in descending degree.
+ * @param g - Polynomial operand as coefficients in descending degree.
+ * @param h - Polynomial operand as coefficients in descending degree.
+ * @param p - Prime modulus of the coefficient field.
+ * @param _K - Integer coefficient domain, normally `ZZ`.
+ * @returns The coefficient list, leading coefficient first.
+ * @see SymPy `sympy.polys.galoistools.gf_add_mul`
+ * @example
+ * ```ts
+ * import { ZZ, gfAddMul } from '@symjs/symjs';
+ *
+ * gfAddMul([3, 2, 4], [2, 2, 2], [1, 4], 5, ZZ); // => [2, 3, 2, 2]
+ * ```
+ */
 export function gfAddMul(f: readonly IntLike[], g: readonly IntLike[], h: readonly IntLike[], p: IntLike, _K: Domain = ZZ): bigint[] {
   const m = asInt(p);
   return add(ints(f), mul(ints(g), ints(h), m), m);
 }
 
-/** f - g*h (SymPy gf_sub_mul). */
+/**
+ * f - g*h.
+ *
+ * @param f - Polynomial as coefficients in descending degree.
+ * @param g - Polynomial operand as coefficients in descending degree.
+ * @param h - Polynomial operand as coefficients in descending degree.
+ * @param p - Prime modulus of the coefficient field.
+ * @param _K - Integer coefficient domain, normally `ZZ`.
+ * @returns The coefficient list, leading coefficient first.
+ * @see SymPy `sympy.polys.galoistools.gf_sub_mul`
+ * @example
+ * ```ts
+ * import { ZZ, gfSubMul } from '@symjs/symjs';
+ *
+ * gfSubMul([3, 2, 4], [2, 2, 2], [1, 4], 5, ZZ); // => [3, 3, 2, 1]
+ * ```
+ */
 export function gfSubMul(f: readonly IntLike[], g: readonly IntLike[], h: readonly IntLike[], p: IntLike, _K: Domain = ZZ): bigint[] {
   const m = asInt(p);
   return sub(ints(f), mul(ints(g), ints(h), m), m);
 }
 
-/** The product of a factorization [[f, k], ...] or [lc, [[f, k], ...]] (SymPy gf_expand). */
+/**
+ * The product of a factorization [[f, k], ...] or [lc, [[f, k], ...]].
+ *
+ * @param F - Factor and multiplicity pairs, optionally preceded by a leading coefficient.
+ * @param p - Prime modulus of the coefficient field.
+ * @param _K - Integer coefficient domain, normally `ZZ`.
+ * @returns The product of a factorization [[f, k], ...] or [lc, [[f, k], ...]].
+ * @see SymPy `sympy.polys.galoistools.gf_expand`
+ * @example
+ * ```ts
+ * import { ZZ, gfExpand } from '@symjs/symjs';
+ *
+ * gfExpand([[[3, 2, 4], 1], [[2, 2], 2], [[3, 1], 3]], 5, ZZ); // => [4, 3, 0, 3, 0, 1, 4, 1]
+ * ```
+ */
 export function gfExpand(F: GFFactorization | readonly [IntLike, GFFactorization], p: IntLike, _K: Domain = ZZ): bigint[] {
   const m = asInt(p);
   const [lc, fs] = hasLc(F) ? [asInt(F[0]), F[1]] : [1n, F];
@@ -687,76 +1061,279 @@ export function gfExpand(F: GFFactorization | readonly [IntLike, GFFactorization
   return g;
 }
 
-/** Division with remainder: [quotient, remainder] (SymPy gf_div). */
+/**
+ * Division with remainder: [quotient, remainder].
+ *
+ * @param f - Polynomial as coefficients in descending degree.
+ * @param g - Polynomial operand as coefficients in descending degree.
+ * @param p - Prime modulus of the coefficient field.
+ * @param _K - Integer coefficient domain, normally `ZZ`.
+ * @returns Division with remainder: [quotient, remainder].
+ * @throws RangeError when the divisor is zero.
+ * @see SymPy `sympy.polys.galoistools.gf_div`
+ * @remarks SymPy returns `([1, 1], [1])` with tuples for the fixed-length groups.
+ * @example
+ * ```ts
+ * import { ZZ, gfDiv } from '@symjs/symjs';
+ *
+ * gfDiv([1, 0, 1, 1], [1, 1, 0], 2, ZZ); // => [[1, 1], [1]]
+ * ```
+ */
 export function gfDiv(f: readonly IntLike[], g: readonly IntLike[], p: IntLike, _K: Domain = ZZ): [bigint[], bigint[]] {
   return div(ints(f), ints(g), asInt(p));
 }
 
-/** The remainder of f / g (SymPy gf_rem). */
+/**
+ * The remainder of f / g.
+ *
+ * @param f - Polynomial as coefficients in descending degree.
+ * @param g - Polynomial operand as coefficients in descending degree.
+ * @param p - Prime modulus of the coefficient field.
+ * @param _K - Integer coefficient domain, normally `ZZ`.
+ * @returns The remainder of f / g.
+ * @throws RangeError when the divisor is zero.
+ * @see SymPy `sympy.polys.galoistools.gf_rem`
+ * @example
+ * ```ts
+ * import { ZZ, gfRem } from '@symjs/symjs';
+ *
+ * gfRem([1, 0, 1, 1], [1, 1, 0], 2, ZZ); // => [1]
+ * ```
+ */
 export function gfRem(f: readonly IntLike[], g: readonly IntLike[], p: IntLike, _K: Domain = ZZ): bigint[] {
   return rem(ints(f), ints(g), asInt(p));
 }
 
-/** The quotient of f / g (SymPy gf_quo). */
+/**
+ * The quotient of f / g.
+ *
+ * @param f - Polynomial as coefficients in descending degree.
+ * @param g - Polynomial operand as coefficients in descending degree.
+ * @param p - Prime modulus of the coefficient field.
+ * @param _K - Integer coefficient domain, normally `ZZ`.
+ * @returns The quotient of f / g.
+ * @throws RangeError when the divisor is zero.
+ * @see SymPy `sympy.polys.galoistools.gf_quo`
+ * @example
+ * ```ts
+ * import { ZZ, gfQuo } from '@symjs/symjs';
+ *
+ * gfQuo([1, 0, 1, 1], [1, 1, 0], 2, ZZ); // => [1, 1]
+ * gfQuo([1, 0, 3, 2, 3], [2, 2, 2], 5, ZZ); // => [3, 2, 4]
+ * ```
+ */
 export function gfQuo(f: readonly IntLike[], g: readonly IntLike[], p: IntLike, _K: Domain = ZZ): bigint[] {
   return quo(ints(f), ints(g), asInt(p));
 }
 
-/** The exact quotient f / g; throws ExactQuotientFailed when g does not divide f (SymPy gf_exquo). */
+/**
+ * The exact quotient f / g; throws ExactQuotientFailed when g does not divide f.
+ *
+ * @param f - Polynomial as coefficients in descending degree.
+ * @param g - Polynomial operand as coefficients in descending degree.
+ * @param p - Prime modulus of the coefficient field.
+ * @param _K - Integer coefficient domain, normally `ZZ`.
+ * @returns The exact quotient f / g.
+ * @throws ExactQuotientFailed when the divisor does not divide the dividend exactly.
+ * @throws RangeError when the divisor is zero.
+ * @see SymPy `sympy.polys.galoistools.gf_exquo`
+ * @example
+ * ```ts
+ * import { ZZ, gfExquo } from '@symjs/symjs';
+ *
+ * gfExquo([1, 0, 3, 2, 3], [2, 2, 2], 5, ZZ); // => [3, 2, 4]
+ * ```
+ */
 export function gfExquo(f: readonly IntLike[], g: readonly IntLike[], p: IntLike, _K: Domain = ZZ): bigint[] {
   const [q, r] = div(ints(f), ints(g), asInt(p));
   if (r.length) throw new ExactQuotientFailed(`[${f.join(', ')}] does not divide [${g.join(', ')}]`);
   return q;
 }
 
-/** f * x**n (SymPy gf_lshift). */
+/**
+ * f * x**n.
+ *
+ * @param f - Polynomial as coefficients in descending degree.
+ * @param n - Nonnegative integer exponent or shift.
+ * @param _K - Integer coefficient domain, normally `ZZ`.
+ * @returns The coefficient list, leading coefficient first.
+ * @see SymPy `sympy.polys.galoistools.gf_lshift`
+ * @example
+ * ```ts
+ * import { ZZ, gfLshift } from '@symjs/symjs';
+ *
+ * gfLshift([3, 2, 4], 4, ZZ); // => [3, 2, 4, 0, 0, 0, 0]
+ * ```
+ */
 export function gfLshift(f: readonly IntLike[], n: IntLike, _K: Domain = ZZ): bigint[] {
   const cs = ints(f);
   return cs.length ? [...cs, ...Array.from({ length: Number(asInt(n)) }, () => 0n)] : cs;
 }
 
-/** [f // x**n, f % x**n] (SymPy gf_rshift). */
+/**
+ * [f // x**n, f % x**n].
+ *
+ * @param f - Polynomial as coefficients in descending degree.
+ * @param n - Nonnegative integer exponent or shift.
+ * @param _K - Integer coefficient domain, normally `ZZ`.
+ * @returns [f // x**n, f % x**n].
+ * @see SymPy `sympy.polys.galoistools.gf_rshift`
+ * @remarks SymPy returns `([1, 2], [3, 4, 0])` with tuples for the fixed-length groups.
+ * @example
+ * ```ts
+ * import { ZZ, gfRshift } from '@symjs/symjs';
+ *
+ * gfRshift([1, 2, 3, 4, 0], 3, ZZ); // => [[1, 2], [3, 4, 0]]
+ * ```
+ */
 export function gfRshift(f: readonly IntLike[], n: IntLike, _K: Domain = ZZ): [bigint[], bigint[]] {
   const cs = ints(f);
   const k = Number(asInt(n));
   return k ? [cs.slice(0, -k), cs.slice(-k)] : [cs, []];
 }
 
-/** f**n by repeated squaring (SymPy gf_pow). */
+/**
+ * f**n by repeated squaring.
+ *
+ * @param f - Polynomial as coefficients in descending degree.
+ * @param n - Nonnegative integer exponent or shift.
+ * @param p - Prime modulus of the coefficient field.
+ * @param _K - Integer coefficient domain, normally `ZZ`.
+ * @returns The coefficient list, leading coefficient first.
+ * @see SymPy `sympy.polys.galoistools.gf_pow`
+ * @example
+ * ```ts
+ * import { ZZ, gfPow } from '@symjs/symjs';
+ *
+ * gfPow([3, 2, 4], 3, 5, ZZ); // => [2, 4, 4, 2, 2, 1, 4]
+ * ```
+ */
 export function gfPow(f: readonly IntLike[], n: IntLike, p: IntLike, _K: Domain = ZZ): bigint[] {
   return pow(ints(f), asInt(n), asInt(p));
 }
 
-/** The powers x**(i*p) modulo g, i = 0 .. deg(g) - 1 (SymPy gf_frobenius_monomial_base). */
+/**
+ * The powers x**(i*p) modulo g, i = 0 .. deg(g) - 1.
+ *
+ * @param g - Polynomial operand as coefficients in descending degree.
+ * @param p - Prime modulus of the coefficient field.
+ * @param _K - Integer coefficient domain, normally `ZZ`.
+ * @returns The powers x**(i*p) modulo g, i = 0 .. deg(g) - 1.
+ * @see SymPy `sympy.polys.galoistools.gf_frobenius_monomial_base`
+ * @example
+ * ```ts
+ * import { ZZ, gfFrobeniusMonomialBase } from '@symjs/symjs';
+ *
+ * gfFrobeniusMonomialBase([1, 0, 2, 1], 5, ZZ); // => [[1], [4, 4, 2], [1, 2]]
+ * ```
+ */
 export function gfFrobeniusMonomialBase(g: readonly IntLike[], p: IntLike, _K: Domain = ZZ): bigint[][] {
   return frobeniusMonomialBase(ints(g), asInt(p));
 }
 
-/** f**p modulo g from the Frobenius monomial base b (SymPy gf_frobenius_map). */
+/**
+ * f**p modulo g from the Frobenius monomial base b.
+ *
+ * @param f - Polynomial as coefficients in descending degree.
+ * @param g - Polynomial operand as coefficients in descending degree.
+ * @param b - Precomputed Frobenius images of the monomial basis.
+ * @param p - Prime modulus of the coefficient field.
+ * @param _K - Integer coefficient domain, normally `ZZ`.
+ * @returns The coefficient list, leading coefficient first.
+ * @see SymPy `sympy.polys.galoistools.gf_frobenius_map`
+ * @example
+ * ```ts
+ * import { ZZ, gfFrobeniusMap } from '@symjs/symjs';
+ *
+ * gfFrobeniusMap([2, 1, 0, 1], [1, 0, 2, 1], [[1], [4, 4, 2], [1, 2]], 5, ZZ); // => [4, 0, 3]
+ * ```
+ */
 export function gfFrobeniusMap(f: readonly IntLike[], g: readonly IntLike[], b: readonly (readonly IntLike[])[], p: IntLike, _K: Domain = ZZ): bigint[] {
   return frobeniusMap(ints(f), ints(g), b.map(ints), asInt(p));
 }
 
-/** f**n modulo g (SymPy gf_pow_mod). */
+/**
+ * f**n modulo g.
+ *
+ * @param f - Polynomial as coefficients in descending degree.
+ * @param n - Nonnegative integer exponent or shift.
+ * @param g - Polynomial operand as coefficients in descending degree.
+ * @param p - Prime modulus of the coefficient field.
+ * @param _K - Integer coefficient domain, normally `ZZ`.
+ * @returns The coefficient list, leading coefficient first.
+ * @see SymPy `sympy.polys.galoistools.gf_pow_mod`
+ * @example
+ * ```ts
+ * import { ZZ, gfPowMod } from '@symjs/symjs';
+ *
+ * gfPowMod([3, 2, 4], 3, [1, 1], 5, ZZ); // => []
+ * ```
+ */
 export function gfPowMod(f: readonly IntLike[], n: IntLike, g: readonly IntLike[], p: IntLike, _K: Domain = ZZ): bigint[] {
   const m = asInt(p);
   const k = asInt(n);
   return k === 0n ? [1n] : powMod(rem(ints(f), ints(g), m), k, ints(g), m);
 }
 
-/** The monic gcd (SymPy gf_gcd). */
+/**
+ * The monic gcd.
+ *
+ * @param f - Polynomial as coefficients in descending degree.
+ * @param g - Polynomial operand as coefficients in descending degree.
+ * @param p - Prime modulus of the coefficient field.
+ * @param _K - Integer coefficient domain, normally `ZZ`.
+ * @returns The monic gcd.
+ * @see SymPy `sympy.polys.galoistools.gf_gcd`
+ * @example
+ * ```ts
+ * import { ZZ, gfGcd } from '@symjs/symjs';
+ *
+ * gfGcd([3, 2, 4], [2, 2, 3], 5, ZZ); // => [1, 3]
+ * ```
+ */
 export function gfGcd(f: readonly IntLike[], g: readonly IntLike[], p: IntLike, _K: Domain = ZZ): bigint[] {
   return gcd(ints(f), ints(g), asInt(p));
 }
 
-/** The monic lcm (SymPy gf_lcm). */
+/**
+ * The monic lcm.
+ *
+ * @param f - Polynomial as coefficients in descending degree.
+ * @param g - Polynomial operand as coefficients in descending degree.
+ * @param p - Prime modulus of the coefficient field.
+ * @param _K - Integer coefficient domain, normally `ZZ`.
+ * @returns The monic lcm.
+ * @see SymPy `sympy.polys.galoistools.gf_lcm`
+ * @example
+ * ```ts
+ * import { ZZ, gfLcm } from '@symjs/symjs';
+ *
+ * gfLcm([3, 2, 4], [2, 2, 3], 5, ZZ); // => [1, 2, 0, 4]
+ * ```
+ */
 export function gfLcm(f: readonly IntLike[], g: readonly IntLike[], p: IntLike, _K: Domain = ZZ): bigint[] {
   const [a, b, m] = [ints(f), ints(g), asInt(p)];
   if (!a.length || !b.length) return [];
   return monic(quo(mul(a, b, m), gcd(a, b, m), m), m)[1];
 }
 
-/** [gcd, f / gcd, g / gcd] (SymPy gf_cofactors). */
+/**
+ * [gcd, f / gcd, g / gcd].
+ *
+ * @param f - Polynomial as coefficients in descending degree.
+ * @param g - Polynomial operand as coefficients in descending degree.
+ * @param p - Prime modulus of the coefficient field.
+ * @param _K - Integer coefficient domain, normally `ZZ`.
+ * @returns [gcd, f / gcd, g / gcd].
+ * @see SymPy `sympy.polys.galoistools.gf_cofactors`
+ * @remarks SymPy returns `([1, 3], [3, 3], [2, 1])` with tuples for the fixed-length groups.
+ * @example
+ * ```ts
+ * import { ZZ, gfCofactors } from '@symjs/symjs';
+ *
+ * gfCofactors([3, 2, 4], [2, 2, 3], 5, ZZ); // => [[1, 3], [3, 3], [2, 1]]
+ * ```
+ */
 export function gfCofactors(f: readonly IntLike[], g: readonly IntLike[], p: IntLike, _K: Domain = ZZ): [bigint[], bigint[], bigint[]] {
   const [a, b, m] = [ints(f), ints(g), asInt(p)];
   if (!a.length && !b.length) return [[], [], []];
@@ -764,7 +1341,23 @@ export function gfCofactors(f: readonly IntLike[], g: readonly IntLike[], p: Int
   return [h, quo(a, h, m), quo(b, h, m)];
 }
 
-/** The extended Euclidean algorithm: [s, t, h] with s*f + t*g = h = gcd(f, g) (SymPy gf_gcdex). */
+/**
+ * The extended Euclidean algorithm: [s, t, h] with s*f + t*g = h = gcd(f, g).
+ *
+ * @param f - Polynomial as coefficients in descending degree.
+ * @param g - Polynomial operand as coefficients in descending degree.
+ * @param p - Prime modulus of the coefficient field.
+ * @param _K - Integer coefficient domain, normally `ZZ`.
+ * @returns The extended Euclidean algorithm: [s, t, h] with s*f + t*g = h = gcd(f, g).
+ * @see SymPy `sympy.polys.galoistools.gf_gcdex`
+ * @remarks SymPy returns `([5, 6], [6], [1, 7])` with tuples for the fixed-length groups.
+ * @example
+ * ```ts
+ * import { ZZ, gfGcdex } from '@symjs/symjs';
+ *
+ * gfGcdex([1, 8, 7], [1, 7, 1, 7], 11, ZZ); // => [[5, 6], [6], [1, 7]]
+ * ```
+ */
 export function gfGcdex(f: readonly IntLike[], g: readonly IntLike[], p: IntLike, _K: Domain = ZZ): [bigint[], bigint[], bigint[]] {
   const [a, b, m] = [ints(f), ints(g), asInt(p)];
   if (!a.length && !b.length) return [[1n], [], []];
@@ -789,28 +1382,102 @@ export function gfGcdex(f: readonly IntLike[], g: readonly IntLike[], p: IntLike
   return [s1, t1, r1];
 }
 
-/** [lc, f / lc] (SymPy gf_monic). */
+/**
+ * [lc, f / lc].
+ *
+ * @param f - Polynomial as coefficients in descending degree.
+ * @param p - Prime modulus of the coefficient field.
+ * @param _K - Integer coefficient domain, normally `ZZ`.
+ * @returns [lc, f / lc].
+ * @see SymPy `sympy.polys.galoistools.gf_monic`
+ * @remarks SymPy returns `(3, [1, 4, 3])` with tuples for the fixed-length groups.
+ * @example
+ * ```ts
+ * import { ZZ, gfMonic } from '@symjs/symjs';
+ *
+ * gfMonic([3, 2, 4], 5, ZZ); // => [3, [1, 4, 3]]
+ * ```
+ */
 export function gfMonic(f: readonly IntLike[], p: IntLike, _K: Domain = ZZ): [bigint, bigint[]] {
   return monic(ints(f), asInt(p));
 }
 
-/** The derivative (SymPy gf_diff). */
+/**
+ * The derivative.
+ *
+ * @param f - Polynomial as coefficients in descending degree.
+ * @param p - Prime modulus of the coefficient field.
+ * @param _K - Integer coefficient domain, normally `ZZ`.
+ * @returns The derivative.
+ * @see SymPy `sympy.polys.galoistools.gf_diff`
+ * @example
+ * ```ts
+ * import { ZZ, gfDiff } from '@symjs/symjs';
+ *
+ * gfDiff([3, 2, 4], 5, ZZ); // => [1, 2]
+ * ```
+ */
 export function gfDiff(f: readonly IntLike[], p: IntLike, _K: Domain = ZZ): bigint[] {
   return diff(ints(f), asInt(p));
 }
 
-/** f(a) by Horner's scheme (SymPy gf_eval). */
+/**
+ * f(a) by Horner's scheme.
+ *
+ * @param f - Polynomial as coefficients in descending degree.
+ * @param a - Evaluation point.
+ * @param p - Prime modulus of the coefficient field.
+ * @param _K - Integer coefficient domain, normally `ZZ`.
+ * @returns F(a) by Horner's scheme.
+ * @see SymPy `sympy.polys.galoistools.gf_eval`
+ * @example
+ * ```ts
+ * import { ZZ, gfEval } from '@symjs/symjs';
+ *
+ * gfEval([3, 2, 4], 2, 5, ZZ); // => 0
+ * ```
+ */
 export function gfEval(f: readonly IntLike[], a: IntLike, p: IntLike, _K: Domain = ZZ): bigint {
   return evalAt(ints(f), asInt(a), asInt(p));
 }
 
-/** f at every point of A (SymPy gf_multi_eval). */
+/**
+ * f at every point of A.
+ *
+ * @param f - Polynomial as coefficients in descending degree.
+ * @param A - Points at which to evaluate the polynomial.
+ * @param p - Prime modulus of the coefficient field.
+ * @param _K - Integer coefficient domain, normally `ZZ`.
+ * @returns The coefficient list, leading coefficient first.
+ * @see SymPy `sympy.polys.galoistools.gf_multi_eval`
+ * @example
+ * ```ts
+ * import { ZZ, gfMultiEval } from '@symjs/symjs';
+ *
+ * gfMultiEval([3, 2, 4], [0, 1, 2, 3, 4], 5, ZZ); // => [4, 4, 0, 2, 0]
+ * ```
+ */
 export function gfMultiEval(f: readonly IntLike[], A: readonly IntLike[], p: IntLike, _K: Domain = ZZ): bigint[] {
   const [cs, m] = [ints(f), asInt(p)];
   return A.map((a) => evalAt(cs, asInt(a), m));
 }
 
-/** The composition f(g) (SymPy gf_compose). */
+/**
+ * The composition f(g).
+ *
+ * @param f - Polynomial as coefficients in descending degree.
+ * @param g - Polynomial operand as coefficients in descending degree.
+ * @param p - Prime modulus of the coefficient field.
+ * @param _K - Integer coefficient domain, normally `ZZ`.
+ * @returns The composition f(g).
+ * @see SymPy `sympy.polys.galoistools.gf_compose`
+ * @example
+ * ```ts
+ * import { ZZ, gfCompose } from '@symjs/symjs';
+ *
+ * gfCompose([3, 2, 4], [2, 2, 2], 5, ZZ); // => [2, 4, 0, 3, 0]
+ * ```
+ */
 export function gfCompose(f: readonly IntLike[], g: readonly IntLike[], p: IntLike, _K: Domain = ZZ): bigint[] {
   const [a, b, m] = [ints(f), ints(g), asInt(p)];
   if (b.length <= 1) return strip([evalAt(a, b.length ? at(b, 0) : 0n, m)]);
@@ -820,22 +1487,87 @@ export function gfCompose(f: readonly IntLike[], g: readonly IntLike[], p: IntLi
   return h;
 }
 
-/** The composition g(h) modulo f (SymPy gf_compose_mod). */
+/**
+ * The composition g(h) modulo f.
+ *
+ * @param g - Polynomial operand as coefficients in descending degree.
+ * @param h - Polynomial operand as coefficients in descending degree.
+ * @param f - Polynomial as coefficients in descending degree.
+ * @param p - Prime modulus of the coefficient field.
+ * @param _K - Integer coefficient domain, normally `ZZ`.
+ * @returns The composition g(h) modulo f.
+ * @see SymPy `sympy.polys.galoistools.gf_compose_mod`
+ * @example
+ * ```ts
+ * import { ZZ, gfComposeMod } from '@symjs/symjs';
+ *
+ * gfComposeMod([3, 2, 4], [2, 2, 2], [4, 3], 5, ZZ); // => [4]
+ * ```
+ */
 export function gfComposeMod(g: readonly IntLike[], h: readonly IntLike[], f: readonly IntLike[], p: IntLike, _K: Domain = ZZ): bigint[] {
   return composeMod(ints(g), ints(h), ints(f), asInt(p));
 }
 
-/** The trace map [a(b**(p**n)) ... ] modulo f used by Shoup's algorithm (SymPy gf_trace_map). */
+/**
+ * The trace map [a(b**(p**n)) ... ] modulo f used by Shoup's algorithm.
+ *
+ * @param a - Polynomial whose iterated Frobenius images are summed.
+ * @param b - Image of the generator under the Frobenius map.
+ * @param c - Initial polynomial to compose with the iterated map.
+ * @param n - Number of Frobenius iterations.
+ * @param f - Polynomial as coefficients in descending degree.
+ * @param p - Prime modulus of the coefficient field.
+ * @param _K - Integer coefficient domain, normally `ZZ`.
+ * @returns The trace map [a(b**(p**n)) ... ] modulo f used by Shoup's algorithm.
+ * @see SymPy `sympy.polys.galoistools.gf_trace_map`
+ * @remarks SymPy returns `([1, 3], [1, 3])` with tuples for the fixed-length groups.
+ * @example
+ * ```ts
+ * import { ZZ, gfTraceMap } from '@symjs/symjs';
+ *
+ * gfTraceMap([1, 2], [4, 4], [1, 1], 4, [3, 2, 4], 5, ZZ); // => [[1, 3], [1, 3]]
+ * ```
+ */
 export function gfTraceMap(a: readonly IntLike[], b: readonly IntLike[], c: readonly IntLike[], n: IntLike, f: readonly IntLike[], p: IntLike, _K: Domain = ZZ): [bigint[], bigint[]] {
   return traceMap(ints(a), ints(b), ints(c), asInt(n), ints(f), asInt(p));
 }
 
-/** A random monic polynomial of degree n (SymPy gf_random); `random` returns integers in [0, bound). */
+/**
+ * A random monic polynomial of degree n; `random` returns integers in [0, bound).
+ *
+ * @param n - Degree of the polynomial to generate.
+ * @param p - Prime modulus of the coefficient field.
+ * @param _K - Integer coefficient domain, normally `ZZ`.
+ * @param random - Sampler returning an integer residue below the supplied bound.
+ * @returns A random monic polynomial of degree n.
+ * @see SymPy `sympy.polys.galoistools.gf_random`
+ * @example
+ * ```ts
+ * import { gfRandom } from '@symjs/symjs';
+ *
+ * gfRandom(10, 5).length; // => 11
+ * ```
+ */
 export function gfRandom(n: IntLike, p: IntLike, _K: Domain = ZZ, random: (bound: bigint) => bigint = rng(BigInt(Date.now()) | 1n)): bigint[] {
   return randomPoly(Number(asInt(n)), asInt(p), random);
 }
 
-/** A random monic irreducible polynomial of degree n (SymPy gf_irreducible). */
+/**
+ * A random monic irreducible polynomial of degree n.
+ *
+ * @param n - Degree of the polynomial to generate.
+ * @param p - Prime modulus of the coefficient field.
+ * @param K - Integer coefficient domain, normally `ZZ`.
+ * @param random - Sampler returning an integer residue below the supplied bound.
+ * @returns A random monic irreducible polynomial of degree n.
+ * @see SymPy `sympy.polys.galoistools.gf_irreducible`
+ * @example
+ * ```ts
+ * import { gfIrreducible, gfIrreducibleP } from '@symjs/symjs';
+ *
+ * gfIrreducibleP(gfIrreducible(5, 3), 3); // => True
+ * ```
+ */
 export function gfIrreducible(n: IntLike, p: IntLike, K: Domain = ZZ, random?: (bound: bigint) => bigint): bigint[] {
   const m = asInt(p);
   for (;;) {
@@ -844,93 +1576,350 @@ export function gfIrreducible(n: IntLike, p: IntLike, K: Domain = ZZ, random?: (
   }
 }
 
-/** Ben-Or's irreducibility test (SymPy gf_irred_p_ben_or). */
+/**
+ * Ben-Or's irreducibility test.
+ *
+ * @param f - Polynomial as coefficients in descending degree.
+ * @param p - Prime modulus of the coefficient field.
+ * @param _K - Integer coefficient domain, normally `ZZ`.
+ * @returns Whether the polynomial is irreducible over the finite field.
+ * @see SymPy `sympy.polys.galoistools.gf_irred_p_ben_or`
+ * @example
+ * ```ts
+ * import { ZZ, gfIrredPBenOr } from '@symjs/symjs';
+ *
+ * gfIrredPBenOr([1, 4, 2, 2, 3, 2, 4, 1, 4, 0, 4], 5, ZZ); // => True
+ * gfIrredPBenOr([3, 2, 4], 5, ZZ); // => False
+ * ```
+ */
 export function gfIrredPBenOr(f: readonly IntLike[], p: IntLike, _K: Domain = ZZ): boolean {
   return irredBenOr(ints(f), asInt(p));
 }
 
-/** Rabin's irreducibility test (SymPy gf_irred_p_rabin). */
+/**
+ * Rabin's irreducibility test.
+ *
+ * @param f - Polynomial as coefficients in descending degree.
+ * @param p - Prime modulus of the coefficient field.
+ * @param _K - Integer coefficient domain, normally `ZZ`.
+ * @returns Whether the polynomial is irreducible over the finite field.
+ * @see SymPy `sympy.polys.galoistools.gf_irred_p_rabin`
+ * @example
+ * ```ts
+ * import { ZZ, gfIrredPRabin } from '@symjs/symjs';
+ *
+ * gfIrredPRabin([1, 4, 2, 2, 3, 2, 4, 1, 4, 0, 4], 5, ZZ); // => True
+ * gfIrredPRabin([3, 2, 4], 5, ZZ); // => False
+ * ```
+ */
 export function gfIrredPRabin(f: readonly IntLike[], p: IntLike, _K: Domain = ZZ): boolean {
   return irredRabin(ints(f), asInt(p));
 }
 
-/** Whether f is irreducible over GF(p) (SymPy gf_irreducible_p, Rabin's test). */
+/**
+ * Whether f is irreducible over GF(p).
+ *
+ * @param f - Polynomial as coefficients in descending degree.
+ * @param p - Prime modulus of the coefficient field.
+ * @param _K - Integer coefficient domain, normally `ZZ`.
+ * @param method - Algorithm to use.
+ * @returns Whether f is irreducible over GF(p).
+ * @throws RangeError when the algorithm name is unrecognized.
+ * @see SymPy `sympy.polys.galoistools.gf_irreducible_p`
+ * @example
+ * ```ts
+ * import { ZZ, gfIrreducibleP } from '@symjs/symjs';
+ *
+ * gfIrreducibleP([1, 4, 2, 2, 3, 2, 4, 1, 4, 0, 4], 5, ZZ); // => True
+ * gfIrreducibleP([3, 2, 4], 5, ZZ); // => False
+ * ```
+ */
 export function gfIrreducibleP(f: readonly IntLike[], p: IntLike, _K: Domain = ZZ, method = 'rabin'): boolean {
   if (method === 'ben-or') return irredBenOr(ints(f), asInt(p));
   if (method === 'rabin') return irredRabin(ints(f), asInt(p));
   throw new RangeError(`unknown finite-field irreducibility method: ${method}`);
 }
 
-/** Whether f is square-free (SymPy gf_sqf_p). */
+/**
+ * Whether f is square-free.
+ *
+ * @param f - Polynomial as coefficients in descending degree.
+ * @param p - Prime modulus of the coefficient field.
+ * @param _K - Integer coefficient domain, normally `ZZ`.
+ * @returns Whether f is square-free.
+ * @see SymPy `sympy.polys.galoistools.gf_sqf_p`
+ * @example
+ * ```ts
+ * import { ZZ, gfSqfP } from '@symjs/symjs';
+ *
+ * gfSqfP([3, 2, 4], 5, ZZ); // => True
+ * gfSqfP([2, 4, 4, 2, 2, 1, 4], 5, ZZ); // => False
+ * ```
+ */
 export function gfSqfP(f: readonly IntLike[], p: IntLike, _K: Domain = ZZ): boolean {
   const m = asInt(p);
   const g = monic(ints(f), m)[1];
   return !g.length || isOne(gcd(g, diff(g, m), m));
 }
 
-/** The square-free part (SymPy gf_sqf_part). */
+/**
+ * The square-free part.
+ *
+ * @param f - Polynomial as coefficients in descending degree.
+ * @param p - Prime modulus of the coefficient field.
+ * @param _K - Integer coefficient domain, normally `ZZ`.
+ * @returns The square-free part.
+ * @see SymPy `sympy.polys.galoistools.gf_sqf_part`
+ * @example
+ * ```ts
+ * import { ZZ, gfSqfPart } from '@symjs/symjs';
+ *
+ * gfSqfPart([1, 1, 3, 0, 1, 0, 2, 2, 1], 5, ZZ); // => [1, 4, 3]
+ * ```
+ */
 export function gfSqfPart(f: readonly IntLike[], p: IntLike, _K: Domain = ZZ): bigint[] {
   const m = asInt(p);
   return sqfList(ints(f), m)[1].reduce<P>((g, [h]) => mul(g, h, m), [1n]);
 }
 
-/** The square-free decomposition [lc, [[factor, multiplicity], ...]] (SymPy gf_sqf_list). */
+/**
+ * The square-free decomposition [lc, [[factor, multiplicity], ...]].
+ *
+ * @param f - Polynomial as coefficients in descending degree.
+ * @param p - Prime modulus of the coefficient field.
+ * @param _K - Integer coefficient domain, normally `ZZ`.
+ * @param opts - Controls `all` (inclusion of all multiplicities).
+ * @returns The square-free decomposition [lc, [[factor, multiplicity], ...]].
+ * @throws RangeError when the `all` option is true.
+ * @see SymPy `sympy.polys.galoistools.gf_sqf_list`
+ * @remarks SymPy returns `(1, [([1, 1], 11)])` with tuples for the fixed-length groups.
+ * @example
+ * ```ts
+ * import { ZZ, gfSqfList } from '@symjs/symjs';
+ *
+ * gfSqfList([1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], 11, ZZ); // => [1, [[[1, 1], 11]]]
+ * ```
+ */
 export function gfSqfList(f: readonly IntLike[], p: IntLike, _K: Domain = ZZ, opts: { all?: boolean } = {}): [bigint, [bigint[], number][]] {
   if (opts.all === true) throw new RangeError("'all=True' is not supported yet");
   return sqfList(ints(f), asInt(p));
 }
 
-/** Berlekamp's Q matrix (SymPy gf_Qmatrix). */
+/**
+ * Berlekamp's Q matrix.
+ *
+ * @param f - Polynomial as coefficients in descending degree.
+ * @param p - Prime modulus of the coefficient field.
+ * @param _K - Integer coefficient domain, normally `ZZ`.
+ * @returns Berlekamp's Q matrix.
+ * @see SymPy `sympy.polys.galoistools.gf_Qmatrix`
+ * @example
+ * ```ts
+ * import { ZZ, gfQmatrix } from '@symjs/symjs';
+ *
+ * gfQmatrix([3, 2, 4], 5, ZZ); // => [[1, 0], [3, 4]]
+ * gfQmatrix([1, 0, 0, 0, 1], 5, ZZ); // => [[1, 0, 0, 0], [0, 4, 0, 0], [0, 0, 1, 0], [0, 0, 0, 4]]
+ * ```
+ */
 export function gfQmatrix(f: readonly IntLike[], p: IntLike, _K: Domain = ZZ): bigint[][] {
   return qMatrix(ints(f), asInt(p));
 }
 
-/** A basis of the kernel of Q - I (SymPy gf_Qbasis). */
+/**
+ * A basis of the kernel of Q - I.
+ *
+ * @param Q - Berlekamp matrix.
+ * @param p - Prime modulus of the coefficient field.
+ * @param _K - Integer coefficient domain, normally `ZZ`.
+ * @returns A basis of the kernel of Q - I.
+ * @see SymPy `sympy.polys.galoistools.gf_Qbasis`
+ * @example
+ * ```ts
+ * import { ZZ, gfQbasis } from '@symjs/symjs';
+ *
+ * gfQbasis([[1, 0, 0, 0], [0, 4, 0, 0], [0, 0, 1, 0], [0, 0, 0, 4]], 5, ZZ); // => [[1, 0, 0, 0], [0, 0, 1, 0]]
+ * gfQbasis([[1, 0], [3, 4]], 5, ZZ); // => [[1, 0]]
+ * ```
+ */
 export function gfQbasis(Q: readonly (readonly IntLike[])[], p: IntLike, _K: Domain = ZZ): bigint[][] {
   return qBasis(Q.map(ints), asInt(p));
 }
 
-/** Berlekamp's factorization of a square-free monic polynomial (SymPy gf_berlekamp). */
+/**
+ * Berlekamp's factorization of a square-free monic polynomial.
+ *
+ * @param f - Polynomial as coefficients in descending degree.
+ * @param p - Prime modulus of the coefficient field.
+ * @param _K - Integer coefficient domain, normally `ZZ`.
+ * @returns Berlekamp's factorization of a square-free monic polynomial.
+ * @see SymPy `sympy.polys.galoistools.gf_berlekamp`
+ * @example
+ * ```ts
+ * import { ZZ, gfBerlekamp } from '@symjs/symjs';
+ *
+ * gfBerlekamp([1, 0, 0, 0, 1], 5, ZZ); // => [[1, 0, 2], [1, 0, 3]]
+ * ```
+ */
 export function gfBerlekamp(f: readonly IntLike[], p: IntLike, _K: Domain = ZZ): bigint[][] {
   return berlekamp(ints(f), asInt(p));
 }
 
-/** Distinct-degree factorization, Cantor-Zassenhaus (SymPy gf_ddf_zassenhaus). */
+/**
+ * Distinct-degree factorization, Cantor-Zassenhaus.
+ *
+ * @param f - Polynomial as coefficients in descending degree.
+ * @param p - Prime modulus of the coefficient field.
+ * @param _K - Integer coefficient domain, normally `ZZ`.
+ * @returns Distinct-degree factorization, Cantor-Zassenhaus.
+ * @see SymPy `sympy.polys.galoistools.gf_ddf_zassenhaus`
+ * @remarks SymPy returns `[([1, 0, 0, 0, 0, 10], 1), ([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1], 2)]` with tuples for the fixed-length groups.
+ * @example
+ * ```ts
+ * import { ZZ, gfDdfZassenhaus } from '@symjs/symjs';
+ *
+ * gfDdfZassenhaus([1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10], 11, ZZ); // => [[[1, 0, 0, 0, 0, 10], 1], [[1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1], 2]]
+ * ```
+ */
 export function gfDdfZassenhaus(f: readonly IntLike[], p: IntLike, _K: Domain = ZZ): [bigint[], number][] {
   return ddfZassenhaus(ints(f), asInt(p));
 }
 
-/** Equal-degree factorization, Cantor-Zassenhaus (SymPy gf_edf_zassenhaus). */
+/**
+ * Equal-degree factorization, Cantor-Zassenhaus.
+ *
+ * @param f - Polynomial as coefficients in descending degree.
+ * @param n - Degree of the factors.
+ * @param p - Prime modulus of the coefficient field.
+ * @param _K - Integer coefficient domain, normally `ZZ`.
+ * @returns Equal-degree factorization, Cantor-Zassenhaus.
+ * @see SymPy `sympy.polys.galoistools.gf_edf_zassenhaus`
+ * @example
+ * ```ts
+ * import { ZZ, gfEdfZassenhaus } from '@symjs/symjs';
+ *
+ * gfEdfZassenhaus([1, 1, 1, 1], 1, 5, ZZ); // => [[1, 1], [1, 2], [1, 3]]
+ * ```
+ */
 export function gfEdfZassenhaus(f: readonly IntLike[], n: IntLike, p: IntLike, _K: Domain = ZZ): bigint[][] {
   return edfZassenhaus(ints(f), Number(asInt(n)), asInt(p), rng());
 }
 
-/** Distinct-degree factorization, Kaltofen-Shoup (SymPy gf_ddf_shoup). */
+/**
+ * Distinct-degree factorization, Kaltofen-Shoup.
+ *
+ * @param f - Polynomial as coefficients in descending degree.
+ * @param p - Prime modulus of the coefficient field.
+ * @param _K - Integer coefficient domain, normally `ZZ`.
+ * @returns Distinct-degree factorization, Kaltofen-Shoup.
+ * @see SymPy `sympy.polys.galoistools.gf_ddf_shoup`
+ * @remarks SymPy returns `[([1, 1, 0], 1), ([1, 1, 0, 1, 2], 2)]` with tuples for the fixed-length groups.
+ * @example
+ * ```ts
+ * import { ZZ, gfDdfShoup } from '@symjs/symjs';
+ *
+ * gfDdfShoup([1, 2, 1, 1, 0, 2, 0], 3, ZZ); // => [[[1, 1, 0], 1], [[1, 1, 0, 1, 2], 2]]
+ * ```
+ */
 export function gfDdfShoup(f: readonly IntLike[], p: IntLike, _K: Domain = ZZ): [bigint[], number][] {
   return ddfShoup(ints(f), asInt(p));
 }
 
-/** Equal-degree factorization, Gathen-Shoup (SymPy gf_edf_shoup). */
+/**
+ * Equal-degree factorization, Gathen-Shoup.
+ *
+ * @param f - Polynomial as coefficients in descending degree.
+ * @param n - Degree of the factors.
+ * @param p - Prime modulus of the coefficient field.
+ * @param _K - Integer coefficient domain, normally `ZZ`.
+ * @returns Equal-degree factorization, Gathen-Shoup.
+ * @see SymPy `sympy.polys.galoistools.gf_edf_shoup`
+ * @example
+ * ```ts
+ * import { ZZ, gfEdfShoup } from '@symjs/symjs';
+ *
+ * gfEdfShoup([1, 2837, 2277], 1, 2917, ZZ); // => [[1, 852], [1, 1985]]
+ * ```
+ */
 export function gfEdfShoup(f: readonly IntLike[], n: IntLike, p: IntLike, _K: Domain = ZZ): bigint[][] {
   return edfShoup(ints(f), Number(asInt(n)), asInt(p), rng());
 }
 
-/** Factorization of a square-free monic polynomial by Cantor-Zassenhaus (SymPy gf_zassenhaus). */
+/**
+ * Factorization of a square-free monic polynomial by Cantor-Zassenhaus.
+ *
+ * @param f - Polynomial as coefficients in descending degree.
+ * @param p - Prime modulus of the coefficient field.
+ * @param _K - Integer coefficient domain, normally `ZZ`.
+ * @returns Factorization of a square-free monic polynomial by Cantor-Zassenhaus.
+ * @see SymPy `sympy.polys.galoistools.gf_zassenhaus`
+ * @example
+ * ```ts
+ * import { ZZ, gfZassenhaus } from '@symjs/symjs';
+ *
+ * gfZassenhaus([1, 4, 3], 5, ZZ); // => [[1, 1], [1, 3]]
+ * ```
+ */
 export function gfZassenhaus(f: readonly IntLike[], p: IntLike, _K: Domain = ZZ): bigint[][] {
   return zassenhaus(ints(f), asInt(p));
 }
 
-/** Factorization of a square-free monic polynomial by Shoup's method (SymPy gf_shoup). */
+/**
+ * Factorization of a square-free monic polynomial by Shoup's method.
+ *
+ * @param f - Polynomial as coefficients in descending degree.
+ * @param p - Prime modulus of the coefficient field.
+ * @param _K - Integer coefficient domain, normally `ZZ`.
+ * @returns Factorization of a square-free monic polynomial by Shoup's method.
+ * @see SymPy `sympy.polys.galoistools.gf_shoup`
+ * @example
+ * ```ts
+ * import { ZZ, gfShoup } from '@symjs/symjs';
+ *
+ * gfShoup([1, 4, 3], 5, ZZ); // => [[1, 1], [1, 3]]
+ * ```
+ */
 export function gfShoup(f: readonly IntLike[], p: IntLike, _K: Domain = ZZ): bigint[][] {
   return shoup(ints(f), asInt(p));
 }
 
-/** Factorization of a square-free polynomial: [lc, factors] (SymPy gf_factor_sqf). */
+/**
+ * Factorization of a square-free polynomial: [lc, factors].
+ *
+ * @param f - Polynomial as coefficients in descending degree.
+ * @param p - Prime modulus of the coefficient field.
+ * @param _K - Integer coefficient domain, normally `ZZ`.
+ * @param method - Algorithm to use.
+ * @returns Factorization of a square-free polynomial: [lc, factors].
+ * @see SymPy `sympy.polys.galoistools.gf_factor_sqf`
+ * @remarks SymPy returns `(3, [[1, 1], [1, 3]])` with tuples for the fixed-length groups.
+ * @example
+ * ```ts
+ * import { ZZ, gfFactorSqf } from '@symjs/symjs';
+ *
+ * gfFactorSqf([3, 2, 4], 5, ZZ); // => [3, [[1, 1], [1, 3]]]
+ * ```
+ */
 export function gfFactorSqf(f: readonly IntLike[], p: IntLike, _K: Domain = ZZ, method?: GFFactorMethod): [bigint, bigint[][]] {
   return factorSqf(ints(f), asInt(p), method);
 }
 
-/** Factorization into irreducibles: [lc, [[factor, multiplicity], ...]] (SymPy gf_factor). */
+/**
+ * Factorization into irreducibles: [lc, [[factor, multiplicity], ...]].
+ *
+ * @param f - Polynomial as coefficients in descending degree.
+ * @param p - Prime modulus of the coefficient field.
+ * @param _K - Integer coefficient domain, normally `ZZ`.
+ * @param method - Algorithm to use.
+ * @returns Factorization into irreducibles: [lc, [[factor, multiplicity], ...]].
+ * @see SymPy `sympy.polys.galoistools.gf_factor`
+ * @remarks SymPy returns `(5, [([1, 2], 1), ([1, 8], 2)])` with tuples for the fixed-length groups.
+ * @example
+ * ```ts
+ * import { ZZ, gfFactor } from '@symjs/symjs';
+ *
+ * gfFactor([5, 2, 7, 2], 11, ZZ); // => [5, [[[1, 2], 1], [[1, 8], 2]]]
+ * ```
+ */
 export function gfFactor(f: readonly IntLike[], p: IntLike, _K: Domain = ZZ, method?: string): [bigint, [bigint[], number][]] {
   const m = asInt(p);
   const [lc, g] = monic(ints(f), m);
@@ -940,7 +1929,20 @@ export function gfFactor(f: readonly IntLike[], p: IntLike, _K: Domain = ZZ, met
   return [lc, sortFactors(factors)];
 }
 
-/** f(a) over the integers (SymPy gf_value). */
+/**
+ * f(a) over the integers.
+ *
+ * @param f - Polynomial as coefficients in descending degree.
+ * @param a - Evaluation point.
+ * @returns F(a) over the integers.
+ * @see SymPy `sympy.polys.galoistools.gf_value`
+ * @example
+ * ```ts
+ * import { gfValue } from '@symjs/symjs';
+ *
+ * gfValue([1, 7, 2, 4], 11); // => 2204
+ * ```
+ */
 export function gfValue(f: readonly IntLike[], a: IntLike): bigint {
   const x = asInt(a);
   return ints(f).reduce((r, c) => r * x + c, 0n);

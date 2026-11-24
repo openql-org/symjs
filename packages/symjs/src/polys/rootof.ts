@@ -309,9 +309,27 @@ function getComplexes(factors: Factor[]): [ComplexInterval, Factor][] {
 }
 
 /** Options of indexed roots (rootof uses radicals by default, CRootOf does not). */
-export interface RootOfOptions { radicals?: boolean; }
+export interface RootOfOptions { /** Whether to express an indexed root in radicals when possible. */
+radicals?: boolean; }
 
-/** Evaluated indexed root. Irreducible nontrivial factors remain CRootOf nodes. */
+/**
+ * Evaluated indexed root. Irreducible nontrivial factors remain CRootOf nodes.
+ *
+ * @param f - Polynomial to operate on.
+ * @param index - Zero-based index.
+ * @param opts - Set `radicals` to allow explicit radical expressions.
+ * @returns The indexed root as a radical expression when available, or as an isolated algebraic root.
+ * @throws PolynomialError when the polynomial does not have a single symbol generator or the polynomial is constant.
+ * @throws RangeError when the root index is outside the degree range.
+ * @throws NotImplementedError when root counting is unavailable over the coefficient domain.
+ * @see SymPy `sympy.polys.rootoftools.rootof`
+ * @example
+ * ```ts
+ * import { ex, rootof } from '@symjs/symjs';
+ *
+ * rootof(ex`x**3 - x - 1`, 0); // => CRootOf(x**3 - x - 1, 0)
+ * ```
+ */
 export function rootOf(f: ExprLike | Poly, index: number | Rational, opts: RootOfOptions = {}): Expr {
   let p = f instanceof Poly ? f : Poly.from(sympify(f));
   if (p.gens.length !== 1 || !(p.gens[0] instanceof Sym)) throw new PolynomialError('rootof requires one Symbol generator');
@@ -339,13 +357,55 @@ export function rootOf(f: ExprLike | Poly, index: number | Rational, opts: RootO
   }
 }
 
-/** Call to evaluate; new CRootOf constructs the unevaluated node for AST work. */
+/**
+ * Call to evaluate; new CRootOf constructs the unevaluated node for AST work.
+ *
+ * @param f - Polynomial to operate on.
+ * @param index - Zero-based index.
+ * @param opts - Set `radicals` to allow explicit radical expressions.
+ * @returns An indexed root of a univariate polynomial, using an isolating interval or rectangle.
+ * @see SymPy `sympy.polys.rootoftools.ComplexRootOf`
+ * @example
+ * ```ts
+ * import { CRootOf, ex } from '@symjs/symjs';
+ *
+ * CRootOf(ex`x**3 - x - 1`, 0); // => CRootOf(x**3 - x - 1, 0)
+ * ```
+ */
 export const CRootOf = callableClass(CRootOfNode, (f: ExprLike | Poly, index: number | Rational, opts: RootOfOptions = {}): Expr => rootOf(f, index, { radicals: false, ...opts }));
 export type CRootOf = CRootOfNode;
-/** SymPy's full spelling of CRootOf. */
+/**
+ * An indexed real or complex root of a univariate polynomial.
+ *
+ * @param f - Polynomial to operate on.
+ * @param index - Zero-based index.
+ * @param opts - Set `radicals` to allow explicit radical expressions.
+ * @returns An indexed real or complex root of a univariate polynomial.
+ * @see SymPy `sympy.polys.rootoftools.ComplexRootOf`
+ * @example
+ * ```ts
+ * import { ComplexRootOf, ex } from '@symjs/symjs';
+ *
+ * ComplexRootOf(ex`x**3 - x - 1`, 0); // => CRootOf(x**3 - x - 1, 0)
+ * ```
+ */
 export const ComplexRootOf = CRootOf;
 export type ComplexRootOf = CRootOfNode;
-/** SymPy RootOf evaluates the trivial radical cases by default. */
+/**
+ * An indexed root of a univariate polynomial, expressed in radicals when available.
+ *
+ * @param f - Polynomial to operate on.
+ * @param index - Zero-based index.
+ * @param opts - Set `radicals` to allow explicit radical expressions.
+ * @returns An indexed root of a univariate polynomial, expressed in radicals when available.
+ * @see SymPy `sympy.polys.rootoftools.RootOf`
+ * @example
+ * ```ts
+ * import { RootOf, ex } from '@symjs/symjs';
+ *
+ * RootOf(ex`x**3 - x - 1`, 0); // => CRootOf(x**3 - x - 1, 0)
+ * ```
+ */
 export const RootOf = callableClass(CRootOfNode, rootOf);
 export type RootOf = CRootOfNode;
 

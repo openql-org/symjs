@@ -179,7 +179,13 @@ export function groundRing(K: Domain): Domain {
   return K;
 }
 
-/** The domain has an associated ring (SymPy has_assoc_Ring). */
+/**
+ * The domain has an associated ring.
+ *
+ * @param K - Coefficient domain for the polynomial arithmetic.
+ * @returns The domain has an associated ring.
+ * @see SymPy `sympy.polys.domains.domain.Domain.has_assoc_Ring`
+ */
 export const hasAssocRing = (K: Domain): boolean => K instanceof RationalField || K instanceof IntegerRing;
 
 /** SymPy K.canonical_unit(a): -1 for a negative element, else 1. */
@@ -236,24 +242,62 @@ export interface CompatElement<P> {
 }
 
 /**
- * The compatibility methods of a polynomial ring (SymPy IPolys): `R.dup_*`
+ * The compatibility methods of a polynomial ring: `R.dup_*`
  * work on univariate polynomials, `R.dmp_*` on multivariate ones read as
  * polynomials in the first generator.
+ *
+ * @see SymPy `sympy.polys.compatibility.IPolys`
  */
 export abstract class IPolys<P extends CompatElement<P>> {
+  /** The number of generators. */
   abstract readonly ngens: number;
+  /** The coefficient domain. */
   abstract readonly domain: Domain;
+  /** The symbols naming the generators, in order. */
   abstract readonly symbols: readonly Expr[];
+  /** The ordered generators. */
   abstract readonly gens: readonly P[];
+  /**
+   * The additive identity.
+   *
+   * @returns The additive identity.
+   */
   abstract get zero(): P;
+  /**
+   * The multiplicative identity.
+   *
+   * @returns The multiplicative identity.
+   */
   abstract get one(): P;
-  /** The constant polynomial c. */
+  /**
+   * The constant polynomial c.
+   *
+   * @param c - Coefficient of the term.
+   * @returns The corresponding constant element.
+   * @see SymPy `sympy.polys.compatibility.IPolys.ground_new`
+   */
   abstract groundNew(c: ExprLike): P;
-  /** A polynomial from its terms (zero coefficients are dropped, repeated monomials added). */
+  /**
+   * A polynomial from its terms (zero coefficients are dropped, repeated monomials added).
+   *
+   * @param terms - Monomial and coefficient pairs.
+   * @returns A polynomial from its terms (zero coefficients are dropped, repeated monomials added).
+   */
   abstract fromTerms(terms: Iterable<readonly [Monom, ExprLike]>): P;
-  /** The ring with the generators start..end (SymPy R[start:end]); the domain when none remain. */
+  /**
+   * The ring with the generators start..end; the domain when none remain.
+   *
+   * @param start - Inclusive starting index.
+   * @param end - Exclusive ending index.
+   * @returns The ring with the generators start..end.
+   */
   abstract slice(start: number, end?: number): IPolys<P> | Domain;
-  /** The ring over another domain (SymPy R.clone(domain=K)). */
+  /**
+   * The ring over another domain (SymPy R.clone(domain=K)).
+   *
+   * @param K - Coefficient domain for the polynomial arithmetic.
+   * @returns The ring over another domain (SymPy R.clone(domain=K)).
+   */
   abstract withDomain(K: Domain): IPolys<P>;
   /** The element with the same terms in another ring with as many generators. */
   protected abstract moveTo(f: P, R: IPolys<P>): P;
@@ -302,169 +346,443 @@ export abstract class IPolys<P extends CompatElement<P>> {
 
   // ---- densearith ---------------------------------------------------------
 
-  /** f + c*x**i (SymPy dup_add_term). */
+  /**
+   * f + c*x**i.
+   *
+   * @param f - Polynomial to operate on.
+   * @param c - Coefficient of the monomial to add, subtract or multiply.
+   * @param i - Exponent of the term in the main variable.
+   * @returns The sum of the polynomial and the term `c*x**i`.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_add_term`
+   */
   dupAddTerm(f: P, c: ExprLike, i: IntLike): P {
     return f.add(this.groundNew(c).mul(this.genPow(0, intArg(i))));
   }
-  /** f + c*x_0**i with c a polynomial in the other generators (SymPy dmp_add_term). */
+  /**
+   * f + c*x_0**i with c a polynomial in the other generators.
+   *
+   * @param f - Polynomial to operate on.
+   * @param c - Coefficient of the monomial to add, subtract or multiply.
+   * @param i - Exponent of the term in the main variable.
+   * @returns The sum of the polynomial and the term `c*x**i`.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_add_term`
+   */
   dmpAddTerm(f: P, c: P | ExprLike, i: IntLike): P {
     return f.add(this.wrap(c).mul(this.genPow(0, intArg(i))));
   }
-  /** f - c*x**i (SymPy dup_sub_term). */
+  /**
+   * f - c*x**i.
+   *
+   * @param f - Polynomial to operate on.
+   * @param c - Coefficient of the monomial to add, subtract or multiply.
+   * @param i - Exponent of the term in the main variable.
+   * @returns The difference between the polynomial and the term `c*x**i`.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_sub_term`
+   */
   dupSubTerm(f: P, c: ExprLike, i: IntLike): P {
     return f.sub(this.groundNew(c).mul(this.genPow(0, intArg(i))));
   }
-  /** f - c*x_0**i (SymPy dmp_sub_term). */
+  /**
+   * f - c*x_0**i.
+   *
+   * @param f - Polynomial to operate on.
+   * @param c - Coefficient of the monomial to add, subtract or multiply.
+   * @param i - Exponent of the term in the main variable.
+   * @returns The difference between the polynomial and the term `c*x**i`.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_sub_term`
+   */
   dmpSubTerm(f: P, c: P | ExprLike, i: IntLike): P {
     return f.sub(this.wrap(c).mul(this.genPow(0, intArg(i))));
   }
-  /** f*c*x**i (SymPy dup_mul_term). */
+  /**
+   * f*c*x**i.
+   *
+   * @param f - Polynomial to operate on.
+   * @param c - Coefficient of the monomial to add, subtract or multiply.
+   * @param i - Exponent of the term in the main variable.
+   * @returns The product of the polynomial and the term `c*x**i`.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_mul_term`
+   */
   dupMulTerm(f: P, c: ExprLike, i: IntLike): P {
     return f.mul(this.groundNew(c).mul(this.genPow(0, intArg(i))));
   }
-  /** f*c*x_0**i (SymPy dmp_mul_term). */
+  /**
+   * f*c*x_0**i.
+   *
+   * @param f - Polynomial to operate on.
+   * @param c - Coefficient of the monomial to add, subtract or multiply.
+   * @param i - Exponent of the term in the main variable.
+   * @returns The product of the polynomial and the term `c*x**i`.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_mul_term`
+   */
   dmpMulTerm(f: P, c: P | ExprLike, i: IntLike): P {
     return f.mul(this.wrap(c).mul(this.genPow(0, intArg(i))));
   }
-  /** f + c (SymPy dup_add_ground). */
+  /**
+   * f + c.
+   *
+   * @param f - Polynomial to operate on.
+   * @param c - Coefficient of the term.
+   * @returns The polynomial with the ground coefficient added to its constant term.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_add_ground`
+   */
   dupAddGround(f: P, c: ExprLike): P {
     return f.add(this.groundNew(c));
   }
-  /** f + c (SymPy dmp_add_ground). */
+  /**
+   * f + c.
+   *
+   * @param f - Polynomial to operate on.
+   * @param c - Coefficient of the term.
+   * @returns The polynomial with the ground coefficient added to its constant term.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_add_ground`
+   */
   dmpAddGround(f: P, c: ExprLike): P {
     return f.add(this.groundNew(c));
   }
-  /** f - c (SymPy dup_sub_ground). */
+  /**
+   * f - c.
+   *
+   * @param f - Polynomial to operate on.
+   * @param c - Coefficient of the term.
+   * @returns The polynomial with the ground coefficient subtracted from its constant term.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_sub_ground`
+   */
   dupSubGround(f: P, c: ExprLike): P {
     return f.sub(this.groundNew(c));
   }
-  /** f - c (SymPy dmp_sub_ground). */
+  /**
+   * f - c.
+   *
+   * @param f - Polynomial to operate on.
+   * @param c - Coefficient of the term.
+   * @returns The polynomial with the ground coefficient subtracted from its constant term.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_sub_ground`
+   */
   dmpSubGround(f: P, c: ExprLike): P {
     return f.sub(this.groundNew(c));
   }
-  /** c*f (SymPy dup_mul_ground). */
+  /**
+   * c*f.
+   *
+   * @param f - Polynomial to operate on.
+   * @param c - Coefficient of the term.
+   * @returns The polynomial scaled by a ground coefficient.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_mul_ground`
+   */
   dupMulGround(f: P, c: ExprLike): P {
     return f.mulGround(groundConvert(this.domain, c));
   }
-  /** c*f (SymPy dmp_mul_ground). */
+  /**
+   * c*f.
+   *
+   * @param f - Polynomial to operate on.
+   * @param c - Coefficient of the term.
+   * @returns The polynomial scaled by a ground coefficient.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_mul_ground`
+   */
   dmpMulGround(f: P, c: ExprLike): P {
     return this.dupMulGround(f, c);
   }
-  /** The quotients of the coefficients by c (SymPy dup_quo_ground: floor division in ZZ). */
+  /**
+   * The quotients of the coefficients by c.
+   *
+   * @param f - Dividend polynomial.
+   * @param c - Coefficient of the term.
+   * @returns The quotients of the coefficients by c.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_quo_ground`
+   */
   dupQuoGround(f: P, c: ExprLike): P {
     const K = this.domain;
     const d = groundConvert(K, c);
     return this.mapCoeffs(f, (a) => groundQuo(K, a, d));
   }
-  /** The quotients of the coefficients by c (SymPy dmp_quo_ground). */
+  /**
+   * The quotients of the coefficients by c.
+   *
+   * @param f - Dividend polynomial.
+   * @param c - Coefficient of the term.
+   * @returns The quotients of the coefficients by c.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_quo_ground`
+   */
   dmpQuoGround(f: P, c: ExprLike): P {
     return this.dupQuoGround(f, c);
   }
-  /** The exact quotients of the coefficients by c (SymPy dup_exquo_ground). */
+  /**
+   * The exact quotients of the coefficients by c.
+   *
+   * @param f - Dividend polynomial.
+   * @param c - Coefficient of the term.
+   * @returns The exact quotients of the coefficients by c.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_exquo_ground`
+   */
   dupExquoGround(f: P, c: ExprLike): P {
     const K = this.domain;
     const d = groundConvert(K, c);
     return this.mapCoeffs(f, (a) => groundExquo(K, a, d));
   }
-  /** The exact quotients of the coefficients by c (SymPy dmp_exquo_ground). */
+  /**
+   * The exact quotients of the coefficients by c.
+   *
+   * @param f - Dividend polynomial.
+   * @param c - Coefficient of the term.
+   * @returns The exact quotients of the coefficients by c.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_exquo_ground`
+   */
   dmpExquoGround(f: P, c: ExprLike): P {
     return this.dupExquoGround(f, c);
   }
-  /** f*x**n (SymPy dup_lshift). */
+  /**
+   * f*x**n.
+   *
+   * @param f - Polynomial to operate on.
+   * @param n - Number of powers to shift.
+   * @returns The polynomial multiplied by the specified power of the generator.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_lshift`
+   */
   dupLshift(f: P, n: IntLike): P {
     return f.mul(this.genPow(0, intArg(n)));
   }
-  /** f/x**n with the terms of lower degree dropped (SymPy dup_rshift). */
+  /**
+   * f/x**n with the terms of lower degree dropped.
+   *
+   * @param f - Polynomial to operate on.
+   * @param n - Number of powers to shift.
+   * @returns The polynomial after discarding the specified number of trailing coefficients.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_rshift`
+   */
   dupRshift(f: P, n: IntLike): P {
     const k = intArg(n);
     return this.fromTerms(f.listterms().filter(([m]) => first(m) >= k).map(([m, c]) => [[first(m) - k, ...m.slice(1)], c] as const));
   }
-  /** The absolute values of the coefficients (SymPy dup_abs). */
+  /**
+   * The absolute values of the coefficients.
+   *
+   * @param f - Polynomial to operate on.
+   * @returns The absolute values of the coefficients.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_abs`
+   */
   dupAbs(f: P): P {
     return this.mapCoeffs(f, (c) => groundAbs(this.domain, c));
   }
-  /** The absolute values of the coefficients (SymPy dmp_abs). */
+  /**
+   * The absolute values of the coefficients.
+   *
+   * @param f - Polynomial to operate on.
+   * @returns The absolute values of the coefficients.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_abs`
+   */
   dmpAbs(f: P): P {
     return this.dupAbs(f);
   }
-  /** -f (SymPy dup_neg). */
+  /**
+   * -f.
+   *
+   * @param f - Polynomial to operate on.
+   * @returns The additive inverse of the polynomial.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_neg`
+   */
   dupNeg(f: P): P {
     return f.neg();
   }
-  /** -f (SymPy dmp_neg). */
+  /**
+   * -f.
+   *
+   * @param f - Polynomial to operate on.
+   * @returns The additive inverse of the polynomial.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_neg`
+   */
   dmpNeg(f: P): P {
     return f.neg();
   }
-  /** f + g (SymPy dup_add). */
+  /**
+   * f + g.
+   *
+   * @param f - Polynomial to operate on.
+   * @param g - Second polynomial operand.
+   * @returns The sum of the polynomials.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_add`
+   */
   dupAdd(f: P, g: P): P {
     return f.add(g);
   }
-  /** f + g (SymPy dmp_add). */
+  /**
+   * f + g.
+   *
+   * @param f - Polynomial to operate on.
+   * @param g - Second polynomial operand.
+   * @returns The sum of the polynomials.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_add`
+   */
   dmpAdd(f: P, g: P): P {
     return f.add(g);
   }
-  /** f - g (SymPy dup_sub). */
+  /**
+   * f - g.
+   *
+   * @param f - Polynomial to operate on.
+   * @param g - Second polynomial operand.
+   * @returns The difference of the polynomials.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_sub`
+   */
   dupSub(f: P, g: P): P {
     return f.sub(g);
   }
-  /** f - g (SymPy dmp_sub). */
+  /**
+   * f - g.
+   *
+   * @param f - Polynomial to operate on.
+   * @param g - Second polynomial operand.
+   * @returns The difference of the polynomials.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_sub`
+   */
   dmpSub(f: P, g: P): P {
     return f.sub(g);
   }
-  /** f + g*h (SymPy dup_add_mul). */
+  /**
+   * f + g*h.
+   *
+   * @param f - Polynomial to operate on.
+   * @param g - Second polynomial operand.
+   * @param h - Third polynomial operand.
+   * @returns The polynomial `f + g*h`.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_add_mul`
+   */
   dupAddMul(f: P, g: P, h: P): P {
     return f.add(g.mul(h));
   }
-  /** f + g*h (SymPy dmp_add_mul). */
+  /**
+   * f + g*h.
+   *
+   * @param f - Polynomial to operate on.
+   * @param g - Second polynomial operand.
+   * @param h - Third polynomial operand.
+   * @returns The polynomial `f + g*h`.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_add_mul`
+   */
   dmpAddMul(f: P, g: P, h: P): P {
     return f.add(g.mul(h));
   }
-  /** f - g*h (SymPy dup_sub_mul). */
+  /**
+   * f - g*h.
+   *
+   * @param f - Polynomial to operate on.
+   * @param g - Second polynomial operand.
+   * @param h - Third polynomial operand.
+   * @returns The polynomial `f - g*h`.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_sub_mul`
+   */
   dupSubMul(f: P, g: P, h: P): P {
     return f.sub(g.mul(h));
   }
-  /** f - g*h (SymPy dmp_sub_mul). */
+  /**
+   * f - g*h.
+   *
+   * @param f - Polynomial to operate on.
+   * @param g - Second polynomial operand.
+   * @param h - Third polynomial operand.
+   * @returns The polynomial `f - g*h`.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_sub_mul`
+   */
   dmpSubMul(f: P, g: P, h: P): P {
     return f.sub(g.mul(h));
   }
-  /** f*g (SymPy dup_mul). */
+  /**
+   * f*g.
+   *
+   * @param f - Polynomial to operate on.
+   * @param g - Second polynomial operand.
+   * @returns The product of the polynomials.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_mul`
+   */
   dupMul(f: P, g: P): P {
     return f.mul(g);
   }
-  /** f*g (SymPy dmp_mul). */
+  /**
+   * f*g.
+   *
+   * @param f - Polynomial to operate on.
+   * @param g - Second polynomial operand.
+   * @returns The product of the polynomials.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_mul`
+   */
   dmpMul(f: P, g: P): P {
     return f.mul(g);
   }
-  /** f**2 (SymPy dup_sqr). */
+  /**
+   * f**2.
+   *
+   * @param f - Polynomial to operate on.
+   * @returns The square of the polynomial.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_sqr`
+   */
   dupSqr(f: P): P {
     return f.mul(f);
   }
-  /** f**2 (SymPy dmp_sqr). */
+  /**
+   * f**2.
+   *
+   * @param f - Polynomial to operate on.
+   * @returns The square of the polynomial.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_sqr`
+   */
   dmpSqr(f: P): P {
     return f.mul(f);
   }
-  /** f**n (SymPy dup_pow). */
+  /**
+   * f**n.
+   *
+   * @param f - Polynomial to operate on.
+   * @param n - Exponent or degree.
+   * @returns The polynomial raised to the nonnegative integer power `n`.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_pow`
+   */
   dupPow(f: P, n: IntLike): P {
     return this.dmpPow(f, n);
   }
-  /** f**n (SymPy dmp_pow). */
+  /**
+   * f**n.
+   *
+   * @param f - Polynomial to operate on.
+   * @param n - Exponent or degree.
+   * @returns The polynomial raised to the nonnegative integer power `n`.
+   * @throws RangeError when the exponent is negative.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_pow`
+   */
   dmpPow(f: P, n: IntLike): P {
     const k = intArg(n);
     if (k < 0) throw new RangeError("can't raise polynomial to a negative power");
     return k === 0 || f.isZero ? (k === 0 ? this.one : f) : f.pow(k);
   }
-  /** The product of the polynomials (SymPy dup_expand). */
+  /**
+   * The product of the polynomials.
+   *
+   * @param polys - Input polynomials.
+   * @returns The product of the polynomials.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_expand`
+   */
   dupExpand(polys: readonly P[]): P {
     return polys.reduce((a, b) => a.mul(b), this.one);
   }
-  /** The product of the polynomials (SymPy dmp_expand). */
+  /**
+   * The product of the polynomials.
+   *
+   * @param polys - Input polynomials.
+   * @returns The product of the polynomials.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_expand`
+   */
   dmpExpand(polys: readonly P[]): P {
     return this.dupExpand(polys);
   }
   /**
-   * SymPy dmp_lift: the norm of f over an algebraic (or Gaussian) domain,
+   * The norm of f over an algebraic (or Gaussian) domain,
    * the resultant in the generator a of the field of f(x, a) and the
    * minimal polynomial of a; its coefficients are rational.
+   *
+   * @param f - Polynomial to operate on.
+   * @returns The norm of f over an algebraic (or Gaussian) domain, the resultant in the generator a of the field of f(x, a) and the minimal polynomial of a.
+   * @throws DomainError when the coefficient domain is not algebraic.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_lift`
    */
   dmpLift(f: P): P {
     const K0 = this.domain;
@@ -500,37 +818,94 @@ export abstract class IPolys<P extends CompatElement<P>> {
     const c = lcG.pow(N);
     return [q.mul(c), r.mul(c)];
   }
-  /** Pseudo-division (SymPy dup_pdiv). */
+  /**
+   * Pseudo-division.
+   *
+   * @param f - Dividend polynomial.
+   * @param g - Divisor polynomial.
+   * @returns The quotient and remainder.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_pdiv`
+   */
   dupPdiv(f: P, g: P): [P, P] {
     return this.pdivIn(f, g, true);
   }
-  /** Pseudo-remainder (SymPy dup_prem). */
+  /**
+   * Pseudo-remainder.
+   *
+   * @param f - Dividend polynomial.
+   * @param g - Divisor polynomial.
+   * @returns The pseudo-remainder in the main variable.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_prem`
+   */
   dupPrem(f: P, g: P): P {
     return this.pdivIn(f, g, false)[1];
   }
-  /** Pseudo-quotient (SymPy dup_pquo). */
+  /**
+   * Pseudo-quotient.
+   *
+   * @param f - Dividend polynomial.
+   * @param g - Divisor polynomial.
+   * @returns The pseudo-quotient in the main variable.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_pquo`
+   */
   dupPquo(f: P, g: P): P {
     return this.pdivIn(f, g, true)[0];
   }
-  /** Exact pseudo-quotient (SymPy dup_pexquo). */
+  /**
+   * Exact pseudo-quotient.
+   *
+   * @param f - Dividend polynomial.
+   * @param g - Divisor polynomial.
+   * @returns The exact pseudo-quotient in the main variable.
+   * @throws ExactQuotientFailed when the divisor does not divide the dividend exactly.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_pexquo`
+   */
   dupPexquo(f: P, g: P): P {
     const [q, r] = this.pdivIn(f, g, true);
     if (!r.isZero) throw new ExactQuotientFailed(`${str(g.asExpr())} does not divide ${str(f.asExpr())}`);
     return q;
   }
-  /** Pseudo-division in x_0 (SymPy dmp_pdiv). */
+  /**
+   * Pseudo-division in x_0.
+   *
+   * @param f - Dividend polynomial.
+   * @param g - Divisor polynomial.
+   * @returns The quotient and remainder.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_pdiv`
+   */
   dmpPdiv(f: P, g: P): [P, P] {
     return this.dupPdiv(f, g);
   }
-  /** Pseudo-remainder in x_0 (SymPy dmp_prem). */
+  /**
+   * Pseudo-remainder in x_0.
+   *
+   * @param f - Dividend polynomial.
+   * @param g - Divisor polynomial.
+   * @returns The pseudo-remainder in the main variable.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_prem`
+   */
   dmpPrem(f: P, g: P): P {
     return this.dupPrem(f, g);
   }
-  /** Pseudo-quotient in x_0 (SymPy dmp_pquo). */
+  /**
+   * Pseudo-quotient in x_0.
+   *
+   * @param f - Dividend polynomial.
+   * @param g - Divisor polynomial.
+   * @returns The pseudo-quotient in the main variable.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_pquo`
+   */
   dmpPquo(f: P, g: P): P {
     return this.dupPquo(f, g);
   }
-  /** Exact pseudo-quotient in x_0 (SymPy dmp_pexquo). */
+  /**
+   * Exact pseudo-quotient in x_0.
+   *
+   * @param f - Dividend polynomial.
+   * @param g - Divisor polynomial.
+   * @returns The exact pseudo-quotient in the main variable.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_pexquo`
+   */
   dmpPexquo(f: P, g: P): P {
     return this.dupPexquo(f, g);
   }
@@ -572,58 +947,150 @@ export abstract class IPolys<P extends CompatElement<P>> {
     }
     return [q, r];
   }
-  /** Division with remainder over a ring (SymPy dup_rr_div). */
+  /**
+   * Division with remainder over a ring.
+   *
+   * @param f - Dividend polynomial.
+   * @param g - Divisor polynomial.
+   * @returns The quotient and remainder using division in the coefficient ring.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_rr_div`
+   */
   dupRrDiv(f: P, g: P): [P, P] {
     return this.divIn(f, g, 0);
   }
-  /** Division with remainder over a ring (SymPy dmp_rr_div). */
+  /**
+   * Division with remainder over a ring.
+   *
+   * @param f - Dividend polynomial.
+   * @param g - Divisor polynomial.
+   * @returns The quotient and remainder using division in the coefficient ring.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_rr_div`
+   */
   dmpRrDiv(f: P, g: P): [P, P] {
     return this.divIn(f, g, 0);
   }
-  /** Division with remainder over a field (SymPy dup_ff_div). */
+  /**
+   * Division with remainder over a field.
+   *
+   * @param f - Dividend polynomial.
+   * @param g - Divisor polynomial.
+   * @returns The quotient and remainder using division in the coefficient field.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_ff_div`
+   */
   dupFfDiv(f: P, g: P): [P, P] {
     return this.divIn(f, g, 0);
   }
-  /** Division with remainder over a field (SymPy dmp_ff_div). */
+  /**
+   * Division with remainder over a field.
+   *
+   * @param f - Dividend polynomial.
+   * @param g - Divisor polynomial.
+   * @returns The quotient and remainder using division in the coefficient field.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_ff_div`
+   */
   dmpFfDiv(f: P, g: P): [P, P] {
     return this.divIn(f, g, 0);
   }
-  /** Division with remainder (SymPy dup_div). */
+  /**
+   * Division with remainder.
+   *
+   * @param f - Dividend polynomial.
+   * @param g - Divisor polynomial.
+   * @returns The quotient and remainder of polynomial division.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_div`
+   */
   dupDiv(f: P, g: P): [P, P] {
     return this.divIn(f, g, 0);
   }
-  /** The remainder (SymPy dup_rem). */
+  /**
+   * The remainder.
+   *
+   * @param f - Dividend polynomial.
+   * @param g - Divisor polynomial.
+   * @returns The remainder.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_rem`
+   */
   dupRem(f: P, g: P): P {
     return this.divIn(f, g, 0)[1];
   }
-  /** The quotient (SymPy dup_quo). */
+  /**
+   * The quotient.
+   *
+   * @param f - Dividend polynomial.
+   * @param g - Divisor polynomial.
+   * @returns The quotient.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_quo`
+   */
   dupQuo(f: P, g: P): P {
     return this.divIn(f, g, 0)[0];
   }
-  /** The exact quotient (SymPy dup_exquo). */
+  /**
+   * The exact quotient.
+   *
+   * @param f - Dividend polynomial.
+   * @param g - Divisor polynomial.
+   * @returns The exact quotient.
+   * @throws ExactQuotientFailed when the divisor does not divide the dividend exactly.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_exquo`
+   */
   dupExquo(f: P, g: P): P {
     const [q, r] = this.divIn(f, g, 0);
     if (!r.isZero) throw new ExactQuotientFailed(`${str(g.asExpr())} does not divide ${str(f.asExpr())}`);
     return q;
   }
-  /** Division with remainder (SymPy dmp_div). */
+  /**
+   * Division with remainder.
+   *
+   * @param f - Dividend polynomial.
+   * @param g - Divisor polynomial.
+   * @returns The quotient and remainder of polynomial division.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_div`
+   */
   dmpDiv(f: P, g: P): [P, P] {
     return this.divIn(f, g, 0);
   }
-  /** The remainder (SymPy dmp_rem). */
+  /**
+   * The remainder.
+   *
+   * @param f - Dividend polynomial.
+   * @param g - Divisor polynomial.
+   * @returns The remainder.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_rem`
+   */
   dmpRem(f: P, g: P): P {
     return this.divIn(f, g, 0)[1];
   }
-  /** The quotient (SymPy dmp_quo). */
+  /**
+   * The quotient.
+   *
+   * @param f - Dividend polynomial.
+   * @param g - Divisor polynomial.
+   * @returns The quotient.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_quo`
+   */
   dmpQuo(f: P, g: P): P {
     return this.divIn(f, g, 0)[0];
   }
-  /** The exact quotient (SymPy dmp_exquo). */
+  /**
+   * The exact quotient.
+   *
+   * @param f - Dividend polynomial.
+   * @param g - Divisor polynomial.
+   * @returns The exact quotient.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_exquo`
+   */
   dmpExquo(f: P, g: P): P {
     return this.dupExquo(f, g);
   }
 
-  /** The largest absolute value of a coefficient (SymPy dup_max_norm). */
+  /**
+   * The largest absolute value of a coefficient.
+   *
+   * @param f - Polynomial to operate on.
+   * @returns The largest absolute value of a coefficient.
+   * @throws DomainError when the coefficient domain is unordered.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_max_norm`
+   */
   dupMaxNorm(f: P): Expr {
     const K = this.domain;
     const cs = f.listterms().map(([, c]) => groundAbs(K, c));
@@ -632,25 +1099,55 @@ export abstract class IPolys<P extends CompatElement<P>> {
       return numCmp(a, b) >= 0 ? a : b;
     }, K.zero);
   }
-  /** The largest absolute value of a coefficient (SymPy dmp_max_norm). */
+  /**
+   * The largest absolute value of a coefficient.
+   *
+   * @param f - Polynomial to operate on.
+   * @returns The largest absolute value of a coefficient.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_max_norm`
+   */
   dmpMaxNorm(f: P): Expr {
     return this.dupMaxNorm(f);
   }
-  /** The sum of the absolute values of the coefficients (SymPy dup_l1_norm). */
+  /**
+   * The sum of the absolute values of the coefficients.
+   *
+   * @param f - Polynomial to operate on.
+   * @returns The sum of the absolute values of the coefficients.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_l1_norm`
+   */
   dupL1Norm(f: P): Expr {
     const K = this.domain;
     return f.listterms().reduce((s, [, c]) => K.add(s, groundAbs(K, c)), K.zero);
   }
-  /** The sum of the absolute values of the coefficients (SymPy dmp_l1_norm). */
+  /**
+   * The sum of the absolute values of the coefficients.
+   *
+   * @param f - Polynomial to operate on.
+   * @returns The sum of the absolute values of the coefficients.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_l1_norm`
+   */
   dmpL1Norm(f: P): Expr {
     return this.dupL1Norm(f);
   }
-  /** The sum of the squares of the coefficients (SymPy dup_l2_norm_squared). */
+  /**
+   * The sum of the squares of the coefficients.
+   *
+   * @param f - Polynomial to operate on.
+   * @returns The sum of the squares of the coefficients.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_l2_norm_squared`
+   */
   dupL2NormSquared(f: P): Expr {
     const K = this.domain;
     return f.listterms().reduce((s, [, c]) => K.add(s, K.mul(c, c)), K.zero);
   }
-  /** The sum of the squares of the coefficients (SymPy dmp_l2_norm_squared). */
+  /**
+   * The sum of the squares of the coefficients.
+   *
+   * @param f - Polynomial to operate on.
+   * @returns The sum of the squares of the coefficients.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_l2_norm_squared`
+   */
   dmpL2NormSquared(f: P): Expr {
     return this.dupL2NormSquared(f);
   }
@@ -669,15 +1166,37 @@ export abstract class IPolys<P extends CompatElement<P>> {
       }),
     );
   }
-  /** The m-th integral (SymPy dup_integrate). */
+  /**
+   * The m-th integral.
+   *
+   * @param f - Polynomial to operate on.
+   * @param m - Number of integrations.
+   * @returns The m-th integral.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_integrate`
+   */
   dupIntegrate(f: P, m: IntLike): P {
     return this.integrateIn(f, intArg(m), 0);
   }
-  /** The m-th integral in x_0 (SymPy dmp_integrate). */
+  /**
+   * The m-th integral in x_0.
+   *
+   * @param f - Polynomial to operate on.
+   * @param m - Number of integrations.
+   * @returns The m-th integral in x_0.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_integrate`
+   */
   dmpIntegrate(f: P, m: IntLike): P {
     return this.integrateIn(f, intArg(m), 0);
   }
-  /** The m-th integral in x_j (SymPy dmp_integrate_in). */
+  /**
+   * The m-th integral in x_j.
+   *
+   * @param f - Polynomial to operate on.
+   * @param m - Number of integrations.
+   * @param j - Index of the polynomial variable.
+   * @returns The m-th integral in x_j.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_integrate_in`
+   */
   dmpIntegrateIn(f: P, m: IntLike, j: IntLike): P {
     return this.integrateIn(f, intArg(m), this.checkLevel(j));
   }
@@ -702,15 +1221,37 @@ export abstract class IPolys<P extends CompatElement<P>> {
         }),
     );
   }
-  /** The m-th derivative (SymPy dup_diff). */
+  /**
+   * The m-th derivative.
+   *
+   * @param f - Polynomial to operate on.
+   * @param m - Number of differentiations.
+   * @returns The m-th derivative.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_diff`
+   */
   dupDiff(f: P, m: IntLike): P {
     return this.diffIn(f, intArg(m), 0);
   }
-  /** The m-th derivative in x_0 (SymPy dmp_diff). */
+  /**
+   * The m-th derivative in x_0.
+   *
+   * @param f - Polynomial to operate on.
+   * @param m - Number of differentiations.
+   * @returns The m-th derivative in x_0.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_diff`
+   */
   dmpDiff(f: P, m: IntLike): P {
     return this.diffIn(f, intArg(m), 0);
   }
-  /** The m-th derivative in x_j (SymPy dmp_diff_in). */
+  /**
+   * The m-th derivative in x_j.
+   *
+   * @param f - Polynomial to operate on.
+   * @param m - Number of differentiations.
+   * @param j - Index of the polynomial variable.
+   * @returns The m-th derivative in x_j.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_diff_in`
+   */
   dmpDiffIn(f: P, m: IntLike, j: IntLike): P {
     return this.diffIn(f, intArg(m), this.checkLevel(j));
   }
@@ -738,25 +1279,63 @@ export abstract class IPolys<P extends CompatElement<P>> {
   /** The ring without the generator j, or the domain when none remains (SymPy R.drop(j)). */
   protected abstract dropRing(j: number): IPolys<P> | Domain;
 
-  /** f(a) (SymPy dup_eval). */
+  /**
+   * f(a).
+   *
+   * @param f - Polynomial to operate on.
+   * @param a - Value substituted for the generator.
+   * @returns The value at the evaluation point.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_eval`
+   */
   dupEval(f: P, a: ExprLike): Expr {
     return this.groundOf(this.evalIn(f, groundConvert(this.domain, a), 0));
   }
-  /** f(a, x_1, ...) in R[1:] (SymPy dmp_eval). */
+  /**
+   * f(a, x_1, ...) in R[1:].
+   *
+   * @param f - Polynomial to operate on.
+   * @param a - Value substituted for the generator.
+   * @returns F(a, x_1, ...) in R[1:].
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_eval`
+   */
   dmpEval(f: P, a: ExprLike): P | Expr {
     return this.dropIn(this.evalIn(f, groundConvert(this.domain, a), 0), 0);
   }
-  /** f with x_j = a in the ring without x_j (SymPy dmp_eval_in). */
+  /**
+   * f with x_j = a in the ring without x_j.
+   *
+   * @param f - Polynomial to operate on.
+   * @param a - Value substituted for the generator.
+   * @param j - Index of the polynomial variable.
+   * @returns F with x_j = a in the ring without x_j.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_eval_in`
+   */
   dmpEvalIn(f: P, a: ExprLike, j: IntLike): P | Expr {
     const k = this.checkLevel(j);
     return this.dropIn(this.evalIn(f, groundConvert(this.domain, a), k), k);
   }
-  /** The m-th derivative in x_j at x_j = a (SymPy dmp_diff_eval_in). */
+  /**
+   * The m-th derivative in x_j at x_j = a.
+   *
+   * @param f - Polynomial to operate on.
+   * @param m - Number of differentiations.
+   * @param a - Value substituted for the generator.
+   * @param j - Index of the polynomial variable.
+   * @returns The m-th derivative in x_j at x_j = a.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_diff_eval_in`
+   */
   dmpDiffEvalIn(f: P, m: IntLike, a: ExprLike, j: IntLike): P | Expr {
     const k = this.checkLevel(j);
     return this.dropIn(this.evalIn(this.diffIn(f, intArg(m), k), groundConvert(this.domain, a), k), k);
   }
-  /** f with its last generators set to the values A (SymPy dmp_eval_tail). */
+  /**
+   * f with its last generators set to the values A.
+   *
+   * @param f - Polynomial to operate on.
+   * @param A - Values for successive trailing variables.
+   * @returns F with its last generators set to the values A.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_eval_tail`
+   */
   dmpEvalTail(f: P, A: readonly ExprLike[]): P | Expr {
     let g = f;
     const n = this.ngens;
@@ -768,7 +1347,14 @@ export abstract class IPolys<P extends CompatElement<P>> {
     return R.fromTerms(g.listterms().map(([m, c]) => [m.slice(0, n - A.length), c] as const));
   }
 
-  /** The coefficients reduced modulo p into the symmetric range in ZZ (SymPy dup_trunc). */
+  /**
+   * The coefficients reduced modulo p into the symmetric range in ZZ.
+   *
+   * @param f - Polynomial to operate on.
+   * @param p - Modulus for reducing coefficients.
+   * @returns The coefficients reduced modulo p into the symmetric range in ZZ.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_trunc`
+   */
   dupTrunc(f: P, p: ExprLike): P {
     const K = this.domain;
     const q = groundConvert(K, p);
@@ -777,7 +1363,14 @@ export abstract class IPolys<P extends CompatElement<P>> {
       return isZZ(K) && rat(r).p > floorDiv(rat(q).p, 2n) ? K.sub(r, q) : r;
     });
   }
-  /** The coefficients of x_0 reduced modulo the polynomial g of R[1:] (SymPy dmp_trunc). */
+  /**
+   * The coefficients of x_0 reduced modulo the polynomial g of R[1:].
+   *
+   * @param f - Polynomial to operate on.
+   * @param g - Second polynomial operand.
+   * @returns The coefficients of x_0 reduced modulo the polynomial g of R[1:].
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_trunc`
+   */
   dmpTrunc(f: P, g: P): P {
     const d = this.degIn(f, 0);
     const p = this.embed(g);
@@ -798,53 +1391,117 @@ export abstract class IPolys<P extends CompatElement<P>> {
       }),
     );
   }
-  /** The ground coefficients reduced modulo p (SymPy dmp_ground_trunc). */
+  /**
+   * The ground coefficients reduced modulo p.
+   *
+   * @param f - Polynomial to operate on.
+   * @param p - Modulus for reducing coefficients.
+   * @returns The ground coefficients reduced modulo p.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_ground_trunc`
+   */
   dmpGroundTrunc(f: P, p: ExprLike): P {
     return this.dupTrunc(f, p);
   }
-  /** f divided by its leading coefficient (SymPy dup_monic). */
+  /**
+   * f divided by its leading coefficient.
+   *
+   * @param f - Polynomial to operate on.
+   * @returns The polynomial divided by its leading coefficient.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_monic`
+   */
   dupMonic(f: P): P {
     if (f.isZero) return f;
     const lc = f.LC;
     return groundEq(lc, this.domain.one) ? f : this.dupExquoGround(f, lc);
   }
-  /** f divided by its ground leading coefficient (SymPy dmp_ground_monic). */
+  /**
+   * f divided by its ground leading coefficient.
+   *
+   * @param f - Polynomial to operate on.
+   * @returns The polynomial normalized by its ground leading coefficient.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_ground_monic`
+   */
   dmpGroundMonic(f: P): P {
     return this.dupMonic(f);
   }
-  /** The gcd of the coefficients (SymPy dup_content). */
+  /**
+   * The gcd of the coefficients.
+   *
+   * @param f - Polynomial to operate on.
+   * @returns The gcd of the coefficients.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_content`
+   */
   dupContent(f: P): Expr {
     const K = this.domain;
     return f.listterms().reduce((g, [, c]) => groundGcd(K, g, c), K.zero);
   }
-  /** The gcd of the ground coefficients (SymPy dmp_ground_content). */
+  /**
+   * The gcd of the ground coefficients.
+   *
+   * @param f - Polynomial to operate on.
+   * @returns The gcd of the ground coefficients.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_ground_content`
+   */
   dmpGroundContent(f: P): Expr {
     return this.dupContent(f);
   }
-  /** The content and the primitive part (SymPy dup_primitive). */
+  /**
+   * The content and the primitive part.
+   *
+   * @param f - Polynomial to operate on.
+   * @returns The content and the primitive part.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_primitive`
+   */
   dupPrimitive(f: P): [Expr, P] {
     const K = this.domain;
     const cont = this.dupContent(f);
     if (f.isZero || groundEq(cont, K.one)) return [cont, f];
     return [cont, this.dupQuoGround(f, cont)];
   }
-  /** The ground content and the primitive part (SymPy dmp_ground_primitive). */
+  /**
+   * The ground content and the primitive part.
+   *
+   * @param f - Polynomial to operate on.
+   * @returns The ground content and the primitive part.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_ground_primitive`
+   */
   dmpGroundPrimitive(f: P): [Expr, P] {
     return this.dupPrimitive(f);
   }
-  /** The common content of f and g and their quotients by it (SymPy dup_extract). */
+  /**
+   * The common content of f and g and their quotients by it.
+   *
+   * @param f - Polynomial to operate on.
+   * @param g - Second polynomial operand.
+   * @returns The common content of f and g and their quotients by it.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_extract`
+   */
   dupExtract(f: P, g: P): [Expr, P, P] {
     const K = this.domain;
     const c = groundGcd(K, this.dupContent(f), this.dupContent(g));
     if (groundEq(c, K.one)) return [c, f, g];
     return [c, this.dupQuoGround(f, c), this.dupQuoGround(g, c)];
   }
-  /** The common ground content of f and g and their quotients by it (SymPy dmp_ground_extract). */
+  /**
+   * The common ground content of f and g and their quotients by it.
+   *
+   * @param f - Polynomial to operate on.
+   * @param g - Second polynomial operand.
+   * @returns The common ground content of f and g and their quotients by it.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_ground_extract`
+   */
   dmpGroundExtract(f: P, g: P): [Expr, P, P] {
     return this.dupExtract(f, g);
   }
 
-  /** The real and imaginary parts of f(x + I*y) in the first two generators (SymPy dup_real_imag). */
+  /**
+   * The real and imaginary parts of f(x + I*y) in the first two generators.
+   *
+   * @param f - Polynomial to operate on.
+   * @returns The real and imaginary parts of f(x + I*y) in the first two generators.
+   * @throws PolynomialError when the coefficients are outside the supported real domains or the ring does not have two generators or the input depends on another generator.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_real_imag`
+   */
   dupRealImag(f: P): [P, P] {
     const K = this.domain;
     if (!(isZZ(K) || K instanceof RationalField)) throw new PolynomialError(`computing real and imaginary parts is not supported over ${K.toString()}`);
@@ -870,21 +1527,48 @@ export abstract class IPolys<P extends CompatElement<P>> {
     }
     return [re, im];
   }
-  /** f(-x) (SymPy dup_mirror). */
+  /**
+   * f(-x).
+   *
+   * @param f - Polynomial to operate on.
+   * @returns The polynomial evaluated at the negated generator.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_mirror`
+   */
   dupMirror(f: P): P {
     return this.mapCoeffs(f, (c, m) => (first(m) % 2 ? this.domain.neg(c) : c));
   }
-  /** f(a*x) (SymPy dup_scale). */
+  /**
+   * f(a*x).
+   *
+   * @param f - Polynomial to operate on.
+   * @param a - Factor multiplying the generator.
+   * @returns The polynomial evaluated at the scaled generator.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_scale`
+   */
   dupScale(f: P, a: ExprLike): P {
     const K = this.domain;
     const b = groundConvert(K, a);
     return this.mapCoeffs(f, (c, m) => K.mul(c, groundPow(K, b, first(m))));
   }
-  /** f(x + a) (SymPy dup_shift). */
+  /**
+   * f(x + a).
+   *
+   * @param f - Polynomial to operate on.
+   * @param a - Translation added to the generator or generators.
+   * @returns The translated polynomial.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_shift`
+   */
   dupShift(f: P, a: ExprLike): P {
     return this.composeIn(f, [[0, at(this.gens, 0).add(this.groundNew(a))]]);
   }
-  /** f(x_0 + a_0, x_1 + a_1, ...) (SymPy dmp_shift). */
+  /**
+   * f(x_0 + a_0, x_1 + a_1, ...).
+   *
+   * @param f - Polynomial to operate on.
+   * @param a - Translation added to the generator or generators.
+   * @returns The polynomial after translating each generator.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_shift`
+   */
   dmpShift(f: P, a: readonly ExprLike[]): P {
     return this.composeIn(f, a.map((ai, i) => [i, at(this.gens, i).add(this.groundNew(ai))] as const));
   }
@@ -902,7 +1586,15 @@ export abstract class IPolys<P extends CompatElement<P>> {
     }
     return out;
   }
-  /** q**n * f(p/q) with n the degree of f (SymPy dup_transform). */
+  /**
+   * q**n * f(p/q) with n the degree of f.
+   *
+   * @param f - Polynomial in the original generator.
+   * @param p - Numerator of the rational substitution.
+   * @param q - Denominator of the rational substitution.
+   * @returns The polynomial after the rational substitution and denominator clearing.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_transform`
+   */
   dupTransform(f: P, p: P, q: P): P {
     if (f.isZero) return f;
     const n = this.degIn(f, 0);
@@ -910,19 +1602,45 @@ export abstract class IPolys<P extends CompatElement<P>> {
     for (const [m, c] of f.listterms()) out = out.add(p.pow(first(m)).mul(q.pow(n - first(m))).mulGround(c));
     return out;
   }
-  /** f(g) (SymPy dup_compose). */
+  /**
+   * f(g).
+   *
+   * @param f - Polynomial to operate on.
+   * @param g - Second polynomial operand.
+   * @returns The composition of the input polynomials.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_compose`
+   */
   dupCompose(f: P, g: P): P {
     return this.composeIn(f, [[0, g]]);
   }
-  /** f(g, x_1, ...) (SymPy dmp_compose). */
+  /**
+   * f(g, x_1, ...).
+   *
+   * @param f - Polynomial to operate on.
+   * @param g - Second polynomial operand.
+   * @returns The composition in the main variable.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_compose`
+   */
   dmpCompose(f: P, g: P): P {
     return this.composeIn(f, [[0, g]]);
   }
-  /** A functional decomposition f = f_1(f_2(...)) (SymPy dup_decompose). */
+  /**
+   * A functional decomposition f = f_1(f_2(...)).
+   *
+   * @param f - Polynomial to operate on.
+   * @returns A functional decomposition f = f_1(f_2(...)).
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_decompose`
+   */
   dupDecompose(f: P): P[] {
     return this.toPoly(f).decompose().map((p) => this.fromPoly(p));
   }
-  /** The number of sign changes of the coefficients (SymPy dup_sign_variations). */
+  /**
+   * The number of sign changes of the coefficients.
+   *
+   * @param f - Polynomial to operate on.
+   * @returns The number of sign changes of the coefficients.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_sign_variations`
+   */
   dupSignVariations(f: P): number {
     const K = this.domain;
     let prev: boolean | undefined;
@@ -935,7 +1653,14 @@ export abstract class IPolys<P extends CompatElement<P>> {
     }
     return k;
   }
-  /** The lcm of the denominators and f multiplied by it, over its ring of integers when convert is true (SymPy dup_clear_denoms). */
+  /**
+   * The lcm of the denominators and f multiplied by it, over its ring of integers when convert is true.
+   *
+   * @param f - Polynomial to operate on.
+   * @param convert - Convert the resulting coefficients to the associated ring.
+   * @returns The lcm of the denominators and f multiplied by it, over its ring of integers when convert is true.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_clear_denoms`
+   */
   dupClearDenoms(f: P, convert = false): [Expr, P] {
     const K = this.domain;
     if (!(K instanceof RationalField)) return [K.one, f];
@@ -943,11 +1668,26 @@ export abstract class IPolys<P extends CompatElement<P>> {
     const g = groundEq(common, K.one) ? f : f.mulGround(common);
     return [common, convert ? this.moveTo(g, this.withDomain(ZZ)) : g];
   }
-  /** The lcm of the denominators and f multiplied by it (SymPy dmp_clear_denoms). */
+  /**
+   * The lcm of the denominators and f multiplied by it.
+   *
+   * @param f - Polynomial to operate on.
+   * @param convert - Convert the resulting coefficients to the associated ring.
+   * @returns The lcm of the denominators and f multiplied by it.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_clear_denoms`
+   */
   dmpClearDenoms(f: P, convert = false): [Expr, P] {
     return this.dupClearDenoms(f, convert);
   }
-  /** The power series reversion of f modulo x**n (SymPy dup_revert). */
+  /**
+   * The power series reversion of f modulo x**n.
+   *
+   * @param f - Polynomial to operate on.
+   * @param n - Truncation order of the inverse series.
+   * @returns The power series reversion of f modulo x**n.
+   * @throws PolynomialError when the constant coefficient is not a unit.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_revert`
+   */
   dupRevert(f: P, n: IntLike): P {
     const K = this.domain;
     const N = intArg(n);
@@ -997,7 +1737,14 @@ export abstract class IPolys<P extends CompatElement<P>> {
     return K.isField ? h.mulGround(K.quo(K.one, this.groundLC(h))) : h;
   }
 
-  /** The gcd and the cofactors (SymPy dmp_inner_gcd). */
+  /**
+   * The gcd and the cofactors.
+   *
+   * @param f - Polynomial to operate on.
+   * @param g - Second polynomial operand.
+   * @returns The gcd and the cofactors.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_inner_gcd`
+   */
   dmpInnerGcd(f: P, g: P): [P, P, P] {
     if (f.isZero && g.isZero) return [this.zero, this.zero, this.zero];
     const h = this.gcdOf(f, g);
@@ -1007,15 +1754,36 @@ export abstract class IPolys<P extends CompatElement<P>> {
   private exquoBy(f: P, h: P): P {
     return this.divIn(f, h, 0)[0];
   }
-  /** The gcd and the cofactors (SymPy dup_inner_gcd). */
+  /**
+   * The gcd and the cofactors.
+   *
+   * @param f - Polynomial to operate on.
+   * @param g - Second polynomial operand.
+   * @returns The gcd and the cofactors.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_inner_gcd`
+   */
   dupInnerGcd(f: P, g: P): [P, P, P] {
     return this.dmpInnerGcd(f, g);
   }
-  /** The gcd (SymPy dmp_gcd). */
+  /**
+   * The gcd.
+   *
+   * @param f - Polynomial to operate on.
+   * @param g - Second polynomial operand.
+   * @returns The gcd.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_gcd`
+   */
   dmpGcd(f: P, g: P): P {
     return this.dmpInnerGcd(f, g)[0];
   }
-  /** The gcd (SymPy dup_gcd). */
+  /**
+   * The gcd.
+   *
+   * @param f - Polynomial to operate on.
+   * @param g - Second polynomial operand.
+   * @returns The gcd.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_gcd`
+   */
   dupGcd(f: P, g: P): P {
     return this.dmpGcd(f, g);
   }
@@ -1023,7 +1791,14 @@ export abstract class IPolys<P extends CompatElement<P>> {
   private lcmPart(f: P, g: P): P {
     return f.isZero || g.isZero ? this.zero : this.exquoBy(f.mul(g), this.dmpGcd(f, g));
   }
-  /** The lcm over a ring, with the lcm of the contents and a positive leading coefficient (SymPy dup_rr_lcm). */
+  /**
+   * The lcm over a ring, with the lcm of the contents and a positive leading coefficient.
+   *
+   * @param f - Polynomial to operate on.
+   * @param g - Second polynomial operand.
+   * @returns The lcm over a ring, with the lcm of the contents and a positive leading coefficient.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_rr_lcm`
+   */
   dupRrLcm(f: P, g: P): P {
     const K = this.domain;
     const [fc, F] = this.dupPrimitive(f);
@@ -1031,26 +1806,61 @@ export abstract class IPolys<P extends CompatElement<P>> {
     const h = this.lcmPart(F, G);
     return h.mulGround(K.mul(groundLcm(K, fc, gc), canonicalUnit(K, this.groundLC(h))));
   }
-  /** The monic lcm over a field (SymPy dup_ff_lcm). */
+  /**
+   * The monic lcm over a field.
+   *
+   * @param f - Polynomial to operate on.
+   * @param g - Second polynomial operand.
+   * @returns The monic lcm over a field.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_ff_lcm`
+   */
   dupFfLcm(f: P, g: P): P {
     return this.dupMonic(this.lcmPart(f, g));
   }
-  /** The lcm (SymPy dup_lcm). */
+  /**
+   * The lcm.
+   *
+   * @param f - Polynomial to operate on.
+   * @param g - Second polynomial operand.
+   * @returns The lcm.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_lcm`
+   */
   dupLcm(f: P, g: P): P {
     return this.domain.isField ? this.dupFfLcm(f, g) : this.dupRrLcm(f, g);
   }
-  /** The lcm over a ring, with the lcm of the ground contents (SymPy dmp_rr_lcm). */
+  /**
+   * The lcm over a ring, with the lcm of the ground contents.
+   *
+   * @param f - Polynomial to operate on.
+   * @param g - Second polynomial operand.
+   * @returns The lcm over a ring, with the lcm of the ground contents.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_rr_lcm`
+   */
   dmpRrLcm(f: P, g: P): P {
     const K = this.domain;
     const [fc, F] = this.dmpGroundPrimitive(f);
     const [gc, G] = this.dmpGroundPrimitive(g);
     return this.lcmPart(F, G).mulGround(groundLcm(K, fc, gc));
   }
-  /** The ground monic lcm over a field (SymPy dmp_ff_lcm). */
+  /**
+   * The ground monic lcm over a field.
+   *
+   * @param f - Polynomial to operate on.
+   * @param g - Second polynomial operand.
+   * @returns The ground monic lcm over a field.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_ff_lcm`
+   */
   dmpFfLcm(f: P, g: P): P {
     return this.dmpGroundMonic(this.lcmPart(f, g));
   }
-  /** The lcm (SymPy dmp_lcm): monic over a field, with the lcm of the contents over a ring. */
+  /**
+   * The lcm: monic over a field, with the lcm of the contents over a ring.
+   *
+   * @param f - Polynomial to operate on.
+   * @param g - Second polynomial operand.
+   * @returns The lcm: monic over a field, with the lcm of the contents over a ring.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_lcm`
+   */
   dmpLcm(f: P, g: P): P {
     if (this.ngens === 1) return this.dupLcm(f, g);
     return this.domain.isField ? this.dmpFfLcm(f, g) : this.dmpRrLcm(f, g);
@@ -1065,12 +1875,24 @@ export abstract class IPolys<P extends CompatElement<P>> {
     return c;
   }
 
-  /** f is square-free (SymPy dup_sqf_p). */
+  /**
+   * f is square-free.
+   *
+   * @param f - Polynomial to operate on.
+   * @returns Whether every irreducible factor occurs at most once.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_sqf_p`
+   */
   dupSqfP(f: P): boolean {
     return this.dmpSqfP(f);
   }
   /** f is square-free (SymPy dmp_sqf_p). */
-  /** A shift with square-free norm, using the dense algebraic-field algorithm. */
+  /**
+   * A shift with square-free norm, using the dense algebraic-field algorithm.
+   *
+   * @param f - Polynomial to operate on.
+   * @returns A shift with square-free norm, using the dense algebraic-field algorithm.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_sqf_norm`
+   */
   dmpSqfNorm(f: P): [number[], P, P] {
     const K = this.domain;
     const dense = dmpFromDict(new Map(f.listterms().map(([m, c]) => [m, K.convert(c)])), this.ngens - 1, K);
@@ -1079,6 +1901,13 @@ export abstract class IPolys<P extends CompatElement<P>> {
     return [shift, this.fromTerms([...dmpToDict(g, this.ngens - 1)].map(([m, c]) => [m, K.toSympy(c)])), ground.fromTerms([...dmpToDict(r, this.ngens - 1)].map(([m, c]) => [m, K.dom.toSympy(c)]))];
   }
 
+  /**
+   * Test whether the polynomial is square-free.
+   *
+   * @param f - Polynomial to operate on.
+   * @returns Whether every irreducible factor occurs at most once.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_sqf_p`
+   */
   dmpSqfP(f: P): boolean {
     if (f.isZero) return true;
     if (this.domain instanceof FiniteField && this.ngens === 1) return this.toPoly(f).isSqf;
@@ -1089,11 +1918,23 @@ export abstract class IPolys<P extends CompatElement<P>> {
     }
     return true;
   }
-  /** The square-free part (SymPy dup_sqf_part). */
+  /**
+   * The square-free part.
+   *
+   * @param f - Polynomial to operate on.
+   * @returns The square-free part.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_sqf_part`
+   */
   dupSqfPart(f: P): P {
     return this.dmpSqfPart(f);
   }
-  /** The square-free part (SymPy dmp_sqf_part). */
+  /**
+   * The square-free part.
+   *
+   * @param f0 - Polynomial in this ring.
+   * @returns The square-free part.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_sqf_part`
+   */
   dmpSqfPart(f0: P): P {
     const K = this.domain;
     if (f0.isZero) return f0;
@@ -1147,11 +1988,26 @@ export abstract class IPolys<P extends CompatElement<P>> {
     }
     return [coeff, [...result].sort((a, b) => a[0] - b[0]).map(([i, p]) => [p, i] as [P, number])];
   }
-  /** The square-free decomposition (coefficient, [(factor, multiplicity)]) (SymPy dup_sqf_list). */
+  /**
+   * The square-free decomposition (coefficient, [(factor, multiplicity)]).
+   *
+   * @param f - Polynomial to operate on.
+   * @param all - Include factors of missing multiplicities.
+   * @returns The square-free decomposition (coefficient, [(factor, multiplicity)]).
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_sqf_list`
+   */
   dupSqfList(f: P, all = false): [Expr, [P, number][]] {
     return this.dmpSqfList(f, all);
   }
-  /** The square-free decomposition (SymPy dmp_sqf_list). */
+  /**
+   * The square-free decomposition.
+   *
+   * @param f - Polynomial to operate on.
+   * @param all - Include factors of missing multiplicities.
+   * @returns The square-free decomposition.
+   * @throws NotImplementedError when the polynomial is multivariate over a finite field.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_sqf_list`
+   */
   dmpSqfList(f: P, all = false): [Expr, [P, number][]] {
     if (this.domain instanceof FiniteField) {
       if (this.ngens > 1) throw new NotImplementedError('multivariate square-free decomposition in finite fields');
@@ -1160,18 +2016,39 @@ export abstract class IPolys<P extends CompatElement<P>> {
     }
     return this.sqfListIn(f, 0, all);
   }
-  /** The square-free decomposition with the coefficient in the first factor (SymPy dup_sqf_list_include). */
+  /**
+   * The square-free decomposition with the coefficient in the first factor.
+   *
+   * @param f - Polynomial to operate on.
+   * @param all - Include factors of missing multiplicities.
+   * @returns The square-free decomposition with the coefficient in the first factor.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_sqf_list_include`
+   */
   dupSqfListInclude(f: P, all = false): [P, number][] {
     const [c, fs] = this.sqfListIn(f, 0, all);
     const head = fs[0];
     if (head?.[1] === 1) return [[head[0].mulGround(c), 1], ...fs.slice(1)];
     return [[this.groundNew(c), 1], ...fs];
   }
-  /** The square-free decomposition with the coefficient in the first factor (SymPy dmp_sqf_list_include). */
+  /**
+   * The square-free decomposition with the coefficient in the first factor.
+   *
+   * @param f - Polynomial to operate on.
+   * @param all - Include factors of missing multiplicities.
+   * @returns The square-free decomposition with the coefficient in the first factor.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_sqf_list_include`
+   */
   dmpSqfListInclude(f: P, all = false): [P, number][] {
     return this.dupSqfListInclude(f, all);
   }
-  /** The greatest factorial factorization (SymPy dup_gff_list). */
+  /**
+   * The greatest factorial factorization.
+   *
+   * @param f0 - Polynomial in this ring.
+   * @returns The greatest factorial factorization.
+   * @throws RangeError when the polynomial is zero.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_gff_list`
+   */
   dupGffList(f0: P): [P, number][] {
     const K = this.domain;
     if (f0.isZero) throw new RangeError("greatest factorial factorization doesn't exist for a zero polynomial");
@@ -1185,13 +2062,26 @@ export abstract class IPolys<P extends CompatElement<P>> {
     const r = this.divIn(f, g, 0)[0];
     return this.degIn(r, 0) <= 0 ? H : [[r, 1], ...H];
   }
-  /** The greatest factorial factorization (SymPy dmp_gff_list). */
+  /**
+   * The greatest factorial factorization.
+   *
+   * @param f - Polynomial to operate on.
+   * @returns The greatest factorial factorization.
+   * @throws MultivariatePolynomialError when the operation requires a univariate polynomial.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_gff_list`
+   */
   dmpGffList(f: P): [P, number][] {
     if (this.ngens > 1) throw new MultivariatePolynomialError('greatest factorial factorization of a multivariate polynomial');
     return this.dupGffList(f);
   }
 
-  /** The factorization (content, [(factor, multiplicity)]) (SymPy dmp_factor_list). */
+  /**
+   * The factorization (content, [(factor, multiplicity)]).
+   *
+   * @param f - Polynomial to operate on.
+   * @returns The factorization (content, [(factor, multiplicity)]).
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_factor_list`
+   */
   dmpFactorList(f: P): [Expr, [P, number][]] {
     if (this.domain instanceof GaussianIntegerRing) {
       const K = this.domain;
@@ -1224,64 +2114,148 @@ export abstract class IPolys<P extends CompatElement<P>> {
     const K = this.domain;
     return [groundConvert(K, c), K instanceof AlgebraicField || K instanceof GaussianRationalField ? sortExtensionFactors(result, K, this.ngens - 1) : result];
   }
-  /** The factorization (SymPy dup_factor_list). */
+  /**
+   * The factorization.
+   *
+   * @param f - Polynomial to operate on.
+   * @returns The factorization.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_factor_list`
+   */
   dupFactorList(f: P): [Expr, [P, number][]] {
     return this.dmpFactorList(f);
   }
-  /** The factorization over ZZ (SymPy dup_zz_factor). */
+  /**
+   * The factorization over ZZ.
+   *
+   * @param f - Polynomial to operate on.
+   * @returns The factorization over ZZ.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_zz_factor`
+   */
   dupZzFactor(f: P): [Expr, [P, number][]] {
     return this.dmpFactorList(f);
   }
-  /** The factorization over ZZ (SymPy dmp_zz_factor). */
+  /**
+   * The factorization over ZZ.
+   *
+   * @param f - Polynomial to operate on.
+   * @returns The factorization over ZZ.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_zz_factor`
+   */
   dmpZzFactor(f: P): [Expr, [P, number][]] {
     return this.dmpFactorList(f);
   }
-  /** Factorization over the coefficient domain. */
+  /**
+   * Factorization over the coefficient domain.
+   *
+   * @param f - Polynomial to operate on.
+   * @returns Factorization over the coefficient domain.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_ext_factor`
+   */
   dupExtFactor(f: P): [Expr, [P, number][]] {
     return this.dmpFactorList(f);
   }
-  /** Factorization over the coefficient domain. */
+  /**
+   * Factorization over the coefficient domain.
+   *
+   * @param f - Polynomial to operate on.
+   * @returns Factorization over the coefficient domain.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_ext_factor`
+   */
   dmpExtFactor(f: P): [Expr, [P, number][]] {
     return this.dmpFactorList(f);
   }
-  /** Factorization over the coefficient domain. */
+  /**
+   * Factorization over the coefficient domain.
+   *
+   * @param f - Polynomial to operate on.
+   * @returns Factorization over the coefficient domain.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_qq_i_factor`
+   */
   dupQqIFactor(f: P): [Expr, [P, number][]] {
     return this.dmpFactorList(f);
   }
-  /** Factorization over the coefficient domain. */
+  /**
+   * Factorization over the coefficient domain.
+   *
+   * @param f - Polynomial to operate on.
+   * @returns Factorization over the coefficient domain.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_qq_i_factor`
+   */
   dmpQqIFactor(f: P): [Expr, [P, number][]] {
     return this.dmpFactorList(f);
   }
-  /** Factorization over the coefficient domain. */
+  /**
+   * Factorization over the coefficient domain.
+   *
+   * @param f - Polynomial to operate on.
+   * @returns Factorization over the coefficient domain.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_zz_i_factor`
+   */
   dupZzIFactor(f: P): [Expr, [P, number][]] {
     return this.dmpFactorList(f);
   }
-  /** Factorization over the coefficient domain. */
+  /**
+   * Factorization over the coefficient domain.
+   *
+   * @param f - Polynomial to operate on.
+   * @returns Factorization over the coefficient domain.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_zz_i_factor`
+   */
   dmpZzIFactor(f: P): [Expr, [P, number][]] {
     return this.dmpFactorList(f);
   }
-  /** Factorization of a square-free integer polynomial. */
+  /**
+   * Factorization of a square-free integer polynomial.
+   *
+   * @param f - Polynomial to operate on.
+   * @returns Factorization of a square-free integer polynomial.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_zz_factor_sqf`
+   */
   dupZzFactorSqf(f: P): [Expr, P[]] {
     const [c, factors] = this.dmpFactorList(f);
     return [c, factors.map(([p]) => p)];
   }
-  /** Include the content in a factor with multiplicity one. */
+  /**
+   * Include the content in a factor with multiplicity one.
+   *
+   * @param f - Polynomial to operate on.
+   * @returns Include the content in a factor with multiplicity one.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_factor_list_include`
+   */
   dupFactorListInclude(f: P): [P, number][] {
     const [c, factors] = this.dmpFactorList(f);
     const head = factors[0];
     if (head === undefined) return [[this.groundNew(c), 1]];
     return [[head[0].mulGround(c), head[1]], ...factors.slice(1)];
   }
-  /** Multivariate factorization including the content. */
+  /**
+   * Multivariate factorization including the content.
+   *
+   * @param f - Polynomial to operate on.
+   * @returns Multivariate factorization including the content.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_factor_list_include`
+   */
   dmpFactorListInclude(f: P): [P, number][] {
     return this.dupFactorListInclude(f);
   }
-  /** The n-th cyclotomic polynomial over the integers. */
+  /**
+   * The n-th cyclotomic polynomial over the integers.
+   *
+   * @param n - Index of the cyclotomic polynomial.
+   * @returns The n-th cyclotomic polynomial over the integers.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_zz_cyclotomic_poly`
+   */
   dupZzCyclotomicPoly(n: number): P {
     const cs = cyclotomicCoeffs(n);
     return this.fromTerms(cs.map((c, i) => [this.unit(0, cs.length - 1 - i), Rational.of(c)]));
   }
-  /** Cyclotomic factorization of x**n - 1 or x**n + 1. */
+  /**
+   * Cyclotomic factorization of x**n - 1 or x**n + 1.
+   *
+   * @param f - Polynomial to operate on.
+   * @returns The matching value, or `NoMatch` when the requested form is unavailable.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_zz_cyclotomic_factor`
+   */
   dupZzCyclotomicFactor(f: P): P[] | NoMatchResult {
     const terms = f.listterms();
     if (terms.length !== 2 || !groundEq(this.groundLC(f), this.domain.one)) return NoMatch;
@@ -1291,11 +2265,23 @@ export abstract class IPolys<P extends CompatElement<P>> {
     const positive = groundEq(constant, this.domain.one);
     return divisors(positive ? 2 * n : n).filter(d => !positive || BigInt(n) % d !== 0n).map(d => this.dupZzCyclotomicPoly(Number(d)));
   }
-  /** Univariate irreducibility over the coefficient domain. */
+  /**
+   * Univariate irreducibility over the coefficient domain.
+   *
+   * @param f - Polynomial to operate on.
+   * @returns Whether the polynomial is irreducible over its coefficient domain.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_irreducible_p`
+   */
   dupIrreducibleP(f: P): boolean {
     return this.dmpIrreducibleP(f);
   }
-  /** Univariate irreducibility over the integers. */
+  /**
+   * Univariate irreducibility over the integers.
+   *
+   * @param f - Polynomial to operate on.
+   * @returns The truth value, including `unknown` if undecidable.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_zz_irreducible_p`
+   */
   dupZzIrreducibleP(f: P): Truth {
     const coeffs = this.toPoly(f).allCoeffs().map(c => rat(c).p);
     const content = coeffs.slice(1).reduce((a, b) => igcd(a, b), 0n);
@@ -1306,12 +2292,24 @@ export abstract class IPolys<P extends CompatElement<P>> {
     }
     return 'unknown';
   }
-  /** f is irreducible (SymPy dmp_irreducible_p). */
+  /**
+   * f is irreducible.
+   *
+   * @param f - Polynomial to operate on.
+   * @returns Whether the polynomial is irreducible over its coefficient domain.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_irreducible_p`
+   */
   dmpIrreducibleP(f: P): boolean {
     const [, fs] = this.dmpFactorList(f);
     return fs.length === 1 && at(first(fs), 1) === 1;
   }
-  /** The Knuth-Cohen variant of the Mignotte bound (SymPy dup_zz_mignotte_bound). */
+  /**
+   * The Knuth-Cohen variant of the Mignotte bound.
+   *
+   * @param f - Polynomial to operate on.
+   * @returns The Knuth-Cohen variant of the Mignotte bound.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_zz_mignotte_bound`
+   */
   dupZzMignotteBound(f: P): Expr {
     const d = this.degIn(f, 0);
     const delta = Math.ceil(d / 2);
@@ -1324,7 +2322,14 @@ export abstract class IPolys<P extends CompatElement<P>> {
     const bound = t1 * eucl + t2 * (lc < 0n ? -lc : lc) + rat(this.dupMaxNorm(f)).p;
     return Rational.of(-floorDiv(-bound, 2n) * 2n);
   }
-  /** f is a cyclotomic polynomial (SymPy dup_cyclotomic_p). */
+  /**
+   * f is a cyclotomic polynomial.
+   *
+   * @param f - Polynomial to operate on.
+   * @param irreducible - Whether the polynomial is already known to be irreducible.
+   * @returns Whether the input is a cyclotomic polynomial.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_cyclotomic_p`
+   */
   dupCyclotomicP(f: P, irreducible = false): boolean {
     const K = this.domain;
     if (!(isZZ(K) || K instanceof RationalField)) return false;
@@ -1357,20 +2362,46 @@ export abstract class IPolys<P extends CompatElement<P>> {
     return S0.mul(S0).equals(F) && this.dupCyclotomicP(S0);
   }
 
-  /** The resultant in x_0 (SymPy dmp_resultant): a polynomial of R[1:], or a ground element for a univariate ring. */
+  /**
+   * The resultant in x_0: a polynomial of R[1:], or a ground element for a univariate ring.
+   *
+   * @param f - Polynomial to operate on.
+   * @param g - Second polynomial operand.
+   * @returns The resultant in x_0: a polynomial of R[1:], or a ground element for a univariate ring.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_resultant`
+   */
   dmpResultant(f: P, g: P): P | Expr {
     return this.dropIn(this.fromExprPoly(resultant(f.asExpr(), g.asExpr(), this.gen0())), 0);
   }
-  /** The resultant (SymPy dup_resultant). */
+  /**
+   * The resultant.
+   *
+   * @param f - Polynomial to operate on.
+   * @param g - Second polynomial operand.
+   * @returns The resultant.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_resultant`
+   */
   dupResultant(f: P, g: P): Expr {
     return this.groundOf(this.fromExprPoly(resultant(f.asExpr(), g.asExpr(), this.gen0())));
   }
-  /** The discriminant in x_0 (SymPy dmp_discriminant). */
+  /**
+   * The discriminant in x_0.
+   *
+   * @param f - Polynomial to operate on.
+   * @returns The discriminant in x_0.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_discriminant`
+   */
   dmpDiscriminant(f: P): P | Expr {
     if (this.degIn(f, 0) <= 0) return this.dropIn(this.zero, 0);
     return this.dropIn(this.fromExprPoly(discriminant(f.asExpr(), this.gen0())), 0);
   }
-  /** The discriminant (SymPy dup_discriminant). */
+  /**
+   * The discriminant.
+   *
+   * @param f - Polynomial to operate on.
+   * @returns The discriminant.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_discriminant`
+   */
   dupDiscriminant(f: P): Expr {
     if (this.degIn(f, 0) <= 0) return this.domain.zero;
     return this.groundOf(this.fromExprPoly(discriminant(f.asExpr(), this.gen0())));
@@ -1380,21 +2411,48 @@ export abstract class IPolys<P extends CompatElement<P>> {
     if (!(x instanceof Sym)) throw new PolynomialError('the first generator must be a symbol');
     return x;
   }
-  /** The extended Euclidean algorithm (s, t, h) with s*f + t*g = h (SymPy dup_gcdex). */
+  /**
+   * The extended Euclidean algorithm (s, t, h) with s*f + t*g = h.
+   *
+   * @param f - Polynomial to operate on.
+   * @param g - Second polynomial operand.
+   * @returns The extended Euclidean algorithm (s, t, h) with s*f + t*g = h.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_gcdex`
+   */
   dupGcdex(f: P, g: P): [P, P, P] {
     const [s, t, h] = this.toPoly(f).gcdex(this.toPoly(g));
     return [this.fromPoly(s), this.fromPoly(t), this.fromPoly(h)];
   }
-  /** The half extended Euclidean algorithm (s, h) with s*f = h mod g (SymPy dup_half_gcdex). */
+  /**
+   * The half extended Euclidean algorithm (s, h) with s*f = h mod g.
+   *
+   * @param f - Polynomial to operate on.
+   * @param g - Second polynomial operand.
+   * @returns The half extended Euclidean algorithm (s, h) with s*f = h mod g.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_half_gcdex`
+   */
   dupHalfGcdex(f: P, g: P): [P, P] {
     const [s, , h] = this.dupGcdex(f, g);
     return [s, h];
   }
-  /** The inverse of f modulo g (SymPy dup_invert). */
+  /**
+   * The inverse of f modulo g.
+   *
+   * @param f - Polynomial to operate on.
+   * @param g - Second polynomial operand.
+   * @returns The inverse of f modulo g.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_invert`
+   */
   dupInvert(f: P, g: P): P {
     return this.fromPoly(this.toPoly(f).invert(this.toPoly(g)));
   }
-  /** The Sturm sequence (SymPy dup_sturm). */
+  /**
+   * The Sturm sequence.
+   *
+   * @param f - Polynomial to operate on.
+   * @returns The Sturm sequence.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_sturm`
+   */
   dupSturm(f: P): P[] {
     return this.toPoly(f).sturm().map((p) => this.fromPoly(p));
   }
@@ -1439,21 +2497,49 @@ export abstract class IPolys<P extends CompatElement<P>> {
     }
     return [R, S];
   }
-  /** The subresultant PRS and the scalar subresultants (SymPy dup_inner_subresultants). */
+  /**
+   * The subresultant PRS and the scalar subresultants.
+   *
+   * @param f - Polynomial to operate on.
+   * @param g - Second polynomial operand.
+   * @returns The subresultant PRS and the scalar subresultants.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_inner_subresultants`
+   */
   dupInnerSubresultants(f: P, g: P): [P[], Expr[]] {
     const [R, S] = this.innerSubresultants(f, g);
     return [R, S.map((s) => this.groundOf(s))];
   }
-  /** The subresultant PRS in x_0 and the scalar subresultants in R[1:] (SymPy dmp_inner_subresultants). */
+  /**
+   * The subresultant PRS in x_0 and the scalar subresultants in R[1:].
+   *
+   * @param f - Polynomial to operate on.
+   * @param g - Second polynomial operand.
+   * @returns The subresultant PRS in x_0 and the scalar subresultants in R[1:].
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_inner_subresultants`
+   */
   dmpInnerSubresultants(f: P, g: P): [P[], (P | Expr)[]] {
     const [R, S] = this.innerSubresultants(f, g);
     return [R, S.map((s) => this.dropIn(s, 0))];
   }
-  /** The subresultant PRS (SymPy dup_subresultants). */
+  /**
+   * The subresultant PRS.
+   *
+   * @param f - Polynomial to operate on.
+   * @param g - Second polynomial operand.
+   * @returns The subresultant PRS.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_subresultants`
+   */
   dupSubresultants(f: P, g: P): P[] {
     return this.innerSubresultants(f, g)[0];
   }
-  /** The subresultant PRS in x_0 (SymPy dmp_subresultants). */
+  /**
+   * The subresultant PRS in x_0.
+   *
+   * @param f - Polynomial to operate on.
+   * @param g - Second polynomial operand.
+   * @returns The subresultant PRS in x_0.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_subresultants`
+   */
   dmpSubresultants(f: P, g: P): P[] {
     return this.innerSubresultants(f, g)[0];
   }
@@ -1463,12 +2549,26 @@ export abstract class IPolys<P extends CompatElement<P>> {
     const [R, S] = this.innerSubresultants(f, g);
     return [this.degIn(last(R), 0) > 0 ? this.zero : last(S), R];
   }
-  /** The resultant from the subresultant PRS and the PRS (SymPy dup_prs_resultant). */
+  /**
+   * The resultant from the subresultant PRS and the PRS.
+   *
+   * @param f - Polynomial to operate on.
+   * @param g - Second polynomial operand.
+   * @returns The resultant from the subresultant PRS and the PRS.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_prs_resultant`
+   */
   dupPrsResultant(f: P, g: P): [Expr, P[]] {
     const [r, R] = this.prsResultant(f, g);
     return [this.groundOf(r), R];
   }
-  /** The resultant in x_0 from the subresultant PRS and the PRS (SymPy dmp_prs_resultant). */
+  /**
+   * The resultant in x_0 from the subresultant PRS and the PRS.
+   *
+   * @param f - Polynomial to operate on.
+   * @param g - Second polynomial operand.
+   * @returns The resultant in x_0 from the subresultant PRS and the PRS.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_prs_resultant`
+   */
   dmpPrsResultant(f: P, g: P): [P | Expr, P[]] {
     const [r, R] = this.prsResultant(f, g);
     return [this.dropIn(r, 0), R];
@@ -1480,23 +2580,41 @@ export abstract class IPolys<P extends CompatElement<P>> {
   }
   /**
    * The resultant in x_0 modulo the prime p, its coefficients in the symmetric
-   * range (SymPy dmp_zz_modular_resultant). SymPy evaluates and interpolates
+   * range. SymPy evaluates and interpolates
    * modulo p, which gives the same polynomial but raises HomomorphismFailed
    * when p has too few evaluation points; reducing the resultant itself has
    * no such limit.
+   *
+   * @param f - Polynomial to operate on.
+   * @param g - Second polynomial operand.
+   * @param p - Prime modulus for computing the resultant.
+   * @returns The resultant in the remaining generators, with coefficients reduced modulo the prime.
+   * @throws DomainError when the coefficient domain is not the integers.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_zz_modular_resultant`
    */
   dmpZzModularResultant(f: P, g: P, p: IntLike): P | Expr {
     if (!isZZ(this.domain)) throw new DomainError(`modular resultants need ZZ, got ${this.domain.toString()}`);
     return this.dropIn(this.dupTrunc(this.collinsResultant(f, g), p), 0);
   }
   /**
-   * The resultant in x_0 over ZZ (SymPy dmp_zz_collins_resultant, Collins's
-   * modular algorithm; the resultant it reconstructs is computed directly).
+   * The resultant in x_0 over ZZ.
+   *
+   * @param f - Polynomial to operate on.
+   * @param g - Second polynomial operand.
+   * @returns The resultant in x_0 over ZZ.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_zz_collins_resultant`
    */
   dmpZzCollinsResultant(f: P, g: P): P | Expr {
     return this.dropIn(this.collinsResultant(f, g), 0);
   }
-  /** The resultant in x_0 over QQ (SymPy dmp_qq_collins_resultant). */
+  /**
+   * The resultant in x_0 over QQ.
+   *
+   * @param f - Polynomial to operate on.
+   * @param g - Second polynomial operand.
+   * @returns The resultant in x_0 over QQ.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_qq_collins_resultant`
+   */
   dmpQqCollinsResultant(f: P, g: P): P | Expr {
     return this.dropIn(this.collinsResultant(f, g), 0);
   }
@@ -1520,14 +2638,24 @@ export abstract class IPolys<P extends CompatElement<P>> {
     return [c, this.exquoBy(f, c)];
   }
   /**
-   * The content in x_0, an element of R[1:] (SymPy dmp_content); in a
+   * The content in x_0, an element of R[1:]; in a
    * univariate ring the ground content (where SymPy fails).
+   *
+   * @param f - Polynomial to operate on.
+   * @returns The content in x_0, an element of R[1:].
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_content`
    */
   dmpContent(f: P): P | Expr {
     if (this.ngens === 1) return this.dupContent(f);
     return this.dropIn(this.contentOf(f), 0);
   }
-  /** The content in x_0, an element of R[1:], and the primitive part (SymPy dmp_primitive). */
+  /**
+   * The content in x_0, an element of R[1:], and the primitive part.
+   *
+   * @param f - Polynomial to operate on.
+   * @returns The content in x_0, an element of R[1:], and the primitive part.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_primitive`
+   */
   dmpPrimitive(f: P): [P | Expr, P] {
     if (this.ngens === 1) return this.dupPrimitive(f);
     const [c, p] = this.primitiveOf(f);
@@ -1564,19 +2692,47 @@ export abstract class IPolys<P extends CompatElement<P>> {
     }
     return [h, this.exquoBy(f, h), this.exquoBy(g, h)];
   }
-  /** The gcd and the cofactors over a ring by the subresultant PRS (SymPy dup_rr_prs_gcd). */
+  /**
+   * The gcd and the cofactors over a ring by the subresultant PRS.
+   *
+   * @param f - Polynomial to operate on.
+   * @param g - Second polynomial operand.
+   * @returns The gcd and the cofactors over a ring by the subresultant PRS.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_rr_prs_gcd`
+   */
   dupRrPrsGcd(f: P, g: P): [P, P, P] {
     return this.prsGcd(f, g, false);
   }
-  /** The gcd and the cofactors over a field by the subresultant PRS (SymPy dup_ff_prs_gcd). */
+  /**
+   * The gcd and the cofactors over a field by the subresultant PRS.
+   *
+   * @param f - Polynomial to operate on.
+   * @param g - Second polynomial operand.
+   * @returns The gcd and the cofactors over a field by the subresultant PRS.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_ff_prs_gcd`
+   */
   dupFfPrsGcd(f: P, g: P): [P, P, P] {
     return this.prsGcd(f, g, true);
   }
-  /** The gcd and the cofactors over a ring by the subresultant PRS (SymPy dmp_rr_prs_gcd). */
+  /**
+   * The gcd and the cofactors over a ring by the subresultant PRS.
+   *
+   * @param f - Polynomial to operate on.
+   * @param g - Second polynomial operand.
+   * @returns The gcd and the cofactors over a ring by the subresultant PRS.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_rr_prs_gcd`
+   */
   dmpRrPrsGcd(f: P, g: P): [P, P, P] {
     return this.prsGcd(f, g, false);
   }
-  /** The gcd and the cofactors over a field by the subresultant PRS (SymPy dmp_ff_prs_gcd). */
+  /**
+   * The gcd and the cofactors over a field by the subresultant PRS.
+   *
+   * @param f - Polynomial to operate on.
+   * @param g - Second polynomial operand.
+   * @returns The gcd and the cofactors over a field by the subresultant PRS.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_ff_prs_gcd`
+   */
   dmpFfPrsGcd(f: P, g: P): [P, P, P] {
     return this.prsGcd(f, g, true);
   }
@@ -1585,30 +2741,74 @@ export abstract class IPolys<P extends CompatElement<P>> {
    * dup_zz_heu_gcd). The normalized gcd is unique, so dmpInnerGcd gives it:
    * it runs the heuristic of euclidtools.ts, with a fallback where SymPy
    * raises HeuristicGCDFailed.
+   *
+   * @param f - Polynomial to operate on.
+   * @param g - Second polynomial operand.
+   * @returns The gcd and the cofactors over ZZ by the heuristic gcd (SymPy dup_zz_heu_gcd).
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_zz_heu_gcd`
    */
   dupZzHeuGcd(f: P, g: P): [P, P, P] {
     return this.dmpInnerGcd(f, g);
   }
-  /** The gcd and the cofactors over ZZ by the heuristic gcd (SymPy dmp_zz_heu_gcd). */
+  /**
+   * The gcd and the cofactors over ZZ by the heuristic gcd.
+   *
+   * @param f - Polynomial to operate on.
+   * @param g - Second polynomial operand.
+   * @returns The gcd and the cofactors over ZZ by the heuristic gcd.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_zz_heu_gcd`
+   */
   dmpZzHeuGcd(f: P, g: P): [P, P, P] {
     return this.dmpInnerGcd(f, g);
   }
-  /** The monic gcd and the cofactors over QQ by the heuristic gcd (SymPy dup_qq_heu_gcd). */
+  /**
+   * The monic gcd and the cofactors over QQ by the heuristic gcd.
+   *
+   * @param f - Polynomial to operate on.
+   * @param g - Second polynomial operand.
+   * @returns The monic gcd and the cofactors over QQ by the heuristic gcd.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_qq_heu_gcd`
+   */
   dupQqHeuGcd(f: P, g: P): [P, P, P] {
     return this.dmpInnerGcd(f, g);
   }
-  /** The monic gcd and the cofactors over QQ by the heuristic gcd (SymPy dmp_qq_heu_gcd). */
+  /**
+   * The monic gcd and the cofactors over QQ by the heuristic gcd.
+   *
+   * @param f - Polynomial to operate on.
+   * @param g - Second polynomial operand.
+   * @returns The monic gcd and the cofactors over QQ by the heuristic gcd.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_qq_heu_gcd`
+   */
   dmpQqHeuGcd(f: P, g: P): [P, P, P] {
     return this.dmpInnerGcd(f, g);
   }
 
   /**
-   * f/g in lowest terms (SymPy dmp_cancel): [p, q], or with include false the
+   * f/g in lowest terms: [p, q], or with include false the
    * ground factors apart, [cp, cq, p, q] with f/g = (cp*p)/(cq*q). Over QQ the
    * denominators are cleared first; p and q get nonnegative leading
    * coefficients.
+   *
+   * @param f - Polynomial to operate on.
+   * @param g - Second polynomial operand.
+   * @param include - Incorporate the scalar factors in the reduced numerator and denominator. If false, return the scalars separately.
+   * @returns F/g in lowest terms: [p, q], or with include false the ground factors apart, [cp, cq, p, q] with f/g = (cp*p)/(cq*q).
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_cancel`
    */
   dmpCancel(f: P, g: P, include?: true): [P, P];
+  /**
+   * f/g in lowest terms: [p, q], or with include false the
+   * ground factors apart, [cp, cq, p, q] with f/g = (cp*p)/(cq*q). Over QQ the
+   * denominators are cleared first; p and q get nonnegative leading
+   * coefficients.
+   *
+   * @param f - Polynomial to operate on.
+   * @param g - Second polynomial operand.
+   * @param include - Incorporate the scalar factors in the reduced numerator and denominator. If false, return the scalars separately.
+   * @returns F/g in lowest terms: [p, q], or with include false the ground factors apart, [cp, cq, p, q] with f/g = (cp*p)/(cq*q).
+   * @see SymPy `sympy.polys.compatibility.IPolys.dmp_cancel`
+   */
   dmpCancel(f: P, g: P, include: false): [Expr, Expr, P, P];
   dmpCancel(f: P, g: P, include = true): [P, P] | [Expr, Expr, P, P] {
     const K = this.domain;
@@ -1633,8 +2833,25 @@ export abstract class IPolys<P extends CompatElement<P>> {
     if (!include) return [cp, cq, p, q];
     return [p.mulGround(cp), q.mulGround(cq)];
   }
-  /** f/g in lowest terms (SymPy dup_cancel). */
+  /**
+   * f/g in lowest terms.
+   *
+   * @param f - Polynomial to operate on.
+   * @param g - Second polynomial operand.
+   * @param include - Incorporate the scalar factors in the reduced numerator and denominator. If false, return the scalars separately.
+   * @returns F/g in lowest terms.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_cancel`
+   */
   dupCancel(f: P, g: P, include?: true): [P, P];
+  /**
+   * f/g in lowest terms.
+   *
+   * @param f - Polynomial to operate on.
+   * @param g - Second polynomial operand.
+   * @param include - Incorporate the scalar factors in the reduced numerator and denominator. If false, return the scalars separately.
+   * @returns F/g in lowest terms.
+   * @see SymPy `sympy.polys.compatibility.IPolys.dup_cancel`
+   */
   dupCancel(f: P, g: P, include: false): [Expr, Expr, P, P];
   dupCancel(f: P, g: P, include = true): [P, P] | [Expr, Expr, P, P] {
     return include ? this.dmpCancel(f, g) : this.dmpCancel(f, g, false);

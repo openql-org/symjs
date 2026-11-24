@@ -23,7 +23,7 @@ import { gcd as igcd } from '../core/numbers';
 import { type Domain, domainArith, groundRational, isDomainElement } from './domains';
 import { monomialKey, compareMonomialKeys, type MonomialOrdering } from './orderings';
 
-/** A dense recursive polynomial: nested coefficient lists (SymPy dmp). */
+/** A dense recursive polynomial: nested coefficient lists. */
 export type DensePoly = readonly unknown[];
 /** A monomial (exponent tuple). */
 export type Monom = readonly number[];
@@ -37,7 +37,12 @@ const ninf = -Infinity;
 // coefficients (Python truth value and equality)
 // ---------------------------------------------------------------------------
 
-/** Is a coefficient (or a nested list) zero/empty, as Python's `not c`? */
+/**
+ * Test a ground coefficient for zero or a nested coefficient list for emptiness.
+ *
+ * @param c - Coefficient of the term.
+ * @returns Whether the coefficient is zero or the list is empty.
+ */
 export function groundIsZero(c: unknown): boolean {
   if (Array.isArray(c)) return c.length === 0;
   if (typeof c === 'number') return c === 0;
@@ -48,7 +53,13 @@ export function groundIsZero(c: unknown): boolean {
   return typeof c === 'object' && !(c instanceof Expr) && 'isZero' in c && c.isZero === true;
 }
 
-/** Python equality of two coefficients (numbers of different types compare by value). */
+/**
+ * Compare ground coefficients by value, including across numeric representations.
+ *
+ * @param a - First operand.
+ * @param b - Second operand.
+ * @returns Whether the two coefficients are equal.
+ */
 export function groundEquals(a: unknown, b: unknown): boolean {
   const [ra, rb] = [groundRational(a), groundRational(b)];
   if (ra !== undefined && rb !== undefined) return ra[0] * rb[1] === rb[0] * ra[1];
@@ -80,33 +91,108 @@ const monomEntries = (f: TermDict): [Monom, unknown][] => [...f].map(([m, c]) =>
 // leading and trailing coefficients, degrees
 // ---------------------------------------------------------------------------
 
-/** The leading coefficient of f (SymPy poly_LC, dup_LC, dmp_LC). */
+/**
+ * The leading coefficient of f.
+ *
+ * @param f - Polynomial in dense, leading-coefficient-first representation.
+ * @param K - Coefficient domain for the polynomial arithmetic.
+ * @returns The leading coefficient of f.
+ * @see SymPy `sympy.polys.densebasic.poly_LC`
+ * @see SymPy `sympy.polys.densebasic.dup_LC`
+ * @see SymPy `sympy.polys.densebasic.dmp_LC`
+ * @example
+ * ```ts
+ * import { ZZ, dmpLC } from '@symjs/symjs';
+ *
+ * dmpLC([], ZZ); // => 0
+ * dmpLC([1, 2, 3], ZZ); // => 1
+ * ```
+ */
 export function polyLC(f: DensePoly, K: Domain): unknown {
   return f.length ? f[0] : K.zero;
 }
 
-/** The trailing coefficient of f (SymPy poly_TC, dup_TC, dmp_TC). */
+/**
+ * The trailing coefficient of f.
+ *
+ * @param f - Polynomial in dense, leading-coefficient-first representation.
+ * @param K - Coefficient domain for the polynomial arithmetic.
+ * @returns The trailing coefficient of f.
+ * @see SymPy `sympy.polys.densebasic.poly_TC`
+ * @see SymPy `sympy.polys.densebasic.dup_TC`
+ * @see SymPy `sympy.polys.densebasic.dmp_TC`
+ * @example
+ * ```ts
+ * import { ZZ, dmpTC } from '@symjs/symjs';
+ *
+ * dmpTC([], ZZ); // => 0
+ * dmpTC([1, 2, 3], ZZ); // => 3
+ * ```
+ */
 export function polyTC(f: DensePoly, K: Domain): unknown {
   return f.length ? f[f.length - 1] : K.zero;
 }
 
 export { polyLC as dupLC, polyLC as dmpLC, polyTC as dupTC, polyTC as dmpTC };
 
-/** The ground leading coefficient (SymPy dmp_ground_LC). */
+/**
+ * The ground leading coefficient.
+ *
+ * @param fIn - Polynomial in dense, leading-coefficient-first representation.
+ * @param uIn - Number of variables minus one.
+ * @param K - Coefficient domain for the polynomial arithmetic.
+ * @returns The ground leading coefficient.
+ * @see SymPy `sympy.polys.densebasic.dmp_ground_LC`
+ * @example
+ * ```ts
+ * import { ZZ, dmpGroundLC } from '@symjs/symjs';
+ *
+ * dmpGroundLC([[[1], [2, 3]]], 2, ZZ); // => 1
+ * ```
+ */
 export function dmpGroundLC(fIn: DensePoly, uIn: number, K: Domain): unknown {
   let [f, u] = [fIn, int(uIn)];
   for (; u; u--) f = asList(polyLC(f, K));
   return polyLC(f, K);
 }
 
-/** The ground trailing coefficient (SymPy dmp_ground_TC). */
+/**
+ * The ground trailing coefficient.
+ *
+ * @param fIn - Polynomial in dense, leading-coefficient-first representation.
+ * @param uIn - Number of variables minus one.
+ * @param K - Coefficient domain for the polynomial arithmetic.
+ * @returns The ground trailing coefficient.
+ * @see SymPy `sympy.polys.densebasic.dmp_ground_TC`
+ * @example
+ * ```ts
+ * import { ZZ, dmpGroundTC } from '@symjs/symjs';
+ *
+ * dmpGroundTC([[[1], [2, 3]]], 2, ZZ); // => 3
+ * ```
+ */
 export function dmpGroundTC(fIn: DensePoly, uIn: number, K: Domain): unknown {
   let [f, u] = [fIn, int(uIn)];
   for (; u; u--) f = asList(polyTC(f, K));
   return polyTC(f, K);
 }
 
-/** The leading term [monomial, coefficient] (SymPy dmp_true_LT). */
+/**
+ * The leading term [monomial, coefficient].
+ *
+ * @param fIn - Polynomial in dense, leading-coefficient-first representation.
+ * @param uIn - Number of variables minus one.
+ * @param K - Coefficient domain for the polynomial arithmetic.
+ * @returns The leading term [monomial, coefficient].
+ * @see SymPy `sympy.polys.densebasic.dmp_true_LT`
+ * @remarks SymPy returns `((2, 0), 4)` with tuples for the fixed-length groups.
+ * @example
+ * ```ts
+ * import { ZZ, dmpTrueLT } from '@symjs/symjs';
+ *
+ * dmpTrueLT([[4], [2, 0], [3, 0, 0]], 1, ZZ); // => [[2, 0], 4]
+ * ```
+ */
 export function dmpTrueLT(fIn: DensePoly, uIn: number, K: Domain): [number[], unknown] {
   const monom: number[] = [];
   let [f, u] = [fIn, int(uIn)];
@@ -118,12 +204,39 @@ export function dmpTrueLT(fIn: DensePoly, uIn: number, K: Domain): [number[], un
   return [monom, polyLC(f, K)];
 }
 
-/** The degree of f (-Infinity for zero; SymPy dup_degree). */
+/**
+ * The degree of f (-Infinity for zero; SymPy dup_degree).
+ *
+ * @param f - Polynomial in dense, leading-coefficient-first representation.
+ * @returns The degree of f (-Infinity for zero.
+ * @see SymPy `sympy.polys.densebasic.dup_degree`
+ * @example
+ * ```ts
+ * import { dupDegree } from '@symjs/symjs';
+ *
+ * dupDegree([1, 2, 0, 3]); // => 3
+ * ```
+ */
 export function dupDegree(f: DensePoly): number {
   return f.length ? f.length - 1 : ninf;
 }
 
-/** The degree of f in x_0 (-Infinity for zero; SymPy dmp_degree). */
+/**
+ * The degree of f in x_0 (-Infinity for zero; SymPy dmp_degree).
+ *
+ * @param f - Polynomial in dense, leading-coefficient-first representation.
+ * @param u - Number of variables minus one.
+ * @returns The degree of f in x_0 (-Infinity for zero.
+ * @see SymPy `sympy.polys.densebasic.dmp_degree`
+ * @remarks SymPy prints the degree of zero as `-inf`.
+ * @example
+ * ```ts
+ * import { dmpDegree } from '@symjs/symjs';
+ *
+ * dmpDegree([[[]]], 2); // => -Infinity
+ * dmpDegree([[2], [1, 2, 3]], 1); // => 1
+ * ```
+ */
 export function dmpDegree(f: DensePoly, u: number): number {
   return dmpZeroP(f, u) ? ninf : f.length - 1;
 }
@@ -133,7 +246,23 @@ function recDegreeIn(g: DensePoly, v: number, i: number, j: number): number {
   return Math.max(...g.map((c) => recDegreeIn(asList(c), v - 1, i + 1, j)));
 }
 
-/** The degree of f in x_j (SymPy dmp_degree_in). */
+/**
+ * The degree of f in x_j.
+ *
+ * @param f - Polynomial in dense, leading-coefficient-first representation.
+ * @param jIn - Index of the polynomial variable.
+ * @param uIn - Number of variables minus one.
+ * @returns The degree of f in x_j.
+ * @throws RangeError when a generator index is outside the allowed range.
+ * @see SymPy `sympy.polys.densebasic.dmp_degree_in`
+ * @example
+ * ```ts
+ * import { dmpDegreeIn } from '@symjs/symjs';
+ *
+ * dmpDegreeIn([[2], [1, 2, 3]], 0, 1); // => 1
+ * dmpDegreeIn([[2], [1, 2, 3]], 1, 1); // => 2
+ * ```
+ */
 export function dmpDegreeIn(f: DensePoly, jIn: number, uIn: number): number {
   const [j, u] = [int(jIn), int(uIn)];
   if (!j) return dmpDegree(f, u);
@@ -146,7 +275,21 @@ function recDegreeList(g: DensePoly, v: number, i: number, degs: number[]): void
   if (v > 0) for (const c of g) recDegreeList(asList(c), v - 1, i + 1, degs);
 }
 
-/** The degrees in x_0, ..., x_u (SymPy dmp_degree_list). */
+/**
+ * The degrees in x_0, ..., x_u.
+ *
+ * @param f - Polynomial in dense, leading-coefficient-first representation.
+ * @param uIn - Number of variables minus one.
+ * @returns The degrees in x_0, ..., x_u.
+ * @see SymPy `sympy.polys.densebasic.dmp_degree_list`
+ * @remarks SymPy returns `(1, 2)` with tuples for the fixed-length groups.
+ * @example
+ * ```ts
+ * import { dmpDegreeList } from '@symjs/symjs';
+ *
+ * dmpDegreeList([[1], [1, 2, 3]], 1); // => [1, 2]
+ * ```
+ */
 export function dmpDegreeList(f: DensePoly, uIn: number): number[] {
   const u = int(uIn);
   const degs = Array.from({ length: u + 1 }, () => ninf);
@@ -158,14 +301,39 @@ export function dmpDegreeList(f: DensePoly, uIn: number): number[] {
 // stripping, validation, copies
 // ---------------------------------------------------------------------------
 
-/** Remove leading zeros (SymPy dup_strip). */
+/**
+ * Remove leading zeros.
+ *
+ * @param f - Polynomial in dense, leading-coefficient-first representation.
+ * @returns The dense coefficient list, leading coefficient first.
+ * @see SymPy `sympy.polys.densebasic.dup_strip`
+ * @example
+ * ```ts
+ * import { dupStrip } from '@symjs/symjs';
+ *
+ * dupStrip([0, 0, 1, 2, 3, 0]); // => [1, 2, 3, 0]
+ * ```
+ */
 export function dupStrip(f: DensePoly): unknown[] {
   let i = 0;
   while (i < f.length && !nz(f[i])) i++;
   return f.slice(i);
 }
 
-/** Remove leading zeros (SymPy dmp_strip). */
+/**
+ * Remove leading zeros.
+ *
+ * @param f - Polynomial in dense, leading-coefficient-first representation.
+ * @param uIn - Number of variables minus one.
+ * @returns The dense coefficient list, leading coefficient first.
+ * @see SymPy `sympy.polys.densebasic.dmp_strip`
+ * @example
+ * ```ts
+ * import { dmpStrip } from '@symjs/symjs';
+ *
+ * dmpStrip([[], [0, 1, 2], [1]], 1); // => [[0, 1, 2], [1]]
+ * ```
+ */
 export function dmpStrip(f: DensePoly, uIn: number): unknown[] {
   const u = int(uIn);
   if (!u) return dupStrip(f);
@@ -194,7 +362,22 @@ function recStrip(g: DensePoly, v: number): unknown[] {
   );
 }
 
-/** Check the structure of a dense polynomial and return [stripped f, u] (SymPy dmp_validate). */
+/**
+ * Check the structure of a dense polynomial and return [stripped f, u].
+ *
+ * @param f - Polynomial in dense, leading-coefficient-first representation.
+ * @param K - Coefficient domain for the polynomial arithmetic.
+ * @returns Check the structure of a dense polynomial and return [stripped f, u].
+ * @throws RangeError when the coefficient lists have inconsistent nesting.
+ * @see SymPy `sympy.polys.densebasic.dmp_validate`
+ * @remarks SymPy returns `([[1, 2], [1]], 1)` with tuples for the fixed-length groups.
+ * @example
+ * ```ts
+ * import { dmpValidate } from '@symjs/symjs';
+ *
+ * dmpValidate([[], [0, 1, 2], [1]]); // => [[[1, 2], [1]], 1]
+ * ```
+ */
 export function dmpValidate(f: DensePoly, K: Domain | null = null): [unknown[], number] {
   const levels = [...recValidate(f, 0, K)];
   if (levels.length !== 1) throw new RangeError('invalid data structure for a multivariate polynomial');
@@ -202,39 +385,130 @@ export function dmpValidate(f: DensePoly, K: Domain | null = null): [unknown[], 
   return [recStrip(f, u), u];
 }
 
-/** The coefficients in reverse order, stripped (SymPy dup_reverse). */
+/**
+ * The coefficients in reverse order, stripped.
+ *
+ * @param f - Polynomial in dense, leading-coefficient-first representation.
+ * @returns The coefficients in reverse order, stripped.
+ * @see SymPy `sympy.polys.densebasic.dup_reverse`
+ * @example
+ * ```ts
+ * import { dupReverse } from '@symjs/symjs';
+ *
+ * dupReverse([1, 2, 3, 0]); // => [3, 2, 1]
+ * ```
+ */
 export function dupReverse(f: DensePoly): unknown[] {
   return dupStrip([...f].reverse());
 }
 
-/** A copy of f (SymPy dup_copy). */
+/**
+ * A copy of f.
+ *
+ * @param f - Polynomial in dense, leading-coefficient-first representation.
+ * @returns A copy of f.
+ * @see SymPy `sympy.polys.densebasic.dup_copy`
+ * @example
+ * ```ts
+ * import { dupCopy } from '@symjs/symjs';
+ *
+ * dupCopy([1, 2, 3, 0]); // => [1, 2, 3, 0]
+ * ```
+ */
 export function dupCopy(f: DensePoly): unknown[] {
   return [...f];
 }
 
-/** A deep copy of f (SymPy dmp_copy). */
+/**
+ * A deep copy of f.
+ *
+ * @param f - Polynomial in dense, leading-coefficient-first representation.
+ * @param uIn - Number of variables minus one.
+ * @returns A deep copy of f.
+ * @see SymPy `sympy.polys.densebasic.dmp_copy`
+ * @example
+ * ```ts
+ * import { dmpCopy } from '@symjs/symjs';
+ *
+ * dmpCopy([[1], [1, 2]], 1); // => [[1], [1, 2]]
+ * ```
+ */
 export function dmpCopy(f: DensePoly, uIn: number): unknown[] {
   const u = int(uIn);
   if (!u) return [...f];
   return f.map((c) => dmpCopy(asList(c), u - 1));
 }
 
-/** f as nested tuples (SymPy dup_to_tuple; JavaScript arrays). */
+/**
+ * f as nested tuples.
+ *
+ * @param f - Polynomial in dense, leading-coefficient-first representation.
+ * @returns The dense coefficient list, leading coefficient first.
+ * @see SymPy `sympy.polys.densebasic.dup_to_tuple`
+ * @remarks SymPy returns `(1, 2, 3)` with tuples for the fixed-length groups.
+ * @example
+ * ```ts
+ * import { dupToTuple } from '@symjs/symjs';
+ *
+ * dupToTuple([1, 2, 3]); // => [1, 2, 3]
+ * ```
+ */
 export function dupToTuple(f: DensePoly): unknown[] {
   return [...f];
 }
 
-/** f as nested tuples (SymPy dmp_to_tuple; JavaScript arrays). */
+/**
+ * f as nested tuples.
+ *
+ * @param f - Polynomial in dense, leading-coefficient-first representation.
+ * @param u - Number of variables minus one.
+ * @returns The dense coefficient list, leading coefficient first.
+ * @see SymPy `sympy.polys.densebasic.dmp_to_tuple`
+ * @remarks SymPy returns `((1,), (1, 2))` with tuples for the fixed-length groups.
+ * @example
+ * ```ts
+ * import { dmpToTuple } from '@symjs/symjs';
+ *
+ * dmpToTuple([[1], [1, 2]], 1); // => [[1], [1, 2]]
+ * ```
+ */
 export function dmpToTuple(f: DensePoly, u: number): unknown[] {
   return dmpCopy(f, u);
 }
 
-/** The coefficients normalized in K (SymPy dup_normal). */
+/**
+ * The coefficients normalized in K.
+ *
+ * @param f - Polynomial in dense, leading-coefficient-first representation.
+ * @param K - Coefficient domain for the polynomial arithmetic.
+ * @returns The coefficients normalized in K.
+ * @see SymPy `sympy.polys.densebasic.dup_normal`
+ * @example
+ * ```ts
+ * import { ZZ, dupNormal } from '@symjs/symjs';
+ *
+ * dupNormal([0, 1, 2, 3], ZZ); // => [1, 2, 3]
+ * ```
+ */
 export function dupNormal(f: DensePoly, K: Domain): unknown[] {
   return dupStrip(f.map((c) => K.new(c)));
 }
 
-/** The coefficients normalized in K (SymPy dmp_normal). */
+/**
+ * The coefficients normalized in K.
+ *
+ * @param f - Polynomial in dense, leading-coefficient-first representation.
+ * @param uIn - Number of variables minus one.
+ * @param K - Coefficient domain for the polynomial arithmetic.
+ * @returns The coefficients normalized in K.
+ * @see SymPy `sympy.polys.densebasic.dmp_normal`
+ * @example
+ * ```ts
+ * import { ZZ, dmpNormal } from '@symjs/symjs';
+ *
+ * dmpNormal([[], [0, 1, 2]], 1, ZZ); // => [[1, 2]]
+ * ```
+ */
 export function dmpNormal(f: DensePoly, uIn: number, K: Domain): unknown[] {
   const u = int(uIn);
   if (!u) return dupNormal(f, K);
@@ -244,13 +518,42 @@ export function dmpNormal(f: DensePoly, uIn: number, K: Domain): unknown[] {
   );
 }
 
-/** Convert the coefficients from K0 to K1 (SymPy dup_convert). */
+/**
+ * Convert the coefficients from K0 to K1.
+ *
+ * @param f - Polynomial in dense, leading-coefficient-first representation.
+ * @param K0 - Source coefficient domain.
+ * @param K1 - Target coefficient domain.
+ * @returns The dense coefficient list, leading coefficient first.
+ * @see SymPy `sympy.polys.densebasic.dup_convert`
+ * @example
+ * ```ts
+ * import { QQ, ZZ, dupConvert } from '@symjs/symjs';
+ *
+ * dupConvert([1, 2], ZZ, QQ).map(c => QQ.toSympy(c)); // => [1, 2]
+ * ```
+ */
 export function dupConvert(f: DensePoly, K0: Domain | null, K1: Domain): unknown[] {
   if (K0?.equals(K1) === true) return [...f];
   return dupStrip(f.map((c) => K1.convert(c, K0 ?? undefined)));
 }
 
-/** Convert the coefficients from K0 to K1 (SymPy dmp_convert). */
+/**
+ * Convert the coefficients from K0 to K1.
+ *
+ * @param f - Polynomial in dense, leading-coefficient-first representation.
+ * @param uIn - Number of variables minus one.
+ * @param K0 - Source coefficient domain.
+ * @param K1 - Target coefficient domain.
+ * @returns The dense coefficient list, leading coefficient first.
+ * @see SymPy `sympy.polys.densebasic.dmp_convert`
+ * @example
+ * ```ts
+ * import { QQ, ZZ, dmpConvert } from '@symjs/symjs';
+ *
+ * dmpConvert([1, 2], 0, ZZ, QQ).map(c => QQ.toSympy(c)); // => [1, 2]
+ * ```
+ */
 export function dmpConvert(f: DensePoly, uIn: number, K0: Domain | null, K1: Domain): unknown[] {
   const u = int(uIn);
   if (!u) return dupConvert(f, K0, K1);
@@ -261,12 +564,39 @@ export function dmpConvert(f: DensePoly, uIn: number, K0: Domain | null, K1: Dom
   );
 }
 
-/** Convert expression coefficients to K (SymPy dup_from_sympy). */
+/**
+ * Convert expression coefficients to K.
+ *
+ * @param f - Polynomial to operate on.
+ * @param K - Coefficient domain for the polynomial arithmetic.
+ * @returns The dense coefficient list, leading coefficient first.
+ * @see SymPy `sympy.polys.densebasic.dup_from_sympy`
+ * @example
+ * ```ts
+ * import { ZZ, dupFromSympy, ex } from '@symjs/symjs';
+ *
+ * dupFromSympy([ex`1`, ex`2`], ZZ); // => [1, 2]
+ * ```
+ */
 export function dupFromSympy(f: readonly Expr[], K: Domain): unknown[] {
   return dupStrip(f.map((c) => K.convert(c)));
 }
 
-/** Convert expression coefficients to K (SymPy dmp_from_sympy). */
+/**
+ * Convert expression coefficients to K.
+ *
+ * @param f - Polynomial in dense, leading-coefficient-first representation.
+ * @param uIn - Number of variables minus one.
+ * @param K - Coefficient domain for the polynomial arithmetic.
+ * @returns The dense coefficient list, leading coefficient first.
+ * @see SymPy `sympy.polys.densebasic.dmp_from_sympy`
+ * @example
+ * ```ts
+ * import { ZZ, dmpFromSympy } from '@symjs/symjs';
+ *
+ * dmpFromSympy([[1], [2]], 1, ZZ); // => [[1], [2]]
+ * ```
+ */
 export function dmpFromSympy(f: DensePoly, uIn: number, K: Domain): unknown[] {
   const u = int(uIn);
   if (!u) return dupStrip(f.map((c) => K.convert(c)));
@@ -280,21 +610,70 @@ export function dmpFromSympy(f: DensePoly, uIn: number, K: Domain): unknown[] {
 // coefficients by degree, zero, one and ground polynomials
 // ---------------------------------------------------------------------------
 
-/** The coefficient of x**n (SymPy dup_nth). */
+/**
+ * The coefficient of x**n.
+ *
+ * @param f - Polynomial in dense, leading-coefficient-first representation.
+ * @param nIn - Requested exponent.
+ * @param K - Coefficient domain for the polynomial arithmetic.
+ * @returns The coefficient of x**n.
+ * @throws RangeError when the exponent is negative.
+ * @see SymPy `sympy.polys.densebasic.dup_nth`
+ * @example
+ * ```ts
+ * import { ZZ, dupNth } from '@symjs/symjs';
+ *
+ * dupNth([1, 2, 3], 0, ZZ); // => 3
+ * dupNth([1, 2, 3], 4, ZZ); // => 0
+ * ```
+ */
 export function dupNth(f: DensePoly, nIn: number, K: Domain): unknown {
   const n = int(nIn);
   if (n < 0) throw new RangeError(`'n' must be non-negative, got ${n}`);
   return n >= f.length ? K.zero : f[f.length - 1 - n];
 }
 
-/** The coefficient of x_0**n, a dmp in u - 1 variables (SymPy dmp_nth). */
+/**
+ * The coefficient of x_0**n, a dmp in u - 1 variables.
+ *
+ * @param f - Polynomial in dense, leading-coefficient-first representation.
+ * @param nIn - Requested exponent.
+ * @param uIn - Number of variables minus one.
+ * @param _K - Coefficient domain for the polynomial arithmetic.
+ * @returns The coefficient of x_0**n, a dmp in u - 1 variables.
+ * @throws RangeError when the exponent is negative.
+ * @see SymPy `sympy.polys.densebasic.dmp_nth`
+ * @example
+ * ```ts
+ * import { ZZ, dmpNth } from '@symjs/symjs';
+ *
+ * dmpNth([[1], [2], [3]], 0, 1, ZZ); // => [3]
+ * dmpNth([[1], [2], [3]], 4, 1, ZZ); // => []
+ * ```
+ */
 export function dmpNth(f: DensePoly, nIn: number, uIn: number, _K: Domain): unknown {
   const [n, u] = [int(nIn), int(uIn)];
   if (n < 0) throw new RangeError(`'n' must be non-negative, got ${n}`);
   return n >= f.length ? dmpZero(u - 1) : f[dmpDegree(f, u) - n];
 }
 
-/** The ground coefficient of x_0**N[0] ... x_u**N[u] (SymPy dmp_ground_nth). */
+/**
+ * The ground coefficient of x_0**N[0] ... x_u**N[u].
+ *
+ * @param fIn - Polynomial in dense, leading-coefficient-first representation.
+ * @param N - Exponent vector of the requested coefficient.
+ * @param uIn - Number of variables minus one.
+ * @param K - Coefficient domain for the polynomial arithmetic.
+ * @returns The ground coefficient of x_0**N[0] ... x_u**N[u].
+ * @throws RangeError when the exponent is negative.
+ * @see SymPy `sympy.polys.densebasic.dmp_ground_nth`
+ * @example
+ * ```ts
+ * import { ZZ, dmpGroundNth } from '@symjs/symjs';
+ *
+ * dmpGroundNth([[1], [2, 3]], [0, 1], 1, ZZ); // => 2
+ * ```
+ */
 export function dmpGroundNth(fIn: DensePoly, N: readonly number[], uIn: number, K: Domain): unknown {
   let f: unknown = fIn;
   let v = int(uIn);
@@ -310,7 +689,21 @@ export function dmpGroundNth(fIn: DensePoly, N: readonly number[], uIn: number, 
   return f;
 }
 
-/** Is f the zero polynomial (SymPy dmp_zero_p)? */
+/**
+ * Test whether a dense polynomial is zero at the given nesting level.
+ *
+ * @param fIn - Polynomial in dense, leading-coefficient-first representation.
+ * @param uIn - Number of variables minus one.
+ * @returns Whether the polynomial is zero.
+ * @see SymPy `sympy.polys.densebasic.dmp_zero_p`
+ * @example
+ * ```ts
+ * import { dmpZeroP } from '@symjs/symjs';
+ *
+ * dmpZeroP([[[[[]]]]], 4); // => True
+ * dmpZeroP([[[[[1]]]]], 4); // => False
+ * ```
+ */
 export function dmpZeroP(fIn: DensePoly, uIn: number): boolean {
   let [f, u] = [fIn, int(uIn)];
   for (; u; u--) {
@@ -320,24 +713,78 @@ export function dmpZeroP(fIn: DensePoly, uIn: number): boolean {
   return f.length === 0;
 }
 
-/** The zero polynomial in u + 1 variables (SymPy dmp_zero). */
+/**
+ * The zero polynomial in u + 1 variables.
+ *
+ * @param uIn - Number of variables minus one.
+ * @returns The zero polynomial in u + 1 variables.
+ * @see SymPy `sympy.polys.densebasic.dmp_zero`
+ * @example
+ * ```ts
+ * import { dmpZero } from '@symjs/symjs';
+ *
+ * dmpZero(4); // => [[[[[]]]]]
+ * ```
+ */
 export function dmpZero(uIn: number): unknown[] {
   let r: unknown[] = [];
   for (let i = 0; i < int(uIn); i++) r = [r];
   return r;
 }
 
-/** Is f the one polynomial (SymPy dmp_one_p)? */
+/**
+ * Test whether a dense polynomial represents one.
+ *
+ * @param f - Polynomial in dense, leading-coefficient-first representation.
+ * @param u - Number of variables minus one.
+ * @param K - Coefficient domain for the polynomial arithmetic.
+ * @returns Whether the polynomial is one.
+ * @see SymPy `sympy.polys.densebasic.dmp_one_p`
+ * @example
+ * ```ts
+ * import { ZZ, dmpOneP } from '@symjs/symjs';
+ *
+ * dmpOneP([[[1]]], 2, ZZ); // => True
+ * ```
+ */
 export function dmpOneP(f: DensePoly, u: number, K: Domain): boolean {
   return dmpGroundP(f, K.one, u);
 }
 
-/** The one polynomial (SymPy dmp_one). */
+/**
+ * The one polynomial.
+ *
+ * @param u - Number of variables minus one.
+ * @param K - Coefficient domain for the polynomial arithmetic.
+ * @returns The one polynomial.
+ * @see SymPy `sympy.polys.densebasic.dmp_one`
+ * @example
+ * ```ts
+ * import { ZZ, dmpOne } from '@symjs/symjs';
+ *
+ * dmpOne(2, ZZ); // => [[[1]]]
+ * ```
+ */
 export function dmpOne(u: number, K: Domain): unknown {
   return dmpGround(K.one, u);
 }
 
-/** Is f the constant c (any constant for c = null; SymPy dmp_ground_p)? */
+/**
+ * Test whether a dense polynomial equals the given constant. Use `null` to accept any constant.
+ *
+ * @param fIn - Polynomial in dense, leading-coefficient-first representation.
+ * @param c - Coefficient of the term.
+ * @param uIn - Number of variables minus one.
+ * @returns Whether the polynomial meets the constant test.
+ * @see SymPy `sympy.polys.densebasic.dmp_ground_p`
+ * @example
+ * ```ts
+ * import { dmpGroundP } from '@symjs/symjs';
+ *
+ * dmpGroundP([[[3]]], 3, 2); // => True
+ * dmpGroundP([[[4]]], null, 2); // => True
+ * ```
+ */
 export function dmpGroundP(fIn: DensePoly, c: unknown, uIn: number): boolean {
   const none = c === null || c === undefined;
   if (!none && !nz(c)) return dmpZeroP(fIn, uIn);
@@ -349,7 +796,21 @@ export function dmpGroundP(fIn: DensePoly, c: unknown, uIn: number): boolean {
   return none ? f.length <= 1 : f.length === 1 && groundEquals(f[0], c);
 }
 
-/** The constant c as a polynomial in u + 1 variables (c itself for u = -1; SymPy dmp_ground). */
+/**
+ * The constant c as a polynomial in u + 1 variables (c itself for u = -1; SymPy dmp_ground).
+ *
+ * @param cIn - Coefficient of the term.
+ * @param uIn - Number of variables minus one.
+ * @returns The constant c as a polynomial in u + 1 variables (c itself for u = -1.
+ * @see SymPy `sympy.polys.densebasic.dmp_ground`
+ * @example
+ * ```ts
+ * import { dmpGround } from '@symjs/symjs';
+ *
+ * dmpGround(3, 5); // => [[[[[[3]]]]]]
+ * dmpGround(1, -1); // => 1
+ * ```
+ */
 export function dmpGround(cIn: unknown, uIn: number): unknown {
   const u = int(uIn);
   if (!nz(cIn)) return dmpZero(u);
@@ -358,24 +819,84 @@ export function dmpGround(cIn: unknown, uIn: number): unknown {
   return c;
 }
 
-/** n zero polynomials (n zeros of K for u < 0; SymPy dmp_zeros). */
+/**
+ * n zero polynomials (n zeros of K for u < 0; SymPy dmp_zeros).
+ *
+ * @param nIn - Number of entries to produce.
+ * @param uIn - Number of variables minus one.
+ * @param K - Coefficient domain for the polynomial arithmetic.
+ * @returns The dense coefficient list, leading coefficient first.
+ * @see SymPy `sympy.polys.densebasic.dmp_zeros`
+ * @example
+ * ```ts
+ * import { ZZ, dmpZeros } from '@symjs/symjs';
+ *
+ * dmpZeros(3, 2, ZZ); // => [[[[]]], [[[]]], [[[]]]]
+ * dmpZeros(3, -1, ZZ); // => [0, 0, 0]
+ * ```
+ */
 export function dmpZeros(nIn: number, uIn: number, K: Domain): unknown[] {
   const [n, u] = [int(nIn), int(uIn)];
   return Array.from({ length: n }, () => (u < 0 ? K.zero : dmpZero(u)));
 }
 
-/** n copies of the constant c (SymPy dmp_grounds). */
+/**
+ * n copies of the constant c.
+ *
+ * @param c - Coefficient of the term.
+ * @param nIn - Number of entries to produce.
+ * @param uIn - Number of variables minus one.
+ * @returns The dense coefficient list, leading coefficient first.
+ * @see SymPy `sympy.polys.densebasic.dmp_grounds`
+ * @example
+ * ```ts
+ * import { dmpGrounds } from '@symjs/symjs';
+ *
+ * dmpGrounds(4, 3, 2); // => [[[[4]]], [[[4]]], [[[4]]]]
+ * dmpGrounds(4, 3, -1); // => [4, 4, 4]
+ * ```
+ */
 export function dmpGrounds(c: unknown, nIn: number, uIn: number): unknown[] {
   const [n, u] = [int(nIn), int(uIn)];
   return Array.from({ length: n }, () => (u < 0 ? c : dmpGround(c, u)));
 }
 
-/** Is the ground leading coefficient negative (SymPy dmp_negative_p)? */
+/**
+ * Is the ground leading coefficient negative?
+ *
+ * @param f - Polynomial in dense, leading-coefficient-first representation.
+ * @param u - Number of variables minus one.
+ * @param K - Coefficient domain for the polynomial arithmetic.
+ * @returns Whether the ground leading coefficient negative.
+ * @see SymPy `sympy.polys.densebasic.dmp_negative_p`
+ * @example
+ * ```ts
+ * import { ZZ, dmpNegativeP } from '@symjs/symjs';
+ *
+ * dmpNegativeP([[1], [-1]], 1, ZZ); // => False
+ * dmpNegativeP([[-1], [1]], 1, ZZ); // => True
+ * ```
+ */
 export function dmpNegativeP(f: DensePoly, u: number, K: Domain): boolean {
   return K.isNegative(dmpGroundLC(f, u, K));
 }
 
-/** Is the ground leading coefficient positive (SymPy dmp_positive_p)? */
+/**
+ * Is the ground leading coefficient positive?
+ *
+ * @param f - Polynomial in dense, leading-coefficient-first representation.
+ * @param u - Number of variables minus one.
+ * @param K - Coefficient domain for the polynomial arithmetic.
+ * @returns Whether the ground leading coefficient positive.
+ * @see SymPy `sympy.polys.densebasic.dmp_positive_p`
+ * @example
+ * ```ts
+ * import { ZZ, dmpPositiveP } from '@symjs/symjs';
+ *
+ * dmpPositiveP([[1], [-1]], 1, ZZ); // => True
+ * dmpPositiveP([[-1], [1]], 1, ZZ); // => False
+ * ```
+ */
 export function dmpPositiveP(f: DensePoly, u: number, K: Domain): boolean {
   return K.isPositive(dmpGroundLC(f, u, K));
 }
@@ -384,14 +905,41 @@ export function dmpPositiveP(f: DensePoly, u: number, K: Domain): boolean {
 // dicts
 // ---------------------------------------------------------------------------
 
-/** A univariate polynomial from {(k,): c} or {k: c} (SymPy dup_from_dict). */
+/**
+ * A univariate polynomial from {(k,): c} or {k: c}.
+ *
+ * @param f - Map from monomials to their nonzero coefficients.
+ * @param K - Coefficient domain for the polynomial arithmetic.
+ * @returns A univariate polynomial from {(k,): c} or {k: c}.
+ * @see SymPy `sympy.polys.densebasic.dup_from_dict`
+ * @example
+ * ```ts
+ * import { ZZ, dupFromDict } from '@symjs/symjs';
+ *
+ * dupFromDict(new Map([[[0], 7], [[2], 5], [[4], 1]]), ZZ); // => [1, 0, 5, 0, 7]
+ * dupFromDict(new Map([]), ZZ); // => []
+ * ```
+ */
 export function dupFromDict(f: TermDict, K: Domain): unknown[] {
   if (!f.size) return [];
   const h = new Map(monomEntries(f).map(([m, c]) => [first(m), c]));
   return dupFromRawDict(h, K);
 }
 
-/** A univariate polynomial from {k: c} (SymPy dup_from_raw_dict). */
+/**
+ * A univariate polynomial from {k: c}.
+ *
+ * @param f - Polynomial to operate on.
+ * @param K - Coefficient domain for the polynomial arithmetic.
+ * @returns A univariate polynomial from {k: c}.
+ * @see SymPy `sympy.polys.densebasic.dup_from_raw_dict`
+ * @example
+ * ```ts
+ * import { ZZ, dupFromRawDict } from '@symjs/symjs';
+ *
+ * dupFromRawDict(new Map([[0, 7], [2, 5], [4, 1]]), ZZ); // => [1, 0, 5, 0, 7]
+ * ```
+ */
 export function dupFromRawDict(f: ReadonlyMap<number, unknown>, K: Domain): unknown[] {
   if (!f.size) return [];
   const g = new Map([...f].map(([k, c]) => [int(k), c]));
@@ -420,12 +968,43 @@ function fromMonoms(entries: readonly [Monom, unknown][], u: number, K: Domain):
   return dmpStrip(h, u);
 }
 
-/** A polynomial in u + 1 variables from {monomial: c} (SymPy dmp_from_dict). */
+/**
+ * A polynomial in u + 1 variables from {monomial: c}.
+ *
+ * @param f - Map from monomials to their nonzero coefficients.
+ * @param u - Number of variables minus one.
+ * @param K - Coefficient domain for the polynomial arithmetic.
+ * @returns A polynomial in u + 1 variables from {monomial: c}.
+ * @see SymPy `sympy.polys.densebasic.dmp_from_dict`
+ * @example
+ * ```ts
+ * import { ZZ, dmpFromDict } from '@symjs/symjs';
+ *
+ * dmpFromDict(new Map([[[0, 0], 3], [[0, 1], 2], [[2, 1], 1]]), 1, ZZ); // => [[1, 0], [], [2, 3]]
+ * dmpFromDict(new Map([]), 0, ZZ); // => []
+ * ```
+ */
 export function dmpFromDict(f: TermDict, u: number, K: Domain): unknown[] {
   return fromMonoms(monomEntries(f), int(u), K);
 }
 
-/** {(k,): c} of the nonzero terms ({(0,): 0} for zero with zero=true; SymPy dup_to_dict). */
+/**
+ * {(k,): c} of the nonzero terms ({(0,): 0} for zero with zero=true; SymPy dup_to_dict).
+ *
+ * @param f - Polynomial in dense, leading-coefficient-first representation.
+ * @param K - Coefficient domain for the polynomial arithmetic.
+ * @param zero - Include an explicit constant zero term for the zero polynomial.
+ * @returns {(k,): c} of the nonzero terms ({(0,): 0} for zero with zero=true; SymPy dup_to_dict).
+ * @see SymPy `sympy.polys.densebasic.dup_to_dict`
+ * @remarks SymPy returns `{(0,): 7, (2,): 5, (4,): 1}` with tuples for the fixed-length groups.
+ * @example
+ * ```ts
+ * import { dupToDict } from '@symjs/symjs';
+ *
+ * dupToDict([1, 0, 5, 0, 7]); // => {[0]: 7, [2]: 5, [4]: 1}
+ * dupToDict([]); // => {}
+ * ```
+ */
 export function dupToDict(f: DensePoly, K: Domain | null = null, zero = false): Map<number[], unknown> {
   if (!f.length && zero && K !== null) return new Map([[[0], K.zero]]);
   const n = f.length - 1;
@@ -434,7 +1013,21 @@ export function dupToDict(f: DensePoly, K: Domain | null = null, zero = false): 
   return result;
 }
 
-/** {k: c} of the nonzero terms (SymPy dup_to_raw_dict). */
+/**
+ * {k: c} of the nonzero terms.
+ *
+ * @param f - Polynomial in dense, leading-coefficient-first representation.
+ * @param K - Coefficient domain for the polynomial arithmetic.
+ * @param zero - Include an explicit constant zero term for the zero polynomial.
+ * @returns {k: c} of the nonzero terms.
+ * @see SymPy `sympy.polys.densebasic.dup_to_raw_dict`
+ * @example
+ * ```ts
+ * import { dupToRawDict } from '@symjs/symjs';
+ *
+ * dupToRawDict([1, 0, 5, 0, 7]); // => {0: 7, 2: 5, 4: 1}
+ * ```
+ */
 export function dupToRawDict(f: DensePoly, K: Domain | null = null, zero = false): Map<number, unknown> {
   if (!f.length && zero && K !== null) return new Map([[0, K.zero]]);
   const n = f.length - 1;
@@ -443,7 +1036,24 @@ export function dupToRawDict(f: DensePoly, K: Domain | null = null, zero = false
   return result;
 }
 
-/** {monomial: c} of the nonzero terms (SymPy dmp_to_dict). */
+/**
+ * {monomial: c} of the nonzero terms.
+ *
+ * @param f - Polynomial in dense, leading-coefficient-first representation.
+ * @param uIn - Number of variables minus one.
+ * @param K - Coefficient domain for the polynomial arithmetic.
+ * @param zero - Include an explicit constant zero term for the zero polynomial.
+ * @returns {monomial: c} of the nonzero terms.
+ * @see SymPy `sympy.polys.densebasic.dmp_to_dict`
+ * @remarks SymPy returns `{(0, 0): 3, (0, 1): 2, (2, 1): 1}` with tuples for the fixed-length groups.
+ * @example
+ * ```ts
+ * import { dmpToDict } from '@symjs/symjs';
+ *
+ * dmpToDict([[1, 0], [], [2, 3]], 1); // => {[0, 0]: 3, [0, 1]: 2, [2, 1]: 1}
+ * dmpToDict([], 0); // => {}
+ * ```
+ */
 export function dmpToDict(f: DensePoly, uIn: number, K: Domain | null = null, zero = false): Map<number[], unknown> {
   const u = int(uIn);
   if (!u) return dupToDict(f, K, zero);
@@ -461,7 +1071,25 @@ export function dmpToDict(f: DensePoly, uIn: number, K: Domain | null = null, ze
 // variables: swap, permute, nest, raise, deflate, inflate, exclude, include
 // ---------------------------------------------------------------------------
 
-/** Exchange x_i and x_j (SymPy dmp_swap). */
+/**
+ * Exchange x_i and x_j.
+ *
+ * @param f - Polynomial in dense, leading-coefficient-first representation.
+ * @param iIn - Zero-based index.
+ * @param jIn - Index of the polynomial variable.
+ * @param uIn - Number of variables minus one.
+ * @param K - Coefficient domain for the polynomial arithmetic.
+ * @returns The dense coefficient list, leading coefficient first.
+ * @throws RangeError when the indices do not satisfy `0 <= i < j <= u`.
+ * @see SymPy `sympy.polys.densebasic.dmp_swap`
+ * @example
+ * ```ts
+ * import { ZZ, dmpSwap } from '@symjs/symjs';
+ *
+ * dmpSwap([[[2], [1, 0]], []], 0, 1, 2, ZZ); // => [[[2], []], [[1, 0], []]]
+ * dmpSwap([[[2], [1, 0]], []], 1, 2, 2, ZZ); // => [[[1], [2, 0]], [[]]]
+ * ```
+ */
 export function dmpSwap(f: DensePoly, iIn: number, jIn: number, uIn: number, K: Domain): unknown[] {
   const [i, j, u] = [int(iIn), int(jIn), int(uIn)];
   if (i < 0 || j < 0 || i > u || j > u) throw new RangeError(`0 <= i < j <= ${u} expected`);
@@ -475,7 +1103,23 @@ export function dmpSwap(f: DensePoly, iIn: number, jIn: number, uIn: number, K: 
   return fromMonoms(H, u, K);
 }
 
-/** Permute the variables: x_i becomes x_P[i] (SymPy dmp_permute). */
+/**
+ * Permute the variables: x_i becomes x_P[i].
+ *
+ * @param f - Polynomial in dense, leading-coefficient-first representation.
+ * @param P - Permutation of the variable indices.
+ * @param uIn - Number of variables minus one.
+ * @param K - Coefficient domain for the polynomial arithmetic.
+ * @returns The dense coefficient list, leading coefficient first.
+ * @see SymPy `sympy.polys.densebasic.dmp_permute`
+ * @example
+ * ```ts
+ * import { ZZ, dmpPermute } from '@symjs/symjs';
+ *
+ * dmpPermute([[[2], [1, 0]], []], [1, 0, 2], 2, ZZ); // => [[[2], []], [[1, 0], []]]
+ * dmpPermute([[[2], [1, 0]], []], [1, 2, 0], 2, ZZ); // => [[[1], []], [[2, 0], []]]
+ * ```
+ */
 export function dmpPermute(f: DensePoly, P: readonly number[], uIn: number, K: Domain): unknown[] {
   const u = int(uIn);
   const H: [Monom, unknown][] = [];
@@ -489,7 +1133,21 @@ export function dmpPermute(f: DensePoly, P: readonly number[], uIn: number, K: D
   return fromMonoms(H, u, K);
 }
 
-/** Wrap f in l more levels (a ground c becomes a polynomial; SymPy dmp_nest). */
+/**
+ * Wrap f in l more levels (a ground c becomes a polynomial; SymPy dmp_nest).
+ *
+ * @param f - Polynomial to operate on.
+ * @param lIn - Number of additional levels.
+ * @param _K - Coefficient domain for the polynomial arithmetic.
+ * @returns Wrap f in l more levels (a ground c becomes a polynomial; SymPy dmp_nest).
+ * @see SymPy `sympy.polys.densebasic.dmp_nest`
+ * @example
+ * ```ts
+ * import { ZZ, dmpNest } from '@symjs/symjs';
+ *
+ * dmpNest([[1]], 2, ZZ); // => [[[[1]]]]
+ * ```
+ */
 export function dmpNest(f: unknown, lIn: number, _K: Domain): unknown {
   const l = int(lIn);
   if (!Array.isArray(f)) return dmpGround(f, l);
@@ -498,7 +1156,22 @@ export function dmpNest(f: unknown, lIn: number, _K: Domain): unknown {
   return g;
 }
 
-/** Add l levels at the bottom of f (SymPy dmp_raise). */
+/**
+ * Add l levels at the bottom of f.
+ *
+ * @param f - Polynomial in dense, leading-coefficient-first representation.
+ * @param lIn - Number of additional levels.
+ * @param uIn - Number of variables minus one.
+ * @param K - Coefficient domain for the polynomial arithmetic.
+ * @returns The dense coefficient list, leading coefficient first.
+ * @see SymPy `sympy.polys.densebasic.dmp_raise`
+ * @example
+ * ```ts
+ * import { ZZ, dmpRaise } from '@symjs/symjs';
+ *
+ * dmpRaise([[], [1, 2]], 2, 1, ZZ); // => [[[[]]], [[[1]], [[2]]]]
+ * ```
+ */
 export function dmpRaise(f: DensePoly, lIn: number, uIn: number, K: Domain): unknown[] {
   const [l, u] = [int(lIn), int(uIn)];
   if (!l) return [...f];
@@ -506,7 +1179,21 @@ export function dmpRaise(f: DensePoly, lIn: number, uIn: number, K: Domain): unk
   return f.map((c) => dmpRaise(asList(c), l, u - 1, K));
 }
 
-/** [g, h] with f(x) = h(x**g) (SymPy dup_deflate). */
+/**
+ * [g, h] with f(x) = h(x**g).
+ *
+ * @param f - Polynomial in dense, leading-coefficient-first representation.
+ * @param _K - Coefficient domain for the polynomial arithmetic.
+ * @returns [g, h] with f(x) = h(x**g).
+ * @see SymPy `sympy.polys.densebasic.dup_deflate`
+ * @remarks SymPy returns `(3, [1, 1, 1])` with tuples for the fixed-length groups.
+ * @example
+ * ```ts
+ * import { ZZ, dupDeflate } from '@symjs/symjs';
+ *
+ * dupDeflate([1, 0, 0, 1, 0, 0, 1], ZZ); // => [3, [1, 1, 1]]
+ * ```
+ */
 export function dupDeflate(f: DensePoly, _K: Domain): [number, unknown[]] {
   if (dupDegree(f) <= 0) return [1, [...f]];
   let g = 0n;
@@ -528,7 +1215,22 @@ function exponentGcds(dicts: readonly Map<number[], unknown>[], u: number): numb
 
 const deflateDict = (F: Map<number[], unknown>, B: readonly number[]): [Monom, unknown][] => [...F].map(([A, c]) => [A.map((a, i) => Math.floor(a / at(B, i))), c]);
 
-/** [B, h] with f(x_0, ...) = h(x_0**B[0], ...) (SymPy dmp_deflate). */
+/**
+ * [B, h] with f(x_0, ...) = h(x_0**B[0], ...).
+ *
+ * @param f - Polynomial in dense, leading-coefficient-first representation.
+ * @param uIn - Number of variables minus one.
+ * @param K - Coefficient domain for the polynomial arithmetic.
+ * @returns [B, h] with f(x_0, ...) = h(x_0**B[0], ...).
+ * @see SymPy `sympy.polys.densebasic.dmp_deflate`
+ * @remarks SymPy returns `((2, 3), [[1, 2], [3, 4]])` with tuples for the fixed-length groups.
+ * @example
+ * ```ts
+ * import { ZZ, dmpDeflate } from '@symjs/symjs';
+ *
+ * dmpDeflate([[1, 0, 0, 2], [], [3, 0, 0, 4]], 1, ZZ); // => [[2, 3], [[1, 2], [3, 4]]]
+ * ```
+ */
 export function dmpDeflate(f: DensePoly, uIn: number, K: Domain): [number[], unknown[]] {
   const u = int(uIn);
   if (dmpZeroP(f, u)) return [Array.from({ length: u + 1 }, () => 1), [...f]];
@@ -538,7 +1240,21 @@ export function dmpDeflate(f: DensePoly, uIn: number, K: Domain): [number[], unk
   return [B, fromMonoms(deflateDict(F, B), u, K)];
 }
 
-/** [G, hs] with a common deflation of univariate polynomials (SymPy dup_multi_deflate). */
+/**
+ * [G, hs] with a common deflation of univariate polynomials.
+ *
+ * @param polys - Input polynomials.
+ * @param _K - Coefficient domain for the polynomial arithmetic.
+ * @returns [G, hs] with a common deflation of univariate polynomials.
+ * @see SymPy `sympy.polys.densebasic.dup_multi_deflate`
+ * @remarks SymPy returns `(2, ([1, 2, 3], [4, 0]))` with tuples for the fixed-length groups.
+ * @example
+ * ```ts
+ * import { ZZ, dupMultiDeflate } from '@symjs/symjs';
+ *
+ * dupMultiDeflate([[1, 0, 2, 0, 3], [4, 0, 0]], ZZ); // => [2, [[1, 2, 3], [4, 0]]]
+ * ```
+ */
 export function dupMultiDeflate(polys: readonly DensePoly[], _K: Domain): [number, unknown[][]] {
   let G = 0n;
   const same = (): [number, unknown[][]] => [1, polys.map((p) => [...p])];
@@ -556,7 +1272,22 @@ export function dupMultiDeflate(polys: readonly DensePoly[], _K: Domain): [numbe
   return [n, polys.map((p) => p.filter((_c, k) => k % n === 0))];
 }
 
-/** [B, hs] with a common deflation of polynomials in u + 1 variables (SymPy dmp_multi_deflate). */
+/**
+ * [B, hs] with a common deflation of polynomials in u + 1 variables.
+ *
+ * @param polys - Input polynomials.
+ * @param uIn - Number of variables minus one.
+ * @param K - Coefficient domain for the polynomial arithmetic.
+ * @returns [B, hs] with a common deflation of polynomials in u + 1 variables.
+ * @see SymPy `sympy.polys.densebasic.dmp_multi_deflate`
+ * @remarks SymPy returns `((2, 1), ([[1, 0, 0, 2], [3, 0, 0, 4]], [[1, 0, 2], [3, 0, 4]]))` with tuples for the fixed-length groups.
+ * @example
+ * ```ts
+ * import { ZZ, dmpMultiDeflate } from '@symjs/symjs';
+ *
+ * dmpMultiDeflate([[[1, 0, 0, 2], [], [3, 0, 0, 4]], [[1, 0, 2], [], [3, 0, 4]]], 1, ZZ); // => [[2, 1], [[[1, 0, 0, 2], [3, 0, 0, 4]], [[1, 0, 2], [3, 0, 4]]]]
+ * ```
+ */
 export function dmpMultiDeflate(polys: readonly DensePoly[], uIn: number, K: Domain): [number[], unknown[][]] {
   const u = int(uIn);
   if (!u) {
@@ -572,7 +1303,22 @@ export function dmpMultiDeflate(polys: readonly DensePoly[], uIn: number, K: Dom
   return [B, F.map((d) => fromMonoms(deflateDict(d, B), u, K))];
 }
 
-/** f(x**m) (SymPy dup_inflate). */
+/**
+ * f(x**m).
+ *
+ * @param f - Polynomial in dense, leading-coefficient-first representation.
+ * @param mIn - Multiplier for the exponents.
+ * @param K - Coefficient domain for the polynomial arithmetic.
+ * @returns The dense coefficient list, leading coefficient first.
+ * @throws RangeError when the inflation factor is not positive.
+ * @see SymPy `sympy.polys.densebasic.dup_inflate`
+ * @example
+ * ```ts
+ * import { ZZ, dupInflate } from '@symjs/symjs';
+ *
+ * dupInflate([1, 1, 1], 3, ZZ); // => [1, 0, 0, 1, 0, 0, 1]
+ * ```
+ */
 export function dupInflate(f: DensePoly, mIn: number, K: Domain): unknown[] {
   const m = int(mIn);
   if (m <= 0) throw new RangeError(`'m' must be positive, got ${m}`);
@@ -594,7 +1340,22 @@ function recInflate(g: DensePoly, M: readonly number[], v: number, i: number, K:
   return result;
 }
 
-/** f(x_0**M[0], ..., x_u**M[u]) (SymPy dmp_inflate). */
+/**
+ * f(x_0**M[0], ..., x_u**M[u]).
+ *
+ * @param f - Polynomial in dense, leading-coefficient-first representation.
+ * @param MIn - Exponent vector.
+ * @param uIn - Number of variables minus one.
+ * @param K - Coefficient domain for the polynomial arithmetic.
+ * @returns The dense coefficient list, leading coefficient first.
+ * @see SymPy `sympy.polys.densebasic.dmp_inflate`
+ * @example
+ * ```ts
+ * import { ZZ, dmpInflate } from '@symjs/symjs';
+ *
+ * dmpInflate([[1, 2], [3, 4]], [2, 3], 1, ZZ); // => [[1, 0, 0, 2], [], [3, 0, 0, 4]]
+ * ```
+ */
 export function dmpInflate(f: DensePoly, MIn: readonly number[], uIn: number, K: Domain): unknown[] {
   const [M, u] = [MIn.map(int), int(uIn)];
   if (!u) return dupInflate(f, first(M), K);
@@ -602,7 +1363,22 @@ export function dmpInflate(f: DensePoly, MIn: readonly number[], uIn: number, K:
   return recInflate(f, M, u, 0, K);
 }
 
-/** [J, g, u'] removing the variables x_j (j in J) that f does not depend on (SymPy dmp_exclude). */
+/**
+ * [J, g, u'] removing the variables x_j (j in J) that f does not depend on.
+ *
+ * @param f - Polynomial in dense, leading-coefficient-first representation.
+ * @param uIn - Number of variables minus one.
+ * @param K - Coefficient domain for the polynomial arithmetic.
+ * @returns [J, g, u'] removing the variables x_j (j in J) that f does not depend on.
+ * @see SymPy `sympy.polys.densebasic.dmp_exclude`
+ * @remarks SymPy returns `([2], [[1], [1, 2]], 1)` with tuples for the fixed-length groups.
+ * @example
+ * ```ts
+ * import { ZZ, dmpExclude } from '@symjs/symjs';
+ *
+ * dmpExclude([[[1]], [[1], [2]]], 2, ZZ); // => [[2], [[1], [1, 2]], 1]
+ * ```
+ */
 export function dmpExclude(f: DensePoly, uIn: number, K: Domain): [number[], unknown[], number] {
   const u = int(uIn);
   if (!u || dmpGroundP(f, null, u)) return [[], [...f], u];
@@ -615,7 +1391,22 @@ export function dmpExclude(f: DensePoly, uIn: number, K: Domain): [number[], unk
   return [J, fromMonoms(g, v, K), v];
 }
 
-/** Add the variables x_j (j in J) that f does not depend on (SymPy dmp_include). */
+/**
+ * Add the variables x_j (j in J) that f does not depend on.
+ *
+ * @param f - Polynomial in dense, leading-coefficient-first representation.
+ * @param J - Indices of the generators.
+ * @param uIn - Number of variables minus one.
+ * @param K - Coefficient domain for the polynomial arithmetic.
+ * @returns The dense coefficient list, leading coefficient first.
+ * @see SymPy `sympy.polys.densebasic.dmp_include`
+ * @example
+ * ```ts
+ * import { ZZ, dmpInclude } from '@symjs/symjs';
+ *
+ * dmpInclude([[1], [1, 2]], [2], 1, ZZ); // => [[[1]], [[1], [2]]]
+ * ```
+ */
 export function dmpInclude(f: DensePoly, J: readonly number[], uIn: number, K: Domain): unknown[] {
   const u = int(uIn);
   if (!J.length) return [...f];
@@ -628,7 +1419,24 @@ export function dmpInclude(f: DensePoly, J: readonly number[], uIn: number, K: D
 }
 
 
-/** Move the generators of a polynomial-ring coefficient domain K[y] into f (SymPy dmp_inject). */
+/**
+ * Move the generators of a polynomial-ring coefficient domain K[y] into f.
+ *
+ * @param f - Polynomial in dense, leading-coefficient-first representation.
+ * @param uIn - Number of variables minus one.
+ * @param K - Coefficient domain for the polynomial arithmetic.
+ * @param front - Place the coefficient-domain generators first.
+ * @returns Move the generators of a polynomial-ring coefficient domain K[y] into f.
+ * @see SymPy `sympy.polys.densebasic.dmp_inject`
+ * @remarks SymPy returns `([[1, 0], [1]], 1)` with tuples for the fixed-length groups.
+ * @example
+ * ```ts
+ * import { ZZ, dmpInject, ex, symbols } from '@symjs/symjs';
+ *
+ * const [y] = symbols('y');
+ * dmpInject([ex`y`, 1], 0, ZZ.polyRing(y)); // => [[[1, 0], [1]], 1]
+ * ```
+ */
 export function dmpInject(f: DensePoly, uIn: number, K: Domain, front = false): [unknown[], number] {
   const u = int(uIn);
   const h: [Monom, unknown][] = [];
@@ -639,7 +1447,24 @@ export function dmpInject(f: DensePoly, uIn: number, K: Domain, front = false): 
   return [fromMonoms(h, w, K.dom), w];
 }
 
-/** Move the last (or first) K.ngens variables of f into the coefficient domain K (SymPy dmp_eject). */
+/**
+ * Move the last (or first) K.ngens variables of f into the coefficient domain K.
+ *
+ * @param f - Polynomial in dense, leading-coefficient-first representation.
+ * @param uIn - Number of variables minus one.
+ * @param K - Coefficient domain for the polynomial arithmetic.
+ * @param front - Place the coefficient-domain generators first.
+ * @returns The dense coefficient list, leading coefficient first.
+ * @see SymPy `sympy.polys.densebasic.dmp_eject`
+ * @example
+ * ```ts
+ * import { ZZ, dmpEject, symbols } from '@symjs/symjs';
+ *
+ * const [y] = symbols('y');
+ * const K = ZZ.polyRing(y);
+ * dmpEject([[1, 0], [1]], 1, K).map(c => K.toSympy(c)); // => [y, 1]
+ * ```
+ */
 export function dmpEject(f: DensePoly, uIn: number, K: Domain, front = false): unknown[] {
   const u = int(uIn);
   const n = K.ngens;
@@ -656,7 +1481,21 @@ export function dmpEject(f: DensePoly, uIn: number, K: Domain, front = false): u
   return fromMonoms(terms, v - 1, K);
 }
 
-/** [i, g] with f = x**i * g (SymPy dup_terms_gcd). */
+/**
+ * [i, g] with f = x**i * g.
+ *
+ * @param f - Polynomial in dense, leading-coefficient-first representation.
+ * @param K - Coefficient domain for the polynomial arithmetic.
+ * @returns [i, g] with f = x**i * g.
+ * @see SymPy `sympy.polys.densebasic.dup_terms_gcd`
+ * @remarks SymPy returns `(2, [1, 0, 1])` with tuples for the fixed-length groups.
+ * @example
+ * ```ts
+ * import { ZZ, dupTermsGcd } from '@symjs/symjs';
+ *
+ * dupTermsGcd([1, 0, 1, 0, 0], ZZ); // => [2, [1, 0, 1]]
+ * ```
+ */
 export function dupTermsGcd(f: DensePoly, K: Domain): [number, unknown[]] {
   if (nz(polyTC(f, K)) || !f.length) return [0, [...f]];
   let i = 0;
@@ -664,7 +1503,22 @@ export function dupTermsGcd(f: DensePoly, K: Domain): [number, unknown[]] {
   return [i, f.slice(0, f.length - i)];
 }
 
-/** [G, g] with f = x**G * g (SymPy dmp_terms_gcd). */
+/**
+ * [G, g] with f = x**G * g.
+ *
+ * @param f - Polynomial in dense, leading-coefficient-first representation.
+ * @param uIn - Number of variables minus one.
+ * @param K - Coefficient domain for the polynomial arithmetic.
+ * @returns [G, g] with f = x**G * g.
+ * @see SymPy `sympy.polys.densebasic.dmp_terms_gcd`
+ * @remarks SymPy returns `((2, 1), [[1], [1, 0]])` with tuples for the fixed-length groups.
+ * @example
+ * ```ts
+ * import { ZZ, dmpTermsGcd } from '@symjs/symjs';
+ *
+ * dmpTermsGcd([[1, 0], [1, 0, 0], [], []], 1, ZZ); // => [[2, 1], [[1], [1, 0]]]
+ * ```
+ */
 export function dmpTermsGcd(f: DensePoly, uIn: number, K: Domain): [number[], unknown[]] {
   const u = int(uIn);
   if (nz(dmpGroundTC(f, u, K)) || dmpZeroP(f, u)) return [Array.from({ length: u + 1 }, () => 0), [...f]];
@@ -685,7 +1539,24 @@ function recListTerms(g: DensePoly, v: number, monom: Monom): [number[], unknown
   return terms;
 }
 
-/** The nonzero terms [monomial, c], in the given order (lex by default; SymPy dmp_list_terms). */
+/**
+ * The nonzero terms [monomial, c], in the given order (lex by default; SymPy dmp_list_terms).
+ *
+ * @param f - Polynomial in dense, leading-coefficient-first representation.
+ * @param uIn - Number of variables minus one.
+ * @param K - Coefficient domain for the polynomial arithmetic.
+ * @param order - Monomial order used to compare terms.
+ * @returns The nonzero terms [monomial, c], in the given order (lex by default.
+ * @see SymPy `sympy.polys.densebasic.dmp_list_terms`
+ * @remarks SymPy returns `[((1, 1), 1), ((1, 0), 1), ((0, 1), 2), ((0, 0), 3)]` with tuples for the fixed-length groups. The second result is `[((1, 1), 1), ((1, 0), 1), ((0, 1), 2), ((0, 0), 3)]` in SymPy.
+ * @example
+ * ```ts
+ * import { ZZ, dmpListTerms } from '@symjs/symjs';
+ *
+ * dmpListTerms([[1, 1], [2, 3]], 1, ZZ); // => [[[1, 1], 1], [[1, 0], 1], [[0, 1], 2], [[0, 0], 3]]
+ * dmpListTerms([[1, 1], [2, 3]], 1, ZZ, 'grevlex'); // => [[[1, 1], 1], [[1, 0], 1], [[0, 1], 2], [[0, 0], 3]]
+ * ```
+ */
 export function dmpListTerms(f: DensePoly, uIn: number, K: Domain, order?: string | MonomialOrdering): [number[], unknown][] {
   const u = int(uIn);
   const terms = recListTerms(f, u, []);
@@ -695,7 +1566,23 @@ export function dmpListTerms(f: DensePoly, uIn: number, K: Domain, order?: strin
   return [...terms].sort((a, b) => compareMonomialKeys(key(b[0]), key(a[0])));
 }
 
-/** h(a, b, ...args) over the coefficient pairs, padded with zeros (SymPy dup_apply_pairs). */
+/**
+ * h(a, b, ...args) over the coefficient pairs, padded with zeros.
+ *
+ * @param fIn - Polynomial in dense, leading-coefficient-first representation.
+ * @param gIn - Second polynomial in dense, leading-coefficient-first representation.
+ * @param h - Function applied to each pair of coefficients.
+ * @param args - Additional arguments to the coefficient function.
+ * @param K - Coefficient domain for the polynomial arithmetic.
+ * @returns The dense coefficient list, leading coefficient first.
+ * @see SymPy `sympy.polys.densebasic.dup_apply_pairs`
+ * @example
+ * ```ts
+ * import { ZZ, dupApplyPairs } from '@symjs/symjs';
+ *
+ * dupApplyPairs([1, 2, 3], [1, 2], (a, b) => Number(a) + Number(b), [], ZZ); // => [1, 3, 5]
+ * ```
+ */
 export function dupApplyPairs(fIn: DensePoly, gIn: DensePoly, h: (a: unknown, b: unknown, ...args: unknown[]) => unknown, args: readonly unknown[], K: Domain): unknown[] {
   const [n, m] = [fIn.length, gIn.length];
   const pad = (p: DensePoly, k: number): unknown[] => [...Array.from({ length: k }, () => K.zero), ...p];
@@ -703,7 +1590,24 @@ export function dupApplyPairs(fIn: DensePoly, gIn: DensePoly, h: (a: unknown, b:
   return dupStrip(f.map((a, i) => h(a, g[i], ...args)));
 }
 
-/** h(a, b, ...args) over the ground coefficient pairs, padded with zeros (SymPy dmp_apply_pairs). */
+/**
+ * h(a, b, ...args) over the ground coefficient pairs, padded with zeros.
+ *
+ * @param fIn - Polynomial in dense, leading-coefficient-first representation.
+ * @param gIn - Second polynomial in dense, leading-coefficient-first representation.
+ * @param h - Function applied to each pair of coefficients.
+ * @param args - Additional arguments to the coefficient function.
+ * @param uIn - Number of variables minus one.
+ * @param K - Coefficient domain for the polynomial arithmetic.
+ * @returns The dense coefficient list, leading coefficient first.
+ * @see SymPy `sympy.polys.densebasic.dmp_apply_pairs`
+ * @example
+ * ```ts
+ * import { ZZ, dmpApplyPairs } from '@symjs/symjs';
+ *
+ * dmpApplyPairs([[1], [2]], [[3]], (a, b) => Number(a) + Number(b), [], 1, ZZ); // => [[1], [5]]
+ * ```
+ */
 export function dmpApplyPairs(fIn: DensePoly, gIn: DensePoly, h: (a: unknown, b: unknown, ...args: unknown[]) => unknown, args: readonly unknown[], uIn: number, K: Domain): unknown[] {
   const u = int(uIn);
   if (!u) return dupApplyPairs(fIn, gIn, h, args, K);
@@ -716,7 +1620,16 @@ export function dmpApplyPairs(fIn: DensePoly, gIn: DensePoly, h: (a: unknown, b:
   );
 }
 
-/** The terms of degree m <= k < n of f (SymPy dup_slice). */
+/**
+ * The terms of degree m <= k < n of f.
+ *
+ * @param f - Polynomial in dense, leading-coefficient-first representation.
+ * @param mIn - Inclusive lower degree bound.
+ * @param nIn - Exclusive upper degree bound.
+ * @param K - Coefficient domain for the polynomial arithmetic.
+ * @returns The terms of degree m <= k < n of f.
+ * @see SymPy `sympy.polys.densebasic.dup_slice`
+ */
 export function dupSlice(f: DensePoly, mIn: number, nIn: number, K: Domain): unknown[] {
   const [m, n, k] = [int(mIn), int(nIn), f.length];
   const M = k >= m ? k - m : 0;
@@ -725,7 +1638,19 @@ export function dupSlice(f: DensePoly, mIn: number, nIn: number, K: Domain): unk
   return g.length ? [...g, ...Array.from({ length: m }, () => K.zero)] : [];
 }
 
-/** The terms of degree m <= k < n in x_j of f, the others with x_j**0 (SymPy dmp_slice_in). */
+/**
+ * The terms of degree m <= k < n in x_j of f, the others with x_j**0.
+ *
+ * @param f - Polynomial in dense, leading-coefficient-first representation.
+ * @param mIn - Inclusive lower degree bound.
+ * @param nIn - Exclusive upper degree bound.
+ * @param jIn - Index of the polynomial variable.
+ * @param uIn - Number of variables minus one.
+ * @param K - Coefficient domain for the polynomial arithmetic.
+ * @returns The terms of degree m <= k < n in x_j of f, the others with x_j**0.
+ * @throws RangeError when the variable index is outside the polynomial levels.
+ * @see SymPy `sympy.polys.densebasic.dmp_slice_in`
+ */
 export function dmpSliceIn(f: DensePoly, mIn: number, nIn: number, jIn: number, uIn: number, K: Domain): unknown[] {
   const [m, n, j, u] = [int(mIn), int(nIn), int(jIn), int(uIn)];
   if (j < 0 || j > u) throw new RangeError(`-${u} <= j < ${u} expected, got ${j}`);
@@ -741,12 +1666,38 @@ export function dmpSliceIn(f: DensePoly, mIn: number, nIn: number, jIn: number, 
   return fromMonoms([...g.values()], u, K);
 }
 
-/** The terms of degree m <= k < n in x_0 (SymPy dmp_slice). */
+/**
+ * The terms of degree m <= k < n in x_0.
+ *
+ * @param f - Polynomial in dense, leading-coefficient-first representation.
+ * @param m - Inclusive lower degree bound.
+ * @param n - Exclusive upper degree bound.
+ * @param u - Number of variables minus one.
+ * @param K - Coefficient domain for the polynomial arithmetic.
+ * @returns The terms of degree m <= k < n in x_0.
+ * @see SymPy `sympy.polys.densebasic.dmp_slice`
+ */
 export function dmpSlice(f: DensePoly, m: number, n: number, u: number, K: Domain): unknown[] {
   return dmpSliceIn(f, m, n, 0, u, K);
 }
 
-/** A random polynomial of degree n with coefficients in [a, b] and a nonzero leading coefficient (SymPy dup_random). */
+/**
+ * A random polynomial of degree n with coefficients in [a, b] and a nonzero leading coefficient.
+ *
+ * @param nIn - Exponent or degree.
+ * @param aIn - Inclusive lower bound on the coefficients.
+ * @param bIn - Inclusive upper bound on the coefficients.
+ * @param K - Coefficient domain for the polynomial arithmetic.
+ * @param random - Sampler returning a number in the half-open interval from zero to one.
+ * @returns A random polynomial of degree n with coefficients in [a, b] and a nonzero leading coefficient.
+ * @see SymPy `sympy.polys.densebasic.dup_random`
+ * @example
+ * ```ts
+ * import { ZZ, dupRandom } from '@symjs/symjs';
+ *
+ * dupRandom(3, -10, 10, ZZ).length; // => 4
+ * ```
+ */
 export function dupRandom(nIn: number, aIn: number, bIn: number, K: Domain, random: () => number = Math.random): unknown[] {
   const [n, a, b] = [int(nIn), int(aIn), int(bIn)];
   const draw = (): unknown => K.convert(a + Math.floor(random() * (b - a + 1)));

@@ -81,7 +81,22 @@ function refine(coeffs: Expr[], z0: C, prec: number): Mpc {
   return z;
 }
 
-/** Numerical roots to n digits. */
+/**
+ * Numerical roots to n digits.
+ *
+ * @param fIn - Polynomial to operate on.
+ * @param n - Requested decimal precision.
+ * @param x - Polynomial generator.
+ * @returns Numerical roots to n digits.
+ * @throws DomainError when a coefficient cannot be evaluated numerically.
+ * @see SymPy `sympy.polys.polytools.nroots`
+ * @example
+ * ```ts
+ * import { ex, nroots } from '@symjs/symjs';
+ *
+ * nroots(ex`x**2 - 3`); // => [-1.73205080756888, 1.73205080756888]
+ * ```
+ */
 export function nroots(fIn: ExprLike | Poly, n = 15, x?: Sym): Expr[] {
   let p = fIn instanceof Poly ? fIn : Poly.from(sympify(fIn), x ? [x] : undefined);
   // numeric generators such as sqrt(2) belong to the coefficients

@@ -36,6 +36,20 @@ function elementary(gens: readonly Expr[], k: number): Expr {
 /**
  * Symmetric part in terms of s1, s2, ... and the non-symmetric remainder.
  * Returns [symmetric, remainder, [(s_k, e_k)]].
+ *
+ * @param fIn - Polynomial to operate on.
+ * @param gensIn - Polynomial generators in the desired order.
+ * @param symbols - Symbols naming the generators, in order.
+ * @returns Symmetric part in terms of s1, s2,.
+ * @throws RangeError when there are too few replacement symbols.
+ * @see SymPy `sympy.polys.polyfuncs.symmetrize`
+ * @remarks SymPy gives `(-2*x*y + (x + y)**2, 0)` by default. Its `formal=True` form corresponds to the three entries returned here.
+ * @example
+ * ```ts
+ * import { ex, symmetrize } from '@symjs/symjs';
+ *
+ * symmetrize(ex`x**2 + y**2`); // => [s1**2 - 2*s2, 0, [[s1, x + y], [s2, x*y]]]
+ * ```
  */
 export function symmetrize(fIn: ExprLike, gensIn: readonly Sym[] = [], symbols?: readonly Sym[]): [Expr, Expr, [Sym, Expr][]] {
   const fe = sympify(fIn);
@@ -78,7 +92,20 @@ export function symmetrizeExpr(fIn: ExprLike, gens: readonly Sym[] = []): [Expr,
 
 /**
  * Rational interpolation of (x, y) data with a numerator of degree
- * `degnum` (SymPy rational_interpolate).
+ * `degnum`.
+ *
+ * @param data - Values or pairs of interpolation nodes and values.
+ * @param degnum - Degree of the interpolant numerator.
+ * @param X - Variable of the interpolating rational function.
+ * @returns A rational function interpolating the data.
+ * @throws RangeError when there are too few data points for the requested numerator degree.
+ * @see SymPy `sympy.polys.polyfuncs.rational_interpolate`
+ * @example
+ * ```ts
+ * import { rationalInterpolate } from '@symjs/symjs';
+ *
+ * rationalInterpolate([[1, -210], [2, -35], [3, 105], [4, 231], [5, 350], [6, 465]], 2); // => (105*x**2 - 525)/(x + 1)
+ * ```
  */
 export function rationalInterpolate(data: readonly (readonly [ExprLike, ExprLike])[], degnum: number, X: Sym = new Sym('x')): Expr {
   const xs = data.map(([a]) => sympify(a));
@@ -100,9 +127,25 @@ export function rationalInterpolate(data: readonly (readonly [ExprLike, ExprLike
 }
 
 /**
- * SymPy viete(f, roots=None, *gens): Viete's formulas for the roots of the
+ * Viete's formulas for the roots of the
  * univariate polynomial f, as [elementary symmetric polynomial of the roots,
  * its value] pairs. Without roots the symbols r1, r2, ... are used.
+ *
+ * @param fIn - Polynomial to operate on.
+ * @param roots - Symbols representing the roots.
+ * @param gens - Polynomial generators in the desired order.
+ * @returns Viete's formulas for the roots of the univariate polynomial f, as [elementary symmetric polynomial of the roots, its value] pairs.
+ * @throws MultivariatePolynomialError when the operation requires a univariate polynomial.
+ * @throws RangeError when the polynomial is constant or the number of root symbols differs from the degree.
+ * @see SymPy `sympy.polys.polyfuncs.viete`
+ * @remarks SymPy returns `[(r1 + r2, -b/a), (r1*r2, c/a)]` with tuples for the fixed-length groups.
+ * @example
+ * ```ts
+ * import { ex, symbols, viete } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * viete(ex`a*x**2 + b*x + c`, [ex`r1`, ex`r2`], x); // => [[r1 + r2, -b/a], [r1*r2, c/a]]
+ * ```
  */
 export function viete(fIn: Poly | ExprLike, roots?: readonly Expr[], ...gens: Expr[]): [Expr, Expr][] {
   const f = fIn instanceof Poly ? fIn : Poly.from(sympify(fIn), gens.length ? gens : undefined);

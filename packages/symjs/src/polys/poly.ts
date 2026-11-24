@@ -395,6 +395,16 @@ export function rootsDict(ex: ExprLike, x: Sym, opts: RootOptions & { multiple?:
  * ```
  */
 export function rootsInRadicals(ex: ExprLike, x: Sym, opts: RootOptions & { multiple: true }): Expr[];
+/**
+ * The roots of a univariate polynomial in radicals, with their
+ * multiplicities. Roots that have no expression in radicals are left out (see
+ * `CRootOf` and `nroots` for them).
+ *
+ * @param ex - Expression to convert or manipulate.
+ * @param x - Polynomial generator.
+ * @param opts - Controls `multiple` (multiple).
+ * @see SymPy `sympy.polys.polyroots.roots`
+ */
 export function rootsInRadicals(ex: ExprLike, x: Sym, opts?: RootOptions & { multiple?: false }): ExprMap<number>;
 export function rootsInRadicals(ex: ExprLike, x: Sym, opts: RootOptions & { multiple?: boolean } = {}): ExprMap<number> | Expr[] {
   // SymPy roots leaves out the factors without roots in radicals (strict raises instead)

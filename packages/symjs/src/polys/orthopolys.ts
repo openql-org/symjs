@@ -31,7 +31,7 @@ import { constructDomain } from './constructor';
 
 /** Options of the polynomial generators. */
 export interface NamedPolyOptions {
-  /** Return a Poly instead of an expression (SymPy polys=True). */
+  /** Return a Poly instead of an expression. */
   polys?: boolean;
 }
 
@@ -52,49 +52,125 @@ function namedPoly(n: number, gen: (n: number) => Coeffs, name: string, x: ExprL
   return Poly.from(e, [v], { pure: x === undefined, domain });
 }
 
-/** SymPy jacobi_poly(n, a, b, x): the Jacobi polynomial P_n^(a,b)(x). */
+/**
+ * The Jacobi polynomial P_n^(a,b)(x).
+ *
+ * @param n - Nonnegative index of the polynomial family.
+ * @param a - First shape parameter.
+ * @param b - Second Jacobi parameter.
+ * @param x - Variable or evaluation point of the polynomial.
+ * @param opts - Set `polys` to return a polynomial object.
+ * @returns The polynomial as an expression, or a `Poly` with `polys: true`.
+ * @throws RangeError when the index is not a nonnegative integer.
+ * @see SymPy `sympy.polys.orthopolys.jacobi_poly`
+ */
 export function jacobiPoly<O extends NamedPolyOptions = Record<never, never>>(n: number, a: ExprLike, b: ExprLike, x?: ExprLike, opts?: O): NamedPolyResult<O>;
 export function jacobiPoly(n: number, a: ExprLike, b: ExprLike, x?: ExprLike, opts: NamedPolyOptions = {}): Expr | Poly {
   return namedPoly(n, (k) => jacobiCoeffs(k, sympify(a), sympify(b)), 'Jacobi polynomial', x, opts, true, [a, b]);
 }
 
-/** SymPy gegenbauer_poly(n, a, x): the Gegenbauer polynomial C_n^(a)(x). */
+/**
+ * The Gegenbauer polynomial C_n^(a)(x).
+ *
+ * @param n - Nonnegative index of the polynomial family.
+ * @param a - Parameter of the polynomial family.
+ * @param x - Variable or evaluation point of the polynomial.
+ * @param opts - Set `polys` to return a polynomial object.
+ * @returns The polynomial as an expression, or a `Poly` with `polys: true`.
+ * @throws RangeError when the index is not a nonnegative integer.
+ * @see SymPy `sympy.polys.orthopolys.gegenbauer_poly`
+ */
 export function gegenbauerPoly<O extends NamedPolyOptions = Record<never, never>>(n: number, a: ExprLike, x?: ExprLike, opts?: O): NamedPolyResult<O>;
 export function gegenbauerPoly(n: number, a: ExprLike, x?: ExprLike, opts: NamedPolyOptions = {}): Expr | Poly {
   return namedPoly(n, (k) => gegenbauerCoeffs(k, sympify(a)), 'Gegenbauer polynomial', x, opts, true, [a]);
 }
 
-/** SymPy chebyshevt_poly(n, x): the Chebyshev polynomial of the first kind T_n(x). */
+/**
+ * The Chebyshev polynomial of the first kind T_n(x).
+ *
+ * @param n - Nonnegative index of the polynomial family.
+ * @param x - Variable or evaluation point of the polynomial.
+ * @param opts - Set `polys` to return a polynomial object.
+ * @returns The polynomial as an expression, or a `Poly` with `polys: true`.
+ * @throws RangeError when the index is not a nonnegative integer.
+ * @see SymPy `sympy.polys.orthopolys.chebyshevt_poly`
+ */
 export function chebyshevtPoly<O extends NamedPolyOptions = Record<never, never>>(n: number, x?: ExprLike, opts?: O): NamedPolyResult<O>;
 export function chebyshevtPoly(n: number, x?: ExprLike, opts: NamedPolyOptions = {}): Expr | Poly {
   return namedPoly(n, chebyshevtCoeffs, 'Chebyshev polynomial of the first kind', x, opts, false);
 }
 
-/** SymPy chebyshevu_poly(n, x): the Chebyshev polynomial of the second kind U_n(x). */
+/**
+ * The Chebyshev polynomial of the second kind U_n(x).
+ *
+ * @param n - Nonnegative index of the polynomial family.
+ * @param x - Variable or evaluation point of the polynomial.
+ * @param opts - Set `polys` to return a polynomial object.
+ * @returns The polynomial as an expression, or a `Poly` with `polys: true`.
+ * @throws RangeError when the index is not a nonnegative integer.
+ * @see SymPy `sympy.polys.orthopolys.chebyshevu_poly`
+ */
 export function chebyshevuPoly<O extends NamedPolyOptions = Record<never, never>>(n: number, x?: ExprLike, opts?: O): NamedPolyResult<O>;
 export function chebyshevuPoly(n: number, x?: ExprLike, opts: NamedPolyOptions = {}): Expr | Poly {
   return namedPoly(n, chebyshevuCoeffs, 'Chebyshev polynomial of the second kind', x, opts, false);
 }
 
-/** SymPy hermite_poly(n, x): the physicist's Hermite polynomial H_n(x). */
+/**
+ * The physicist's Hermite polynomial H_n(x).
+ *
+ * @param n - Nonnegative index of the polynomial family.
+ * @param x - Variable or evaluation point of the polynomial.
+ * @param opts - Set `polys` to return a polynomial object.
+ * @returns The polynomial as an expression, or a `Poly` with `polys: true`.
+ * @throws RangeError when the index is not a nonnegative integer.
+ * @see SymPy `sympy.polys.orthopolys.hermite_poly`
+ */
 export function hermitePoly<O extends NamedPolyOptions = Record<never, never>>(n: number, x?: ExprLike, opts?: O): NamedPolyResult<O>;
 export function hermitePoly(n: number, x?: ExprLike, opts: NamedPolyOptions = {}): Expr | Poly {
   return namedPoly(n, hermiteCoeffs, 'Hermite polynomial', x, opts, false);
 }
 
-/** SymPy hermite_prob_poly(n, x): the probabilist's Hermite polynomial He_n(x). */
+/**
+ * The probabilist's Hermite polynomial He_n(x).
+ *
+ * @param n - Nonnegative index of the polynomial family.
+ * @param x - Variable or evaluation point of the polynomial.
+ * @param opts - Set `polys` to return a polynomial object.
+ * @returns The polynomial as an expression, or a `Poly` with `polys: true`.
+ * @throws RangeError when the index is not a nonnegative integer.
+ * @see SymPy `sympy.polys.orthopolys.hermite_prob_poly`
+ */
 export function hermiteProbPoly<O extends NamedPolyOptions = Record<never, never>>(n: number, x?: ExprLike, opts?: O): NamedPolyResult<O>;
 export function hermiteProbPoly(n: number, x?: ExprLike, opts: NamedPolyOptions = {}): Expr | Poly {
   return namedPoly(n, hermiteProbCoeffs, "probabilist's Hermite polynomial", x, opts, false);
 }
 
-/** SymPy legendre_poly(n, x): the Legendre polynomial P_n(x). */
+/**
+ * The Legendre polynomial P_n(x).
+ *
+ * @param n - Nonnegative index of the polynomial family.
+ * @param x - Variable or evaluation point of the polynomial.
+ * @param opts - Set `polys` to return a polynomial object.
+ * @returns The polynomial as an expression, or a `Poly` with `polys: true`.
+ * @throws RangeError when the index is not a nonnegative integer.
+ * @see SymPy `sympy.polys.orthopolys.legendre_poly`
+ */
 export function legendrePoly<O extends NamedPolyOptions = Record<never, never>>(n: number, x?: ExprLike, opts?: O): NamedPolyResult<O>;
 export function legendrePoly(n: number, x?: ExprLike, opts: NamedPolyOptions = {}): Expr | Poly {
   return namedPoly(n, legendreCoeffs, 'Legendre polynomial', x, opts);
 }
 
-/** SymPy laguerre_poly(n, x, alpha): the generalized Laguerre polynomial L_n^(alpha)(x). */
+/**
+ * The generalized Laguerre polynomial L_n^(alpha)(x).
+ *
+ * @param n - Nonnegative index of the polynomial family.
+ * @param x - Variable or evaluation point of the polynomial.
+ * @param alpha - Laguerre parameter.
+ * @param opts - Set `polys` to return a polynomial object.
+ * @returns The polynomial as an expression, or a `Poly` with `polys: true`.
+ * @throws RangeError when the index is not a nonnegative integer.
+ * @see SymPy `sympy.polys.orthopolys.laguerre_poly`
+ */
 export function laguerrePoly<O extends NamedPolyOptions = Record<never, never>>(n: number, x?: ExprLike, alpha?: ExprLike, opts?: O): NamedPolyResult<O>;
 export function laguerrePoly(n: number, x?: ExprLike, alpha: ExprLike = 0, opts: NamedPolyOptions = {}): Expr | Poly {
   return namedPoly(n, (k) => laguerreCoeffs(k, sympify(alpha)), 'Laguerre polynomial', x, opts, true, [alpha]);

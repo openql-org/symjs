@@ -15,7 +15,24 @@ import type { Domain } from './domains';
 import { AlgebraicField } from './domains/algebraicfield';
 import { Poly, resultant } from './sympoly';
 
-/** Shift a square-free polynomial over an algebraic field until its norm is square-free. */
+/**
+ * Shift a square-free polynomial over an algebraic field until its norm is square-free.
+ *
+ * @param f - Polynomial in dense, leading-coefficient-first representation.
+ * @param u - Number of variables minus one.
+ * @param K - Coefficient domain for the polynomial arithmetic.
+ * @returns The generator shifts, the shifted polynomial and its square-free norm over the ground field.
+ * @throws DomainError when the coefficient domain is not algebraic.
+ * @throws RangeError when the polynomial is not square-free.
+ * @see SymPy `sympy.polys.sqfreetools.dmp_sqf_norm`
+ * @example
+ * ```ts
+ * import { QQ, dmpSqfNorm, ex } from '@symjs/symjs';
+ *
+ * const K = QQ.algebraicField(ex`sqrt(3)`);
+ * dmpSqfNorm([1, 0, 1], 0, K)[0]; // => [1]
+ * ```
+ */
 export function dmpSqfNorm(f: DensePoly, u: number, K: Domain): [number[], unknown[], unknown[]] {
   if (!(K instanceof AlgebraicField)) throw new DomainError('ground domain must be algebraic');
   const variables = Array.from({ length: u + 1 }, (_, i) => new Dummy(`x${i}`));

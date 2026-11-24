@@ -19,35 +19,77 @@ function zip<A, B>(a: readonly A[], b: readonly B[]): [A, B][] {
   return a.slice(0, b.length).map((v, i) => [v, at(b, i)]);
 }
 
-/** A monomial as exponents over generators (SymPy Monomial). */
+/**
+ * A monomial as exponents over generators.
+ *
+ * @see SymPy `sympy.polys.monomials.Monomial`
+ */
 export class Monomial {
+  /**
+   * Construct a `Monomial` instance.
+   *
+   * @param exponents - Powers of the generators in order.
+   * @param gens - Polynomial generators in the desired order.
+   */
   constructor(
+    /** The exponent of each generator in order. @see SymPy `sympy.polys.monomials.Monomial.exponents` */
     readonly exponents: readonly number[],
+    /** The ordered generators. @see SymPy `sympy.polys.monomials.Monomial.gens` */
     readonly gens: readonly Expr[] = [],
   ) {}
 
-  /** The monomial as an expression (SymPy as_expr). */
+  /**
+   * The monomial as an expression.
+   *
+   * @param gens - Polynomial generators in the desired order.
+   * @returns The symbolic expression.
+   * @throws TypeError when no generators are supplied.
+   * @see SymPy `sympy.polys.monomials.Monomial.as_expr`
+   */
   asExpr(...gens: Expr[]): Expr {
     const g = gens.length ? gens : this.gens;
     if (!g.length) throw new TypeError(`Cannot convert ${this.toString()} to an expression without generators`);
     return mul(...zip(g, this.exponents).map(([x, k]) => pow(x, k)));
   }
-  /** Product of monomials (exponents added). */
+  /**
+   * Product of monomials (exponents added).
+   *
+   * @param o - Operand to combine or compare with this value.
+   * @returns The product of the operands.
+   * @see SymPy `sympy.polys.monomials.Monomial.__mul__`
+   */
   mul(o: Monomial | readonly number[]): Monomial {
     const e = o instanceof Monomial ? o.exponents : o;
     return new Monomial(zip(this.exponents, e).map(([k, l]) => k + l), this.gens);
   }
-  /** Greatest common divisor (minimum exponents). */
+  /**
+   * Greatest common divisor (minimum exponents).
+   *
+   * @param o - Operand to combine or compare with this value.
+   * @returns The greatest common divisor.
+   * @see SymPy `sympy.polys.monomials.Monomial.gcd`
+   */
   gcd(o: Monomial | readonly number[]): Monomial {
     const e = o instanceof Monomial ? o.exponents : o;
     return new Monomial(zip(this.exponents, e).map(([k, l]) => Math.min(k, l)), this.gens);
   }
-  /** Least common multiple (maximum exponents). */
+  /**
+   * Least common multiple (maximum exponents).
+   *
+   * @param o - Operand to combine or compare with this value.
+   * @returns The least common multiple.
+   * @see SymPy `sympy.polys.monomials.Monomial.lcm`
+   */
   lcm(o: Monomial | readonly number[]): Monomial {
     const e = o instanceof Monomial ? o.exponents : o;
     return new Monomial(zip(this.exponents, e).map(([k, l]) => Math.max(k, l)), this.gens);
   }
-  /** SymPy str: x**2*y**0, or Monomial((2, 0)) without generators. */
+  /**
+   * x**2*y**0, or Monomial((2, 0)) without generators.
+   *
+   * @returns The formatted text.
+   * @see SymPy `sympy.polys.monomials.Monomial.__str__`
+   */
   toString(): string {
     if (this.gens.length) return zip(this.gens, this.exponents).map(([g, k]) => `${str(g)}**${k}`).join('*');
     return `Monomial((${this.exponents.join(', ')}${this.exponents.length === 1 ? ',' : ''}))`;
@@ -61,60 +103,203 @@ export class Monomial {
 /** An exponent tuple. */
 export type ExponentVector = readonly number[];
 
-/** The product of monomials, exponents added (SymPy monomial_mul). */
+/**
+ * The product of monomials, exponents added.
+ *
+ * @param A - First exponent vector.
+ * @param B - Second exponent vector.
+ * @returns The product of monomials, exponents added.
+ * @see SymPy `sympy.polys.monomials.monomial_mul`
+ * @remarks SymPy returns `(4, 6, 1)` with tuples for the fixed-length groups.
+ * @example
+ * ```ts
+ * import { monomialMul } from '@symjs/symjs';
+ *
+ * monomialMul([3, 4, 1], [1, 2, 0]); // => [4, 6, 1]
+ * ```
+ */
 export function monomialMul(A: ExponentVector, B: ExponentVector): number[] {
   return zip(A, B).map(([a, b]) => a + b);
 }
 
-/** The quotient A / B, or NoMatch when B does not divide A (SymPy monomial_div, None). */
+/**
+ * The quotient A / B, or NoMatch when B does not divide A.
+ *
+ * @param A - First exponent vector.
+ * @param B - Second exponent vector.
+ * @returns The quotient A / B, or NoMatch when B does not divide A.
+ * @see SymPy `sympy.polys.monomials.monomial_div`
+ * @remarks SymPy returns `(2, 2, 1)` with tuples for the fixed-length groups.
+ * @example
+ * ```ts
+ * import { monomialDiv } from '@symjs/symjs';
+ *
+ * monomialDiv([3, 4, 1], [1, 2, 0]); // => [2, 2, 1]
+ * ```
+ */
 export function monomialDiv(A: ExponentVector, B: ExponentVector): number[] | NoMatchResult {
   const C = monomialLdiv(A, B);
   return C.every((c) => c >= 0) ? C : NoMatch;
 }
 
-/** The quotient A / B with possibly negative exponents (SymPy monomial_ldiv). */
+/**
+ * The quotient A / B with possibly negative exponents.
+ *
+ * @param A - First exponent vector.
+ * @param B - Second exponent vector.
+ * @returns The quotient A / B with possibly negative exponents.
+ * @see SymPy `sympy.polys.monomials.monomial_ldiv`
+ * @remarks SymPy returns `(2, 2, 1)` with tuples for the fixed-length groups. The second result is `(2, 2, -1)` in SymPy.
+ * @example
+ * ```ts
+ * import { monomialLdiv } from '@symjs/symjs';
+ *
+ * monomialLdiv([3, 4, 1], [1, 2, 0]); // => [2, 2, 1]
+ * monomialLdiv([3, 4, 1], [1, 2, 2]); // => [2, 2, -1]
+ * ```
+ */
 export function monomialLdiv(A: ExponentVector, B: ExponentVector): number[] {
   return zip(A, B).map(([a, b]) => a - b);
 }
 
-/** The power A**n (SymPy monomial_pow). */
+/**
+ * The power A**n.
+ *
+ * @param A - First exponent vector.
+ * @param n - Nonnegative power of the monomial.
+ * @returns The power A**n.
+ * @see SymPy `sympy.polys.monomials.monomial_pow`
+ */
 export function monomialPow(A: ExponentVector, n: number): number[] {
   return A.map((a) => a * n);
 }
 
-/** The greatest common divisor, minimum exponents (SymPy monomial_gcd). */
+/**
+ * The greatest common divisor, minimum exponents.
+ *
+ * @param A - First exponent vector.
+ * @param B - Second exponent vector.
+ * @returns The greatest common divisor, minimum exponents.
+ * @see SymPy `sympy.polys.monomials.monomial_gcd`
+ * @remarks SymPy returns `(1, 2, 0)` with tuples for the fixed-length groups.
+ * @example
+ * ```ts
+ * import { monomialGcd } from '@symjs/symjs';
+ *
+ * monomialGcd([1, 4, 1], [3, 2, 0]); // => [1, 2, 0]
+ * ```
+ */
 export function monomialGcd(A: ExponentVector, B: ExponentVector): number[] {
   return zip(A, B).map(([a, b]) => Math.min(a, b));
 }
 
-/** The least common multiple, maximum exponents (SymPy monomial_lcm). */
+/**
+ * The least common multiple, maximum exponents.
+ *
+ * @param A - First exponent vector.
+ * @param B - Second exponent vector.
+ * @returns The least common multiple, maximum exponents.
+ * @see SymPy `sympy.polys.monomials.monomial_lcm`
+ * @remarks SymPy returns `(3, 4, 1)` with tuples for the fixed-length groups.
+ * @example
+ * ```ts
+ * import { monomialLcm } from '@symjs/symjs';
+ *
+ * monomialLcm([1, 4, 1], [3, 2, 0]); // => [3, 4, 1]
+ * ```
+ */
 export function monomialLcm(A: ExponentVector, B: ExponentVector): number[] {
   return zip(A, B).map(([a, b]) => Math.max(a, b));
 }
 
-/** Whether A divides B (SymPy monomial_divides). */
+/**
+ * Whether A divides B.
+ *
+ * @param A - First exponent vector.
+ * @param B - Second exponent vector.
+ * @returns Whether A divides B.
+ * @see SymPy `sympy.polys.monomials.monomial_divides`
+ * @example
+ * ```ts
+ * import { monomialDivides } from '@symjs/symjs';
+ *
+ * monomialDivides([1, 2], [3, 4]); // => True
+ * monomialDivides([1, 2], [0, 2]); // => False
+ * ```
+ */
 export function monomialDivides(A: ExponentVector, B: ExponentVector): boolean {
   return zip(A, B).every(([a, b]) => a <= b);
 }
 
-/** The exponentwise maximum of monomials (SymPy monomial_max). */
+/**
+ * The exponentwise maximum of monomials.
+ *
+ * @param monoms - Exponent vectors of the monomials.
+ * @returns The exponentwise maximum of monomials.
+ * @see SymPy `sympy.polys.monomials.monomial_max`
+ * @remarks SymPy returns `(6, 5, 9)` with tuples for the fixed-length groups.
+ * @example
+ * ```ts
+ * import { monomialMax } from '@symjs/symjs';
+ *
+ * monomialMax([3, 4, 5], [0, 5, 1], [6, 3, 9]); // => [6, 5, 9]
+ * ```
+ */
 export function monomialMax(...monoms: ExponentVector[]): number[] {
   const [first = [], ...rest] = monoms;
   return rest.reduce<number[]>((M, N) => monomialLcm(M, N), [...first]);
 }
 
-/** The exponentwise minimum of monomials (SymPy monomial_min). */
+/**
+ * The exponentwise minimum of monomials.
+ *
+ * @param monoms - Exponent vectors of the monomials.
+ * @returns The exponentwise minimum of monomials.
+ * @see SymPy `sympy.polys.monomials.monomial_min`
+ * @remarks SymPy returns `(0, 3, 1)` with tuples for the fixed-length groups.
+ * @example
+ * ```ts
+ * import { monomialMin } from '@symjs/symjs';
+ *
+ * monomialMin([3, 4, 5], [0, 5, 1], [6, 3, 9]); // => [0, 3, 1]
+ * ```
+ */
 export function monomialMin(...monoms: ExponentVector[]): number[] {
   const [first = [], ...rest] = monoms;
   return rest.reduce<number[]>((M, N) => monomialGcd(M, N), [...first]);
 }
 
-/** The total degree (SymPy monomial_deg). */
+/**
+ * The total degree.
+ *
+ * @param M - Exponent vector.
+ * @returns The total degree.
+ * @see SymPy `sympy.polys.monomials.monomial_deg`
+ * @example
+ * ```ts
+ * import { monomialDeg } from '@symjs/symjs';
+ *
+ * monomialDeg([1, 2]); // => 3
+ * ```
+ */
 export function monomialDeg(M: ExponentVector): number {
   return M.reduce((s, m) => s + m, 0);
 }
 
-/** The number of monomials of total degree at most N in V variables, binomial(V + N, N) (SymPy monomial_count). */
+/**
+ * The number of monomials of total degree at most N in V variables, binomial(V + N, N).
+ *
+ * @param V - Number of variables.
+ * @param N - Maximum total degree to count.
+ * @returns The number of monomials of total degree at most N in V variables, binomial(V + N, N).
+ * @see SymPy `sympy.polys.monomials.monomial_count`
+ * @example
+ * ```ts
+ * import { monomialCount } from '@symjs/symjs';
+ *
+ * monomialCount(2, 2); // => 6
+ * ```
+ */
 export function monomialCount(V: IntLike, N: IntLike): Rational {
   const [v, n] = [asInt(V, 'V'), asInt(N, 'N')];
   let c = 1n;
@@ -128,11 +313,25 @@ function product<T>(lists: readonly (readonly T[])[]): T[][] {
 }
 
 /**
- * The monomials in the variables (SymPy itermonomials): with a total degree
+ * The monomials in the variables: with a total degree
  * between minDegrees and maxDegrees, or, given lists of degrees, with the
  * degree of each variable between its bounds. SymPy yields them in no
  * particular order; they are returned in the order generated, without
  * duplicates.
+ *
+ * @param variables - Generators from which to build the monomials.
+ * @param maxDegrees - Upper total degree or componentwise upper degree bounds.
+ * @param minDegrees - Lower total degree or componentwise lower degree bounds.
+ * @returns The monomials satisfying the degree bounds.
+ * @throws RangeError when the exponent vectors have different lengths or a degree bound is negative or a minimum degree exceeds the corresponding maximum.
+ * @throws TypeError when the lower and upper degree bounds have incompatible shapes.
+ * @see SymPy `sympy.polys.monomials.itermonomials`
+ * @example
+ * ```ts
+ * import { ex, itermonomials } from '@symjs/symjs';
+ *
+ * itermonomials([ex`x`, ex`y`], 2).length; // => 6
+ * ```
  */
 export function itermonomials(variables: readonly Expr[], maxDegrees: number | readonly number[], minDegrees?: number | readonly number[]): Expr[] {
   if (typeof maxDegrees !== 'number') {

@@ -16,12 +16,22 @@ import { parallelPolyFromExpr } from './fromexpr';
 import { preprocessDomain } from './polyoptions';
 import { Poly } from './sympoly';
 
+/** An expression or polynomial accepted as a matrix entry. */
 export type PolyMatrixEntry = ExprLike | Poly;
 /** The generators of a polynomial matrix: one generator or a list of them (SymPy's tuple). */
 export type PolyMatrixGens = Expr | readonly Expr[];
-export interface PolyMatrixOptions { ring?: PolyMatrixRing | Domain | string }
-/** SymPy PolyMatrix(rows, cols, lambda i, j: ...): the entry in row i and column j. */
+/** Options for constructing a polynomial matrix over a specified ring. */
+export interface PolyMatrixOptions { /** The polynomial ring for the matrix entries. */
+ring?: PolyMatrixRing | Domain | string }
+/**
+ * ...): the entry in row i and column j.
+ *
+ * @param i - Zero-based row index.
+ * @param j - Zero-based column index.
+ * @returns The entry to place at that position.
+ */
 export type PolyMatrixEntryFunction = (i: number, j: number) => PolyMatrixEntry;
+/** An argument to the polynomial matrix constructor, including dimensions, entries, generators or options. */
 export type PolyMatrixArgument = PolyMatrixEntry | readonly PolyMatrixEntry[] | readonly (readonly PolyMatrixEntry[])[] | PolyMatrixEntryFunction | readonly Expr[] | PolyMatrixOptions;
 
 const range = (n: number): number[] => Array.from({ length: n }, (_, i) => i);
@@ -38,11 +48,26 @@ const isInteger = (a: unknown): a is number => typeof a === 'number' && Number.i
  * polynomial ring or a fraction field, as in QQ[x][y] or ZZ(x)[y].
  */
 export class PolyMatrixRing {
+  /** The ordered generators. */
   readonly gens: readonly Expr[];
-  constructor(readonly domain: Domain, gens: PolyMatrixGens) {
+  /**
+   * Construct a `PolyMatrixRing` instance.
+   *
+   * @param domain - Coefficient domain.
+   * @param gens - Polynomial generators in the desired order.
+   */
+  constructor(
+    /** The coefficient domain. */
+    readonly domain: Domain, gens: PolyMatrixGens) {
     this.gens = gens instanceof Expr ? [gens] : [...gens];
   }
-  /** A ring given as a PolyMatrixRing, a polynomial ring domain or a string such as 'QQ[x]' or 'QQ[x][y]'. */
+  /**
+   * A ring given as a PolyMatrixRing, a polynomial ring domain or a string such as 'QQ[x]' or 'QQ[x][y]'.
+   *
+   * @param ring - Polynomial ring supplying the generators and coefficient domain.
+   * @returns A ring given as a PolyMatrixRing, a polynomial ring domain or a string such as 'QQ[x]' or 'QQ[x][y]'.
+   * @throws TypeError when the supplied domain is not a polynomial ring.
+   */
   static of(ring: PolyMatrixRing | Domain | string): PolyMatrixRing {
     if (ring instanceof PolyMatrixRing) return ring;
     if (typeof ring === 'string') {
@@ -53,38 +78,78 @@ export class PolyMatrixRing {
     if (ring.isField || ring.symbols.length === 0) throw new TypeError(`expected a polynomial ring, got ${ring.toString()}`);
     return new PolyMatrixRing(ring.dom, ring.symbols);
   }
-  /** The element of the ring of an expression or a polynomial; throws CoercionFailed when it is not one. */
+  /**
+   * The element of the ring of an expression or a polynomial; throws CoercionFailed when it is not one.
+   *
+   * @param e - Expression to convert.
+   * @returns The element of the ring of an expression or a polynomial.
+   */
   element(e: PolyMatrixEntry): Poly {
     const p = Poly.from(e instanceof Poly ? e.asExpr() : e, this.gens, { domain: this.domain.toString() });
     for (const c of p.coeffs()) this.domain.fromSympy(c);
     return p;
   }
-  /** The smallest ring containing this one and another ring or coefficient domain. */
+  /**
+   * The smallest ring containing this one and another ring or coefficient domain.
+   *
+   * @param other - Operand to combine or compare with this value.
+   * @returns The smallest ring containing this one and another ring or coefficient domain.
+   */
   unify(other: PolyMatrixRing | Domain): PolyMatrixRing {
     const o = other instanceof PolyMatrixRing ? other : other.symbols.length && !other.isField ? new PolyMatrixRing(other.dom, other.symbols) : new PolyMatrixRing(other, []);
     const gens = [...this.gens];
     for (const g of o.gens) if (!gens.some((h) => h.key === g.key)) gens.push(g);
     return new PolyMatrixRing(this.domain.unify(o.domain), gens);
   }
+  /**
+   * Whether the operand represents the same value.
+   *
+   * @param other - Operand to combine or compare with this value.
+   * @returns Whether the comparison holds.
+   */
   equals(other: unknown): boolean {
     return other instanceof PolyMatrixRing && this.toString() === other.toString();
   }
+  /**
+   * The printable representation.
+   *
+   * @returns The formatted text.
+   */
   toString(): string {
     return `${this.domain.toString()}[${this.gens.map((g) => str(g)).join(',')}]`;
   }
 }
 
-/** A dense matrix of polynomials in a common polynomial ring (SymPy PolyMatrix). */
+/**
+ * A dense matrix of polynomials in a common polynomial ring.
+ *
+ * @see SymPy `sympy.polys.polymatrix.MutablePolyDenseMatrix`
+ * @example
+ * ```ts
+ * import { MutablePolyDenseMatrix, ex } from '@symjs/symjs';
+ *
+ * new MutablePolyDenseMatrix([[ex`x**2`]], ex`x`).toMatrix(); // => Matrix([[x**2]])
+ * ```
+ */
 export class MutablePolyDenseMatrix implements Iterable<Poly> {
+  /**
+   * The polynomial ring to which the elements belong.
+   *
+   * @see SymPy `sympy.polys.polymatrix.MutablePolyDenseMatrix.ring`
+   */
   readonly ring: PolyMatrixRing;
   private readonly nrows: number;
   private readonly ncols: number;
   private readonly entries: readonly Poly[];
 
   /**
-   * SymPy PolyMatrix(...): from a list of rows, a list of entries (a column)
+   * From a list of rows, a list of entries (a column)
    * or rows, columns and a list or function of the entries, followed by the
    * generators; the ring option fixes the polynomial ring.
+   *
+   * @param args - Arguments to the operation.
+   * @throws TypeError when an empty matrix is constructed without specifying its ring or the entries mix individual values and rows or the arguments do not describe a polynomial matrix or a generator is not an expression.
+   * @throws RangeError when the entry count differs from the product of the dimensions.
    */
   constructor(...args: PolyMatrixArgument[]) {
     const last = args.at(-1);
@@ -124,7 +189,17 @@ export class MutablePolyDenseMatrix implements Iterable<Poly> {
     [this.nrows, this.ncols, this.entries] = [rows, cols, built.entries];
   }
 
-  /** The matrix of rows x cols entries over the given ring, or over the ring of their polynomials (SymPy from_list). */
+  /**
+   * The matrix of rows x cols entries over the given ring, or over the ring of their polynomials.
+   *
+   * @param rows - Number of rows.
+   * @param cols - Number of columns.
+   * @param items - Entries of the matrix.
+   * @param gens - Polynomial generators in the desired order.
+   * @param ring - Polynomial ring supplying the generators and coefficient domain.
+   * @returns The matrix of rows x cols entries over the given ring, or over the ring of their polynomials.
+   * @see SymPy `sympy.polys.polymatrix.MutablePolyDenseMatrix.from_list`
+   */
   static fromList(rows: number, cols: number, items: readonly PolyMatrixEntry[], gens: readonly Expr[], ring?: PolyMatrixRing | Domain | string): MutablePolyDenseMatrix {
     let R: PolyMatrixRing;
     if (ring !== undefined) R = PolyMatrixRing.of(ring);
@@ -150,24 +225,52 @@ export class MutablePolyDenseMatrix implements Iterable<Poly> {
     return MutablePolyDenseMatrix.create(ring, rows, cols, values.map((e) => ring.element(e)));
   }
 
-  /** The matrix of a DomainMatrix over a polynomial ring (SymPy from_dm). */
+  /**
+   * The matrix of a DomainMatrix over a polynomial ring.
+   *
+   * @param dm - Matrix over a coefficient domain.
+   * @returns The matrix of a DomainMatrix over a polynomial ring.
+   * @see SymPy `sympy.polys.polymatrix.MutablePolyDenseMatrix.from_dm`
+   */
   static fromDm(dm: DomainMatrix): MutablePolyDenseMatrix {
     const [rows, cols] = dm.shape;
     const ring = PolyMatrixRing.of(dm.domain);
     return MutablePolyDenseMatrix.create(ring, rows, cols, dm.toMatrix().flat().map((e) => ring.element(e)));
   }
 
-  /** The polynomial matrix of a Matrix in the given generators or ring (SymPy from_Matrix). */
+  /**
+   * The polynomial matrix of a Matrix in the given generators or ring.
+   *
+   * @param other - Operand to combine or compare with this value.
+   * @param args - Arguments to the operation.
+   * @returns The polynomial matrix of a Matrix in the given generators or ring.
+   * @see SymPy `sympy.polys.polymatrix.MutablePolyDenseMatrix.from_Matrix`
+   */
   static fromMatrix(other: Matrix, ...args: (Expr | readonly Expr[] | PolyMatrixOptions)[]): MutablePolyDenseMatrix {
     return new MutablePolyDenseMatrix(other.rows, other.cols, other.flat(), ...args);
   }
 
-  /** The identity matrix over QQ[gens]. */
+  /**
+   * The identity matrix over QQ[gens].
+   *
+   * @param n - Number of rows and columns.
+   * @param gens - Polynomial generators in the desired order.
+   * @returns The identity matrix over QQ[gens].
+   * @see SymPy `sympy.polys.polymatrix.MutablePolyDenseMatrix.eye`
+   */
   static eye(n: number, gens: PolyMatrixGens): MutablePolyDenseMatrix {
     return MutablePolyDenseMatrix.fromDmOver(Matrix.eye(n), gens);
   }
 
-  /** The zero matrix over QQ[gens]. */
+  /**
+   * The zero matrix over QQ[gens].
+   *
+   * @param m - Number of rows.
+   * @param n - Number of columns.
+   * @param gens - Polynomial generators in the desired order.
+   * @returns The zero matrix over QQ[gens].
+   * @see SymPy `sympy.polys.polymatrix.MutablePolyDenseMatrix.zeros`
+   */
   static zeros(m: number, n: number, gens: PolyMatrixGens): MutablePolyDenseMatrix {
     return MutablePolyDenseMatrix.fromDmOver(Matrix.zeros(m, n), gens);
   }
@@ -180,19 +283,70 @@ export class MutablePolyDenseMatrix implements Iterable<Poly> {
     return MutablePolyDenseMatrix.create(ring, matrix.rows, matrix.cols, matrix.flat().map((e) => ring.element(e)));
   }
 
+  /**
+   * The number of matrix rows.
+   *
+   * @returns The number of matrix rows.
+   * @see SymPy `sympy.polys.polymatrix.MutablePolyDenseMatrix.rows`
+   */
   get rows(): number { return this.nrows; }
+  /**
+   * The number of matrix columns.
+   *
+   * @returns The number of matrix columns.
+   * @see SymPy `sympy.polys.polymatrix.MutablePolyDenseMatrix.cols`
+   */
   get cols(): number { return this.ncols; }
+  /**
+   * The number of rows and columns, in that order.
+   *
+   * @returns The number of rows and columns, in that order.
+   * @see SymPy `sympy.polys.polymatrix.MutablePolyDenseMatrix.shape`
+   */
   get shape(): [number, number] { return [this.rows, this.cols]; }
-  /** The coefficient domain of the ring. */
+  /**
+   * The coefficient domain of the ring.
+   *
+   * @returns The coefficient domain of the ring.
+   * @see SymPy `sympy.polys.polymatrix.MutablePolyDenseMatrix.domain`
+   */
   get domain(): Domain { return this.ring.domain; }
+  /**
+   * The ordered generators.
+   *
+   * @returns The ordered generators.
+   * @see SymPy `sympy.polys.polymatrix.MutablePolyDenseMatrix.gens`
+   */
   get gens(): readonly Expr[] { return this.ring.gens; }
-  /** The number of entries (Python len). */
+  /**
+   * The number of entries (Python len).
+   *
+   * @returns The number of entries (Python len).
+   * @see SymPy `sympy.polys.polymatrix.MutablePolyDenseMatrix.__len__`
+   */
   get length(): number { return this.entries.length; }
+  /**
+   * Iterate over the polynomial entries in row-major order.
+   *
+   * @returns An iterator over the entries.
+   */
   *[Symbol.iterator](): Iterator<Poly> { yield* this.entries; }
-  /** The entries in row-major order. */
+  /**
+   * The entries in row-major order.
+   *
+   * @returns The entries in row-major order.
+   */
   flat(): Poly[] { return [...this.entries]; }
 
-  /** The entry at row i and column j, or the entry at the row-major index i (negative indices count from the end). */
+  /**
+   * The entry at row i and column j, or the entry at the row-major index i (negative indices count from the end).
+   *
+   * @param i - Zero-based row index.
+   * @param j - Zero-based column index.
+   * @returns The entry at row i and column j, or the entry at the row-major index i (negative indices count from the end).
+   * @throws RangeError when a row or column index is out of bounds.
+   * @see SymPy `sympy.polys.polymatrix.MutablePolyDenseMatrix.__getitem__`
+   */
   get(i: number, j?: number): Poly {
     if (j === undefined) {
       const k = i < 0 ? i + this.entries.length : i;
@@ -204,17 +358,35 @@ export class MutablePolyDenseMatrix implements Iterable<Poly> {
     return at(this.entries, r * this.cols + c);
   }
 
-  /** The submatrix of the given rows and columns. */
+  /**
+   * The submatrix of the given rows and columns.
+   *
+   * @param rows - Number of rows.
+   * @param cols - Number of columns.
+   * @returns The submatrix of the given rows and columns.
+   */
   extract(rows: readonly number[], cols: readonly number[]): MutablePolyDenseMatrix {
     const entries = rows.flatMap((i) => cols.map((j) => this.get(i, j)));
     return MutablePolyDenseMatrix.create(this.ring, rows.length, cols.length, entries);
   }
 
+  /**
+   * The matrix with each polynomial entry converted to an expression.
+   *
+   * @returns The matrix with each polynomial entry converted to an expression.
+   * @see SymPy `sympy.polys.polymatrix.MutablePolyDenseMatrix.to_Matrix`
+   */
   toMatrix(): Matrix {
     return Matrix.fromFunction(this.rows, this.cols, (i, j) => this.get(i, j).asExpr());
   }
 
-  /** The same matrix in other generators (SymPy set_gens). */
+  /**
+   * The same matrix in other generators.
+   *
+   * @param gens - Polynomial generators in the desired order.
+   * @returns The same matrix in other generators.
+   * @see SymPy `sympy.polys.polymatrix.MutablePolyDenseMatrix.set_gens`
+   */
   setGens(gens: PolyMatrixGens): MutablePolyDenseMatrix {
     return MutablePolyDenseMatrix.fromMatrix(this.toMatrix(), gens);
   }
@@ -233,11 +405,39 @@ export class MutablePolyDenseMatrix implements Iterable<Poly> {
     return this.withEntries(ring, this.rows, this.cols, this.entries.map((a, k) => f(a, at(other.entries, k)).asExpr()));
   }
 
+  /**
+   * The sum of the operands.
+   *
+   * @param other - Operand to combine or compare with this value.
+   * @returns The sum of the operands.
+   * @see SymPy `sympy.polys.polymatrix.MutablePolyDenseMatrix.__add__`
+   */
   add(other: MutablePolyDenseMatrix): MutablePolyDenseMatrix { return this.elementwise(other, '+', (a, b) => a.add(b)); }
+  /**
+   * The difference of the operands.
+   *
+   * @param other - Operand to combine or compare with this value.
+   * @returns The difference of the operands.
+   * @see SymPy `sympy.polys.polymatrix.MutablePolyDenseMatrix.__sub__`
+   */
   sub(other: MutablePolyDenseMatrix): MutablePolyDenseMatrix { return this.elementwise(other, '-', (a, b) => a.sub(b)); }
+  /**
+   * The additive inverse.
+   *
+   * @returns The additive inverse.
+   * @see SymPy `sympy.polys.polymatrix.MutablePolyDenseMatrix.__neg__`
+   */
   neg(): MutablePolyDenseMatrix { return this.withEntries(this.ring, this.rows, this.cols, this.entries.map((p) => p.neg().asExpr())); }
 
-  /** The matrix product, or the product with a scalar in the ring or in a larger domain. */
+  /**
+   * The matrix product, or the product with a scalar in the ring or in a larger domain.
+   *
+   * @param other - Operand to combine or compare with this value.
+   * @returns The matrix product, or the product with a scalar in the ring or in a larger domain.
+   * @throws RangeError when the inner matrix dimensions differ.
+   * @throws TypeError when the operand is neither a compatible matrix nor a supported scalar.
+   * @see SymPy `sympy.polys.polymatrix.MutablePolyDenseMatrix.__mul__`
+   */
   mul(other: MutablePolyDenseMatrix | ExprLike): MutablePolyDenseMatrix {
     if (other instanceof MutablePolyDenseMatrix) {
       if (this.cols !== other.rows) throw new RangeError('PolyMatrix shape mismatch for *');
@@ -261,7 +461,14 @@ export class MutablePolyDenseMatrix implements Iterable<Poly> {
     return this.withEntries(ring, this.rows, this.cols, this.values().map((e) => mul(e, scalar)));
   }
 
-  /** Division by a scalar of the coefficient domain (or a constant polynomial). */
+  /**
+   * Division by a scalar of the coefficient domain (or a constant polynomial).
+   *
+   * @param other - Operand to combine or compare with this value.
+   * @returns The matrix of polynomial quotients by the scalar.
+   * @throws TypeError when the operand is neither a compatible matrix nor a supported scalar.
+   * @see SymPy `sympy.polys.polymatrix.MutablePolyDenseMatrix.__truediv__`
+   */
   div(other: ExprLike | Poly): MutablePolyDenseMatrix {
     if (!(other instanceof Expr) && !(other instanceof Poly) && typeof other !== 'number' && typeof other !== 'bigint') throw new TypeError(`unsupported operand for /: PolyMatrix and ${String(other)}`);
     const scalar = this.domain.fromSympy(other instanceof Poly ? other.asExpr() : other);
@@ -269,6 +476,12 @@ export class MutablePolyDenseMatrix implements Iterable<Poly> {
     return this.withEntries(this.ring, this.rows, this.cols, this.values().map((e) => mul(e, inverse)));
   }
 
+  /**
+   * The transposed matrix.
+   *
+   * @returns The transposed matrix.
+   * @see SymPy `sympy.polys.polymatrix.MutablePolyDenseMatrix.transpose`
+   */
   transpose(): MutablePolyDenseMatrix {
     return this.extractAll(range(this.cols).flatMap((j) => range(this.rows).map((i) => this.get(i, j))), this.cols, this.rows);
   }
@@ -277,7 +490,14 @@ export class MutablePolyDenseMatrix implements Iterable<Poly> {
     return this.withEntries(ring, rows, cols, entries.map((p) => p.asExpr()));
   }
 
-  /** The matrices side by side. */
+  /**
+   * The matrices side by side.
+   *
+   * @param other - Operand to combine or compare with this value.
+   * @returns The matrices side by side.
+   * @throws RangeError when the row counts differ.
+   * @see SymPy `sympy.polys.polymatrix.MutablePolyDenseMatrix.row_join`
+   */
   rowJoin(other: MutablePolyDenseMatrix): MutablePolyDenseMatrix {
     if (this.rows !== other.rows) throw new RangeError('PolyMatrix row_join: the numbers of rows differ');
     const cols = this.cols + other.cols;
@@ -285,13 +505,26 @@ export class MutablePolyDenseMatrix implements Iterable<Poly> {
     return this.extractAll(entries, this.rows, cols, this.ring.unify(other.ring));
   }
 
-  /** The matrices one above the other. */
+  /**
+   * The matrices one above the other.
+   *
+   * @param other - Operand to combine or compare with this value.
+   * @returns The matrices one above the other.
+   * @throws RangeError when the column counts differ.
+   * @see SymPy `sympy.polys.polymatrix.MutablePolyDenseMatrix.col_join`
+   */
   colJoin(other: MutablePolyDenseMatrix): MutablePolyDenseMatrix {
     if (this.cols !== other.cols) throw new RangeError('PolyMatrix col_join: the numbers of columns differ');
     return this.extractAll([...this.entries, ...other.entries], this.rows + other.rows, this.cols, this.ring.unify(other.ring));
   }
 
-  /** The matrix of f applied to every entry (as an expression), in the same generators. */
+  /**
+   * The matrix of f applied to every entry (as an expression), in the same generators.
+   *
+   * @param f - Function applied to the arguments.
+   * @returns The matrix of f applied to every entry (as an expression), in the same generators.
+   * @see SymPy `sympy.polys.polymatrix.MutablePolyDenseMatrix.applyfunc`
+   */
   applyfunc(f: (e: Expr) => ExprLike): MutablePolyDenseMatrix {
     return MutablePolyDenseMatrix.fromMatrix(this.toMatrix().map((e) => f(e)), this.gens);
   }
@@ -302,28 +535,55 @@ export class MutablePolyDenseMatrix implements Iterable<Poly> {
     return new DomainMatrix(range(this.rows).map((i) => range(this.cols).map((j) => K.fromSympy(this.get(i, j).asExpr()))), [this.rows, this.cols], K);
   }
 
-  /** The reduced row echelon form over the coefficient field and the pivot columns. */
+  /**
+   * The reduced row echelon form over the coefficient field and the pivot columns.
+   *
+   * @returns The reduced row echelon form over the coefficient field and the pivot columns.
+   * @see SymPy `sympy.polys.polymatrix.MutablePolyDenseMatrix.rref`
+   */
   rref(): [MutablePolyDenseMatrix, number[]] {
     const [R, pivots] = this.groundMatrix('rref').rref();
     return [this.withEntries(this.ring, this.rows, this.cols, R.toMatrix().flat()), pivots];
   }
 
-  /** A basis of the nullspace over the coefficient field, as column vectors whose last nonzero entry is 1. */
+  /**
+   * A basis of the nullspace over the coefficient field, as column vectors whose last nonzero entry is 1.
+   *
+   * @returns A basis of the nullspace over the coefficient field, as column vectors whose last nonzero entry is 1.
+   * @see SymPy `sympy.polys.polymatrix.MutablePolyDenseMatrix.nullspace`
+   */
   nullspace(): MutablePolyDenseMatrix[] {
     const basis = this.groundMatrix('nullspace').nullspace({ divideLast: true }).toMatrix();
     return range(basis.rows).map((k) => this.withEntries(this.ring, this.cols, 1, basis.row(k).flat()));
   }
 
+  /**
+   * The rank of the matrix.
+   *
+   * @returns The rank of the matrix.
+   * @see SymPy `sympy.polys.polymatrix.MutablePolyDenseMatrix.rank`
+   */
   rank(): number {
     return this.cols - this.nullspace().length;
   }
 
-  /** Equal rings and entries. */
+  /**
+   * Equal rings and entries.
+   *
+   * @param other - Operand to combine or compare with this value.
+   * @returns Whether the comparison holds.
+   * @see SymPy `sympy.polys.polymatrix.MutablePolyDenseMatrix.__eq__`
+   */
   equals(other: unknown): boolean {
     return other instanceof MutablePolyDenseMatrix && this.ring.equals(other.ring) && this.rows === other.rows && this.cols === other.cols
       && this.entries.every((p, k) => p.asExpr().equals(at(other.entries, k).asExpr()));
   }
 
+  /**
+   * The printable representation.
+   *
+   * @returns The formatted text.
+   */
   toString(): string {
     if (!this.rows || !this.cols) return `PolyMatrix(${this.rows}, ${this.cols}, [], ring=${this.ring.toString()})`;
     // SymPy's repr of the Matrix: one row per line, the columns right-aligned

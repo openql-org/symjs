@@ -55,7 +55,15 @@ const GROUNDS: Readonly<Record<string, Domain>> = { Z: ZZ, ZZ, Q: QQ, QQ, ZZ_I, 
 const ground = (name: string | undefined): Domain => defined(GROUNDS[defined(name)], 'ground domain');
 const symbolsOf = (s: string | undefined): Sym[] => defined(s).split(',').map((g) => expectType(parse(g.trim()), (e): e is Sym => e instanceof Sym, 'generator'));
 
-/** A domain from its specification: a domain, or a string such as 'ZZ', 'QQ[x,y]', 'GF(5)' or 'QQ<sqrt(2)>' (SymPy Domain.preprocess). */
+/**
+ * A domain from its specification: a domain, or a string such as 'ZZ', 'QQ[x,y]', 'GF(5)' or 'QQ<sqrt(2)>'.
+ *
+ * @param domain - Coefficient domain.
+ * @returns A domain from its specification: a domain, or a string such as 'ZZ', 'QQ[x,y]', 'GF(5)' or 'QQ<sqrt(2)>'.
+ * @throws NotImplementedError when the requested floating-point precision is unsupported.
+ * @throws OptionError when the domain specification is unrecognized.
+ * @see SymPy `sympy.polys.polyoptions.Domain.preprocess`
+ */
 export function preprocessDomain(domain: unknown): Domain {
   if (domain instanceof Domain) return domain;
   if (typeof domain === 'string') {
@@ -233,12 +241,29 @@ function spec(name: string): OptionSpec {
 }
 
 /**
- * The options of a polynomial manipulation function (SymPy Options): a Map
+ * The options of a polynomial manipulation function: a Map
  * of the given options, preprocessed and checked, with the derived options
  * set. `get(name)` is the raw entry; the getters (`domain`, `gens`, ...)
  * give an option's default when it is not set.
+ *
+ * @see SymPy `sympy.polys.polyoptions.Options`
+ * @example
+ * ```ts
+ * import { Options } from '@symjs/symjs';
+ *
+ * new Options([], { field: true }).field; // => True
+ * ```
  */
 export class Options extends Map<string, unknown> {
+  /**
+   * Construct polynomial options from generators and keyword arguments.
+   *
+   * @param gens - Polynomial generators in the desired order.
+   * @param args - Polynomial options keyed by name.
+   * @param flags - Option flags allowed in this context.
+   * @param strict - Reject flags outside the allowed set.
+   * @throws OptionError when generators are specified both positionally and in the options or a flag is not allowed in this context or a required companion option is absent or mutually exclusive options are supplied together.
+   */
   constructor(gens: readonly unknown[] | null, args: OptionArgs, flags: readonly string[] | null = null, strict = false) {
     super();
     const given = new Map(entriesOf(args));
@@ -260,46 +285,104 @@ export class Options extends Map<string, unknown> {
     }
     for (const option of ORDER) spec(option).postprocess?.(this);
   }
-  /** An option's value, or its default when it is not set (SymPy attribute access). */
+  /**
+   * An option's value, or its default when it is not set.
+   *
+   * @param name - Name of the option.
+   * @returns An option's value, or its default when it is not set.
+   */
   option(name: string): unknown {
     return this.has(name) ? this.get(name) : (spec(name).default?.() ?? null);
   }
-  /** The generators (SymPy gens). */
+  /**
+   * The generators.
+   *
+   * @returns The generators.
+   * @see SymPy `sympy.polys.polyoptions.Options.gens`
+   */
   get gens(): Expr[] {
     return [...cast(this.option('gens'), TupleNode).args];
   }
+  /**
+   * The coefficient domain.
+   *
+   * @returns The coefficient domain.
+   * @see SymPy `sympy.polys.polyoptions.Options.domain`
+   */
   get domain(): Domain | null {
     const d = this.option('domain');
     return d instanceof Domain ? d : null;
   }
+  /**
+   * Whether to prefer a field for the coefficients.
+   *
+   * @returns Whether to prefer a field for the coefficients.
+   * @see SymPy `sympy.polys.polyoptions.Options.field`
+   */
   get field(): boolean {
     return this.option('field') === true;
   }
+  /**
+   * The algebraic extensions to include in the coefficient domain.
+   *
+   * @returns The algebraic extensions to include in the coefficient domain.
+   * @see SymPy `sympy.polys.polyoptions.Options.extension`
+   */
   get extension(): boolean | Expr[] | null {
     const e = this.option('extension');
     return e === true || (Array.isArray(e) ? e.map(asExpr) : null);
   }
+  /**
+   * Whether the coefficient domain may contain polynomial or rational-function generators.
+   *
+   * @returns Whether the coefficient domain may contain polynomial or rational-function generators.
+   * @see SymPy `sympy.polys.polyoptions.Options.composite`
+   */
   get composite(): boolean | null {
     const c = this.option('composite');
     return typeof c === 'boolean' ? c : null;
   }
+  /**
+   * Whether to convert the coefficient domain automatically.
+   *
+   * @returns Whether to convert the coefficient domain automatically.
+   * @see SymPy `sympy.polys.polyoptions.Options.auto`
+   */
   get auto(): boolean {
     return this.option('auto') === true;
   }
-  /** A copy with some options replaced (SymPy clone). */
+  /**
+   * A copy with some options replaced.
+   *
+   * @param updates - Option values to replace.
+   * @returns A copy with some options replaced.
+   * @see SymPy `sympy.polys.polyoptions.Options.clone`
+   */
   clone(updates: OptionArgs = {}): Options {
     const o = new Options(null, {});
     for (const [k, v] of this) o.set(k, v);
     for (const [k, v] of entriesOf(updates)) o.set(k, v);
     return o;
   }
-  /** The options that are not flags, except gens (SymPy args). */
+  /**
+   * The options that are not flags, except gens.
+   *
+   * @returns The options that are not flags, except gens.
+   * @see SymPy `sympy.polys.polyoptions.Options.args`
+   */
   get args(): Map<string, unknown> {
     return new Map([...this].filter(([k, v]) => v !== null && k !== 'gens' && !SPECS[k]?.flag));
   }
 }
 
-/** The options from gens and args, or args.opt when it is the only argument (SymPy build_options). */
+/**
+ * The options from gens and args, or args.opt when it is the only argument.
+ *
+ * @param gens - Polynomial generators in the desired order.
+ * @param args - Polynomial options keyed by name.
+ * @returns The options from gens and args, or args.opt when it is the only argument.
+ * @see SymPy `sympy.polys.polyoptions.build_options`
+ */
 export function buildOptions(gens: readonly unknown[], args: OptionArgs): Options {
   const entries = entriesOf(args);
   const opt = entries.find(([k]) => k === 'opt')?.[1];
@@ -307,7 +390,21 @@ export function buildOptions(gens: readonly unknown[], args: OptionArgs): Option
   return new Options(gens, args);
 }
 
-/** Throws FlagError when args contain a flag not in flags, OptionError for an unknown option (SymPy allowed_flags). */
+/**
+ * Throws FlagError when args contain a flag not in flags, OptionError for an unknown option.
+ *
+ * @param args - Polynomial options keyed by name.
+ * @param flags - Option flags allowed in this context.
+ * @throws FlagError when a flag is not allowed in this context.
+ * @see SymPy `sympy.polys.polyoptions.allowed_flags`
+ * @example
+ * ```ts
+ * import { allowedFlags, ZZ } from '@symjs/symjs';
+ *
+ * allowedFlags({ domain: ZZ }, []);
+ * allowedFlags({ domain: ZZ, frac: true }, ['frac']);
+ * ```
+ */
 export function allowedFlags(args: OptionArgs, flags: readonly string[]): void {
   for (const [arg] of entriesOf(args)) {
     if (spec(arg).flag && !flags.includes(arg)) throw new FlagError(`'${arg}' flag is not allowed in this context`);

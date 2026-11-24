@@ -12,7 +12,15 @@ import type { Domain } from './domains';
 import { IntegerRing, RationalField } from './domains';
 import { Poly } from './sympoly';
 
-/** Cauchy upper bound on the absolute values of all complex roots. */
+/**
+ * Cauchy upper bound on the absolute values of all complex roots.
+ *
+ * @param f - Polynomial to operate on.
+ * @param K - Coefficient domain for the polynomial arithmetic.
+ * @returns Cauchy upper bound on the absolute values of all complex roots.
+ * @throws PolynomialError when the polynomial has no roots.
+ * @see SymPy `sympy.polys.rootisolation.dup_cauchy_upper_bound`
+ */
 export function dupCauchyUpperBound(f: readonly ExprLike[], K: Domain): Rational {
   if (f.length < 2) throw new PolynomialError('Polynomial has no roots.');
   checkBoundDomain(K);
@@ -30,7 +38,15 @@ export function dupCauchyUpperBound(f: readonly ExprLike[], K: Domain): Rational
   return Rational.of(maximum.p + maximum.q, maximum.q);
 }
 
-/** Cauchy lower bound on the absolute values of nonzero roots. */
+/**
+ * Cauchy lower bound on the absolute values of nonzero roots.
+ *
+ * @param f - Polynomial to operate on.
+ * @param K - Coefficient domain for the polynomial arithmetic.
+ * @returns Cauchy lower bound on the absolute values of nonzero roots.
+ * @throws PolynomialError when there are no nonzero roots.
+ * @see SymPy `sympy.polys.rootisolation.dup_cauchy_lower_bound`
+ */
 export function dupCauchyLowerBound(f: readonly ExprLike[], K: Domain): Rational {
   const reversed = [...f].reverse();
   while (reversed.length && sympify(first(reversed)).key === S.Zero.key) reversed.shift();
@@ -39,7 +55,15 @@ export function dupCauchyLowerBound(f: readonly ExprLike[], K: Domain): Rational
   return Rational.of(bound.q, bound.p);
 }
 
-/** Square of Mignotte's lower bound on separation of distinct roots. */
+/**
+ * Square of Mignotte's lower bound on separation of distinct roots.
+ *
+ * @param f - Polynomial to operate on.
+ * @param K - Coefficient domain for the polynomial arithmetic.
+ * @returns Square of Mignotte's lower bound on separation of distinct roots.
+ * @throws PolynomialError when the polynomial degree is less than two.
+ * @see SymPy `sympy.polys.rootisolation.dup_mignotte_sep_bound_squared`
+ */
 export function dupMignotteSepBoundSquared(f: readonly ExprLike[], K: Domain): Rational {
   const n = f.length - 1;
   if (n < 2) throw new PolynomialError('Polynomials of degree < 2 have no distinct roots.');

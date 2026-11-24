@@ -36,7 +36,7 @@ import { CoercionFailed } from './domains';
 
 /** Options of minimalPolynomial. */
 export interface MinimalPolynomialOptions {
-  /** Compose the minimal polynomials of the parts by resultants (SymPy compose=True, the default). */
+  /** Compose the minimal polynomials of the parts by resultants. */
   compose?: boolean;
   /** Return a Poly instead of an expression. */
   polys?: boolean;
@@ -502,13 +502,56 @@ function topLevel(s: string): string[] {
 }
 
 /**
- * SymPy minimal_polynomial(ex, x): the minimal polynomial of the algebraic
+ * The minimal polynomial of the algebraic
  * element ex over QQ, over the field of the free symbols of ex
  * (QQ(y) for sqrt(y)), or over an algebraic field `{ domain: 'QQ<a>' }`;
  * primitive with a positive leading coefficient, collected in x.
+ *
+ * @param ex - Expression to convert or manipulate.
+ * @param x - Polynomial generator.
+ * @param opts - Options for the coefficient domain, algorithm and polynomial return type.
+ * @returns The minimal polynomial as an expression, or as a polynomial object with `polys: true`.
+ * @throws PolynomialError when the polynomial variable belongs to the coefficient domain.
+ * @throws NotImplementedError when the Gröbner method is requested over a nonnumeric ground field.
+ * @see SymPy `sympy.polys.numberfields.minpoly.minimal_polynomial`
+ * @example
+ * ```ts
+ * import { ex, minimalPolynomial, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * minimalPolynomial(ex`sqrt(2) + sqrt(3)`, x); // => x**4 - 10*x**2 + 1
+ * ```
  */
 export function minimalPolynomial(ex: ExprLike | AlgebraicNumber, x?: Sym, opts?: MinimalPolynomialOptions & { polys?: false }): Expr;
+/**
+ * The minimal polynomial of the algebraic
+ * element ex over QQ, over the field of the free symbols of ex
+ * (QQ(y) for sqrt(y)), or over an algebraic field `{ domain: 'QQ<a>' }`;
+ * primitive with a positive leading coefficient, collected in x.
+ *
+ * @param ex - Expression to convert or manipulate.
+ * @param x - Polynomial generator.
+ * @param opts - Options for the coefficient domain, algorithm and polynomial return type.
+ * @returns The minimal polynomial as an expression, or as a polynomial object with `polys: true`.
+ * @throws PolynomialError when the polynomial variable belongs to the coefficient domain.
+ * @throws NotImplementedError when the Gröbner method is requested over a nonnumeric ground field.
+ * @see SymPy `sympy.polys.numberfields.minpoly.minimal_polynomial`
+ */
 export function minimalPolynomial(ex: ExprLike | AlgebraicNumber, x: Sym | undefined, opts: MinimalPolynomialOptions & { polys: true }): Poly;
+/**
+ * The minimal polynomial of the algebraic
+ * element ex over QQ, over the field of the free symbols of ex
+ * (QQ(y) for sqrt(y)), or over an algebraic field `{ domain: 'QQ<a>' }`;
+ * primitive with a positive leading coefficient, collected in x.
+ *
+ * @param ex - Expression to convert or manipulate.
+ * @param x - Polynomial generator.
+ * @param opts - Options for the coefficient domain, algorithm and polynomial return type.
+ * @returns The minimal polynomial as an expression, or as a polynomial object with `polys: true`.
+ * @throws PolynomialError when the polynomial variable belongs to the coefficient domain.
+ * @throws NotImplementedError when the Gröbner method is requested over a nonnumeric ground field.
+ * @see SymPy `sympy.polys.numberfields.minpoly.minimal_polynomial`
+ */
 export function minimalPolynomial(ex: ExprLike | AlgebraicNumber, x?: Sym, opts?: MinimalPolynomialOptions): Expr | Poly;
 export function minimalPolynomial(exIn: ExprLike | AlgebraicNumber, xIn?: Sym, opts: MinimalPolynomialOptions = {}): Expr | Poly {
   let ex = exIn instanceof AlgebraicNumber ? exIn.asExpr() : sympify(exIn);
@@ -540,7 +583,7 @@ export interface AlgebraicNumberOptions {
    * it is not computed, so the root may be a symbol standing for a root of it.
    */
   minpoly?: Poly;
-  /** The symbol the primitive element is written with (SymPy alias). */
+  /** The symbol the primitive element is written with. */
   alias?: Sym | string;
 }
 
@@ -548,15 +591,39 @@ export interface AlgebraicNumberOptions {
  * An element of Q(theta) written as c[0]*theta**(n-1) + ... + c[n-1] for a
  * primitive element theta (SymPy AlgebraicNumber(theta, coeffs)). The
  * polynomial is reduced modulo the minimal polynomial of theta.
+ *
+ * @see SymPy `sympy.core.numbers.AlgebraicNumber`
  */
 export class AlgebraicNumber {
+  /**
+   * The chosen root defining the embedding of the number field.
+   *
+   * @see SymPy `sympy.core.numbers.AlgebraicNumber.root`
+   */
   readonly root: Expr;
+  /** The coefficients of the element in descending powers of its primitive element. */
   readonly coeffList: readonly Expr[];
+  /**
+   * The defining expression and coefficients of the algebraic number.
+   *
+   * @see SymPy `sympy.core.numbers.AlgebraicNumber.args`
+   */
   readonly args: readonly [Expr, readonly Expr[]] | readonly [Expr, readonly Expr[], Sym];
-  /** The symbol of the primitive element, when one was given (SymPy alias). */
+  /**
+   * The symbol of the primitive element, when one was given.
+   *
+   * @see SymPy `sympy.core.numbers.AlgebraicNumber.alias`
+   */
   readonly alias: Sym | undefined;
   private readonly rootMinpoly: Poly;
   private ownMinpoly: Poly | undefined;
+  /**
+   * Construct a `AlgebraicNumber` instance.
+   *
+   * @param root - Algebraic number defining the field embedding.
+   * @param coeffs - Coefficients in generator order.
+   * @param opts - Use `minpoly` to specify the defining polynomial and `alias` to name the primitive element.
+   */
   constructor(root: ExprLike | AlgebraicNumber, coeffs: readonly ExprLike[] = [1, 0], opts: AlgebraicNumberOptions = {}) {
     const t = new Dummy('t');
     const cs = coeffs.map((c) => sympify(c));
@@ -571,23 +638,44 @@ export class AlgebraicNumber {
     this.coeffList = p.rem(Poly.from(horner(this.rootMinpoly.allCoeffs(), t), [t])).allCoeffs();
   }
 
-  /** The element was given an alias (SymPy is_aliased). */
+  /**
+   * The element was given an alias.
+   *
+   * @returns The element was given an alias.
+   * @see SymPy `sympy.core.numbers.AlgebraicNumber.is_aliased`
+   */
   get isAliased(): boolean {
     return this.alias !== undefined;
   }
 
-  /** The minimal polynomial of the primitive element (SymPy minpoly). */
+  /**
+   * The minimal polynomial of the primitive element.
+   *
+   * @returns The minimal polynomial of the primitive element.
+   * @see SymPy `sympy.core.numbers.AlgebraicNumber.minpoly`
+   */
   minpoly(): Poly {
     return this.rootMinpoly;
   }
 
-  /** The minimal polynomial of this element (SymPy minpoly_of_element); the same polynomial object on every call. */
+  /**
+   * The minimal polynomial of this element; the same polynomial object on every call.
+   *
+   * @returns The minimal polynomial of this element.
+   * @see SymPy `sympy.core.numbers.AlgebraicNumber.minpoly_of_element`
+   */
   minpolyOfElement(): Poly {
     this.ownMinpoly ??= this.isPrimitiveElement ? this.rootMinpoly : minimalPolynomial(this.asExpr(), undefined, { polys: true });
     return this.ownMinpoly;
   }
 
-  /** The element of the same field with these coefficients (SymPy field_element). */
+  /**
+   * The element of the same field with these coefficients.
+   *
+   * @param coeffs - Coefficients in generator order.
+   * @returns The element of the same field with these coefficients.
+   * @see SymPy `sympy.core.numbers.AlgebraicNumber.field_element`
+   */
   fieldElement(coeffs: readonly ExprLike[]): AlgebraicNumber {
     return new AlgebraicNumber(this.root, coeffs, { minpoly: this.rootMinpoly, ...(this.alias ? { alias: this.alias } : {}) });
   }
@@ -598,33 +686,66 @@ export class AlgebraicNumber {
     return add(...this.coeffList.map((c, i) => mul(c, pow(this.root, n - 1 - i))));
   }
 
-  /** The value as an expression (SymPy as_expr). */
+  /**
+   * The value as an expression.
+   *
+   * @param x - Polynomial generator.
+   * @returns The symbolic expression.
+   * @see SymPy `sympy.core.numbers.AlgebraicNumber.as_expr`
+   */
   asExpr(x?: ExprLike): Expr {
     return x === undefined ? expandMul(this.asPolyExpr()) : expandMul(horner(this.coeffList, sympify(x)));
   }
 
-  /** The coefficient polynomial in an explicit generator or the field alias. */
+  /**
+   * The coefficient polynomial in an explicit generator or the field alias.
+   *
+   * @param x - Polynomial generator.
+   * @returns The polynomial, or `NoMatch` if conversion fails.
+   * @see SymPy `sympy.core.numbers.AlgebraicNumber.as_poly`
+   */
   asPoly(x?: ExprLike): Poly {
     const generator = x === undefined ? this.alias ?? new Dummy('x') : sympify(x);
     return Poly.from(horner(this.coeffList, generator), [generator], { domain: 'QQ', pure: x === undefined && this.alias === undefined });
   }
 
-  /** An algebraic field element is a number even when its root is represented symbolically. */
+  /**
+   * An algebraic field element is a number even when its root is represented symbolically.
+   *
+   * @returns An algebraic field element is a number even when its root is represented symbolically.
+   * @see SymPy `sympy.core.numbers.AlgebraicNumber.is_Number`
+   */
   get isNumber(): boolean { return true; }
 
-  /** Whether this element equals the primitive root of its field. */
+  /**
+   * Whether this element equals the primitive root of its field.
+   *
+   * @returns Whether this element equals the primitive root of its field.
+   * @see SymPy `sympy.core.numbers.AlgebraicNumber.is_primitive_element`
+   */
   get isPrimitiveElement(): boolean {
     const c = this.coeffList;
     return c.length === 2 && at(c, 0).equals(1) && at(c, 1).equals(0)
       || c.length === 1 && at(c, 0).equals(this.root);
   }
 
-  /** Structural equality includes the primitive element and its coefficient representation. */
+  /**
+   * Structural equality includes the primitive element and its coefficient representation.
+   *
+   * @param other - Operand to combine or compare with this value.
+   * @returns Whether the comparison holds.
+   * @see SymPy `sympy.core.numbers.AlgebraicNumber.equals`
+   */
   equals(other: unknown): boolean {
     return other instanceof AlgebraicNumber && this.root.equals(other.root) && this.alias?.key === other.alias?.key && this.coeffList.length === other.coeffList.length && this.coeffList.every((c, i) => c.equals(at(other.coeffList, i)));
   }
 
-  /** SymPy LatexPrinter._print_AlgebraicNumber: the polynomial in the alias when there is one, else the value. */
+  /**
+   * The polynomial in the alias when there is one, else the value.
+   *
+   * @param print - Printer for the expression's arguments.
+   * @returns The polynomial in the alias when there is one, else the value.
+   */
   toLatex(print: (e: Expr) => string): string {
     const alias = this.alias;
     if (alias === undefined) return print(this.asExpr());
@@ -632,21 +753,43 @@ export class AlgebraicNumber {
     return print(add(...this.coeffList.map((c, i) => mul(c, pow(alias, n - 1 - i)))));
   }
 
-  /** The value as an explicit root expression (SymPy to_root). */
+  /**
+   * The value as an explicit root expression.
+   *
+   * @returns The value as an explicit root expression.
+   * @see SymPy `sympy.core.numbers.AlgebraicNumber.to_root`
+   */
   toRoot(): Expr {
     return this.asExpr();
   }
 
-  /** The primitive element theta. */
+  /**
+   * The primitive element theta.
+   *
+   * @returns The primitive element theta.
+   * @see SymPy `sympy.core.numbers.AlgebraicNumber.primitive_element`
+   */
   primitiveElement(): Expr {
     return this.root;
   }
 
-  /** Coefficients in the primitive element, highest power first. */
+  /**
+   * Coefficients in the primitive element, highest power first.
+   *
+   * @returns Coefficients in the primitive element, highest power first.
+   * @see SymPy `sympy.core.numbers.AlgebraicNumber.coeffs`
+   */
   coeffs(): Expr[] {
     return [...this.coeffList];
   }
 
+  /**
+   * Evaluate the given formula to an accuracy of *n* digits.
+   *
+   * @param n - Number of decimal digits of precision.
+   * @returns A numerical approximation at the requested precision.
+   * @see SymPy `sympy.core.numbers.AlgebraicNumber.evalf`
+   */
   evalf(n = 15): Expr {
     return this.asExpr().evalf(n);
   }

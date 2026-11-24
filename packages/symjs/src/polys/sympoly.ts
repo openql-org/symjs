@@ -48,21 +48,27 @@ import { MPContext } from './domains/mpelements';
 
 /** Coefficient-domain options shared by polynomial construction and operations. */
 export interface PolynomialDomainOptions {
+  /** The coefficient domain. */
   domain?: string | Domain;
+  /** The modulus for finite-field coefficients. */
   modulus?: number | bigint;
+  /** Whether modular coefficients use symmetric representatives. */
   symmetric?: boolean;
-  /** An algebraic extension of QQ to compute over (SymPy extension=...). */
+  /** An algebraic extension of QQ to compute over. */
   extension?: boolean | ExprLike | readonly ExprLike[];
 }
 
 /** Construction options for algebraic and Gaussian coefficient domains. */
 export interface PolyConstructionOptions extends PolynomialDomainOptions {
-  /** Prefer a field: QQ over ZZ, QQ_I over ZZ_I, ZZ(x) over ZZ[x] or QQ[x] (SymPy field=True). */
+  /** Prefer a field: QQ over ZZ, QQ_I over ZZ_I, ZZ(x) over ZZ[x] or QQ[x]. */
   field?: boolean;
+  /** The algebraic extensions to include in the coefficient domain. */
   extension?: boolean | ExprLike | readonly ExprLike[];
+  /** Whether to include the imaginary unit in the coefficient domain. */
   gaussian?: boolean;
+  /** Whether the polynomial uses generator-independent equality. */
   pure?: boolean;
-  /** Keep the expression as given instead of expanding it first (SymPy expand=False). */
+  /** Keep the expression as given instead of expanding it first. */
   expand?: boolean;
 }
 /** Options of Poly.intervals: the real bounds of the roots and the fast refinement of SymPy. */
@@ -132,6 +138,11 @@ const asRational = (x: Expr, what: string): Rational => expectType(x, isRational
 /** Numeric roots and CRootOf, registered by polys/nroots and polys/rootof (which import this module). @internal */
 export const rootHooks: { nroots?: (f: Poly, n: number) => Expr[]; crootof?: (e: Expr, i: number) => Expr } = {};
 
+/**
+ * An expression or sequence could not be converted to polynomial form.
+ *
+ * @see SymPy `sympy.polys.polyerrors.PolificationFailed`
+ */
 export class PolificationFailed extends PolynomialError {}
 
 // ---------------------------------------------------------------------------
@@ -328,35 +339,129 @@ function sympifyLeaf(x: unknown): Expr {
  * ```
  */
 export class Poly {
+  /**
+   * The ordered generators.
+   *
+   * @see SymPy `sympy.polys.polytools.Poly.gens`
+   */
   readonly gens: readonly Expr[];
-  /** terms in lex order, highest first; coefficients are nonzero */
+  /** Terms in lex order, highest first; coefficients are nonzero */
   readonly termList: readonly Term[];
+  /**
+   * The coefficient domain.
+   *
+   * @see SymPy `sympy.polys.polytools.Poly.domain`
+   */
   readonly domain: string;
+  /** Whether the polynomial uses generator-independent equality. */
   readonly pure: boolean;
 
-  /** Free symbols of a polynomial; PurePoly binds its generators. */
+  /**
+   * Free symbols of a polynomial; PurePoly binds its generators.
+   *
+   * @returns Free symbols of a polynomial; PurePoly binds its generators.
+   * @see SymPy `sympy.polys.polytools.Poly.free_symbols`
+   */
   freeSymbols(): Set<Expr> {
     return this.pure ? this.freeSymbolsInDomain : freeSymbols(this.asExpr());
   }
 
+  /**
+   * The principal generator.
+   *
+   * @returns The principal generator.
+   * @see SymPy `sympy.polys.polytools.Poly.gen`
+   */
   get gen(): Expr { return first(this.gens); }
+  /**
+   * The free symbols appearing in the coefficient domain.
+   *
+   * @returns The free symbols appearing in the coefficient domain.
+   * @see SymPy `sympy.polys.polytools.Poly.free_symbols_in_domain`
+   */
   get freeSymbolsInDomain(): Set<Sym> {
     const symbols = new Map<string, Sym>();
     for (const { coeff } of this.termList) for (const s of [...freeSymbols(coeff)].filter((s) => s instanceof Sym)) symbols.set(s.key, s);
     return new Set(symbols.values());
   }
+  /**
+   * Whether the polynomial is constant in its generators.
+   *
+   * @returns Whether the polynomial is constant in its generators.
+   * @see SymPy `sympy.polys.polytools.Poly.is_ground`
+   */
   get isGround(): boolean { return this.totalDegree() <= 0; }
+  /**
+   * Whether all nonzero terms have the same total degree.
+   *
+   * @returns Whether all nonzero terms have the same total degree.
+   * @see SymPy `sympy.polys.polytools.Poly.is_homogeneous`
+   */
   get isHomogeneous(): boolean {
     return this.termList.every((t) => t.monom.reduce((a, b) => a + b, 0) === this.totalDegree());
   }
+  /**
+   * Whether the total degree is at most one.
+   *
+   * @returns Whether the total degree is at most one.
+   * @see SymPy `sympy.polys.polytools.Poly.is_linear`
+   */
   get isLinear(): boolean { return this.totalDegree() <= 1; }
+  /**
+   * Whether the total degree is at most two.
+   *
+   * @returns Whether the total degree is at most two.
+   * @see SymPy `sympy.polys.polytools.Poly.is_quadratic`
+   */
   get isQuadratic(): boolean { return this.totalDegree() <= 2; }
+  /**
+   * Whether the leading coefficient is one.
+   *
+   * @returns Whether the leading coefficient is one.
+   * @see SymPy `sympy.polys.polytools.Poly.is_monic`
+   */
   get isMonic(): boolean { return this.LC().equals(S.One); }
+  /**
+   * Whether the polynomial has at most one nonzero term.
+   *
+   * @returns Whether the polynomial has at most one nonzero term.
+   * @see SymPy `sympy.polys.polytools.Poly.is_monomial`
+   */
   get isMonomial(): boolean { return this.termList.length <= 1; }
+  /**
+   * Whether there is more than one generator.
+   *
+   * @returns Whether there is more than one generator.
+   * @see SymPy `sympy.polys.polytools.Poly.is_multivariate`
+   */
   get isMultivariate(): boolean { return this.gens.length > 1; }
+  /**
+   * Whether there is exactly one generator.
+   *
+   * @returns Whether there is exactly one generator.
+   * @see SymPy `sympy.polys.polytools.Poly.is_univariate`
+   */
   get isUnivariate(): boolean { return this.gens.length === 1; }
+  /**
+   * Whether the element is the multiplicative identity.
+   *
+   * @returns Whether the element is the multiplicative identity.
+   * @see SymPy `sympy.polys.polytools.Poly.is_one`
+   */
   get isOne(): boolean { return this.isGround && this.LC().equals(S.One); }
+  /**
+   * Whether the coefficients have unit content.
+   *
+   * @returns Whether the coefficients have unit content.
+   * @see SymPy `sympy.polys.polytools.Poly.is_primitive`
+   */
   get isPrimitive(): boolean { return this.content().equals(S.One); }
+  /**
+   * Whether the polynomial is irreducible in its coefficient domain.
+   *
+   * @returns Whether the polynomial is irreducible in its coefficient domain.
+   * @see SymPy `sympy.polys.polytools.Poly.is_irreducible`
+   */
   get isIrreducible(): boolean {
     // As in SymPy, content is ignored; nonzero ground polynomials have no
     // nonconstant factors. Zero is excluded: it is divisible by every polynomial.
@@ -364,6 +469,12 @@ export class Poly {
     const [, factors] = this.factorList();
     return factors.length === 1 && first(factors)[1] === 1;
   }
+  /**
+   * Whether the polynomial is square-free.
+   *
+   * @returns Whether the polynomial is square-free.
+   * @see SymPy `sympy.polys.polytools.Poly.is_sqf`
+   */
   get isSqf(): boolean {
     // SymPy 1.14 calls zero square-free, but x**2 divides zero. Keep the
     // mathematical predicate false instead of treating an empty factor list as proof.
@@ -373,7 +484,12 @@ export class Poly {
     return g.isGround;
   }
 
-  /** SymPy dup_cyclotomic_p: split even/odd powers and recurse on degree. */
+  /**
+   * Split even/odd powers and recurse on degree.
+   *
+   * @returns Whether the polynomial is cyclotomic.
+   * @see SymPy `sympy.polys.polytools.Poly.is_cyclotomic`
+   */
   get isCyclotomic(): boolean {
     if (!this.isUnivariate || this.isGround || !['ZZ', 'QQ'].includes(this.domain)) return false;
     const cs = this.allCoeffs();
@@ -398,7 +514,17 @@ export class Poly {
     this.pure = pure;
   }
 
-  /** Build from exponent tuples and coefficients (SymPy Poly.from_dict). */
+  /**
+   * Build from exponent tuples and coefficients.
+   *
+   * @param terms - Monomial and coefficient pairs.
+   * @param gens - Polynomial generators in the desired order.
+   * @param opts - Options for the coefficient domain, algebraic extensions and polynomial representation.
+   * @returns A polynomial with the supplied monomial coefficients.
+   * @throws GeneratorsNeeded when the polynomial generators cannot be inferred.
+   * @throws PolynomialError when a term has an invalid monomial.
+   * @see SymPy `sympy.polys.polytools.Poly.from_dict`
+   */
   static fromDict(terms: ReadonlyMap<readonly number[], ExprLike>, gens: readonly Expr[], opts: PolyConstructionOptions & { composite?: boolean } = {}): Poly {
     if (!gens.length) throw new GeneratorsNeeded('polynomial generators are required');
     for (const m of terms.keys()) {
@@ -408,7 +534,16 @@ export class Poly {
     return opts.composite === false && /^(?:ZZ|QQ)[[(]/.test(p.domain) ? p.setDomain('EX') : p;
   }
 
-  /** Construct from an expression, requiring at least one generator. */
+  /**
+   * Construct from an expression, requiring at least one generator.
+   *
+   * @param expr - Expression to convert.
+   * @param gens - Polynomial generators in the desired order.
+   * @param opts - Options for the coefficient domain, algebraic extensions and polynomial representation.
+   * @returns The expression as a polynomial in the given generators.
+   * @throws GeneratorsNeeded when the polynomial generators cannot be inferred.
+   * @see SymPy `sympy.polys.polytools.Poly.from_expr`
+   */
   static fromExpr(expr: ExprLike | string, gens?: readonly Expr[], opts: PolyConstructionOptions = {}): Poly {
     const parsed = typeof expr === 'string' ? parse(expr, { evaluate: false }) : expr;
     const p = Poly.from(parsed, gens, opts);
@@ -420,12 +555,25 @@ export class Poly {
     throw new GeneratorsNeeded('polynomial generators are required');
   }
 
-  /** The coefficient domain, including its generators and defining relations. */
+  /**
+   * The coefficient domain, including its generators and defining relations.
+   *
+   * @returns The coefficient domain, including its generators and defining relations.
+   * @see SymPy `sympy.polys.polytools.Poly.get_domain`
+   */
   getDomain(): Domain {
     return this.coefficientDomain ?? defined(polyConstructionHooks.domain, 'polynomial domain construction')([], { domain: this.domain });
   }
 
-  /** Change the coefficient domain, converting each coefficient in that domain. */
+  /**
+   * Change the coefficient domain, converting each coefficient in that domain.
+   *
+   * @param domain - Coefficient domain.
+   * @returns The corresponding object over the specified coefficient domain.
+   * @throws CoercionFailed when conversion would change finite characteristic to characteristic zero.
+   * @throws GeneratorsError when a generator also belongs to the coefficient domain.
+   * @see SymPy `sympy.polys.polytools.Poly.set_domain`
+   */
   setDomain(domain: string | Domain): Poly {
     if (this.finiteModulus !== undefined && String(domain) !== this.domain) throw new CoercionFailed('cannot convert a finite-field polynomial to characteristic zero');
     const K = typeof domain === 'string' ? domain === 'EX' ? EX : defined(polyConstructionHooks.domain, 'polynomial domain construction')([], { domain }) : domain;
@@ -433,29 +581,70 @@ export class Poly {
     return Poly.from(this.asExpr(), this.gens, { domain: K, pure: this.pure });
   }
 
-  /** Equality with an optional strict comparison of coefficient domains. */
+  /**
+   * Equality with an optional strict comparison of coefficient domains.
+   *
+   * @param other - Operand to combine or compare with this value.
+   * @param opts - Controls `strict` (strict comparison).
+   * @returns Whether the comparison holds.
+   * @see SymPy `sympy.polys.polytools.Poly.eq`
+   */
   eq(other: Poly | ExprLike, opts: { strict?: boolean } = {}): boolean {
     if (!(other instanceof Poly)) return opts.strict !== true && this.equals(other);
     if (opts.strict && this.pure !== other.pure) return false;
     return (this.pure && !opts.strict || this.domain === other.domain) && this.equals(other);
   }
+  /**
+   * Whether the polynomials are unequal.
+   *
+   * @param other - Operand to combine or compare with this value.
+   * @param opts - Controls `strict` (strict comparison).
+   * @returns Whether the comparison holds.
+   * @see SymPy `sympy.polys.polytools.Poly.ne`
+   */
   ne(other: Poly | ExprLike, opts: { strict?: boolean } = {}): boolean {
     return !this.eq(other, opts);
   }
 
-  /** Retain terms whose exponent in gen belongs to [start, stop). */
+  /**
+   * Retain terms whose exponent in gen belongs to [start, stop).
+   *
+   * @param start - Inclusive starting index.
+   * @param stop - Exclusive upper degree bound.
+   * @param gen - Generator or its index.
+   * @returns The polynomial restricted to the specified range of degrees.
+   * @see SymPy `sympy.polys.polytools.Poly.slice`
+   */
   slice(start: number, stop: number, gen: Expr = first(this.gens)): Poly {
     const i = this.genIndex(gen);
     return new Poly(this.gens, this.termList.filter((t) => at(t.monom, i) >= start && at(t.monom, i) < stop).map((t) => ({ monom: [...t.monom], coeff: t.coeff })), this.domain, this.pure, this.coefficientDomain, this.finiteSymmetric);
   }
 
-  /** Build a univariate polynomial from descending coefficients (SymPy from_list). */
+  /**
+   * Build a univariate polynomial from descending coefficients.
+   *
+   * @param coeffs - Coefficients in generator order.
+   * @param gens - Polynomial generators in the desired order.
+   * @param opts - Options for the coefficient domain, algebraic extensions and polynomial representation.
+   * @returns The univariate polynomial with the supplied coefficients.
+   * @throws PolynomialError when the list representation is used with more or fewer than one generator.
+   * @see SymPy `sympy.polys.polytools.Poly.from_list`
+   */
   static fromList(coeffs: readonly ExprLike[], gens: readonly Expr[], opts: PolyConstructionOptions = {}): Poly {
     if (gens.length !== 1) throw new PolynomialError('from_list requires exactly one generator');
     return Poly.from(add(...coeffs.map((c, i) => mul(c, pow(first(gens), coeffs.length - i - 1)))), gens, opts);
   }
 
-  /** Recast a polynomial in new generators or a different coefficient domain. */
+  /**
+   * Recast a polynomial in new generators or a different coefficient domain.
+   *
+   * @param poly - Polynomial to represent or transform.
+   * @param gens - Polynomial generators in the desired order.
+   * @param opts - Options for the coefficient domain, algebraic extensions and polynomial representation.
+   * @returns The polynomial converted to the specified generators and domain.
+   * @throws CoercionFailed when conversion would change finite characteristic to characteristic zero.
+   * @see SymPy `sympy.polys.polytools.Poly.from_poly`
+   */
   static fromPoly(poly: Poly, gens: readonly Expr[] = poly.gens, opts: PolyConstructionOptions = {}): Poly {
     const same = gens.length === poly.gens.length && gens.every((g) => poly.gens.some((h) => h.key === g.key));
     if (same && poly.finiteModulus !== undefined && String(opts.domain) === 'QQ') throw new CoercionFailed('cannot convert finite-field coefficients to QQ');
@@ -464,7 +653,25 @@ export class Poly {
     return Poly.from(poly.asExpr(), gens, { domain, symmetric: poly.finiteSymmetric, pure: poly.pure, ...opts });
   }
 
-  /** Build a polynomial; generators are detected unless given. */
+  /**
+   * Build a polynomial; generators are detected unless given.
+   *
+   * @param ex - Expression to convert or manipulate.
+   * @param gens - Polynomial generators in the desired order.
+   * @param opts - Options for the coefficient domain, algebraic extensions and polynomial representation.
+   * @returns The polynomial over the inferred or specified generators and domain.
+   * @throws OptionError when both `field` and `domain` are supplied.
+   * @throws GeneratorsError when the generator list contains duplicates or a generator also belongs to the coefficient domain.
+   * @throws PolificationFailed when the input cannot be converted to polynomial form.
+   * @see SymPy `sympy.polys.polytools.Poly.from_expr`
+   * @example
+   * ```ts
+   * import { ex, Poly } from '@symjs/symjs';
+   *
+   * const p = Poly.from(ex`x**2 + x*y`, [ex`x`]);
+   * p.allCoeffs(); // => [1, y, 0]
+   * ```
+   */
   static from(ex: ExprLike, gens?: readonly Expr[], opts: PolyConstructionOptions = {}): Poly {
     const modulus = modulusOption(opts);
     const requestedDomain = opts.domain === undefined ? undefined : String(opts.domain);
@@ -547,14 +754,24 @@ export class Poly {
     return mul(t.coeff, ...t.monom.map((k, i) => pow(at(this.gens, i), k)));
   }
 
+  /**
+   * The corresponding symbolic expression.
+   *
+   * @returns The symbolic expression.
+   * @see SymPy `sympy.polys.polytools.Poly.as_expr`
+   */
   asExpr(): Expr {
     return add(...this.termList.map((t) => this.termExpr(t)));
   }
 
   /**
-   * SymPy ==: the same terms over the same generators (an expression is
+   * The same terms over the same generators (an expression is
    * converted to a polynomial in them first). The generators of a PurePoly
    * are placeholders: only their number has to agree.
+   *
+   * @param other - Operand to combine or compare with this value.
+   * @returns Whether the comparison holds.
+   * @see SymPy `sympy.polys.polytools.Poly.__eq__`
    */
   equals(other: Poly | ExprLike): boolean {
     if (other instanceof Poly && (this.finiteModulus !== undefined || other.finiteModulus !== undefined) && this.domain !== other.domain) return false;
@@ -572,13 +789,25 @@ export class Poly {
     });
   }
 
+  /**
+   * Whether the element is zero.
+   *
+   * @returns Whether the element is zero.
+   * @see SymPy `sympy.polys.polytools.Poly.is_zero`
+   */
   get isZero(): boolean {
     return this.termList.length === 0;
   }
 
   /**
-   * Apply func to every term (SymPy termwise): it returns the new
+   * Apply func to every term: it returns the new
    * coefficient, or a [monomial, coefficient] pair; zero coefficients drop.
+   *
+   * @param func - Function to apply to each coefficient.
+   * @param gens - Polynomial generators in the desired order.
+   * @returns The polynomial obtained by applying the transformation to each term.
+   * @throws PolynomialError when the transformation produces the same monomial twice.
+   * @see SymPy `sympy.polys.polytools.Poly.termwise`
    */
   termwise(func: (monom: number[], coeff: Expr) => ExprLike | readonly [readonly number[], ExprLike], gens: readonly Expr[] = this.gens): Poly {
     const out = new Map<string, Term>();
@@ -594,9 +823,15 @@ export class Poly {
   }
 
   /**
-   * A polynomial with this domain from a dense representation (SymPy per):
+   * A polynomial with this domain from a dense representation:
    * nested coefficient lists, highest degree first, one level per
    * generator. `remove` drops the generator at that index.
+   *
+   * @param rep - Dense coefficients in descending order.
+   * @param opts - Controls `gens` (the ordered generators), `remove` (a generator index to remove).
+   * @returns A polynomial with this domain from a dense representation: nested coefficient lists, highest degree first, one level per generator.
+   * @throws PolynomialError when the coefficient list depth differs from the number of generators.
+   * @see SymPy `sympy.polys.polytools.Poly.per`
    */
   per(rep: readonly unknown[], opts: { gens?: readonly Expr[]; remove?: number } = {}): Poly | Expr {
     let gens = [...(opts.gens ?? this.gens)];
@@ -622,24 +857,57 @@ export class Poly {
     return new Poly(gens, terms, this.domain, this.pure, this.coefficientDomain, this.finiteSymmetric);
   }
 
-  /** [(monomial, coefficient)] in the selected monomial order. */
+  /**
+   * [(monomial, coefficient)] in the selected monomial order.
+   *
+   * @param opts - Controls `order` (the monomial order).
+   * @returns [(monomial, coefficient)] in the selected monomial order.
+   * @see SymPy `sympy.polys.polytools.Poly.terms`
+   */
   terms(opts: { order?: 'lex' | 'grlex' | 'grevlex' } = {}): [number[], Expr][] {
     if (this.isZero) return [[this.gens.map(() => 0), S.Zero]];
     return this.orderedTerms(opts).map((t) => [t.monom, t.coeff]);
   }
+  /**
+   * The nonzero coefficients in the requested monomial order.
+   *
+   * @param opts - Controls `order` (the monomial order).
+   * @returns The nonzero coefficients in the requested monomial order.
+   * @see SymPy `sympy.polys.polytools.Poly.coeffs`
+   */
   coeffs(opts: { order?: 'lex' | 'grlex' | 'grevlex' } = {}): Expr[] {
     return this.terms(opts).map(([, c]) => c);
   }
+  /**
+   * The exponent vectors of the nonzero terms in the requested monomial order.
+   *
+   * @param opts - Controls `order` (the monomial order).
+   * @returns The exponent vectors of the nonzero terms in the requested monomial order.
+   * @see SymPy `sympy.polys.polytools.Poly.monoms`
+   */
   monoms(opts: { order?: 'lex' | 'grlex' | 'grevlex' } = {}): number[][] {
     return this.terms(opts).map(([m]) => m);
   }
-  /** Dense coefficient list of a univariate polynomial, highest degree first. */
+  /**
+   * Dense coefficient list of a univariate polynomial, highest degree first.
+   *
+   * @returns Dense coefficient list of a univariate polynomial, highest degree first.
+   * @throws PolynomialError when the polynomial is multivariate.
+   * @see SymPy `sympy.polys.polytools.Poly.all_coeffs`
+   */
   allCoeffs(): Expr[] {
     if (this.gens.length !== 1) throw new PolynomialError('all_coeffs: multivariate polynomial');
     const d = this.degree();
     if (d < 0) return [S.Zero];
     return Array.from({ length: d + 1 }, (_, i) => this.coeffMonomial([d - i]));
   }
+  /**
+   * Look up the coefficient of a monomial by its exponent vector.
+   *
+   * @param monom - Exponent vector of the monomial.
+   * @returns The coefficient at the exponent vector, or zero if the monomial is absent.
+   * @see SymPy `sympy.polys.polytools.Poly.coeff_monomial`
+   */
   coeffMonomial(monom: number[]): Expr {
     return this.termList.find((t) => monomCmp(t.monom, monom) === 0)?.coeff ?? S.Zero;
   }
@@ -650,18 +918,45 @@ export class Poly {
     const degree = (m: readonly number[]) => m.reduce((s, e) => s + e, 0);
     return [...this.termList].sort((a, b) => degree(b.monom) - degree(a.monom) || (order === 'grlex' ? monomCmp(b.monom, a.monom) : monomCmp([...a.monom].reverse(), [...b.monom].reverse())));
   }
+  /**
+   * Returns the leading coefficient of the polynomial.
+   *
+   * @param opts - Controls `order` (the monomial order).
+   * @returns The leading coefficient of the polynomial.
+   * @see SymPy `sympy.polys.polytools.Poly.LC`
+   */
   LC(opts: { order?: 'lex' | 'grlex' | 'grevlex' } = {}): Expr {
     return this.orderedTerms(opts)[0]?.coeff ?? S.Zero;
   }
+  /**
+   * Returns the leading monomial of the polynomial.
+   *
+   * @param opts - Controls `order` (the monomial order).
+   * @returns The leading monomial of the polynomial.
+   * @see SymPy `sympy.polys.polytools.Poly.LM`
+   */
   LM(opts: { order?: 'lex' | 'grlex' | 'grevlex' } = {}): Expr {
     const t = this.orderedTerms(opts)[0];
     return t ? mul(...t.monom.map((k, i) => pow(at(this.gens, i), k))) : S.One;
   }
+  /**
+   * Returns the leading term of the polynomial.
+   *
+   * @param opts - Controls `order` (the monomial order).
+   * @returns The leading term of the polynomial.
+   * @see SymPy `sympy.polys.polytools.Poly.LT`
+   */
   LT(opts: { order?: 'lex' | 'grlex' | 'grevlex' } = {}): [number[], Expr] {
     const t = this.orderedTerms(opts)[0];
     return t ? [t.monom, t.coeff] : [this.gens.map(() => 0), S.Zero];
   }
-  /** The trailing monomial and coefficient in the selected ordering. */
+  /**
+   * The trailing monomial and coefficient in the selected ordering.
+   *
+   * @param opts - Controls `order` (the monomial order).
+   * @returns The trailing monomial and coefficient in the selected ordering.
+   * @see SymPy `sympy.polys.polytools.Poly.ET`
+   */
   ET(opts: { order?: 'lex' | 'grlex' | 'grevlex' } = {}): [number[], Expr] {
     const t = this.orderedTerms(opts).at(-1);
     return t ? [t.monom, t.coeff] : [this.gens.map(() => 0), S.Zero];
@@ -672,20 +967,45 @@ export class Poly {
     if (i < 0) throw new PolynomialError(`a valid generator expected, got ${gen.toString()}`);
     return i;
   }
-  /** Degree in the given generator (first generator by default); -oo for zero. */
+  /**
+   * Degree in the given generator (first generator by default); -oo for zero.
+   *
+   * @param gen - Generator or its index.
+   * @returns The degree in the selected generator, or `-Infinity` for zero.
+   * @see SymPy `sympy.polys.polytools.Poly.degree`
+   */
   degree(gen?: Expr | number): number {
     const i = gen === undefined ? 0 : typeof gen === 'number' ? gen : this.genIndex(gen);
     if (this.isZero) return -Infinity;
     return Math.max(...this.termList.map((t) => at(t.monom, i)));
   }
+  /**
+   * Returns a list of degrees of the polynomial.
+   *
+   * @returns A list of degrees of the polynomial.
+   * @see SymPy `sympy.polys.polytools.Poly.degree_list`
+   */
   degreeList(): number[] {
     return this.gens.map((_, i) => this.degree(i));
   }
+  /**
+   * Returns the total degree of the polynomial.
+   *
+   * @returns The total degree of the polynomial.
+   * @see SymPy `sympy.polys.polytools.Poly.total_degree`
+   */
   totalDegree(): number {
     if (this.isZero) return -Infinity;
     return Math.max(...this.termList.map((t) => t.monom.reduce((a, b) => a + b, 0)));
   }
 
+  /**
+   * The sum of the operands.
+   *
+   * @param o - Operand to combine or compare with this value.
+   * @returns The sum of the operands.
+   * @see SymPy `sympy.polys.polytools.Poly.add`
+   */
   add(o: Poly | ExprLike): Poly {
     if (o instanceof Poly && (this.gens.length !== o.gens.length || this.gens.some((g, i) => g.key !== o.gens[i]?.key))) {
       const [f, g] = this.unify(o);
@@ -699,6 +1019,13 @@ export class Poly {
     const [f, g] = this.unify(o instanceof Poly ? o : Poly.from(o, this.gens));
     return Poly.from(add(f.asExpr(), g.asExpr()), f.gens, { domain: f.coefficientDomain ?? f.domain, pure: f.pure });
   }
+  /**
+   * The difference of the operands.
+   *
+   * @param o - Operand to combine or compare with this value.
+   * @returns The difference of the operands.
+   * @see SymPy `sympy.polys.polytools.Poly.sub`
+   */
   sub(o: Poly | ExprLike): Poly {
     if (o instanceof Poly && (this.gens.length !== o.gens.length || this.gens.some((g, i) => g.key !== o.gens[i]?.key))) {
       const [f, g] = this.unify(o);
@@ -712,6 +1039,13 @@ export class Poly {
     const expression = add(this.asExpr(), mul(-1, toExpr(o)));
     return this.coefficientDomain?.isFiniteExtension ? this.like(expression) : Poly.from(expression, this.gens);
   }
+  /**
+   * The product of the operands.
+   *
+   * @param o - Operand to combine or compare with this value.
+   * @returns The product of the operands.
+   * @see SymPy `sympy.polys.polytools.Poly.mul`
+   */
   mul(o: Poly | ExprLike): Poly {
     if(o instanceof Poly && this.algebraicField && this.domain!==o.domain){const [a,b]=this.unify(o);return a.mul(b);}
     const finite = this.finitePair(o);
@@ -721,10 +1055,23 @@ export class Poly {
     const [f, g] = this.unify(o instanceof Poly ? o : Poly.from(o, this.gens));
     return Poly.from(mul(f.asExpr(), g.asExpr()), f.gens, { domain: f.coefficientDomain ?? f.domain });
   }
+  /**
+   * The element raised to the specified exponent.
+   *
+   * @param n - Exponent or degree.
+   * @returns The element raised to the specified exponent.
+   * @see SymPy `sympy.polys.polytools.Poly.pow`
+   */
   pow(n: number): Poly {
     if (this.finiteModulus !== undefined || this.algebraicField !== undefined || this.coefficientDomain?.isFiniteExtension) return this.like(pow(this.asExpr(), n));
     return Poly.from(pow(this.asExpr(), n), this.gens);
   }
+  /**
+   * The additive inverse.
+   *
+   * @returns The additive inverse.
+   * @see SymPy `sympy.polys.polytools.Poly.neg`
+   */
   neg(): Poly {
     if (this.finiteModulus !== undefined || this.algebraicField !== undefined || this.coefficientDomain?.isFiniteExtension) return this.like(mul(-1, this.asExpr()));
     return Poly.from(mul(-1, this.asExpr()), this.gens);
@@ -790,7 +1137,14 @@ export class Poly {
     return [q, r];
   }
 
-  /** Division with remainder (univariate over the field of fractions). */
+  /**
+   * Division with remainder (univariate over the field of fractions).
+   *
+   * @param o - Operand to combine or compare with this value.
+   * @returns Division with remainder (univariate over the field of fractions).
+   * @throws RangeError when the divisor is zero.
+   * @see SymPy `sympy.polys.polytools.Poly.div`
+   */
   div(o: Poly): [Poly, Poly] {
     if(o instanceof Poly && this.algebraicField && this.domain!==o.domain){const [a,b]=this.unify(o);return a.div(b);}
     const finite = this.finitePair(o);
@@ -841,6 +1195,14 @@ export class Poly {
     }
     return p;
   }
+  /**
+   * Polynomial division with optional promotion to a field.
+   *
+   * @param o - Operand to combine or compare with this value.
+   * @param auto - Allow promotion to a field for division.
+   * @returns The quotient and remainder.
+   * @see SymPy `sympy.polys.polytools.Poly.div`
+   */
   divAuto(o: Poly, auto = true): [Poly, Poly] {
     if (this.domain === 'ZZ_I' && o.domain === 'ZZ_I') {
       const [q, r] = this.setDomain('QQ_I').div(o.setDomain('QQ_I'));
@@ -862,15 +1224,38 @@ export class Poly {
     if (ring && (Q.domain !== 'ZZ' || R.domain !== 'ZZ')) return [q, r];
     return [Q, R];
   }
+  /**
+   * The remainder after division.
+   *
+   * @param o - Operand to combine or compare with this value.
+   * @param auto - Allow promotion to a field for division.
+   * @returns The remainder after division.
+   * @see SymPy `sympy.polys.polytools.Poly.rem`
+   */
   rem(o: Poly, auto = true): Poly {
     if (!auto && this.domain === 'ZZ') return this.divAuto(o, false)[1];
     return this.toRingIfExact(this.div(o)[1], this.domain === 'ZZ' && o.domain === 'ZZ');
   }
+  /**
+   * The quotient in the coefficient domain.
+   *
+   * @param o - Operand to combine or compare with this value.
+   * @param auto - Allow promotion to a field for division.
+   * @returns The quotient in the coefficient domain.
+   * @see SymPy `sympy.polys.polytools.Poly.quo`
+   */
   quo(o: Poly, auto = true): Poly {
     if (!auto && this.domain === 'ZZ') return this.divAuto(o, false)[0];
     return this.toRingIfExact(this.div(o)[0], this.domain === 'ZZ' && o.domain === 'ZZ');
   }
-  /** Pseudo-remainder: the remainder of LC(g)**(deg f - deg g + 1)*f (SymPy dup_prem). */
+  /**
+   * Pseudo-remainder: the remainder of LC(g)**(deg f - deg g + 1)*f.
+   *
+   * @param o - Operand to combine or compare with this value.
+   * @returns The pseudo-remainder.
+   * @throws RangeError when the divisor is zero.
+   * @see SymPy `sympy.polys.polytools.Poly.prem`
+   */
   prem(o: Poly): Poly {
     if (this.gens.length > 1) {
       const x = first(this.gens);
@@ -894,7 +1279,13 @@ export class Poly {
     }
     return Poly.from(expand(mul(pow(lg, N), r.asExpr())), this.gens);
   }
-  /** Subresultant PRS (SymPy dup_inner_subresultants), univariate. */
+  /**
+   * Subresultant PRS, univariate.
+   *
+   * @param o - Operand to combine or compare with this value.
+   * @returns Subresultant PRS, univariate.
+   * @see SymPy `sympy.polys.polytools.Poly.subresultants`
+   */
   subresultants(o: Poly): Poly[] {
     const finite=this.finitePair(o),K=this.algebraicField;
     if(finite&&isprime(finite[2])){
@@ -930,7 +1321,13 @@ export class Poly {
     }
     return R;
   }
-  /** Pseudo-quotient. */
+  /**
+   * Pseudo-quotient.
+   *
+   * @param o - Operand to combine or compare with this value.
+   * @returns The pseudo-quotient.
+   * @see SymPy `sympy.polys.polytools.Poly.pquo`
+   */
   pquo(o: Poly): Poly {
     if (this.gens.length > 1) {
       const x = first(this.gens);
@@ -945,6 +1342,14 @@ export class Poly {
     // the scaled dividend minus the pseudo-remainder is an exact multiple of o
     return Poly.from(defined(divExact(expand(add(scaled, mul(-1, this.prem(o).asExpr()))), o.asExpr(), [x]), 'pseudo-quotient'), this.gens);
   }
+  /**
+   * The exact quotient, requiring divisibility.
+   *
+   * @param o - Operand to combine or compare with this value.
+   * @returns The exact quotient, requiring divisibility.
+   * @throws ExactQuotientFailed when the divisor does not divide the dividend exactly.
+   * @see SymPy `sympy.polys.polytools.Poly.exquo`
+   */
   exquo(o: Poly): Poly {
     if (this.finiteModulus !== undefined || o.finiteModulus !== undefined || this.algebraicField !== undefined) {
       const [q, r] = this.div(o);
@@ -956,6 +1361,13 @@ export class Poly {
     return Poly.from(q, this.gens);
   }
 
+  /**
+   * The greatest common divisor.
+   *
+   * @param o - Operand to combine or compare with this value.
+   * @returns The greatest common divisor.
+   * @see SymPy `sympy.polys.polytools.Poly.gcd`
+   */
   gcd(o: Poly): Poly {
     if (this.domain !== o.domain && (o.algebraicField || this.domain.endsWith('_I') || o.domain.endsWith('_I'))) {
       const [a, b] = this.unify(o);
@@ -986,6 +1398,13 @@ export class Poly {
     const h = Poly.from(mgcd(exactCoeffs(f), exactCoeffs(g), f.gens), f.gens, { domain: f.domain });
     return h.isZero ? h : h.monic();
   }
+  /**
+   * The least common multiple.
+   *
+   * @param o - Operand to combine or compare with this value.
+   * @returns The least common multiple.
+   * @see SymPy `sympy.polys.polytools.Poly.lcm`
+   */
   lcm(o: Poly): Poly {
     if (this.isZero || o.isZero) return this.unify(o)[0].like(0);
     const finite = this.finitePair(o);
@@ -1000,6 +1419,13 @@ export class Poly {
     // SymPy dmp_ff_lcm: the monic quotient f*g / gcd(f, g)
     return f.mul(g).div(f.gcd(g))[0].monic();
   }
+  /**
+   * Divides all coefficients by `LC(f)`.
+   *
+   * @param auto - Allow promotion to a field for division.
+   * @returns The polynomial normalized to have leading coefficient one.
+   * @see SymPy `sympy.polys.polytools.Poly.monic`
+   */
   monic(auto = true): Poly {
     if (!auto) return this.exquoGround(this.LC());
     if (this.finiteModulus !== undefined) return this.isZero ? this : this.exquoGround(this.LC());
@@ -1012,12 +1438,23 @@ export class Poly {
     const dom = this.domain === 'ZZ' ? 'QQ' : ring ? this.coefficientDomain?.getField() ?? `${ring[1]}(${ring[2]})` : this.domain;
     return Poly.from(mul(this.asExpr(), pow(lc, -1)), this.gens, { domain: dom });
   }
-  /** [content, primitive part] over the integers. */
+  /**
+   * [content, primitive part] over the integers.
+   *
+   * @returns [content, primitive part] over the integers.
+   * @see SymPy `sympy.polys.polytools.Poly.primitive`
+   */
   primitive(): [Expr, Poly] {
     if (this.finiteModulus !== undefined || this.algebraicField !== undefined || this.domain === 'RR' || this.domain === 'CC' || this.isZero) return [this.content(), this];
     const c = this.content();
     return [c, Poly.from(mul(this.asExpr(), pow(c, -1)), this.gens)];
   }
+  /**
+   * Returns the GCD of polynomial coefficients.
+   *
+   * @returns The GCD of polynomial coefficients.
+   * @see SymPy `sympy.polys.polytools.Poly.content`
+   */
   content(): Expr {
     if (this.finiteModulus !== undefined || this.algebraicField !== undefined) return this.isZero ? S.Zero : S.One;
     if (this.domain === 'RR' || this.domain === 'CC') return new Float(this.isZero ? 0 : 1);
@@ -1026,6 +1463,13 @@ export class Poly {
     return g;
   }
 
+  /**
+   * Computes partial derivative of the polynomial.
+   *
+   * @param x - Polynomial generator.
+   * @returns Partial derivative of the polynomial.
+   * @see SymPy `sympy.polys.polytools.Poly.diff`
+   */
   diff(x?: Expr): Poly {
     // a generator need not be a symbol (Poly(pi*x, pi)): differentiate formally through a dummy symbol
     const g = x ?? first(this.gens);
@@ -1036,7 +1480,13 @@ export class Poly {
     if (this.finiteModulus !== undefined || this.algebraicField !== undefined) return this.like(d);
     return Poly.from(d, this.gens);
   }
-  /** The antiderivative in a generator (SymPy Poly.integrate), term by term. */
+  /**
+   * The antiderivative in a generator, term by term.
+   *
+   * @param x - Polynomial generator.
+   * @returns The antiderivative in a generator, term by term.
+   * @see SymPy `sympy.polys.polytools.Poly.integrate`
+   */
   integrate(x?: Expr): Poly {
     const i = x === undefined ? 0 : this.genIndex(x);
     const p = this.finiteModulus;
@@ -1057,7 +1507,16 @@ export class Poly {
     });
     return this.like(add(...terms),this.gens,domain);
   }
-  /** Evaluate at gen = a (first generator by default). */
+  /**
+   * Evaluate at gen = a (first generator by default).
+   *
+   * @param a - Value substituted for the generator.
+   * @param gen - Generator or its index.
+   * @param auto - Allow promotion to a field for division.
+   * @returns Evaluate at gen = a (first generator by default).
+   * @throws DomainError when the evaluation point is incompatible with the coefficient domain.
+   * @see SymPy `sympy.polys.polytools.Poly.eval`
+   */
   eval(a: ExprLike, gen?: Expr, auto = true): Expr | Poly {
     const g = gen ?? first(this.gens);
     const p = this.finiteModulus;
@@ -1087,7 +1546,12 @@ export class Poly {
     return rest.length ? Poly.from(normalized, rest) : expand(normalized);
   }
 
-  /** (content, [(factor, multiplicity)]) with primitive integer factors. */
+  /**
+   * (content, [(factor, multiplicity)]) with primitive integer factors.
+   *
+   * @returns (content, [(factor, multiplicity)]) with primitive integer factors.
+   * @see SymPy `sympy.polys.polytools.Poly.factor_list`
+   */
   factorList(): [Expr, [Poly, number][]] {
     const p = this.finiteModulus;
     if (p !== undefined) {
@@ -1102,6 +1566,12 @@ export class Poly {
     const [c, fs] = factorListInt(this.asExpr(), this.gens);
     return [c, fs.map(([f, k]) => [Poly.from(f, this.gens), k] as [Poly, number])];
   }
+  /**
+   * Returns a list of square-free factors of the polynomial.
+   *
+   * @returns A list of square-free factors of the polynomial.
+   * @see SymPy `sympy.polys.polytools.Poly.sqf_list`
+   */
   sqfList(): [Rational, [Poly, number][]] {
     const p = this.finiteModulus;
     if (p !== undefined) {
@@ -1190,11 +1660,30 @@ export class Poly {
     return add(...cs.map((c, i) => mul(Rational.of(c / g), pow(first(this.gens), n - i))));
   }
   /**
-   * Isolating intervals of the real roots with multiplicities in [inf, sup], each narrower than eps
-   * (SymPy Poly.intervals); with all, also the isolating rectangles [lower-left, upper-right corner]
+   * Isolating intervals of the real roots with multiplicities in [inf, sup], each narrower than eps; with all, also the isolating rectangles [lower-left, upper-right corner]
    * of the non-real roots of a polynomial with one square-free factor.
+   *
+   * @param eps - Maximum width of the isolating interval.
+   * @param opts - Use `inf` and `sup` for bounds, `fast` for accelerated refinement and `all` to include complex roots.
+   * @returns Isolating intervals of the real roots with multiplicities in [inf, sup], each narrower than eps; with all, also the isolating rectangles [lower-left, upper-right corner] of the non-real roots of a polynomial with one square-free factor.
+   * @throws DomainError when the coefficients belong to a finite domain.
+   * @throws RangeError when the requested tolerance is not a positive rational.
+   * @throws NotImplementedError when the requested square-free case is unsupported.
+   * @see SymPy `sympy.polys.polytools.Poly.intervals`
    */
   intervals(eps?: Rational, opts?: IntervalsOptions & { all?: false }): [[Rational, Rational], number][];
+  /**
+   * Isolating intervals of the real roots with multiplicities in [inf, sup], each narrower than eps; with all, also the isolating rectangles [lower-left, upper-right corner]
+   * of the non-real roots of a polynomial with one square-free factor.
+   *
+   * @param eps - Maximum width of the isolating interval.
+   * @param opts - Use `inf` and `sup` for bounds, `fast` for accelerated refinement and `all` to include complex roots.
+   * @returns Isolating intervals of the real roots with multiplicities in [inf, sup], each narrower than eps; with all, also the isolating rectangles [lower-left, upper-right corner] of the non-real roots of a polynomial with one square-free factor.
+   * @throws DomainError when the coefficients belong to a finite domain.
+   * @throws RangeError when the requested tolerance is not a positive rational.
+   * @throws NotImplementedError when the requested square-free case is unsupported.
+   * @see SymPy `sympy.polys.polytools.Poly.intervals`
+   */
   intervals(eps: Rational | undefined, opts: IntervalsOptions & { all: true }): [[[Rational, Rational], number][], [[Expr, Expr], number][]];
   intervals(eps?: Rational, opts: IntervalsOptions & { all?: boolean } = {}): [[Rational, Rational], number][] | [[[Rational, Rational], number][], [[Expr, Expr], number][]] {
     if(this.finiteModulus!==undefined)throw new DomainError('isolation of roots not supported over finite domains');
@@ -1211,7 +1700,19 @@ export class Poly {
     const complex = isolateComplexRootsSqf(f.denseInts(), iso).map((r): [[Expr, Expr], number] => [[point([r.ax, r.ay]), point([r.bx, r.by])], k]);
     return [real, complex];
   }
-  /** Refine the isolating interval (s, t) of a real root (SymPy Poly.refine_root). */
+  /**
+   * Refine the isolating interval (s, t) of a real root.
+   *
+   * @param s - Left endpoint.
+   * @param t - Right endpoint.
+   * @param eps - Maximum width of the isolating interval.
+   * @param steps - Number of refinement steps.
+   * @param fast - Use accelerated interval refinement.
+   * @returns Refine the isolating interval (s, t) of a real root.
+   * @throws DomainError when the coefficients belong to a finite domain.
+   * @throws RangeError when the requested tolerance is not a positive rational.
+   * @see SymPy `sympy.polys.polytools.Poly.refine_root`
+   */
   refineRoot(s: Rational, t: Rational, eps?: Rational, steps?: number, fast = false): [Rational, Rational] {
     if(this.finiteModulus!==undefined)throw new DomainError('real root refinement not supported over finite domains');
     if (eps !== undefined && !eps.isPositive) throw new RangeError("'eps' must be a positive rational");
@@ -1219,6 +1720,11 @@ export class Poly {
     return refineRealRoot(this.denseInts(), s, t, { eps, steps: steps ?? (eps === undefined ? 1 : undefined), fast });
   }
 
+  /**
+   * Find the roots of the univariate polynomial, repeating each root according to its multiplicity.
+   *
+   * @returns The list of roots, repeated by multiplicity.
+   */
   roots(): Expr[] {
     return rootsOf(this.asExpr(), this.univariate());
   }
@@ -1236,25 +1742,65 @@ export class Poly {
   private mapCoeffs(f: (c: Expr) => Expr, domain?: string): Poly {
     return this.like(add(...this.termList.map((t) => this.termExpr({ monom: t.monom, coeff: f(t.coeff) }))), this.gens, domain);
   }
+  /**
+   * Make all coefficients in `f` positive.
+   *
+   * @returns The polynomial with its coefficients replaced by their absolute values.
+   * @see SymPy `sympy.polys.polytools.Poly.abs`
+   */
   abs(): Poly {
     return this.mapCoeffs((c) => (c instanceof Rational && c.isNegative ? mul(-1, c) : c));
   }
+  /**
+   * The square of the polynomial.
+   *
+   * @returns The square of the polynomial.
+   * @see SymPy `sympy.polys.polytools.Poly.sqr`
+   */
   sqr(): Poly {
     return this.pow(2);
   }
+  /**
+   * Add an element of the ground domain to `f`.
+   *
+   * @param c - Coefficient of the term.
+   * @returns The polynomial plus the constant element.
+   * @see SymPy `sympy.polys.polytools.Poly.add_ground`
+   */
   addGround(c: ExprLike): Poly {
     return this.like(add(this.asExpr(), c));
   }
+  /**
+   * Subtract an element of the ground domain from `f`.
+   *
+   * @param c - Coefficient of the term.
+   * @returns The polynomial minus the constant element.
+   * @throws TypeError when the ground element to subtract is zero.
+   * @see SymPy `sympy.polys.polytools.Poly.sub_ground`
+   */
   subGround(c: ExprLike): Poly {
     // Preserve SymPy 1.14 dmp_sub_ground's TypeError for a zero ground element.
     const p = this.finiteModulus;
     if (p !== undefined && finiteCoefficient(sympify(c),p).isZero) throw new TypeError('cannot subtract a zero ground element');
     return this.like(add(this.asExpr(), mul(-1, c)));
   }
+  /**
+   * Multiply `f` by an element of the ground domain.
+   *
+   * @param c - Coefficient of the term.
+   * @returns The polynomial scaled by the ground coefficient.
+   * @see SymPy `sympy.polys.polytools.Poly.mul_ground`
+   */
   mulGround(c: ExprLike): Poly {
     return this.like(mul(this.asExpr(), c));
   }
-  /** Coefficient-wise quotient (floor division over ZZ). */
+  /**
+   * Coefficient-wise quotient (floor division over ZZ).
+   *
+   * @param c - Coefficient of the term.
+   * @returns The polynomial obtained by dividing its coefficients by the ground element.
+   * @see SymPy `sympy.polys.polytools.Poly.quo_ground`
+   */
   quoGround(c: ExprLike): Poly {
     const k = sympify(c);
     const p = this.finiteModulus;
@@ -1268,6 +1814,14 @@ export class Poly {
     }
     return this.mapCoeffs((x) => mul(x, pow(k, -1)));
   }
+  /**
+   * Exact quotient of the polynomial by an element of the ground domain.
+   *
+   * @param c - Coefficient of the term.
+   * @returns The exact coefficientwise quotient.
+   * @throws ExactQuotientFailed when the divisor does not divide the dividend exactly.
+   * @see SymPy `sympy.polys.polytools.Poly.exquo_ground`
+   */
   exquoGround(c: ExprLike): Poly {
     if (this.finiteModulus !== undefined) return this.quoGround(c);
     const k = sympify(c);
@@ -1275,17 +1829,42 @@ export class Poly {
     if (this.domain === 'ZZ' && r.domain !== 'ZZ') throw new ExactQuotientFailed('exquo_ground: inexact division');
     return r;
   }
+  /**
+   * Returns all monomials from a univariate polynomial `f`.
+   *
+   * @returns All monomials from a univariate polynomial `f`.
+   * @see SymPy `sympy.polys.polytools.Poly.all_monoms`
+   */
   allMonoms(): number[][] {
     const d = this.degree();
     return Array.from({ length: Math.max(d, 0) + 1 }, (_, i) => [Math.max(d, 0) - i]);
   }
+  /**
+   * Returns all terms from a univariate polynomial `f`.
+   *
+   * @returns All terms from a univariate polynomial `f`.
+   * @see SymPy `sympy.polys.polytools.Poly.all_terms`
+   */
   allTerms(): [number[], Expr][] {
     return this.allMonoms().map((m) => [m, this.coeffMonomial(m)]);
   }
+  /**
+   * Switch to a `dict` representation.
+   *
+   * @returns Switch to a `dict` representation.
+   * @see SymPy `sympy.polys.polytools.Poly.as_dict`
+   */
   asDict(): [number[], Expr][] {
     return this.termList.map((t) => [t.monom, t.coeff]);
   }
-  /** Evaluate at the given generator values (positional) or a substitution list. */
+  /**
+   * Evaluate at the given generator values (positional) or a substitution list.
+   *
+   * @param values - Values to substitute, in generator order.
+   * @returns The expression after replacing the specified generators.
+   * @throws GeneratorsError when the specified generator or index is invalid.
+   * @see SymPy `sympy.polys.polytools.Poly.as_expr`
+   */
   asExprAt(values: readonly ExprLike[] | readonly (readonly [Expr, ExprLike])[]): Expr {
     const vs: readonly (ExprLike | readonly [Expr, ExprLike])[] = values;
     const reps = vs.map((v, i): [Expr, Expr] => {
@@ -1295,13 +1874,34 @@ export class Poly {
     });
     return expand(xreplace(this.asExpr(), reps));
   }
-  /** (gcd, f/gcd, g/gcd). */
+  /**
+   * (gcd, f/gcd, g/gcd).
+   *
+   * @param o - Operand to combine or compare with this value.
+   * @returns (gcd, f/gcd, g/gcd).
+   * @see SymPy `sympy.polys.polytools.Poly.cofactors`
+   */
   cofactors(o: Poly): [Poly, Poly, Poly] {
     const h = this.gcd(o);
     return [h, this.exquo(h), o.exquo(h)];
   }
-  /** Cancel common factors in a ratio while preserving the coefficient domain. */
+  /**
+   * Cancel common factors in a ratio while preserving the coefficient domain.
+   *
+   * @param other - Operand to combine or compare with this value.
+   * @param include - Incorporate the scalar factors in the reduced numerator and denominator. If false, return the scalars separately.
+   * @returns Cancel common factors in a ratio while preserving the coefficient domain.
+   * @see SymPy `sympy.polys.polytools.Poly.cancel`
+   */
   cancel(other: Poly, include: true): [Poly, Poly];
+  /**
+   * Cancel common factors in a ratio while preserving the coefficient domain.
+   *
+   * @param other - Operand to combine or compare with this value.
+   * @param include - Incorporate the scalar factors in the reduced numerator and denominator. If false, return the scalars separately.
+   * @returns Cancel common factors in a ratio while preserving the coefficient domain.
+   * @see SymPy `sympy.polys.polytools.Poly.cancel`
+   */
   cancel(other: Poly, include?: false): [Expr, Poly, Poly];
   cancel(other: Poly, include = false): [Poly, Poly] | [Expr, Poly, Poly] {
     const [f, g] = this.unify(other);
@@ -1328,10 +1928,23 @@ export class Poly {
     if (include) return [P.mulGround(Rational.of(coefficient.p)), Q.mulGround(Rational.of(coefficient.q))];
     return [coefficient, P, Q];
   }
+  /**
+   * Computes the functional composition of the polynomial and `g`.
+   *
+   * @param o - Operand to combine or compare with this value.
+   * @returns The functional composition of the polynomial and `g`.
+   * @see SymPy `sympy.polys.polytools.Poly.compose`
+   */
   compose(o: Poly): Poly {
     if(this.algebraicField && this.domain!==o.domain){const [a,b]=this.unify(o);return a.compose(b);}
     return this.like(add(...this.termList.map((t)=>mul(t.coeff,pow(o.asExpr(),first(t.monom)),...t.monom.slice(1).map((e,i)=>pow(at(this.gens,i+1),e))))));
   }
+  /**
+   * Computes the discriminant of the polynomial.
+   *
+   * @returns The discriminant of the polynomial.
+   * @see SymPy `sympy.polys.polytools.Poly.discriminant`
+   */
   discriminant(): Expr {
     const p=this.finiteModulus;
     if(p!==undefined){
@@ -1346,6 +1959,13 @@ export class Poly {
     }
     return discriminant(this.asExpr(), this.univariate());
   }
+  /**
+   * Computes the resultant of the polynomial and `g` via PRS.
+   *
+   * @param o - Operand to combine or compare with this value.
+   * @returns The resultant with respect to the elimination variable.
+   * @see SymPy `sympy.polys.polytools.Poly.resultant`
+   */
   resultant(o: Poly): Expr {
     const finite = this.finitePair(o);
     if (finite) {
@@ -1355,28 +1975,69 @@ export class Poly {
     }
     return resultant(this.asExpr(), o.asExpr(), this.univariate());
   }
-  /** Last coefficient in term order. */
+  /**
+   * Last coefficient in term order.
+   *
+   * @param opts - Controls `order` (the monomial order).
+   * @returns The coefficient of the last nonzero term in the requested order.
+   * @see SymPy `sympy.polys.polytools.Poly.EC`
+   */
   EC(opts: { order?: 'lex' | 'grlex' | 'grevlex' } = {}): Expr {
     return this.ET(opts)[1];
   }
-  /** Last monomial in lexicographic term order (SymPy Poly.EM). */
+  /**
+   * Last monomial in lexicographic term order.
+   *
+   * @param opts - Controls `order` (the monomial order).
+   * @returns The monomial of the last nonzero term in the requested order.
+   * @see SymPy `sympy.polys.polytools.Poly.EM`
+   */
   EM(opts: { order?: 'lex' | 'grlex' | 'grevlex' } = {}): Expr {
     return mul(...this.ET(opts)[0].map((n, i) => pow(at(this.gens, i), n)));
   }
-  /** Constant term. */
+  /**
+   * Constant term.
+   *
+   * @returns The trailing coefficient.
+   * @see SymPy `sympy.polys.polytools.Poly.TC`
+   */
   TC(): Expr {
     return this.coeffMonomial(this.gens.map(() => 0));
   }
-  /** Coefficient of gens**N. */
+  /**
+   * Coefficient of gens**N.
+   *
+   * @param N - Exponent vector of the requested coefficient.
+   * @returns The coefficient at the specified exponents.
+   * @see SymPy `sympy.polys.polytools.Poly.nth`
+   */
   nth(...N: number[]): Expr {
     return this.coeffMonomial(N);
   }
+  /**
+   * The number of stored terms.
+   *
+   * @returns The number of stored terms.
+   * @see SymPy `sympy.polys.polytools.Poly.length`
+   */
   length(): number {
     return this.termList.length;
   }
+  /**
+   * Returns l1 norm of the polynomial.
+   *
+   * @returns L1 norm of the polynomial.
+   * @see SymPy `sympy.polys.polytools.Poly.l1_norm`
+   */
   l1Norm(): Expr {
     return add(...this.termList.map((t) => (t.coeff instanceof Rational && t.coeff.isNegative ? mul(-1, t.coeff) : t.coeff)));
   }
+  /**
+   * Returns maximum norm of the polynomial.
+   *
+   * @returns Maximum norm of the polynomial.
+   * @see SymPy `sympy.polys.polytools.Poly.max_norm`
+   */
   maxNorm(): Expr {
     let m: Expr = S.Zero;
     for (const t of this.termList) {
@@ -1385,35 +2046,73 @@ export class Poly {
     }
     return m;
   }
-  /** Evaluate several generators at once (dict or tuple of leading values). */
+  /**
+   * Evaluate several generators at once (dict or tuple of leading values).
+   *
+   * @param values - Values to substitute, in generator order.
+   * @returns Evaluate several generators at once (dict or tuple of leading values).
+   * @see SymPy `sympy.polys.polytools.Poly.eval`
+   */
   evalMany(values: readonly (readonly [Expr, ExprLike])[]): Expr | Poly {
     const rest = this.gens.filter((g) => !values.some(([h]) => h.key === g.key));
     const v = expand(xreplace(this.asExpr(), values.map(([g, a]) => [g, sympify(a)] as [Expr, Expr])));
     return rest.length ? this.like(v,rest) : this.finiteModulus === undefined ? v : finiteCoefficient(v,this.finiteModulus,this.finiteSymmetric);
   }
-  /** Remove generators that do not occur. */
+  /**
+   * Remove generators that do not occur.
+   *
+   * @returns The polynomial with unused generators removed.
+   * @see SymPy `sympy.polys.polytools.Poly.exclude`
+   */
   exclude(): Poly {
     const keep = this.gens.filter((_, i) => this.termList.some((t) => at(t.monom, i) > 0));
     return this.like(this.asExpr(),keep.length ? keep : this.gens);
   }
+  /**
+   * Return `True` if `Poly(f, *gens)` retains ground domain.
+   *
+   * @param gens - Polynomial generators in the desired order.
+   * @returns `True` if `Poly(f, *gens)` retains ground domain.
+   * @throws GeneratorsError when the specified generator or index is invalid.
+   * @see SymPy `sympy.polys.polytools.Poly.has_only_gens`
+   */
   hasOnlyGens(...gens: Expr[]): boolean {
     if (gens.some((h) => !this.gens.some((g) => g.key === h.key))) throw new GeneratorsError('invalid polynomial generator');
     return this.gens.every((g, i) => gens.some((h) => h.key === g.key) || this.termList.every((t) => t.monom[i] === 0));
   }
-  /** Total degree when homogeneous (SymPy homogeneous_order), else NoMatch. */
+  /**
+   * Total degree when homogeneous, else NoMatch.
+   *
+   * @returns The matching value, or `NoMatch` when the requested form is unavailable.
+   * @see SymPy `sympy.polys.polytools.Poly.homogeneous_order`
+   */
   homogeneousOrder(): number | NoMatchResult {
     if (this.isZero) return -Infinity;
     const ds = this.termList.map((t) => t.monom.reduce((a, b) => a + b, 0));
     const [d0] = ds;
     return d0 !== undefined && ds.every((d) => d === d0) ? d0 : NoMatch;
   }
+  /**
+   * Homogenize the polynomial with respect to the supplied generator.
+   *
+   * @param s - Generator whose powers make all terms homogeneous.
+   * @returns The homogeneous polynomial after introducing the required powers of the generator.
+   * @see SymPy `sympy.polys.polytools.Poly.homogenize`
+   */
   homogenize(s: Expr): Poly {
     const d = this.totalDegree();
     const gens = this.gens.some((g) => g.key === s.key) ? this.gens : [...this.gens, s];
     const e = add(...this.termList.map((t) => mul(this.termExpr(t), pow(s, d - t.monom.reduce((a, b) => a + b, 0)))));
     return this.like(e,gens);
   }
-  /** Drop the generators to the left of gen. */
+  /**
+   * Drop the generators to the left of gen.
+   *
+   * @param gen - Generator or its index.
+   * @returns The polynomial with the leading unused generators removed.
+   * @throws PolynomialError when the specified generator or index is invalid or the discarded generators occur in the polynomial.
+   * @see SymPy `sympy.polys.polytools.Poly.ltrim`
+   */
   ltrim(gen: Expr | number): Poly {
     let i = typeof gen === 'number' ? gen : this.gens.findIndex((g) => g.key === gen.key);
     if (typeof gen === 'number' && i < 0) i += this.gens.length;
@@ -1421,8 +2120,23 @@ export class Poly {
     if (this.termList.some((t) => t.monom.slice(0, i).some((e) => e !== 0))) throw new PolynomialError('Cannot left trim');
     return this.like(this.asExpr(),this.gens.slice(i));
   }
-  /** Reorder the generators; with `{ wrt }` the given generators come first and the rest follow the default order. */
+  /**
+   * Reorder the generators; with `{ wrt }` the given generators come first and the rest follow the default order.
+   *
+   * @param gens - Polynomial generators in the desired order.
+   * @returns The same polynomial with its generators reordered.
+   * @throws PolynomialError when the new generator list is not a permutation of the old one.
+   * @see SymPy `sympy.polys.polytools.Poly.reorder`
+   */
   reorder(...gens: Expr[]): Poly;
+  /**
+   * Reorder the generators; with `{ wrt }` the given generators come first and the rest follow the default order.
+   *
+   * @param options - Controls `wrt` (the generators to place first).
+   * @returns The same polynomial with its generators reordered.
+   * @throws PolynomialError when the new generator list is not a permutation of the old one.
+   * @see SymPy `sympy.polys.polytools.Poly.reorder`
+   */
   reorder(options: { wrt: Expr | readonly Expr[] }): Poly;
   reorder(...args: (Expr | { wrt: Expr | readonly Expr[] })[]): Poly {
     const [only] = args;
@@ -1437,6 +2151,15 @@ export class Poly {
     const first = (wrt instanceof Expr ? [wrt] : [...wrt]).filter((w) => this.gens.some((g) => g.key === w.key));
     return [...first, ...sortGens(this.gens.filter((g) => !first.some((w) => w.key === g.key)))];
   }
+  /**
+   * Replace `x` with `y` in generators list.
+   *
+   * @param x - Polynomial generator.
+   * @param y - Second polynomial generator.
+   * @returns The polynomial expressed using the replacement generator.
+   * @throws PolynomialError when the source generator is omitted for a multivariate polynomial or the replacement generator is already present.
+   * @see SymPy `sympy.polys.polytools.Poly.replace`
+   */
   replace(x: Expr, y?: Expr): Poly {
     const source=y===undefined?this.gen:x,target=y??x;
     if(y===undefined && this.isMultivariate)throw new PolynomialError('replace requires a source generator for multivariate polynomials');
@@ -1446,7 +2169,14 @@ export class Poly {
     const gens=this.gens.map((g)=>g.key===source.key?target:g);
     return this.like(add(...this.termList.map((t)=>mul(t.coeff,...t.monom.map((e,i)=>pow(at(gens,i),e))))),gens);
   }
-  /** Substitute a coefficient expression or a generator. */
+  /**
+   * Substitute a coefficient expression or a generator.
+   *
+   * @param from - Expression to replace.
+   * @param to - Replacement expression.
+   * @returns Apply the indicated substitutions to the root sum.
+   * @see SymPy `sympy.polys.polytools.Poly.subs`
+   */
   subs(from: Expr, to: Expr): Poly | Expr {
     if (from.key === to.key) return this;
     const e = this.asExpr();
@@ -1459,7 +2189,13 @@ export class Poly {
     if (this.gens.some((g) => g.key === to.key) || e.has(to)) return e.subs(from, to);
     return this.replace(from, to);
   }
-  /** Pseudo-division: (pquo, prem). */
+  /**
+   * Pseudo-division: (pquo, prem).
+   *
+   * @param o - Operand to combine or compare with this value.
+   * @returns The quotient and remainder.
+   * @see SymPy `sympy.polys.polytools.Poly.pdiv`
+   */
   pdiv(o: Poly): [Poly, Poly] {
     const finite = this.finitePair(o);
     if (finite) return finite[0].finitePseudoDiv(finite[1]);
@@ -1482,13 +2218,27 @@ export class Poly {
     const scale = lc.pow(remaining);
     return [q.mul(scale), r.mul(scale)];
   }
+  /**
+   * Polynomial exact pseudo-quotient of the polynomial by `g`.
+   *
+   * @param o - Operand to combine or compare with this value.
+   * @returns The exact pseudo-quotient.
+   * @throws ExactQuotientFailed when the divisor does not divide the dividend exactly.
+   * @see SymPy `sympy.polys.polytools.Poly.pexquo`
+   */
   pexquo(o: Poly): Poly {
     const [q, r] = this.pdiv(o);
     if (!r.isZero) throw new ExactQuotientFailed('pexquo: inexact division');
     return q;
   }
   /** f(x + a). */
-  /** Greatest factorial factorization (SymPy gff_list, dup_gff_list). */
+  /**
+   * Greatest factorial factorization.
+   *
+   * @returns Greatest factorial factorization.
+   * @throws PolynomialError when the polynomial is zero.
+   * @see SymPy `sympy.polys.polytools.Poly.gff_list`
+   */
   gffList(): [Poly, number][] {
     if (this.isZero) throw new PolynomialError('gff_list: zero polynomial');
     const f = this.monic();
@@ -1506,17 +2256,37 @@ export class Poly {
     return all.map(([h, k]) => [this.domain === 'ZZ' ? h.retract() : h.toField(), k]);
   }
 
+  /**
+   * Efficiently compute Taylor shift `f(x + a)`.
+   *
+   * @param a - First operand.
+   * @returns The translated polynomial.
+   * @throws RangeError when the polynomial is multivariate.
+   * @see SymPy `sympy.polys.polytools.Poly.shift`
+   */
   shift(a: ExprLike): Poly {
     if(this.gens.length!==1)throw new RangeError('univariate polynomial expected');
     const x = first(this.gens);
     return this.like(add(...this.termList.map((t)=>mul(t.coeff,pow(add(x,a),first(t.monom))))));
   }
-  /** Translate each generator by its corresponding value. */
+  /**
+   * Translate each generator by its corresponding value.
+   *
+   * @param values - Values to substitute, in generator order.
+   * @returns The polynomial translated by one amount for each generator.
+   * @throws PolynomialError when the number of translations differs from the number of generators.
+   * @see SymPy `sympy.polys.polytools.Poly.shift_list`
+   */
   shiftList(values: readonly ExprLike[]): Poly {
     if (values.length !== this.gens.length) throw new PolynomialError('a shift is required for each generator');
     return this.like(this.asExprAt(this.gens.map((g, i) => [g, add(g, at(values, i))] as const)));
   }
-  /** Square-free part. */
+  /**
+   * Square-free part.
+   *
+   * @returns The square-free part of the polynomial.
+   * @see SymPy `sympy.polys.polytools.Poly.sqf_part`
+   */
   sqfPart(): Poly {
     if(this.finiteModulus !== undefined)return this.fromFiniteDense(gfSqfPart(this.finiteDense(),this.finiteModulus));
     const x = this.univariate();
@@ -1527,27 +2297,56 @@ export class Poly {
     const lc = prim.LC();
     return lc instanceof Rational && lc.isNegative ? prim.neg() : prim;
   }
-  /** (gcd of the monomials, quotient). */
+  /**
+   * (gcd of the monomials, quotient).
+   *
+   * @returns The expression with the common factors of its terms taken out.
+   * @see SymPy `sympy.polys.polytools.Poly.terms_gcd`
+   */
   termsGcd(): [number[], Poly] {
     const m = this.gens.map((_, i) => Math.min(...this.termList.map((t) => at(t.monom, i))));
     const e = add(...this.termList.map((t) => this.termExpr({ monom: t.monom.map((k, i) => k - at(m, i)), coeff: t.coeff })));
     return [m, this.like(e)];
   }
-  /** (gcd of the exponents per generator, deflated polynomial). */
+  /**
+   * (gcd of the exponents per generator, deflated polynomial).
+   *
+   * @returns (gcd of the exponents per generator, deflated polynomial).
+   * @see SymPy `sympy.polys.polytools.Poly.deflate`
+   */
   deflate(): [number[], Poly] {
     const g = (a: number, b: number): number => (b === 0 ? a : g(b, a % b));
     const J = this.gens.map((_, i) => this.termList.reduce((acc, t) => g(acc, at(t.monom, i)), 0) || 1);
     const e = add(...this.termList.map((t) => this.termExpr({ monom: t.monom.map((k, i) => k / at(J, i)), coeff: t.coeff })));
     return [J, this.like(e)];
   }
+  /**
+   * Make the ground domain a field.
+   *
+   * @returns The polynomial over the associated coefficient field.
+   * @see SymPy `sympy.polys.polytools.Poly.to_field`
+   */
   toField(): Poly {
     return this.like(this.asExpr(),this.gens,this.domain === 'ZZ' ? 'QQ' : this.domain);
   }
+  /**
+   * The polynomial ring with the same generators and coefficient domain.
+   *
+   * @returns The polynomial ring with the same generators and coefficient domain.
+   * @throws DomainError when the finite field has no associated ring.
+   * @see SymPy `sympy.polys.polytools.Poly.to_ring`
+   */
   toRing(): Poly {
     const K = this.coefficientDomain ?? defined(polyConstructionHooks.domain, 'polynomial domain construction')([], { domain: this.domain });
     if (this.finiteModulus !== undefined) throw new DomainError('the finite field has no associated ring');
     return this.like(this.asExpr(), this.gens, String(K.getRing()));
   }
+  /**
+   * Make the ground domain exact.
+   *
+   * @returns The polynomial over an exact coefficient domain.
+   * @see SymPy `sympy.polys.polytools.Poly.to_exact`
+   */
   toExact(): Poly {
     const e = xreplace(
       this.asExpr(),
@@ -1556,7 +2355,15 @@ export class Poly {
     // SymPy get_exact: RR -> QQ, exact domains unchanged
     return this.like(e,this.gens,this.domain === 'RR' ? 'QQ' : this.domain);
   }
-  /** q**n * f(p/q). */
+  /**
+   * q**n * f(p/q).
+   *
+   * @param p - Numerator of the rational substitution.
+   * @param q - Denominator of the rational substitution.
+   * @returns The polynomial after rational substitution and denominator clearing.
+   * @throws RangeError when the polynomials do not share a single generator.
+   * @see SymPy `sympy.polys.polytools.Poly.transform`
+   */
   transform(p: Poly, q: Poly): Poly {
     if (!this.isUnivariate || !p.isUnivariate || !q.isUnivariate || p.gen.key !== this.gen.key || q.gen.key !== this.gen.key) {
       throw new RangeError('univariate polynomials with a common generator expected');
@@ -1572,7 +2379,13 @@ export class Poly {
     );
     return fu.like(expand(e));
   }
-  /** Reduce the coefficients modulo p into the symmetric range. */
+  /**
+   * Reduce the coefficients modulo p into the symmetric range.
+   *
+   * @param pIn - Modulus for reducing coefficients.
+   * @returns The polynomial with coefficients reduced modulo the supplied modulus.
+   * @see SymPy `sympy.polys.polytools.Poly.trunc`
+   */
   trunc(pIn: ExprLike): Poly {
     const p = asRational(sympify(pIn), 'modulus').p;
     const finite = this.finiteModulus;
@@ -1583,7 +2396,13 @@ export class Poly {
       return Rational.of(v);
     });
   }
-  /** Polynomials with common generators and coefficient domain. */
+  /**
+   * Polynomials with common generators and coefficient domain.
+   *
+   * @param other - Operand to combine or compare with this value.
+   * @returns Polynomials with common generators and coefficient domain.
+   * @see SymPy `sympy.polys.polytools.Poly.unify`
+   */
   unify(other: Poly): [Poly, Poly] {
     const finite = this.finitePair(other);
     if (finite !== undefined) return [finite[0], finite[1]];
@@ -1611,14 +2430,27 @@ export class Poly {
     }
     return [Poly.from(this.asExpr(), gens, { domain: coefficientDomain?.toString()===domain?coefficientDomain:domain, pure: this.pure }), Poly.from(other.asExpr(), gens, { domain: coefficientDomain?.toString()===domain?coefficientDomain:domain, pure: other.pure })];
   }
-  /** Clear coefficient denominators while preserving the quotient f/g. */
+  /**
+   * Clear coefficient denominators while preserving the quotient f/g.
+   *
+   * @param other - Operand to combine or compare with this value.
+   * @returns Clear coefficient denominators while preserving the quotient f/g.
+   * @see SymPy `sympy.polys.polytools.Poly.rat_clear_denoms`
+   */
   ratClearDenoms(other: Poly): [Poly, Poly] {
     const [f, g] = this.unify(other);
     if (f.domain === 'EX') return [f, g];
     const [a, F] = f.clearDenoms(true), [b, G] = g.clearDenoms(true);
     return [F.mulGround(b), G.mulGround(a)];
   }
-  /** A translated polynomial and its square-free norm over the ground field. */
+  /**
+   * A translated polynomial and its square-free norm over the ground field.
+   *
+   * @returns A translated polynomial and its square-free norm over the ground field.
+   * @throws DomainError when the coefficient domain is not algebraic.
+   * @throws PolynomialError when the polynomial is not square-free.
+   * @see SymPy `sympy.polys.polytools.Poly.sqf_norm`
+   */
   sqfNorm(): [number[], Poly, Poly] {
     if(!this.algebraicField)throw new DomainError('sqf_norm requires an algebraic coefficient domain');
     if(this.isZero)return [this.gens.map(()=>0),this,this.like(0,this.gens,'QQ')];
@@ -1636,7 +2468,13 @@ export class Poly {
     }
   }
 
-  /** (lcm of denominators, polynomial times it). */
+  /**
+   * (lcm of denominators, polynomial times it).
+   *
+   * @param convert - Convert the resulting coefficients to the associated ring.
+   * @returns (lcm of denominators, polynomial times it).
+   * @see SymPy `sympy.polys.polytools.Poly.clear_denoms`
+   */
   clearDenoms(convert = false): [Expr, Poly] {
     const fractionDomain = /^(ZZ|QQ)\((.*)\)$/.exec(this.domain);
     if (fractionDomain !== null) {
@@ -1652,7 +2490,16 @@ export class Poly {
     const e = expand(mul(Rational.of(l), this.asExpr()));
     return [Rational.of(l),this.like(e,this.gens,convert && this.domain==='QQ'?'ZZ':this.domain)];
   }
-  /** Extended Euclid: (s, t, h) with s*f + t*g = h = gcd(f, g) (monic, over the coefficient field). */
+  /**
+   * Extended Euclid: (s, t, h) with s*f + t*g = h = gcd(f, g) (monic, over the coefficient field).
+   *
+   * @param o - Operand to combine or compare with this value.
+   * @param auto - Allow promotion to a field for division.
+   * @returns Extended Euclid: (s, t, h) with s*f + t*g = h = gcd(f, g) (monic, over the coefficient field).
+   * @throws RangeError when the divisor is zero.
+   * @throws DomainError when the coefficient domain is not a field.
+   * @see SymPy `sympy.polys.polytools.Poly.gcdex`
+   */
   gcdex(o: Poly, auto = true): [Poly, Poly, Poly] {
     const finite = this.finitePair(o);
     if (finite) {
@@ -1679,17 +2526,39 @@ export class Poly {
     const f = (p: Poly) => Poly.from(expand(mul(inv, p.asExpr())), [x], { domain });
     return [f(s0), f(t0), f(r0)];
   }
+  /**
+   * Half extended Euclidean algorithm of the polynomial and `g`.
+   *
+   * @param o - Operand to combine or compare with this value.
+   * @param auto - Allow promotion to a field for division.
+   * @returns A Bézout coefficient and the greatest common divisor.
+   * @see SymPy `sympy.polys.polytools.Poly.half_gcdex`
+   */
   halfGcdex(o: Poly, auto = true): [Poly, Poly] {
     const [s, , h] = this.gcdex(o, auto);
     return [s, h];
   }
-  /** Inverse of f modulo g. */
+  /**
+   * Inverse of f modulo g.
+   *
+   * @param o - Operand to combine or compare with this value.
+   * @returns The multiplicative inverse modulo the second polynomial.
+   * @throws NotInvertible when the element has no multiplicative inverse modulo the given modulus.
+   * @see SymPy `sympy.polys.polytools.Poly.invert`
+   */
   invert(o: Poly): Poly {
     const [s, , h] = this.gcdex(o);
     if (h.degree() !== 0) throw new NotInvertible('invert: zero divisor');
     return s;
   }
-  /** Sturm sequence over the coefficient field. */
+  /**
+   * Sturm sequence over the coefficient field.
+   *
+   * @param auto - Allow promotion to a field for division.
+   * @returns Sturm sequence over the coefficient field.
+   * @throws DomainError when the coefficient domain is not a field.
+   * @see SymPy `sympy.polys.polytools.Poly.sturm`
+   */
   sturm(auto = true): Poly[] {
     const x = this.univariate();
     if (!auto && fieldDomainName(this.domain) !== this.domain) throw new DomainError('Sturm sequence requires a field');
@@ -1728,7 +2597,15 @@ export class Poly {
       coeff: xreplace(K.toSympy(c), restore),
     })), domain, this.pure));
   }
-  /** Number of real roots in [a, b] (Sturm's theorem). */
+  /**
+   * Number of real roots in [a, b] (Sturm's theorem).
+   *
+   * @param a - Lower endpoint or lower-left corner.
+   * @param b - Upper endpoint or upper-right corner.
+   * @returns The number of roots in the specified interval or rectangle.
+   * @throws DomainError when the coefficients belong to a finite domain or the coefficients are not rational.
+   * @see SymPy `sympy.polys.polytools.Poly.count_roots`
+   */
   countRoots(a?: ExprLike, b?: ExprLike): number {
     const x = this.univariate();
     if (this.degree() <= 0) return 0;
@@ -1774,7 +2651,13 @@ export class Poly {
   private sqfPartQQ(): Poly {
     return this.sqfPart();
   }
-  /** Rational roots with multiplicities (SymPy ground_roots). */
+  /**
+   * Rational roots with multiplicities.
+   *
+   * @param opts - Controls `extension` (algebraic coefficient extensions).
+   * @returns Rational roots with multiplicities.
+   * @see SymPy `sympy.polys.polytools.Poly.ground_roots`
+   */
   groundRoots(opts: { extension?: boolean } = {}): [Expr, number][] {
     const x = first(this.gens);
     if (opts.extension) {
@@ -1807,7 +2690,13 @@ export class Poly {
     }
     return out;
   }
-  /** Series reversion: g with f*g = 1 mod x**n. */
+  /**
+   * Series reversion: g with f*g = 1 mod x**n.
+   *
+   * @param n - Exponent or degree.
+   * @returns The truncated multiplicative inverse.
+   * @see SymPy `sympy.polys.polytools.Poly.revert`
+   */
   revert(n: number): Poly {
     const x = this.univariate();
     if(this.finiteModulus !== undefined){
@@ -1827,7 +2716,14 @@ export class Poly {
     }
     return this.like(expand(g));
   }
-  /** Polynomial whose roots are the n-th powers of the roots of f. */
+  /**
+   * Polynomial whose roots are the n-th powers of the roots of f.
+   *
+   * @param n - Positive integer power to which each root is raised.
+   * @returns A polynomial whose roots are the specified powers of the input roots.
+   * @throws RangeError when the requested power is not a positive integer.
+   * @see SymPy `sympy.polys.polytools.Poly.nth_power_roots_poly`
+   */
   nthPowerRootsPoly(n: number): Poly {
     if (!Number.isInteger(n) || n < 1) throw new RangeError('a positive integer power is required');
     if (n === 1) return this;
@@ -1894,9 +2790,13 @@ export class Poly {
     return this.algebraicNorm();
   }
   /**
-   * SymPy Poly.norm: the product of the conjugates of a polynomial over an
+   * The product of the conjugates of a polynomial over an
    * algebraic field QQ<a>, a polynomial over QQ. Like SymPy, other ground
    * domains (ZZ, QQ, ZZ_I, EX) raise DomainError.
+   *
+   * @returns The product of the conjugates of a polynomial over an algebraic field QQ<a>, a polynomial over QQ. Like SymPy, other ground domains (ZZ, QQ, ZZ_I, EX) raise DomainError.
+   * @throws DomainError when the coefficient domain is not algebraic.
+   * @see SymPy `sympy.polys.polytools.Poly.norm`
    */
   norm(): Poly {
     if (!/^(?:QQ|ZZ)<.*>$/.test(this.domain)) throw new DomainError('ground domain must be algebraic');
@@ -1951,7 +2851,13 @@ export class Poly {
     const N = Poly.from(expand(norm), this.gens);
     return N.termList.every((t) => t.coeff instanceof Rational) ? Poly.from(N.asExpr(), this.gens, { domain: 'QQ' }) : undefined;
   }
-  /** SymPy Poly.make_monic_over_integers_by_scaling_roots: [monic integer polynomial g, s] with g(x) = f(x/s)*s**n/LC(f). */
+  /**
+   * [monic integer polynomial g, s] with g(x) = f(x/s)*s**n/LC(f).
+   *
+   * @returns [monic integer polynomial g, s] with g(x) = f(x/s)*s**n/LC(f).
+   * @throws DomainError when the coefficients are not rational.
+   * @see SymPy `sympy.polys.polytools.Poly.make_monic_over_integers_by_scaling_roots`
+   */
   makeMonicOverIntegersByScalingRoots(): [Poly, Expr] {
     const x = this.univariate();
     const n = this.degree();
@@ -1967,20 +2873,41 @@ export class Poly {
     const e = impl.add(...cs.map((c, i) => impl.mul(c, impl.pow(S_, i), impl.pow(x, n - i))));
     return [Poly.from(e, [x], { domain: 'ZZ' }), S_];
   }
-  /** SymPy Poly.get_modulus: p of a polynomial over GF(p). */
+  /**
+   * p of a polynomial over GF(p).
+   *
+   * @returns P of a polynomial over GF(p).
+   * @throws DomainError when the polynomial is not over a finite field.
+   * @see SymPy `sympy.polys.polytools.Poly.get_modulus`
+   */
   getModulus(): bigint {
     const m = /^GF\((\d+)\)$/.exec(this.domain);
     if (!m) throw new DomainError('get_modulus: not a polynomial over a finite field');
     return BigInt(defined(m[1], 'modulus'));
   }
-  /** SymPy Poly.set_modulus: the polynomial over GF(p), coefficients in the symmetric range. */
+  /**
+   * The polynomial over GF(p), coefficients in the symmetric range.
+   *
+   * @param p - Modulus of the new coefficient domain.
+   * @returns The polynomial over GF(p), coefficients in the symmetric range.
+   * @throws DomainError when the coefficients are not integers.
+   * @see SymPy `sympy.polys.polytools.Poly.set_modulus`
+   */
   setModulus(p: number | bigint): Poly {
     for (const c of this.coeffs()) if (!(c instanceof Rational && c.isInteger)) throw new DomainError('set_modulus: integer coefficients expected');
     const q = this.finiteModulus;
     const expr = q === undefined ? this.asExpr() : add(...this.termList.map((t) => this.termExpr({ ...t, coeff: finiteCoefficient(t.coeff, q, false) })));
     return Poly.from(expr, this.gens, { modulus: p });
   }
-  /** SymPy Poly.eject(*gens): move generators into the ground domain (ZZ -> ZZ[x]). */
+  /**
+   * Move generators into the ground domain (ZZ -> ZZ[x]).
+   *
+   * @param gens - Polynomial generators in the desired order.
+   * @returns The polynomial with the selected generators moved into its coefficients.
+   * @throws DomainError when the coefficient domain cannot absorb the requested generators.
+   * @throws NotImplementedError when the generators to eject are not at either end of the generator list.
+   * @see SymPy `sympy.polys.polytools.Poly.eject`
+   */
   eject(...gens: Expr[]): Poly {
     // SymPy ejects over a numerical domain only
     if (this.domain.includes('[')) throw new DomainError(`Cannot eject generators over ${this.domain}`);
@@ -1994,7 +2921,13 @@ export class Poly {
     const names = this.gens.filter((g) => keys.has(g.key)).map((g) => str(g)).join(',');
     return Poly.from(this.asExpr(), rest, { domain: `${this.domain}[${names}]` });
   }
-  /** SymPy Poly.inject(front=False): move the generators of a polynomial ground domain (ZZ[y]) into the generators. */
+  /**
+   * Move the generators of a polynomial ground domain (ZZ[y]) into the generators.
+   *
+   * @param opts - Controls `front` (placement of injected generators at the front).
+   * @returns The polynomial with coefficient-domain generators made explicit.
+   * @see SymPy `sympy.polys.polytools.Poly.inject`
+   */
   inject(opts: { front?: boolean } = {}): Poly {
     const m = this.domain.match(/^(ZZ|QQ)\[(.*)\]$/);
     if (!m) return this;
@@ -2005,19 +2938,41 @@ export class Poly {
     const gens = opts.front ? [...dg, ...this.gens] : [...this.gens, ...dg];
     return Poly.from(this.asExpr(), gens, { domain: ground });
   }
-  /** SymPy Poly.lift: the norm over the ground field of an algebraic extension (ZZ_I -> ZZ, QQ<a> -> QQ). */
+  /**
+   * The norm over the ground field of an algebraic extension (ZZ_I -> ZZ, QQ<a> -> QQ).
+   *
+   * @returns The norm over the ground field of an algebraic extension (ZZ_I -> ZZ, QQ<a> -> QQ).
+   * @throws DomainError when the coefficient domain is not algebraic.
+   * @see SymPy `sympy.polys.polytools.Poly.lift`
+   */
   lift(): Poly {
     // SymPy lifts over ZZ_I, QQ_I and QQ<a> only
     if (!/^(?:ZZ_I|QQ_I|(?:QQ|ZZ)<.*>)$/.test(this.domain)) throw new DomainError('computation can be done only in an algebraic domain');
     const N = defined(this.normPoly(), 'lift');
     return Poly.from(N.asExpr(), this.gens, { domain: this.domain.startsWith('ZZ') ? 'ZZ' : 'QQ' });
   }
-  /** Real roots (rational and quadratic surds), sorted, with multiplicity. */
+  /**
+   * Real roots (rational and quadratic surds), sorted, with multiplicity.
+   *
+   * @param opts - Controls `extension` (algebraic coefficient extensions), `radicals` (radical expressions for roots).
+   * @returns Real roots (rational and quadratic surds), sorted, with multiplicity.
+   * @throws PolynomialError when the generator is not a symbol.
+   * @throws NotImplementedError when root isolation requires an unavailable coefficient extension.
+   * @see SymPy `sympy.polys.polytools.Poly.real_roots`
+   */
   realRoots(opts: { extension?: boolean; radicals?: boolean } = {}): Expr[] {
     if (opts.extension === false && this.isUnivariate && !(this.gen instanceof Sym)) throw new PolynomialError('a symbolic generator is required');
     if (opts.extension === false && this.domain === 'EX') throw new NotImplementedError('real root isolation requires a coefficient extension');
     return opts.extension ? this.radicalRoots(true) : this.rootsWhere(true, opts.radicals);
   }
+  /**
+   * Return a list of real and complex roots with multiplicities.
+   *
+   * @param opts - Controls `extension` (algebraic coefficient extensions), `radicals` (radical expressions for roots).
+   * @returns A list of real and complex roots with multiplicities.
+   * @throws NotImplementedError when root isolation requires an unavailable coefficient extension.
+   * @see SymPy `sympy.polys.polytools.Poly.all_roots`
+   */
   allRoots(opts: { extension?: boolean; radicals?: boolean } = {}): Expr[] {
     if (opts.extension === false && this.domain === 'EX') throw new NotImplementedError('root isolation requires a coefficient extension');
     return opts.extension ? this.radicalRoots(false) : this.rootsWhere(false, opts.radicals);
@@ -2155,10 +3110,27 @@ export class Poly {
     factors.sort(([a],[b])=>a.totalDegree()-b.totalDegree() || compareExpr(a.asExpr(),b.asExpr()));
     return [K.toSympy(lc),factors];
   }
+  /**
+   * The indexed root in the ordered list of all roots.
+   *
+   * @param i - Zero-based index in the ordered list of roots.
+   * @returns The indexed root in the ordered list of all roots.
+   * @see SymPy `sympy.polys.polytools.Poly.root`
+   */
   root(i: number): Expr {
     return at(this.allRoots(), i);
   }
-  /** Compare two roots using a separation bound for this polynomial. */
+  /**
+   * Compare two roots using a separation bound for this polynomial.
+   *
+   * @param a - First operand.
+   * @param b - Second operand.
+   * @returns Whether the two values represent the same root of this polynomial.
+   * @throws MultivariatePolynomialError when the operation requires a univariate polynomial.
+   * @throws DomainError when root separation is unsupported over the coefficient domain.
+   * @throws PolynomialError when the polynomial degree is less than two.
+   * @see SymPy `sympy.polys.polytools.Poly.same_root`
+   */
   sameRoot(a: Expr, b: Expr): boolean {
     if (this.isMultivariate) throw new MultivariatePolynomialError('a univariate polynomial is required');
     if (!['ZZ', 'QQ', 'RR'].includes(this.domain)) throw new DomainError(`root separation is not supported over ${this.domain}`);
@@ -2178,6 +3150,14 @@ export class Poly {
     const distanceSquared = asRational(add(pow(add(ar, mul(-1, br)), 2), pow(add(ai, mul(-1, bi)), 2)), 'root distance');
     return distanceSquared.p * epsilonSquared.q < epsilonSquared.p * distanceSquared.q;
   }
+  /**
+   * Find roots of a square-free polynomial `f` from `candidates`.
+   *
+   * @param cands - Candidate roots to test.
+   * @returns Roots of a square-free polynomial `f` from `candidates`.
+   * @throws NotImplementedError when root counting is unavailable over the coefficient domain.
+   * @see SymPy `sympy.polys.polytools.Poly.which_real_roots`
+   */
   whichRealRoots(cands: readonly Expr[]): Expr[] {
     this.univariate();
     if (this.domain !== 'ZZ' && this.domain !== 'QQ' && !this.domain.startsWith('QQ<')) {
@@ -2185,6 +3165,13 @@ export class Poly {
     }
     return this.whichRoots(cands, this.countRoots());
   }
+  /**
+   * Find roots of a square-free polynomial `f` from `candidates`.
+   *
+   * @param cands - Candidate roots to test.
+   * @returns Roots of a square-free polynomial `f` from `candidates`.
+   * @see SymPy `sympy.polys.polytools.Poly.which_all_roots`
+   */
   whichAllRoots(cands: readonly Expr[]): Expr[] {
     this.univariate();
     return this.whichRoots(cands, this.degree());
@@ -2209,7 +3196,12 @@ export class Poly {
     }
     return out;
   }
-  /** [(f, k)] with the content folded into the first factor. */
+  /**
+   * [(f, k)] with the content folded into the first factor.
+   *
+   * @returns [(f, k)] with the content folded into the first factor.
+   * @see SymPy `sympy.polys.polytools.Poly.factor_list_include`
+   */
   factorListInclude(): [Poly, number][] {
     const [c, fs] = this.factorList();
     const [f0, ...rest] = fs;
@@ -2217,6 +3209,13 @@ export class Poly {
     if (!(c instanceof Rational && c.isOne)) return [[Poly.from(mul(c, f0[0].asExpr()), this.gens), f0[1]], ...rest];
     return fs;
   }
+  /**
+   * Returns a list of square-free factors of the polynomial.
+   *
+   * @param all - Include factors of missing multiplicities.
+   * @returns A list of square-free factors of the polynomial.
+   * @see SymPy `sympy.polys.polytools.Poly.sqf_list_include`
+   */
   sqfListInclude(all = false): [Poly, number][] {
     const [c, fs] = this.sqfListAll(all);
     const out: [Poly, number][] = [[Poly.from(c, this.gens, { domain: this.domain }), 1], ...fs];
@@ -2227,6 +3226,12 @@ export class Poly {
     }
     return out;
   }
+  /**
+   * The square-free factorization including a factor for each multiplicity.
+   *
+   * @param all - Include factors of missing multiplicities.
+   * @returns The square-free factorization including a factor for each multiplicity.
+   */
   sqfListAll(all = false): [Rational, [Poly, number][]] {
     const [c, fs] = this.sqfList();
     if (!all) return [c, fs];
@@ -2236,13 +3241,24 @@ export class Poly {
     return [c, full];
   }
 
-  /** Smallest domain containing the coefficients (SymPy retract). */
+  /**
+   * Smallest domain containing the coefficients.
+   *
+   * @param field - The target coefficient field.
+   * @returns The polynomial over the inferred smaller coefficient domain.
+   * @see SymPy `sympy.polys.polytools.Poly.retract`
+   */
   retract(field = false): Poly {
     const p = Poly.from(this.asExpr(), this.gens);
     if (field && p.domain === 'ZZ') return Poly.from(this.asExpr(), this.gens, { domain: 'QQ' });
     return p;
   }
-  /** Functional decomposition f = g1(g2(...)) of a univariate polynomial (SymPy decompose). */
+  /**
+   * Functional decomposition f = g1(g2(...)) of a univariate polynomial.
+   *
+   * @returns Functional decomposition f = g1(g2(...)) of a univariate polynomial.
+   * @see SymPy `sympy.polys.polytools.Poly.decompose`
+   */
   decompose(): Poly[] {
     const x = this.univariate();
     const out: Poly[] = [];
@@ -2256,6 +3272,12 @@ export class Poly {
     return [f, ...out];
   }
 
+  /**
+   * The printable representation.
+   *
+   * @returns The formatted text.
+   * @see SymPy `sympy.polys.polytools.Poly.__str__`
+   */
   toString(): string {
     return polyStr(this);
   }
@@ -2326,19 +3348,20 @@ function rationalOfFloat(f: Float): Rational {
 /** The primitive integer polynomial of a monic univariate rational polynomial (positive leading coefficient). */
 const primitiveIntPoly = (e: Expr, x: Expr): Poly => Poly.from(e, [x]).primitive()[1];
 
-/** SymPy factor_list(expr) without `frac`: (content, [(factor, multiplicity)]). */
+/** (content, [(factor, multiplicity)]). */
 export type FactorList = [Expr, [Expr, Expr][]];
-/** SymPy factor_list(expr, frac=True): (content, numerator factors, denominator factors). */
+/** (content, numerator factors, denominator factors). */
 export type FactorListFrac = [Expr, [Expr, Expr][], [Expr, Expr][]];
-/** Options of factorList (SymPy factor_list flags). */
+/** Options of factorList. */
 export interface FactorListOptions {
-  /** Factor the denominator too and return its factors as a third element (SymPy frac=True). */
+  /** Factor the denominator too and return its factors as a third element. */
   frac?: boolean;
+  /** Whether to include the imaginary unit in the coefficient domain. */
   gaussian?: boolean;
 }
 
 /**
- * SymPy factor_list(f, *gens) on expressions: (content, [(factor, multiplicity)]).
+ * (content, [(factor, multiplicity)]).
  * The multiplicities are expressions: a power with a symbolic or fractional
  * exponent keeps it ((x + 1)**y -> (1, [(x + 1, y)])). Without gens every
  * non-rational part is a generator (sqrt(2), f(1), exp(y), ...); with gens the
@@ -2346,9 +3369,57 @@ export interface FactorListOptions {
  * parts free of the gens with an integer exponent make up the content. A
  * denominator is an error unless `frac` is set, which returns its factors as
  * a third element.
+ *
+ * @param e - Expression to convert.
+ * @param gens - Polynomial generators in the desired order.
+ * @param opts - Coefficient-domain and factorization settings, including algebraic or Gaussian extensions.
+ * @returns The scalar coefficient and factors with multiplicities, plus denominator factors when `frac` is set.
+ * @throws PolynomialError when the input is not a polynomial.
+ * @see SymPy `sympy.polys.polytools.factor_list`
+ * @remarks SymPy returns `(2, [(x + y, 1), (x**2 + 1, 2)])` with tuples for the fixed-length groups.
+ * @example
+ * ```ts
+ * import { ex, factorList } from '@symjs/symjs';
+ *
+ * factorList(ex`2*x**5 + 2*x**4*y + 4*x**3 + 4*x**2*y + 2*x + 2*y`); // => [2, [[x + y, 1], [x**2 + 1, 2]]]
+ * ```
  */
 export function factorListExpr(e: Expr, gens?: readonly Expr[], opts?: FactorListOptions & { frac?: false }): FactorList;
+/**
+ * (content, [(factor, multiplicity)]).
+ * The multiplicities are expressions: a power with a symbolic or fractional
+ * exponent keeps it ((x + 1)**y -> (1, [(x + 1, y)])). Without gens every
+ * non-rational part is a generator (sqrt(2), f(1), exp(y), ...); with gens the
+ * factors are polynomials in them over the ring of the other parts, and the
+ * parts free of the gens with an integer exponent make up the content. A
+ * denominator is an error unless `frac` is set, which returns its factors as
+ * a third element.
+ *
+ * @param e - Expression to convert.
+ * @param gens - Polynomial generators in the desired order.
+ * @param opts - Coefficient-domain and factorization settings, including algebraic or Gaussian extensions.
+ * @returns The scalar coefficient and factors with multiplicities, plus denominator factors when `frac` is set.
+ * @throws PolynomialError when the input is not a polynomial.
+ * @see SymPy `sympy.polys.polytools.factor_list`
+ */
 export function factorListExpr(e: Expr, gens: readonly Expr[] | undefined, opts: FactorListOptions & { frac: true }): FactorListFrac;
+/**
+ * (content, [(factor, multiplicity)]).
+ * The multiplicities are expressions: a power with a symbolic or fractional
+ * exponent keeps it ((x + 1)**y -> (1, [(x + 1, y)])). Without gens every
+ * non-rational part is a generator (sqrt(2), f(1), exp(y), ...); with gens the
+ * factors are polynomials in them over the ring of the other parts, and the
+ * parts free of the gens with an integer exponent make up the content. A
+ * denominator is an error unless `frac` is set, which returns its factors as
+ * a third element.
+ *
+ * @param e - Expression to convert.
+ * @param gens - Polynomial generators in the desired order.
+ * @param opts - Coefficient-domain and factorization settings, including algebraic or Gaussian extensions.
+ * @returns The scalar coefficient and factors with multiplicities, plus denominator factors when `frac` is set.
+ * @throws PolynomialError when the input is not a polynomial.
+ * @see SymPy `sympy.polys.polytools.factor_list`
+ */
 export function factorListExpr(e: Expr, gens?: readonly Expr[], opts?: FactorListOptions): FactorList | FactorListFrac;
 export function factorListExpr(e: Expr, gens: readonly Expr[] = [], opts: FactorListOptions = {}): FactorList | FactorListFrac {
   const [numer, denom] = fraction(together(e));
@@ -2757,7 +3828,21 @@ const gensFor = (...fs: Expr[]): Expr[] => {
   return sortGens([...m.values()]);
 };
 
-/** gcd of polynomials (expressions). */
+/**
+ * Gcd of polynomials (expressions).
+ *
+ * @param f - Polynomial to operate on.
+ * @param g - Second polynomial operand.
+ * @param opts - Set `domain` or `modulus` to choose the coefficient domain and `symmetric` for signed residues.
+ * @returns The greatest common divisor.
+ * @see SymPy `sympy.polys.polytools.gcd`
+ * @example
+ * ```ts
+ * import { ex, gcd } from '@symjs/symjs';
+ *
+ * gcd(ex`x**2 - 1`, ex`x**2 - 3*x + 2`); // => x - 1
+ * ```
+ */
 export function polyGcd(f: Poly | ExprLike, g: Poly | ExprLike, opts: PolynomialDomainOptions = {}): Expr {
   if (opts.extension !== undefined) {
     const vars = varsFor(toExpr(f), toExpr(g));
@@ -2775,6 +3860,21 @@ export function polyGcd(f: Poly | ExprLike, g: Poly | ExprLike, opts: Polynomial
   const gens = gensFor(a, b);
   return algebraicGcdLcm(a, b, 'gcd') ?? fieldGcdLcm(a, b, gens, 'gcd') ?? mgcd(a, b, gens);
 }
+/**
+ * Compute LCM of the polynomial and `g`.
+ *
+ * @param f - Polynomial to operate on.
+ * @param g - Second polynomial operand.
+ * @param opts - Set `domain` or `modulus` to choose the coefficient domain and `symmetric` for signed residues.
+ * @returns LCM of the polynomial and `g`.
+ * @see SymPy `sympy.polys.polytools.lcm`
+ * @example
+ * ```ts
+ * import { ex, lcm } from '@symjs/symjs';
+ *
+ * lcm(ex`x**2 - 1`, ex`x**2 - 3*x + 2`); // => x**3 - 2*x**2 - x + 2
+ * ```
+ */
 export function polyLcm(f: Poly | ExprLike, g: Poly | ExprLike, opts: PolynomialDomainOptions = {}): Expr {
   if (opts.extension !== undefined) {
     const vars = varsFor(toExpr(f), toExpr(g));
@@ -2829,7 +3929,22 @@ function fieldGcdLcm(a: Expr, b: Expr, gens: readonly Expr[], op: 'gcd' | 'lcm')
   return (op === 'gcd' ? f.gcd(g) : f.lcm(g)).asExpr();
 }
 
-/** Degree of f in gen (default: the only/first generator). */
+/**
+ * Degree of f in gen (default: the only/first generator).
+ *
+ * @param f - Polynomial to operate on.
+ * @param gen - Generator or its index.
+ * @returns The degree in the selected generator, or `-Infinity` for zero.
+ * @throws TypeError when the generator is not a symbol.
+ * @throws PolynomialError when the specified generator or index is invalid.
+ * @see SymPy `sympy.polys.polytools.degree`
+ * @example
+ * ```ts
+ * import { degree, ex } from '@symjs/symjs';
+ *
+ * degree(ex`x**2 + x*y + 1`, ex`x`); // => 2
+ * ```
+ */
 export function degree(f: Poly | ExprLike, gen?: Expr | number): number {
   const p = f instanceof Poly ? f : Poly.from(f);
   if (gen === undefined || typeof gen === 'number') {
@@ -2843,8 +3958,22 @@ export function degree(f: Poly | ExprLike, gen?: Expr | number): number {
 }
 
 /**
- * Division q, r with f = q*g + r (SymPy div), in the given generators or the free symbols;
- * multivariate polynomials are divided recursively in the first generator (SymPy dmp_div).
+ * Division q, r with f = q*g + r, in the given generators or the free symbols;
+ * multivariate polynomials are divided recursively in the first generator.
+ *
+ * @param f - Dividend polynomial.
+ * @param g - Divisor polynomial.
+ * @param gens - Polynomial generators in the desired order.
+ * @returns The quotient and remainder.
+ * @throws PolynomialError when the inputs cannot be expressed as polynomials in a common generator.
+ * @see SymPy `sympy.polys.polytools.div`
+ * @remarks SymPy returns `(x/2 + 1, 5)` with tuples for the fixed-length groups.
+ * @example
+ * ```ts
+ * import { div, ex } from '@symjs/symjs';
+ *
+ * div(ex`x**2 + 1`, ex`2*x - 4`); // => [x/2 + 1, 5]
+ * ```
  */
 export function polyDiv(f: Poly | ExprLike, g: Poly | ExprLike, gens?: readonly Expr[]): [Expr, Expr] {
   const a = toExpr(f);
@@ -2855,7 +3984,22 @@ export function polyDiv(f: Poly | ExprLike, g: Poly | ExprLike, gens?: readonly 
   return [q.asExpr(), r.asExpr()];
 }
 
-/** terms_gcd: pull out the gcd of all terms (numeric content and common monomial). */
+/**
+ * Terms_gcd: pull out the gcd of all terms (numeric content and common monomial).
+ *
+ * @param f - Polynomial to operate on.
+ * @param rest - Generators followed by optional flags. `expand` expands products, `deep` processes nested expressions and `clear` controls extraction of rational denominators.
+ * @returns The expression with the common factors of its terms taken out.
+ * @throws TypeError when the input is neither a polynomial expression nor an equality.
+ * @see SymPy `sympy.polys.polytools.terms_gcd`
+ * @example
+ * ```ts
+ * import { ex, symbols, termsGcd } from '@symjs/symjs';
+ *
+ * const [x, y] = symbols('x y');
+ * termsGcd(ex`x**6*y**2 + x**3*y`, x, y); // => x**3*y*(x**3*y + 1)
+ * ```
+ */
 export function termsGcd(f: ExprLike, ...rest: (Sym | TermsGcdOptions)[]): Expr {
   const lastArg = rest[rest.length - 1];
   const opts: TermsGcdOptions = lastArg !== undefined && !(lastArg instanceof Expr) ? lastArg : {};
@@ -2939,7 +4083,20 @@ export interface TermsGcdOptions {
 
 const isOneExpr = (e: Expr) => e instanceof Rational && e.isOne;
 
-/** Horner form (SymPy horner): multivariate polynomials recurse on the coefficients. */
+/**
+ * Horner form: multivariate polynomials recurse on the coefficients.
+ *
+ * @param f - Polynomial to operate on.
+ * @param x - Polynomial generator.
+ * @returns The expression in nested Horner form.
+ * @see SymPy `sympy.polys.polyfuncs.horner`
+ * @example
+ * ```ts
+ * import { ex, horner } from '@symjs/symjs';
+ *
+ * horner(ex`9*x**4 + 8*x**3 + 7*x**2 + 6*x + 5`); // => x*(x*(x*(9*x + 8) + 7) + 6) + 5
+ * ```
+ */
 export function horner(f: ExprLike, x?: Sym): Expr {
   const e = sympify(f);
   if (isNum(e)) return e;
@@ -2955,7 +4112,21 @@ export function horner(f: ExprLike, x?: Sym): Expr {
 
 const isPoint = (d: readonly [ExprLike, ExprLike] | ExprLike): d is readonly [ExprLike, ExprLike] => Array.isArray(d);
 
-/** Lagrange interpolating polynomial through points (x_i, y_i) or y-values at 1..n. */
+/**
+ * Lagrange interpolating polynomial through points (x_i, y_i) or y-values at 1..n.
+ *
+ * @param data - Values or pairs of interpolation nodes and values.
+ * @param x - Polynomial generator.
+ * @returns The polynomial interpolating the supplied values.
+ * @see SymPy `sympy.polys.polyfuncs.interpolate`
+ * @example
+ * ```ts
+ * import { interpolate, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * interpolate([1, 4, 9, 16], x); // => x**2
+ * ```
+ */
 export function interpolate(data: readonly (readonly [ExprLike, ExprLike])[] | readonly ExprLike[], x: Sym): Expr {
   const items: readonly (readonly [ExprLike, ExprLike] | ExprLike)[] = data;
   const pts = items.map((d, i): [Expr, Expr] => (isPoint(d) ? [sympify(d[0]), sympify(d[1])] : [Rational.of(i + 1), sympify(d)]));
@@ -2984,6 +4155,19 @@ function rationalResultant(left: UPoly, right: UPoly): Rational {
  * Res(a, b) = (-1)**(da*db) * LC(b)**(da - dr) * Res(b, a mod b), with the
  * powers of LC(b) introduced by the pseudo-division divided out at the end
  * (no division by symbolic coefficients during the sequence).
+ *
+ * @param f - Polynomial to operate on.
+ * @param g - Second polynomial operand.
+ * @param x - Polynomial generator.
+ * @returns The resultant with respect to the elimination variable.
+ * @see SymPy `sympy.polys.polytools.resultant`
+ * @example
+ * ```ts
+ * import { ex, resultant, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * resultant(ex`x**2 + 1`, ex`x**2 - 1`, x); // => 4
+ * ```
  */
 export function resultant(f: ExprLike, g: ExprLike, x: Sym): Expr {
   let a = Poly.from(f, [x]);
@@ -3014,6 +4198,21 @@ export function resultant(f: ExprLike, g: ExprLike, x: Sym): Expr {
   return expand(cancel(mul(num, pow(den, -1))));
 }
 
+/**
+ * Compute discriminant of the polynomial.
+ *
+ * @param f - Polynomial to operate on.
+ * @param x - Polynomial generator.
+ * @returns Discriminant of the polynomial.
+ * @see SymPy `sympy.polys.polytools.discriminant`
+ * @example
+ * ```ts
+ * import { discriminant, ex, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * discriminant(ex`x**2 + 2*x + 3`, x); // => -8
+ * ```
+ */
 export function discriminant(f: ExprLike, x: Sym): Expr {
   const p = Poly.from(f, [x]);
   const n = p.degree();
@@ -3053,7 +4252,13 @@ function factorModulus(e: Expr, p: bigint, symmetric:boolean): Expr {
   return keepCoeff(Rational.of(sym(lc)), mul(...fs.map(([g, m]) => pow(toExpr(g), m))));
 }
 
-/** Clear denominators, remove content and scale away removable coefficient generators. */
+/**
+ * Clear denominators, remove content and scale away removable coefficient generators.
+ *
+ * @param p - Polynomial to operate on.
+ * @returns Clear denominators, remove content and scale away removable coefficient generators.
+ * @see SymPy `sympy.polys.polyroots.preprocess_roots`
+ */
 export function preprocessRoots(p:Poly): [Expr,Poly] {
   if(p.domain==='RR'||p.domain==='CC')return [S.One,p];
   if(p.isZero)return [S.One,Poly.from(0,p.gens,{pure:p.pure})];
@@ -3274,6 +4479,18 @@ function factorOverExtension(e: Expr, ext: true | readonly Expr[], domain?:Domai
  * factor_nc): the non-commutative symbols are replaced by commutative
  * dummies, the result is factored and accepted when expanding it with the
  * original symbols gives back the input.
+ *
+ * @param ex - Expression to convert or manipulate.
+ * @returns The factored expression, preserving the order of noncommuting factors.
+ * @see SymPy `sympy.core.exprtools.factor_nc`
+ * @example
+ * ```ts
+ * import { factorNc, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * const [A] = symbols('A', { commutative: false });
+ * factorNc(A.pow(2).add(A.mul(x).mul(2)).add(x.pow(2))); // => (x + A)**2
+ * ```
  */
 export function factorNc(ex: ExprLike): Expr {
   const e = sympify(ex);
@@ -3311,9 +4528,23 @@ export function factorNc(ex: ExprLike): Expr {
 }
 
 /**
- * SymPy sqf_norm(f, extension): [s, g, r] with g(x) = f(x - s*a) for the
+ * [s, g, r] with g(x) = f(x - s*a) for the
  * primitive element a (the sum of the extension generators) and r = norm(g)
  * square-free over QQ.
+ *
+ * @param fIn - Polynomial to operate on.
+ * @param x - Polynomial generator.
+ * @param extension - Algebraic numbers to adjoin to the coefficient field.
+ * @returns [s, g, r] with g(x) = f(x - s*a) for the primitive element a (the sum of the extension generators) and r = norm(g) square-free over QQ.
+ * @see SymPy `sympy.polys.polytools.sqf_norm`
+ * @remarks SymPy returns `([1], x**2 - 2*sqrt(3)*x + 4, x**4 - 4*x**2 + 16)` with tuples for the fixed-length groups.
+ * @example
+ * ```ts
+ * import { ex, sqfNorm, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * sqfNorm(ex`x**2 + 1`, x, [ex`sqrt(3)`]); // => [[1], x**2 - 2*sqrt(3)*x + 4, x**4 - 4*x**2 + 16]
+ * ```
  */
 export function sqfNorm(fIn: ExprLike, x: Sym, extension: readonly Expr[]): [number[], Expr, Expr] {
   const p=Poly.from(fIn,[x],{extension});
@@ -3358,9 +4589,14 @@ polyHooks.cancelDomain = (e, opts) => {
 };
 
 /**
- * SymPy PurePoly(expr, *gens): a polynomial whose generators are only
+ * a polynomial whose generators are only
  * placeholders, so that polynomials over different generators compare equal
  * (PurePoly(x**2 + 1).equals(PurePoly(y**2 + 1))).
+ *
+ * @param ex - Expression to convert or manipulate.
+ * @param gens - Polynomial generators in the desired order.
+ * @returns The resulting polynomial.
+ * @see SymPy `sympy.polys.polytools.PurePoly`
  */
 export function PurePoly(ex: Poly | ExprLike, ...gens: Expr[]): Poly {
   return Poly.from(toExpr(ex), gens.length ? gens : ex instanceof Poly ? ex.gens : undefined, { pure: true });
@@ -3373,8 +4609,20 @@ function commutativeOnly(e: Expr): Expr {
 }
 
 /**
- * SymPy Expr.as_poly(*gens): e as a polynomial in gens (detected when not
+ * e as a polynomial in gens (detected when not
  * given), or NoMatch when it is not one.
+ *
+ * @param ex - Expression to convert or manipulate.
+ * @param generators - Polynomial generators and optional coefficient-domain settings.
+ * @returns The polynomial, or `NoMatch` if conversion fails.
+ * @see SymPy `sympy.core.expr.Expr.as_poly`
+ * @example
+ * ```ts
+ * import { NoMatch, asPoly, ex } from '@symjs/symjs';
+ *
+ * asPoly(ex`x**2 + 1`); // => Poly(x**2 + 1, x, domain='ZZ')
+ * asPoly(ex`sin(x)`, ex`x`) === NoMatch; // => True
+ * ```
  */
 export function asPoly(ex: ExprLike, ...generators: (Expr | { extension: true })[]): Poly | NoMatchResult {
   const e = sympify(ex);
@@ -3388,9 +4636,22 @@ export function asPoly(ex: ExprLike, ...generators: (Expr | { extension: true })
 }
 
 /**
- * SymPy invert(f, g, *gens): the inverse of f modulo g (an integer modulo an
+ * The inverse of f modulo g (an integer modulo an
  * integer, or a polynomial modulo a polynomial); NotInvertible when f and g
  * have a common factor.
+ *
+ * @param fIn - Polynomial to operate on.
+ * @param gIn - Second polynomial operand.
+ * @param gens - Polynomial generators in the desired order.
+ * @returns The multiplicative inverse modulo the second polynomial.
+ * @throws PolynomialError when the inputs are not univariate polynomials.
+ * @see SymPy `sympy.polys.polytools.invert`
+ * @example
+ * ```ts
+ * import { ex, invert } from '@symjs/symjs';
+ *
+ * invert(ex`x**2 - 1`, ex`2*x - 1`); // => -4/3
+ * ```
  */
 export function invert(fIn: Poly | ExprLike, gIn: Poly | ExprLike, ...gens: Expr[]): Expr {
   const f = commutativeOnly(toExpr(fIn));
@@ -3402,24 +4663,69 @@ export function invert(fIn: Poly | ExprLike, gIn: Poly | ExprLike, ...gens: Expr
   return Poly.from(f, vars, { domain: 'QQ' }).invert(gp).rem(gp).asExpr();
 }
 
-/** SymPy gcd_list(seq, *gens): the greatest common divisor of the items of seq (0 for none). */
+/**
+ * The greatest common divisor of the items of seq (0 for none).
+ *
+ * @param seq - Sequence of polynomials.
+ * @returns The greatest common divisor of the items of seq (0 for none).
+ * @see SymPy `sympy.polys.polytools.gcd_list`
+ * @example
+ * ```ts
+ * import { ex, gcdList } from '@symjs/symjs';
+ *
+ * gcdList([ex`x**3 - 1`, ex`x**2 - 1`, ex`x**2 - 3*x + 2`]); // => x - 1
+ * ```
+ */
 export function gcdList(seq: readonly (Poly | ExprLike)[]): Expr {
   const [first, ...rest] = seq;
   return first === undefined ? S.Zero : rest.reduce<Expr>((acc, f) => polyGcd(acc, f), toExpr(first));
 }
 
-/** SymPy lcm_list(seq, *gens): the least common multiple of the items of seq (1 for none). */
+/**
+ * The least common multiple of the items of seq (1 for none).
+ *
+ * @param seq - Sequence of polynomials.
+ * @returns The least common multiple of the items of seq (1 for none).
+ * @see SymPy `sympy.polys.polytools.lcm_list`
+ * @example
+ * ```ts
+ * import { ex, lcmList } from '@symjs/symjs';
+ *
+ * lcmList([ex`x**3 - 1`, ex`x**2 - 1`, ex`x**2 - 3*x + 2`]); // => x**5 - x**4 - 2*x**3 - x**2 + x + 2
+ * ```
+ */
 export function lcmList(seq: readonly (Poly | ExprLike)[]): Expr {
   const [first, ...rest] = seq;
   return first === undefined ? S.One : rest.reduce<Expr>((acc, f) => polyLcm(acc, f), toExpr(first));
 }
 
 /**
- * SymPy sqf(f, *gens): the square-free factorization of f, the numerator and
+ * The square-free factorization of f, the numerator and
  * the denominator of a rational function separately
  * (2*x**5 + 16*x**4 + ... -> 2*(x + 1)**2*(x + 2)**3).
+ *
+ * @param ex - Expression to convert or manipulate.
+ * @param gens - Polynomial generators in the desired order.
+ * @returns The square-free factorization of f, the numerator and the denominator of a rational function separately (2*x**5 + 16*x**4 + ... -> 2*(x + 1)**2*(x + 2)**3).
+ * @see SymPy `sympy.polys.polytools.sqf`
+ * @example
+ * ```ts
+ * import { ex, sqf } from '@symjs/symjs';
+ *
+ * sqf(ex`2*x**5 + 16*x**4 + 50*x**3 + 76*x**2 + 56*x + 16`); // => 2*(x + 1)**2*(x + 2)**3
+ * ```
  */
 export function sqf(ex: Poly, ...gens: Expr[]): Poly;
+/**
+ * The square-free factorization of f, the numerator and
+ * the denominator of a rational function separately
+ * (2*x**5 + 16*x**4 + ... -> 2*(x + 1)**2*(x + 2)**3).
+ *
+ * @param ex - Expression to convert or manipulate.
+ * @param gens - Polynomial generators in the desired order.
+ * @returns The square-free factorization of f, the numerator and the denominator of a rational function separately (2*x**5 + 16*x**4 + ... -> 2*(x + 1)**2*(x + 2)**3).
+ * @see SymPy `sympy.polys.polytools.sqf`
+ */
 export function sqf(ex: ExprLike, ...gens: Expr[]): Expr;
 export function sqf(ex: Poly | ExprLike, ...gens: Expr[]): Expr | Poly {
   const [content, numer, denom] = factorListExpr(toExpr(ex), gens, { frac: true });
@@ -3433,13 +4739,43 @@ function sqfProduct(factors: readonly [Expr, Expr][]): Expr {
   return mul(...squareFreeGroups(factors).map(([f, k]) => pow(f, k)));
 }
 
-/** List of square-free factors and their multiplicities (SymPy sqf_list). */
+/**
+ * List of square-free factors and their multiplicities.
+ *
+ * @param ex - Expression to convert or manipulate.
+ * @param gens - Polynomial generators in the desired order.
+ * @returns The scalar coefficient and factors with multiplicities.
+ * @see SymPy `sympy.polys.polytools.sqf_list`
+ * @remarks SymPy returns `(2, [(x + 1, 2), (x + 2, 3)])` with tuples for the fixed-length groups.
+ * @example
+ * ```ts
+ * import { ex, sqfList } from '@symjs/symjs';
+ *
+ * sqfList(ex`2*x**5 + 16*x**4 + 50*x**3 + 76*x**2 + 56*x + 16`); // => [2, [[x + 1, 2], [x + 2, 3]]]
+ * ```
+ */
 export function sqfList(ex: ExprLike, ...gens: Expr[]): FactorList {
   const [content, factors] = factorListExpr(sympify(ex), gens);
   return [content, squareFreeGroups(factors).sort(([, a], [, b]) => asRational(add(a, mul(-1, b)), 'multiplicity difference').toNumber())];
 }
 
-/** Try a rescaling or translation to make square-root coefficients rational. */
+/**
+ * Try a rescaling or translation to make square-root coefficients rational.
+ *
+ * @param f - Polynomial to operate on.
+ * @returns The leading coefficient, rescaling, translation and transformed polynomial. Unused transformations and unmatched inputs yield `NoMatch`.
+ * @see SymPy `sympy.polys.polytools.to_rational_coeffs`
+ * @remarks SymPy returns `None` when no transformation matches. The example tests the corresponding `NoMatch` result.
+ * @example
+ * ```ts
+ * import { NoMatch, Poly, ex, isNoMatch, toRationalCoeffs } from '@symjs/symjs';
+ *
+ * toRationalCoeffs(Poly.from(ex`x**2 + 1`)) === NoMatch; // => True
+ * const f = Poly.from(ex`(7 + 5*sqrt(2))*x**3 - (6 + 4*sqrt(2))*x**2 - (sqrt(2) + 1)*x + 2`, [ex`x`], { domain: 'EX' });
+ * const result = toRationalCoeffs(f);
+ * isNoMatch(result) ? false : result[3].asExpr(); // => x**3 + x**2 - x/4 - 1/4
+ * ```
+ */
 export function toRationalCoeffs(f: Poly): readonly [Expr | NoMatchResult, Expr | NoMatchResult, Expr | NoMatchResult, Poly] | NoMatchResult {
   if (f.domain !== 'EX' || !f.isUnivariate || !f.gen.isAtom || f.degree() < 1) return NoMatch;
   const rationalRadicals = f.coeffs().flatMap((c) => (c instanceof Add ? c.args : [c]))

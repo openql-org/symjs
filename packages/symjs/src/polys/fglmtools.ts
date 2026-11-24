@@ -37,7 +37,15 @@ export interface FglmRing<P> {
   fromDict(terms: Iterable<readonly [Monom, Expr]>): P;
 }
 
-/** Convert a reduced Groebner basis of a zero-dimensional ideal to another monomial order. */
+/**
+ * Convert a reduced Groebner basis of a zero-dimensional ideal to another monomial order.
+ *
+ * @param F - Input polynomials.
+ * @param ring - Polynomial ring supplying the generators and coefficient domain.
+ * @param order - Monomial order used to compare terms.
+ * @returns The reduced basis in the requested monomial order.
+ * @see SymPy `sympy.polys.fglmtools.matrix_fglm`
+ */
 export function matrixFglm(F: readonly PolyElement[], ring: PolyRing, order: OrderLike): PolyElement[] {
   return matrixFglmBasis(F, ring, order);
 }
