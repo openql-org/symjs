@@ -110,11 +110,13 @@ function addComponents(f: Expr, x: Sym, out: Map<string, Expr>): void {
 }
 
 /**
- * SymPy components(f, x): the functional components of f, its symbols,
- * function applications and non-integer powers (a rational power with its
- * minimal positive exponent).
+ * Collects the functional components of `f` that depend on `x`, including function
+ * applications, derivatives and noninteger powers. For a reduced rational exponent `p/q`, it
+ * collects the power with exponent `1/q`.
  *
  * For example, the components of `sin(x)*cos(x)**2` in `x` are `x`, `sin(x)` and `cos(x)`.
+ *
+ * @see SymPy `sympy.integrals.heurisch.components`
  */
 export function componentsOf(f: Expr, x: Sym): Expr[] {
   const out = new Map<string, Expr>();
@@ -219,12 +221,12 @@ function splitI(e0: Expr): [Expr, Expr] {
 }
 
 /**
- * SymPy heurisch(f, x): an antiderivative of f by the heuristic (parallel)
- * Risch algorithm (Bronstein's "Poor Man's Integrator"), or undefined when it
- * is not found (which does not prove that none is elementary).
+ * Searches for an elementary antiderivative of `f` with respect to `x` using the heuristic
+ * Risch algorithm. The public function returns `NoMatch` if the search is unsuccessful.
  *
  * Bessel derivatives use adjacent orders as an algebraically independent pair.
  *
+ * @see SymPy `sympy.integrals.heurisch.heurisch`
  * @example
  * ```ts
  * import { heurisch, parse, symbols } from '@symjs/symjs';
@@ -524,10 +526,11 @@ function solveDenominator(d: Expr, x: Sym): Solution[] {
 }
 
 /**
- * SymPy heurisch_wrapper(f, x): heurisch with the cases where a symbolic
- * denominator of the result vanishes, as a Piecewise; undefined when
- * heurisch finds no antiderivative.
+ * Searches for an antiderivative with {@link heurisch} and uses a piecewise result for
+ * parameter values where a denominator introduced by integration vanishes. The public function
+ * returns `NoMatch` if the search is unsuccessful.
  *
+ * @see SymPy `sympy.integrals.heurisch.heurisch_wrapper`
  * @example
  * ```ts
  * import { heurischWrapper, parse, symbols } from '@symjs/symjs';

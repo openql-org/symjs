@@ -78,11 +78,15 @@ const Gu = (an: readonly ExprLike[], ap: readonly ExprLike[], bm: readonly ExprL
 
 // ---- polar helpers ----------------------------------------------------------------------
 
-/** SymPy unpolarify(e, exponents_only=True). */
+/**
+ * Projects polar quantities in exponents onto the ordinary complex plane.
+ *
+ * @see SymPy `sympy.functions.elementary.complexes.unpolarify`
+ */
 export const unpolarifyExponents = (e: Expr): Expr => unpolarify(e, { exponentsOnly: true });
 /** The expression of a polarify result (without substitutions, it is an expression). */
 const polarExpr = (r: Expr | [Expr, [Expr, Expr][]]): Expr => expectType(r, (v): v is Expr => !Array.isArray(v), 'polarify');
-/** unpolarify(polarify(e, lift=True), exponents_only=True): the polar number lying over e. */
+/** Lifts `e` to the polar surface and projects its exponents back onto the complex plane. */
 export function liftPolar(e: Expr): Expr {
   return unpolarifyExponents(polarExpr(polarify(e, { lift: true })));
 }
@@ -164,7 +168,7 @@ function linearIn(e: Expr, x: Sym): [Expr, Expr] | undefined {
   return isRat(p) && p.isZero ? undefined : [p, q];
 }
 
-/** f = fac*po*g with fac free of x and po = x**s (SymPy _split_mul). */
+/** Splits `f` into a factor independent of `x`, a power of `x`, and the remaining product. */
 export function splitMul(f: Expr, x: Sym): [Expr, Expr, Expr] {
   let fac: Expr = S.One;
   let po: Expr = S.One;
@@ -731,8 +735,8 @@ function logTerms(n: number, t: Expr, below: boolean, above: boolean): [Expr, Me
 }
 
 /**
- * f as a sum of terms C*x**s*G(a*x**b) with b rational (SymPy _rewrite_single,
- * without the recursive rewriting through Mellin transforms).
+ * Tries to express `f` as a sum of terms `C*x**s*G(a*x**b)` with rational `b`. Returns the
+ * terms and their validity condition when the rewrite succeeds.
  */
 export function rewriteSingle(f: Expr, x: Sym): Rewritten | undefined {
   if (f instanceof MeijerG) {
@@ -758,14 +762,21 @@ export function rewriteSingle(f: Expr, x: Sym): Rewritten | undefined {
   return undefined;
 }
 
-/** f = fac*po*g with g a sum of single G-functions (SymPy _rewrite1). */
+/**
+ * Extracts a factor independent of `x` and a power of `x`, then rewrites the remaining factor
+ * as a sum of Meijer G-function terms with a validity condition.
+ */
 export function rewrite1(f: Expr, x: Sym): [Expr, Expr, GTerm[], Expr] | undefined {
   const [fac, po, g] = splitMul(f, x);
   const r = rewriteSingle(g, x);
   return r ? [fac, po, r[0], r[1]] : undefined;
 }
 
-/** f = fac*po*g1*g2 with g1, g2 sums of single G-functions (SymPy _rewrite2). */
+/**
+ * Extracts a factor independent of `x` and a power of `x`, then looks for two factors that can
+ * each be written as a sum of Meijer G-function terms. The result includes their joint
+ * validity condition.
+ */
 export function rewrite2(f: Expr, x: Sym): [Expr, Expr, GTerm[], GTerm[], Expr] | undefined {
   const [fac, po, g] = splitMul(f, x);
   if (mulArgsRepeated(g).some((e) => rewriteSingle(e, x) === undefined)) return undefined;

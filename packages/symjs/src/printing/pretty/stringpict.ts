@@ -309,7 +309,10 @@ export class StringPict {
   }
 }
 
-/** SymPy `prettyForm` binding powers. */
+/**
+ * The binding powers used by {@link PrettyForm} to decide where a combined expression needs
+ * parentheses.
+ */
 export const Binding = { ATOM: 0, FUNC: 1, DIV: 2, POW: 3, MUL: 4, ADD: 5, NEG: 6, OPEN: 7, LINE: 8 } as const;
 
 /**

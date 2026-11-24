@@ -33,13 +33,13 @@ import type { FunctionClassLike } from '../core/undef';
  * its srepr form.
  */
 export interface BasicView {
-  /** SymPy's class name (`type(e).__name__`). */
+  /** The name of the corresponding SymPy class. */
   readonly cls: string;
   /** The arguments (`e.args`). */
   readonly args: readonly BasicView[];
   /** The class derives from Expr (not only Basic, like Tuple, sets, relations and booleans). */
   readonly isExpr: boolean;
-  /** SymPy's str() of the node. */
+  /** The string representation of the node. */
   readonly str: string;
   /** The srepr form of an atom (a node without arguments) or of a node printed whole (a matrix). */
   readonly repr?: string;
@@ -210,9 +210,8 @@ function matrixRepr(m: ReprMatrix, cls: string, item: (e: Expr) => string): stri
 }
 
 /**
- * SymPy's view of an expression ({@link BasicView}). With `printOrder` the
- * terms of sums and the factors of products are in printing order (as
- * srepr prints them); otherwise they are in SymPy's argument order.
+ * Builds a {@link BasicView} of the expression in SymPy argument order. With `printOrder`
+ * enabled, sums and products use the order in which `srepr` prints their terms and factors.
  */
 export function basicView(e: Expr, printOrder = false): BasicView {
   const v = (x: Expr): BasicView => basicView(x, printOrder);

@@ -51,15 +51,27 @@ import { toAnf as toAnfExpr, toNnf as toNnfExpr } from '../logic/normalforms';
 interface Rules {
   /** Accepted argument counts (SymPy nargs). */
   readonly nargs: number;
-  /** SymPy eval: the value of the application, or undefined to keep it. */
+  /**
+   * Supplies a simplified value when an evaluation rule applies. Otherwise the application
+   * stays unevaluated.
+   *
+   * @see SymPy `sympy.core.function.Function.eval`
+   */
   readonly eval?: (args: readonly Expr[]) => Expr | undefined;
-  /** SymPy fdiff(index + 1): the partial derivative in the argument at `index`. */
+  /**
+   * Computes the partial derivative with respect to the argument at the zero-based `index`.
+   *
+   * @see SymPy `sympy.core.function.Function.fdiff`
+   */
   readonly fdiff?: (self: Expr, args: readonly Expr[], index: number) => Expr;
-  /** SymPy _eval_expand_func. */
+  /** Expands the function application using its defining identities. */
   readonly expandFunc?: (args: readonly Expr[]) => Expr;
-  /** SymPy _eval_rewrite_as_<target>. */
+  /**
+   * Maps each supported rewrite target to a rule that expresses the function in terms of that
+   * target.
+   */
   readonly rewrite?: Readonly<Record<string, (args: readonly Expr[]) => Expr>>;
-  /** SymPy _eval_is_<predicate>, decided in the assumptions context. */
+  /** Maps assumption predicates to rules that evaluate them in the given assumptions context. */
   readonly assumptions?: Readonly<Record<string, (args: readonly Expr[], assumptions: Assumption) => Truth>>;
   /**
    * The exact expression whose value is the numeric value of the application
@@ -69,7 +81,10 @@ interface Rules {
   readonly numeric?: (args: readonly Expr[]) => Expr | undefined;
   /** The value for complex arguments, used by lambdify. */
   readonly lambdify?: (args: readonly C[]) => C;
-  /** SymPy _eval_evalf of log2: a non-numeric application evaluates its rewrite in terms of log. */
+  /**
+   * Rewrites a symbolic `log2` application in terms of the natural logarithm for numerical
+   * evaluation.
+   */
   readonly evalfRewrite?: (args: readonly Expr[]) => Expr;
   /** A boolean-valued function (SymPy BooleanFunction). */
   readonly boolean?: true;
@@ -151,7 +166,11 @@ abstract class CFunctionBase extends ExtensionExpr {
     return this.rules.boolean ? super.printLatex(print) : print(new UndefFn(this.name, this.args));
   }
 
-  /** SymPy fdiff(argindex): the derivative in the argument at position argindex (from 1). */
+  /**
+   * Computes the partial derivative with respect to argument `argindex`, counting from 1.
+   *
+   * @see SymPy `sympy.core.function.Function.fdiff`
+   */
   fdiff(argindex = 1): Expr {
     const fdiff = this.rules.fdiff;
     if (fdiff === undefined || !Number.isInteger(argindex) || argindex < 1 || argindex > this.args.length) {
@@ -161,27 +180,54 @@ abstract class CFunctionBase extends ExtensionExpr {
   }
 
   // SymPy Basic attributes
-  /** SymPy assumptions0: the assumptions given to the expression; none for a function application. */
+  /**
+   * The assumptions supplied when constructing the expression. This map is empty for a
+   * function application.
+   *
+   * @see SymPy `sympy.core.basic.Basic.assumptions0`
+   */
   get assumptions0(): Map<string, boolean> {
     return new Map();
   }
-  /** SymPy canonical_variables: the bound variables and their canonical dummies; none for a function application. */
+  /**
+   * Maps bound variables to canonical dummy symbols. These function applications have no bound
+   * variables.
+   *
+   * @see SymPy `sympy.core.basic.Basic.canonical_variables`
+   */
   get canonicalVariables(): Map<Expr, Expr> {
     return new Map();
   }
-  /** SymPy default_assumptions: the assumptions of the class; none for these functions. */
+  /**
+   * The default assumptions of the function class, represented by an empty map for these
+   * functions.
+   *
+   * @see SymPy `sympy.core.function.Function.default_assumptions`
+   */
   get defaultAssumptions(): Map<string, boolean> {
     return new Map();
   }
-  /** SymPy expr_free_symbols: the free symbols of the expression. */
+  /**
+   * The set of free symbols in the function application.
+   *
+   * @see SymPy `sympy.core.expr.Expr.expr_free_symbols`
+   */
   get exprFreeSymbols(): Set<Expr> {
     return freeSymbols(this);
   }
-  /** SymPy floordiv (Python //): floor(self/other). */
+  /**
+   * Computes the floor of the quotient of this expression by `other`.
+   *
+   * @see SymPy `sympy.core.expr.Expr.__floordiv__`
+   */
   floordiv(other: ExprLike): Expr {
     return floor(div(this, other));
   }
-  /** SymPy mod (Python %): Mod(self, other). */
+  /**
+   * Computes the remainder of this expression modulo `other`.
+   *
+   * @see SymPy `sympy.core.expr.Expr.__mod__`
+   */
   mod(other: ExprLike): Expr {
     return Mod(this, other);
   }
@@ -189,7 +235,11 @@ abstract class CFunctionBase extends ExtensionExpr {
   // SymPy class flags: a function application is none of these
   get isAdd(): boolean { return false; }
   get isAlgebraicNumber(): boolean { return false; }
-  /** SymPy is_Boolean: true for isnan and isinf. */
+  /**
+   * Whether the function is Boolean-valued. This is true for `isnan` and `isinf`.
+   *
+   * @see SymPy `sympy.core.basic.Basic.is_Boolean`
+   */
   get isBoolean(): boolean { return this.rules.boolean === true; }
   get isDerivative(): boolean { return false; }
   get isDummy(): boolean { return false; }
@@ -208,7 +258,11 @@ abstract class CFunctionBase extends ExtensionExpr {
   get isPoly(): boolean { return false; }
   get isPow(): boolean { return false; }
   get isRelational(): boolean { return false; }
-  /** SymPy is_Symbol and is_symbol. */
+  /**
+   * Whether the expression is a symbol. Function applications always give `false`.
+   *
+   * @see SymPy `sympy.core.basic.Basic.is_Symbol`
+   */
   get isSymbol(): boolean { return false; }
   get isVector(): boolean { return false; }
   get isWild(): boolean { return false; }
@@ -232,7 +286,11 @@ abstract class CFunctionBase extends ExtensionExpr {
   get isHermitian(): Truth { return this.query('hermitian'); }
   get isImaginary(): Truth { return this.query('imaginary'); }
   get isInfinite(): Truth { return this.query('infinite'); }
-  /** SymPy is_integer (is_Integer, the class flag, is false for a function application). */
+  /**
+   * Whether the value of the application is an integer under the current assumptions.
+   *
+   * @see SymPy `sympy.core.expr.Expr.is_integer`
+   */
   get isInteger(): Truth { return this.query('integer'); }
   get isIrrational(): Truth { return this.query('irrational'); }
   get isNegative(): Truth { return this.query('negative'); }
@@ -245,11 +303,20 @@ abstract class CFunctionBase extends ExtensionExpr {
   /** Alias of isNonzero (the spelling of the core function isNonZero). */
   get isNonZero(): Truth { return this.isNonzero; }
   get isOdd(): Truth { return this.query('odd'); }
-  /** SymPy is_polar: not known for these functions. */
+  /**
+   * Whether the value lies on the logarithm's Riemann surface. The result is `'unknown'` for
+   * these functions.
+   *
+   * @see SymPy `sympy.core.expr.Expr.is_polar`
+   */
   get isPolar(): Truth { return 'unknown'; }
   get isPositive(): Truth { return this.query('positive'); }
   get isPrime(): Truth { return this.query('prime'); }
-  /** SymPy is_rational (is_Rational, the class flag, is false for a function application). */
+  /**
+   * Whether the value of the application is rational under the current assumptions.
+   *
+   * @see SymPy `sympy.core.expr.Expr.is_rational`
+   */
   get isRational(): Truth { return this.query('rational'); }
   get isReal(): Truth { return this.query('real'); }
   get isTranscendental(): Truth { return this.query('transcendental'); }
@@ -406,13 +473,31 @@ export abstract class CBooleanFunction extends CFunctionBase {
 
 /** The members of a function class (SymPy's class attributes and classmethods). */
 interface ClassMembers {
-  /** SymPy eval: the value of the application of the class to args, or NoMatch when it stays unevaluated. */
+  /**
+   * Evaluates the function at `args`, returning `NoMatch` when the application stays
+   * unevaluated.
+   *
+   * @see SymPy `sympy.core.function.Function.eval`
+   */
   eval(...args: ExprLike[]): Expr | NoMatchResult;
-  /** SymPy nargs: the set of accepted argument counts. */
+  /**
+   * The set of argument counts accepted by the function.
+   *
+   * @see SymPy `sympy.core.function.Function.nargs`
+   */
   readonly nargs: SetExpr;
-  /** SymPy is_singular(a): whether a is a singularity; not known for these functions. */
+  /**
+   * Whether `a` is a singularity of the function. The result is `'unknown'` for these
+   * functions.
+   *
+   * @see SymPy `sympy.core.function.Function.is_singular`
+   */
   isSingular(a: ExprLike): Truth;
-  /** SymPy default_assumptions of the class. */
+  /**
+   * The default assumptions of the function class, represented by an empty map.
+   *
+   * @see SymPy `sympy.core.function.Function.default_assumptions`
+   */
   readonly defaultAssumptions: Map<string, boolean>;
   /** The function name (SymPy __name__). */
   readonly functionName: string;

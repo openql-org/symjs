@@ -31,7 +31,11 @@ export const sin = (x: IntervalLike): interval => periodic(x, false);
 /** Scalar cos computes cosine; SymPy 1.14 incorrectly calls sine for scalar inputs. */
 export const cos = (x: IntervalLike): interval => periodic(x, true);
 export const tan = (x: IntervalLike): interval => sin(x).div(cos(x));
-/** sqrt(0) is defined; SymPy 1.14 incorrectly invalidates a scalar zero. */
+/**
+ * Computes the interval square root on the nonnegative real axis, including zero.
+ *
+ * @see SymPy `sympy.plotting.intervalmath.lib_interval.sqrt`
+ */
 export const sqrt = (x: IntervalLike): interval => domain(x, Math.sqrt, 0, Infinity);
 export const sinh = (x: IntervalLike): interval => monotone(x, Math.sinh);
 export const cosh = (x: IntervalLike): interval => { const i = asInterval(x); return new interval(i.contains(0) ? 1 : Math.min(Math.cosh(i.start), Math.cosh(i.end)), Math.max(Math.cosh(i.start), Math.cosh(i.end)), { isValid: i.isValid }); };

@@ -240,7 +240,9 @@ function nodeCount(e: Expr): number {
   return n;
 }
 
-/** SymPy `_nodes`: the size of a value, the first key of `ordered`. */
+/**
+ * Counts the nodes in a value. This count is the first default sort key used by `ordered`.
+ */
 export function nodesOf(e: unknown): number {
   if (e instanceof Derivative) {
     let n = nodesOf(e.args[0]);

@@ -44,15 +44,28 @@ const HYPER: ReadonlySet<string> = new Set<HyperName>(['sinh', 'cosh', 'tanh', '
 
 /** An instance of one of the named functions (SymPy isinstance(e, (f, g, ...))). */
 export const isF = (e: Expr, ...names: readonly FnName[]): e is Fn => e instanceof Fn && names.includes(e.name);
-/** SymPy isinstance(e, TrigonometricFunction). */
+/** Tests whether the expression is an application of a trigonometric function. */
 export const isTrigFunction = (e: Expr): e is Fn => e instanceof Fn && TRIG.has(e.name);
-/** SymPy isinstance(e, HyperbolicFunction). */
+/** Tests whether the expression is an application of a hyperbolic function. */
 export const isHyperFunction = (e: Expr): e is Fn => e instanceof Fn && HYPER.has(e.name);
-/** SymPy e.has(f, g, ...) for function classes. */
+/**
+ * Tests whether the expression or any subexpression is an application of one of the named
+ * functions.
+ *
+ * @see SymPy `sympy.core.basic.Basic.has`
+ */
 export const hasF = (e: Expr, ...names: readonly FnName[]): boolean => some(e, (x) => isF(x, ...names));
-/** SymPy e.has(TrigonometricFunction). */
+/**
+ * Tests whether the expression contains a trigonometric function, including at its root.
+ *
+ * @see SymPy `sympy.core.basic.Basic.has`
+ */
 export const hasTrigFunction = (e: Expr): boolean => some(e, isTrigFunction);
-/** SymPy e.has(HyperbolicFunction). */
+/**
+ * Tests whether the expression contains a hyperbolic function, including at its root.
+ *
+ * @see SymPy `sympy.core.basic.Basic.has`
+ */
 export const hasHyperFunction = (e: Expr): boolean => some(e, isHyperFunction);
 
 const arg0 = (e: Fn): Expr => first(e.args);
@@ -69,7 +82,12 @@ const isPowNode = (e: Expr): e is Pow => e instanceof Pow && !eq(e.base, S.E);
 const mulArgs = (e: Expr): readonly Expr[] => (e instanceof Mul ? e.args : [e]);
 const isTrue = (t: boolean | undefined): boolean => t === true;
 
-/** SymPy as_coeff_Mul(rational=...). */
+/**
+ * Splits a product into its numeric coefficient and remaining factor. Set `rational` to
+ * extract only rational coefficients.
+ *
+ * @see SymPy `sympy.core.expr.Expr.as_coeff_Mul`
+ */
 export function asCoeffMul(e: Expr, rational = false): [Expr, Expr] {
   const isCoeff = (c: Expr): boolean => c instanceof Rational || (!rational && c instanceof Float);
   if (e instanceof Mul && isCoeff(first(e.args))) return [first(e.args), mul(...e.args.slice(1))];
@@ -77,7 +95,11 @@ export function asCoeffMul(e: Expr, rational = false): [Expr, Expr] {
   return [S.One, e];
 }
 
-/** SymPy bottom_up: F applied to every non-atomic node, children first. */
+/**
+ * Applies `f` to each non-atomic node of an expression after processing its children.
+ *
+ * @see SymPy `sympy.core.traversal.bottom_up`
+ */
 export function bottomUp(e: Expr, f: (e: Expr) => Expr): Expr {
   if (e.args.length === 0) return e;
   const args = e.args.map((a) => bottomUp(a, f));
@@ -99,7 +121,10 @@ export function positive(e: Expr): boolean | undefined {
   }
 }
 
-/** SymPy's Mul._eval_expand_mul applied deeply to a fixed point (expand_mul: no multinomial expansion). */
+/**
+ * Distributes products over sums throughout the expression until no further products expand.
+ * Powers of sums retain their exponents.
+ */
 export function expandMulOnly(eIn: ExprLike): Expr {
   const node = (e: Mul): Expr => {
     let [n, d] = fraction(e);
@@ -133,7 +158,10 @@ export function expandMulOnly(eIn: ExprLike): Expr {
   }
 }
 
-/** SymPy _mexpand: expand_mul(expand_multinomial(e)) to a fixed point. */
+/**
+ * Expands powers of sums and distributes products repeatedly until the expression stops
+ * changing.
+ */
 export function mexpand(eIn: ExprLike): Expr {
   let cur = sympify(eIn);
   for (;;) {
@@ -143,7 +171,11 @@ export function mexpand(eIn: ExprLike): Expr {
   }
 }
 
-/** SymPy Expr.normal(). */
+/**
+ * Combines the expression's numerator and denominator into a single fraction.
+ *
+ * @see SymPy `sympy.core.expr.Expr.normal`
+ */
 export function normal(e: Expr): Expr {
   const [n, d] = asNumerDenom(e);
   return isOne(d) ? n : mul(n, pow(d, -1));
@@ -291,10 +323,19 @@ export type Tree = Rule | { readonly chain: readonly Tree[] } | { readonly choic
 export const chain = (...ts: Tree[]): Tree => ({ chain: ts });
 /** A list of SymPy's trees: the result with the smallest objective. */
 export const choice = (...ts: Tree[]): Tree => ({ choice: ts });
-/** SymPy identity. */
+/**
+ * Returns the input expression unchanged.
+ *
+ * @see SymPy `sympy.strategies.core.identity`
+ */
 export const identity: Rule = (e) => e;
 
-/** SymPy strategies.tree.greedy. */
+/**
+ * Builds a transformation rule that applies chained rules in order and chooses the result with
+ * the smallest objective value at each branch.
+ *
+ * @see SymPy `sympy.strategies.tree.greedy`
+ */
 export function greedy(tree: Tree, objective: (e: Expr) => Measured): Rule {
   if (typeof tree === 'function') return tree;
   if ('chain' in tree) {
@@ -1290,7 +1331,10 @@ function uniqExprs(xs: readonly Expr[]): Expr[] {
   return [...m.keys()];
 }
 
-/** SymPy _node_count (Floats count 1/2, exp(x) is one node). */
+/**
+ * Counts expression nodes, weighting a float as half a node and an exponential as one node
+ * plus the count for its exponent.
+ */
 export function nodeCount(e: Expr): number {
   if (e instanceof Float) return 0.5;
   if (e instanceof Pow && eq(e.base, S.E)) return 1 + nodeCount(e.exp);
@@ -1568,8 +1612,10 @@ export const FU: ReadonlyMap<string, (e: Expr) => Expr> = new Map<string, (e: Ex
 // ---------------------------------------------------------------------------
 
 /**
- * SymPy trig_split: the gcd, the signs, the arguments and the kind of a pair
- * of terms that combine by an angle sum or difference formula.
+ * Matches two trigonometric terms for an angle sum or difference identity, extracting their
+ * common factor, signs, angles and whether the identity uses cosine or sine.
+ *
+ * @see SymPy `sympy.simplify.fu.trig_split`
  */
 export function trigSplit(aIn: Expr, bIn: Expr, two = false): [Expr, number, number, Expr, Expr, boolean] | undefined {
   const fa = factorsOf(aIn);
@@ -1656,7 +1702,11 @@ export function trigSplit(aIn: Expr, bIn: Expr, two = false): [Expr, number, num
   return undefined;
 }
 
-/** SymPy as_f_sign_1: e = g*(f + s) with s = +-1, or undefined. */
+/**
+ * Matches a two-term sum to `g*(f + s)` and extracts `[g, f, s]`, where `s` is 1 or −1.
+ *
+ * @see SymPy `sympy.simplify.fu.as_f_sign_1`
+ */
 export function asFSign1(e: Expr): [Expr, Expr, Expr] | undefined {
   if (!(e instanceof Add) || e.args.length !== 2) return undefined;
   let [a, b] = [at(e.args, 0), at(e.args, 1)];
@@ -1745,8 +1795,10 @@ function osbornei(e: Expr, d: Dummy): Expr {
 }
 
 /**
- * SymPy hyper_as_trig: the expression with hyperbolic functions written as
- * trigonometric ones, and the function that undoes it.
+ * Rewrites hyperbolic functions as trigonometric functions and returns both the transformed
+ * expression and a function that reverses the substitution.
+ *
+ * @see SymPy `sympy.simplify.fu.hyper_as_trig`
  */
 export function hyperAsTrig(rvIn: ExprLike): [Expr, (x: Expr) => Expr] {
   const rv = sympify(rvIn);
@@ -1762,7 +1814,8 @@ export function hyperAsTrig(rvIn: ExprLike): [Expr, (x: Expr) => Expr] {
 }
 
 /**
- * powers and products of sin and cos -> sums of multiple angles.
+ * Rewrites powers and products of sines and cosines as sums of trigonometric functions of
+ * combined or multiple angles.
  *
  * @param expr - The input expression.
  * @returns The equivalent sum of trigonometric functions.

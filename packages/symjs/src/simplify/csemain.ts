@@ -78,7 +78,10 @@ export interface CseOptions {
   order?: 'canonical' | 'none';
   /** Subexpressions containing any of these symbols are not replaced. */
   ignore?: Iterable<Expr>;
-  /** false: the reduced expressions have the type of the input (default true: a list). */
+  /**
+   * Whether to return the reduced expressions as an array. Defaults to `true`. Set to `false`
+   * to preserve the input type.
+   */
   list?: boolean;
 }
 
@@ -248,8 +251,10 @@ const inter = (a: ReadonlySet<number>, b: ReadonlySet<number>): Set<number> => n
 const diff = (a: ReadonlySet<number>, b: ReadonlySet<number>): Set<number> => new Set([...a].filter((x) => !b.has(x)));
 
 /**
- * SymPy FuncArgTracker: maps functions to their arguments and arguments to
- * the functions using them, with arguments numbered by value.
+ * Tracks which arguments each function uses and which functions share an argument, assigning
+ * equal arguments the same number.
+ *
+ * @see SymPy `sympy.simplify.cse_main.FuncArgTracker`
  */
 export class FuncArgTracker {
   readonly valueNumbers = new NodeMap<number>();
@@ -392,7 +397,12 @@ function matchCommonArgs(head: 'Add' | 'Mul', funcsIn: readonly Expr[], optSubs:
 // opt_cse
 // ---------------------------------------------------------------------------
 
-/** SymPy is_Atom: no arguments (an Indexed object is an atom too). */
+/**
+ * Tests whether the expression is atomic for common subexpression elimination. Indexed
+ * expressions count as atoms.
+ *
+ * @see SymPy `sympy.core.basic.Basic.is_Atom`
+ */
 export const isSympyAtom = (e: Expr): boolean => sympyArgs(e).length === 0 || e instanceof Indexed;
 const isAtom = isSympyAtom;
 

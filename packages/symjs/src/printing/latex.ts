@@ -1066,7 +1066,11 @@ export type LatexPrintable = Domain | Module | ModuleHomomorphism | ModuleImplem
 
 const isMatrixLike = (v: object): v is LatexMatrix => 'rows' in v && 'cols' in v && 'get' in v && typeof v.get === 'function';
 
-/** SymPy `latex_escape`: the LaTeX special characters of a text escaped. */
+/**
+ * Escapes LaTeX special characters in text.
+ *
+ * @see SymPy `sympy.printing.latex.latex_escape`
+ */
 export function latexEscape(s: string): string {
   let out = s.replace(/\\/g, '\\textbackslash');
   for (const c of '&%$#_{}') out = out.split(c).join(`\\${c}`);
@@ -1233,7 +1237,8 @@ function printValue(v: LatexPrintable): string {
 }
 
 /**
- * SymPy's LatexPrinter, with instance options layered on the current global defaults.
+ * Formats expressions as LaTeX using the current global defaults and any options supplied to
+ * the printer.
  *
  * @see SymPy `sympy.printing.latex.LatexPrinter`
  */

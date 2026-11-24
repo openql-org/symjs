@@ -149,7 +149,7 @@ export function polyCoeffs(e: Expr, x: Expr): Expr[] | undefined {
   return Poly.from(e, [x]).allCoeffs();
 }
 
-/** p + q for convergence abscissas, keeping -oo and oo (SymPy -oo + re(a) is -oo). */
+/** Shifts the convergence abscissa `p` by `q`. An infinite `p` retains its sign. */
 export function planeAdd(p: Expr, q: Expr): Expr {
   if (p.key === S.NegativeInfinity.key || p.key === S.Infinity.key) return p;
   return add(p, q);

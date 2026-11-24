@@ -255,7 +255,12 @@ export function splitfactorSqf(p: KPoly, DE: DiffExtension, coefficientD = false
   return [N, Sp];
 }
 
-/** f = a/d as q + bs/ds + cn/dn: polynomial, special and normal parts (SymPy canonical_representation). */
+/**
+ * Decomposes `a0/d0` into a polynomial part and two fractions, one with a special denominator
+ * and the other with a normal denominator.
+ *
+ * @see SymPy `sympy.integrals.risch.canonical_representation`
+ */
 export function canonicalRepresentation(a0: KPoly, d0: KPoly, DE: DiffExtension): [KPoly, [KPoly, KPoly], [KPoly, KPoly]] {
   const l = pow(d0.LC(), -1);
   const a = a0.mulGround(l);
@@ -306,7 +311,12 @@ export function hermiteReduce(a0: KPoly, d0: KPoly, DE: DiffExtension): [[KPoly,
   ];
 }
 
-/** p = Dq + r with deg r < deg Dt (SymPy polynomial_reduce, nonlinear case). */
+/**
+ * Finds polynomials `q` and `r` such that `p0 = Dq + r` and `deg(r) < deg(Dt)` for a nonlinear
+ * derivation.
+ *
+ * @see SymPy `sympy.integrals.risch.polynomial_reduce`
+ */
 export function polynomialReduce(p0: KPoly, DE: DiffExtension): [KPoly, KPoly] {
   let q = KPoly.zero(DE.t);
   let p = p0;
@@ -319,7 +329,12 @@ export function polynomialReduce(p0: KPoly, DE: DiffExtension): [KPoly, KPoly] {
   return [q, p];
 }
 
-/** p in K[t, 1/t] as a polynomial in t and z = 1/t: [part in t, part in z] (SymPy as_poly_1t). */
+/**
+ * Splits a Laurent polynomial in `t` into its polynomial part in `t` and its negative-power
+ * terms expressed as a polynomial in `z = 1/t`.
+ *
+ * @see SymPy `sympy.integrals.risch.as_poly_1t`
+ */
 export function asPoly1t(p: Expr, t: Sym, z: Sym): [KPoly, KPoly] {
   const [pa0, pd0] = fracInCancel(p, t);
   if (!pd0.isMonomial) throw new NotImplementedError(`${String(p)} is not an element of K[${t.name}, 1/${t.name}].`);

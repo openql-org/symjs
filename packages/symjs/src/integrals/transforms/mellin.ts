@@ -275,7 +275,10 @@ function mellinMeijer(f: Expr, x: Sym, s: Expr): [Expr, Expr, Expr, Expr] | unde
   return [F, a, b, aux];
 }
 
-/** SymPy _mellin_transform: [F, [a, b], cond]. */
+/**
+ * Computes the Mellin transform together with its fundamental strip and auxiliary convergence
+ * condition.
+ */
 export function mellinTransformImpl(f: Expr, x: Sym, s: Expr, simplify: boolean): MellinTriple {
   const r = mellinTable(f, x, s) ?? mellinMeijer(f, x, s);
   if (!r) throw new IntegralTransformError('Mellin', f, 'could not compute integral');

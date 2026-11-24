@@ -376,12 +376,18 @@ export function solvePolyRde(b: KPoly, cQ: KPoly, n: number, DE: DiffExtension):
   throw new NotImplementedError(`Other Poly (P)RDE cancellation cases are not yet implemented (${DE.case}).`);
 }
 
-/** rischDE, with undefined when there is no solution (NonElementaryIntegralException). */
+/**
+ * Attempts to solve the Risch differential equation `Dy + f*y = g` in the given differential
+ * field. A solution is returned as a polynomial numerator and denominator.
+ */
 export function rischDEOrNone(fa: KPoly, fd: KPoly, ga: KPoly, gd: KPoly, DE: DiffExtension): [KPoly, KPoly] | undefined {
   return recover((): [KPoly, KPoly] | undefined => rischDE(fa, fd, ga, gd, DE), NonElementaryIntegralException, undefined);
 }
 
-/** fn(), or the fallback when it raises an error of the class E (other errors are raised). */
+/**
+ * Returns the result of `fn()`, or `fallback` if `fn` throws an instance of `E`. Other
+ * exceptions propagate.
+ */
 export function recover<T>(fn: () => T, E: abstract new (...args: never[]) => Error, fallback: T): T {
   try {
     return fn();

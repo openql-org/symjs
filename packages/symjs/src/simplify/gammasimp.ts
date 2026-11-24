@@ -452,8 +452,8 @@ function absorb(numerGammas: Expr[], denomGammas: Expr[], numerOthers: Expr[], d
 const isFunctionNode = (x: Expr): boolean => x instanceof Fn || x instanceof UndefFn || x instanceof Piecewise || isExpPow(x);
 
 /**
- * simplify expressions with gamma functions, minimizing
- * the number of gamma functions and the size of their arguments.
+ * Simplifies gamma expressions by reducing the number of gamma factors and the size of their
+ * arguments.
  *
  * @param exIn - The input expression.
  * @returns The expression after applying gamma and factorial identities.
@@ -545,10 +545,9 @@ function gammaAsComb(e: Expr): Expr {
 }
 
 /**
- * simplify combinatorial expressions (factorials,
- * binomials, rising and falling factorials), keeping integer arguments;
- * the result is written with factorials and binomials. An expression with
- * a gamma of a non-integer argument is passed to gammasimp.
+ * Simplifies factorials, binomial coefficients, and rising and falling factorials while
+ * preserving integer arguments. The result uses factorials and binomials when all gamma
+ * arguments are known to be integers. Otherwise it uses {@link gammasimp}.
  *
  * @param exIn - The input expression.
  * @returns The expression after applying gamma and factorial identities.
@@ -568,8 +567,10 @@ export function combsimp(exIn: ExprLike): Expr {
 }
 
 /**
- * SymPy hypersimp(f, k): the term ratio f(k + 1)/f(k) simplified, when it is
- * a rational function of k (f is hypergeometric); undefined otherwise.
+ * Attempts to simplify the successive-term ratio `f(k + 1)/f(k)` to a rational function of
+ * `k`.
+ *
+ * @see SymPy `sympy.simplify.simplify.hypersimp`
  */
 export function hypersimp(fIn: ExprLike, k: Expr): Expr | undefined {
   const f = sympify(fIn);
@@ -610,7 +611,8 @@ export function isHypergeometric(f: ExprLike, k: Expr): boolean {
 }
 
 /**
- * is f/g a rational function of k (after combinatorial simplification)?
+ * Tests whether the ratio `f/g` is a rational function of `k` after combinatorial
+ * simplification.
  *
  * @param f - The function or expression to transform.
  * @param g - The second function.

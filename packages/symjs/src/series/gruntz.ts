@@ -43,9 +43,12 @@ const isPlainPow = (e: Expr): e is Pow => e instanceof Pow && !isExp(e);
 
 /** A map from mrv subexpressions to dummies, with the rewrites of the exponentials (SymPy SubsSet). */
 class SubsSet {
-  /** expression key -> [expression, dummy] */
+  /** Maps an expression key to the expression and its dummy symbol. */
   readonly items = new Map<string, [Expr, Dummy]>();
-  /** dummy key -> its exponential written with the dummies of its argument */
+  /**
+   * Maps a dummy symbol's key to its exponential with nested expressions replaced by their
+   * dummies.
+   */
   readonly rewrites = new Map<string, Expr>();
 
   get size(): number {
@@ -63,7 +66,11 @@ class SubsSet {
     return this.items.has(e.key);
   }
 
-  /** e with the dummies replaced by their expressions. */
+  /**
+   * Replaces the dummy symbols in `e` with the expressions they represent.
+   *
+   * @see SymPy `sympy.series.gruntz.SubsSet.do_subs`
+   */
   doSubs(e: Expr): Expr {
     let r = e;
     for (const [expr, v] of this.items.values()) r = xreplace(r, [[v, expr]]);
