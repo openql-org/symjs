@@ -681,6 +681,8 @@ export function asRealImag(eIn: ExprLike): [Expr, Expr] {
     }
     return [real, imag];
   }
+  // SymPy Pow.as_real_imag splits an integer power without expanding it first
+  if (e0 instanceof Pow && e0.exp instanceof Rational && e0.exp.isInteger) return [re(e0), im(e0)];
   const e = expandMul(e0);
   return [re(e), im(e)];
 }

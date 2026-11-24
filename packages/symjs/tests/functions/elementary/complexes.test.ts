@@ -455,3 +455,33 @@ describe('matchRealImag (SymPy match_real_imag)', () => {
     expect(m(new Sym('z'))).toBe('NoMatch');
   });
 });
+
+describe('real and imaginary parts of integer powers (SymPy Pow.as_real_imag)', () => {
+  const [x, y, x1, y1, x2, y2] = ['x', 'y', 'x1', 'y1', 'x2', 'y2'].map((n) => new Sym(n, { real: true })) as [Sym, Sym, Sym, Sym, Sym, Sym];
+  const z = new Sym('z');
+  const d = add(x, mul(y, sj.I));
+  const s = (e: sj.Expr): string => sj.sstr(e);
+  const parts = (e: sj.Expr): string => `(${sj.asRealImag(e).map(s).join(', ')})`;
+  it('splits a negative power of a symbolic complex base by rationalizing it', () => {
+    expect(s(sj.re(pow(d, -1)))).toBe('x/(x**2 + y**2)');
+    expect(s(sj.im(pow(d, -1)))).toBe('-y/(x**2 + y**2)');
+    expect(parts(pow(d, -1))).toBe('(x/(x**2 + y**2), -y/(x**2 + y**2))');
+    expect(s(sj.re(pow(d, -2)))).toBe('x**2/(x**2 + y**2)**2 - y**2/(x**2 + y**2)**2');
+    expect(s(sj.im(pow(d, -2)))).toBe('-2*x*y/(x**2 + y**2)**2');
+  });
+  it('splits a positive power by the binomial expansion', () => {
+    expect(s(sj.re(pow(z, 2)))).toBe('re(z)**2 - im(z)**2');
+    expect(s(sj.im(pow(z, -1)))).toBe('-im(z)/(re(z)**2 + im(z)**2)');
+    expect(s(sj.re(sj.parse('(1+I)**3')))).toBe('-2');
+    expect(parts(sj.parse('(1+I)**-2'))).toBe('(0, -1/2)');
+  });
+  it('keeps the powers unexpanded in expand_complex', () => {
+    expect(s(sj.expandComplex(pow(d, -1)))).toBe('x/(x**2 + y**2) - I*y/(x**2 + y**2)');
+    expect(s(sj.expandComplex(pow(d, 3)))).toBe('x**3 - 3*x*y**2 + I*(3*x**2*y - y**3)');
+    expect(s(sj.expandComplex(pow(d, -2)))).toBe('x**2/(x**2 + y**2)**2 - 2*I*x*y/(x**2 + y**2)**2 - y**2/(x**2 + y**2)**2');
+    expect(s(sj.expandComplex(mul(add(x1, mul(y1, sj.I)), pow(add(x2, mul(y2, sj.I)), -1)))))
+      .toBe('x1*x2/(x2**2 + y2**2) + y1*y2/(x2**2 + y2**2) + I*(-x1*y2/(x2**2 + y2**2) + x2*y1/(x2**2 + y2**2))');
+    expect(s(sj.expand(pow(d, -2), { complex: true })))
+      .toBe('x**2/(x**4 + 2*x**2*y**2 + y**4) - 2*I*x*y/(x**4 + 2*x**2*y**2 + y**4) - y**2/(x**4 + 2*x**2*y**2 + y**4)');
+  });
+});

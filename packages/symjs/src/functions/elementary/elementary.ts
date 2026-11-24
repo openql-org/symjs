@@ -8,6 +8,7 @@
 import { accumBoundsFunction } from './accumbounds';
 import { AccumBounds } from '../../core/accumbounds';
 import { piecewise } from '../../core/logic';
+import { asRealImag } from '../../core/methods';
 import { expectType, first } from '../../core/guard';
 import { precToDps } from '../../numeric/mpf';
 import { isIntegerQ, isNegative, isNonNegative, isNonZero, isPositive, isReal } from '../../core/assumptions';
@@ -478,6 +479,37 @@ function productComponent(x: Mul, imaginary: boolean): Expr | undefined {
   return undefined;
 }
 
+/** The real and imaginary parts of a power's base, as SymPy `base.as_real_imag()`. */
+function baseRealImag(b: Expr): [Expr, Expr] {
+  const usesExpand = b instanceof Fn || (b instanceof Pow && b.base instanceof Constant && b.base.name === 'E');
+  return usesExpand && impl.asRealImagExpand === undefined ? [re(b), im(b)] : asRealImag(b);
+}
+
+/**
+ * SymPy Pow.as_real_imag for an integer exponent: with base = a + b*I, the binomial
+ * expansion of (a + b*I)**n, or of (a/m - b*I/m)**-n with m = a**2 + b**2 when n < 0.
+ */
+function integerPowerParts(x: Expr): [Expr, Expr] | undefined {
+  if (!(x instanceof Pow && x.exp instanceof Rational && x.exp.isInteger) || (x.base instanceof Constant && x.base.name === 'E')) return undefined;
+  let [a, b] = baseRealImag(x.base);
+  if (b instanceof Rational && b.isZero) return undefined;
+  let n = x.exp.p;
+  if (n < 0n) {
+    const m = add(pow(a, 2), pow(b, 2));
+    [a, b] = [mul(a, pow(m, -1)), neg(mul(b, pow(m, -1)))];
+    n = -n;
+  }
+  const real: Expr[] = [];
+  const imaginary: Expr[] = [];
+  let c = 1n;
+  for (let k = 0n; k <= n; k++) {
+    const term = mul(Rational.of(k % 4n < 2n ? c : -c), pow(a, Rational.of(n - k)), pow(b, Rational.of(k)));
+    (k % 2n === 0n ? real : imaginary).push(term);
+    c = c * (n - k) / (k + 1n);
+  }
+  return [add(...real), add(...imaginary)];
+}
+
 const evalRe: Evaluator = (x) => {
   if (x instanceof ExtensionExpr) {
     const parts = x.asRealImagSelf();
@@ -493,6 +525,10 @@ const evalRe: Evaluator = (x) => {
     if (part !== undefined) return part;
   }
   if (x instanceof Fn && x.name === 'conjugate') return re(first(x.args));
+  {
+    const parts = integerPowerParts(x);
+    if (parts !== undefined) return parts[0];
+  }
   if (isImaginaryArg(x)) return S.Zero;
   return undefined;
 };
@@ -512,6 +548,10 @@ const evalIm: Evaluator = (x) => {
     if (part !== undefined) return part;
   }
   if (x instanceof Fn && x.name === 'conjugate') return neg(im(first(x.args)));
+  {
+    const parts = integerPowerParts(x);
+    if (parts !== undefined) return parts[1];
+  }
   if (isImaginaryArg(x)) return mul(-1, S.I, x);
   return undefined;
 };

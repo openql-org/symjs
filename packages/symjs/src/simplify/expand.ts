@@ -547,6 +547,18 @@ export function asRealImagExpand(e: Expr): [Expr, Expr] {
     const ia = im(e.exp);
     return [mul(pow(S.E, ra), cos(ia)), mul(pow(S.E, ra), sin(ia))];
   }
+  // SymPy Pow.as_real_imag splits an integer power without expanding it first
+  if (e instanceof Pow && e.exp instanceof Rational && e.exp.isInteger) return [re(e), im(e)];
+  // SymPy Add.as_real_imag: the parts of each term
+  if (e instanceof Add) {
+    const parts = e.args.map(asRealImagExpand);
+    return [add(...parts.map((p) => p[0])), add(...parts.map((p) => p[1]))];
+  }
+  if (isReal(e) === true) return [e, S.Zero];
+  // SymPy Mul.as_real_imag of real factors times I
+  if (e instanceof Mul && e.args.filter((a) => a === S.I).length === 1 && e.args.every((a) => a === S.I || isReal(a) === true)) {
+    return [S.Zero, mul(...e.args.filter((a) => a !== S.I))];
+  }
   const ex = expandMul(e);
   return [re(ex), im(ex)];
 }
