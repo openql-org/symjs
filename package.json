@@ -26,6 +26,8 @@
     "corpus:extract:doctest": "MPLBACKEND=Agg PYTHONHASHSEED=0 python3 tools/sympy-reference/extract_doctest.py tools/sympy-corpus/doctest < /dev/null",
     "golden": "python3 tools/sympy-reference/generators/gen_golden.py packages/symjs/tests/golden/cases.json packages/symjs/tests/golden/expected.json",
     "lint": "oxlint --type-aware --deny-warnings packages",
+    "docs:coverage": "bun tools/api-docs/coverage.ts --markdown docs/api-docs-coverage.md",
+    "docs:examples": "bun tools/api-docs/examples.ts",
     "test:package": "node scripts/build.mjs && node scripts/check-package.mjs",
     "corpus:compat:doctest": "bun tools/sympy-corpus/compat/category.ts doctest",
     "corpus:compat:unittest": "bun tools/sympy-corpus/compat/category.ts unittest"

@@ -3067,6 +3067,35 @@ export function formalCoefficientDomain(coeffs: readonly Expr[]): string | undef
   return gens.size ? `${rational ? 'QQ' : 'ZZ'}[${sortGens([...gens.values()]).map(str).join(',')}]` : undefined;
 }
 
+/**
+ * Factors an expression into irreducibles over the rationals, or over the domain
+ * the options select. To factor an integer into primes, use `factorint`.
+ *
+ * Without `gens` the expression tree is factored without prior expansion: only
+ * sums are factored as polynomials, so large or symbolic exponents are kept.
+ *
+ * @param ex - The expression to factor.
+ * @param opts - The coefficient domain (`modulus`, `extension`, `gaussian`,
+ *   `domain`), `deep` to factor subexpressions, `fraction: false` to keep
+ *   rational expressions apart, `gens` to factor as a polynomial in the given
+ *   generators.
+ * @returns The factored expression.
+ * @throws OptionError when `modulus` and `domain` are both given.
+ * @see SymPy `sympy.polys.polytools.factor`
+ * @example
+ * ```ts
+ * import { ex, factor, sqrt } from '@symjs/symjs';
+ *
+ * factor(ex`2*x**5 + 2*x**4*y + 4*x**3 + 4*x**2*y + 2*x + 2*y`); // => 2*(x + y)*(x**2 + 1)**2
+ * factor(ex`x**2 + 1`); // => x**2 + 1
+ * factor(ex`x**2 + 1`, { modulus: 2 }); // => (x + 1)**2
+ * factor(ex`x**2 + 1`, { gaussian: true }); // => (x - I)*(x + I)
+ * factor(ex`x**2 - 2`, { extension: sqrt(2) }); // => (x - sqrt(2))*(x + sqrt(2))
+ * factor(ex`(x**2 - 1)/(x**2 + 4*x + 4)`); // => (x - 1)*(x + 1)/(x + 2)**2
+ * factor(ex`2**(x**2 + 2*x + 1)`, { deep: true }); // => 2**((x + 1)**2)
+ * factor(ex`5*x + 3*exp(2 - 7*x)`, { deep: true, fraction: false }); // => 5*x + 3*exp(2)*exp(-7*x)
+ * ```
+ */
 export function factor(ex: ExprLike, opts: PolynomialDomainOptions & { deep?: boolean; gaussian?: boolean; fraction?: boolean; gens?: readonly Expr[]; expand?: boolean } = {}): Expr {
   const e = sympify(ex);
   if (e instanceof Concrete && e.kind2 === 'Sum') return factorConcreteSum(e, factor);
