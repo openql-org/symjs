@@ -820,12 +820,21 @@ export function toInput(x: unknown): PointInput {
   throw new TypeError(`Expecting sequence of coordinates, not \`${typeof x}\``);
 }
 
-/** SymPy Point(coords, **kwargs) for one argument (a point or a sequence of coordinates). */
+/**
+ * Converts a point or a sequence of coordinates to a point of the requested dimension.
+ *
+ * @see SymPy `sympy.geometry.point.Point`
+ */
 export function toPoint(coords: PointInput, opts: PointOptions = {}): PointNode {
   return newPoint(coords, opts);
 }
 
-/** SymPy Point.__new__: the coordinates checked, then a Point2D, Point3D or Point. */
+/**
+ * Checks the coordinates and constructs a `Point2D`, `Point3D`, or general point according to
+ * their dimension.
+ *
+ * @see SymPy `sympy.geometry.point.Point`
+ */
 export function newPoint(coordsIn: PointInput, opts: PointOptions = {}): PointNode {
   let evaluate = opts.evaluate ?? true;
   const onMorph = opts.onMorph ?? 'ignore';
@@ -963,8 +972,8 @@ export function uniqPoints<T extends Expr>(ps: readonly T[]): T[] {
 }
 
 /**
- * SymPy Point._normalize_dimension: the points in a common dimension (the
- * largest one, or `dim`), padded with zeros.
+ * Converts the points to the specified dimension or, by default, the largest input dimension,
+ * padding shorter coordinate lists with zeros.
  */
 export function normalizeDimension(points: readonly PointNode[], opts: { dim?: number; onMorph?: PointOptions['onMorph'] } = {}): PointNode[] {
   const dim = opts.dim ?? Math.max(...points.map((p) => p.ambientDimension));
@@ -973,8 +982,10 @@ export function normalizeDimension(points: readonly PointNode[], opts: { dim?: n
 }
 
 /**
- * SymPy Expr.equals(other): true when the difference is zero, false when it
- * is not, undefined when it cannot be decided.
+ * Tests whether two expressions are mathematically equal by simplifying their difference and
+ * checking it for zero.
+ *
+ * @see SymPy `sympy.core.expr.Expr.equals`
  */
 export function exprEquals(a: Expr, b: ExprLike): boolean | undefined {
   const d = add(a, mul(-1, b));
@@ -1037,7 +1048,11 @@ function reasonablePivot(col: readonly Expr[], iszero: (x: Expr) => boolean | un
   return zs.indexOf(undefined);
 }
 
-/** SymPy Matrix.rank(iszerofunc) of the matrix with the given rows. */
+/**
+ * Computes the rank of the matrix with the given rows using the supplied zero test.
+ *
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.rank`
+ */
 export function matrixRank(rowsIn: readonly (readonly Expr[])[], iszero: (x: Expr) => boolean | undefined): number {
   const nr = rowsIn.length;
   const nc = nr ? at(rowsIn, 0).length : 0;

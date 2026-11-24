@@ -12,12 +12,21 @@ import { basicFns } from '../util';
 import type { BranchRule } from './core';
 import { chain, doOne, identity } from './core';
 
-/** SymPy `top_down(brule, fns=basic_fns)`: apply a branching rule down a tree, on the top nodes first. */
+/**
+ * Builds a traversal that applies a branching rule to each node before visiting its children.
+ *
+ * @see SymPy `sympy.strategies.branch.traverse.top_down`
+ */
 export function topDown(brule: BranchRule<Expr>, fns: TreeFns = basicFns): BranchRule<Expr> {
   return chain(doOne(brule, identity), (expr) => sall(topDown(brule, fns), fns)(expr));
 }
 
-/** SymPy `sall(brule, fns=basic_fns)`: strategic all, apply a branching rule to the arguments (every combination). */
+/**
+ * Applies a branching rule to each immediate child and yields a rebuilt tree for every
+ * combination of child results.
+ *
+ * @see SymPy `sympy.strategies.branch.traverse.sall`
+ */
 export function sall(brule: BranchRule<Expr>, fns: TreeFns = basicFns): BranchRule<Expr> {
   return function* allRl(expr: Expr): Generator<Expr, void, undefined> {
     if (fns.leaf(expr)) {

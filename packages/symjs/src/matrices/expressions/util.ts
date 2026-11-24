@@ -16,7 +16,11 @@ import type { Truth } from '../../core/truth';
 import { precedence } from '../../printing/str';
 import { at, expectType } from '../../core/guard';
 
-/** SymPy precedence values (sympy.printing.precedence.PRECEDENCE). */
+/**
+ * The printing precedence values for sums, products, powers, and atoms.
+ *
+ * @see SymPy `sympy.printing.precedence.PRECEDENCE`
+ */
 export const PRECEDENCE = { Add: 40, Mul: 50, Pow: 60, Atom: 1000 } as const;
 
 /** An explicit integer (SymPy Integer). */
@@ -45,7 +49,11 @@ export function toInt(e: Expr): number {
   return Number(expectType(e, (x): x is Rational => x instanceof Rational, 'integer').p);
 }
 
-/** SymPy precedence_traditional for scalar expressions (used by the LaTeX printer). */
+/**
+ * Returns the precedence used to parenthesize a scalar expression in LaTeX.
+ *
+ * @see SymPy `sympy.printing.precedence.precedence_traditional`
+ */
 export function scalarPrecTraditional(e: Expr): number {
   if (e instanceof Integral || e instanceof Concrete || e instanceof Limit || e instanceof Derivative) return PRECEDENCE.Mul;
   return precedence(e);

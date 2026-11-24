@@ -103,7 +103,11 @@ export function* dihedral(n: number): Generator<Permutation, void, undefined> {
   }
 }
 
-/** SymPy rubik_cube_generators(): the six face turns of the 3x3x3 cube on its 48 movable facets. */
+/**
+ * Returns the six face turns of a 3×3×3 cube as permutations of its 48 movable facets.
+ *
+ * @see SymPy `sympy.combinatorics.generators.rubik_cube_generators`
+ */
 export function rubikCubeGenerators(): Permutation[] {
   const a = [
     [[1, 3, 8, 6], [2, 5, 7, 4], [9, 33, 25, 17], [10, 34, 26, 18], [11, 35, 27, 19]],
@@ -119,9 +123,10 @@ export function rubikCubeGenerators(): Permutation[] {
 type Face = 'U' | 'F' | 'R' | 'B' | 'L' | 'D';
 
 /**
- * SymPy rubik(n): the generators of the n x n x n cube group, as
- * permutations of its 6n^2 facets (the slice turns of the front face, and
- * the same turns seen from the upper and right faces).
+ * Returns generators of the n × n × n cube group as permutations of its 6n² facets, using slice
+ * turns about each of the three axes.
+ *
+ * @see SymPy `sympy.combinatorics.generators.rubik`
  */
 export function rubik(n: number): Permutation[] {
   if (!Number.isSafeInteger(n) || n < 2) throw new RangeError('dimension of cube must be > 1');

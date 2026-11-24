@@ -222,7 +222,12 @@ function askPred(name: MatrixPredicateName, m: Expr, as: readonly MatrixPredicat
   }
 }
 
-/** SymPy ask(Q.invertible(M), assumptions) with SymPy's handlers. */
+/**
+ * Tests matrix invertibility under the supplied assumptions, returning `'unknown'` when they do
+ * not determine the answer.
+ *
+ * @see SymPy `sympy.assumptions.ask.ask`
+ */
 export function askInvertible(m: Expr, assumptions: readonly MatrixPredicate[] = []): Truth {
   if (!(m instanceof MatrixExpr)) return 'unknown';
   const a = assumed('invertible', m, assumptions);

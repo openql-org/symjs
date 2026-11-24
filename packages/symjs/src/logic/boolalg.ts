@@ -125,19 +125,19 @@ export class LogicGate extends ExtensionExpr {
   }
 }
 
-/** e is a SymPy BooleanFunction (And, Or, Not, Xor, ITE, Implies, Equivalent, Nand, Nor, Xnor). */
+/** Tests whether the expression is a Boolean function, such as `And`, `Implies`, or `ITE`. */
 export const isBooleanFunction = (e: Expr): boolean => e instanceof BoolOp || e instanceof LogicGate;
 
-/** e is a SymPy Boolean (a boolean function, true/false, a relation, a symbol or an applied predicate such as Q.positive(x)). */
+/** Tests whether the expression is a Boolean function, truth value, relation, symbol, or applied predicate. */
 export const isBoolean = (e: Expr): boolean => isBooleanFunction(e) || e instanceof BoolAtom || e instanceof Rel || e instanceof Sym || e instanceof AppliedPredicate;
 
-/** e is a BoolOp node of the given core operator (And, Or, Not, Xor, ITE). */
+/** Tests whether the expression is a core Boolean operation with the specified operator. */
 export const isOp = (e: Expr, op: BoolOpName): e is BoolOp => e instanceof BoolOp && !(e instanceof LogicOp) && e.op === op;
 
-/** e is an ITE (the LogicGate of this module or the core BoolOp made by Piecewise). */
+/** Tests whether the expression represents an if-then-else operation. */
 export const isITE = (e: Expr): boolean => isOp(e, 'ITE') || (e instanceof LogicGate && e.gate === 'ITE');
 
-/** e is an Implies or Equivalent node. */
+/** Tests whether the expression is a logic node with the specified `Implies` or `Equivalent` operator. */
 export const isLogicOp = (e: Expr, name: LogicOpName): e is LogicOp => e instanceof LogicOp && e.name === name;
 
 /**
@@ -182,10 +182,19 @@ const NEGATED: Record<RelOp, RelOp> = { Eq: 'Ne', Ne: 'Eq', Lt: 'Ge', Le: 'Gt', 
 const reversedRel = (r: Rel): Rel => new Rel(REVERSED[r.op], r.rhs, r.lhs);
 const reversedSign = (r: Rel): Rel => new Rel(r.op === 'Eq' || r.op === 'Ne' ? r.op : REVERSED[r.op], impl.mul(-1, r.lhs), impl.mul(-1, r.rhs));
 
-/** SymPy Relational.negated: Not(x < y) is x >= y. */
+/**
+ * Negates a relation while preserving its operands. For example, `x < y` becomes `x >= y`.
+ *
+ * @see SymPy `sympy.core.relational.Relational.negated`
+ */
 export const relNegated = (r: Rel): Rel => new Rel(NEGATED[r.op], r.lhs, r.rhs);
 
-/** SymPy Relational.canonical: numbers on the right, ordered sides, no leading minus sign. */
+/**
+ * Normalizes the order and signs of a relation's operands, placing a lone numeric operand on the
+ * right.
+ *
+ * @see SymPy `sympy.core.relational.Relational.canonical`
+ */
 export function relCanonical(r0: Rel): Rel {
   let r = r0;
   if (isNumberExpr(r.rhs)) {
@@ -217,12 +226,22 @@ function greater(a: Rational | Float, b: Rational | Float): boolean {
 // ---------------------------------------------------------------------------
 // And, Or, Not and Xor with SymPy's argument handling
 
-/** SymPy And: numbers as booleans, equal relations merged, complementary relations give false. */
+/**
+ * Forms the logical conjunction of the arguments, interpreting numbers as truth values and
+ * merging equivalent relations. Complementary relations give `false`.
+ *
+ * @see SymPy `sympy.logic.boolalg.And`
+ */
 export function andFn(...xs: readonly BoolLike[]): Expr {
   return lattice('And', xs.map((x) => numberToBool(toBool(x))));
 }
 
-/** SymPy Or: numbers as booleans, equal relations merged, complementary relations give true. */
+/**
+ * Forms the logical disjunction of the arguments, interpreting numbers as truth values and
+ * merging equivalent relations. Complementary relations give `true`.
+ *
+ * @see SymPy `sympy.logic.boolalg.Or`
+ */
 export function orFn(...xs: readonly BoolLike[]): Expr {
   return lattice('Or', xs.map((x) => numberToBool(toBool(x))));
 }
@@ -252,16 +271,22 @@ function lattice(op: 'And' | 'Or', xs: readonly Expr[]): Expr {
   return op === 'And' ? coreAnd(...kept) : coreOr(...kept);
 }
 
-/** SymPy Not: numbers as booleans, double negation removed, relations negated. */
+/**
+ * Negates a Boolean expression, interpreting numeric arguments as truth values, cancelling
+ * double negation, and inverting relations.
+ *
+ * @see SymPy `sympy.logic.boolalg.Not`
+ */
 export function notFn(x: BoolLike): Expr {
   return coreNot(numberToBool(toBool(x)));
 }
 
 /**
- * SymPy Xor(*args, remove_true=...): true when an odd number of arguments
- * is true. With removeTrue (the default) a `true` argument becomes a
- * negation, Xor(x, True) = ~x; with removeTrue false it stays (x ^ True),
- * as in the algebraic normal form.
+ * Forms an exclusive disjunction, which is true when an odd number of arguments are true. By
+ * default a `true` operand negates the remaining expression. Set `removeTrue` to `false` to
+ * retain it for algebraic normal form.
+ *
+ * @see SymPy `sympy.logic.boolalg.Xor`
  */
 export function xorFn(xs: readonly BoolLike[], removeTrue = true): Expr {
   return xorArgs(xs.map((x) => numberToBool(toBool(x))), removeTrue, relCanonical);
@@ -430,7 +455,12 @@ export function Exclusive(...args: readonly BoolLike[]): Expr {
   return andFn(...out);
 }
 
-/** SymPy Boolean.as_set, using the real-set solver for relational leaves. */
+/**
+ * Finds the set on which a Boolean expression holds, solving its relational subexpressions over
+ * the reals.
+ *
+ * @see SymPy `sympy.logic.boolalg.Boolean.as_set`
+ */
 export function booleanAsSet<T extends Expr>(
   input: BoolLike,
   solveSet: (e: Expr) => T,
@@ -642,7 +672,11 @@ export function rebuildBool(e: Expr, args: readonly Expr[]): Expr {
   return rebuild(e, args);
 }
 
-/** SymPy xreplace through boolean functions (which the core traversal does not rebuild). */
+/**
+ * Replaces subexpressions by exact key match, including those nested inside Boolean functions.
+ *
+ * @see SymPy `sympy.core.basic.Basic.xreplace`
+ */
 export function boolXreplace(e: Expr, reps: ReadonlyMap<string, Expr>): Expr {
   if (reps.size === 0) return e;
   const go = (x: Expr): Expr => {
@@ -666,7 +700,7 @@ export function collect(e: Expr, pred: (x: Expr) => boolean): Expr[] {
   return [...out.values()];
 }
 
-/** SymPy _find_predicates: the maximal subexpressions that are not boolean functions. */
+/** Collects the distinct maximal subexpressions that are not Boolean functions. */
 export function findPredicates(e: Expr): Expr[] {
   const out = new Map<string, Expr>();
   const go = (x: Expr): void => {

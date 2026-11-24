@@ -243,7 +243,7 @@ export class MutableDenseMatrix extends Matrix {
   asImmutable(): Matrix {
     return Matrix.of(this.toArray());
   }
-  /** sympify gives an immutable copy, as in SymPy. */
+  /** Returns an immutable copy of this matrix when converting it to a symbolic expression. */
   override [sympifyMethod](): Matrix {
     return this.asImmutable();
   }

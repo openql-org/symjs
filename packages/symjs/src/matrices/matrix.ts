@@ -1467,7 +1467,7 @@ export class Matrix {
   [Symbol.for('nodejs.util.inspect.custom')](): string {
     return this.toString();
   }
-  /** sympify of an (immutable) matrix is the matrix itself. */
+  /** Returns this immutable matrix when converting it to a symbolic expression. */
   [sympifyMethod](): Matrix {
     return this;
   }

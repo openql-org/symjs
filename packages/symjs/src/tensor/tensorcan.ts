@@ -26,12 +26,12 @@ export type PermLike = Permutation | readonly number[];
 const afOf = (p: PermLike): Af => (p instanceof Permutation ? p.arrayForm : [...p]);
 const toPerms = (gens: readonly Af[]): Permutation[] => gens.map((h) => new Permutation(h));
 
-/** SymPy _af_rmul(a, b): the product a*b in array form ([a[i] for i in b]). */
+/** Composes two array-form permutations, mapping each index `i` to `a[b[i]]`. */
 export function afRmul(a: readonly number[], b: readonly number[]): Af {
   return b.map((i) => at(a, i));
 }
 
-/** SymPy _af_invert. */
+/** Computes the inverse of a permutation in array form. */
 export function afInvert(a: readonly number[]): Af {
   const inv: Af = Array.from({ length: a.length }, () => 0);
   a.forEach((v, i) => {
@@ -99,7 +99,12 @@ function distributeGensByBase(base: readonly number[], gens: readonly Af[]): Af[
   return stabs;
 }
 
-/** SymPy get_transversals(base, gens): the basic transversals of a BSGS (point -> array form, in BFS order). */
+/**
+ * Computes the basic transversals for a base and strong generating set, mapping orbit points in
+ * breadth-first order to array-form representatives.
+ *
+ * @see SymPy `sympy.combinatorics.tensor_can.get_transversals`
+ */
 export function getTransversals(base: readonly number[], gens: readonly Af[]): Map<number, Af>[] {
   if (!base.length) return [];
   const stabs = distributeGensByBase(base, gens);
@@ -122,7 +127,12 @@ function stripAf(h0: Af, base: readonly number[], orbits: readonly Set<number>[]
   return [h, baseLen + 1];
 }
 
-/** SymPy PermutationGroup.schreier_sims_incremental(base, gens): a base and a strong generating set. */
+/**
+ * Computes a base and strong generating set from array-form generators using the incremental
+ * Schreier–Sims algorithm.
+ *
+ * @see SymPy `sympy.combinatorics.perm_groups.PermutationGroup.schreier_sims_incremental`
+ */
 export function schreierSimsIncremental(gens: readonly Af[], baseIn: readonly number[] = []): [number[], Af[]] {
   const degree = at(gens, 0).length;
   if (gens.length === 1 && isIdentity(at(gens, 0))) return [[...baseIn], [...gens]];
@@ -438,7 +448,12 @@ export function permAfDirectProduct(gens1: readonly (readonly number[])[], gens2
   ];
 }
 
-/** SymPy bsgs_direct_product on array forms (signed). */
+/**
+ * Constructs a base and strong generating set for the direct product of two permutation groups,
+ * sharing the two sign slots when `signed` is true.
+ *
+ * @see SymPy `sympy.combinatorics.tensor_can.bsgs_direct_product`
+ */
 export function bsgsDirectProductAf(base1: readonly number[], gens1: readonly Af[], base2: readonly number[], gens2: readonly Af[], signed = true): [number[], Af[]] {
   const n1 = at(gens1, 0).length - (signed ? 2 : 0);
   const base = [...base1, ...base2.map((x) => x + n1)];
@@ -490,7 +505,12 @@ export function getSymmetricGroupSgs(n: number, antisym = false): [number[], Per
   return [base, toPerms(gens)];
 }
 
-/** SymPy get_symmetric_group_sgs on array forms. */
+/**
+ * Constructs a base and array-form strong generators for the symmetric group on `n` slots,
+ * recording the sign of odd permutations when `antisym` is true.
+ *
+ * @see SymPy `sympy.combinatorics.tensor_can.get_symmetric_group_sgs`
+ */
 export function getSymmetricGroupSgsAf(n: number, antisym = false): [number[], Af[]] {
   if (n === 1) return [[], [range(3)]];
   const gens = range(n - 1).map((i) => {
@@ -502,7 +522,11 @@ export function getSymmetricGroupSgsAf(n: number, antisym = false): [number[], A
   return [range(n - 1), gens];
 }
 
-/** SymPy riemann_bsgs: the BSGS of the Riemann tensor symmetry. */
+/**
+ * Returns a base and strong generators for the slot symmetries of the Riemann curvature tensor.
+ *
+ * @see SymPy `sympy.combinatorics.tensor_can.riemann_bsgs`
+ */
 export const riemannBsgs = (): [number[], Af[]] => [
   [0, 2],
   [
@@ -678,11 +702,12 @@ function canonicalizeNaiveAf(g: Af, dummies: readonly number[][], sym: readonly 
 }
 
 /**
- * SymPy canonicalize(g, dummies, msym, *v): the canonical form of the tensor
- * `g` (an array form of size n + 2) with the dummy index pairs `dummies` of
- * each index type (metric symmetry `msym`: 0 symmetric, 1 antisymmetric,
- * null none) and the components `v` = [(base, generators, count, commutation)],
- * or 0 when the tensor vanishes.
+ * Computes the canonical index permutation of a tensor under dummy-index and component
+ * symmetries, or zero if the tensor vanishes. The last two slots of `g` encode the sign. Each
+ * dummy-index type has metric symmetry `0` (symmetric), `1` (antisymmetric), or `null` (none).
+ * Each component specifies its base, generators, multiplicity, and commutation symmetry.
+ *
+ * @see SymPy `sympy.combinatorics.tensor_can.canonicalize`
  */
 export function canonicalize(g: Af, dummies: readonly number[][], msym: readonly (0 | 1 | null)[], ...v: [number[], Af[], number, 0 | 1 | null][]): Af | 0 {
   if (dummies.length !== msym.length) throw new RangeError('dummies and msym must have the same number of elements');
@@ -750,12 +775,11 @@ const isSymList = (m: MetricSym | readonly MetricSym[]): m is readonly MetricSym
 const isFlat = (d: readonly number[] | readonly (readonly number[])[]): d is readonly number[] => d.every((x) => typeof x === 'number');
 
 /**
- * SymPy tensor_can.canonicalize(g, dummies, msym, *v) with SymPy's argument
- * forms: `g` and the generators as Permutations or array forms, and for a
- * single index type the dummies as a flat list with a scalar `msym`. The
- * result is the array form of the canonical tensor, or 0 when it vanishes.
- * The root exports it as the tensor form of `canonicalize` (one name with the
- * matrix-expression form of sympy.matrices.expressions.hadamard).
+ * Returns the canonical tensor permutation in array form, or zero if symmetry forces the tensor
+ * to vanish. The input permutation and generators may be permutations or their array forms. For
+ * one index type, a flat list of dummy slots and a single metric symmetry suffice.
+ *
+ * @see SymPy `sympy.combinatorics.tensor_can.canonicalize`
  */
 export function canonicalizeTensor(g: PermLike | Expr, dummies: readonly number[] | readonly (readonly number[])[], msym: MetricSym | readonly MetricSym[], ...v: CanonComponent[]): Af | 0 {
   const valid = (s: unknown): boolean => s === 0 || s === 1 || s === null;

@@ -144,7 +144,11 @@ export class Collector {
    * @see SymPy `sympy.combinatorics.pc_groups.Collector.free_group`
    */
   readonly freeGroup: FreeGroup;
-  /** SymPy index: the position of each symbol of the free group (by symbol key). */
+  /**
+   * Maps each free-group symbol's key to its position in the list of generators.
+   *
+   * @see SymPy `sympy.combinatorics.pc_groups.Collector.index`
+   */
   readonly #index: Map<string, number>;
   /** The pc presentation, keyed by the relator's key. @internal */
   presentationMap = new Map<string, [FreeGroupElement, PcRelatorValue]>();
@@ -465,7 +469,11 @@ export class Collector {
   }
 }
 
-/** SymPy PermutationGroup.polycyclic_group(): a solvable permutation group as a PolycyclicGroup. */
+/**
+ * Constructs a polycyclic group from a solvable permutation group.
+ *
+ * @see SymPy `sympy.combinatorics.perm_groups.PermutationGroup.polycyclic_group`
+ */
 export function polycyclicGroupOf(G: PermutationGroupNode): PolycyclicGroup {
   if (!G.isPolycyclic) throw new RangeError('The group must be solvable');
   const der = G.derivedSeries();

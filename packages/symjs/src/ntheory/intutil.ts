@@ -40,7 +40,7 @@ export function divmod(a: bigint, b: bigint): [bigint, bigint] {
 
 export const babs = (a: bigint): bigint => (a < 0n ? -a : a);
 
-/** int.bit_length(). */
+/** Counts the bits in the magnitude of an integer, returning zero for zero. */
 export function bitLength(nIn: bigint): number {
   const n = babs(nIn);
   if (n === 0n) return 0;
@@ -91,7 +91,11 @@ export function remove(xIn: bigint, f: bigint): [bigint, bigint] {
   return [x, m];
 }
 
-/** floor(sqrt(n)) for n >= 0. */
+/**
+ * Computes the largest integer whose square is at most the given nonnegative integer.
+ *
+ * @see SymPy `sympy.core.intfunc.isqrt`
+ */
 export function isqrt(n: bigint): bigint {
   if (n < 0n) throw new RangeError('isqrt of a negative number');
   if (n < 2n) return n;
@@ -115,7 +119,11 @@ export function sqrtrem(n: bigint): [bigint, bigint] {
   return [s, n - s * s];
 }
 
-/** n is a perfect square (gmpy is_square). */
+/**
+ * Tests whether an integer is a perfect square.
+ *
+ * @see SymPy `sympy.external.ntheory.is_square`
+ */
 export function isSquare(n: bigint): boolean {
   if (n < 0n) return false;
   return sqrtrem(n)[1] === 0n;
@@ -298,7 +306,7 @@ function exprInt(e: Expr, round: (x: Expr) => Expr): bigint {
   throw new TypeError(`${e.toString()} cannot be converted to an integer`);
 }
 
-/** as_int(ceiling(n)) (SymPy _as_int_ceiling). */
+/** Rounds the input up to the nearest integer and returns it as a bigint. */
 export function asIntCeiling(n: IntLike): bigint {
   if (typeof n === 'bigint') return n;
   if (typeof n === 'number') return BigInt(Math.ceil(n));

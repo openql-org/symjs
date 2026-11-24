@@ -302,8 +302,10 @@ export class JointPSpace extends ProductPSpace {
 }
 
 /**
- * SymPy JointPSpace(sym, dist): a single continuous or discrete space for a
- * single-variable distribution, a joint space otherwise.
+ * Constructs a probability space from a symbol and distribution, choosing a single-variable
+ * space for a univariate continuous or discrete law and a joint space otherwise.
+ *
+ * @see SymPy `sympy.stats.joint_rv.JointPSpace`
  */
 export function jointPSpace(sym: string | Sym, dist: Distribution): PSpace & { value: RandomSymbol } {
   if (dist instanceof SingleContinuousDistribution) return new SingleContinuousPSpace([symbolConverter(sym), dist]);
@@ -460,8 +462,10 @@ export class MarginalDistribution extends Distribution {
 }
 
 /**
- * SymPy MarginalDistribution(dist, *rvs): a distribution that is not joint
- * and has no random parameters is returned as it is.
+ * Constructs the marginal distribution for the specified random variables. A non-joint
+ * distribution with deterministic parameters is already its own marginal.
+ *
+ * @see SymPy `sympy.stats.joint_rv.MarginalDistribution`
  */
 export function makeMarginalDistribution(dist: Distribution, rvs: readonly Expr[]): Distribution {
   if (!rvs.every((r) => r instanceof Indexed || r instanceof RandomSymbol)) {

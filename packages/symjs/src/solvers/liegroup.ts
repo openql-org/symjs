@@ -39,7 +39,11 @@ import { separatevars } from '../simplify/separatevars';
 import { simplify } from '../simplify/simplify';
 import { linsolve, solve } from './solve';
 
-/** SymPy lie_heuristics, in the order the default hint tries them. */
+/**
+ * The Lie symmetry heuristics in the order the default ODE solver tries them.
+ *
+ * @see SymPy `sympy.solvers.ode.lie_group.lie_heuristics`
+ */
 export const LIE_HEURISTICS = [
   'abaco1_simple', 'abaco1_product', 'abaco2_similar', 'abaco2_unique_unknown', 'abaco2_unique_general', 'linear', 'function_sum', 'bivariate',
   'chi',
@@ -58,7 +62,10 @@ interface LieMatch {
   h: Expr;
   hx: Expr;
   hy: Expr;
-  /** h with x and y exchanged, inverted: the equation dx/dy = 1/h. */
+  /**
+   * The reciprocal of the slope `h` with `x` and `y` exchanged, used when interchanging the
+   * dependent and independent variables.
+   */
   hinv: Expr;
   x: Sym;
   y: Dummy;
@@ -569,7 +576,10 @@ function pdsolveLinear(b: Expr, c: Expr, e: Expr, x: Sym, y: Sym, dsolveFn: OdeS
   return simplify(xreplace(fin, [[eta, etat]]));
 }
 
-/** SymPy _lie_group_remove: drop the arbitrary functions of pdsolve's solution. */
+/**
+ * Removes arbitrary functions from a partial differential equation's solution to extract
+ * coordinates for the Lie group method.
+ */
 export function lieGroupRemove(coords: Expr): Expr {
   if (coords instanceof UndefFn) return first(coords.args);
   if (coords instanceof Add) {
@@ -667,9 +677,8 @@ function solveByCoordinates(xiinf: Expr, etainf: Expr, m: LieMatch, dsolveFn: Od
 }
 
 /**
- * SymPy LieGroup._get_general_solution and _ode_lie_group: the solutions of
- * the first-order ODE eq for f(x) by the Lie group method, with user-given
- * infinitesimals xi, eta (tried alone, like SymPy) or those of the heuristics.
+ * Solves a first-order ordinary differential equation using Lie symmetries. It uses the supplied
+ * infinitesimals `xi` and `eta` when present and otherwise tries the built-in heuristics.
  */
 export function odeLieGroup(eq: Expr, func: UndefFn, dsolveFn: OdeSolver, user?: { xi: ExprLike; eta: ExprLike }): Expr[] | undefined {
   const x = cast(first(func.args), Sym, 'independent variable');

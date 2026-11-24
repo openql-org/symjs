@@ -10,8 +10,16 @@
 
 export { MatrixSymbol } from './expressions/matexpr';
 
-/** SymPy Transpose (the node class of transposes). */
+/**
+ * Represents the unevaluated transpose of a matrix expression.
+ *
+ * @see SymPy `sympy.matrices.expressions.transpose.Transpose`
+ */
 export { TransposeNode as MatrixTranspose } from './expressions/matexpr';
 
-/** SymPy Adjoint (the node class of adjoints). */
+/**
+ * Represents the unevaluated conjugate transpose of a matrix expression.
+ *
+ * @see SymPy `sympy.matrices.expressions.adjoint.Adjoint`
+ */
 export { AdjointNode as MatrixAdjoint } from './expressions/matexpr';

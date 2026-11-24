@@ -207,9 +207,10 @@ export interface UnifyFns {
 const isWild = (x: Term): x is Variable | CondVariable => x instanceof Variable || x instanceof CondVariable;
 
 /**
- * SymPy `unify(x, y, s=None, **fns)`: unify two terms. Yields the
- * substitutions (maps from wild tokens to subterms) that make `x` and `y`
- * equal, extending `s`.
+ * Yields substitutions that make two terms equal. Each substitution extends the supplied map
+ * from wild tokens to subterms.
+ *
+ * @see SymPy `sympy.unify.core.unify`
  */
 export function* unify(x: Term, y: Term, s: ReadonlyMap<Term, Term> | null = null, fns: UnifyFns = {}): Generator<TermMap, void, undefined> {
   const sub = s instanceof TermMap ? s : new TermMap(s);
@@ -243,14 +244,23 @@ export function* unify(x: Term, y: Term, s: ReadonlyMap<Term, Term> | null = nul
   }
 }
 
-/** SymPy `unify_var(var, x, s, **fns)`: unify a wild token with a term. */
+/**
+ * Yields substitutions that unify a wild token with a term while respecting existing bindings
+ * and any condition on the token.
+ *
+ * @see SymPy `sympy.unify.core.unify_var`
+ */
 export function* unifyVar(v: Variable | CondVariable, x: Term, s: TermMap, fns: UnifyFns = {}): Generator<TermMap, void, undefined> {
   if (s.has(v)) yield* unify(s.get(v), x, s, fns);
   else if (occurCheck(v, x)) return;
   else if (v instanceof CondVariable ? v.valid(x) : true) yield assoc(s, v, x);
 }
 
-/** SymPy `occur_check(var, x)`: whether `var` occurs in the subtree owned by `x`. */
+/**
+ * Tests whether the term `v` occurs anywhere in `x`, including at the root.
+ *
+ * @see SymPy `sympy.unify.core.occur_check`
+ */
 export function occurCheck(v: Term, x: Term): boolean {
   if (termEquals(v, x)) return true;
   if (x instanceof Compound) return occurCheck(v, x.args);
@@ -258,28 +268,42 @@ export function occurCheck(v: Term, x: Term): boolean {
   return false;
 }
 
-/** SymPy `assoc(d, key, val)`: a copy of `d` with `key` associated to `val`. */
+/**
+ * Copies the substitution map and binds the given key to the supplied value in the copy.
+ *
+ * @see SymPy `sympy.unify.core.assoc`
+ */
 export function assoc(d: ReadonlyMap<Term, Term>, key: Term, val: Term): TermMap {
   const copy = new TermMap(d);
   copy.set(key, val);
   return copy;
 }
 
-/** SymPy `is_args(x)`: whether `x` is a sequence of terms (an array). */
+/**
+ * Tests whether the term is an array of terms.
+ *
+ * @see SymPy `sympy.unify.core.is_args`
+ */
 export function isArgs(x: Term): x is readonly Term[] {
   return Array.isArray(x);
 }
 
-/** SymPy `unpack(x)`: the argument of a Compound with a single argument, else `x`. */
+/**
+ * Extracts the argument of a single-argument compound term and otherwise returns the original
+ * term.
+ *
+ * @see SymPy `sympy.unify.core.unpack`
+ */
 export function unpack(x: Term): Term {
   return x instanceof Compound && x.args.length === 1 ? x.args[0] : x;
 }
 
 /**
- * SymPy `allcombinations(A, B, ordered)`: the ways to restructure `A` and
- * `B` into the same number of pieces, the longer one split into consecutive
- * sublists (`'associative'`) or into sublists of any of its permutations
- * (`'commutative'`).
+ * Yields paired groupings of two sequences by splitting the longer one into as many pieces as
+ * the shorter has elements. Associative grouping uses consecutive pieces, while commutative
+ * grouping also considers permutations.
+ *
+ * @see SymPy `sympy.unify.core.allcombinations`
  */
 export function* allcombinations<T>(A: readonly T[], B: readonly T[], ordered: 'commutative' | 'associative'): Generator<[T[][], T[][]], void, undefined> {
   const [sm, bg] = A.length < B.length ? [A, B] : [B, A];
@@ -290,7 +314,11 @@ export function* allcombinations<T>(A: readonly T[], B: readonly T[], ordered: '
   }
 }
 
-/** SymPy `partition(it, part)`: the pieces of `it` given by the lists of indices `part`. */
+/**
+ * Groups the elements of a sequence according to the supplied lists of indices.
+ *
+ * @see SymPy `sympy.unify.core.partition`
+ */
 export function partition<T>(it: readonly T[], part: readonly (readonly number[])[]): T[][] {
   return part.map((ind) => index(it, ind));
 }

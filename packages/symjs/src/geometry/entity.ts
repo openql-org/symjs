@@ -51,11 +51,19 @@ export interface ReflectionLine {
  * (the geometry modules import each other only downwards).
  */
 export const geometryClasses: {
-  /** SymPy Point(coords, dim=dim, evaluate=evaluate). */
+  /**
+   * Constructs a point from coordinates with the requested dimension and evaluation settings.
+   *
+   * @see SymPy `sympy.geometry.point.Point`
+   */
   point?: (coords: PointInput, opts?: { dim?: number; evaluate?: boolean }) => GeometryEntity;
 } = {};
 
-/** SymPy Point(coords, dim=...): the point class registered by geometry/point. */
+/**
+ * Creates a point from coordinates using the registered point constructor.
+ *
+ * @see SymPy `sympy.geometry.point.Point`
+ */
 export function makePoint(coords: PointInput, opts: { dim?: number; evaluate?: boolean } = {}): GeometryEntity {
   return defined(geometryClasses.point, 'Point')(coords, opts);
 }
@@ -83,7 +91,7 @@ export function tryDecide(e: Expr | boolean): boolean | undefined {
   return !(e.key === S.Zero.key);
 }
 
-/** SymPy _symbol(name, real=True): a real symbol of that name, or the symbol itself. */
+/** Creates a real symbol from a name or returns the supplied symbol. */
 export function realSymbol(parameter: string | Sym): Sym {
   return typeof parameter === 'string' ? new Sym(parameter, { real: true }) : parameter;
 }

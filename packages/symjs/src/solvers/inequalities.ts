@@ -1894,10 +1894,11 @@ export function notEmptyIn(setIn: SetExpr, x: Sym, ...otherSymbols: Sym[]): SetE
 }
 
 /**
- * SymPy Boolean.as_set(): the set of real values of the one free symbol
- * for which a relation or a boolean combination of relations holds
- * (`(x > 0).as_set()` = Interval.open(0, oo)); true is UniversalSet and
- * false EmptySet.
+ * Finds the real values of the single free symbol for which a relation or Boolean combination of
+ * relations holds. The constants `true` and `false` give `UniversalSet` and `EmptySet`,
+ * respectively.
+ *
+ * @see SymPy `sympy.logic.boolalg.Boolean.as_set`
  */
 export function asSet(eIn: ExprLike | boolean): SetExpr {
   const e = typeof eIn === 'boolean' ? (eIn ? S.true : S.false) : sympify(eIn);

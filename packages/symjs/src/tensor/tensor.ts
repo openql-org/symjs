@@ -871,7 +871,10 @@ class IndexStructure {
   sortedFree(): Free[] {
     return [...this.free].sort((a, b) => compareIndices(a[0], b[0]));
   }
-  /** SymPy indices_canon_args: the permutation to the ordered indices, the dummy slots of each type and their metric symmetries. */
+  /**
+   * Computes the permutation that orders the tensor indices, together with the dummy slots and
+   * metric symmetry for each index type.
+   */
   indicesCanonArgs(): [Af, number[][], (0 | 1 | null)[]] {
     const n = this.extRank;
     const g: Af = [...range(n), n, n + 1];
@@ -901,7 +904,7 @@ class IndexStructure {
     if (a.length) dummies.push(a);
     return [g, dummies, msym];
   }
-  /** SymPy perm2tensor: the index structure after the slot permutation g of the ordered indices. */
+  /** Builds the index structure obtained by applying the slot permutation `g` to the ordered indices. */
   perm2tensor(g: Af): IndexStructure {
     const sortedFree = this.sortedFree().map(([i]) => i);
     const [perm] = this.indicesCanonArgs();
@@ -1702,7 +1705,10 @@ function indicesToFreeDum(argsIndices: readonly TensorIndexNode[][]): { indices:
   return { indices, free: fr, freeNames: fr.map(([i]) => i.indexName), dummyData };
 }
 
-/** SymPy _tensMul_contract_indices: the dummy pairs of the arguments, renamed L_0, L_1, ... when `replace`. */
+/**
+ * Finds free indices and contracted pairs across the tensor factors, assigning fresh names to
+ * dummy indices when `replace` is true.
+ */
 export function contractIndices(argsIn: readonly Expr[], replace: boolean): { args: Expr[]; indices: TensorIndexNode[]; free: Free[]; dum: Dum[] } {
   let args = [...argsIn];
   let r = indicesToFreeDum(args.map(getIndicesOf));
@@ -2243,7 +2249,12 @@ const sameTypes = (a: readonly TensorIndexTypeNode[], b: readonly TensorIndexTyp
 /** SymPy -expr for tensors and scalars. */
 const neg = (e: Expr): Expr => (e instanceof TensMul ? new TensMul([S.NegOne, e], e.isCanonBp).doitShallow() : mul(-1, e));
 
-/** SymPy TensMul(*args).doit(deep=False): the evaluated product (mul of tensors). */
+/**
+ * Multiplies tensor expressions and evaluates the product without recursively evaluating its
+ * factors.
+ *
+ * @see SymPy `sympy.tensor.tensor.TensMul`
+ */
 export function tensMul(...args: ExprLike[]): Expr {
   return new TensMul(args).doitShallow();
 }
@@ -2480,7 +2491,11 @@ function collectTerms(args: readonly Expr[]): Expr[] {
   return [...(scalars instanceof Add ? scalars.args : scalars.equals(0) ? [] : [scalars]), ...out];
 }
 
-/** SymPy TensAdd(*args).doit(deep=False): the evaluated sum (add of tensors). */
+/**
+ * Adds tensor expressions and evaluates the sum without recursively evaluating its terms.
+ *
+ * @see SymPy `sympy.tensor.tensor.TensAdd`
+ */
 export function tensAdd(...args: ExprLike[]): Expr {
   const s = newTensAdd(args);
   return isTens(s) ? s.doitShallow() : s;

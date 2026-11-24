@@ -63,7 +63,12 @@ export function limitOver(x: Sym, set: SetExpr): Limit {
   return [x, inf(set), set instanceof Interval ? set.end : S.Infinity];
 }
 
-/** SymPy Integral(f, *limits) (unevaluated): nested integrals, innermost limit first. */
+/**
+ * Builds nested unevaluated integrals from the integrand and limits, with the first limit
+ * innermost.
+ *
+ * @see SymPy `sympy.integrals.integrals.Integral`
+ */
 export function makeIntegral(f: Expr, limits: readonly Limit[]): Expr {
   return limits.reduce<Expr>((acc, [x, a, b]) => new Integral([acc, x, a, b]), f);
 }
@@ -276,7 +281,7 @@ export class ConditionalContinuousDomain extends ConditionalDomain {
   }
 }
 
-/** SymPy Interval(-oo, oo): the real line as an interval (equal to Reals, printed as an interval). */
+/** The real line represented by the open interval from negative to positive infinity. */
 export const realLine: SetExpr = new Interval(S.NegativeInfinity, S.Infinity, true, true);
 
 // ---------------------------------------------------------------------------

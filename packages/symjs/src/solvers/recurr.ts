@@ -74,8 +74,10 @@ const quo = (f: Expr, g: Expr, x: Sym = curN): Expr => Poly.from(expand(f), [x])
 const gcdN = (f: Expr, g: Expr, x: Sym = curN): Expr => Poly.from(expand(f), [x]).gcd(Poly.from(expand(g), [x])).asExpr();
 
 /**
- * SymPy rsolve_poly: polynomial solutions of sum(coeffs[i] * y(n + i)) = f
- * (Abramov's algorithm). Returns [solution, free constants].
+ * Finds polynomial solutions of the recurrence `sum(coeffs[i] * y(n + i)) = f` using Abramov's
+ * algorithm, returning the solution with its free constants when found.
+ *
+ * @see SymPy `sympy.solvers.recurr.rsolve_poly`
  */
 export function rsolvePoly(coeffsIn: readonly ExprLike[], fIn: ExprLike, n: Sym, shift = 0): [Expr, Sym[]] | undefined {
   curN = n;
@@ -232,7 +234,12 @@ function sylvesterResultant(f: Expr, g: Expr, x: Sym): Expr {
   return expand(Matrix.of(rows).det());
 }
 
-/** SymPy rsolve_ratio: rational solutions (Abramov). */
+/**
+ * Finds rational solutions of a linear recurrence with polynomial coefficients using Abramov's
+ * algorithm, returning the solution with its free constants when found.
+ *
+ * @see SymPy `sympy.solvers.recurr.rsolve_ratio`
+ */
 export function rsolveRatio(coeffsIn: readonly ExprLike[], fIn: ExprLike, n: Sym): [Expr, Sym[]] | undefined {
   curN = n;
   const f = sympify(fIn);
@@ -271,7 +278,12 @@ function casoratian(seqs: Expr[], n: Sym): Expr {
   return Matrix.of(Array.from({ length: k }, (_, i) => seqs.map((s) => subs(s, n, add(n, i))))).det();
 }
 
-/** SymPy rsolve_hyper: hypergeometric solutions (Petkovsek). Returns [solution, constants]. */
+/**
+ * Finds hypergeometric solutions of a linear recurrence with polynomial coefficients using
+ * Petkovšek's algorithm, returning the solution with its free constants when found.
+ *
+ * @see SymPy `sympy.solvers.recurr.rsolve_hyper`
+ */
 export function rsolveHyper(coeffsIn: readonly ExprLike[], fIn: ExprLike, n: Sym): [Expr, Sym[]] | undefined {
   curN = n;
   const coeffs = coeffsIn.map((c) => sympify(c));
@@ -393,8 +405,11 @@ export function rsolveHyper(coeffsIn: readonly ExprLike[], fIn: ExprLike, n: Sym
 }
 
 /**
- * SymPy rsolve(f, y(n), init): solve a linear recurrence with polynomial
- * coefficients. init maps indices (or y(i)) to values.
+ * Solves a linear recurrence with polynomial coefficients for `y(n)`, applying any initial
+ * conditions given as pairs of indices or sequence terms and their values. The public solver
+ * returns `Unsolved` when it cannot find a closed form.
+ *
+ * @see SymPy `sympy.solvers.recurr.rsolve`
  */
 export function rsolve(fIn: ExprLike, y: Expr, init?: [ExprLike, ExprLike][]): Expr | undefined {
   let f = sympify(fIn);

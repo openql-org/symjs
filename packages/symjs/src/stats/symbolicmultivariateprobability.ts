@@ -163,7 +163,12 @@ function expandExpectation(a: Expr, condition: Expr | undefined): Expr {
   return node instanceof ExpectationMatrixNode ? node.expand() : node;
 }
 
-/** SymPy ExpectationMatrix(expr, condition=None): a value that is not random is its own expectation. */
+/**
+ * Constructs the symbolic expectation of a matrix expression. With no conditioning event, a
+ * deterministic matrix is its own expectation.
+ *
+ * @see SymPy `sympy.stats.symbolic_multivariate_probability.ExpectationMatrix`
+ */
 export function makeExpectationMatrix(exprIn: ExprLike, conditionIn?: ExprLike): Expr {
   const e = sympify(exprIn);
   if (conditionIn === undefined) return isRandom(e) ? new ExpectationMatrixNode([e]) : e;

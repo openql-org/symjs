@@ -11,9 +11,10 @@ import { exhaust, multiplex } from './core';
 import { topDown } from './traverse';
 
 /**
- * SymPy `canon(*rules)`: apply each branching rule top down through the
- * tree, multiplex the results of all traversals and repeat until nothing
- * changes.
+ * Builds a rule that traverses the expression tree top down with each branching rule and repeats
+ * across the resulting branches until no rule changes the tree.
+ *
+ * @see SymPy `sympy.strategies.branch.tools.canon`
  */
 export function canon(...rules: BranchRule<Expr>[]): BranchRule<Expr> {
   return exhaust(multiplex(...rules.map((r) => topDown(r))));

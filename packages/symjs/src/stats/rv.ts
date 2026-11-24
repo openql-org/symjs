@@ -156,19 +156,36 @@ export type DensityResult = Expr | FiniteDensity;
 
 /** The constructors of the spaces of the other stats modules, registered when they are loaded. */
 export const statsClasses: {
-  /** sympy.stats.frv.ProductFinitePSpace(*spaces). */
+  /**
+   * Constructs the product of finite probability spaces.
+   *
+   * @see SymPy `sympy.stats.frv.ProductFinitePSpace`
+   */
   productFinitePSpace?: (spaces: readonly PSpace[]) => PSpace;
   /** ProductFiniteDomain, ProductContinuousDomain and ProductDiscreteDomain(*domains). */
   productFiniteDomain?: (domains: readonly RandomDomain[]) => RandomDomain;
   productContinuousDomain?: (domains: readonly RandomDomain[]) => RandomDomain;
   productDiscreteDomain?: (domains: readonly RandomDomain[]) => RandomDomain;
-  /** sympy.stats.symbolic_probability.Probability(condition), unevaluated. */
+  /**
+   * Constructs the unevaluated probability of an event.
+   *
+   * @see SymPy `sympy.stats.symbolic_probability.Probability`
+   */
   probabilityNode?: (condition: Expr) => Expr;
-  /** sympy.stats.crv_types.ContinuousDistributionHandmade(pdf, set). */
+  /**
+   * Constructs a continuous distribution from its probability density function and optional
+   * support.
+   *
+   * @see SymPy `sympy.stats.crv_types.ContinuousDistributionHandmade`
+   */
   continuousHandmade?: (pdf: Expr, set?: SetExpr) => Distribution;
   /** SingleContinuousPSpace(z, distribution). */
   continuousSingle?: (z: Sym, dist: Distribution) => PSpace & SingleSpace;
-  /** sympy.stats.drv_types.DiscreteDistributionHandmade(pdf, set). */
+  /**
+   * Constructs a discrete distribution from its probability mass function and optional support.
+   *
+   * @see SymPy `sympy.stats.drv_types.DiscreteDistributionHandmade`
+   */
   discreteHandmade?: (pdf: Expr, set?: SetExpr) => Distribution;
   /** SingleDiscretePSpace(z, distribution). */
   discreteSingle?: (z: Sym, dist: Distribution) => PSpace & SingleSpace;
@@ -182,9 +199,18 @@ export const statsClasses: {
   finiteConditionalSpace?: (space: PSpace, condition: Expr) => PSpace;
   /** CompoundPSpace(symbol, CompoundDistribution(dist)).value (sympy.stats.compound_rv). */
   compound?: (symbol: string | Sym, dist: Distribution) => RandomSymbol;
-  /** sympy.stats.symbolic_probability.Expectation(expr, condition).doit(evaluate=...). */
+  /**
+   * Forms the expectation of an expression under an optional condition, evaluating it when
+   * requested.
+   *
+   * @see SymPy `sympy.stats.symbolic_probability.Expectation.doit`
+   */
   expectation?: (expr: Expr, condition: Expr | undefined, evaluate: boolean) => Expr;
-  /** sympy.stats.symbolic_probability.Probability(condition, given).doit(evaluate=...). */
+  /**
+   * Forms the probability of an event under an optional condition, evaluating it when requested.
+   *
+   * @see SymPy `sympy.stats.symbolic_probability.Probability.doit`
+   */
   probability?: (condition: Expr, given: Expr | undefined, evaluate: boolean) => Expr;
   /** ExpectationMatrix, VarianceMatrix and CrossCovarianceMatrix (sympy.stats.symbolic_multivariate_probability). */
   expectationMatrix?: (expr: Expr, condition: Expr | undefined) => Expr;
@@ -555,9 +581,10 @@ export function sortedSymbols(xs: readonly Sym[]): Sym[] {
 }
 
 /**
- * SymPy ProductDomain(*domains): products of products are flattened, and
- * domains that are all finite, continuous or discrete give the product
- * domain of that kind.
+ * Constructs a product of random domains, flattening nested products and selecting a finite,
+ * continuous, or discrete product domain when its factors share that kind.
+ *
+ * @see SymPy `sympy.stats.rv.ProductDomain`
  */
 export function makeProductDomain(domains: readonly RandomDomain[]): RandomDomain {
   const flat = domains.flatMap((d) => (d instanceof ProductDomain ? d.domains : [d]));
@@ -1393,9 +1420,10 @@ export class IndependentProductPSpace extends ProductPSpace {
 }
 
 /**
- * SymPy IndependentProductPSpace(*spaces): the spaces are ordered like a
- * FiniteSet, and finite spaces give a ProductFinitePSpace. Overlapping
- * random variables are rejected.
+ * Combines independent probability spaces in canonical order, producing a finite product space
+ * when all factors are finite. The factors must have disjoint random variables.
+ *
+ * @see SymPy `sympy.stats.rv.IndependentProductPSpace`
  */
 export function independentProductPSpace(spacesIn: readonly PSpace[]): PSpace {
   const spaces = ordered([...new Map(spacesIn.map((s) => [s.key, s] as const)).values()]).map((s) => cast(s, PSpace));
@@ -1478,8 +1506,8 @@ export abstract class Distribution extends ExtensionExpr {
 }
 
 /**
- * SymPy _value_check: throws a RangeError with the message when the
- * condition is false; true when it holds and false when it is undecided.
+ * Checks one or more conditions. A false condition raises a `RangeError` with the supplied
+ * message. The result is `true` if every condition holds and `false` if any remains undecided.
  */
 export function valueCheck(condition: Expr | boolean | undefined | readonly (Expr | boolean | undefined)[], message: string): boolean {
   const conds: readonly (Expr | boolean | undefined)[] = Array.isArray(condition) ? condition : [condition];
@@ -1739,7 +1767,11 @@ export class Density extends ExtensionExpr {
   }
 }
 
-/** SymPy Density(expr, condition=None). */
+/**
+ * Constructs an unevaluated density for an expression, optionally conditioned on an event.
+ *
+ * @see SymPy `sympy.stats.rv.Density`
+ */
 export function makeDensity(expr: ExprLike, condition?: ExprLike): Density {
   return new Density(condition === undefined ? [sympify(expr)] : [sympify(expr), sympify(condition)]);
 }

@@ -78,7 +78,7 @@ class Domain {
   neg(a: Elt): Elt {
     return this.of(-a.n, a.d);
   }
-  /** a * k for a small integer k. */
+  /** Multiplies the field element `a` by the small integer `k`. */
   k(k: bigint, a: Elt): Elt {
     return this.of(k * a.n, a.d);
   }
@@ -93,7 +93,12 @@ class Domain {
   isZero(a: Elt): boolean {
     return a.n === 0n;
   }
-  /** SymPy domain.to_sympy: a Rational; an element of GF(p) in the symmetric range. */
+  /**
+   * Converts a field element to a rational number, using the symmetric representative for an
+   * element of a prime field.
+   *
+   * @see SymPy `sympy.polys.domains.domain.Domain.to_sympy`
+   */
   toSympy(a: Elt): Rational {
     const n = this.p && a.n > this.p / 2n ? a.n - this.p : a.n;
     return Rational.of(n, a.d);

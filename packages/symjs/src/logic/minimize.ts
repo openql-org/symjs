@@ -620,7 +620,10 @@ function propagateEqualities(terms: Expr[], simplify: (arg: Expr) => Expr): void
   }
 }
 
-/** SymPy BooleanFunction._eval_simplify and the relational reductions of And, Or and Xor. */
+/**
+ * Simplifies the operands of a Boolean expression and reduces combinations of relations in
+ * `And`, `Or`, and `Xor`.
+ */
 export function simplifyBoolean(input: BoolOp, simplify: (arg: Expr) => Expr): Expr {
   const terms = input.args.map(simplify);
   const op = input.op;

@@ -99,7 +99,7 @@ function elements(s: Expr): Expr[] {
 /** The number of elements (SymPy len). */
 const size = (s: Expr): number => elements(s).length;
 
-/** SymPy _set_converter: a list or tuple as a FiniteSet; a Set is kept. */
+/** Converts an array of states to a finite set or returns an existing set. */
 export function setConverter(itr: unknown): SetExpr {
   if (Array.isArray(itr)) return finiteSet(...itr.map(toExprArg));
   if (!(itr instanceof SetExpr)) throw new TypeError(`${String(itr)} is not an instance of list/tuple/set.`);
@@ -1397,7 +1397,10 @@ function rvindexedSubs(expr: Expr): Expr {
   return expr.subs(rvs.map((rv) => [rv, simpleProcessOf(rv).simpleRv(rv)] as const));
 }
 
-/** SymPy _SubstituteRV._expectation: the expectation with simple random symbols in place of the random indexed symbols. */
+/**
+ * Computes an expectation after replacing indexed random variables in the expression and its
+ * condition with their corresponding simple random symbols.
+ */
 export function substituteExpectation(expr: Expr, condition?: Expr, opts: ComputeOptions = {}): Expr {
   let newExpr = rvindexedSubs(expr);
   const newCondition = condition === undefined ? undefined : rvindexedSubs(condition);
@@ -1409,7 +1412,10 @@ export function substituteExpectation(expr: Expr, condition?: Expr, opts: Comput
   return ps.computeExpectation(newExpr, undefined, { evaluate });
 }
 
-/** SymPy _SubstituteRV._probability: the probability with simple random symbols in place of the random indexed symbols. */
+/**
+ * Computes a probability after replacing indexed random variables in the event and any
+ * conditioning event with their corresponding simple random symbols.
+ */
 export function substituteProbability(condition: Expr, givenCondition?: Expr, opts: ComputeOptions = {}): Expr {
   const newCondition = rvindexedSubs(condition);
   const newGiven = givenCondition === undefined ? undefined : rvindexedSubs(givenCondition);

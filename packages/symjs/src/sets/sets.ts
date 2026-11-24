@@ -1258,10 +1258,12 @@ function rangeContains(r: Range, x: Expr): Expr | undefined {
 }
 
 /**
- * SymPy Range(stop) or Range(start, stop, step): integer (or infinite) start and stop and a nonzero
- * integer (or infinite) step, or symbolic expressions that may be integers. The Range is made
- * canonical as in SymPy: the stop of a numeric Range is the first value not taken, an empty
- * Range is Range(0, 0, 1).
+ * Constructs an integer range with an exclusive stop and a nonzero step. With one argument, the
+ * range starts at zero and advances by one. Bounds and steps can be integers, signed infinities,
+ * or symbolic expressions that may be integers. A finite numeric range stores the first excluded
+ * value as its stop. The canonical empty range is `Range(0, 0, 1)`.
+ *
+ * @see SymPy `sympy.sets.fancysets.Range`
  */
 export function range(startIn: ExprLike, stopIn?: ExprLike, stepIn: ExprLike = 1): SetExpr {
   let [start, stop, step] = stopIn === undefined ? [S.Zero, sympify(startIn), sympify(stepIn)] : [sympify(startIn), sympify(stopIn), sympify(stepIn)];
@@ -1874,9 +1876,11 @@ function sameSignature(a: Expr, b: Expr): boolean {
 }
 
 /**
- * SymPy ConditionSet(sym, condition, base) with its evaluation: a true
- * condition gives the base set and a false one the empty set, a finite base
- * set is filtered, and a nested ConditionSet is merged.
+ * Constructs the subset of a base set satisfying a condition. A true condition gives the base
+ * set and a false condition gives the empty set. Finite base sets are filtered and nested
+ * conditions are combined when possible.
+ *
+ * @see SymPy `sympy.sets.conditionset.ConditionSet`
  */
 export function conditionSet(symIn: Expr, conditionIn: ExprLike | boolean, baseIn: SetExpr = UniversalSet): SetExpr {
   let sym = symIn;
@@ -1949,7 +1953,15 @@ class SetOp extends SetExpr {
     if (!source) throw new TypeError('Intersection needs an iterable operand');
     for (const x of elements(source)) if (this.hasElement(x)) yield x;
   }
-  /** SymPy: a Union of iterable sets, an Intersection with an iterable set and a Complement of an iterable set iterate. */
+  /**
+   * Indicates whether the set operation can be iterated. A union requires all operands to be
+   * iterable, an intersection requires any iterable operand, and a complement requires its first
+   * operand to be iterable.
+   *
+   * @see SymPy `sympy.sets.sets.Union.is_iterable`
+   * @see SymPy `sympy.sets.sets.Intersection.is_iterable`
+   * @see SymPy `sympy.sets.sets.Complement.is_iterable`
+   */
   override get isIterable(): boolean {
     if (this.op === 'Union') return this.args.every((s) => s.isIterable);
     if (this.op === 'Intersection') return this.args.some((s) => s.isIterable);
@@ -2163,7 +2175,12 @@ export class ProductSetNode extends SetExpr {
   }
 }
 
-/** SymPy ProductSet(*sets): the empty product is {()}, and a product with an empty factor is empty. */
+/**
+ * Forms the Cartesian product of the given sets. With no factors it contains only the empty
+ * tuple. An empty factor makes the product empty.
+ *
+ * @see SymPy `sympy.sets.sets.ProductSet`
+ */
 export function productSet(...sets: SetExpr[]): SetExpr {
   if (!sets.length) return finiteSet(new TupleNode([]));
   if (sets.some((x) => x === EmptySet)) return EmptySet;
@@ -2407,7 +2424,7 @@ export class DisjointUnionNode extends SetExpr {
     return `DisjointUnion(${this.args.map(p).join(', ')})`;
   }
   /**
-   * SymPy's LaTeX form (the default function form).
+   * Formats the disjoint union in LaTeX as an operator applied to its constituent sets.
    *
    * @param p - The callback for printing child expressions.
    * @returns The formatted LaTeX source.

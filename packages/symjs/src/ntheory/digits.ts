@@ -71,5 +71,11 @@ export function countDigits(n: IntLike, bIn: IntLike = 10): Map<bigint, bigint> 
   return rv;
 }
 
-/** SymPy is_palindromic of an integer in base b, or of a sequence (one definition, in utilities). */
+/**
+ * Tests whether an integer's digits in the given base or the elements of a sequence read the
+ * same forwards and backwards.
+ *
+ * @see SymPy `sympy.ntheory.digits.is_palindromic`
+ * @see SymPy `sympy.utilities.iterables.is_palindromic`
+ */
 export { isPalindromic } from '../utilities/iterables';

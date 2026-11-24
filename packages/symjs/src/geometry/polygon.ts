@@ -716,9 +716,8 @@ export class PolygonNode extends GeometrySet {
 }
 
 /**
- * SymPy simplify(cond) == True for a condition of the arbitrary point: a
- * conjunction of comparisons of numbers, decided with the differences
- * simplified (a parameter at the end of a side compares equal).
+ * Tests whether a polygon side's parameter condition holds by simplifying the difference between
+ * the two sides of each comparison.
  */
 export function conditionHolds(c: Expr): boolean {
   if (c instanceof BoolAtom) return c.value;
@@ -1379,7 +1378,12 @@ function dedupe(vertices: readonly PointNode[]): PointNode[] {
   return nodup;
 }
 
-/** SymPy Polygon.__new__ for vertices: collinear vertices removed, then a Polygon, Triangle, Segment or Point. */
+/**
+ * Constructs a polygon from its vertices, removing consecutive duplicates and redundant
+ * collinear vertices. Three remaining vertices give a triangle, two a segment, and one a point.
+ *
+ * @see SymPy `sympy.geometry.polygon.Polygon`
+ */
 export function newPolygon(points: readonly PointInput[], opts: { evaluate?: boolean } = {}): GeometryEntity {
   const vertices = points.map((a) => toPoint(a, { dim: 2, ...opts }));
   const nodup = dedupe(vertices);
@@ -1398,7 +1402,12 @@ export function newPolygon(points: readonly PointInput[], opts: { evaluate?: boo
   return toPoint(at(nodup, 0));
 }
 
-/** SymPy Triangle.__new__ for three vertices: a Triangle, or the Segment or Point it degenerates to. */
+/**
+ * Constructs a triangle from three vertices, returning a segment or point when the triangle is
+ * degenerate.
+ *
+ * @see SymPy `sympy.geometry.polygon.Triangle`
+ */
 export function newTriangle(points: readonly PointInput[], opts: { evaluate?: boolean } = {}): GeometryEntity {
   const vertices = points.map((a) => toPoint(a, { dim: 2, ...opts }));
   const nodup: (PointNode | undefined)[] = dedupe(vertices);
@@ -1421,7 +1430,12 @@ export function newTriangle(points: readonly PointInput[], opts: { evaluate?: bo
   return toPoint(at(vs, 0));
 }
 
-/** SymPy RegularPolygon.__new__(c, r, n, rot=0). */
+/**
+ * Constructs a regular polygon from its center, circumradius, number of sides, and optional
+ * angle of rotation.
+ *
+ * @see SymPy `sympy.geometry.polygon.RegularPolygon`
+ */
 export function newRegularPolygon(cIn: PointInput, rIn: ExprLike, nIn: ExprLike, rotIn: ExprLike = 0): RegularPolygonNode {
   const [r, n, rot] = [rIn, nIn, rotIn].map(sympify);
   const c = as2D(toPoint(cIn, { dim: 2 }));

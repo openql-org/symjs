@@ -248,8 +248,10 @@ const isAlgebraicNumber = (e: Expr): boolean =>
   e instanceof Rational || e === S.I || ((e instanceof Add || e instanceof Mul) && e.args.every(isAlgebraicNumber)) || (e instanceof Pow && e.exp instanceof Rational && isAlgebraicNumber(e.base));
 
 /**
- * SymPy Expr.equals(0): exprEquals of the geometry, and for an algebraic
- * number that it cannot decide, SymPy's proof by its minimal polynomial.
+ * Tests whether an expression equals zero, using the minimal polynomial to resolve an
+ * inconclusive equality test for an algebraic number.
+ *
+ * @see SymPy `sympy.core.expr.Expr.equals`
  */
 export function equalsZero(e: Expr): boolean | undefined {
   const r = exprEquals(e, S.Zero);
@@ -267,8 +269,8 @@ export const compareStr = (a: string, b: string): number => (a < b ? -1 : 1);
 const VECTOR_ZERO_LATEX = '\\mathbf{\\hat{0}}';
 
 /**
- * SymPy LatexPrinter._print_BasisDependent: the terms (base instance,
- * measure) in printing order.
+ * Formats vector or dyadic components as a LaTeX sum in the supplied order, pairing each
+ * coefficient with its basis element.
  */
 export function basisLatex(items: readonly (readonly [Expr, Expr])[], print: (e: Expr) => string): string {
   const parts = items.map(([k, v]) => {
@@ -466,7 +468,10 @@ export class VectorMulNode extends Vector implements ScaledBase {
   }
 }
 
-/** SymPy BasisDependentMul._sympystr: the measure (in parentheses when it has (, - or +) times the base instance. */
+/**
+ * Formats a scalar coefficient times a basis element, enclosing the coefficient in parentheses
+ * if its text contains an opening parenthesis, plus sign, or minus sign.
+ */
 export function mulStr(measure: Expr, base: Expr, print: (e: Expr) => string): string {
   let m = print(measure);
   if (m.includes('(') || m.includes('-') || m.includes('+')) m = `(${m})`;
@@ -731,13 +736,23 @@ export class CrossNode extends Vector {
   }
 }
 
-/** SymPy LatexPrinter.parenthesize(e, PRECEDENCE['Mul']): sums and products (scaled vectors among them) in parentheses. */
+/**
+ * Prints a LaTeX operand in parentheses when its precedence is at or below multiplication,
+ * including vector sums and scaled vectors.
+ *
+ * @see SymPy `sympy.printing.latex.LatexPrinter.parenthesize`
+ */
 export function parenMul(e: Expr, print: (e: Expr) => string): string {
   const s = print(e);
   return e instanceof VectorAddNode || e instanceof VectorMulNode || latexPrecedence(e) <= PREC.MUL ? `\\left(${s}\\right)` : s;
 }
 
-/** SymPy PRECEDENCE_TRADITIONAL of Dot, Cross and the differential operators: just below a product. */
+/**
+ * The LaTeX precedence of dot products, cross products, and vector differential operators, one
+ * level below multiplication.
+ *
+ * @see SymPy `sympy.printing.precedence.PRECEDENCE_TRADITIONAL`
+ */
 export const OPERATOR_PRECEDENCE = PREC.MUL - 1;
 
 /** The precedence of an operand: the one a node declares for LaTeX, else the str precedence. */
@@ -867,7 +882,11 @@ const single = (v: VectorMulNode): [BaseVectorNode, Expr] => [v.baseInstance, v.
 /** Two coordinate systems of one tree (express can relate them). */
 export const connected = (a: CoordSysBase, b: CoordSysBase): boolean => a.rootSystem.key === b.rootSystem.key;
 
-/** SymPy cross(vect1, vect2): the cross product of two vectors. */
+/**
+ * Computes the cross product of two vectors.
+ *
+ * @see SymPy `sympy.vector.vector.cross`
+ */
 export function cross(vect1In: ExprLike, vect2In: ExprLike): Expr {
   const [vect1, vect2] = [sympify(vect1In), sympify(vect2In)];
   const t1 = sumTerms(vect1);
@@ -898,7 +917,11 @@ export function cross(vect1In: ExprLike, vect2In: ExprLike): Expr {
   return Cross(vect1, vect2);
 }
 
-/** SymPy dot(vect1, vect2): the dot product of two vectors. */
+/**
+ * Computes the dot product of two vectors.
+ *
+ * @see SymPy `sympy.vector.vector.dot`
+ */
 export function dot(vect1In: ExprLike, vect2In: ExprLike): Expr {
   const [vect1, vect2] = [sympify(vect1In), sympify(vect2In)];
   const t1 = sumTerms(vect1);
@@ -922,7 +945,11 @@ export function dot(vect1In: ExprLike, vect2In: ExprLike): Expr {
   return Dot(vect1, vect2);
 }
 
-/** SymPy Vector.outer: the dyadic sum of the products of the components. */
+/**
+ * Forms the dyadic outer product of two vectors by multiplying each pair of components.
+ *
+ * @see SymPy `sympy.vector.vector.Vector.outer`
+ */
 export function outer(vect1: Expr, vect2: Expr): Expr {
   if (!(vect1 instanceof Vector) || !(vect2 instanceof Vector)) throw new TypeError('Invalid operand for outer product');
   if (vect1 instanceof VectorZeroNode || vect2 instanceof VectorZeroNode) return dyadicZero();
@@ -947,10 +974,7 @@ export function coordSystems(e: Expr): CoordSysBase[] {
   return [...out.values()];
 }
 
-/**
- * SymPy Vector._projections: the components along the base vectors of the
- * system of the vector, zeros included.
- */
+/** Returns all three components along the coordinate system's base vectors, including zero components. */
 export function projections(v: Expr): [Expr, Expr, Expr] {
   if (v instanceof VectorZeroNode) return [S.Zero, S.Zero, S.Zero];
   const [i, j, k] = defined(coordSystems(v)[0], 'coordinate system').baseVectors();
@@ -1014,9 +1038,8 @@ function prettyFormOf(k: Expr): string {
 }
 
 /**
- * SymPy PrettyPrinter._print_BasisDependent: the terms (base instance,
- * measure) of a vector or dyadic side by side, each measure in parentheses
- * (unicode only, as in SymPy).
+ * Formats the components of a vector or dyadic side by side in Unicode, parenthesizing each
+ * coefficient other than one.
  */
 export function basisPretty(expr: BasisDependent, items: readonly (readonly [Expr, Expr])[], printer: PrettyPrinter): PrettyForm {
   if (!printer.useUnicode) throw new NotImplementedError('ASCII pretty printing of BasisDependent is not implemented');

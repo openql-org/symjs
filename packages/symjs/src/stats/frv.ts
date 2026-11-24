@@ -319,7 +319,12 @@ export class ConditionalFiniteDomain extends ConditionalDomain {
   }
 }
 
-/** SymPy ConditionalFiniteDomain(domain, condition): the domain itself for a true condition. */
+/**
+ * Restricts a finite random domain to outcomes satisfying the condition. A true condition gives
+ * the original domain.
+ *
+ * @see SymPy `sympy.stats.frv.ConditionalFiniteDomain`
+ */
 export function conditionalFiniteDomain(domain: RandomDomain, condition: Expr): RandomDomain {
   if (condition === S.true) return domain;
   return new ConditionalFiniteDomain([domain, condition]);

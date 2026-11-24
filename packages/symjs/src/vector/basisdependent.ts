@@ -318,8 +318,10 @@ export const vectorOperatorNames: ReadonlySet<string> = new Set(['Cross', 'Curl'
 const isZeroNumber = (e: Expr): boolean => isNum(e) && e.isZero;
 
 /**
- * SymPy BasisDependentAdd.__new__: the sum of the arguments, collecting the
- * components; a sum of one term is that term, an empty sum the zero.
+ * Adds vectors or dyadics by collecting coefficients of each basis element. The empty sum gives
+ * the family's zero, and a single surviving term represents the sum.
+ *
+ * @see SymPy `sympy.vector.basisdependent.BasisDependentAdd`
  */
 export function basisAdd(f: BasisFamily, args: readonly Expr[]): Expr {
   const components = new ExprMap<Expr>();
@@ -340,9 +342,8 @@ export function basisAdd(f: BasisFamily, args: readonly Expr[]): Expr {
 }
 
 /**
- * SymPy BasisDependentMul._new: the product of scalars and one base
- * instance, product or sum (distributed over the sum). Two quantities
- * cannot be multiplied; without any, the product is a plain Mul.
+ * Multiplies scalar factors and at most one vector or dyadic, distributing the scalar product
+ * over its components. With only scalar arguments it returns their ordinary product.
  */
 export function basisMul(f: BasisFamily, args: readonly Expr[]): Expr {
   let count = 0;
@@ -430,11 +431,25 @@ export abstract class CoordSysBase extends ExtensionExpr {
   abstract get rootSystem(): CoordSysBase;
   /** The origin of the system (a vector Point). */
   abstract get originPoint(): Expr;
-  /** SymPy rotation_matrix(other): the direction cosine matrix with respect to other. */
+  /**
+   * Returns the direction cosine matrix of this coordinate system with respect to the other
+   * system.
+   *
+   * @see SymPy `sympy.vector.coordsysrect.CoordSys3D.rotation_matrix`
+   */
   abstract rotationMatrix(other: CoordSysBase): Matrix;
-  /** SymPy scalar_map(other): the base scalars of this system in terms of those of other. */
+  /**
+   * Expresses the base scalars of this coordinate system in terms of the other system's base
+   * scalars.
+   *
+   * @see SymPy `sympy.vector.coordsysrect.CoordSys3D.scalar_map`
+   */
   abstract scalarMap(other: CoordSysBase): ExprMap<Expr>;
-  /** SymPy lame_coefficients. */
+  /**
+   * Returns the three Lamé scale factors of this coordinate system in coordinate order.
+   *
+   * @see SymPy `sympy.vector.coordsysrect.CoordSys3D.lame_coefficients`
+   */
   abstract lameCoefficients(): readonly [Expr, Expr, Expr];
   /** The position of this system's origin with respect to a point or system. */
   abstract positionWrt(other: Expr): Expr;
@@ -451,26 +466,50 @@ export interface ExpressOptions {
  * imports them locally): set by functions.ts and dyadic.ts when loaded.
  */
 export const vectorHooks: {
-  /** SymPy express(expr, system, system2, variables). */
+  /**
+   * Re-expresses a scalar, vector, or dyadic in the specified coordinate system, with an
+   * optional second system for the right basis of a dyadic.
+   *
+   * @see SymPy `sympy.vector.functions.express`
+   */
   express?: (expr: Expr, system: CoordSysBase, system2?: CoordSysBase, opts?: ExpressOptions) => Expr;
-  /** SymPy laplacian(expr). */
+  /**
+   * Computes the Laplacian of a scalar or vector field.
+   *
+   * @see SymPy `sympy.vector.functions.laplacian`
+   */
   laplacian?: (expr: Expr) => Expr;
-  /** SymPy BaseDyadic(v1, v2) of two base vectors. */
+  /**
+   * Forms the basis dyadic given by the outer product of two base vectors in the supplied order.
+   *
+   * @see SymPy `sympy.vector.dyadic.BaseDyadic`
+   */
   baseDyadic?: (v1: Expr, v2: Expr) => Expr;
-  /** SymPy directional_derivative(field, direction_vector). */
+  /**
+   * Differentiates a scalar or vector field along the given vector.
+   *
+   * @see SymPy `sympy.vector.functions.directional_derivative`
+   */
   directionalDerivative?: (field: Expr, direction: Expr) => Expr;
 } = {};
 
 /**
- * SymPy Del, as the lower vector modules see it (implemented by Del in
- * deloperator.ts): `v.dot(delop)` is the directional derivative operator.
+ * Represents the del operator. Taking its dot product with a vector on the left gives the
+ * directional derivative operator along that vector.
+ *
+ * @see SymPy `sympy.vector.deloperator.Del`
  */
 export abstract class DelBase extends ExtensionExpr {
   /** Marks the Del operator (SymPy isinstance(other, Del)). */
   readonly isDelOperator = true as const;
 }
 
-/** SymPy express (registered by functions.ts). */
+/**
+ * Expresses a scalar, vector, or dyadic in the requested coordinate system using the registered
+ * implementation.
+ *
+ * @see SymPy `sympy.vector.functions.express`
+ */
 export function expressHook(expr: Expr, system: CoordSysBase, system2?: CoordSysBase, opts?: ExpressOptions): Expr {
   return defined(vectorHooks.express, 'express')(expr, system, system2, opts);
 }
