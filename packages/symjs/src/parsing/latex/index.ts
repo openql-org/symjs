@@ -12,7 +12,9 @@ import type { LatexResult } from './tree';
 
 /** Options of SymPy parse_latex. The ANTLR grammar is the default. */
 export interface ParseLatexOptions {
+  /** Require the ANTLR backend to consume the entire input. */
   readonly strict?: boolean;
+  /** Select the ANTLR or Lark grammar. */
   readonly backend?: 'antlr' | 'lark';
 }
 
@@ -38,7 +40,21 @@ function checkMatrixDelimiters(source: string): void {
   if (stack.length) throw new LaTeXParsingError('Missing matrix end delimiter');
 }
 
-/** Convert LaTeX to an expression; Lark preserves ambiguous inputs as explicit trees. */
+/**
+ * Convert LaTeX to an expression; Lark preserves ambiguous inputs as explicit trees.
+ *
+ * @param source - The source text to parse.
+ * @param options - The backend and parsing settings in {@link ParseLatexOptions}.
+ * @returns The parsed expression or a tree retaining ambiguous parses when using Lark.
+ * @throws LaTeXParsingError when the input cannot be parsed or transformed into a mathematical expression.
+ * @see SymPy `sympy.parsing.latex.parse_latex`
+ * @example
+ * ```ts
+ * import { parseLatex } from '@symjs/symjs/parsing';
+ *
+ * parseLatex('\\frac {1 + \\sqrt {\\a}} {\\b}'); // => (sqrt(a) + 1)/b
+ * ```
+ */
 export function parseLatex(source: string, options?: ParseLatexOptions & { backend?: 'antlr' }): Expr;
 export function parseLatex(source: string, options: ParseLatexOptions): LatexResult;
 export function parseLatex(source: string, options: ParseLatexOptions = {}): LatexResult {

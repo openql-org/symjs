@@ -125,7 +125,20 @@ function integerReduce(name: BName, n: number, z: Expr): Expr {
   return hi;
 }
 
-/** SymPy besselsimp. */
+/**
+ * Simplifies expressions containing Bessel functions using order relations and recurrences.
+ *
+ * @param ex - The expression to transform.
+ * @returns The expression after simplifying Bessel functions.
+ * @see SymPy `sympy.simplify.simplify.besselsimp`
+ * @example
+ * ```ts
+ * import { besselsimp, ex } from '@symjs/symjs';
+ *
+ * besselsimp(ex`besseli(-1/2, z)`); // => sqrt(2)*cosh(z)/(sqrt(pi)*sqrt(z))
+ * besselsimp(ex`besselj(nu, z*exp_polar(I*pi))`); // => exp(I*pi*nu)*besselj(nu, z)
+ * ```
+ */
 export function besselsimp(ex: ExprLike): Expr {
   const orig = sympify(ex);
   let e = mapBottomUp(orig, (t) => (isBessel(t) ? (polarRule(t) ?? t) : t));

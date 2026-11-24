@@ -27,14 +27,42 @@ function factorialProduct(x: ExprLike | Poly, kIn: ExprLike, direction: 1 | -1):
   return k.isNegative ? pow(product.asExpr(), -1) : product;
 }
 
-/** Falling factorial x*(x-1)*...; polynomial factors shift the generator. */
+/**
+ * Falling factorial x*(x-1)*...; polynomial factors shift the generator.
+ *
+ * @param x - The argument of the function.
+ * @param k - The number of factors.
+ * @returns The falling factorial.
+ * @see SymPy `sympy.functions.combinatorial.factorials.FallingFactorial`
+ * @example
+ * ```ts
+ * import { ex, ff } from '@symjs/symjs';
+ *
+ * ff(5, 5); // => 120
+ * ff(ex`x`, 0); // => 1
+ * ```
+ */
 export function ff(x: ExprLike, k: ExprLike): Expr;
 export function ff(x: ExprLike | Poly, k: ExprLike): Expr | Poly;
 export function ff(x: ExprLike | Poly, k: ExprLike): Expr | Poly {
   return factorialProduct(x, k, -1);
 }
 
-/** Rising factorial x*(x+1)*...; polynomial factors shift the generator. */
+/**
+ * Rising factorial x*(x+1)*...; polynomial factors shift the generator.
+ *
+ * @param x - The argument of the function.
+ * @param k - The number of factors.
+ * @returns The rising factorial.
+ * @see SymPy `sympy.functions.combinatorial.factorials.RisingFactorial`
+ * @example
+ * ```ts
+ * import { ex, rf } from '@symjs/symjs';
+ *
+ * rf(1, 5); // => 120
+ * rf(ex`x`, 0); // => 1
+ * ```
+ */
 export function rf(x: ExprLike, k: ExprLike): Expr;
 export function rf(x: ExprLike | Poly, k: ExprLike): Expr | Poly;
 export function rf(x: ExprLike | Poly, k: ExprLike): Expr | Poly {

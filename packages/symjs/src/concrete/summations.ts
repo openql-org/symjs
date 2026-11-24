@@ -55,7 +55,20 @@ registerRewrite('Concrete', 'Sum', (args, self) => self instanceof Concrete && s
 registerRewrite('Concrete', 'Product', (args, self) => self instanceof Concrete && self.kind2 === 'Sum' && fact(first(args), 'extended_real') === true
   ? log(new Concrete('Product', [exp(first(args)), ...args.slice(1)])) : undefined);
 
-/** Evaluate an infinite rational sum by residues, or return NoMatch. */
+/**
+ * Evaluate an infinite rational sum by residues, or return NoMatch.
+ *
+ * @param f - The summand.
+ * @param limits - The triple `[k, a, b]` giving the index and inclusive endpoints.
+ * @returns The value of the infinite sum, or `NoMatch` when the residue method does not apply.
+ * @see SymPy `sympy.concrete.summations.eval_sum_residue`
+ * @example
+ * ```ts
+ * import { evalSumResidue, ex, oo, symbols } from '@symjs/symjs';
+ *
+ * evalSumResidue(ex`1/k**2`, [symbols('k')[0], 1, oo]); // => pi**2/6
+ * ```
+ */
 export function evalSumResidue(f: ExprLike, [k, a, b]: readonly [Sym, ExprLike, ExprLike]): Expr | NoMatchResult {
   const upper = sympify(b);
   if (!isOo(upper)) return NoMatch;
@@ -461,7 +474,15 @@ function telescopicAdd(f: Expr, k: Sym, a: Expr, b: Expr): Expr | undefined {
   return isNoMatch(result) ? undefined : result;
 }
 
-/** Sum two terms whose translates cancel, or return NoMatch. */
+/**
+ * Sum two terms whose translates cancel, or return NoMatch.
+ *
+ * @param left - The first term of the telescoping pair.
+ * @param right - The second term of the telescoping pair.
+ * @param limits - The index and its inclusive lower and upper bounds.
+ * @returns The matching result, or `NoMatch` when the required form is absent.
+ * @see SymPy `sympy.concrete.summations.telescopic`
+ */
 export function telescopic(left: ExprLike, right: ExprLike, limits: readonly [Sym, ExprLike, ExprLike]): Expr | NoMatchResult {
   const L = sympify(left), R = sympify(right), [k] = limits;
   if (L instanceof Add || R instanceof Add) return NoMatch;
@@ -480,7 +501,23 @@ export function telescopic(left: ExprLike, right: ExprLike, limits: readonly [Sy
   return isNegative(distance) === true ? telescopicDirect(R, L, mul(-1, distance), limits) : telescopicDirect(L, R, distance, limits);
 }
 
-/** Boundary terms left after cancelling a telescoping sum with a positive integer shift. */
+/**
+ * Boundary terms left after cancelling a telescoping sum with a positive integer shift.
+ *
+ * @param L - The first term of the telescoping pair.
+ * @param R - The second term of the telescoping pair.
+ * @param nIn - The positive index shift between the two terms.
+ * @param limits - The index and its inclusive lower and upper bounds.
+ * @returns The sum of the surviving boundary terms.
+ * @throws RangeError when the shift is not a nonnegative integer.
+ * @see SymPy `sympy.concrete.summations.telescopic_direct`
+ * @example
+ * ```ts
+ * import { ex, symbols, telescopicDirect } from '@symjs/symjs';
+ *
+ * telescopicDirect(ex`1/k`, ex`-1/(k + 1)`, 1, [symbols('k')[0], 1, 3]); // => 3/4
+ * ```
+ */
 export function telescopicDirect(L: ExprLike, R: ExprLike, nIn: ExprLike, limits: readonly [Sym, ExprLike, ExprLike]): Expr {
   const shift = sympify(nIn);
   if (!(shift instanceof Rational && shift.isInteger) || shift.isNegative || shift.p > BigInt(Number.MAX_SAFE_INTEGER)) throw new RangeError('telescopicDirect requires a nonnegative integer shift');
@@ -831,7 +868,20 @@ export function doitConcrete(c: Concrete): Expr {
   return c.kind2 === 'Sum' ? summation(c.function, ...lims) : productDeep(c.function, lims);
 }
 
-/** Reverse the order of the given limits (by index or variable), SymPy reverse_order. */
+/**
+ * Reverse the order of the given limits (by index or variable), SymPy reverse_order.
+ *
+ * @param c - The unevaluated sum or product.
+ * @param which - The indices or variables of the limits to reverse.
+ * @returns The equivalent sum or product with the selected bounds reversed.
+ * @see SymPy `sympy.concrete.summations.Sum.reverse_order`
+ * @example
+ * ```ts
+ * import { Concrete, ex, reverseOrder } from '@symjs/symjs';
+ *
+ * reverseOrder(new Concrete('Sum', [ex`k`, ex`k`, ex`1`, ex`3`]), 0); // => Sum(-k, (k, 4, 0))
+ * ```
+ */
 export function reverseOrder(c: Concrete, ...which: (number | Sym)[]): Expr {
   // as in SymPy, each selected limit is reversed once however often it is named
   const sel = new Set(which.map((w) => (typeof w === 'number' ? w : c.limits.findIndex(([k]) => k.key === w.key))));
@@ -972,8 +1022,23 @@ export function sumIsAbsolutelyConvergent(c: Concrete): boolean | undefined {
 }
 
 /**
- * SymPy Sum.euler_maclaurin(m, n): [approximation, error estimate] by the
+ * [approximation, error estimate] by the
  * Euler-Maclaurin formula with m explicit leading terms and n correction terms.
+ *
+ * @param sum - The unevaluated sum to approximate.
+ * @param mIn - The number of leading terms to sum explicitly.
+ * @param n - The number of correction terms.
+ * @param eps - The requested error threshold.
+ * @returns The approximation and estimated absolute error.
+ * @throws TypeError when the expression is not a sum with one limit.
+ * @remarks SymPy returns the tuple `(6, 0)` for the example below.
+ * @see SymPy `sympy.concrete.summations.Sum.euler_maclaurin`
+ * @example
+ * ```ts
+ * import { Concrete, eulerMaclaurin, ex } from '@symjs/symjs';
+ *
+ * eulerMaclaurin(new Concrete('Sum', [ex`k`, ex`k`, ex`1`, ex`3`])); // => [6, 0]
+ * ```
  */
 export function eulerMaclaurin(sum: Concrete, mIn = 0, n = 0, eps = 0): [Expr, Expr] {
   let m = mIn;

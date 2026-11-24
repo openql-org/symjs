@@ -174,7 +174,23 @@ function minimalSolution(eqs: readonly Expr[], vars: readonly Sym[]): Map<string
   return bestsol;
 }
 
-/** SymPy ratsimpmodprime(expr, G, *gens, order=...): a simpler fraction equal to expr modulo the ideal of G (G a Groebner basis of a prime ideal). */
+/**
+ * A simpler fraction equal to expr modulo the ideal of G (G a Groebner basis of a prime ideal).
+ *
+ * @param exprIn - The input expression.
+ * @param G - A Gröbner basis of the prime ideal.
+ * @param generators - The polynomial generators in order.
+ * @param opts - `order` sets the monomial order, `domain` the coefficient domain and `quick` the search strategy.
+ * @returns A simpler fraction equal to expr modulo the ideal of G (G a Groebner basis of a prime ideal).
+ * @throws RangeError when finite-field reduction requires a univariate basis or the ideal does not support the requested reduction.
+ * @see SymPy `sympy.simplify.ratsimp.ratsimpmodprime`
+ * @example
+ * ```ts
+ * import { ex, ratsimpmodprime, symbols } from '@symjs/symjs';
+ *
+ * ratsimpmodprime(ex`x**2`, [ex`x**2 - 1`], [symbols('x')[0]]); // => 1
+ * ```
+ */
 export function ratsimpmodprime(exprIn: ExprLike, G: readonly ExprLike[], generators: readonly Sym[] = [], opts: { order?: MonomialOrder; quick?: boolean; domain?: string } = {}): Expr {
   const order = opts.order ?? 'grevlex';
   const quick = opts.quick ?? true;

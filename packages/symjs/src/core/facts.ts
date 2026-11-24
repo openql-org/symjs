@@ -208,11 +208,22 @@ function factExpression(text: string, negate = false): Clauses {
   return clauses;
 }
 
-/** Compile user-defined implications and equivalences into a forward-chaining fact system. */
+/**
+ * Compile user-defined implications and equivalences into a forward-chaining fact system.
+ *
+ * @see SymPy `sympy.core.facts.FactRules`
+ */
 export class FactRules {
+  /** The names of facts mentioned in the rule system. */
   readonly definedFacts: ReadonlySet<string>;
   private readonly clauses: Clauses;
 
+  /**
+   * Creates a `FactRules`.
+   *
+   * @param rules - The implications and equivalences between named facts.
+   * @throws RangeError when a rule is invalid or the implications are inconsistent.
+   */
   constructor(rules: string | Iterable<string>) {
     const statements = typeof rules === 'string' ? rules.split(/\r?\n/) : [...rules];
     const clauses: string[][] = [];
@@ -253,7 +264,13 @@ export class FactRules {
     this.clauses = clauses;
   }
 
-  /** Derive the consequences of the supplied fact values. */
+  /**
+   * Derive the consequences of the supplied fact values.
+   *
+   * @param facts - The known fact values.
+   * @returns The supplied facts together with their implied values.
+   * @throws RangeError when the facts imply contradictory values.
+   */
   deduce(facts: Readonly<Record<string, boolean>>): Map<string, boolean> {
     const known = new Map(Object.entries(facts));
     let changed = true;

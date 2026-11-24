@@ -129,28 +129,60 @@ import { expsimp as _expsimp_ } from './simplify/trigsimp';
 import { exptotrig as _exptotrig_ } from './simplify/trigsimp';
 import { combineExp as _combineExp_ } from './simplify/trigsimp';
 
-/** @deprecated Internal; removed from the public API in 1.0. */
+/**
+ * The registered rules for rewriting function applications.
+ *
+ * @deprecated Internal; removed from the public API in 1.0.
+ */
 export const rewriteRules = _rewriteRules_;
 
-/** @deprecated Internal; removed from the public API in 1.0. */
+/**
+ * Attaches a coefficient to an expression while preserving its additive grouping.
+ *
+ * @deprecated Internal; removed from the public API in 1.0.
+ */
 export const keepCoeffSympy = _keepCoeffSympy_;
 
-/** @deprecated Internal; removed from the public API in 1.0. */
+/**
+ * Builds a sum without evaluating its terms.
+ *
+ * @deprecated Internal; removed from the public API in 1.0.
+ */
 export const unevaluatedAdd = _unevaluatedAdd_;
 
-/** @deprecated Internal; removed from the public API in 1.0. */
+/**
+ * Rewrites an expression in terms of exponentials.
+ *
+ * @deprecated Internal; removed from the public API in 1.0.
+ */
 export const rewriteExp = _rewriteExp_;
 
-/** @deprecated Internal; removed from the public API in 1.0. */
+/**
+ * Rewrites an expression in terms of trigonometric functions.
+ *
+ * @deprecated Internal; removed from the public API in 1.0.
+ */
 export const rewriteTrig = _rewriteTrig_;
 
-/** @deprecated Internal; removed from the public API in 1.0. */
+/**
+ * Simplifies products and powers of exponentials.
+ *
+ * @deprecated Internal; removed from the public API in 1.0.
+ */
 export const expsimp = _expsimp_;
 
-/** @deprecated Internal; removed from the public API in 1.0. */
+/**
+ * Rewrites exponentials using trigonometric or hyperbolic functions.
+ *
+ * @deprecated Internal; removed from the public API in 1.0.
+ */
 export const exptotrig = _exptotrig_;
 
-/** @deprecated Internal; removed from the public API in 1.0. */
+/**
+ * Combines exponential factors into a single exponential.
+ *
+ * @deprecated Internal; removed from the public API in 1.0.
+ */
 export const combineExp = _combineExp_;
 
 impl.isHypergeometric = isHypergeometricOf;

@@ -147,14 +147,29 @@ function opCompatible(op1: FullForm, op2: string): boolean {
  * An instance converts a string of a Wolfram Mathematica expression to a
  * SymPy expression (SymPy MathematicaParser), in three stages: the
  * tokenizer, the FullForm syntax tree and the conversion of its nodes.
+ *
+ * @see SymPy `sympy.parsing.mathematica.MathematicaParser`
  */
 export class MathematicaParser {
-  /** The expression for the Mathematica code s. */
+  /**
+   * The expression for the Mathematica code s.
+   *
+   * @param s - The Mathematica source text.
+   * @returns The expression for the Mathematica code s.
+   * @throws SyntaxError when the input has invalid Wolfram syntax.
+   * @see SymPy `sympy.parsing.mathematica.MathematicaParser.parse`
+   */
   parse(s: string): Expr {
     return this.fromFullformlistToSympy(this.fromTokensToFullformlist(this.fromMathematicaToTokens(s)));
   }
 
-  /** The tokens of the code: strings become ['_Str', text] nodes, comments are removed. @internal */
+  /**
+   * The tokens of the code: strings become ['_Str', text] nodes, comments are removed.
+   *
+   * @internal
+   * @param codeIn - The source text to parse.
+   * @returns The tokens of the code: strings become ['_Str', text] nodes, comments are removed.
+   */
   fromMathematicaToTokens(codeIn: string): FullForm[] {
     let code = codeIn;
     const splits: FullForm[] = [];
@@ -191,7 +206,13 @@ export class MathematicaParser {
     return tokens;
   }
 
-  /** The FullForm syntax tree of the tokens. @internal */
+  /**
+   * The FullForm syntax tree of the tokens.
+   *
+   * @internal
+   * @param tokens - The tokens in source order.
+   * @returns The FullForm syntax tree of the tokens.
+   */
   fromTokensToFullformlist(tokens: FullForm[]): FullForm {
     // the open enclosures, each with the parsed arguments (an argument replaces its tokens after a comma)
     const stack: FullForm[] = [[]];
@@ -278,7 +299,14 @@ export class MathematicaParser {
     }
   }
 
-  /** The FullForm node of tokens whose enclosures are already parsed. @internal */
+  /**
+   * The FullForm node of tokens whose enclosures are already parsed.
+   *
+   * @internal
+   * @param tokens - The tokens in source order.
+   * @param insideEnclosure - Whether the tokens lie within a delimited expression.
+   * @returns The FullForm node of tokens whose enclosures are already parsed.
+   */
   parseAfterBraces(tokens: FullForm[], insideEnclosure = false): FullForm {
     let changed = false;
     const lines: FullForm[] = [];
@@ -346,7 +374,13 @@ export class MathematicaParser {
     return at(tokens, 0);
   }
 
-  /** The expression of a FullForm syntax tree. @internal */
+  /**
+   * The expression of a FullForm syntax tree.
+   *
+   * @internal
+   * @param tree - The grammar tree to convert.
+   * @returns The expression of a FullForm syntax tree.
+   */
   fromFullformlistToSympy(tree: FullForm): Expr {
     const recurse = (e: FullForm): Expr => {
       // an atom is sympified (a name is a symbol, a number a number)
@@ -509,6 +543,18 @@ const ATOM_CONVERSIONS: ReadonlyMap<string, Expr> = /* @__PURE__ */ new Map([
  *
  * Example: parseMathematica('Sin[x]^2 Tan[y]') is sin(x)**2*tan(y);
  * parseMathematica('x_.') is Optional(Pattern(x, Blank())).
+ *
+ * @param s - The source text to parse.
+ * @returns The expression of a string of Wolfram Mathematica code (SymPy parse_mathematica).
+ * @throws SyntaxError when the input has invalid Wolfram syntax.
+ * @see SymPy `sympy.parsing.mathematica.parse_mathematica`
+ * @example
+ * ```ts
+ * import { parseMathematica } from '@symjs/symjs';
+ *
+ * parseMathematica('x*(a + b)'); // => x*(a + b)
+ * parseMathematica('F[7,5,3]'); // => F(7, 5, 3)
+ * ```
  */
 export function parseMathematica(s: string): Expr {
   return new MathematicaParser().parse(s);

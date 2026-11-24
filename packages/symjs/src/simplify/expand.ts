@@ -170,19 +170,31 @@ export function expandMulRounds(e: ExprLike, maxRounds: number): Expr {
 // SymPy-compatible expand() with hints
 // ---------------------------------------------------------------------------
 
+/** The expansion rules to apply and how far to descend into the expression. */
 export interface ExpandHints {
+  /** Reduce integer coefficients modulo this value. */
   modulus?: ExprLike;
+  /** Apply the rules inside function arguments. */
   deep?: boolean;
+  /** Distribute products over sums. */
   mul?: boolean;
+  /** Expand positive integer powers of sums. */
   multinomial?: boolean;
+  /** Split powers with additive exponents. */
   power_exp?: boolean;
+  /** Split powers of products. */
   power_base?: boolean;
+  /** Expand logarithms of products and powers. */
   log?: boolean;
   /** Split logarithms of integers into logarithms of their factors. */
   factor?: boolean;
+  /** Expand into real and imaginary parts. */
   complex?: boolean;
+  /** Expand trigonometric sums and multiple angles. */
   trig?: boolean;
+  /** Apply power and logarithm identities without requiring their usual sign assumptions. */
   force?: boolean;
+  /** Enable node-specific basic expansion rules. */
   basic?: boolean;
   /** Expand special functions into simpler ones (SymPy func=True). */
   func?: boolean;
@@ -695,12 +707,68 @@ export function expandMulOnly(e: Expr): Expr {
   }
 }
 
+/**
+ * Distributes multiplication over addition.
+ *
+ * @param e - The input expression.
+ * @returns The expanded expression.
+ * @see SymPy `sympy.core.function.expand_mul`
+ * @example
+ * ```ts
+ * import { ex, expandMul } from '@symjs/symjs';
+ *
+ * expandMul(ex`x*(x + 1)`); // => x**2 + x
+ * ```
+ */
 export const expand_mul = (e: ExprLike): Expr =>
   expand(e, { basic: false, power_exp: false, power_base: false, log: false, multinomial: false });
+/**
+ * Expands powers of sums by the multinomial theorem.
+ *
+ * @param e - The input expression.
+ * @returns The expanded expression.
+ * @see SymPy `sympy.core.function.expand_multinomial`
+ * @example
+ * ```ts
+ * import { ex, expandMultinomial } from '@symjs/symjs';
+ *
+ * expandMultinomial(ex`(x + 1)**2`); // => x**2 + 2*x + 1
+ * ```
+ */
 export const expand_multinomial = (e: ExprLike): Expr =>
   expand(e, { basic: false, power_exp: false, power_base: false, log: false, mul: false });
+/**
+ * Splits powers with additive exponents into products when the base permits it.
+ *
+ * @param e - The input expression.
+ * @param force - Whether to apply identities without checking the usual assumptions.
+ * @returns The expanded expression.
+ * @see SymPy `sympy.core.function.expand_power_exp`
+ * @example
+ * ```ts
+ * import { ex, expandPowerExp } from '@symjs/symjs';
+ *
+ * expandPowerExp(ex`3**(y + 2)`); // => 9*3**y
+ * expandPowerExp(ex`x**(y + 2)`); // => x**(y + 2)
+ * ```
+ */
 export const expand_power_exp = (e: ExprLike, force = false): Expr =>
   expand(e, { basic: false, power_base: false, log: false, mul: false, multinomial: false, force });
+/**
+ * Splits powers of products into products of powers when assumptions permit it.
+ *
+ * @param e - The input expression.
+ * @param opts - `force` permits splitting without positivity assumptions and `deep` controls recursion.
+ * @returns The expanded expression.
+ * @see SymPy `sympy.core.function.expand_power_base`
+ * @example
+ * ```ts
+ * import { ex, expandPowerBase, separate } from '@symjs/symjs';
+ *
+ * expandPowerBase(ex`(2*x)**y`); // => 2**y*x**y
+ * separate(ex`(2*x)**y`); // => 2**y*x**y
+ * ```
+ */
 export const expand_power_base = (e: ExprLike, opts: { force?: boolean; deep?: boolean } = {}): Expr =>
   expand(e, { basic: false, power_exp: false, log: false, mul: false, multinomial: false, ...opts });
 function integerLogArgument(e: Expr): Rational | undefined {
@@ -727,6 +795,21 @@ function expandLogRatio(e: Expr): Expr {
   return expandMulOnly(mul(e, pow(n, -1), d, ratio));
 }
 
+/**
+ * Expands logarithms of products and powers when assumptions permit it.
+ *
+ * @param e - The input expression.
+ * @param options - A force flag or an object with `force` to ignore sign conditions, `deep` to recurse and `factor` to factor integer arguments.
+ * @param legacy - The optional `factor` and `deep` settings when the preceding argument is the Boolean force flag.
+ * @returns The expanded expression.
+ * @see SymPy `sympy.core.function.expand_log`
+ * @example
+ * ```ts
+ * import { ex, expandLog } from '@symjs/symjs';
+ *
+ * expandLog(ex`log(x*y)`, { force: true }); // => log(x) + log(y)
+ * ```
+ */
 export function expand_log(e: ExprLike, options: boolean | { force?: boolean; factor?: boolean; deep?: boolean } = false, legacy: { factor?: boolean; deep?: boolean } = {}): Expr {
   const opts = typeof options === 'boolean' ? { force: options, ...legacy } : options;
   const expandLogs = (x: ExprLike, factor: boolean): Expr =>
@@ -747,8 +830,35 @@ export function expand_log(e: ExprLike, options: boolean | { force?: boolean; fa
   }
   return expandLogs(expression, opts.factor === true);
 }
+/**
+ * Expands trigonometric functions of sums and multiple angles.
+ *
+ * @param e - The input expression.
+ * @returns The expanded expression.
+ * @see SymPy `sympy.core.function.expand_trig`
+ * @example
+ * ```ts
+ * import { ex, expandTrig } from '@symjs/symjs';
+ *
+ * expandTrig(ex`(x + y)*sin(x + y)`); // => (x + y)*(sin(x)*cos(y) + sin(y)*cos(x))
+ * ```
+ */
 export const expand_trig = (e: ExprLike): Expr =>
   expand(e, { basic: false, power_exp: false, power_base: false, log: false, mul: false, multinomial: false, trig: true });
+/**
+ * Expands an expression in terms of its real and imaginary parts.
+ *
+ * @param e - The input expression.
+ * @returns The expanded expression.
+ * @see SymPy `sympy.core.function.expand_complex`
+ * @example
+ * ```ts
+ * import { ex, expandComplex } from '@symjs/symjs';
+ *
+ * expandComplex(ex`sqrt(I)`); // => sqrt(2)/2 + sqrt(2)*I/2
+ * expandComplex(ex`exp(z)`); // => I*exp(re(z))*sin(im(z)) + exp(re(z))*cos(im(z))
+ * ```
+ */
 export const expand_complex = (e: ExprLike): Expr =>
   expand(e, { basic: false, complex: true, power_exp: false, power_base: false, log: false, mul: false, multinomial: false });
 

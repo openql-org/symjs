@@ -30,7 +30,23 @@ const negExponent = (x: Expr): boolean => {
   return c.isNegative;
 };
 
-/** Split e into [numerator, denominator]. */
+/**
+ * Split e into [numerator, denominator].
+ *
+ * @remarks
+ * For `fraction(x)`, SymPy displays `(x, 1)`. For `fraction(x/y)`, SymPy displays `(x, y)`.
+ * @param ex - The expression to transform.
+ * @param opts - `exact` preserves unevaluated factors when splitting numerator and denominator.
+ * @returns The numerator and denominator, in that order.
+ * @see SymPy `sympy.simplify.radsimp.fraction`
+ * @example
+ * ```ts
+ * import { ex, fraction } from '@symjs/symjs';
+ *
+ * fraction(ex`x`); // => [x, 1]
+ * fraction(ex`x/y`); // => [x, y]
+ * ```
+ */
 export function fraction(ex: ExprLike, opts: { exact?: boolean } = {}): [Expr, Expr] {
   const e = sympify(ex);
   // SymPy Mul.make_args: the factors of a product, a MatMul included
@@ -67,12 +83,26 @@ export function fraction(ex: ExprLike, opts: { exact?: boolean } = {}): [Expr, E
   return [mul(...num), mul(...den)];
 }
 
-/** SymPy numer(expr, exact=False): the numerator of fraction(expr). */
+/**
+ * The numerator of fraction(expr).
+ *
+ * @param ex - The expression to transform.
+ * @param opts - `exact` preserves unevaluated factors when splitting numerator and denominator.
+ * @returns The numerator of fraction(expr).
+ * @see SymPy `sympy.simplify.radsimp.numer`
+ */
 export function numer(ex: ExprLike, opts: { exact?: boolean } = {}): Expr {
   return fraction(ex, opts)[0];
 }
 
-/** SymPy denom(expr, exact=False): the denominator of fraction(expr). */
+/**
+ * The denominator of fraction(expr).
+ *
+ * @param ex - The expression to transform.
+ * @param opts - `exact` preserves unevaluated factors when splitting numerator and denominator.
+ * @returns The denominator of fraction(expr).
+ * @see SymPy `sympy.simplify.radsimp.denom`
+ */
 export function denom(ex: ExprLike, opts: { exact?: boolean } = {}): Expr {
   return fraction(ex, opts)[1];
 }
@@ -485,7 +515,19 @@ const lexGreater = (a: readonly number[], b: readonly number[]): boolean =>
 
 impl.fraction = fraction;
 
-/** SymPy ratsimp: polynomial part plus a cancelled remainder over a single denominator. */
+/**
+ * Polynomial part plus a cancelled remainder over a single denominator.
+ *
+ * @param ex - The expression to transform.
+ * @returns The simplified rational expression.
+ * @see SymPy `sympy.simplify.ratsimp.ratsimp`
+ * @example
+ * ```ts
+ * import { ex, ratsimp } from '@symjs/symjs';
+ *
+ * ratsimp(ex`1/y + 1/x`); // => (x + y)/(x*y)
+ * ```
+ */
 export function ratsimp(ex: ExprLike): Expr {
   const c = cancel(sympify(ex));
   const [f, g] = fraction(c);

@@ -34,7 +34,19 @@ function nodeCount(e: Expr): number {
   return n;
 }
 
-/** SymPy ordered(): by node count, then default_sort_key. */
+/**
+ * by node count, then default_sort_key.
+ *
+ * @param xs - The operands, in order.
+ * @returns The expressions in canonical order.
+ * @see SymPy `sympy.core.sorting.ordered`
+ * @example
+ * ```ts
+ * import { ex, ordered } from '@symjs/symjs';
+ *
+ * ordered([ex`x**2`, ex`x`, ex`1`]); // => [1, x, x**2]
+ * ```
+ */
 export function ordered(xs: readonly Expr[]): Expr[] {
   return [...xs].sort((a, b) => nodeCount(a) - nodeCount(b) || compareKeys(sortKey(a), sortKey(b)));
 }
@@ -433,6 +445,20 @@ function walk(e: Expr, f: (e: Expr) => Expr, simultaneous: boolean): Expr {
 /**
  * Replace matching subexpressions (SymPy Basic.replace), bottom-up.
  * With `map` returns the replaced subexpressions as well.
+ *
+ * @param exprIn - The input expression.
+ * @param query - The pattern, function name, class or predicate to match.
+ * @param value - The replacement expression, head or callback.
+ * @param opts - `exact` restricts matching, `map` returns the replacements, and `simultaneous` controls revisiting them. `apply` and `applyType` build replacement heads.
+ * @returns The transformed expression, with replacement pairs when requested.
+ * @throws TypeError when the replacement is incompatible with the query.
+ * @see SymPy `sympy.core.basic.Basic.replace`
+ * @example
+ * ```ts
+ * import { ex, replace } from '@symjs/symjs';
+ *
+ * replace(ex`Heaviside(x, 1/2) + 1`, ex`Heaviside(x, 1/2)`, ex`Heaviside(x, 1)`); // => Heaviside(x, 1) + 1
+ * ```
  */
 export function replace(
   exprIn: ExprLike,
@@ -502,7 +528,14 @@ export function replace(
 }
 
 /** All subexpressions satisfying the query (SymPy Basic.find). */
-/** SymPy Basic.count(query): the number of subexpressions (with repetition) matching the query. */
+/**
+ * The number of subexpressions (with repetition) matching the query.
+ *
+ * @param exprIn - The input expression.
+ * @param query - The pattern, function name, class or predicate to match.
+ * @returns The number of matching occurrences.
+ * @see SymPy `sympy.core.basic.Basic.count`
+ */
 export function count(exprIn: ExprLike, query: Query): number {
   const expr = sympify(exprIn);
   const q: (e: Expr) => boolean =
@@ -522,6 +555,18 @@ export function count(exprIn: ExprLike, query: Query): number {
   return n;
 }
 
+/**
+ * Finds matching subexpressions, or looks up a free symbol by name in an equation.
+ *
+ * @param name - The symbolic name or names.
+ * @param equation - The expression whose free symbols are searched.
+ * @param exprIn - The input expression.
+ * @param query - The pattern, function name, class or predicate to match.
+ * @returns The matching subexpressions, or the unique symbol in a name lookup.
+ * @throws RangeError when the name does not identify exactly one free symbol.
+ * @throws TypeError when a name lookup is attempted without an expression.
+ * @see SymPy `sympy.core.basic.Basic.find`
+ */
 export function find(name: string, equation: Expr): Sym;
 export function find(exprIn: ExprLike, query: Query): Expr[];
 export function find(exprIn: ExprLike | string, query: Query): Expr[] | Sym {
@@ -648,8 +693,19 @@ export function countOpsMap(exprIn: ExprLike): Map<string, number> {
 const sympyName = (n: string): string => ({ abs: 'Abs', ff: 'FallingFactorial', rf: 'RisingFactorial' })[n] ?? n;
 
 /**
- * SymPy count_ops(expr): the total number of operations; with
+ * The total number of operations; with
  * `{ visual: true }` the operations as an expression such as 2*ADD + SIN.
+ *
+ * @param exprIn - The input expression.
+ * @param opts - `visual` returns a symbolic sum of operation names.
+ * @returns The operation count or its symbolic decomposition.
+ * @see SymPy `sympy.core.function.count_ops`
+ * @example
+ * ```ts
+ * import { countOps, ex } from '@symjs/symjs';
+ *
+ * countOps(ex`x + y*z`, { visual: true }); // => ADD + MUL
+ * ```
  */
 export function countOps(exprIn: ExprLike, opts?: { visual?: false }): number;
 export function countOps(exprIn: ExprLike, opts: { visual: true }): Expr;

@@ -75,15 +75,172 @@ const isNegOo = (e: Expr): boolean => e instanceof Special && e.name === '-oo';
 const isOne = (e: Expr): boolean => e instanceof Rational && e.isOne;
 const minusOneTo = (n: Expr): Expr => pow(S.NegOne, n);
 
+/**
+ * Evaluates a Jacobi polynomial.
+ *
+ * @param n - The polynomial degree.
+ * @param a - The polynomial family parameter.
+ * @param b - The polynomial family parameter.
+ * @param x - The argument of the function.
+ * @returns The polynomial or function evaluated at the supplied argument.
+ * @throws RangeError when the polynomial index or the parameter combination is unsupported.
+ * @see SymPy `sympy.functions.special.polynomials.jacobi`
+ * @example
+ * ```ts
+ * import { ex, jacobi } from '@symjs/symjs';
+ *
+ * jacobi(0, ex`a`, ex`b`, ex`x`); // => 1
+ * jacobi(ex`n`, 0, 0, ex`x`); // => legendre(n, x)
+ * ```
+ */
 export const jacobi = (n: ExprLike, a: ExprLike, b: ExprLike, x: ExprLike): Expr => fn('jacobi', [n, a, b, x]);
+/**
+ * Evaluates a Gegenbauer polynomial.
+ *
+ * @param n - The polynomial degree.
+ * @param a - The polynomial family parameter.
+ * @param x - The argument of the function.
+ * @returns The polynomial or function evaluated at the supplied argument.
+ * @see SymPy `sympy.functions.special.polynomials.gegenbauer`
+ * @example
+ * ```ts
+ * import { ex, gegenbauer } from '@symjs/symjs';
+ *
+ * gegenbauer(0, ex`a`, ex`x`); // => 1
+ * gegenbauer(1, ex`a`, ex`x`); // => 2*a*x
+ * ```
+ */
 export const gegenbauer = (n: ExprLike, a: ExprLike, x: ExprLike): Expr => fn('gegenbauer', [n, a, x]);
+/**
+ * Evaluates a Chebyshev polynomial of the first kind.
+ *
+ * @param n - The polynomial degree.
+ * @param x - The argument of the function.
+ * @returns The polynomial or function evaluated at the supplied argument.
+ * @see SymPy `sympy.functions.special.polynomials.chebyshevt`
+ * @example
+ * ```ts
+ * import { chebyshevt, ex } from '@symjs/symjs';
+ *
+ * chebyshevt(0, ex`x`); // => 1
+ * chebyshevt(1, ex`x`); // => x
+ * ```
+ */
 export const chebyshevt = (n: ExprLike, x: ExprLike): Expr => fn('chebyshevt', [n, x]);
+/**
+ * Evaluates a Chebyshev polynomial of the second kind.
+ *
+ * @param n - The polynomial degree.
+ * @param x - The argument of the function.
+ * @returns The polynomial or function evaluated at the supplied argument.
+ * @see SymPy `sympy.functions.special.polynomials.chebyshevu`
+ * @example
+ * ```ts
+ * import { chebyshevu, ex } from '@symjs/symjs';
+ *
+ * chebyshevu(0, ex`x`); // => 1
+ * chebyshevu(1, ex`x`); // => 2*x
+ * ```
+ */
 export const chebyshevu = (n: ExprLike, x: ExprLike): Expr => fn('chebyshevu', [n, x]);
+/**
+ * Evaluates a Legendre polynomial.
+ *
+ * @param n - The polynomial degree.
+ * @param x - The argument of the function.
+ * @returns The polynomial or function evaluated at the supplied argument.
+ * @see SymPy `sympy.functions.special.polynomials.legendre`
+ * @example
+ * ```ts
+ * import { ex, legendre } from '@symjs/symjs';
+ *
+ * legendre(0, ex`x`); // => 1
+ * legendre(1, ex`x`); // => x
+ * ```
+ */
 export const legendre = (n: ExprLike, x: ExprLike): Expr => fn('legendre', [n, x]);
+/**
+ * Evaluates the associated Legendre function of a given degree and order.
+ *
+ * @param n - The polynomial degree.
+ * @param m - The order.
+ * @param x - The argument of the function.
+ * @returns The polynomial or function evaluated at the supplied argument.
+ * @throws RangeError when an integer degree is negative or the absolute integer order exceeds the degree.
+ * @see SymPy `sympy.functions.special.polynomials.assoc_legendre`
+ * @example
+ * ```ts
+ * import { assocLegendre, ex } from '@symjs/symjs';
+ *
+ * assocLegendre(0, 0, ex`x`); // => 1
+ * assocLegendre(1, 0, ex`x`); // => x
+ * ```
+ */
 export const assocLegendre = (n: ExprLike, m: ExprLike, x: ExprLike): Expr => fn('assoc_legendre', [n, m, x]);
+/**
+ * Evaluates a physicists' Hermite polynomial.
+ *
+ * @param n - The polynomial degree.
+ * @param x - The argument of the function.
+ * @returns The polynomial or function evaluated at the supplied argument.
+ * @see SymPy `sympy.functions.special.polynomials.hermite`
+ * @example
+ * ```ts
+ * import { ex, hermite } from '@symjs/symjs';
+ *
+ * hermite(0, ex`x`); // => 1
+ * hermite(1, ex`x`); // => 2*x
+ * ```
+ */
 export const hermite = (n: ExprLike, x: ExprLike): Expr => fn('hermite', [n, x]);
+/**
+ * Evaluates a probabilists' Hermite polynomial.
+ *
+ * @param n - The polynomial degree.
+ * @param x - The argument of the function.
+ * @returns The polynomial or function evaluated at the supplied argument.
+ * @see SymPy `sympy.functions.special.polynomials.hermite_prob`
+ * @example
+ * ```ts
+ * import { ex, hermiteProb } from '@symjs/symjs';
+ *
+ * hermiteProb(1, ex`x`); // => x
+ * hermiteProb(5, ex`x`); // => x**5 - 10*x**3 + 15*x
+ * ```
+ */
 export const hermiteProb = (n: ExprLike, x: ExprLike): Expr => fn('hermite_prob', [n, x]);
+/**
+ * Evaluates a Laguerre polynomial.
+ *
+ * @param n - The polynomial degree.
+ * @param x - The argument of the function.
+ * @returns The polynomial or function evaluated at the supplied argument.
+ * @see SymPy `sympy.functions.special.polynomials.laguerre`
+ * @example
+ * ```ts
+ * import { ex, laguerre } from '@symjs/symjs';
+ *
+ * laguerre(0, ex`x`); // => 1
+ * laguerre(1, ex`x`); // => 1 - x
+ * ```
+ */
 export const laguerre = (n: ExprLike, x: ExprLike): Expr => fn('laguerre', [n, x]);
+/**
+ * Evaluates a generalized Laguerre polynomial.
+ *
+ * @param n - The polynomial degree.
+ * @param alpha - The polynomial family parameter.
+ * @param x - The argument of the function.
+ * @returns The polynomial or function evaluated at the supplied argument.
+ * @see SymPy `sympy.functions.special.polynomials.assoc_laguerre`
+ * @example
+ * ```ts
+ * import { assocLaguerre, ex } from '@symjs/symjs';
+ *
+ * assocLaguerre(0, ex`a`, ex`x`); // => 1
+ * assocLaguerre(1, ex`a`, ex`x`); // => a - x + 1
+ * ```
+ */
 export const assocLaguerre = (n: ExprLike, alpha: ExprLike, x: ExprLike): Expr => fn('assoc_laguerre', [n, alpha, x]);
 
 /**
@@ -276,13 +433,41 @@ evaluators.hermite_prob = args2((n, x) => evalHermite(n, x, true));
 evaluators.laguerre = args2(evalLaguerre);
 evaluators.assoc_laguerre = args3(evalAssocLaguerre);
 
-/** SymPy chebyshevt_root(n, k) = cos(pi (2k + 1)/(2n)), the k-th root of T_n. */
+/**
+ * Computes the zero-based `k`-th root of the Chebyshev polynomial of the first kind.
+ *
+ * @param nIn - The index.
+ * @param kIn - The zero-based root index.
+ * @returns The selected root.
+ * @throws RangeError when the integer root index lies outside the range from zero to degree minus one.
+ * @see SymPy `sympy.functions.special.polynomials.chebyshevt_root`
+ * @example
+ * ```ts
+ * import { chebyshevtRoot } from '@symjs/symjs';
+ *
+ * chebyshevtRoot(3, 2); // => -sqrt(3)/2
+ * ```
+ */
 export function chebyshevtRoot(nIn: ExprLike, kIn: ExprLike): Expr {
   const [n, k] = rootIndices(nIn, kIn);
   return cos(mul(S.Pi, add(mul(2, k), 1), pow(mul(2, n), -1)));
 }
 
-/** SymPy chebyshevu_root(n, k) = cos(pi (k + 1)/(n + 1)), the k-th root of U_n. */
+/**
+ * Computes the zero-based `k`-th root of the Chebyshev polynomial of the second kind.
+ *
+ * @param nIn - The index.
+ * @param kIn - The zero-based root index.
+ * @returns The selected root.
+ * @throws RangeError when the integer root index lies outside the range from zero to degree minus one.
+ * @see SymPy `sympy.functions.special.polynomials.chebyshevu_root`
+ * @example
+ * ```ts
+ * import { chebyshevuRoot } from '@symjs/symjs';
+ *
+ * chebyshevuRoot(3, 2); // => -sqrt(2)/2
+ * ```
+ */
 export function chebyshevuRoot(nIn: ExprLike, kIn: ExprLike): Expr {
   const [n, k] = rootIndices(nIn, kIn);
   return cos(mul(S.Pi, add(k, 1), pow(add(n, 1), -1)));
@@ -297,7 +482,23 @@ function rootIndices(nIn: ExprLike, kIn: ExprLike): [Expr, Expr] {
   return [n, k];
 }
 
-/** SymPy jacobi_normalized: P_n^(a,b)(x) divided by the square root of its norm. */
+/**
+ * P_n^(a,b)(x) divided by the square root of its norm.
+ *
+ * @param n - The polynomial degree.
+ * @param a - The polynomial family parameter.
+ * @param b - The polynomial family parameter.
+ * @param x - The argument of the function.
+ * @returns The polynomial or function evaluated at the supplied argument.
+ * @throws RangeError when the polynomial index or the parameter combination is unsupported.
+ * @see SymPy `sympy.functions.special.polynomials.jacobi_normalized`
+ * @example
+ * ```ts
+ * import { ex, jacobiNormalized } from '@symjs/symjs';
+ *
+ * jacobiNormalized(ex`n`, ex`a`, ex`b`, ex`x`); // => jacobi(n, a, b, x)/sqrt(2**(a + b + 1)*gamma(a + n + 1)*gamma(b + n + 1)/((a + b + 2*n + 1)*factorial(n)*gamma(a + b + n + 1)))
+ * ```
+ */
 export function jacobiNormalized(n: ExprLike, a: ExprLike, b: ExprLike, x: ExprLike): Expr {
   const nfactor = mul(
     pow(2, add(a, b, 1)),

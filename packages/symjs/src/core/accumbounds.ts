@@ -37,45 +37,112 @@ const setsNotLoaded = (): never => {
 
 const asAB = (e: Expr): AccumBoundsNode => cast(e, AccumBoundsNode, 'AccumBounds operand');
 
-/** A closed interval [min, max] of real values (SymPy AccumulationBounds). */
+/**
+ * A closed interval [min, max] of real values (SymPy AccumulationBounds).
+ *
+ * @see SymPy `sympy.calculus.accumulationbounds.AccumulationBounds`
+ * @example
+ * ```ts
+ * import { AccumBoundsNode, ex } from '@symjs/symjs';
+ *
+ * new AccumBoundsNode(ex`1`, ex`3`).mid; // => 2
+ * ```
+ */
 export class AccumBoundsNode extends ExtensionExpr {
+  /**
+   * Creates an `AccumBoundsNode`.
+   *
+   * @param min - The lower endpoint.
+   * @param max - The upper endpoint.
+   */
   constructor(min: Expr, max: Expr) {
     super('AccumBounds', [min, max]);
   }
+  /**
+   * Rebuilds the node with the supplied arguments.
+   *
+   * @param args - The replacement arguments, in node order.
+   * @returns The expression rebuilt with the new arguments.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return accumBounds(at(args, 0), at(args, 1));
   }
-  /** The lower bound. */
+  /**
+   * The lower bound.
+   *
+   * @returns The lower bound.
+   * @see SymPy `sympy.calculus.accumulationbounds.AccumulationBounds.min`
+   */
   get min(): Expr {
     return at(this.args, 0);
   }
-  /** The upper bound. */
+  /**
+   * The upper bound.
+   *
+   * @returns The upper bound.
+   * @see SymPy `sympy.calculus.accumulationbounds.AccumulationBounds.max`
+   */
   get max(): Expr {
     return at(this.args, 1);
   }
-  /** max - min (SymPy delta). */
+  /**
+   * max - min (SymPy delta).
+   *
+   * @returns The interval width.
+   * @see SymPy `sympy.calculus.accumulationbounds.AccumulationBounds.delta`
+   */
   get delta(): Expr {
     return add(this.max, mul(-1, this.min));
   }
-  /** (min + max)/2 (SymPy mid). */
+  /**
+   * (min + max)/2 (SymPy mid).
+   *
+   * @returns The interval midpoint.
+   * @see SymPy `sympy.calculus.accumulationbounds.AccumulationBounds.mid`
+   */
   get mid(): Expr {
     return mul(add(this.min, this.max), Rational.of(1n, 2n));
   }
-  /** Every accumulation bound is extended real. */
+  /**
+   * Every accumulation bound is extended real.
+   *
+   * @returns True for an interval of extended real values.
+   */
   override isRealSelf(): boolean {
     return true;
   }
-  /** A real interval is its own conjugate and adjoint. */
+  /**
+   * A real interval is its own conjugate and adjoint.
+   *
+   * @returns A real interval is its own conjugate and adjoint.
+   */
   override conjugateSelf(): Expr {
     return this;
   }
+  /**
+   * Computes the adjoint of this node.
+   *
+   * @returns The adjoint of this node.
+   */
   override adjointSelf(): Expr {
     return this;
   }
+  /**
+   * Formats the node in LaTeX using the supplied child printer.
+   *
+   * @param print - The printer to use for child expressions.
+   * @returns The formatted string.
+   */
   override printLatex(print: (e: Expr) => string): string {
     return `\\left\\langle ${print(this.min)}, ${print(this.max)}\\right\\rangle`;
   }
-  /** x lies in the interval (SymPy `x in AccumBounds(...)`). */
+  /**
+   * x lies in the interval (SymPy `x in AccumBounds(...)`).
+   *
+   * @param x - The argument of the function.
+   * @returns Whether the point belongs to the interval.
+   * @throws TypeError when the argument is nonreal or membership is undecidable.
+   */
   contains(x: ExprLike): boolean {
     const e = sympify(x);
     if (!isKnownExtendedReal(e)) throw new TypeError('Input must be a real number');
@@ -85,7 +152,13 @@ export class AccumBoundsNode extends ExtensionExpr {
     if (inside === S.false) return false;
     throw new TypeError('Cannot determine membership in AccumBounds');
   }
-  /** The intersection with another AccumBounds, an Interval or a FiniteSet (SymPy intersection). */
+  /**
+   * The intersection with another AccumBounds, an Interval or a FiniteSet (SymPy intersection).
+   *
+   * @param other - The other operand.
+   * @returns The intersection with another AccumBounds, an Interval or a FiniteSet (SymPy intersection).
+   * @see SymPy `sympy.calculus.accumulationbounds.AccumulationBounds.intersection`
+   */
   intersection(other: Expr): Expr {
     if (other instanceof AccumBoundsNode) {
       const lo = lt(this.min, other.min) ? other.min : this.min;
@@ -96,7 +169,14 @@ export class AccumBoundsNode extends ExtensionExpr {
     if (impl.setIntersection === undefined || impl.interval === undefined) return setsNotLoaded();
     return impl.setIntersection(impl.interval(this.min, this.max), other);
   }
-  /** The union with an overlapping AccumBounds (SymPy union). */
+  /**
+   * The union with an overlapping AccumBounds (SymPy union).
+   *
+   * @param other - The other operand.
+   * @returns The resulting set.
+   * @throws RangeError when the intervals do not overlap.
+   * @see SymPy `sympy.calculus.accumulationbounds.AccumulationBounds.union`
+   */
   union(other: AccumBoundsNode): Expr {
     if (lt(this.max, other.min) || lt(other.max, this.min)) throw new RangeError('AccumBounds.union: the intervals do not overlap');
     return accumBounds(minOf([this.min, other.min]), maxOf([this.max, other.max]));
@@ -113,7 +193,22 @@ export function accumBounds(minIn: ExprLike, maxIn: ExprLike): Expr {
   return new AccumBoundsNode(lo, hi);
 }
 
-/** SymPy AccumBounds(min, max), callable and usable with instanceof. */
+/**
+ * Constructs a closed interval containing the possible accumulation values.
+ *
+ * @param minIn - The min in.
+ * @param maxIn - The max in.
+ * @returns A closed accumulation interval or its value when the endpoints coincide.
+ * @throws TypeError when an endpoint is not known to be extended real.
+ * @throws RangeError when the lower endpoint exceeds the upper endpoint.
+ * @see SymPy `sympy.calculus.accumulationbounds.AccumulationBounds`
+ * @example
+ * ```ts
+ * import { AccumBounds } from '@symjs/symjs';
+ *
+ * AccumBounds(1, 3); // => AccumBounds(1, 3)
+ * ```
+ */
 export const AccumBounds = /* @__PURE__ */ callableClass(AccumBoundsNode, accumBounds);
 
 // ---- interval arithmetic used by add/mul/pow -------------------------------------------

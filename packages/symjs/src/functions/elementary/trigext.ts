@@ -31,30 +31,251 @@ import type { Mpc } from '../../numeric/mpfun';
 import type { Evaluator } from './elementary';
 import { acos, asin, atan, conjugateCommutes, cos, cosh, evaluators, fn, forEachEntry, im, log, re, sin, sinh, splitPiTerm, tan, tanh } from './elementary';
 
+/**
+ * Computes the cotangent.
+ *
+ * @param x - The argument of the function.
+ * @returns The cotangent.
+ * @see SymPy `sympy.functions.elementary.trigonometric.cot`
+ * @example
+ * ```ts
+ * import { cot, ex } from '@symjs/symjs';
+ *
+ * cot(ex`pi/12`); // => sqrt(3) + 2
+ * ```
+ */
 export const cot = (x: ExprLike): Expr => fn('cot', [x]);
+/**
+ * Computes the secant.
+ *
+ * @param x - The argument of the function.
+ * @returns The secant.
+ * @see SymPy `sympy.functions.elementary.trigonometric.sec`
+ * @example
+ * ```ts
+ * import { sec } from '@symjs/symjs';
+ *
+ * sec(0); // => 1
+ * ```
+ */
 export const sec = (x: ExprLike): Expr => fn('sec', [x]);
+/**
+ * Computes the cosecant.
+ *
+ * @param x - The argument of the function.
+ * @returns The cosecant.
+ * @see SymPy `sympy.functions.elementary.trigonometric.csc`
+ * @example
+ * ```ts
+ * import { csc, ex } from '@symjs/symjs';
+ *
+ * csc(ex`pi/2`); // => 1
+ * ```
+ */
 export const csc = (x: ExprLike): Expr => fn('csc', [x]);
+/**
+ * Computes the inverse cotangent.
+ *
+ * @param x - The argument of the function.
+ * @returns The inverse cotangent.
+ * @see SymPy `sympy.functions.elementary.trigonometric.acot`
+ * @example
+ * ```ts
+ * import { acot } from '@symjs/symjs';
+ *
+ * acot(0); // => pi/2
+ * acot(1); // => pi/4
+ * ```
+ */
 export const acot = (x: ExprLike): Expr => fn('acot', [x]);
+/**
+ * Computes the inverse secant.
+ *
+ * @param x - The argument of the function.
+ * @returns The inverse secant.
+ * @see SymPy `sympy.functions.elementary.trigonometric.asec`
+ * @example
+ * ```ts
+ * import { asec } from '@symjs/symjs';
+ *
+ * asec(1); // => 0
+ * asec(0); // => zoo
+ * ```
+ */
 export const asec = (x: ExprLike): Expr => fn('asec', [x]);
+/**
+ * Computes the inverse cosecant.
+ *
+ * @param x - The argument of the function.
+ * @returns The inverse cosecant.
+ * @see SymPy `sympy.functions.elementary.trigonometric.acsc`
+ * @example
+ * ```ts
+ * import { acsc } from '@symjs/symjs';
+ *
+ * acsc(0); // => zoo
+ * acsc(1); // => pi/2
+ * ```
+ */
 export const acsc = (x: ExprLike): Expr => fn('acsc', [x]);
+/**
+ * Computes the hyperbolic cotangent.
+ *
+ * @param x - The argument of the function.
+ * @returns The hyperbolic cotangent.
+ * @see SymPy `sympy.functions.elementary.hyperbolic.coth`
+ * @example
+ * ```ts
+ * import { coth, ex } from '@symjs/symjs';
+ *
+ * coth(ex`x`); // => coth(x)
+ * ```
+ */
 export const coth = (x: ExprLike): Expr => fn('coth', [x]);
+/**
+ * Computes the hyperbolic secant.
+ *
+ * @param x - The argument of the function.
+ * @returns The hyperbolic secant.
+ * @see SymPy `sympy.functions.elementary.hyperbolic.sech`
+ * @example
+ * ```ts
+ * import { ex, sech } from '@symjs/symjs';
+ *
+ * sech(ex`x`); // => sech(x)
+ * ```
+ */
 export const sech = (x: ExprLike): Expr => fn('sech', [x]);
+/**
+ * Computes the hyperbolic cosecant.
+ *
+ * @param x - The argument of the function.
+ * @returns The hyperbolic cosecant.
+ * @see SymPy `sympy.functions.elementary.hyperbolic.csch`
+ * @example
+ * ```ts
+ * import { csch, ex } from '@symjs/symjs';
+ *
+ * csch(ex`x`); // => csch(x)
+ * ```
+ */
 export const csch = (x: ExprLike): Expr => fn('csch', [x]);
+/**
+ * Computes the inverse hyperbolic sine.
+ *
+ * @param x - The argument of the function.
+ * @returns The inverse hyperbolic sine.
+ * @see SymPy `sympy.functions.elementary.hyperbolic.asinh`
+ * @example
+ * ```ts
+ * import { asinh } from '@symjs/symjs';
+ *
+ * asinh(1); // => log(1 + sqrt(2))
+ * ```
+ */
 export const asinh = (x: ExprLike): Expr => fn('asinh', [x]);
+/**
+ * Computes the inverse hyperbolic cosine.
+ *
+ * @param x - The argument of the function.
+ * @returns The inverse hyperbolic cosine.
+ * @see SymPy `sympy.functions.elementary.hyperbolic.acosh`
+ * @example
+ * ```ts
+ * import { acosh } from '@symjs/symjs';
+ *
+ * acosh(1); // => 0
+ * ```
+ */
 export const acosh = (x: ExprLike): Expr => fn('acosh', [x]);
+/**
+ * Computes the inverse hyperbolic tangent.
+ *
+ * @param x - The argument of the function.
+ * @returns The inverse hyperbolic tangent.
+ * @see SymPy `sympy.functions.elementary.hyperbolic.atanh`
+ * @example
+ * ```ts
+ * import { atanh } from '@symjs/symjs';
+ *
+ * atanh(0); // => 0
+ * ```
+ */
 export const atanh = (x: ExprLike): Expr => fn('atanh', [x]);
+/**
+ * Computes the inverse hyperbolic cotangent.
+ *
+ * @param x - The argument of the function.
+ * @returns The inverse hyperbolic cotangent.
+ * @see SymPy `sympy.functions.elementary.hyperbolic.acoth`
+ * @example
+ * ```ts
+ * import { acoth, ex } from '@symjs/symjs';
+ *
+ * acoth(ex`oo`); // => 0
+ * ```
+ */
 export const acoth = (x: ExprLike): Expr => fn('acoth', [x]);
+/**
+ * Computes the inverse hyperbolic secant.
+ *
+ * @param x - The argument of the function.
+ * @returns The inverse hyperbolic secant.
+ * @see SymPy `sympy.functions.elementary.hyperbolic.asech`
+ * @example
+ * ```ts
+ * import { asech } from '@symjs/symjs';
+ *
+ * asech(1); // => 0
+ * asech(2); // => I*pi/3
+ * ```
+ */
 export const asech = (x: ExprLike): Expr => fn('asech', [x]);
+/**
+ * Computes the inverse hyperbolic cosecant.
+ *
+ * @param x - The argument of the function.
+ * @returns The inverse hyperbolic cosecant.
+ * @see SymPy `sympy.functions.elementary.hyperbolic.acsch`
+ * @example
+ * ```ts
+ * import { acsch, ex } from '@symjs/symjs';
+ *
+ * acsch(ex`I`); // => -I*pi/2
+ * acsch(1); // => log(1 + sqrt(2))
+ * ```
+ */
 export const acsch = (x: ExprLike): Expr => fn('acsch', [x]);
+/**
+ * Computes the unnormalized sinc function, equal to `sin(x)/x` with value one at zero.
+ *
+ * @param x - The argument of the function.
+ * @returns The unnormalized sinc function, equal to `sin(x)/x` with value one at zero.
+ * @see SymPy `sympy.functions.elementary.trigonometric.sinc`
+ * @example
+ * ```ts
+ * import { ex, sinc } from '@symjs/symjs';
+ *
+ * sinc(0); // => 1
+ * sinc(ex`oo`); // => 0
+ * ```
+ */
 export const sinc = (x: ExprLike): Expr => fn('sinc', [x]);
 
 /** The periods of the trigonometric functions in their argument. */
 const TRIG_PERIODS: Readonly<Record<string, Expr>> = { sin: mul(2, S.Pi), cos: mul(2, S.Pi), sec: mul(2, S.Pi), csc: mul(2, S.Pi), tan: S.Pi, cot: S.Pi };
 
 /**
- * SymPy TrigonometricFunction.period(symbol): the period of a trigonometric function of
+ * The period of a trigonometric function of
  * a*symbol + b (0 when the argument does not depend on the symbol, which defaults to the free
  * symbol of the argument); NotImplementedError for other arguments.
+ *
+ * @param e - The input expression.
+ * @param symbol - The symbol to use for the requested operation.
+ * @returns The period with respect to the symbol.
+ * @throws TypeError when the expression is not a trigonometric function.
+ * @throws NotImplementedError when the argument requires a general periodicity calculation.
+ * @see SymPy `sympy.functions.elementary.trigonometric.sin.period`
  */
 export function period(e: Expr, symbol?: Sym): Expr {
   const general = e instanceof Fn && e.args.length === 1 ? TRIG_PERIODS[e.name] : undefined;

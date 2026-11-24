@@ -127,34 +127,121 @@ import { extractLeadingOrder as _extractLeadingOrder_ } from './series/series';
 import { dominant as _dominant_ } from './series/limitseq';
 import type { Sym as _Sym_ } from './core/nodes';
 
-/** The unique asymptotically dominant term of a sum, or NoMatch. */
+/**
+ * The unique asymptotically dominant term of a sum, or NoMatch.
+ *
+ * @param expr - The input expression.
+ * @param n - The index tending to infinity.
+ * @returns The dominant term, or `NoMatch` when no term dominates uniquely.
+ * @see SymPy `sympy.series.limitseq.dominant`
+ * @example
+ * ```ts
+ * import { dominant, ex, symbols } from '@symjs/symjs';
+ *
+ * dominant(ex`5*n**3 + 4*n**2 + n + 1`, symbols('n')[0]); // => 5*n**3
+ * ```
+ */
 export function dominant(expr: _ExprLike_, n: _Sym_): _Expr_ | NoMatchResult {
   return _orNoMatch_(_dominant_(expr, n));
 }
 
-/** @deprecated Internal; removed from the public API in 1.0. */
+/**
+ * Evaluates the summand or product over its limits.
+ *
+ * @deprecated Internal; removed from the public API in 1.0.
+ */
 export const doitConcrete = _doitConcrete_;
 
-/** @deprecated Internal; removed from the public API in 1.0. */
+/**
+ * Integrates the branches of a piecewise expression.
+ *
+ * @deprecated Internal; removed from the public API in 1.0.
+ */
 export const piecewiseIntegrate = _piecewiseIntegrate_;
 
-/** SymPy Sum.is_convergent: true, false or 'unknown'. */
+/**
+ * Tests a sum for convergence.
+ *
+ * @param s - The unevaluated sum to test.
+ * @returns The truth value, or `'unknown'` when it cannot be determined.
+ * @see SymPy `sympy.concrete.summations.Sum.is_convergent`
+ * @example
+ * ```ts
+ * import { Concrete, ex, isConvergent, oo } from '@symjs/symjs';
+ *
+ * isConvergent(new Concrete('Sum', [ex`1/k**2`, ex`k`, ex`1`, oo])); // => True
+ * ```
+ */
 export const isConvergent = (s: _Concrete_): Truth => _toTruth_(_sumIsConvergent_(s));
-/** SymPy Sum.is_absolutely_convergent: true, false or 'unknown'. */
+/**
+ * Tests a sum for absolute convergence.
+ *
+ * @param s - The unevaluated sum to test.
+ * @returns The truth value, or `'unknown'` when it cannot be determined.
+ * @see SymPy `sympy.concrete.summations.Sum.is_absolutely_convergent`
+ * @example
+ * ```ts
+ * import { Concrete, ex, isAbsolutelyConvergent, oo } from '@symjs/symjs';
+ *
+ * isAbsolutelyConvergent(new Concrete('Sum', [ex`1/k**2`, ex`k`, ex`1`, oo])); // => True
+ * ```
+ */
 export const isAbsolutelyConvergent = (s: _Concrete_): Truth => _toTruth_(_sumIsAbsolutelyConvergent_(s));
 
-/** @deprecated Use `isConvergent`. */
+/**
+ * Alias for {@link isConvergent}.
+ *
+ * @deprecated Use {@link isConvergent}.
+ * @param s - The input value.
+ * @returns The truth value, or `'unknown'` if convergence cannot be decided.
+ * @see SymPy `sympy.concrete.summations.Sum.is_convergent`
+ * @example
+ * ```ts
+ * import { Concrete, ex, oo, sumIsConvergent } from '@symjs/symjs';
+ *
+ * sumIsConvergent(new Concrete('Sum', [ex`1/k**2`, ex`k`, ex`1`, oo])); // => True
+ * ```
+ */
 export const sumIsConvergent = isConvergent;
 
-/** @deprecated Use `isAbsolutelyConvergent`. */
+/**
+ * Alias for {@link isAbsolutelyConvergent}.
+ *
+ * @deprecated Use {@link isAbsolutelyConvergent}.
+ * @param s - The input value.
+ * @returns The truth value, or `'unknown'` if convergence cannot be decided.
+ * @see SymPy `sympy.concrete.summations.Sum.is_absolutely_convergent`
+ * @example
+ * ```ts
+ * import { Concrete, ex, oo, sumIsAbsolutelyConvergent } from '@symjs/symjs';
+ *
+ * sumIsAbsolutelyConvergent(new Concrete('Sum', [ex`1/k**2`, ex`k`, ex`1`, oo])); // => True
+ * ```
+ */
 export const sumIsAbsolutelyConvergent = isAbsolutelyConvergent;
 
-/** SymPy Order.getn: the order of the Order term in the expression, or NoMatch. */
+/**
+ * The order of the Order term in the expression, or NoMatch.
+ *
+ * @param e - The input expression.
+ * @returns The exponent of the order term, or `NoMatch`.
+ * @see SymPy `sympy.core.expr.Expr.getn`
+ * @example
+ * ```ts
+ * import { Order, ex, getn } from '@symjs/symjs';
+ *
+ * getn(new Order([ex`x**3`, ex`x`, ex`0`])); // => 3
+ * ```
+ */
 export function getn(e: _ExprLike_): _Expr_ | NoMatchResult {
   return _orNoMatch_(_getn_(e));
 }
 
-/** @deprecated Internal; removed from the public API in 1.0. */
+/**
+ * Extracts the terms that determine the leading order of a sum.
+ *
+ * @deprecated Internal; removed from the public API in 1.0.
+ */
 export const extractLeadingOrder = _extractLeadingOrder_;
 export { lseries, dir } from './series/lseries';
 export { fps, FormalPowerSeries, expRe, hyperRe, rationalIndependent, rationalAlgorithm, simpleDE, solveDe, hyperAlgorithm } from './series/formal';
@@ -173,7 +260,14 @@ import { integral as makeIntegral } from './integrals/integrate';
 import { asSet as conditionSet } from './solvers/inequalities';
 import { processContinuousLimit } from './concrete/exprwithlimits';
 
-/** Construct an unevaluated integral from variables, endpoints, intervals or inequalities. */
+/**
+ * Construct an unevaluated integral from variables, endpoints, intervals or inequalities.
+ *
+ * @param ex - The integrand.
+ * @param limits - The integration variables with optional endpoints or domains, innermost first.
+ * @returns An unevaluated integral with the specified limits.
+ * @see SymPy `sympy.integrals.integrals.Integral`
+ */
 export function integral(ex: _ExprLike_, ...limits: readonly (_ExprLike_ | readonly _ExprLike_[])[]): _Expr_ {
   return makeIntegral(ex, ...limits.map(input => processContinuousLimit(input, conditionSet)));
 }

@@ -8,7 +8,15 @@ import { isLt } from '../core/relational';
 import { abs } from '../functions/elementary/elementary';
 import { float } from './floatctor';
 
-/** SymPy Float.epsilon_eq: strict comparison using an absolute tolerance. */
+/**
+ * strict comparison using an absolute tolerance.
+ *
+ * @param a - The first operand.
+ * @param b - The second operand.
+ * @param epsilon - The tolerance for the numerical comparison.
+ * @returns The truth value, or `'unknown'` when it cannot be determined.
+ * @see SymPy `sympy.core.numbers.Float.epsilon_eq`
+ */
 export function epsilonEq(a: ExprLike, b: ExprLike, epsilon: ExprLike = 1e-15): Truth {
   return isLt(abs(sub(a, b)), float(epsilon));
 }

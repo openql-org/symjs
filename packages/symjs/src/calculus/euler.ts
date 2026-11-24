@@ -48,9 +48,23 @@ function combinationsWithReplacement<T>(items: readonly T[], k: number): T[][] {
 }
 
 /**
- * SymPy euler_equations(L, funcs, vars): the Euler-Lagrange equations of the
+ * The Euler-Lagrange equations of the
  * Lagrangian L for the functions funcs (all the functions of L by default) of
  * the variables vars (the arguments of the first function by default).
+ *
+ * @param lagrangian - The Lagrangian density.
+ * @param funcs - The dependent functions in the Lagrangian.
+ * @param vars - The independent variables.
+ * @returns The Euler–Lagrange equations for the dependent functions.
+ * @throws TypeError when a dependent function is not applied or an independent variable is not a symbol.
+ * @throws RangeError when the independent variables do not match the function arguments.
+ * @see SymPy `sympy.calculus.euler.euler_equations`
+ * @example
+ * ```ts
+ * import { eulerEquations, ex } from '@symjs/symjs';
+ *
+ * eulerEquations(ex`f(t)**2/2`, ex`f(t)`, ex`t`); // => [Eq(f(t), 0)]
+ * ```
  */
 export function eulerEquations(lagrangian: ExprLike, funcs: Expr | readonly Expr[] = [], vars: ExprLike | readonly ExprLike[] = []): Expr[] {
   const L = sympify(lagrangian);

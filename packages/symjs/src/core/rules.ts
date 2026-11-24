@@ -13,27 +13,57 @@ import { NoMatch, type NoMatchResult } from './truth';
  * An immutable mapping whose value at a key is computed by `transform` (SymPy Transform). When a
  * `filter` is given, only the keys it accepts are in the mapping. SymPy's `key in t` is `t.has(key)`
  * and `t[key]` is `t.at(key)`.
+ *
+ * @see SymPy `sympy.core.rules.Transform`
+ * @example
+ * ```ts
+ * import { Transform } from '@symjs/symjs';
+ *
+ * new Transform((x: number) => x * x).at(3); // => 9
+ * ```
  */
 export class Transform<K, V> {
+  /**
+   * Creates a `Transform`.
+   *
+   * @param transform - Converts a LaTeX grammar tree into an expression or ambiguity tree.
+   * @param filter - The predicate selecting keys in the mapping.
+   */
   constructor(
     private readonly transform: (key: K) => V,
     private readonly filter: (key: K) => boolean = () => true,
   ) {}
 
-  /** SymPy `key in t`: whether the filter accepts the key. */
+  /**
+   * Tests whether the filter accepts the key.
+   *
+   * @param key - The lookup key.
+   * @returns Whether the filter accepts the key.
+   */
   has(key: K): boolean {
     return this.filter(key);
   }
 
-  /** SymPy `t[key]`: the transformed key; a key outside the mapping is a RangeError (SymPy KeyError). */
+  /**
+   * Applies the transformation to an accepted key.
+   *
+   * @param key - The lookup key.
+   * @returns The value computed for the key.
+   * @throws RangeError when the filter rejects the key.
+   */
   at(key: K): V {
     if (!this.filter(key)) throw new RangeError(`key not in the mapping: ${String(key)}`);
     return this.transform(key);
   }
 
   /**
-   * SymPy `t.get(key, default)`: the transformed key, or the default for a key outside the mapping
+   * The transformed key, or the default for a key outside the mapping
    * (NoMatch when no default is given, SymPy None).
+   *
+   * @param key - The lookup key.
+   * @param defaultValue - The value to return for a missing key.
+   * @returns The transformed key, or the default for a key outside the mapping (NoMatch when no default is given, SymPy None).
+   * @see SymPy `sympy.core.rules.Transform.get`
    */
   get(key: K): V | NoMatchResult;
   get<D>(key: K, defaultValue: D): V | D;

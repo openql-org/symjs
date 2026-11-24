@@ -153,10 +153,18 @@ export {
 import { asEquation as _asEquation_ } from './solvers/solve';
 import { invertEquation as _invertEquation_ } from './solvers/solve';
 
-/** @deprecated Internal; removed from the public API in 1.0. */
+/**
+ * Separates the sides of an equation.
+ *
+ * @deprecated Internal; removed from the public API in 1.0.
+ */
 export const asEquation = _asEquation_;
 
-/** @deprecated Internal; removed from the public API in 1.0. */
+/**
+ * Isolates the part of an equation that depends on the unknown.
+ *
+ * @deprecated Internal; removed from the public API in 1.0.
+ */
 export const invertEquation = _invertEquation_;
 export { pdsolve, classifyPde, checkpdesol, pdeSeparate, pdeSeparateAdd, pdeSeparateMul } from './solvers/pde';
 export { decompogen, compogen } from './solvers/decompogen';
@@ -166,7 +174,20 @@ export type { LPMatrixLike, LPBound, LPBounds } from './solvers/simplex';
 export { bivariateType } from './solvers/bivariate';
 export { SingleODEProblem, SingleODESolver, FirstLinear, getNumberedConstants, NthAlgebraic, ODEMatchError } from './solvers/ode/single';
 
-/** The real solution set of a univariate Boolean condition. */
+/**
+ * The real solution set of a univariate Boolean condition.
+ *
+ * @param input - The input expression.
+ * @returns The set of real solutions.
+ * @see SymPy `sympy.logic.boolalg.Boolean.as_set`
+ * @example
+ * ```ts
+ * import { asSet } from '@symjs/symjs';
+ *
+ * asSet(false); // => EmptySet
+ * asSet(true); // => UniversalSet
+ * ```
+ */
 export function asSet(input: ExprLike | boolean): SetExpr {
   return booleanAsSet(input, asSetOf, periodOf, EmptySet, Reals);
 }

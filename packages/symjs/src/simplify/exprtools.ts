@@ -72,7 +72,22 @@ export function keepCoeff(coeffIn: Expr, factorsIn: Expr, clear = true, sign = f
   return mul(coeff, factors);
 }
 
-/** SymPy decompose_power: expr = base**e with integer e. */
+/**
+ * expr = base**e with integer e.
+ *
+ * @remarks
+ * For `decompose_power(x)`, SymPy displays `(x, 1)`. For `decompose_power(x**2)`, SymPy displays `(x, 2)`.
+ * @param eIn - The input expression.
+ * @returns The base and the extracted exponent.
+ * @see SymPy `sympy.core.exprtools.decompose_power`
+ * @example
+ * ```ts
+ * import { decomposePower, ex } from '@symjs/symjs';
+ *
+ * decomposePower(ex`x`); // => [x, 1]
+ * decomposePower(ex`x**2`); // => [x, 2]
+ * ```
+ */
 export function decomposePower(eIn: ExprLike): [Expr, number] {
   const e = sympify(eIn);
   const ex = expExponent(e);
@@ -101,9 +116,22 @@ export function decomposePower(eIn: ExprLike): [Expr, number] {
 }
 
 /**
- * SymPy decompose_power_rat: expr = base**e with a rational e when the
+ * expr = base**e with a rational e when the
  * exponent of expr is rational, else with the integer coefficient of the
  * exponent (decompose_power).
+ *
+ * @remarks
+ * For `decompose_power_rat(sqrt(x))`, SymPy displays `(x, 1/2)`. For `decompose_power_rat(exp(-3*x/2))`, SymPy displays `(exp(x/2), -3)`.
+ * @param eIn - The input expression.
+ * @returns The base and the extracted exponent.
+ * @see SymPy `sympy.core.exprtools.decompose_power_rat`
+ * @example
+ * ```ts
+ * import { decomposePowerRat, ex } from '@symjs/symjs';
+ *
+ * decomposePowerRat(ex`sqrt(x)`); // => [x, 1/2]
+ * decomposePowerRat(ex`exp(-3*x/2)`); // => [exp(x/2), -3]
+ * ```
  */
 export function decomposePowerRat(eIn: ExprLike): [Expr, Rational] {
   const e = sympify(eIn);
@@ -266,7 +294,21 @@ function gcdTermsCore(terms0: Expr[], isprimitive: boolean, fraction: boolean): 
   return [cont, numer, denom];
 }
 
-/** SymPy gcd_terms: factor out common terms of a sum, recursing into other nodes. */
+/**
+ * factor out common terms of a sum, recursing into other nodes.
+ *
+ * @param termsIn - The terms in.
+ * @param opts - `isprimitive` indicates primitive input, `clear` clears coefficient denominators and `fraction` allows a common denominator.
+ * @returns The sum with its greatest common term factored out.
+ * @see SymPy `sympy.core.exprtools.gcd_terms`
+ * @example
+ * ```ts
+ * import { ex, gcdTerms } from '@symjs/symjs';
+ *
+ * gcdTerms(ex`x/2 + 1`); // => (x + 2)/2
+ * gcdTerms(ex`x/2 + 1/x`); // => (x**2 + 2)/(2*x)
+ * ```
+ */
 export function gcdTerms(termsIn: ExprLike, opts: { isprimitive?: boolean; clear?: boolean; fraction?: boolean } = {}): Expr {
   const terms = sympify(termsIn);
   const clear = opts.clear ?? true;
@@ -316,7 +358,21 @@ export function gcdTermsOf(termsList: readonly Expr[], opts: { isprimitive?: boo
   }
 }
 
-/** SymPy factor_terms: pull out common factors and content from terms, recursively. */
+/**
+ * pull out common factors and content from terms, recursively.
+ *
+ * @param exprIn - The input expression.
+ * @param opts - `radical` extracts common radicals, `clear` clears rational coefficients, `fraction` combines denominators and `sign` extracts a common minus sign.
+ * @returns The expression with common term factors collected.
+ * @see SymPy `sympy.core.exprtools.factor_terms`
+ * @example
+ * ```ts
+ * import { ex, factorTerms } from '@symjs/symjs';
+ *
+ * factorTerms(ex`-x - y`); // => -(x + y)
+ * factorTerms(ex`-x - y`, { sign: false }); // => -x - y
+ * ```
+ */
 export function factorTerms(
   exprIn: ExprLike,
   opts: { radical?: boolean; clear?: boolean; fraction?: boolean; sign?: boolean } = {},
@@ -429,7 +485,22 @@ function factorsExpr(f: Map<string, [Expr, Expr]>): Expr {
   return mul(...[...f.values()].map(([b, x]) => pow(b, x)));
 }
 
-/** SymPy collect_const: collect terms sharing a numeric (or given) factor. */
+/**
+ * Collect terms sharing a numeric (or given) factor.
+ *
+ * @param exprIn - The input expression.
+ * @param varsIn - The vars in.
+ * @param opts - `numbers` enables collection of numeric constants.
+ * @returns The sum grouped by common constant factors.
+ * @see SymPy `sympy.simplify.radsimp.collect_const`
+ * @example
+ * ```ts
+ * import { collectConst, ex } from '@symjs/symjs';
+ *
+ * collectConst(ex`-y - z`); // => -(y + z)
+ * collectConst(ex`x - y - z`); // => x - (y + z)
+ * ```
+ */
 export function collectConst(exprIn: ExprLike, varsIn: readonly Expr[] = [], opts: { numbers?: boolean } = {}): Expr {
   let expr = sympify(exprIn);
   const numbers = opts.numbers ?? true;
@@ -512,7 +583,20 @@ export function unevaluatedAdd(argsIn: Expr[]): Expr {
   return out.length === 1 ? first(out) : new Add(out);
 }
 
-/** SymPy signsimp: write sums with a leading minus sign as -(...). */
+/**
+ * write sums with a leading minus sign as -(...).
+ *
+ * @param exprIn - The input expression.
+ * @param evaluate - Whether to evaluate the transformation.
+ * @returns The expression with canonical signs.
+ * @see SymPy `sympy.simplify.simplify.signsimp`
+ * @example
+ * ```ts
+ * import { ex, signsimp } from '@symjs/symjs';
+ *
+ * signsimp(ex`x*(-x + y)`); // => -x*(x - y)
+ * ```
+ */
 export function signsimp(exprIn: ExprLike, evaluate = true): Expr {
   const expr = sympify(exprIn);
   if (expr.args.length === 0) return expr;
@@ -543,9 +627,13 @@ function replaceSums(e: Expr, reps: ReadonlyMap<string, Expr>): Expr {
 }
 
 /**
- * SymPy sub_pre: replace every sum that could extract a minus sign by Mul(-1, -a) (unevaluated);
+ * Replace every sum that could extract a minus sign by Mul(-1, -a) (unevaluated);
  * then mark the sums that still could extract one as Mul(1, -1, -a), which a product rebuilt
  * around it absorbs as a factor -1 (subPost restores the marks left elsewhere).
+ *
+ * @param e - The input expression.
+ * @returns The expression with subtraction rewritten for the current elimination pass.
+ * @see SymPy `sympy.simplify.cse_opts.sub_pre`
  */
 export function subPre(e: Expr): Expr {
   const reps = new Map<string, Expr>();
@@ -561,7 +649,13 @@ export function subPre(e: Expr): Expr {
   return replaceSums(e1, negs);
 }
 
-/** SymPy sub_post: replace the marks Mul(1, -1, x) by -x (x is a sum: the negation of a sum is one). */
+/**
+ * Replace the marks Mul(1, -1, x) by -x (x is a sum: the negation of a sum is one).
+ *
+ * @param e - The input expression.
+ * @returns The expression with subtraction rewritten for the current elimination pass.
+ * @see SymPy `sympy.simplify.cse_opts.sub_post`
+ */
 export function subPost(e: Expr): Expr {
   if (e instanceof Mul && e.args.length === 3 && isOneE(at(e.args, 0)) && isNegOneE(at(e.args, 1))) return mul(-1, subPost(at(e.args, 2)));
   if (e.args.length === 0) return e;

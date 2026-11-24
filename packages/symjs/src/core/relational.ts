@@ -17,7 +17,24 @@ import { gcd, lcm } from './numbers';
 import { first } from './guard';
 import { compareKeys, sortKey } from '../printing/sortkey';
 
-/** SymPy Relational(lhs, rhs, rop). */
+/**
+ * Constructs the comparison specified by the operator and its two operands.
+ *
+ * @param lhs - The left-hand side.
+ * @param rhs - The right-hand side.
+ * @param rop - The comparison operator.
+ * @param options - Set `evaluate` to false to suppress automatic evaluation.
+ * @returns The comparison, evaluated to a Boolean atom when decidable.
+ * @throws RangeError when the operator is unknown.
+ * @see SymPy `sympy.core.relational.Relational`
+ * @example
+ * ```ts
+ * import { Relational, ex } from '@symjs/symjs';
+ *
+ * Relational(ex`x`, 1, '>'); // => x > 1
+ * Relational(1, ex`x`, '<'); // => 1 < x
+ * ```
+ */
 export function Relational(lhs: ExprLike, rhs: ExprLike, rop = '==', options: { evaluate?: boolean } = {}): Expr {
   const construct = (op: RelOp): Expr => options.evaluate === false ? new Rel(op, sympify(lhs), sympify(rhs)) : rel(op, lhs, rhs);
   switch (rop) {
@@ -34,23 +51,74 @@ export function Relational(lhs: ExprLike, rhs: ExprLike, rop = '==', options: { 
 const REVERSED: Readonly<Record<RelOp, RelOp>> = { Eq: 'Eq', Ne: 'Ne', Lt: 'Gt', Le: 'Ge', Gt: 'Lt', Ge: 'Le' };
 const NEGATED: Readonly<Record<RelOp, RelOp>> = { Eq: 'Ne', Ne: 'Eq', Lt: 'Ge', Le: 'Gt', Gt: 'Le', Ge: 'Lt' };
 
-/** Exchange the sides and reverse the comparison, preserving unevaluated relations. */
+/**
+ * Exchange the sides and reverse the comparison, preserving unevaluated relations.
+ *
+ * @param relation - The relation to transform.
+ * @returns The relation with the operands exchanged and the operator reversed.
+ * @see SymPy `sympy.core.relational.Relational.reversed`
+ * @example
+ * ```ts
+ * import { Rel, ex, reversed } from '@symjs/symjs';
+ *
+ * reversed(new Rel('Lt', ex`x`, ex`2`)); // => 2 > x
+ * ```
+ */
 export function reversed(relation: Rel): Rel {
   return new Rel(REVERSED[relation.op], relation.rhs, relation.lhs);
 }
 
-/** Negate both sides and reverse the comparison. Boolean sides retain their signs. */
+/**
+ * Negate both sides and reverse the comparison. Boolean sides retain their signs.
+ *
+ * @param relation - The relation to transform.
+ * @returns The equivalent relation with both operands negated.
+ * @see SymPy `sympy.core.relational.Relational.reversedsign`
+ * @example
+ * ```ts
+ * import { Rel, ex, reversedSign } from '@symjs/symjs';
+ *
+ * reversedSign(new Rel('Lt', ex`x`, ex`2`)); // => -x > -2
+ * ```
+ */
 export function reversedSign(relation: Rel): Rel {
   if (relation.lhs instanceof BoolAtom || relation.rhs instanceof BoolAtom) return relation;
   return new Rel(REVERSED[relation.op], mul(-1, relation.lhs), mul(-1, relation.rhs));
 }
 
-/** Complement a comparison without evaluating its sides. */
+/**
+ * Complement a comparison without evaluating its sides.
+ *
+ * @param relation - The relation to transform.
+ * @returns The complementary relation.
+ * @see SymPy `sympy.core.relational.Relational.negated`
+ * @example
+ * ```ts
+ * import { Rel, ex, negated } from '@symjs/symjs';
+ *
+ * negated(new Rel('Lt', ex`x`, ex`2`)); // => x >= 2
+ * ```
+ */
 export function negated(relation: Rel): Rel {
   return new Rel(NEGATED[relation.op], relation.lhs, relation.rhs);
 }
 
-/** SymPy is_eq. */
+/**
+ * Tests whether the left-hand side is equal to the right-hand side.
+ *
+ * @param lhs - The left-hand side.
+ * @param rhs - The right-hand side.
+ * @param assumptions - The facts to assume.
+ * @returns The truth value, or `'unknown'` when it cannot be determined.
+ * @see SymPy `sympy.core.relational.is_eq`
+ * @example
+ * ```ts
+ * import { isEq } from '@symjs/symjs';
+ *
+ * isEq(0, 0); // => True
+ * isEq(0, 2); // => False
+ * ```
+ */
 export function isEq(lhs: ExprLike, rhs: ExprLike, assumptions: Assumption = true): Truth {
   const a = sympify(lhs), b = sympify(rhs);
   if (a.key !== b.key && ask(Q.infinite(a), assumptions) === true && ask(Q.infinite(b), assumptions) === true) {
@@ -63,18 +131,65 @@ export function isEq(lhs: ExprLike, rhs: ExprLike, assumptions: Assumption = tru
   }
   return ask(Q.eq(a, b), assumptions);
 }
-/** SymPy is_neq. */
+/**
+ * Tests whether the left-hand side is different from the right-hand side.
+ *
+ * @param lhs - The left-hand side.
+ * @param rhs - The right-hand side.
+ * @param assumptions - The facts to assume.
+ * @returns The truth value, or `'unknown'` when it cannot be determined.
+ * @see SymPy `sympy.core.relational.is_neq`
+ */
 export const isNeq = (lhs: ExprLike, rhs: ExprLike, assumptions: Assumption = true): Truth => truthNot(isEq(lhs, rhs, assumptions));
-/** SymPy is_ge. */
+/**
+ * Tests whether the left-hand side is greater than or equal to the right-hand side.
+ *
+ * @param lhs - The left-hand side.
+ * @param rhs - The right-hand side.
+ * @param assumptions - The facts to assume.
+ * @returns The truth value, or `'unknown'` when it cannot be determined.
+ * @see SymPy `sympy.core.relational.is_ge`
+ * @example
+ * ```ts
+ * import { isGe } from '@symjs/symjs';
+ *
+ * isGe(2, 0); // => True
+ * isGe(0, 2); // => False
+ * ```
+ */
 export const isGe = (lhs: ExprLike, rhs: ExprLike, assumptions: Assumption = true): Truth => {
   if ([lhs, rhs].some((e) => e instanceof BasicNode && e.name === 'Basic')) throw new TypeError('inequalities require expressions');
   return ask(Q.ge(lhs, rhs), assumptions);
 };
-/** SymPy is_le. */
+/**
+ * Tests whether the left-hand side is less than or equal to the right-hand side.
+ *
+ * @param lhs - The left-hand side.
+ * @param rhs - The right-hand side.
+ * @param assumptions - The facts to assume.
+ * @returns The truth value, or `'unknown'` when it cannot be determined.
+ * @see SymPy `sympy.core.relational.is_le`
+ */
 export const isLe = (lhs: ExprLike, rhs: ExprLike, assumptions: Assumption = true): Truth => isGe(rhs, lhs, assumptions);
-/** SymPy is_gt. */
+/**
+ * Tests whether the left-hand side is greater than the right-hand side.
+ *
+ * @param lhs - The left-hand side.
+ * @param rhs - The right-hand side.
+ * @param assumptions - The facts to assume.
+ * @returns The truth value, or `'unknown'` when it cannot be determined.
+ * @see SymPy `sympy.core.relational.is_gt`
+ */
 export const isGt = (lhs: ExprLike, rhs: ExprLike, assumptions: Assumption = true): Truth => truthNot(isLe(lhs, rhs, assumptions));
-/** SymPy is_lt. */
+/**
+ * Tests whether the left-hand side is less than the right-hand side.
+ *
+ * @param lhs - The left-hand side.
+ * @param rhs - The right-hand side.
+ * @param assumptions - The facts to assume.
+ * @returns The truth value, or `'unknown'` when it cannot be determined.
+ * @see SymPy `sympy.core.relational.is_lt`
+ */
 export const isLt = (lhs: ExprLike, rhs: ExprLike, assumptions: Assumption = true): Truth => truthNot(isGe(lhs, rhs, assumptions));
 
 /** Simplify both sides and normalize a linear relation, as in Relational._eval_simplify. */
@@ -117,7 +232,15 @@ export function simplifyRelation(relation: Rel, simplify: (e: Expr) => Expr): Ex
   return canonicalRelation(result);
 }
 
-/** Mathematical equality of relational sides, including reversed comparisons. */
+/**
+ * Mathematical equality of relational sides, including reversed comparisons.
+ *
+ * @param a - The first operand.
+ * @param other - The other operand.
+ * @param failingExpression - Whether to return the expression that prevents a decision.
+ * @returns The equality decision, or the failing expression when requested.
+ * @see SymPy `sympy.core.relational.Relational.equals`
+ */
 export function relationalEquals(a: Rel, other: Expr, failingExpression = false): Truth | Expr {
   if (!(other instanceof Rel)) return 'unknown';
   if (a.key === other.key || a.key === reversed(other).key) return true;

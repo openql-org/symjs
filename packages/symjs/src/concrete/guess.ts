@@ -51,6 +51,16 @@ function truncate(e: Expr): Expr {
  * found.
  *
  * Example: findSimpleRecurrenceVector(fibonacci(0..11)) is [1, -1, -1].
+ *
+ * @param lIn - The successive terms of the rational sequence.
+ * @returns The recurrence coefficients, or the zero vector when no recurrence is found.
+ * @see SymPy `sympy.concrete.guess.find_simple_recurrence_vector`
+ * @example
+ * ```ts
+ * import { findSimpleRecurrenceVector } from '@symjs/symjs';
+ *
+ * findSimpleRecurrenceVector([0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89]); // => [1, -1, -1]
+ * ```
  */
 export function findSimpleRecurrenceVector(lIn: readonly ExprLike[]): Expr[] {
   let l = lIn.map(sympify);
@@ -96,6 +106,18 @@ export function findSimpleRecurrenceVector(lIn: readonly ExprLike[]): Expr[] {
  *
  * Example: findSimpleRecurrence(fibonacci(0..11)) is
  * -a(n) - a(n + 1) + a(n + 2).
+ *
+ * @param v - The successive terms of the rational sequence.
+ * @param A - The function head representing the sequence.
+ * @param N - The index symbol of the recurrence.
+ * @returns The recurrence as an expression equal to zero, or zero when none is found.
+ * @see SymPy `sympy.concrete.guess.find_simple_recurrence`
+ * @example
+ * ```ts
+ * import { findSimpleRecurrence } from '@symjs/symjs';
+ *
+ * findSimpleRecurrence([0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89]); // => -a(n) - a(n + 1) + a(n + 2)
+ * ```
  */
 export function findSimpleRecurrence(v: readonly ExprLike[], A: UndefinedFunction = defaultA, N: Expr = defaultN): Expr {
   const p = findSimpleRecurrenceVector(v);
@@ -111,6 +133,17 @@ export function findSimpleRecurrence(v: readonly ExprLike[], A: UndefinedFunctio
  *
  * Example: rationalize(Float(0.333333333333333)) is 1/3; with maxcoeff 250,
  * pi gives 355/113.
+ *
+ * @param xIn - The argument of the function.
+ * @param maxcoeff - The partial-quotient threshold for truncating the continued fraction.
+ * @returns The rational convergent retained by the continued-fraction algorithm.
+ * @see SymPy `sympy.concrete.guess.rationalize`
+ * @example
+ * ```ts
+ * import { rationalize } from '@symjs/symjs';
+ *
+ * rationalize(0.3333333333333333); // => 1/3
+ * ```
  */
 export function rationalize(xIn: ExprLike, maxcoeff: ExprLike = 10000): Expr {
   let x = sympify(xIn);
@@ -134,6 +167,17 @@ export function rationalize(xIn: ExprLike, maxcoeff: ExprLike = 10000): Expr {
  * numbers (SymPy guess_generating_function_rational), or NoMatch.
  *
  * Example: for fibonacci(5..14) it is (3*x + 5)/(-x**2 - x + 1).
+ *
+ * @param vIn - The successive terms of the rational sequence.
+ * @param X - The generating-function variable.
+ * @returns The rational generating function, or `NoMatch`.
+ * @see SymPy `sympy.concrete.guess.guess_generating_function_rational`
+ * @example
+ * ```ts
+ * import { guessGeneratingFunctionRational } from '@symjs/symjs';
+ *
+ * guessGeneratingFunctionRational([5, 8, 13, 21, 34, 55, 89, 144, 233, 377]); // => (3*x + 5)/(-x**2 - x + 1)
+ * ```
  */
 export function guessGeneratingFunctionRational(vIn: readonly ExprLike[], X: Expr = defaultX): Expr | NoMatchResult {
   const v = vIn.map(sympify);
@@ -204,6 +248,18 @@ function logarithmicDerivative(z: readonly Expr[]): Expr[] {
  *
  * Example: for 1, 2, 3, ... with types ['ogf', 'lgf', 'hlgf'] it is
  * Map { ogf: 1/(x**2 - 2*x + 1), lgf: 1/(x + 1), hlgf: 1/(1 - x) }.
+ *
+ * @param vIn - The successive terms of the rational sequence.
+ * @param X - The generating-function variable.
+ * @param opts - The generating-function families and search depth in {@link GuessGeneratingFunctionOptions}.
+ * @returns A map of generating-function types to their guessed expressions.
+ * @see SymPy `sympy.concrete.guess.guess_generating_function`
+ * @example
+ * ```ts
+ * import { ex, guessGeneratingFunction } from '@symjs/symjs';
+ *
+ * guessGeneratingFunction([1, 2, 4, 8, 16, 32], ex`x`).get('ogf'); // => 1/(1 - 2*x)
+ * ```
  */
 export function guessGeneratingFunction(vIn: readonly ExprLike[], X: Expr = defaultX, opts: GuessGeneratingFunctionOptions = {}): Map<string, Expr> {
   const v = vIn.map(sympify);
@@ -265,6 +321,17 @@ export interface GuessOptions {
  *
  * Example: guess([1, 2, 6, 24, 120], { evaluate: false }) is
  * [Product(i1 + 1, (i1, 1, i0 - 1))].
+ *
+ * @param lIn - The successive terms of the rational sequence.
+ * @param opts - The sequence-formula search settings in {@link GuessOptions}.
+ * @returns The candidate formulas for the sequence.
+ * @see SymPy `sympy.concrete.guess.guess`
+ * @example
+ * ```ts
+ * import { guess } from '@symjs/symjs';
+ *
+ * guess([1, 2, 6, 24, 120], { evaluate: false }); // => [Product(i1 + 1, (i1, 1, i0 - 1))]
+ * ```
  */
 export function guess(lIn: readonly ExprLike[], opts: GuessOptions = {}): Expr[] {
   let l = lIn.map(sympify);

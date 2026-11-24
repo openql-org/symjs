@@ -11,7 +11,20 @@ function isPolyLike(a: unknown): a is { asExpr(): Expr; gens: readonly Expr[] } 
   return typeof a === 'object' && a !== null && !(a instanceof Expr) && typeof Reflect.get(a, 'asExpr') === 'function' && Array.isArray(Reflect.get(a, 'gens'));
 }
 
-/** SymPy unchanged(func, ...args): construction preserves the function and its arguments. */
+/**
+ * construction preserves the function and its arguments.
+ *
+ * @param func - The callable to inspect.
+ * @param args - The arguments in positional order.
+ * @returns True if applying the constructor preserves both the head and arguments.
+ * @see SymPy `sympy.core.expr.unchanged`
+ * @example
+ * ```ts
+ * import { ex, sin, unchanged } from '@symjs/symjs';
+ *
+ * unchanged(sin, ex`x`); // => True
+ * ```
+ */
 export function unchanged<A extends unknown[]>(func: (...args: A) => Expr, ...args: A): boolean {
   const result = func(...args);
   const name = func.name.replace(/Node$/, '');

@@ -20,7 +20,21 @@ import { identify, pslq } from './identification';
 import { parse } from '../parsing/parser';
 import { limitDenominator } from '../core/numberutils';
 
-/** Make all rationals Floats, keeping exponents exact unless exponent=true. */
+/**
+ * Make all rationals Floats, keeping exponents exact unless exponent=true.
+ *
+ * @param exIn - The input expression.
+ * @param n - The precision in decimal digits.
+ * @param exponent - The exponent.
+ * @returns The expression with its rational constants converted to floats.
+ * @see SymPy `sympy.core.function.nfloat`
+ * @example
+ * ```ts
+ * import { ex, nfloat } from '@symjs/symjs';
+ *
+ * nfloat(ex`x**4 + x/2 + sqrt(y) + 3/2`); // => x**4 + 0.5*x + sqrt(y) + 1.5
+ * ```
+ */
 export function nfloat(exIn: ExprLike, n = 15, exponent = false): Expr {
   const e = sympify(exIn);
   if (e instanceof Rational) return float(e, n);
@@ -57,7 +71,22 @@ export function nfloat(exIn: ExprLike, n = 15, exponent = false): Expr {
   return mapBottomUp(rv, (term) => term instanceof Fn && term.name !== 'Min' && term.name !== 'Max' ? rebuild(term, term.args.map((arg) => nfloat(arg, n, exponent))) : term);
 }
 
-/** Are z1 and z2 equal within tolerance (SymPy comp)? */
+/**
+ * Are z1 and z2 equal within tolerance (SymPy comp)?
+ *
+ * @param z1In - The z1in.
+ * @param z2In - The z2in.
+ * @param tol - The tolerance for the numerical comparison.
+ * @returns Whether the numerical values agree within the specified tolerance.
+ * @throws RangeError when the inputs do not support the requested numerical comparison.
+ * @see SymPy `sympy.core.numbers.comp`
+ * @example
+ * ```ts
+ * import { comp, ex } from '@symjs/symjs';
+ *
+ * comp(ex`1/3`, ex`1/3`); // => True
+ * ```
+ */
 export function comp(z1In: ExprLike, z2In: ExprLike | string, tol?: number | ''): boolean {
   let z1 = sympify(z1In);
   if (typeof z2In === 'string') {

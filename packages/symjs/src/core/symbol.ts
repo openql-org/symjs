@@ -9,12 +9,30 @@ import { preorderTraversal, xreplace } from './traverse';
 import { compareKeys, sortKey } from '../printing/sortkey';
 import { TupleNode } from './containers';
 
+/** Rules for comparing and modifying a candidate symbol name to avoid collisions. */
 export interface UniqueSymbolOptions extends Assumptions {
+  /** Normalize candidate names for comparison. */
   readonly compare?: (name: string) => string;
+  /** Produce the next candidate name after a collision. */
   readonly modify?: (name: string) => string;
 }
 
-/** SymPy uniquely_named_symbol: increment a suffix until the name is unused. */
+/**
+ * Creates a symbol whose name is unused in the supplied expressions.
+ *
+ * @param xname - The proposed symbol name or name and fallback symbol.
+ * @param exprs - The expressions to process.
+ * @param options - The comparison and renaming callbacks in {@link UniqueSymbolOptions}.
+ * @returns A symbol whose name is distinct from those in the given expressions.
+ * @see SymPy `sympy.core.symbol.uniquely_named_symbol`
+ * @example
+ * ```ts
+ * import { ex, uniquelyNamedSymbol } from '@symjs/symjs';
+ *
+ * uniquelyNamedSymbol('x', ex`x`); // => x0
+ * uniquelyNamedSymbol('x', [ex`x`, ex`x0`]); // => x1
+ * ```
+ */
 export function uniquelyNamedSymbol(xname: string | Sym | readonly [string | Sym, Sym], exprs: ExprLike | readonly ExprLike[] = [], options: UniqueSymbolOptions = {}): Sym {
   const { compare = (name: string): string => name, modify, ...assumptions } = options;
   const base = typeof xname === 'string' || xname instanceof Sym ? xname : xname[0];
@@ -31,7 +49,19 @@ export function uniquelyNamedSymbol(xname: string | Sym | readonly [string | Sym
   return new Sym(name, assumptions);
 }
 
-/** SymPy disambiguate: unique printed names, replacing Dummy symbols by ordinary symbols. */
+/**
+ * unique printed names, replacing Dummy symbols by ordinary symbols.
+ *
+ * @param exprs - The expressions to process.
+ * @returns The expressions with conflicting symbol names distinguished.
+ * @see SymPy `sympy.core.symbol.disambiguate`
+ * @example
+ * ```ts
+ * import { disambiguate, ex } from '@symjs/symjs';
+ *
+ * disambiguate(ex`x`, ex`y`); // => (x, y)
+ * ```
+ */
 export function disambiguate(...exprs: ExprLike[]): TupleNode {
   const tuple = new TupleNode(exprs.map(sympify));
   const groups = new Map<string, Sym[]>();

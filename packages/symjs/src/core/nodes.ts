@@ -21,6 +21,7 @@ import { gcd, lcm } from './numbers';
 import { deduceAllFacts } from './facts';
 import { type Mpf, fromNumber as mpfFromNumber, fromRational as mpfFromRational, normalize as mpfNormalize, toNumber as mpfToNumber } from '../numeric/mpf';
 
+/** The discriminant identifying the kind of an expression node. */
 export type ExprKind =
   | 'Rational'
   | 'Float'
@@ -49,7 +50,9 @@ export type ExprLike = Expr | number | bigint;
 
 /** Complex number value used by numeric evaluation. */
 export interface ComplexValue {
+  /** The real component. */
   re: number;
+  /** The imaginary component. */
   im: number;
 }
 
@@ -76,38 +79,67 @@ export type Substitution =
   | readonly (readonly [Expr, ExprLike])[]
   | Readonly<Record<string, ExprLike>>;
 
+/** Facts attached to a symbol, such as whether it is real, positive, or commutative. */
 export interface Assumptions {
+  /** Whether the symbol is algebraic. */
   readonly algebraic?: boolean;
+  /** Whether the symbol is antihermitian. */
   readonly antihermitian?: boolean;
+  /** Whether the symbol is complex. */
   readonly complex?: boolean;
+  /** Whether the symbol is composite. */
   readonly composite?: boolean;
+  /** Whether the symbol is even. */
   readonly even?: boolean;
+  /** Whether the symbol is extended negative. */
   readonly extendedNegative?: boolean;
+  /** Whether the symbol is extended nonnegative. */
   readonly extendedNonnegative?: boolean;
+  /** Whether the symbol is extended nonpositive. */
   readonly extendedNonpositive?: boolean;
+  /** Whether the symbol is extended nonzero. */
   readonly extendedNonzero?: boolean;
+  /** Whether the symbol is extended positive. */
   readonly extendedPositive?: boolean;
+  /** Whether the symbol is extended real. */
   readonly extendedReal?: boolean;
+  /** Whether the symbol is finite. */
   readonly finite?: boolean;
+  /** Whether the symbol is hermitian. */
   readonly hermitian?: boolean;
+  /** Whether the symbol is imaginary. */
   readonly imaginary?: boolean;
+  /** Whether the symbol is infinite. */
   readonly infinite?: boolean;
+  /** Whether the symbol is irrational. */
   readonly irrational?: boolean;
+  /** Whether the symbol is noninteger. */
   readonly noninteger?: boolean;
+  /** Whether the symbol is nonzero. */
   readonly nonzero?: boolean;
+  /** Whether the symbol is odd. */
   readonly odd?: boolean;
+  /** Whether the symbol is prime. */
   readonly prime?: boolean;
+  /** Whether the symbol is rational. */
   readonly rational?: boolean;
+  /** Whether the symbol is transcendental. */
   readonly transcendental?: boolean;
   /** Fermionic index restrictions (SymPy above_fermi / below_fermi). */
   readonly aboveFermi?: boolean;
+  /** Whether the symbol is below fermi. */
   readonly belowFermi?: boolean;
+  /** Whether the symbol is real. */
   readonly real?: boolean;
+  /** Whether the symbol is positive. */
   readonly positive?: boolean;
+  /** Whether the symbol is nonnegative. */
   readonly nonnegative?: boolean;
   /** true for an integer symbol; false for a symbol known not to be an integer (SymPy integer=False). */
   readonly integer?: boolean;
+  /** Whether the symbol is negative. */
   readonly negative?: boolean;
+  /** Whether the symbol is nonpositive. */
   readonly nonpositive?: boolean;
   /** false for non-commutative symbols (operators). */
   readonly commutative?: boolean;
@@ -560,10 +592,15 @@ function fromiterItem(v: unknown): Expr {
  */
 export abstract class Expr {
   /**
-   * SymPy `fromiter(args)`: the class applied to the items of args
+   * The class applied to the items of args
    * (`Add.fromiter([x, y])` is x + y). Classes whose constructor SymPy calls
    * this way (Add, Mul, Pow, MatAdd, MatMul, ...) register it; others throw
    * NotImplementedError (SymPy's bare `Expr(x, y)` has no JavaScript counterpart).
+   *
+   * @param this - The node class on which the method is called.
+   * @param args - The arguments in positional order.
+   * @returns The class applied to the items of args (`Add.fromiter([x, y])` is x + y).
+   * @see SymPy `sympy.core.expr.Expr.fromiter`
    */
   static fromiter(this: abstract new (...args: never[]) => Expr, args: Iterable<unknown>): Expr {
     const build = fromiterBuilders.get(classOf(this));
@@ -571,9 +608,13 @@ export abstract class Expr {
     return build([...args].map(fromiterItem));
   }
   /**
-   * SymPy `AssocOp.make_args(expr)`: the arguments of expr when it is an
+   * The arguments of expr when it is an
    * instance of the class, else expr alone (`Mul.makeArgs(x*y)` is [x, y],
    * `Add.makeArgs(x*y)` is [x*y]).
+   *
+   * @param this - The node class on which the method is called.
+   * @param exprIn - The input expression.
+   * @returns The arguments of expr when it is an instance of the class, else expr alone (`Mul.makeArgs(x*y)` is [x, y], `Add.makeArgs(x*y)` is [x*y]).
    */
   static makeArgs(this: abstract new (...args: never[]) => Expr, exprIn: ExprLike): Expr[] {
     const expr = impl.sympify(exprIn);
@@ -592,7 +633,11 @@ export abstract class Expr {
   abstract readonly args: readonly Expr[];
   #key: string | undefined;
 
-  /** Structural key: two expressions are equal iff their keys are equal. */
+  /**
+   * Structural key: two expressions are equal iff their keys are equal.
+   *
+   * @returns The structural comparison key.
+   */
   get key(): string {
     return (this.#key ??= this.computeKey());
   }
@@ -621,9 +666,12 @@ export abstract class Expr {
   }
 
   /**
-   * SymPy `func`: the head of the expression, the public constructor or function that builds it
+   * The head of the expression, the public constructor or function that builds it
    * from its arguments (`func(sin(x)) === sin`, `func(x + y) === Add`, `e.func(...e.args)` equals
    * `e`). An atom (a symbol, a number) has no arguments to rebuild it from, as in SymPy.
+   *
+   * @returns The callable expression head.
+   * @see SymPy `sympy.core.expr.Expr.func`
    */
   get func(): Head {
     return headOf(this);
@@ -634,6 +682,7 @@ export abstract class Expr {
    * undefined functions (`2`, `pi`, `sqrt(2) + 1`, `sin(1)`).
    *
    * @see SymPy `sympy.core.expr.Expr.is_number`
+   * @returns Whether the expression represents a number.
    */
   get isNumber(): boolean {
     if (this instanceof Constant || this instanceof Special) return true;
@@ -641,7 +690,12 @@ export abstract class Expr {
     return false;
   }
 
-  /** Whether numerical evaluation gives a real number with nonzero precision. */
+  /**
+   * Whether numerical evaluation gives a real number with nonzero precision.
+   *
+   * @returns Whether numerical evaluation permits a real-valued comparison.
+   * @see SymPy `sympy.core.expr.Expr.is_comparable`
+   */
   get isComparable(): boolean {
     return impl.isComparable(this);
   }
@@ -650,13 +704,19 @@ export abstract class Expr {
    * Whether the expression has no arguments (a number, a symbol or a constant).
    *
    * @see SymPy `sympy.core.basic.Basic.is_Atom`
+   * @returns Whether the node has no arguments.
    */
   get isAtom(): boolean {
     return this.args.length === 0;
   }
 
   private _commutative?: boolean;
-  /** False when the expression contains a non-commutative symbol in a product-like position. */
+  /**
+   * False when the expression contains a non-commutative symbol in a product-like position.
+   *
+   * @returns Whether multiplication by the expression commutes.
+   * @see SymPy `sympy.core.expr.Expr.is_commutative`
+   */
   get isCommutative(): boolean {
     this._commutative ??= this.computeCommutative();
     return this._commutative;
@@ -1090,9 +1150,25 @@ export function asRational(e: Expr, what = 'value'): Rational {
  * ```
  */
 export class Rational extends Expr {
+  /** The node's discriminant. */
   readonly kind = 'Rational' as const;
+  /**
+   * The node's arguments in canonical order.
+   *
+   * @see SymPy `sympy.core.numbers.Rational.args`
+   */
   readonly args: readonly Expr[] = [];
+  /**
+   * The numerator in lowest terms.
+   *
+   * @see SymPy `sympy.core.numbers.Rational.p`
+   */
   readonly p: bigint;
+  /**
+   * The positive denominator in lowest terms.
+   *
+   * @see SymPy `sympy.core.numbers.Rational.q`
+   */
   readonly q: bigint;
 
   private constructor(p: bigint, q: bigint) {
@@ -1101,6 +1177,15 @@ export class Rational extends Expr {
     this.q = q;
   }
 
+  /**
+   * Constructs a reduced rational number from an integer numerator and denominator.
+   *
+   * @param p - The integer numerator or denominator, respectively.
+   * @param q - The integer numerator or denominator, respectively.
+   * @param options - `gcd` supplies a known common divisor of the numerator and denominator.
+   * @returns A reduced rational number from an integer numerator and denominator.
+   * @throws RangeError when the denominator is zero or the supplied common divisor is invalid.
+   */
   static of(p: bigint | number, q: bigint | number = 1n, options: { gcd?: bigint } = {}): Rational {
     let P = BigInt(p);
     let Q = BigInt(q);
@@ -1118,24 +1203,64 @@ export class Rational extends Expr {
     return new Rational(P, Q);
   }
 
+  /**
+   * Whether this expression represents a number.
+   *
+   * @returns Whether the expression represents a number.
+   * @see SymPy `sympy.core.numbers.Rational.is_number`
+   */
   get isNumber(): boolean {
     return true;
   }
+  /**
+   * Whether the denominator equals one.
+   *
+   * @returns Whether the number is integral.
+   * @see SymPy `sympy.core.numbers.Rational.is_integer`
+   */
   get isInteger(): boolean {
     return this.q === 1n;
   }
+  /**
+   * Whether the number equals zero.
+   *
+   * @returns Whether the value is zero.
+   * @see SymPy `sympy.core.numbers.Rational.is_zero`
+   */
   get isZero(): boolean {
     return this.p === 0n;
   }
+  /**
+   * Whether the number equals one.
+   *
+   * @returns Whether the value equals one.
+   */
   get isOne(): boolean {
     return this.p === 1n && this.q === 1n;
   }
+  /**
+   * Whether the number is strictly negative.
+   *
+   * @returns Whether the number is negative.
+   * @see SymPy `sympy.core.numbers.Rational.is_negative`
+   */
   get isNegative(): boolean {
     return this.p < 0n;
   }
+  /**
+   * Whether the number is strictly positive.
+   *
+   * @returns Whether the number is positive.
+   * @see SymPy `sympy.core.numbers.Rational.is_positive`
+   */
   get isPositive(): boolean {
     return this.p > 0n;
   }
+  /**
+   * The numerical value as a JavaScript number.
+   *
+   * @returns The nearest JavaScript number.
+   */
   get value(): number {
     return Number(this.p) / Number(this.q);
   }
@@ -1149,7 +1274,14 @@ export class Rational extends Expr {
     if (this.q !== 1n || b === undefined) throw new TypeError('bitwise operations need integers');
     return Rational.of(op(this.p, b));
   }
-  /** The numeric gcd and both quotients (SymPy Number.cofactors). */
+  /**
+   * The numeric gcd and both quotients (SymPy Number.cofactors).
+   *
+   * @param other - The other operand.
+   * @returns The numeric gcd and both quotients (SymPy Number.cofactors).
+   * @throws RangeError when both operands are exactly zero.
+   * @see SymPy `sympy.core.numbers.Rational.cofactors`
+   */
   cofactors(other: Num): [Num, Num, Num] {
     if (other instanceof Float) {
       const [g, b, a] = other.cofactors(this);
@@ -1159,28 +1291,65 @@ export class Rational extends Expr {
     if (g.isZero) throw new RangeError('cofactors of two exact zeros');
     return [g, Rational.of(this.p * g.q, this.q * g.p), Rational.of(other.p * g.q, other.q * g.p)];
   }
-  /** Bitwise complement of an integer in two's complement. */
+  /**
+   * Bitwise complement of an integer in two's complement.
+   *
+   * @returns The bitwise complement as an integer.
+   * @throws TypeError when the operand is not an integer.
+   */
   bitNot(): Rational {
     if (!this.isInteger) throw new TypeError('bitwise operations need integers');
     return Rational.of(~this.p);
   }
-  /** SymPy Integer.__lshift__: the integer shifted left by n bits (a RangeError for a negative n). */
+  /**
+   * Shifts this integer left.
+   *
+   * @param n - The number of bit positions to shift.
+   * @returns The integer multiplied by `2**n`.
+   * @throws TypeError when either operand is not an integer.
+   * @throws RangeError when the shift count is negative.
+   */
   lshift(n: Rational | number | bigint): Rational {
     return this.bits(n, (a, b) => (b < 0n ? negativeShift() : a << b));
   }
-  /** SymPy Integer.__rshift__: the integer shifted right by n bits, rounding down (a RangeError for a negative n). */
+  /**
+   * Shifts this integer right.
+   *
+   * @param n - The number of bit positions to shift.
+   * @returns The integer divided by `2**n`, rounded down.
+   * @throws TypeError when either operand is not an integer.
+   * @throws RangeError when the shift count is negative.
+   */
   rshift(n: Rational | number | bigint): Rational {
     return this.bits(n, (a, b) => (b < 0n ? negativeShift() : a >> b));
   }
-  /** SymPy Integer.__and__: the bitwise and of two integers (in two's complement). */
+  /**
+   * The bitwise and of two integers (in two's complement).
+   *
+   * @param other - The other operand.
+   * @returns The bitwise AND as an integer.
+   * @throws TypeError when either operand is not an integer.
+   */
   and(other: Rational | number | bigint): Rational {
     return this.bits(other, (a, b) => a & b);
   }
-  /** SymPy Integer.__or__: the bitwise or of two integers (in two's complement). */
+  /**
+   * The bitwise or of two integers (in two's complement).
+   *
+   * @param other - The other operand.
+   * @returns The bitwise OR as an integer.
+   * @throws TypeError when either operand is not an integer.
+   */
   or(other: Rational | number | bigint): Rational {
     return this.bits(other, (a, b) => a | b);
   }
-  /** SymPy Integer.__xor__: the bitwise exclusive or of two integers (in two's complement). */
+  /**
+   * The bitwise exclusive or of two integers (in two's complement).
+   *
+   * @param other - The other operand.
+   * @returns The bitwise XOR as an integer.
+   * @throws TypeError when either operand is not an integer.
+   */
   xor(other: Rational | number | bigint): Rational {
     return this.bits(other, (a, b) => a ^ b);
   }
@@ -1205,7 +1374,13 @@ const negativeShift = (): never => {
  * ```
  */
 export class Float extends Expr {
+  /** The node's discriminant. */
   readonly kind = 'Float' as const;
+  /**
+   * The node's arguments in canonical order.
+   *
+   * @see SymPy `sympy.core.numbers.Float.args`
+   */
   readonly args: readonly Expr[] = [];
   /** Exact binary value man * 2**exp. */
   readonly mpf: Mpf;
@@ -1213,7 +1388,10 @@ export class Float extends Expr {
   readonly prec: number;
   /**
    * A float from a JS number (rounded to `prec` bits) or a raw mpf value.
+   *
    * @param prec binary precision; defaults to 53 (15 decimal digits).
+   * @param valueIn - The value to convert.
+   * @throws RangeError when a JavaScript number is nonfinite.
    */
   constructor(valueIn: number | Mpf, prec = 53) {
     super();
@@ -1225,25 +1403,59 @@ export class Float extends Expr {
     this.mpf = mpfNormalize(value.man, value.exp, prec);
     this.prec = prec;
   }
-  /** In the real field the gcd is one, at the precision of the two operands. */
+  /**
+   * In the real field the gcd is one, at the precision of the two operands.
+   *
+   * @param other - The other operand.
+   * @returns The unit gcd and the two operands converted to floating point.
+   * @see SymPy `sympy.core.numbers.Float.cofactors`
+   */
   cofactors(other: Num): [Float, Float, Float] {
     const prec = other instanceof Float ? Math.max(this.prec, other.prec) : this.prec;
     const value = other instanceof Float ? other.mpf : mpfFromRational(other.p, other.q, prec);
     return [new Float(1, prec), new Float(this.mpf, prec), new Float(value, prec)];
   }
-  /** Nearest JS double. */
+  /**
+   * Nearest JS double.
+   *
+   * @returns The nearest JavaScript number.
+   */
   get value(): number {
     return mpfToNumber(this.mpf);
   }
+  /**
+   * Whether this expression represents a number.
+   *
+   * @returns Whether the expression represents a number.
+   * @see SymPy `sympy.core.numbers.Float.is_number`
+   */
   get isNumber(): boolean {
     return true;
   }
+  /**
+   * Whether the number equals zero.
+   *
+   * @returns Whether the value is zero.
+   * @see SymPy `sympy.core.numbers.Float.is_zero`
+   */
   get isZero(): boolean {
     return this.mpf.man === 0n;
   }
+  /**
+   * Whether the number is strictly negative.
+   *
+   * @returns Whether the number is negative.
+   * @see SymPy `sympy.core.numbers.Float.is_negative`
+   */
   get isNegative(): boolean {
     return this.mpf.man < 0n;
   }
+  /**
+   * Whether the number is strictly positive.
+   *
+   * @returns Whether the number is positive.
+   * @see SymPy `sympy.core.numbers.Float.is_positive`
+   */
   get isPositive(): boolean {
     return this.mpf.man > 0n;
   }
@@ -1256,25 +1468,46 @@ export class Float extends Expr {
   }
 }
 
+/** An exact rational number or a floating-point number. */
 export type Num = Rational | Float;
 
+/**
+ * Tests whether an expression is a rational or floating-point number.
+ *
+ * @param e - The input expression.
+ * @returns Whether the expression belongs to the indicated node class.
+ * @see SymPy `sympy.core.expr.Expr.is_Number`
+ */
 export function isNum(e: Expr): e is Num {
   return e instanceof Rational || e instanceof Float;
 }
 
 /** A symbolic variable. */
 export class Sym extends Expr {
+  /** The discriminant identifying the expression node. */
   readonly kind = 'Symbol' as const;
+  /** The operands of the expression in node order. */
   readonly args: readonly Expr[] = [];
+  /** The facts supplied when constructing the symbol. */
   readonly assumptions: Assumptions;
-  /** All consequences of the assumptions used to construct this symbol. */
+  /**
+   * All consequences of the assumptions used to construct this symbol.
+   *
+   * @see SymPy `sympy.core.symbol.Symbol.assumptions0`
+   */
   get assumptions0(): Map<string, boolean> {
     return deduceAllFacts({ commutative: true, ...Object.fromEntries(Object.entries(this.assumptions).map(([k, v]) => [k.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`), v])) });
   }
 
   /** Whether commutative=True was given explicitly: it is the default, and SymPy's srepr shows it only then. */
   readonly givenCommutative: boolean;
-  constructor(readonly name: string, assumptions: Assumptions = {}) {
+  /**
+   * Creates a named symbol.
+   *
+   * @param name - The symbolic name.
+   * @param assumptions - The facts to attach to the symbol.
+   */
+  constructor(/** The symbolic name. */ readonly name: string, assumptions: Assumptions = {}) {
     super();
     if (typeof name !== 'string') {
       throw new SyntaxError(`Invalid symbol name: ${JSON.stringify(name)}`);
@@ -1317,6 +1550,9 @@ export class Sym extends Expr {
    * (SymPy RandomSymbol(symbol, pspace) substitutes in its probability
    * space), given the substitution of a subexpression; undefined for a plain
    * symbol, which has nothing inside.
+   *
+   * @param _f - The transformation to apply to embedded expressions.
+   * @returns The specialized substitution or `undefined` to use ordinary symbol substitution.
    */
   substituteInner(_f: (e: Expr) => Expr): Expr | undefined {
     return undefined;
@@ -1325,6 +1561,8 @@ export class Sym extends Expr {
   /**
    * Free symbols of a symbol-like node besides itself (SymPy
    * RandomIndexedSymbol X(t) also has t free); none for a plain symbol.
+   *
+   * @returns The free symbols contributed by the embedded expressions.
    */
   innerFreeSymbols(): readonly Sym[] {
     return [];
@@ -1356,11 +1594,20 @@ export class Sym extends Expr {
 /** SymPy Dummy: a symbol that is distinct from every other symbol, printed with a leading underscore. */
 export class Dummy extends Sym {
   private static counter = 0;
+  /** The unique index distinguishing this dummy from other symbols of the same name. */
   readonly dummyIndex: number;
+  /**
+   * Creates a distinct dummy symbol.
+   *
+   * @param name - The symbolic name.
+   * @param assumptions - The facts to attach to the symbol.
+   * @param index - The unique identifier for this dummy.
+   */
   constructor(name = 'Dummy', assumptions: Assumptions = {}, index?: number) {
     super(name, assumptions);
     this.dummyIndex = index ?? ++Dummy.counter;
   }
+  /** The symbol name prefixed with an underscore. */
   get printName(): string {
     return `_${this.name}`;
   }
@@ -1369,10 +1616,36 @@ export class Dummy extends Sym {
   }
 }
 
-/** Pattern symbol for match/replace; matches any expression not containing an excluded one. */
+/**
+ * Pattern symbol for match/replace; matches any expression not containing an excluded one.
+ *
+ * @see SymPy `sympy.core.symbol.Wild`
+ * @example
+ * ```ts
+ * import { Wild } from '@symjs/symjs';
+ *
+ * new Wild('p').printName; // => p_
+ * ```
+ */
 export class Wild extends Sym {
+  /**
+   * Expressions that cannot occur in a wildcard match.
+   *
+   * @see SymPy `sympy.core.symbol.Wild.exclude`
+   */
   readonly exclude: readonly Expr[];
+  /**
+   * Predicates that a match for this wildcard must satisfy.
+   *
+   * @see SymPy `sympy.core.symbol.Wild.properties`
+   */
   readonly properties: readonly ((e: Expr) => boolean)[];
+  /**
+   * Creates a `Wild`.
+   *
+   * @param name - The symbolic name or names.
+   * @param opts - `exclude` rules out subexpressions, `properties` supplies match tests, and assumption flags constrain the wildcard.
+   */
   constructor(
     name: string,
     opts: { exclude?: readonly ExprLike[]; properties?: readonly ((e: Expr) => boolean)[] } & Assumptions = {},
@@ -1382,6 +1655,11 @@ export class Wild extends Sym {
     this.exclude = exclude.map((e) => impl.sympify(e));
     this.properties = properties;
   }
+  /**
+   * The wildcard name with its trailing underscore.
+   *
+   * @returns The wildcard name with its trailing underscore.
+   */
   get printName(): string {
     return `${this.name}_`;
   }
@@ -1390,9 +1668,27 @@ export class Wild extends Sym {
   }
 }
 
-/** Pattern matching an applied function (optionally with a given number of arguments). */
+/**
+ * Pattern matching an applied function (optionally with a given number of arguments).
+ *
+ * @see SymPy `sympy.core.function.WildFunction`
+ * @example
+ * ```ts
+ * import { WildFunction } from '@symjs/symjs';
+ *
+ * new WildFunction('F').name; // => F
+ * ```
+ */
 export class WildFunction extends Wild {
-  constructor(name: string, readonly nargs?: readonly number[]) {
+  /**
+   * Creates a `WildFunction`.
+   *
+   * @param name - The symbolic name or names.
+   * @param nargs - The allowed argument counts of the matched function.
+   */
+  constructor(name: string,
+    /** The allowed argument counts of the matched function. */
+    readonly nargs?: readonly number[]) {
     super(name);
   }
   protected computeKey(): string {
@@ -1400,13 +1696,31 @@ export class WildFunction extends Wild {
   }
 }
 
+/** The names of the supported symbolic number constants. */
 export type ConstantName = 'pi' | 'E' | 'I' | 'EulerGamma' | 'Catalan' | 'GoldenRatio' | 'TribonacciConstant';
 
-/** Mathematical constants: pi, E (Euler's number) and I (imaginary unit). */
+/**
+ * Mathematical constants: pi, E (Euler's number) and I (imaginary unit).
+ *
+ * @see SymPy `sympy.core.numbers.NumberSymbol`
+ */
 export class Constant extends Expr {
+  /** The node's discriminant. */
   readonly kind = 'Constant' as const;
+  /**
+   * The node's arguments in canonical order.
+   *
+   * @see SymPy `sympy.core.numbers.NumberSymbol.args`
+   */
   readonly args: readonly Expr[] = [];
-  constructor(readonly name: ConstantName) {
+  /**
+   * Creates a `NumberSymbol`.
+   *
+   * @param name - The symbolic name or names.
+   */
+  constructor(
+    /** The symbolic name. */
+    readonly name: ConstantName) {
     super();
   }
   protected computeKey(): string {
@@ -1420,8 +1734,14 @@ export class Constant extends Expr {
 
 /** Sum. Canonical: numeric term first (if non-zero), remaining terms sorted. @internal ctor */
 export class Add extends Expr {
+  /** The discriminant identifying the expression node. */
   readonly kind = 'Add' as const;
-  constructor(readonly args: readonly Expr[]) {
+  /**
+   * Creates a sum from its terms.
+   *
+   * @param args - The operands in node order.
+   */
+  constructor(/** The operands of the expression in node order. */ readonly args: readonly Expr[]) {
     super();
   }
   protected computeKey(): string {
@@ -1431,8 +1751,14 @@ export class Add extends Expr {
 
 /** Product. Canonical: numeric coefficient first (if not 1), remaining factors sorted. @internal ctor */
 export class Mul extends Expr {
+  /** The discriminant identifying the expression node. */
   readonly kind = 'Mul' as const;
-  constructor(readonly args: readonly Expr[]) {
+  /**
+   * Creates a product from its factors.
+   *
+   * @param args - The operands in node order.
+   */
+  constructor(/** The operands of the expression in node order. */ readonly args: readonly Expr[]) {
     super();
   }
   protected computeKey(): string {
@@ -1442,15 +1768,33 @@ export class Mul extends Expr {
 
 /** Power base^exp. `exp(x)` is represented as Pow(E, x). @internal ctor */
 export class Pow extends Expr {
+  /** The discriminant identifying the expression node. */
   readonly kind = 'Pow' as const;
+  /** The operands of the expression in node order. */
   readonly args: readonly [Expr, Expr];
+  /**
+   * Creates a power from a base and exponent.
+   *
+   * @param base - The base of the power.
+   * @param exp - The exponent.
+   */
   constructor(base: Expr, exp: Expr) {
     super();
     this.args = [base, exp];
   }
+  /**
+   * The expression being raised to a power.
+   *
+   * @see SymPy `sympy.core.power.Pow.base`
+   */
   get base(): Expr {
     return this.args[0];
   }
+  /**
+   * The exponent.
+   *
+   * @see SymPy `sympy.core.power.Pow.exp`
+   */
   get exp(): Expr {
     return this.args[1];
   }
@@ -1460,13 +1804,37 @@ export class Pow extends Expr {
 }
 
 /**
- * Application of a named function. @internal ctor
+ * Application of a named function.
+ *
+ * @internal ctor
  *
  * @experimental May change in a minor release.
+ * @see SymPy `sympy.core.function.Function`
+ * @example
+ * ```ts
+ * import { AppliedFunction, ex } from '@symjs/symjs';
+ *
+ * new AppliedFunction('sin', [ex`x`]); // => sin(x)
+ * ```
  */
 export class Fn extends Expr {
+  /** The node's discriminant. */
   readonly kind = 'Fn' as const;
-  constructor(readonly name: FnName, readonly args: readonly Expr[]) {
+  /**
+   * Creates an `AppliedFunction`.
+   *
+   * @param name - The symbolic name or names.
+   * @param args - The arguments in positional order.
+   */
+  constructor(
+    /** The symbolic name. */
+    readonly name: FnName,
+    /**
+     * The node's arguments in canonical order.
+     *
+     * @see SymPy `sympy.core.function.Function.args`
+     */
+    readonly args: readonly Expr[]) {
     super();
   }
   protected computeKey(): string {
@@ -1478,11 +1846,19 @@ export type SpecialName = 'oo' | '-oo' | 'zoo' | 'nan';
 
 /** Extended values: oo, -oo, zoo (complex infinity) and nan. */
 export class Special extends Expr {
+  /** The discriminant identifying the expression node. */
   readonly kind = 'Special' as const;
+  /** The operands of the expression in node order. */
   readonly args: readonly Expr[] = [];
-  constructor(readonly name: SpecialName) {
+  /**
+   * Creates a special numerical value.
+   *
+   * @param name - The symbolic name.
+   */
+  constructor(/** The symbolic name. */ readonly name: SpecialName) {
     super();
   }
+  /** Whether this value represents an infinity. */
   get isInfinite(): boolean {
     return this.name !== 'nan';
   }
@@ -1491,11 +1867,28 @@ export class Special extends Expr {
   }
 }
 
-/** Boolean constant (SymPy `true` / `false`). */
+/**
+ * Boolean constant (SymPy `true` / `false`).
+ *
+ * @see SymPy `sympy.logic.boolalg.BooleanAtom`
+ */
 export class BoolAtom extends Expr {
+  /** The node's discriminant. */
   readonly kind = 'Bool' as const;
+  /**
+   * The node's arguments in canonical order.
+   *
+   * @see SymPy `sympy.logic.boolalg.BooleanAtom.args`
+   */
   readonly args: readonly Expr[] = [];
-  constructor(readonly value: boolean) {
+  /**
+   * Creates a `BooleanAtom`.
+   *
+   * @param value - The value to examine.
+   */
+  constructor(
+    /** The truth value of the Boolean atom. */
+    readonly value: boolean) {
     super();
   }
   protected computeKey(): string {
@@ -1503,28 +1896,84 @@ export class BoolAtom extends Expr {
   }
 }
 
+/** The comparison operator stored in a relational expression. */
 export type RelOp = 'Eq' | 'Ne' | 'Lt' | 'Le' | 'Gt' | 'Ge';
 
-/** Relation such as Ne(a, 0). Construct with `rel()` in `logic.ts`. @internal ctor */
+/**
+ * Relation such as Ne(a, 0). Construct with `rel()` in `logic.ts`.
+ *
+ * @internal ctor
+ * @see SymPy `sympy.core.relational.Relational`
+ * @example
+ * ```ts
+ * import { Rel, ex } from '@symjs/symjs';
+ *
+ * new Rel('Lt', ex`x`, ex`1`); // => x < 1
+ * ```
+ */
 export class Rel extends Expr {
+  /** The node's discriminant. */
   readonly kind = 'Rel' as const;
+  /**
+   * The node's arguments in canonical order.
+   *
+   * @see SymPy `sympy.core.relational.Relational.args`
+   */
   readonly args: readonly [Expr, Expr];
-  constructor(readonly op: RelOp, lhs: Expr, rhs: Expr) {
+  /**
+   * Creates a `Rel`.
+   *
+   * @param op - The comparison operator.
+   * @param lhs - The left-hand operand.
+   * @param rhs - The right-hand operand.
+   */
+  constructor(
+    /** The comparison operator identifying this relation. */
+    readonly op: RelOp, lhs: Expr, rhs: Expr) {
     super();
     this.args = [lhs, rhs];
   }
+  /**
+   * The left-hand operand.
+   *
+   * @returns The left-hand operand.
+   * @see SymPy `sympy.core.relational.Relational.lhs`
+   */
   get lhs(): Expr {
     return this.args[0];
   }
+  /**
+   * The right-hand operand.
+   *
+   * @returns The right-hand operand.
+   * @see SymPy `sympy.core.relational.Relational.rhs`
+   */
   get rhs(): Expr {
     return this.args[1];
   }
+  /**
+   * The printable comparison operator.
+   *
+   * @returns The printable comparison operator.
+   */
   get relOp(): string {
     return { Eq: '==', Ne: '!=', Lt: '<', Le: '<=', Gt: '>', Ge: '>=' }[this.op];
   }
+  /**
+   * The strict version of the inequality.
+   *
+   * @returns The strict version of the inequality.
+   * @see SymPy `sympy.core.relational.Relational.strict`
+   */
   get strict(): Rel {
     return new Rel(this.op === 'Le' ? 'Lt' : this.op === 'Ge' ? 'Gt' : this.op, this.lhs, this.rhs);
   }
+  /**
+   * The non-strict version of the inequality.
+   *
+   * @returns The non-strict version of the inequality.
+   * @see SymPy `sympy.core.relational.Relational.weak`
+   */
   get weak(): Rel {
     return new Rel(this.op === 'Lt' ? 'Le' : this.op === 'Gt' ? 'Ge' : this.op, this.lhs, this.rhs);
   }
@@ -1535,10 +1984,17 @@ export class Rel extends Expr {
 
 /** Piecewise((expr, cond), ...). Args are stored flat: [e1, c1, e2, c2, ...]. @internal ctor */
 export class Piecewise extends Expr {
+  /** The discriminant identifying the expression node. */
   readonly kind = 'Piecewise' as const;
-  constructor(readonly args: readonly Expr[]) {
+  /**
+   * Creates a piecewise expression from interleaved values and conditions.
+   *
+   * @param args - The operands in node order.
+   */
+  constructor(/** The operands of the expression in node order. */ readonly args: readonly Expr[]) {
     super();
   }
+  /** The branch expressions paired with their conditions, in evaluation order. */
   get pairs(): [Expr, Expr][] {
     const out: [Expr, Expr][] = [];
     for (let i = 0; i < this.args.length; i += 2) out.push([at(this.args, i), at(this.args, i + 1)]);
@@ -1566,24 +2022,69 @@ export class Piecewise extends Expr {
  * ```
  */
 export class Integral extends Expr {
+  /** The node's discriminant. */
   readonly kind = 'Integral' as const;
-  constructor(readonly args: readonly Expr[]) {
+  /**
+   * Creates an `Integral`.
+   *
+   * @param args - The integrand, integration variable and optional endpoints.
+   */
+  constructor(
+    /**
+     * The node's arguments in canonical order.
+     *
+     * @see SymPy `sympy.integrals.integrals.Integral.args`
+     */
+    readonly args: readonly Expr[]) {
     super();
   }
+  /**
+   * The expression being integrated at this level.
+   *
+   * @returns The expression being integrated at this level.
+   */
   get integrand(): Expr {
     return at(this.args, 0);
   }
+  /**
+   * Whether this expression represents a number.
+   *
+   * @returns Whether the expression represents a number.
+   * @see SymPy `sympy.integrals.integrals.Integral.is_number`
+   */
   override get isNumber(): boolean {
     return this.freeSymbols().size === 0;
   }
+  /**
+   * The innermost integrand across nested integrals.
+   *
+   * @returns The innermost integrand across nested integrals.
+   * @see SymPy `sympy.integrals.integrals.Integral.function`
+   */
   get function(): Expr { return this.integrand instanceof Integral ? this.integrand.function : this.integrand; }
-  /** Variables bound by definite limits, including nested integral limits. */
+  /**
+   * Variables bound by definite limits, including nested integral limits.
+   *
+   * @returns The resulting expressions in order.
+   * @see SymPy `sympy.integrals.integrals.Integral.bound_symbols`
+   */
   get boundSymbols(): Expr[] {
     return [...(this.integrand instanceof Integral ? this.integrand.boundSymbols : []), ...(this.args.length >= 3 ? [this.variable] : [])];
   }
+  /**
+   * The integration variable of the outermost integral.
+   *
+   * @returns The integration variable of the outermost integral.
+   */
   get variable(): Expr {
     return at(this.args, 1);
   }
+  /**
+   * The lower and upper endpoints of a definite integral, when present.
+   *
+   * @returns The specialized result, or `undefined` to use the default behavior.
+   * @see SymPy `sympy.integrals.integrals.Integral.limits`
+   */
   get limits(): [Expr, Expr] | undefined {
     return this.args.length === 4 ? [at(this.args, 2), at(this.args, 3)] : undefined;
   }
@@ -1596,10 +2097,32 @@ export class Integral extends Expr {
   }
 }
 
-/** Application of an undefined function, e.g. f(x). Create with `Function('f')`. */
+/**
+ * Application of an undefined function, e.g. f(x). Create with `Function('f')`.
+ *
+ * @see SymPy `sympy.core.function.AppliedUndef`
+ */
 export class UndefFn extends Expr {
+  /** The node's discriminant. */
   readonly kind = 'Undef' as const;
-  constructor(readonly name: string, readonly args: readonly Expr[], readonly givenFacts: ReadonlyMap<string, boolean> = new Map()) {
+  /**
+   * Creates an `AppliedUndef`.
+   *
+   * @param name - The symbolic name or names.
+   * @param args - The arguments in positional order.
+   * @param givenFacts - The assumptions attached to the undefined function.
+   */
+  constructor(
+    /** The symbolic name. */
+    readonly name: string,
+    /**
+     * The node's arguments in canonical order.
+     *
+     * @see SymPy `sympy.core.function.AppliedUndef.args`
+     */
+    readonly args: readonly Expr[],
+    /** The assumptions attached to the undefined function. */
+    readonly givenFacts: ReadonlyMap<string, boolean> = new Map()) {
     super();
   }
   protected override computeCommutative(): boolean {
@@ -1616,10 +2139,21 @@ export class UndefFn extends Expr {
  * nonnegative integer counts which may be symbolic (SymPy `variable_count`). @internal ctor
  */
 export class Derivative extends Expr {
+  /** The discriminant identifying the expression node. */
   readonly kind = 'Derivative' as const;
-  constructor(readonly args: readonly Expr[]) {
+  /**
+   * Creates a held derivative.
+   *
+   * @param args - The operands in node order.
+   */
+  constructor(/** The operands of the expression in node order. */ readonly args: readonly Expr[]) {
     super();
   }
+  /**
+   * The expression being differentiated.
+   *
+   * @see SymPy `sympy.core.function.Derivative.expr`
+   */
   get expr(): Expr {
     return at(this.args, 0);
   }
@@ -1629,7 +2163,12 @@ export class Derivative extends Expr {
     for (let i = 1; i < this.args.length; i += 2) out.push([at(this.args, i), this.args[i + 1] ?? S.One]);
     return out;
   }
-  /** Integer counts for algorithms that require a concrete derivative order. */
+  /**
+   * Integer counts for algorithms that require a concrete derivative order.
+   *
+   * @throws RangeError when an order cannot be represented as a concrete integer count.
+   * @see SymPy `sympy.core.function.Derivative.variable_count`
+   */
   get variableCount(): [Expr, number][] {
     return this.variableOrders.map(([v, order]) => {
       if (!(order instanceof Rational && order.isInteger) || order.p > BigInt(Number.MAX_SAFE_INTEGER)) {
@@ -1642,9 +2181,19 @@ export class Derivative extends Expr {
   get derivativeOrder(): Expr {
     return impl.add(...this.variableOrders.map(([, n]) => n));
   }
-  /** Reconstruct a derivative while preserving subclass behavior. */
+  /**
+   * Reconstruct a derivative while preserving subclass behavior.
+   *
+   * @param args - The operands in node order.
+   * @returns The rebuilt expression.
+   */
   withArgs(args: readonly Expr[]): Derivative { return new Derivative(args); }
-  /** Evaluate the derivative in variable order. */
+  /**
+   * Evaluate the derivative in variable order.
+   *
+   * @returns The evaluated derivative, with unresolved differentiations held symbolically.
+   * @see SymPy `sympy.core.function.Derivative.doit`
+   */
   doit(): Expr {
     let result = this.expr;
     for (const [variable, count] of this.variableOrders) result = impl.diff(result, variable, count);
@@ -1672,19 +2221,50 @@ export class Derivative extends Expr {
  * ```
  */
 export class Limit extends Expr {
+  /** The node's discriminant. */
   readonly kind = 'Limit' as const;
-  constructor(readonly args: readonly Expr[], readonly dir: '+' | '-' | '+-' = '+') {
+  /**
+   * Creates a `Limit`.
+   *
+   * @param args - The expression, variable and limit point.
+   * @param dir - The side from which the variable approaches the limit point.
+   */
+  constructor(
+    /**
+     * The node's arguments in canonical order.
+     *
+     * @see SymPy `sympy.series.limits.Limit.args`
+     */
+    readonly args: readonly Expr[],
+    /**
+     * The side from which the variable approaches the limit point.
+     *
+     * @see SymPy `sympy.series.limits.Limit.dir`
+     */
+    readonly dir: '+' | '-' | '+-' = '+') {
     super();
   }
-  /** The expression whose limit is taken. */
+  /**
+   * The expression whose limit is taken.
+   *
+   * @returns The expression whose limit is taken.
+   */
   get expr(): Expr {
     return at(this.args, 0);
   }
-  /** The limit variable. */
+  /**
+   * The limit variable.
+   *
+   * @returns The limit variable.
+   */
   get variable(): Expr {
     return at(this.args, 1);
   }
-  /** The point the variable approaches. */
+  /**
+   * The point the variable approaches.
+   *
+   * @returns The point the variable approaches.
+   */
   get point(): Expr {
     return at(this.args, 2);
   }
@@ -1695,23 +2275,67 @@ export class Limit extends Expr {
 
 /**
  * Order term O(expr) as variable -> point. args: [expr, variable, point];
- * expr is a power of the variable (or of variable - point). @internal ctor
+ * expr is a power of the variable (or of variable - point).
+ *
+ * @internal ctor
+ * @see SymPy `sympy.series.order.Order`
+ * @example
+ * ```ts
+ * import { Order, ex } from '@symjs/symjs';
+ *
+ * new Order([ex`x**2`, ex`x`, ex`0`]); // => O(x**2)
+ * ```
  */
 export class Order extends Expr {
+  /** The node's discriminant. */
   readonly kind = 'Order' as const;
-  constructor(readonly args: readonly Expr[]) {
+  /**
+   * Creates an `Order`.
+   *
+   * @param args - The expression and optional expansion variable and point.
+   */
+  constructor(
+    /**
+     * The node's arguments in canonical order.
+     *
+     * @see SymPy `sympy.series.order.Order.args`
+     */
+    readonly args: readonly Expr[]) {
     super();
   }
+  /**
+   * The expression specifying the asymptotic order.
+   *
+   * @returns The expression specifying the asymptotic order.
+   * @see SymPy `sympy.series.order.Order.expr`
+   */
   get expr(): Expr {
     return at(this.args, 0);
   }
+  /**
+   * The variable of the asymptotic comparison, when specified.
+   *
+   * @returns The specialized result, or `undefined` to use the default behavior.
+   */
   get variable(): Expr | undefined {
     return this.args[1];
   }
+  /**
+   * The expansion point, when specified.
+   *
+   * @returns The specialized result, or `undefined` to use the default behavior.
+   * @see SymPy `sympy.series.order.Order.point`
+   */
   get point(): Expr | undefined {
     return this.args[2];
   }
-  /** Whether expr is bounded by this order term at its expansion point. */
+  /**
+   * Whether expr is bounded by this order term at its expansion point.
+   *
+   * @param expr - The input expression.
+   * @returns Whether expr is bounded by this order term at its expansion point.
+   * @see SymPy `sympy.series.order.Order.contains`
+   */
   contains(expr: ExprLike): boolean | 'unknown' {
     if (impl.orderContains === undefined) return notLoaded('Order.contains', 'calculus');
     return impl.orderContains(this, impl.sympify(expr));
@@ -1851,14 +2475,71 @@ export function compareExpr(a: Expr, b: Expr): number {
 // Type guards
 // ---------------------------------------------------------------------------
 
+/**
+ * Tests whether an expression is a rational number node.
+ *
+ * @param e - The input expression.
+ * @returns True if an expression is a rational number node, otherwise false.
+ * @see SymPy `sympy.core.expr.Expr.is_Rational`
+ */
 export const isRational = (e: Expr): e is Rational => e instanceof Rational;
+/**
+ * Tests whether an expression is a floating-point number node.
+ *
+ * @param e - The input expression.
+ * @returns True if an expression is a floating-point number node, otherwise false.
+ * @see SymPy `sympy.core.expr.Expr.is_Float`
+ */
 export const isFloat = (e: Expr): e is Float => e instanceof Float;
+/**
+ * Tests whether an expression is a symbol.
+ *
+ * @param e - The input expression.
+ * @returns True if an expression is a symbol, otherwise false.
+ * @see SymPy `sympy.core.expr.Expr.is_Symbol`
+ */
 export const isSymbol = (e: Expr): e is Sym => e instanceof Sym;
+/**
+ * Tests whether an expression is a sum.
+ *
+ * @param e - The input expression.
+ * @returns True if an expression is a sum, otherwise false.
+ * @see SymPy `sympy.core.expr.Expr.is_Add`
+ */
 export const isAdd = (e: Expr): e is Add => e instanceof Add;
+/**
+ * Tests whether an expression is a product.
+ *
+ * @param e - The input expression.
+ * @returns True if an expression is a product, otherwise false.
+ * @see SymPy `sympy.core.expr.Expr.is_Mul`
+ */
 export const isMul = (e: Expr): e is Mul => e instanceof Mul;
+/**
+ * Tests whether an expression is a power.
+ *
+ * @param e - The input expression.
+ * @returns True if an expression is a power, otherwise false.
+ * @see SymPy `sympy.core.expr.Expr.is_Pow`
+ */
 export const isPow = (e: Expr): e is Pow => e instanceof Pow;
+/**
+ * Tests whether an expression is an application of a known function, optionally by name.
+ *
+ * @param e - The input expression.
+ * @param name - The symbolic name or names.
+ * @returns Whether the expression belongs to the indicated node class.
+ * @see SymPy `sympy.core.expr.Expr.is_Function`
+ */
 export const isFn = (e: Expr, name?: FnName): e is Fn =>
   e instanceof Fn && (name === undefined || e.name === name);
+/**
+ * Tests whether an expression is a rational number with denominator one.
+ *
+ * @param e - The input expression.
+ * @returns True if an expression is a rational number with denominator one, otherwise false.
+ * @see SymPy `sympy.core.expr.Expr.is_Integer`
+ */
 export const isInteger = (e: Expr): e is Rational => e instanceof Rational && e.q === 1n;
 
 /** SymPy is_Add: a sum, or a node whose SymPy class derives from Add (MatAdd). */
@@ -1873,8 +2554,15 @@ export const isMulLike = (e: Expr): boolean => e instanceof Mul || (e instanceof
  * printers, diff and adjoint/conjugate/transpose.
  */
 export abstract class ExtensionExpr extends Expr {
+  /** The node's discriminant. */
   readonly kind = 'Extension' as const;
   readonly #args: readonly Expr[];
+  /**
+   * Creates an `ExtensionExpr`.
+   *
+   * @param args - The arguments in positional order.
+   * @param name - The symbolic name or names.
+   */
   constructor(
     /** Class name used in the structural key and the default printers. */
     readonly name: string,
@@ -1883,20 +2571,35 @@ export abstract class ExtensionExpr extends Expr {
     super();
     this.#args = args;
   }
-  /** The arguments (SymPy Basic.args, a property of the class). */
+  /**
+   * The arguments (SymPy Basic.args, a property of the class).
+   *
+   * @returns The arguments (SymPy Basic.args, a property of the class).
+   */
   get args(): readonly Expr[] {
     return this.#args;
   }
-  /** Symbolic arguments exposed to pattern searches, including tuple-valued arguments. */
+  /**
+   * Symbolic arguments exposed to pattern searches, including tuple-valued arguments.
+   *
+   * @returns The resulting expressions in order.
+   */
   searchArgs(): readonly Expr[] { return this.args; }
 
-  /** A node of the same class with new arguments (required for traversals). */
+  /**
+   * A node of the same class with new arguments (required for traversals).
+   *
+   * @param args - The replacement arguments, in node order.
+   * @returns The expression rebuilt with the new arguments.
+   */
   abstract withArgs(args: readonly Expr[]): Expr;
   /**
    * SymPy is_Add / is_Mul: 'Add' or 'Mul' for a node whose SymPy class derives from Add or Mul
    * (MatAdd, MatMul), whose arguments the structural methods (as_coeff_add, as_coeff_mul,
    * as_powers_dict, could_extract_minus_sign, count_ops, ...) then treat as terms or factors;
    * 'none' for other nodes.
+   *
+   * @returns The associated operation, when the node acts as a sum or product.
    */
   get assocOp(): 'Add' | 'Mul' | 'none' {
     return 'none';
@@ -1904,15 +2607,27 @@ export abstract class ExtensionExpr extends Expr {
   /**
    * True for a node whose SymPy class derives from Atom (Str, Permutation): it sorts with the
    * class key (2, 0, name) and by its printed form, like SymPy Atom.class_key and Atom.sort_key.
+   *
+   * @returns True for a node whose SymPy class derives from Atom (Str, Permutation): it sorts with the class key (2, 0, name) and by its printed form, like SymPy Atom.class_key and Atom.sort_key.
    */
   get atomClass(): boolean {
     return false;
   }
-  /** str() form; defaults to Name(arg1, arg2, ...). */
+  /**
+   * str() form; defaults to Name(arg1, arg2, ...).
+   *
+   * @param print - The printer to use for child expressions.
+   * @returns The formatted string.
+   */
   printStr(print: (e: Expr) => string): string {
     return `${this.name}(${this.args.map(print).join(', ')})`;
   }
-  /** LaTeX form; defaults to \operatorname{Name}\left(...\right). */
+  /**
+   * LaTeX form; defaults to \operatorname{Name}\left(...\right).
+   *
+   * @param print - The printer to use for child expressions.
+   * @returns The formatted string.
+   */
   printLatex(print: (e: Expr) => string): string {
     return `\\operatorname{${this.name}}\\left(${this.args.map(print).join(', ')}\\right)`;
   }
@@ -1920,48 +2635,91 @@ export abstract class ExtensionExpr extends Expr {
   /**
    * A numeric value with at least `dps` correct digits as an expression of
    * Floats (and I), used by evalf; undefined when the node has no value.
+   *
+   * @param _dps - The precision in decimal digits.
+   * @returns The specialized result, or `undefined` to use the default behavior.
    */
   numericValue(_dps: number): Expr | undefined {
     return undefined;
   }
+  /**
+   * Computes the derivative using the node's differentiation rule.
+   *
+   * @param _x - The differentiation variable.
+   * @param _d - The callback for differentiating a subexpression.
+   * @returns The specialized result, or `undefined` to use the default behavior.
+   */
   diffSelf(_x: Expr, _d: (e: Expr, x: Expr) => Expr): Expr | undefined {
     return undefined;
   }
   /**
-   * SymPy _eval_evalf: this node evaluated to `dps` digits, given `evalfArg`
+   * This node evaluated to `dps` digits, given `evalfArg`
    * that evaluates a subexpression; undefined for the generic rule (the
    * arguments evaluated, then withArgs).
+   *
+   * @param _evalfArg - The callback for evaluating an argument numerically.
+   * @param _dps - The precision in decimal digits.
+   * @returns The specialized result, or `undefined` to use the default behavior.
    */
   evalfSelf(_evalfArg: (e: Expr) => Expr, _dps: number): Expr | undefined {
     return undefined;
   }
   /**
-   * SymPy _eval_trigsimp: trigsimp of this node, given `trigsimp` for a
+   * trigsimp of this node, given `trigsimp` for a
    * subexpression (vectors simplify their components); undefined for the
    * generic rule.
+   *
+   * @param _trigsimp - The trigonometric simplifier for child expressions.
+   * @returns The specialized result, or `undefined` to use the default behavior.
    */
   trigsimpSelf(_trigsimp: (e: Expr) => Expr): Expr | undefined {
     return undefined;
   }
-  /** SymPy as_real_imag of this node (MatrixExpr: (M + conj(M))/2, (M - conj(M))/(2*I)); undefined for the generic rule. */
+  /**
+   * SymPy as_real_imag of this node (MatrixExpr: (M + conj(M))/2, (M - conj(M))/(2*I)); undefined for the generic rule.
+   *
+   * @returns The specialized result, or `undefined` to use the default behavior.
+   */
   asRealImagSelf(): [Expr, Expr] | undefined {
     return undefined;
   }
-  /** SymPy kind of this node (VectorKind of a vector, ...); undefined for the generic rule. */
+  /**
+   * SymPy kind of this node (VectorKind of a vector, ...); undefined for the generic rule.
+   *
+   * @returns The specialized result, or `undefined` to use the default behavior.
+   */
   kindSelf(): Kind | undefined {
     return undefined;
   }
-  /** Hermitian adjoint, conjugate and transpose; undefined keeps the generic unevaluated form. */
+  /**
+   * Hermitian adjoint, conjugate and transpose; undefined keeps the generic unevaluated form.
+   *
+   * @returns The specialized result, or `undefined` to use the default behavior.
+   */
   adjointSelf(): Expr | undefined {
     return undefined;
   }
+  /**
+   * Supplies a conjugation rule for the extension node.
+   *
+   * @returns The specialized result, or `undefined` to use the default behavior.
+   */
   conjugateSelf(): Expr | undefined {
     return undefined;
   }
+  /**
+   * Supplies a transpose rule for the extension node.
+   *
+   * @returns The specialized result, or `undefined` to use the default behavior.
+   */
   transposeSelf(): Expr | undefined {
     return undefined;
   }
-  /** Explicit free symbols for nodes with an opaque bound representation (for example CRootOf). */
+  /**
+   * Explicit free symbols for nodes with an opaque bound representation (for example CRootOf).
+   *
+   * @returns The specialized result, or `undefined` to use the default behavior.
+   */
   freeSymbolsSelf(): ReadonlySet<Expr> | undefined {
     return undefined;
   }
@@ -1970,6 +2728,8 @@ export abstract class ExtensionExpr extends Expr {
    * the variables and the positions of the arguments in which they are
    * bound. Bound variables are not free, and substituting one only changes
    * the other arguments. Undefined when the node binds nothing.
+   *
+   * @returns The specialized result, or `undefined` to use the default behavior.
    */
   bindings(): { variables: readonly number[]; scope: readonly number[] } | undefined {
     return undefined;
@@ -1977,18 +2737,29 @@ export abstract class ExtensionExpr extends Expr {
   /**
    * doit evaluates the arguments before the node (SymPy Basic.doit); false
    * for a node whose doit is not deep (SymPy Cross, Dot, Gradient, ...).
+   *
+   * @returns doit evaluates the arguments before the node (SymPy Basic.doit); false for a node whose doit is not deep (SymPy Cross, Dot, Gradient, ...).
    */
   get doitDeep(): boolean {
     return true;
   }
-  /** SymPy doit for this node, given its arguments already evaluated (unless doitDeep is false); undefined keeps it. */
+  /**
+   * SymPy doit for this node, given its arguments already evaluated (unless doitDeep is false); undefined keeps it.
+   *
+   * @returns The specialized result, or `undefined` to use the default behavior.
+   */
   doitSelf(): Expr | undefined {
     return undefined;
   }
   /**
-   * SymPy _eval_subs: this node with old replaced by nw, given `subs` that
+   * This node with old replaced by nw, given `subs` that
    * substitutes in a subexpression; undefined for the generic rule
    * (substitution in the arguments, then withArgs).
+   *
+   * @param _old - The expression to replace.
+   * @param _nw - The new expression.
+   * @param _subs - The substitution callback for child expressions.
+   * @returns The specialized result, or `undefined` to use the default behavior.
    */
   subsSelf(_old: Expr, _nw: Expr, _subs: (e: Expr) => Expr): Expr | undefined {
     return undefined;
@@ -1997,14 +2768,22 @@ export abstract class ExtensionExpr extends Expr {
    * SymPy matches(expr) of this node as a pattern (used by replace, find and
    * count): the replacements making it equal to expr, false when it does not
    * match, undefined for the generic matching of Wilds.
+   *
+   * @param _expr - The input expression.
+   * @returns The specialized result, or `undefined` to use the default behavior.
    */
   matchesSelf(_expr: Expr): ReadonlyMap<Expr, Expr> | false | undefined {
     return undefined;
   }
   /**
-   * SymPy _eval_Integral: the integral of this node over x (between the
+   * The integral of this node over x (between the
    * limits when given), given `integrate` for a subexpression; undefined for
    * the generic integrator.
+   *
+   * @param _x - The argument of the function.
+   * @param _limits - The index and its inclusive lower and upper bounds.
+   * @param _integrate - The integration callback for child expressions.
+   * @returns The specialized result, or `undefined` to use the default behavior.
    */
   integrateSelf(_x: Sym, _limits: readonly [Expr, Expr] | undefined, _integrate: (e: Expr) => Expr): Expr | undefined {
     return undefined;
@@ -2013,6 +2792,9 @@ export abstract class ExtensionExpr extends Expr {
    * SymPy simplify of this node, given `simplify` for a subexpression
    * (SymPy simplifies the arguments of a node that is not an Add, Mul or
    * Pow); undefined for the generic simplification.
+   *
+   * @param _simplify - The simplifier to apply to child expressions.
+   * @returns The specialized result, or `undefined` to use the default behavior.
    */
   simplifySelf(_simplify: (e: Expr) => Expr): Expr | undefined {
     return undefined;
@@ -2020,26 +2802,38 @@ export abstract class ExtensionExpr extends Expr {
   /**
    * SymPy is_scalar. Differentiating a node with respect to itself gives 1
    * for a scalar and stays an unevaluated Derivative otherwise.
+   *
+   * @returns Whether the expression has scalar values.
    */
   get isScalar(): boolean {
     return true;
   }
   /**
-   * SymPy Function._eval_nseries: true for the application of a function whose series is its
+   * True for the application of a function whose series is its
    * Taylor series in the argument that depends on the variable (the derivatives coming from
    * diffSelf, a singular point from rewriteSelf('tractable')); false for other nodes.
+   *
+   * @returns Whether a Taylor expansion in the argument is supported.
    */
   get isTaylorExpandable(): boolean {
     return false;
   }
-  /** SymPy is_extended_real of this node: true, false, or undefined when unknown. */
+  /**
+   * SymPy is_extended_real of this node: true, false, or undefined when unknown.
+   *
+   * @returns The known truth value, or `undefined` when the hook has no answer.
+   */
   isRealSelf(): boolean | undefined {
     return undefined;
   }
   /**
-   * SymPy _eval_rewrite(rule, args): this node rewritten in terms of
+   * This node rewritten in terms of
    * `target` (a function or class name such as 'cos'), given its arguments
    * already rewritten; undefined keeps the node.
+   *
+   * @param _target - The target function or representation.
+   * @param _args - The arguments in positional order.
+   * @returns The specialized result, or `undefined` to use the default behavior.
    */
   rewriteSelf(_target: string, _args: readonly Expr[]): Expr | undefined {
     return undefined;
@@ -2048,6 +2842,9 @@ export abstract class ExtensionExpr extends Expr {
    * SymPy expand overridden by the node's class (Expectation.expand,
    * Variance.expand): the expansion of this node when it is the expression
    * being expanded; undefined for the generic expansion.
+   *
+   * @param _hints - The additional options for the transformation.
+   * @returns The specialized result, or `undefined` to use the default behavior.
    */
   expandTop(_hints: Readonly<Record<string, unknown>>): Expr | undefined {
     return undefined;
@@ -2057,6 +2854,10 @@ export abstract class ExtensionExpr extends Expr {
    * does not know (expand(e, { double: true }) calls it with 'double'). The
    * arguments are already expanded when the expansion is deep; `hints`
    * holds every hint of the call (force, deep, ...). Undefined keeps the node.
+   *
+   * @param _hint - The expansion rule to apply.
+   * @param _hints - The additional options for the transformation.
+   * @returns The specialized result, or `undefined` to use the default behavior.
    */
   expandSelf(_hint: string, _hints: Readonly<Record<string, unknown>>): Expr | undefined {
     return undefined;

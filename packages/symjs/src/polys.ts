@@ -164,37 +164,100 @@ import { divExact as _divExact_ } from './polys/mpoly';
 import { rootOf as _rootOf_ } from './polys/rootof';
 import { symmetrizeExpr as _symmetrizeExpr_ } from './polys/polyfuncs';
 
-/** @deprecated Internal; removed from the public API in 1.0. */
+/**
+ * A univariate polynomial represented by its coefficients.
+ *
+ * @deprecated Internal; removed from the public API in 1.0.
+ */
 export const UPoly = _UPoly_;
 
 /** @deprecated Internal; removed from the public API in 1.0. */
 export type UPoly = _UPoly_;
 
-/** @deprecated Internal; removed from the public API in 1.0. */
+/**
+ * Collects the coefficients of a polynomial by exponent.
+ *
+ * @deprecated Internal; removed from the public API in 1.0.
+ * @param e - The input expression.
+ * @param x - The argument of the function.
+ * @returns The matching result, or `NoMatch` when the required form is absent.
+ */
 export const polyCoefficients = (e: _ExprLike_, x: _Sym_): Map<number, _Expr_> | NoMatchResult => _orNoMatch_(_polyCoefficients_(e, x));
 
-/** @deprecated Internal; removed from the public API in 1.0. */
+/**
+ * Factors a polynomial into irreducible factors with multiplicities.
+ *
+ * @deprecated Internal; removed from the public API in 1.0.
+ */
 export const factorPoly = _factorPoly_;
 
-/** @deprecated Use `div`. */
+/**
+ * Alias for {@link div}.
+ *
+ * @deprecated Use {@link div}.
+ * @param f - The function or expression to transform.
+ * @param g - The second function.
+ * @param gens - The gens.
+ * @returns The polynomial quotient and remainder.
+ * @see SymPy `sympy.polys.polytools.div`
+ * @example
+ * ```ts
+ * import { ex, polyDiv, symbols } from '@symjs/symjs';
+ *
+ * polyDiv(ex`x**2 - 1`, ex`x - 1`, [symbols('x')[0]]); // => [x + 1, 0]
+ * ```
+ */
 export const polyDiv = _polyDiv_;
 
-/** @deprecated Internal; removed from the public API in 1.0. */
+/**
+ * Orders polynomial generators.
+ *
+ * @deprecated Internal; removed from the public API in 1.0.
+ */
 export const sortGens = _sortGens_;
 
-/** @deprecated Internal; removed from the public API in 1.0. */
+/**
+ * Computes a multivariate polynomial greatest common divisor.
+ *
+ * @deprecated Internal; removed from the public API in 1.0.
+ */
 export const mgcd = _mgcd_;
 
-/** @deprecated Internal; removed from the public API in 1.0. */
+/**
+ * Computes a multivariate polynomial least common multiple.
+ *
+ * @deprecated Internal; removed from the public API in 1.0.
+ */
 export const mlcm = _mlcm_;
 
-/** @deprecated Internal; removed from the public API in 1.0. */
+/**
+ * Divides polynomials exactly in the specified generators.
+ *
+ * @deprecated Internal; removed from the public API in 1.0.
+ * @param f - The function or expression to transform.
+ * @param g - The second function.
+ * @param vars - The polynomial generators.
+ * @returns The matching result, or `NoMatch` when the required form is absent.
+ */
 export const divExact = (f: _Expr_, g: _Expr_, vars: readonly _Sym_[]): _Expr_ | NoMatchResult => _orNoMatch_(_divExact_(f, g, vars));
 
-/** @deprecated Use `rootof`. */
+/**
+ * Alias for {@link rootof}.
+ *
+ * @deprecated Use {@link rootof}.
+ * @param f - The function or expression to transform.
+ * @param index - The index.
+ * @param opts - `radicals` enables radical expressions for supported roots.
+ * @returns The selected root of the polynomial.
+ * @see SymPy `sympy.polys.rootoftools.rootof`
+ */
 export const rootOf = _rootOf_;
 
-/** @deprecated Internal; removed from the public API in 1.0. */
+/**
+ * Expresses a polynomial in elementary symmetric polynomials and a remainder.
+ *
+ * @deprecated Internal; removed from the public API in 1.0.
+ */
 export const symmetrizeExpr = _symmetrizeExpr_;
 export {
   gfCrt, gfCrt1, gfCrt2, gfInt, gfDegree, gfLC, gfTC, gfStrip, gfTrunc, gfNormal, gfFromDict, gfToDict, gfFromIntPoly, gfToIntPoly, gfNeg,

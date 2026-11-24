@@ -124,9 +124,21 @@ function simplifyDelta(expr: Expr): Expr {
 const isNegativeRange = (a: Expr, b: Expr): boolean => Lt(sub(b, a), 0) === S.true;
 
 /**
- * SymPy deltasummation: the sum of f over limit = (k, a, b) where f contains
+ * The sum of f over limit = (k, a, b) where f contains
  * Kronecker deltas in k: a delta picks the term at its root, under the
  * condition that the root is in [a, b] (a Piecewise) unless noPiecewise.
+ *
+ * @param fIn - The summand.
+ * @param limit - The index and its inclusive lower and upper bounds.
+ * @param noPiecewise - Whether to omit the condition on the selected delta root.
+ * @returns The sum with its Kronecker constraints applied.
+ * @see SymPy `sympy.concrete.delta.deltasummation`
+ * @example
+ * ```ts
+ * import { deltasummation, ex, symbols } from '@symjs/symjs';
+ *
+ * deltasummation(ex`KroneckerDelta(k, 2)`, [symbols('k')[0], 1, 5]); // => 1
+ * ```
  */
 export function deltasummation(fIn: ExprLike, limit: DeltaLimit, noPiecewise = false): Expr {
   const f = sympify(fIn);
@@ -145,8 +157,14 @@ export function deltasummation(fIn: ExprLike, limit: DeltaLimit, noPiecewise = f
 }
 
 /**
- * SymPy deltaproduct: the product of f over limit = (k, a, b) where f
+ * The product of f over limit = (k, a, b) where f
  * contains Kronecker deltas in k.
+ *
+ * @param fIn - The factor at each index.
+ * @param limit - The index and its inclusive lower and upper bounds.
+ * @returns The product of f over limit = (k, a, b) where f contains Kronecker deltas in k.
+ * @throws NotImplementedError when the delta term cannot be reduced to a simple indexed delta.
+ * @see SymPy `sympy.concrete.delta.deltaproduct`
  */
 export function deltaproduct(fIn: ExprLike, limit: DeltaLimit): Expr {
   const f = sympify(fIn);

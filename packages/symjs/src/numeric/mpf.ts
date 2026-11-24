@@ -329,10 +329,22 @@ export function fromFixed(x: bigint, prec: number, outPrec?: number): Mpf {
 // Precision conversions (mpmath libmpf)
 // ---------------------------------------------------------------------------
 
+/**
+ * Converts a binary precision in bits to decimal digits.
+ *
+ * @param n - The precision in bits.
+ * @returns The equivalent decimal precision.
+ */
 export function precToDps(n: number): number {
   return Math.max(1, Math.round(n / 3.3219280948873626) - 1);
 }
 
+/**
+ * Converts decimal digits of precision to bits.
+ *
+ * @param n - The precision in decimal digits.
+ * @returns The equivalent binary precision.
+ */
 export function dpsToPrec(n: number): number {
   return Math.max(1, Math.round((n + 1) * 3.3219280948873626));
 }

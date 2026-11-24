@@ -50,30 +50,74 @@ function orWithComplements(c: Expr): Expr {
   return rels.some((r) => keys.has(canonicalRelation(cast(rel(NEGATED_OP[r.op], r.lhs, r.rhs), Rel, 'relation')).key)) ? S.true : c;
 }
 
-/** SymPy hyper(ap, bq, z): args are [z, ...ap, ...bq]. */
+/**
+ * args are [z, ...ap, ...bq].
+ *
+ * @see SymPy `sympy.functions.special.hyper.hyper`
+ * @example
+ * ```ts
+ * import { Hyper, ex } from '@symjs/symjs';
+ *
+ * new Hyper([ex`z`, ex`1`], 1).ap; // => [1]
+ * ```
+ */
 export class Hyper extends ExtensionExpr {
+  /**
+   * Creates a `Hyper`.
+   *
+   * @param args - The arguments in positional order.
+   * @param p - The number of upper parameters in the flattened argument list.
+   */
   constructor(
     args: readonly Expr[],
+    /** The number of upper hypergeometric parameters. */
     readonly p: number,
   ) {
     super('hyper', args);
   }
+  /**
+   * The upper parameters.
+   *
+   * @returns The upper parameters.
+   * @see SymPy `sympy.functions.special.hyper.hyper.ap`
+   */
   get ap(): Expr[] {
     return this.args.slice(1, 1 + this.p);
   }
+  /**
+   * The lower parameters.
+   *
+   * @returns The lower parameters.
+   * @see SymPy `sympy.functions.special.hyper.hyper.bq`
+   */
   get bq(): Expr[] {
     return this.args.slice(1 + this.p);
   }
+  /**
+   * The function argument.
+   *
+   * @returns The argument of the generalized hypergeometric function.
+   * @see SymPy `sympy.functions.special.hyper.hyper.argument`
+   */
   get argument(): Expr {
     return first(this.args);
   }
+  /**
+   * Rebuilds the node with the supplied arguments.
+   *
+   * @param args - The replacement arguments, in node order.
+   * @returns The expression rebuilt with the new arguments.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new Hyper(args, this.p);
   }
   /**
-   * SymPy hyper.radius_of_convergence: 0, 1 or oo (oo for a polynomial,
+   * 0, 1 or oo (oo for a polynomial,
    * whose nonpositive integer numerator parameters end the series before
    * those of the denominator).
+   *
+   * @returns The radius of convergence of the defining series.
+   * @see SymPy `sympy.functions.special.hyper.hyper.radius_of_convergence`
    */
   get radiusOfConvergence(): Expr {
     const npInt = (a: Expr): boolean => a instanceof Rational && a.isInteger && a.p <= 0n;
@@ -100,11 +144,21 @@ export class Hyper extends ExtensionExpr {
     if (this.ap.length === this.bq.length + 1) return S.One;
     return this.ap.length <= this.bq.length ? S.Infinity : S.Zero;
   }
-  /** SymPy hyper.eta: sum(ap) - sum(bq). */
+  /**
+   * sum(ap) - sum(bq).
+   *
+   * @returns The sum of upper parameters minus the sum of lower parameters.
+   * @see SymPy `sympy.functions.special.hyper.hyper.eta`
+   */
   get eta(): Expr {
     return add(...this.ap, mul(-1, add(...this.bq)));
   }
-  /** SymPy hyper.convergence_statement: a condition on the argument under which the series converges. */
+  /**
+   * A condition on the argument under which the series converges.
+   *
+   * @returns A condition on the argument under which the series converges.
+   * @see SymPy `sympy.functions.special.hyper.hyper.convergence_statement`
+   */
   get convergenceStatement(): Expr {
     const R = this.radiusOfConvergence;
     if (R === S.Zero) return S.false;
@@ -117,14 +171,32 @@ export class Hyper extends ExtensionExpr {
     const c3 = and(Ge(e, 1), Lt(abs(z), 1));
     return orWithComplements(or(c1, c2, c3));
   }
+  /**
+   * Formats the node using the expression printer for its arguments.
+   *
+   * @param print - The printer to use for child expressions.
+   * @returns The formatted string.
+   */
   override printStr(print: (e: Expr) => string): string {
     return `hyper(${tuple(print, this.ap)}, ${tuple(print, this.bq)}, ${print(this.argument)})`;
   }
+  /**
+   * Formats the node in LaTeX using the supplied child printer.
+   *
+   * @param print - The printer to use for child expressions.
+   * @returns The formatted string.
+   */
   override printLatex(print: (e: Expr) => string): string {
     const col = (xs: Expr[]) => (xs.length ? xs.map(print).join(', ') : '');
     return `{{}_{${this.ap.length}}F_{${this.bq.length}}\\left(\\begin{matrix} ${col(this.ap)} \\\\ ${col(this.bq)} \\end{matrix}\\middle| {${print(this.argument)}} \\right)}`;
   }
-  /** d/dz hyper(a, b, z) = prod(a)/prod(b) * hyper(a + 1, b + 1, z). */
+  /**
+   * d/dz hyper(a, b, z) = prod(a)/prod(b) * hyper(a + 1, b + 1, z).
+   *
+   * @param x - The differentiation variable.
+   * @param d - The callback for differentiating a subexpression.
+   * @returns The specialized result, or `undefined` to use the default behavior.
+   */
   override diffSelf(x: Expr, d: (e: Expr, x: Expr) => Expr): Expr | undefined {
     if ([...this.ap, ...this.bq].some((e) => e.has(x))) return derivative(this, [[x, 1]]);
     const dz = d(this.argument, x);
@@ -136,6 +208,9 @@ export class Hyper extends ExtensionExpr {
    * the other functions by mpmath's series, asymptotic expansions and 1/z transformation; undefined
    * where mpmath raises or sums with methods not ported (nsum near the unit circle, Borel
    * integrals), and for an argument that is not a number.
+   *
+   * @param dps - The precision in decimal digits.
+   * @returns The specialized result, or `undefined` to use the default behavior.
    */
   override numericValue(dps: number): Expr | undefined {
     if (this.freeSymbols().size > 0) return undefined;
@@ -175,9 +250,23 @@ export class Hyper extends ExtensionExpr {
 const orderedParams = (xs: readonly Expr[]): Expr[] => [...xs].sort((u, v) => compareKeys(sortKey(u), sortKey(v)));
 
 /**
- * SymPy hyper(ap, bq, z): the parameters are sorted, and those common to ap
+ * The parameters are sorted, and those common to ap
  * and bq cancel unless `evaluate` is false. The argument of a function that
  * is not branched at it loses its polar factors (SymPy hyper.eval).
+ *
+ * @param ap - The upper parameters.
+ * @param bq - The lower parameters.
+ * @param zIn - The argument of the function.
+ * @param opts - Set `evaluate` to false to suppress automatic evaluation.
+ * @returns The generalized hypergeometric function with the specified upper and lower parameters.
+ * @see SymPy `sympy.functions.special.hyper.hyper`
+ * @example
+ * ```ts
+ * import { ex, hyper } from '@symjs/symjs';
+ *
+ * hyper([1], [], ex`x`); // => hyper((1,), (), x)
+ * hyper([ex`n`, ex`a`], [ex`n**2`], ex`x`); // => hyper((a, n), (n**2,), x)
+ * ```
  */
 export function hyper(ap: readonly ExprLike[], bq: readonly ExprLike[], zIn: ExprLike, opts: { evaluate?: boolean } = {}): Expr {
   let as = ap.map((a) => unpolarify(sympify(a)));
@@ -219,15 +308,43 @@ export function gaussAtOne(h: Hyper): Expr | undefined {
   return mul(g(c), g(add(c, mul(-1, a), mul(-1, b))), pow(mul(g(add(c, mul(-1, a))), g(add(c, mul(-1, b)))), -1));
 }
 
-/** SymPy meijerg(((a_1..a_n), (a_n+1..a_p)), ((b_1..b_m), (b_m+1..b_q)), z): args are [z, ...an, ...ap, ...bm, ...bq]. */
+/**
+ * args are [z, ...an, ...ap, ...bm, ...bq].
+ *
+ * @see SymPy `sympy.functions.special.hyper.meijerg`
+ * @example
+ * ```ts
+ * import { MeijerG, ex } from '@symjs/symjs';
+ *
+ * new MeijerG([ex`z`, ex`1`], [1, 0, 0, 0]).isNumber; // => False
+ * ```
+ */
 export class MeijerG extends ExtensionExpr {
+  /**
+   * Creates a `MeijerG`.
+   *
+   * @param args - The arguments in positional order.
+   * @param sizes - The lengths of the parameter groups in argument order.
+   */
   constructor(
     args: readonly Expr[],
+    /** The lengths of the four parameter groups. */
     readonly sizes: readonly [number, number, number, number],
   ) {
     super('meijerg', args);
   }
+  /**
+   * Whether this expression represents a number.
+   *
+   * @returns Whether the expression represents a number.
+   * @see SymPy `sympy.functions.special.hyper.meijerg.is_number`
+   */
   override get isNumber(): boolean { return this.args.every((a) => a.isNumber); }
+  /**
+   * The parameter tuples and argument used in structural searches.
+   *
+   * @returns The parameter tuples and argument used in structural searches.
+   */
   override searchArgs(): readonly Expr[] {
     return [Tuple(Tuple(...this.an), Tuple(...this.aother)), Tuple(Tuple(...this.bm), Tuple(...this.bother)), this.argument];
   }
@@ -235,14 +352,31 @@ export class MeijerG extends ExtensionExpr {
     const start = 1 + this.sizes.slice(0, i).reduce((s, k) => s + k, 0);
     return this.args.slice(start, start + at(this.sizes, i));
   }
+  /**
+   * Rebuilds the node with the supplied arguments.
+   *
+   * @param args - The replacement arguments, in node order.
+   * @returns The expression rebuilt with the new arguments.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new MeijerG(args, this.sizes);
   }
-  /** The argument z. */
+  /**
+   * The argument z.
+   *
+   * @returns The argument of the Meijer G function.
+   * @see SymPy `sympy.functions.special.hyper.meijerg.argument`
+   */
   get argument(): Expr {
     return first(this.args);
   }
-  /** SymPy meijerg.fdiff: shift an upper or lower numerator parameter. */
+  /**
+   * shift an upper or lower numerator parameter.
+   *
+   * @param x - The differentiation variable.
+   * @param d - The callback for differentiating a subexpression.
+   * @returns The derivative of the Meijer G-function with respect to the variable.
+   */
   override diffSelf(x: Expr, d: (e: Expr, x: Expr) => Expr): Expr {
     const terms: Expr[] = [];
     const parts = [this.an, this.aother, this.bm, this.bother] as const;
@@ -298,6 +432,12 @@ export class MeijerG extends ExtensionExpr {
     }
     return add(...terms);
   }
+  /**
+   * Evaluates the node using its numeric implementation when applicable.
+   *
+   * @param dps - The precision in decimal digits.
+   * @returns The specialized result, or `undefined` to use the default behavior.
+   */
   override numericValue(dps: number): Expr | undefined {
     if (!this.isNumber) return undefined;
     const prec = F.dpsToPrec(dps), wp = prec + 10;
@@ -312,50 +452,99 @@ export class MeijerG extends ExtensionExpr {
       : mpMeijerResidues(params.slice(0, p), params.slice(p), z, n, m, prec);
     return fromMpc(value, prec);
   }
-  /** SymPy meijerg.integrand(s): the Mellin-Barnes integrand. */
+  /**
+   * The Mellin-Barnes integrand.
+   *
+   * @param s - The input value.
+   * @returns The Mellin-Barnes integrand.
+   * @see SymPy `sympy.functions.special.hyper.meijerg.integrand`
+   */
   integrand(s: ExprLike): Expr {
     const v = sympify(s);
     const g = (a: Expr) => fn('gamma', [a]);
     return mul(pow(this.argument, v), ...this.bm.map((b) => g(add(b, mul(-1, v)))), ...this.an.map((a) => g(add(1, mul(-1, a), v))),
       pow(mul(...this.bother.map((b) => g(add(1, mul(-1, b), v))), ...this.aother.map((a) => g(add(a, mul(-1, v))))), -1));
   }
-  /** The first n upper parameters (SymPy meijerg.an). */
+  /**
+   * The first n upper parameters (SymPy meijerg.an).
+   *
+   * @returns The first n upper parameters (SymPy meijerg.an).
+   * @see SymPy `sympy.functions.special.hyper.meijerg.an`
+   */
   get an(): Expr[] {
     return this.part(0);
   }
-  /** The other upper parameters (SymPy meijerg.aother). */
+  /**
+   * The other upper parameters (SymPy meijerg.aother).
+   *
+   * @returns The other upper parameters (SymPy meijerg.aother).
+   * @see SymPy `sympy.functions.special.hyper.meijerg.aother`
+   */
   get aother(): Expr[] {
     return this.part(1);
   }
-  /** All upper parameters (SymPy meijerg.ap). */
+  /**
+   * All upper parameters (SymPy meijerg.ap).
+   *
+   * @returns The resulting expressions in order.
+   * @see SymPy `sympy.functions.special.hyper.meijerg.ap`
+   */
   get ap(): Expr[] {
     return [...this.part(0), ...this.part(1)];
   }
-  /** The first m lower parameters (SymPy meijerg.bm). */
+  /**
+   * The first m lower parameters (SymPy meijerg.bm).
+   *
+   * @returns The first m lower parameters (SymPy meijerg.bm).
+   * @see SymPy `sympy.functions.special.hyper.meijerg.bm`
+   */
   get bm(): Expr[] {
     return this.part(2);
   }
-  /** The other lower parameters (SymPy meijerg.bother). */
+  /**
+   * The other lower parameters (SymPy meijerg.bother).
+   *
+   * @returns The other lower parameters (SymPy meijerg.bother).
+   * @see SymPy `sympy.functions.special.hyper.meijerg.bother`
+   */
   get bother(): Expr[] {
     return this.part(3);
   }
-  /** All lower parameters (SymPy meijerg.bq). */
+  /**
+   * All lower parameters (SymPy meijerg.bq).
+   *
+   * @returns The resulting expressions in order.
+   * @see SymPy `sympy.functions.special.hyper.meijerg.bq`
+   */
   get bq(): Expr[] {
     return [...this.part(2), ...this.part(3)];
   }
-  /** SymPy meijerg.nu: sum(bq) - sum(ap). */
+  /**
+   * sum(bq) - sum(ap).
+   *
+   * @returns The sum of lower parameters minus the sum of upper parameters.
+   * @see SymPy `sympy.functions.special.hyper.meijerg.nu`
+   */
   get nu(): Expr {
     return add(...this.bq, ...this.ap.map((a) => mul(-1, a)));
   }
-  /** SymPy meijerg.delta: m + n - (p + q)/2. */
+  /**
+   * m + n - (p + q)/2.
+   *
+   * @returns The parameter combination `m + n - (p + q)/2`.
+   * @see SymPy `sympy.functions.special.hyper.meijerg.delta`
+   */
   get delta(): Expr {
     const [n, p, m, q] = this.sizes;
     return Rational.of(BigInt(2 * (m + n) - (n + p) - (m + q)), 2n);
   }
   /**
-   * SymPy meijerg.get_period: a number P with G(z*exp_polar(I*P)) = G(z), oo
+   * A number P with G(z*exp_polar(I*P)) = G(z), oo
    * when there is none (for parameters that are not rational or differ by
    * integers).
+   *
+   * @returns A number P with G(z*exp_polar(I*P)) = G(z), oo when there is none (for parameters that are not rational or differ by integers).
+   * @see SymPy `sympy.functions.special.hyper.meijerg.get_period`
    */
   getPeriod(): Expr {
     const compute = (l: readonly Expr[]): bigint | undefined => {
@@ -378,6 +567,12 @@ export class MeijerG extends ExtensionExpr {
     if (n + p === m + q) return alpha === undefined || beta === undefined ? S.Infinity : twoPi((alpha / gcdBig(alpha, beta)) * beta);
     return n + p < m + q ? twoPi(beta) : twoPi(alpha);
   }
+  /**
+   * Formats the node using the expression printer for its arguments.
+   *
+   * @param print - The printer to use for child expressions.
+   * @returns The formatted string.
+   */
   override printStr(print: (e: Expr) => string): string {
     const t = (xs: Expr[]) => tuple(print, xs);
     return `meijerg((${t(this.part(0))}, ${t(this.part(1))}), (${t(this.part(2))}, ${t(this.part(3))}), ${print(first(this.args))})`;
@@ -403,7 +598,24 @@ function mpMeijerResidues(a: readonly Mpc[], b: readonly Mpc[], z: Mpc, n: numbe
   }, [...a, ...b], prec);
 }
 
-/** SymPy meijerg(((an), (ap)), ((bm), (bq)), z). */
+/**
+ * Constructs a Meijer G-function from its four parameter groups and argument.
+ *
+ * @param an - The first group of upper Meijer G parameters.
+ * @param ap - The upper parameters.
+ * @param bm - The first group of lower Meijer G parameters.
+ * @param bq - The lower parameters.
+ * @param z - The argument of the function.
+ * @returns The Meijer G-function with the supplied parameter groups.
+ * @throws RangeError when the parameters are infinite or the two numerator pole families overlap.
+ * @see SymPy `sympy.functions.special.hyper.meijerg`
+ * @example
+ * ```ts
+ * import { ex, meijerg } from '@symjs/symjs';
+ *
+ * meijerg([], [], [0], [], ex`z`); // => meijerg(((), ()), ((0,), ()), z)
+ * ```
+ */
 export function meijerg(an: readonly ExprLike[], ap: readonly ExprLike[], bm: readonly ExprLike[], bq: readonly ExprLike[], z: ExprLike): Expr {
   const parts = [an, ap, bm, bq].map((xs) => xs.map((x) => unpolarify(sympify(x))));
   if (parts.flat().some((a) => a.has(S.Infinity) || a.has(S.NegativeInfinity) || a.has(S.ComplexInfinity))) throw new RangeError('G-function parameters must be finite');
@@ -444,9 +656,35 @@ registerRewrite('catalan', 'hyper', (args) => {
 
 // ---- spherical Bessel functions --------------------------------------------------
 
-/** SymPy jn(n, z): spherical Bessel function of the first kind. */
+/**
+ * spherical Bessel function of the first kind.
+ *
+ * @param n - The spherical Bessel order.
+ * @param z - The argument of the function.
+ * @returns The spherical Bessel function value.
+ * @see SymPy `sympy.functions.special.bessel.jn`
+ * @example
+ * ```ts
+ * import { ex, jn } from '@symjs/symjs';
+ *
+ * jn(0, ex`z`); // => jn(0, z)
+ * ```
+ */
 export const jn = (n: ExprLike, z: ExprLike): Expr => fn('jn', [n, z]);
-/** SymPy yn(n, z): spherical Bessel function of the second kind. */
+/**
+ * spherical Bessel function of the second kind.
+ *
+ * @param n - The spherical Bessel order.
+ * @param z - The argument of the function.
+ * @returns The spherical Bessel function value.
+ * @see SymPy `sympy.functions.special.bessel.yn`
+ * @example
+ * ```ts
+ * import { ex, yn } from '@symjs/symjs';
+ *
+ * yn(0, ex`z`); // => yn(0, z)
+ * ```
+ */
 export const yn = (n: ExprLike, z: ExprLike): Expr => fn('yn', [n, z]);
 
 /** SymPy jn.eval: the values at 0 and at +-oo. */
@@ -478,7 +716,21 @@ for (const name of ['jn', 'yn'] as const) {
 }
 registerRewrite('sinc', 'jn', (args) => jn(0, first(args)));
 
-/** jn(n, z) for integer n >= 0 in terms of sin and cos (SymPy expand_func). */
+/**
+ * jn(n, z) for integer n >= 0 in terms of sin and cos (SymPy expand_func).
+ *
+ * @param n - The spherical Bessel order.
+ * @param z - The argument of the function.
+ * @param kind - The spherical Bessel family to expand.
+ * @returns The spherical Bessel function expressed using sine and cosine.
+ * @see SymPy `sympy.functions.special.bessel.SphericalBesselBase._eval_expand_func`
+ * @example
+ * ```ts
+ * import { ex, expandJn } from '@symjs/symjs';
+ *
+ * expandJn(0, ex`z`); // => sin(z)/z
+ * ```
+ */
 export function expandJn(n: number, z: Expr, kind: 'jn' | 'yn' = 'jn'): Expr {
   // jn: j0 = sin(z)/z, j1 = sin(z)/z**2 - cos(z)/z, j_{k+1} = (2k + 1)/z j_k - j_{k-1}
   let a = kind === 'jn' ? mul(sin(z), pow(z, -1)) : mul(-1, cos(z), pow(z, -1));
@@ -490,7 +742,22 @@ export function expandJn(n: number, z: Expr, kind: 'jn' | 'yn' = 'jn'): Expr {
 
 // ---- Kronecker delta ---------------------------------------------------------------
 
-/** SymPy KroneckerDelta(i, j): 1 when equal, 0 for distinct numbers, unevaluated otherwise. */
+/**
+ * 1 when equal, 0 for distinct numbers, unevaluated otherwise.
+ *
+ * @param i - One of the two indices tested for equality.
+ * @param j - One of the two indices tested for equality.
+ * @param deltaRange - The allowed lower and upper index bounds.
+ * @returns One for equal indices, zero for known distinct indices, or a symbolic delta.
+ * @see SymPy `sympy.functions.special.tensor_functions.KroneckerDelta`
+ * @example
+ * ```ts
+ * import { KroneckerDelta } from '@symjs/symjs';
+ *
+ * KroneckerDelta(1, 2); // => 0
+ * KroneckerDelta(3, 3); // => 1
+ * ```
+ */
 export const KroneckerDelta = (i: ExprLike, j: ExprLike, deltaRange?: ExprLike | [ExprLike, ExprLike]): Expr => fn('KroneckerDelta', deltaRange === undefined ? [i, j] : [i, j, Array.isArray(deltaRange) ? Tuple(...deltaRange) : deltaRange]);
 /** Is d a number (no free symbols) whose value is clearly not 0? */
 function numericallyNonZero(d: Expr): boolean {
@@ -522,8 +789,18 @@ evaluators.KroneckerDelta = (i, j, range?: Expr) => {
 registerRewrite('KroneckerDelta', 'Piecewise', (args) => piecewise([S.Zero, Ne(at(args, 0), at(args, 1))], [S.One, true]));
 
 /**
- * SymPy kroneckersimp: a product of deltas sharing an index with distinct
+ * A product of deltas sharing an index with distinct
  * numbers on the other side vanishes, e.g. KroneckerDelta(0, i)*KroneckerDelta(1, i) = 0.
+ *
+ * @param eIn - The input expression.
+ * @returns A product of deltas sharing an index with distinct numbers on the other side vanishes, e.g.
+ * @see SymPy `sympy.simplify.simplify.kroneckersimp`
+ * @example
+ * ```ts
+ * import { ex, kroneckersimp } from '@symjs/symjs';
+ *
+ * kroneckersimp(ex`KroneckerDelta(0, i)*KroneckerDelta(1, i) + 1`); // => 1
+ * ```
  */
 export function kroneckersimp(eIn: ExprLike): Expr {
   const e = sympify(eIn);
@@ -574,7 +851,25 @@ registerRewrite('betainc_regularized', 'hyper', (args) => mul(betaincHyper(args)
 
 // ---- Appell F1 ---------------------------------------------------------------------------
 
-/** SymPy appellf1(a, b1, b2, c, x, y): the Appell hypergeometric function of two variables F1. */
+/**
+ * The Appell hypergeometric function of two variables F1.
+ *
+ * @param a - The first operand.
+ * @param b1 - The numerator parameter paired with the corresponding independent variable.
+ * @param b2 - The numerator parameter paired with the corresponding independent variable.
+ * @param c - The coefficient.
+ * @param x - The argument of the function.
+ * @param y - The second argument.
+ * @returns The Appell hypergeometric function of two variables F1.
+ * @see SymPy `sympy.functions.special.hyper.appellf1`
+ * @example
+ * ```ts
+ * import { appellf1, float } from '@symjs/symjs';
+ *
+ * appellf1(float(2), float(1), float(6), float(4), float(5), float(6)); // => 0.00633394262926730
+ * appellf1(40, 2, 6, 4, 15, 60); // => appellf1(40, 2, 6, 4, 15, 60)
+ * ```
+ */
 export const appellf1 = (a: ExprLike, b1: ExprLike, b2: ExprLike, c: ExprLike, x: ExprLike, y: ExprLike): Expr => fn('appellf1', [a, b1, b2, c, x, y]);
 
 /** SymPy appellf1.eval: b1 <= b2 (and x <= y when b1 = b2) in sort-key order; 1 at x = y = 0. */

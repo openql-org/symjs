@@ -138,7 +138,7 @@ function orderedArgs(e: Expr): readonly Expr[] {
 }
 
 /**
- * SymPy EPath: a compiled path selecting parts of an expression or of
+ * A compiled path selecting parts of an expression or of
  * nested arrays (Python tuples and lists).
  *
  * ```text
@@ -157,12 +157,20 @@ function orderedArgs(e: Expr): readonly Expr[] {
  * Types are SymPy class names (and their superclasses: `Symbol`, `Number`,
  * `Function`, ...), `int`, `float`, `str` and `tuple`/`list` for arrays;
  * `__iter__?` tests that a value is iterable.
+ *
+ * @see SymPy `sympy.simplify.epathtools.EPath`
  */
 export class EPath {
   readonly #path: string;
   readonly #epath: readonly Selector[];
 
-  /** Compile a path (an EPath is returned as it is by {@link epath}). */
+  /**
+   * Compile a path (an EPath is returned as it is by {@link epath}).
+   *
+   * @param path - The expression path to select.
+   * @throws RangeError when the path is empty.
+   * @throws NotImplementedError when the path does not start at the root.
+   */
   constructor(path: string | EPath) {
     if (path instanceof EPath) {
       this.#path = path.#path;
@@ -175,12 +183,20 @@ export class EPath {
     this.#epath = path.slice(1).split('/').map(compileSelector);
   }
 
-  /** The path string. */
+  /**
+   * The path string.
+   *
+   * @returns The path string.
+   */
   get path(): string {
     return this.#path;
   }
 
-  /** SymPy repr: `EPath('/*\/[0]')`. */
+  /**
+   * `EPath('/*\/[0]')`.
+   *
+   * @returns The formatted string.
+   */
   toString(): string {
     return `EPath('${this.#path}')`;
   }
@@ -199,6 +215,12 @@ export class EPath {
   /**
    * Apply func (with the extra arguments args) to the parts of expr selected
    * by the path; the rest of expr is rebuilt around the results.
+   *
+   * @param expr - The input expression.
+   * @param func - The func.
+   * @param args - The arguments in positional order.
+   * @returns The expression rebuilt after transforming the selected nodes.
+   * @see SymPy `sympy.simplify.epathtools.EPath.apply`
    */
   apply<P = Expr>(expr: unknown, func: EPathFunction<P>, args: readonly unknown[] = []): unknown {
     // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the selected parts are what the caller's path selects; their type is the caller's claim, as in SymPy
@@ -225,7 +247,13 @@ export class EPath {
     return go(this.#epath, expr);
   }
 
-  /** The parts of expr selected by the path. */
+  /**
+   * The parts of expr selected by the path.
+   *
+   * @param expr - The input expression.
+   * @returns The parts of expr selected by the path.
+   * @see SymPy `sympy.simplify.epathtools.EPath.select`
+   */
   select(expr: unknown): unknown[] {
     const result: unknown[] = [];
     const go = (path: readonly Selector[], e: unknown): void => {
@@ -254,7 +282,7 @@ export class EPath {
 }
 
 /**
- * SymPy `epath(path, expr=None, func=None, args=None)`: without expr, the
+ * Without expr, the
  * compiled {@link EPath}; without func, the parts of expr selected by the
  * path; otherwise expr with func (called with the part and the extra
  * arguments args) applied to each selected part. The path syntax:
@@ -267,6 +295,19 @@ export class EPath {
  *   properties, also in camelCase).
  *
  * The arguments of sums and products are taken in printing order.
+ *
+ * @param path - The expression path to select.
+ * @param expr - The input expression.
+ * @param func - The func.
+ * @param args - The arguments in positional order.
+ * @returns The selected nodes, or the rebuilt expression when a function is supplied.
+ * @see SymPy `sympy.simplify.epathtools.epath`
+ * @example
+ * ```ts
+ * import { epath, ex } from '@symjs/symjs';
+ *
+ * epath('/*', ex`x + 1`); // => [x, 1]
+ * ```
  */
 export function epath(path: string | EPath): EPath;
 export function epath(path: string | EPath, expr: unknown): unknown[];

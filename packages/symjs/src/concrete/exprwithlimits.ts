@@ -53,12 +53,36 @@ function limits(e: Concrete | Integral): (readonly Expr[])[] {
   return [...(e.integrand instanceof Integral ? limits(e.integrand) : []), e.args.slice(1)];
 }
 
-/** Variables of a sum, product or integral, including indefinite variables. */
+/**
+ * Variables of a sum, product or integral, including indefinite variables.
+ *
+ * @param e - The input expression.
+ * @returns The bound variables in limit order.
+ * @see SymPy `sympy.concrete.expr_with_limits.ExprWithLimits.variables`
+ * @example
+ * ```ts
+ * import { Concrete, ex, variables } from '@symjs/symjs';
+ *
+ * variables(new Concrete('Sum', [ex`k`, ex`k`, ex`1`, ex`3`])); // => [k]
+ * ```
+ */
 export function variables(e: Concrete | Integral): Expr[] {
   return limits(e).flatMap((l) => l.slice(0, 1));
 }
 
-/** Whether every limit is finite, using assumptions on the bounds and variables. */
+/**
+ * Whether every limit is finite, using assumptions on the bounds and variables.
+ *
+ * @param e - The input expression.
+ * @returns The truth value, or `'unknown'` when it cannot be determined.
+ * @see SymPy `sympy.concrete.expr_with_limits.ExprWithLimits.has_finite_limits`
+ * @example
+ * ```ts
+ * import { Concrete, ex, hasFiniteLimits } from '@symjs/symjs';
+ *
+ * hasFiniteLimits(new Concrete('Sum', [ex`k`, ex`k`, ex`1`, ex`3`])); // => True
+ * ```
+ */
 export function hasFiniteLimits(e: Concrete | Integral): Truth {
   return truthAnd(...limits(e).map((l): Truth => {
     const variableFinite = ask(Q.finite(first(l)));
@@ -68,7 +92,19 @@ export function hasFiniteLimits(e: Concrete | Integral): Truth {
   }));
 }
 
-/** Whether any definite limit runs from a larger lower bound to a smaller upper bound. */
+/**
+ * Whether any definite limit runs from a larger lower bound to a smaller upper bound.
+ *
+ * @param e - The input expression.
+ * @returns The truth value, or `'unknown'` when it cannot be determined.
+ * @see SymPy `sympy.concrete.expr_with_limits.ExprWithLimits.has_reversed_limits`
+ * @example
+ * ```ts
+ * import { Concrete, ex, hasReversedLimits } from '@symjs/symjs';
+ *
+ * hasReversedLimits(new Concrete('Sum', [ex`k`, ex`k`, ex`3`, ex`1`])); // => True
+ * ```
+ */
 export function hasReversedLimits(e: Concrete | Integral): Truth {
   return truthOr(...limits(e).map((l): Truth => {
     const a = l[1], b = l[2];

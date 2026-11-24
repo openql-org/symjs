@@ -114,7 +114,21 @@ function hashableContent(e: Expr): Content[] {
   return [...sympyArgs(e)];
 }
 
-/** SymPy Basic.compare: class names, then the length and items of the hashable content. */
+/**
+ * class names, then the length and items of the hashable content.
+ *
+ * @param a - The first operand.
+ * @param b - The second operand.
+ * @returns A negative, zero or positive value indicating the ordering.
+ * @see SymPy `sympy.core.basic.Basic.compare`
+ * @example
+ * ```ts
+ * import { compare, ex } from '@symjs/symjs';
+ *
+ * compare(ex`x`, ex`x`); // => 0
+ * compare(ex`y`, ex`x`); // => 1
+ * ```
+ */
 export function basicCompare(a: Expr, b: Expr): number {
   if (a === b) return 0;
   const c = cmpName(sympyClassName(a), sympyClassName(b));

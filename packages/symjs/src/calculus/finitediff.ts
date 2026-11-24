@@ -14,7 +14,21 @@ import { add, mul, pow, sympify } from '../core/ops';
 import { freeSymbols, rebuild, subs } from '../core/traverse';
 import { derivative as impl_derivative } from '../core/undef';
 
-/** Fornberg weights: delta[m][n][nu] for derivative order m using the first n+1 points. */
+/**
+ * Fornberg weights: delta[m][n][nu] for derivative order m using the first n+1 points.
+ *
+ * @param order - The order of differentiation.
+ * @param xs - The grid coordinates, in stencil order.
+ * @param x0 - The point about which to expand or differentiate.
+ * @returns Weights indexed by derivative order, final grid-point index and sample index.
+ * @see SymPy `sympy.calculus.finite_diff.finite_diff_weights`
+ * @example
+ * ```ts
+ * import { ex, finiteDiffWeights } from '@symjs/symjs';
+ *
+ * finiteDiffWeights(1, [ex`0`, ex`1`], 0)[1][1]; // => [-1, 1]
+ * ```
+ */
 export function finiteDiffWeights(order: number, xs: readonly Expr[], x0: ExprLike = 1): Expr[][][] {
   const X0 = sympify(x0);
   const M = order;
@@ -48,9 +62,23 @@ export function finiteDiffWeights(order: number, xs: readonly Expr[], x0: ExprLi
 const isPointList = (p: ExprLike | readonly ExprLike[]): p is readonly ExprLike[] => Array.isArray(p);
 
 /**
- * SymPy apply_finite_diff(order, x_list, y_list, x0): the finite difference
+ * The finite difference
  * approximation at x0 of the derivative of the given order of the function
  * with the values y_list at the points x_list.
+ *
+ * @param order - The order of differentiation.
+ * @param xList - The grid coordinates, in stencil order.
+ * @param yList - The function values at the corresponding grid points.
+ * @param x0 - The point about which to expand or differentiate.
+ * @returns The finite-difference approximation.
+ * @throws RangeError when the sample positions and values have different lengths.
+ * @see SymPy `sympy.calculus.finite_diff.apply_finite_diff`
+ * @example
+ * ```ts
+ * import { applyFiniteDiff } from '@symjs/symjs';
+ *
+ * applyFiniteDiff(1, [0, 1, 2], [0, 1, 4], 1); // => 2
+ * ```
  */
 export function applyFiniteDiff(order: number, xList: readonly ExprLike[], yList: readonly ExprLike[], x0: ExprLike = 0): Expr {
   if (xList.length !== yList.length) throw new RangeError('x_list and y_list not equal in length.');
@@ -112,6 +140,20 @@ function asFiniteDiff(e: Expr, points: ExprLike | readonly ExprLike[], x0: ExprL
  * Approximate a derivative by finite differences (SymPy
  * Derivative.as_finite_difference). `points` is a step size or the list of
  * sample points; without `wrt`, every variable of the derivative in turn.
+ *
+ * @param d - The derivative to approximate.
+ * @param points - The spacing or explicit list of sample points.
+ * @param x0 - The point about which to expand or differentiate.
+ * @param wrt - The variable or variables with respect to which to perform the operation.
+ * @returns The finite-difference approximation.
+ * @throws RangeError when the stencil does not support the requested derivative.
+ * @see SymPy `sympy.core.function.Derivative.as_finite_difference`
+ * @example
+ * ```ts
+ * import { Derivative, asFiniteDifference, ex } from '@symjs/symjs';
+ *
+ * asFiniteDifference(new Derivative([ex`f(x)`, ex`x`, ex`1`]), [0, 1]); // => -f(0) + f(1)
+ * ```
  */
 export function asFiniteDifference(d: Derivative, points: ExprLike | readonly ExprLike[] = 1, x0?: ExprLike, wrt?: Sym): Expr {
   return asFiniteDiff(d, points, x0, wrt);
@@ -126,9 +168,22 @@ function replaceSubs(e: Expr, points: ExprLike | readonly ExprLike[], wrt: Sym |
 }
 
 /**
- * SymPy differentiate_finite(expr, *symbols, points, x0, wrt): the
+ * The
  * derivative of expr with respect to the symbols (a symbol and a count, or
  * several symbols), with every derivative replaced by a finite difference.
+ *
+ * @param ex - The expression to transform.
+ * @param symbols - The differentiation variables with optional repetition counts.
+ * @param opts - `points` gives the stencil or spacing, `x0` its center, and `wrt` the variable to discretize.
+ * @returns The finite-difference approximation.
+ * @throws RangeError when a multiplicity has no preceding variable or the differentiation variable is ambiguous.
+ * @see SymPy `sympy.calculus.finite_diff.differentiate_finite`
+ * @example
+ * ```ts
+ * import { differentiateFinite, ex, expand, symbols } from '@symjs/symjs';
+ *
+ * differentiateFinite(ex`x**2`, [symbols('x')[0]]).expand(); // => 2*x
+ * ```
  */
 export function differentiateFinite(ex: ExprLike, symbols: readonly (Sym | number)[] = [], opts: { points?: ExprLike | readonly ExprLike[]; x0?: ExprLike; wrt?: Sym } = {}): Expr {
   const e = sympify(ex);

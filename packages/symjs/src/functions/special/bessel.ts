@@ -34,12 +34,26 @@ import { cgamma, funcExpanders } from './special';
 
 type BName = 'besselj' | 'bessely' | 'besseli' | 'besselk';
 type HName = 'hankel1' | 'hankel2';
-/** Order of a Bessel function (SymPy BesselBase.order). */
+/**
+ * Order of a Bessel function (SymPy BesselBase.order).
+ *
+ * @param e - The Bessel function application.
+ * @returns The order of the Bessel function.
+ * @throws TypeError when the expression is not a supported Bessel function.
+ * @see SymPy `sympy.functions.special.bessel.BesselBase.order`
+ */
 export function order(e: Expr): Expr {
   if (!(e instanceof Fn) || !['besselj', 'bessely', 'besseli', 'besselk', 'hankel1', 'hankel2', 'jn', 'yn', 'hn1', 'hn2'].includes(e.name)) throw new TypeError('expected a Bessel function');
   return at(e.args, 0);
 }
-/** Argument of a Bessel function (SymPy BesselBase.argument). */
+/**
+ * Argument of a Bessel function (SymPy BesselBase.argument).
+ *
+ * @param e - The Bessel function application.
+ * @returns The argument of the Bessel function.
+ * @throws TypeError when the expression is not a supported Bessel function.
+ * @see SymPy `sympy.functions.special.bessel.BesselBase.argument`
+ */
 export function argument(e: Expr): Expr {
   order(e);
   return at(e.args, 1);
@@ -518,19 +532,172 @@ for (const name of ['airyai', 'airybi', 'airyaiprime', 'airybiprime'] as const) 
   };
 }
 
+/**
+ * Computes the Bessel function of the first kind.
+ *
+ * @param nu - The order of the function.
+ * @param z - The argument of the function.
+ * @returns The Bessel function of the first kind.
+ * @see SymPy `sympy.functions.special.bessel.besselj`
+ * @example
+ * ```ts
+ * import { besselj } from '@symjs/symjs';
+ *
+ * besselj(0, 0); // => 1
+ * ```
+ */
 export const besselj = (nu: ExprLike, z: ExprLike): Expr => fn('besselj', [nu, z]);
+/**
+ * Computes the Bessel function of the second kind.
+ *
+ * @param nu - The order of the function.
+ * @param z - The argument of the function.
+ * @returns The Bessel function of the second kind.
+ * @see SymPy `sympy.functions.special.bessel.bessely`
+ * @example
+ * ```ts
+ * import { bessely } from '@symjs/symjs';
+ *
+ * bessely(0, 0); // => -oo
+ * ```
+ */
 export const bessely = (nu: ExprLike, z: ExprLike): Expr => fn('bessely', [nu, z]);
+/**
+ * Computes the modified Bessel function of the first kind.
+ *
+ * @param nu - The order of the function.
+ * @param z - The argument of the function.
+ * @returns The modified Bessel function of the first kind.
+ * @see SymPy `sympy.functions.special.bessel.besseli`
+ * @example
+ * ```ts
+ * import { besseli } from '@symjs/symjs';
+ *
+ * besseli(0, 0); // => 1
+ * ```
+ */
 export const besseli = (nu: ExprLike, z: ExprLike): Expr => fn('besseli', [nu, z]);
+/**
+ * Computes the modified Bessel function of the second kind.
+ *
+ * @param nu - The order of the function.
+ * @param z - The argument of the function.
+ * @returns The modified Bessel function of the second kind.
+ * @see SymPy `sympy.functions.special.bessel.besselk`
+ * @example
+ * ```ts
+ * import { besselk } from '@symjs/symjs';
+ *
+ * besselk(0, 0); // => oo
+ * ```
+ */
 export const besselk = (nu: ExprLike, z: ExprLike): Expr => fn('besselk', [nu, z]);
+/**
+ * Computes the Airy Ai function.
+ *
+ * @param z - The argument of the function.
+ * @returns The Airy Ai function.
+ * @see SymPy `sympy.functions.special.bessel.airyai`
+ * @example
+ * ```ts
+ * import { airyai, ex } from '@symjs/symjs';
+ *
+ * airyai(ex`oo`); // => 0
+ * airyai(ex`-oo`); // => 0
+ * ```
+ */
 export const airyai = (z: ExprLike): Expr => fn('airyai', [z]);
+/**
+ * Computes the Airy Bi function.
+ *
+ * @param z - The argument of the function.
+ * @returns The Airy Bi function.
+ * @see SymPy `sympy.functions.special.bessel.airybi`
+ * @example
+ * ```ts
+ * import { airybi, ex } from '@symjs/symjs';
+ *
+ * airybi(ex`oo`); // => oo
+ * airybi(ex`-oo`); // => 0
+ * ```
+ */
 export const airybi = (z: ExprLike): Expr => fn('airybi', [z]);
+/**
+ * Computes the first derivative of the Airy Ai function.
+ *
+ * @param z - The argument of the function.
+ * @returns The first derivative of the Airy Ai function.
+ * @see SymPy `sympy.functions.special.bessel.airyaiprime`
+ * @example
+ * ```ts
+ * import { airyaiprime, ex } from '@symjs/symjs';
+ *
+ * airyaiprime(ex`oo`); // => 0
+ * airyaiprime(ex`z`); // => airyaiprime(z)
+ * ```
+ */
 export const airyaiprime = (z: ExprLike): Expr => fn('airyaiprime', [z]);
+/**
+ * Computes the first derivative of the Airy Bi function.
+ *
+ * @param z - The argument of the function.
+ * @returns The first derivative of the Airy Bi function.
+ * @see SymPy `sympy.functions.special.bessel.airybiprime`
+ * @example
+ * ```ts
+ * import { airybiprime, ex } from '@symjs/symjs';
+ *
+ * airybiprime(ex`oo`); // => oo
+ * airybiprime(ex`-oo`); // => 0
+ * ```
+ */
 export const airybiprime = (z: ExprLike): Expr => fn('airybiprime', [z]);
-/** SymPy hankel1(nu, z) = besselj(nu, z) + I*bessely(nu, z): Hankel function of the first kind. */
+/**
+ * Hankel function of the first kind.
+ *
+ * @param nu - The order of the function.
+ * @param z - The argument of the function.
+ * @returns The value of the specified Hankel function.
+ * @see SymPy `sympy.functions.special.bessel.hankel1`
+ * @example
+ * ```ts
+ * import { ex, hankel1 } from '@symjs/symjs';
+ *
+ * hankel1(ex`nu`, ex`z`); // => hankel1(nu, z)
+ * ```
+ */
 export const hankel1 = (nu: ExprLike, z: ExprLike): Expr => fn('hankel1', [nu, z]);
-/** SymPy hankel2(nu, z) = besselj(nu, z) - I*bessely(nu, z): Hankel function of the second kind. */
+/**
+ * Hankel function of the second kind.
+ *
+ * @param nu - The order of the function.
+ * @param z - The argument of the function.
+ * @returns The value of the specified Hankel function.
+ * @see SymPy `sympy.functions.special.bessel.hankel2`
+ * @example
+ * ```ts
+ * import { ex, hankel2 } from '@symjs/symjs';
+ *
+ * hankel2(ex`nu`, ex`z`); // => hankel2(nu, z)
+ * ```
+ */
 export const hankel2 = (nu: ExprLike, z: ExprLike): Expr => fn('hankel2', [nu, z]);
-/** SymPy marcumq(m, a, b): the generalized Marcum Q-function. */
+/**
+ * The generalized Marcum Q-function.
+ *
+ * @param m - The order.
+ * @param a - The first operand.
+ * @param b - The second operand.
+ * @returns The generalized Marcum Q-function.
+ * @see SymPy `sympy.functions.special.bessel.marcumq`
+ * @example
+ * ```ts
+ * import { ex, marcumq } from '@symjs/symjs';
+ *
+ * marcumq(0, 0, 0); // => 0
+ * marcumq(0, ex`a`, 0); // => 1 - exp(-a**2/2)
+ * ```
+ */
 export const marcumq = (m: ExprLike, a: ExprLike, b: ExprLike): Expr => fn('marcumq', [m, a, b]);
 
 registerFunctionHeads([

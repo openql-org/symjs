@@ -8,8 +8,17 @@
 
 import { at } from './guard';
 
-/** SymPy Kind: the mathematical kind of an object (number, boolean, array, ...). */
+/**
+ * The mathematical kind of an object (number, boolean, array, ...).
+ *
+ * @see SymPy `sympy.core.kind.Kind`
+ */
 export abstract class Kind {
+  /**
+   * Formats the object as a string.
+   *
+   * @returns The formatted string.
+   */
   abstract toString(): string;
   [Symbol.for('nodejs.util.inspect.custom')](): string {
     return this.toString();
@@ -25,11 +34,41 @@ class NamedKind extends Kind {
   }
 }
 
-/** SymPy NumberKind: the kind of numbers and commutative expressions. */
+/**
+ * The kind of numbers and commutative expressions.
+ *
+ * @see SymPy `sympy.core.kind.NumberKind`
+ * @example
+ * ```ts
+ * import { NumberKind } from '@symjs/symjs';
+ *
+ * NumberKind.toString(); // => NumberKind
+ * ```
+ */
 export const NumberKind: Kind = new NamedKind('NumberKind');
-/** SymPy BooleanKind: the kind of relations and boolean values. */
+/**
+ * The kind of relations and boolean values.
+ *
+ * @see SymPy `sympy.core.kind.BooleanKind`
+ * @example
+ * ```ts
+ * import { BooleanKind } from '@symjs/symjs';
+ *
+ * BooleanKind.toString(); // => BooleanKind
+ * ```
+ */
 export const BooleanKind: Kind = new NamedKind('BooleanKind');
-/** SymPy UndefinedKind: the kind is not known. */
+/**
+ * The kind is not known.
+ *
+ * @see SymPy `sympy.core.kind.UndefinedKind`
+ * @example
+ * ```ts
+ * import { UndefinedKind } from '@symjs/symjs';
+ *
+ * UndefinedKind.toString(); // => UndefinedKind
+ * ```
+ */
 export const UndefinedKind: Kind = new NamedKind('UndefinedKind');
 
 const arrayKinds = new Map<Kind, ArrayKindNode>();
@@ -65,13 +104,34 @@ export class ArrayKindNode extends Kind {
   }
 }
 
-/** The kinds of the ordered elements of a SymPy Tuple. */
+/**
+ * The kinds of the ordered elements of a SymPy Tuple.
+ *
+ * @see SymPy `sympy.core.containers.TupleKind`
+ * @example
+ * ```ts
+ * import { BooleanKind, NumberKind, TupleKind } from '@symjs/symjs';
+ *
+ * new TupleKind(NumberKind, BooleanKind).toString(); // => TupleKind(NumberKind, BooleanKind)
+ * ```
+ */
 export class TupleKind extends Kind {
+  /** The kinds of the tuple elements in order. */
   readonly elementKind: readonly Kind[];
+  /**
+   * Creates a `TupleKind`.
+   *
+   * @param elementKind - The kinds of the tuple elements in order.
+   */
   constructor(...elementKind: Kind[]) {
     super();
     this.elementKind = elementKind;
   }
+  /**
+   * Formats the object as a string.
+   *
+   * @returns The formatted string.
+   */
   toString(): string {
     return `TupleKind(${this.elementKind.map((kind) => kind.toString()).join(', ')})`;
   }

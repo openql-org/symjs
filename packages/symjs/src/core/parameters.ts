@@ -19,6 +19,14 @@ const state: Parameters = { evaluate: true };
 /**
  * The current global parameters (SymPy `global_parameters`): `evaluate`, the automatic evaluation of
  * `Add`, `Mul` and `Pow`.
+ *
+ * @see SymPy `sympy.core.parameters.global_parameters`
+ * @example
+ * ```ts
+ * import { globalParameters } from '@symjs/symjs';
+ *
+ * globalParameters.evaluate; // => True
+ * ```
  */
 export const globalParameters: Readonly<Parameters> = {
   get evaluate(): boolean {
@@ -30,6 +38,17 @@ export const globalParameters: Readonly<Parameters> = {
  * Runs `fn` with automatic evaluation switched on or off (SymPy's context manager
  * `with evaluate(flag): ...`): with `false`, `add`, `mul` and `pow` build their arguments as given
  * (`x + x` stays `x + x`). The previous setting is restored when `fn` returns or throws.
+ *
+ * @param flag - Whether to enable automatic evaluation during the callback.
+ * @param fn - The callback to run.
+ * @returns The value returned by the callback.
+ * @see SymPy `sympy.core.parameters.evaluate`
+ * @example
+ * ```ts
+ * import { Add, evaluate } from '@symjs/symjs';
+ *
+ * evaluate(false, () => Add(1, 1)); // => 1 + 1
+ * ```
  */
 export function evaluate<T>(flag: boolean, fn: () => T): T {
   const old = state.evaluate;

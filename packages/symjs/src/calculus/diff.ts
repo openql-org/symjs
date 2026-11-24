@@ -329,11 +329,24 @@ export function diff(ex: ExprLike, x: Expr, order: ExprLike = 1): Expr {
 impl.diff = diff;
 
 /**
- * SymPy Function.fdiff(argindex): the derivative of the function application
+ * The derivative of the function application
  * `f` with respect to its argindex-th argument (1-based), at the arguments:
  * fdiff(DiracDelta(x**2 - 1)) = DiracDelta(x**2 - 1, 1). Where the derivative
  * has no closed form it is Derivative(f(x), x), or
  * Subs(Derivative(f(xi), xi), xi, a) for an argument a that is not a symbol.
+ *
+ * @param f - The applied function.
+ * @param argindex - The one-based index of the argument.
+ * @returns The partial derivative evaluated at the arguments of the application.
+ * @throws TypeError when the expression is not a function application.
+ * @throws RangeError when the argument index is outside the function's arity.
+ * @see SymPy `sympy.core.function.Function.fdiff`
+ * @example
+ * ```ts
+ * import { ex, fdiff, sin } from '@symjs/symjs';
+ *
+ * fdiff(sin(ex`x`), 1); // => cos(x)
+ * ```
  */
 export function fdiff(f: ExprLike, argindex = 1): Expr {
   const e = sympify(f);

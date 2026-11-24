@@ -192,13 +192,40 @@ function partitionNumber(n: number): bigint {
   return at(p, n);
 }
 
-/** Primality test (deterministic Miller-Rabin for 64-bit, trial division otherwise). */
+/**
+ * Primality test (deterministic Miller-Rabin for 64-bit, trial division otherwise).
+ *
+ * @param nIn - The integer to test for primality.
+ * @returns Whether the integer is prime.
+ * @see SymPy `sympy.ntheory.primetest.isprime`
+ * @example
+ * ```ts
+ * import { isprime } from '@symjs/symjs';
+ *
+ * isprime(13); // => True
+ * isprime(15); // => False
+ * ```
+ */
 export function isprime(nIn: ExprLike | bigint): boolean {
   // SymPy's test (trial division, Miller-Rabin with fixed bases, then BPSW): no strong pseudoprimes pass
   return ntheoryIsprime(nIn);
 }
 
-/** Jacobi symbol (m/n) for odd positive n. */
+/**
+ * Jacobi symbol (m/n) for odd positive n.
+ *
+ * @param m - The order.
+ * @param n - The index.
+ * @returns The Jacobi symbol.
+ * @see SymPy `sympy.functions.combinatorial.numbers.jacobi_symbol`
+ * @example
+ * ```ts
+ * import { jacobiSymbol } from '@symjs/symjs';
+ *
+ * jacobiSymbol(45, 77); // => -1
+ * jacobiSymbol(60, 121); // => 1
+ * ```
+ */
 export function jacobiSymbol(m: bigint, n: bigint): number;
 export function jacobiSymbol(m: ExprLike, n: ExprLike): Expr;
 export function jacobiSymbol(m: ExprLike, n: ExprLike): number | Expr {
@@ -223,7 +250,21 @@ function jacobiInt(mIn: bigint, nIn: bigint): number {
   return n === 1n ? t : 0;
 }
 
-/** Kronecker symbol (a/n). */
+/**
+ * Kronecker symbol (a/n).
+ *
+ * @param a - The first operand.
+ * @param n - The index.
+ * @returns The Kronecker symbol.
+ * @see SymPy `sympy.functions.combinatorial.numbers.kronecker_symbol`
+ * @example
+ * ```ts
+ * import { kroneckerSymbol } from '@symjs/symjs';
+ *
+ * kroneckerSymbol(45, 77); // => -1
+ * kroneckerSymbol(13, -120); // => 1
+ * ```
+ */
 export function kroneckerSymbol(a: bigint, n: bigint): number;
 export function kroneckerSymbol(a: ExprLike, n: ExprLike): Expr;
 export function kroneckerSymbol(a: ExprLike, n: ExprLike): number | Expr {
@@ -823,13 +864,127 @@ mpFns['andre'] = (args, prec) => {
     M.cadd(M.cmul(M.ccos(angle, p), odd, p), M.cmul(M.csin(angle, p), even, p), p), p);
 };
 
+/**
+ * Computes a Bernoulli number or evaluates a Bernoulli polynomial.
+ *
+ * @param n - The index.
+ * @param x - The argument of the function.
+ * @returns The indexed number, or the corresponding polynomial value when a variable is supplied.
+ * @see SymPy `sympy.functions.combinatorial.numbers.bernoulli`
+ * @example
+ * ```ts
+ * import { bernoulli, ex } from '@symjs/symjs';
+ *
+ * bernoulli(3, ex`x`); // => x**3 - 3*x**2/2 + x/2
+ * ```
+ */
 export const bernoulli = (n: ExprLike, x?: ExprLike): Expr => fn('bernoulli', x === undefined ? [n] : [n, x]);
+/**
+ * Computes an Euler number or evaluates an Euler polynomial.
+ *
+ * @param n - The index.
+ * @param x - The argument of the function.
+ * @returns The indexed number, or the corresponding polynomial value when a variable is supplied.
+ * @see SymPy `sympy.functions.combinatorial.numbers.euler`
+ * @example
+ * ```ts
+ * import { euler, ex } from '@symjs/symjs';
+ *
+ * euler(12); // => 2702765
+ * euler(0, ex`x`); // => 1
+ * ```
+ */
 export const euler = (n: ExprLike, x?: ExprLike): Expr => fn('euler', x === undefined ? [n] : [n, x]);
+/**
+ * Computes a Genocchi number or evaluates a Genocchi polynomial.
+ *
+ * @param n - The index.
+ * @param x - The argument of the function.
+ * @returns The indexed number, or the corresponding polynomial value when a variable is supplied.
+ * @see SymPy `sympy.functions.combinatorial.numbers.genocchi`
+ * @example
+ * ```ts
+ * import { ex, genocchi } from '@symjs/symjs';
+ *
+ * genocchi(4, ex`x`); // => -4*x**3 + 6*x**2 - 1
+ * ```
+ */
 export const genocchi = (n: ExprLike, x?: ExprLike): Expr => fn('genocchi', x === undefined ? [n] : [n, x]);
+/**
+ * Computes a Bell number, a Bell polynomial or an incomplete Bell polynomial.
+ *
+ * @param n - The index.
+ * @param a - The polynomial variable, or the number of blocks for an incomplete Bell polynomial.
+ * @param xs - The weights of blocks of successive sizes in an incomplete Bell polynomial.
+ * @returns The Bell number or polynomial specified by the arguments.
+ * @see SymPy `sympy.functions.combinatorial.numbers.bell`
+ * @example
+ * ```ts
+ * import { bell, ex } from '@symjs/symjs';
+ *
+ * bell(30); // => 846749014511809332450147
+ * bell(4, ex`t`); // => t**4 + 6*t**3 + 7*t**2 + t
+ * ```
+ */
 export const bell = (n: ExprLike, a?: ExprLike, xs?: readonly ExprLike[]): Expr => fn('bell', [n, ...(a === undefined ? [] : [a]), ...(xs ?? [])]);
+/**
+ * Computes a Fibonacci number or evaluates a Fibonacci polynomial.
+ *
+ * @param n - The index.
+ * @param x - The argument of the function.
+ * @returns The indexed number, or the corresponding polynomial value when a variable is supplied.
+ * @see SymPy `sympy.functions.combinatorial.numbers.fibonacci`
+ * @example
+ * ```ts
+ * import { ex, fibonacci } from '@symjs/symjs';
+ *
+ * fibonacci(5, ex`t`); // => t**4 + 3*t**2 + 1
+ * ```
+ */
 export const fibonacci = (n: ExprLike, x?: ExprLike): Expr => fn('fibonacci', x === undefined ? [n] : [n, x]);
+/**
+ * Computes a Lucas number.
+ *
+ * @param n - The index.
+ * @returns A Lucas number.
+ * @see SymPy `sympy.functions.combinatorial.numbers.lucas`
+ * @example
+ * ```ts
+ * import { lucas } from '@symjs/symjs';
+ *
+ * lucas(5); // => 11
+ * ```
+ */
 export const lucas = (n: ExprLike): Expr => fn('lucas', [n]);
+/**
+ * Computes a Tribonacci number or evaluates a Tribonacci polynomial.
+ *
+ * @param n - The index.
+ * @param x - The argument of the function.
+ * @returns The indexed number, or the corresponding polynomial value when a variable is supplied.
+ * @see SymPy `sympy.functions.combinatorial.numbers.tribonacci`
+ * @example
+ * ```ts
+ * import { ex, tribonacci } from '@symjs/symjs';
+ *
+ * tribonacci(5, ex`t`); // => t**8 + 3*t**5 + 3*t**2
+ * ```
+ */
 export const tribonacci = (n: ExprLike, x?: ExprLike): Expr => fn('tribonacci', x === undefined ? [n] : [n, x]);
+/**
+ * Counts the integer partitions of a nonnegative integer.
+ *
+ * @param n - The index.
+ * @returns The number of integer partitions of a nonnegative integer.
+ * @see SymPy `sympy.functions.combinatorial.numbers.partition`
+ * @example
+ * ```ts
+ * import { partition } from '@symjs/symjs';
+ *
+ * partition(4); // => 5
+ * partition(25); // => 1958
+ * ```
+ */
 export const partition = (n: ExprLike): Expr => fn('partition', [n]);
 /** An integer supplied directly or by its prime factorization. */
 type FactoredInteger = ExprLike | ReadonlyMap<ExprLike, ExprLike>;
@@ -837,24 +992,169 @@ function factoredExpr(n: FactoredInteger): Expr {
   if (typeof n === 'object' && !(n instanceof Expr)) return mul(...[...n].map(([p, k]) => pow(p, k)));
   return sympify(n);
 }
+/**
+ * Counts the positive integers up to `n` that are coprime to `n`.
+ *
+ * @param n - The index.
+ * @returns The number of positive integers up to `n` that are coprime to `n`.
+ * @see SymPy `sympy.functions.combinatorial.numbers.totient`
+ * @example
+ * ```ts
+ * import { totient } from '@symjs/symjs';
+ *
+ * totient(1); // => 1
+ * totient(25); // => 20
+ * ```
+ */
 export const totientFn = (n: FactoredInteger): Expr => fn('totient', [factoredExpr(n)]);
+/**
+ * Computes the exponent of the multiplicative group of integers modulo `n`.
+ *
+ * @param n - The index.
+ * @returns The exponent of the multiplicative group of integers modulo `n`.
+ * @see SymPy `sympy.functions.combinatorial.numbers.reduced_totient`
+ * @example
+ * ```ts
+ * import { reducedTotient } from '@symjs/symjs';
+ *
+ * reducedTotient(1); // => 1
+ * reducedTotient(8); // => 2
+ * ```
+ */
 export const reducedTotient = (n: FactoredInteger): Expr => fn('reduced_totient', [factoredExpr(n)]);
+/**
+ * Computes the Möbius function, zero for integers with a squared prime factor.
+ *
+ * @param n - The index.
+ * @returns The Möbius function, zero for integers with a squared prime factor.
+ * @see SymPy `sympy.functions.combinatorial.numbers.mobius`
+ * @example
+ * ```ts
+ * import { mobius } from '@symjs/symjs';
+ *
+ * mobius(1); // => 1
+ * mobius(91); // => 1
+ * ```
+ */
 export const mobius = (n: ExprLike): Expr => fn('mobius', [n]);
+/**
+ * Sums powers of the positive divisors of an integer.
+ *
+ * @param n - The index.
+ * @param k - The power to which each divisor is raised.
+ * @returns The sum of the specified powers of all positive divisors.
+ * @see SymPy `sympy.functions.combinatorial.numbers.divisor_sigma`
+ * @example
+ * ```ts
+ * import { divisorSigma } from '@symjs/symjs';
+ *
+ * divisorSigma(37); // => 38
+ * divisorSigma(18, 0); // => 6
+ * ```
+ */
 export const divisorSigma = (n: ExprLike, k?: ExprLike): Expr => fn('divisor_sigma', k === undefined ? [n] : [n, k]);
-/** Sum of k-th powers of the unitary divisors of n. */
+/**
+ * Sum of k-th powers of the unitary divisors of n.
+ *
+ * @param n - The index.
+ * @param k - The power to which each divisor is raised.
+ * @returns The sum of the specified powers of the unitary divisors.
+ * @see SymPy `sympy.functions.combinatorial.numbers.udivisor_sigma`
+ * @example
+ * ```ts
+ * import { udivisorSigma } from '@symjs/symjs';
+ *
+ * udivisorSigma(111); // => 152
+ * udivisorSigma(18, 0); // => 4
+ * ```
+ */
 export const udivisorSigma = (n: ExprLike, k?: ExprLike): Expr => fn('udivisor_sigma', k === undefined ? [n] : [n, k]);
+/**
+ * Counts the distinct prime factors of an integer.
+ *
+ * @param n - The index.
+ * @returns The number of distinct prime factors of an integer.
+ * @see SymPy `sympy.functions.combinatorial.numbers.primenu`
+ * @example
+ * ```ts
+ * import { primenu } from '@symjs/symjs';
+ *
+ * primenu(1); // => 0
+ * primenu(30); // => 3
+ * ```
+ */
 export const primenu = (n: ExprLike): Expr => fn('primenu', [n]);
+/**
+ * Counts the prime factors of an integer with multiplicity.
+ *
+ * @param n - The index.
+ * @returns The number of prime factors of an integer with multiplicity.
+ * @see SymPy `sympy.functions.combinatorial.numbers.primeomega`
+ * @example
+ * ```ts
+ * import { primeomega } from '@symjs/symjs';
+ *
+ * primeomega(1); // => 0
+ * primeomega(20); // => 3
+ * ```
+ */
 export const primeomega = (n: ExprLike): Expr => fn('primeomega', [n]);
+/**
+ * Counts the primes less than or equal to the argument.
+ *
+ * @param n - The index.
+ * @returns The number of primes less than or equal to the argument.
+ * @see SymPy `sympy.functions.combinatorial.numbers.primepi`
+ * @example
+ * ```ts
+ * import { primepi } from '@symjs/symjs';
+ *
+ * primepi(25); // => 9
+ * ```
+ */
 export const primepiFn = (n: ExprLike): Expr => fn('primepi', [n]);
+/**
+ * Computes the multivariate gamma function in the given dimension.
+ *
+ * @param x - The argument of the function.
+ * @param p - The dimension.
+ * @returns The multivariate gamma function in the given dimension.
+ * @see SymPy `sympy.functions.special.gamma_functions.multigamma`
+ * @example
+ * ```ts
+ * import { multigamma } from '@symjs/symjs';
+ *
+ * multigamma(1, 1); // => 1
+ * multigamma(4, 1); // => 6
+ * ```
+ */
 export const multigamma = (x: ExprLike, p: ExprLike): Expr => fn('multigamma', [x, p]);
 
 
+/**
+ * Subtracts the floor from the argument to obtain its fractional part.
+ *
+ * @param x - The argument of the function.
+ * @returns The fractional part.
+ * @see SymPy `sympy.functions.elementary.integers.frac`
+ * @example
+ * ```ts
+ * import { ex, frac } from '@symjs/symjs';
+ *
+ * frac(ex`4/3`); // => 1/3
+ * frac(ex`-4/3`); // => 2/3
+ * ```
+ */
 export const frac = (x: ExprLike): Expr => fn('frac', [x]);
 
 /**
  * Motzkin numbers M(0), ..., M(n-1) (SymPy motzkin.find_first_n_motzkins).
  *
  * @experimental May change in a minor release.
+ * @param n - The number of terms to return.
+ * @returns The requested initial segment of the Motzkin sequence.
+ * @throws RangeError when the requested count is not a nonnegative integer.
+ * @see SymPy `sympy.functions.combinatorial.numbers.motzkin.find_first_n_motzkins`
  */
 export function firstMotzkins(n: number): bigint[] {
   if (!Number.isInteger(n) || n < 0) throw new RangeError('count must be a nonnegative integer');
@@ -877,6 +1177,11 @@ export function firstMotzkins(n: number): bigint[] {
  * Motzkin numbers in [x, y] (SymPy motzkin.find_motzkin_numbers_in_range).
  *
  * @experimental May change in a minor release.
+ * @param x - The lower endpoint.
+ * @param y - The upper endpoint.
+ * @returns The Motzkin numbers within the given range.
+ * @throws RangeError when the endpoints do not define a valid range.
+ * @see SymPy `sympy.functions.combinatorial.numbers.motzkin.find_motzkin_numbers_in_range`
  */
 export function motzkinNumbersInRange(x: bigint, y: bigint): bigint[] {
   if (x < 0n || y < x) throw new RangeError('invalid Motzkin range');
@@ -898,13 +1203,29 @@ export function motzkinNumbersInRange(x: bigint, y: bigint): bigint[] {
  * Is n a Motzkin number (SymPy motzkin.is_motzkin)?
  *
  * @experimental May change in a minor release.
+ * @param n - The index.
+ * @returns Whether the integer is a Motzkin number.
+ * @see SymPy `sympy.functions.combinatorial.numbers.motzkin.is_motzkin`
  */
 export function isMotzkin(n: bigint): boolean {
   if (n < 1n) return false;
   return motzkinNumbersInRange(n, n).length > 0;
 }
 
-/** SymPy legendre_symbol(a, p) for an odd prime p: 0, 1 or -1. */
+/**
+ * Computes the quadratic character of an integer modulo an odd prime.
+ *
+ * @param a - The first operand.
+ * @param p - The odd prime modulus.
+ * @returns Zero for a multiple of the prime, one for a nonzero quadratic residue and minus one otherwise.
+ * @see SymPy `sympy.functions.combinatorial.numbers.legendre_symbol`
+ * @example
+ * ```ts
+ * import { legendreSymbol } from '@symjs/symjs';
+ *
+ * legendreSymbol(3, 7); // => -1
+ * ```
+ */
 export function legendreSymbol(a: bigint | number, p: bigint | number): number;
 export function legendreSymbol(a: ExprLike, p: ExprLike): Expr;
 export function legendreSymbol(a: ExprLike, p: ExprLike): number | Expr {
@@ -914,13 +1235,38 @@ export function legendreSymbol(a: ExprLike, p: ExprLike): number | Expr {
   return jacobiInt(BigInt(a), P);
 }
 
-/** SymPy motzkin(n) (motzkin.find_first_n_motzkins(n)[n - 1]). */
+/**
+ * Computes the Motzkin number using a one-based index.
+ *
+ * @param n - The index.
+ * @returns The Motzkin number at the specified index.
+ * @throws RangeError when the index is not a positive integer.
+ * @see SymPy `sympy.functions.combinatorial.numbers.motzkin`
+ * @example
+ * ```ts
+ * import { motzkin } from '@symjs/symjs';
+ *
+ * motzkin(5); // => 9
+ * ```
+ */
 export function motzkin(n: number): bigint {
   if (!Number.isInteger(n) || n < 1) throw new RangeError('motzkin: n must be a positive integer');
   return at(firstMotzkins(n), n - 1);
 }
 
-/** Euler zigzag numbers and their analytic continuation for symbolic inputs. */
+/**
+ * Euler zigzag numbers and their analytic continuation for symbolic inputs.
+ *
+ * @param n - The index.
+ * @returns The André number at the specified index.
+ * @see SymPy `sympy.functions.combinatorial.numbers.andre`
+ * @example
+ * ```ts
+ * import { andre } from '@symjs/symjs';
+ *
+ * andre(6); // => 61
+ * ```
+ */
 export function andre(n: Expr | bigint): Expr;
 export function andre(n: number): bigint;
 export function andre(n: ExprLike): bigint | Expr {
@@ -1022,7 +1368,23 @@ const digitSum = (n: bigint, p: bigint) => {
   return s;
 };
 
-/** binomial(n, k) modulo m for nonnegative integers (prime-power moduli of moderate size). */
+/**
+ * binomial(n, k) modulo m for nonnegative integers (prime-power moduli of moderate size).
+ *
+ * @param nIn - The upper binomial argument.
+ * @param kIn - The number selected.
+ * @param mIn - The modulus.
+ * @returns The binomial coefficient reduced modulo the given modulus.
+ * @throws RangeError when the modulus is not positive.
+ * @see SymPy `sympy.ntheory.residue_ntheory.binomial_mod`
+ * @example
+ * ```ts
+ * import { binomialMod } from '@symjs/symjs';
+ *
+ * binomialMod(10, 2, 6); // => 3
+ * binomialMod(17, 9, 10); // => 0
+ * ```
+ */
 export function binomialMod(nIn: IntLike, kIn: IntLike, mIn: IntLike): bigint {
   const [n, k, m] = [intOf(nIn), intOf(kIn), intOf(mIn)];
   if (m < 1n) throw new RangeError('the modulus is required to be positive');
@@ -1069,7 +1431,13 @@ function toBig(n: ExprLike | bigint | number): bigint {
   return v.p;
 }
 
-/** SymPy is_carmichael: n is composite, squarefree and p - 1 | n - 1 for each prime p | n (Korselt). */
+/**
+ * n is composite, squarefree and p - 1 | n - 1 for each prime p | n (Korselt).
+ *
+ * @param nIn - The index.
+ * @returns Whether the integer is a Carmichael number.
+ * @see SymPy `sympy.functions.combinatorial.numbers.carmichael.is_carmichael`
+ */
 export function isCarmichael(nIn: ExprLike | bigint | number): boolean {
   const n = toBig(nIn);
   if (n < 561n || n % 2n === 0n || isprime(n)) return false;
@@ -1077,7 +1445,15 @@ export function isCarmichael(nIn: ExprLike | bigint | number): boolean {
   return true;
 }
 
-/** SymPy find_carmichael_numbers_in_range(x, y): the Carmichael numbers in [x, y). */
+/**
+ * The Carmichael numbers in [x, y).
+ *
+ * @param x - The lower endpoint.
+ * @param y - The upper endpoint.
+ * @returns The Carmichael numbers in [x, y).
+ * @throws RangeError when the integer endpoints do not define a valid range.
+ * @see SymPy `sympy.functions.combinatorial.numbers.carmichael.find_carmichael_numbers_in_range`
+ */
 export function findCarmichaelNumbersInRange(x: ExprLike | bigint | number, y: ExprLike | bigint | number): bigint[] {
   const lo = toBig(x);
   const hi = toBig(y);
@@ -1087,14 +1463,30 @@ export function findCarmichaelNumbersInRange(x: ExprLike | bigint | number, y: E
   return out;
 }
 
-/** SymPy find_first_n_carmichaels(n): the first n Carmichael numbers. */
+/**
+ * The first n Carmichael numbers.
+ *
+ * @param n - The number of terms to return.
+ * @returns The first n Carmichael numbers.
+ * @see SymPy `sympy.functions.combinatorial.numbers.carmichael.find_first_n_carmichaels`
+ */
 export function findFirstNCarmichaels(n: number): bigint[] {
   const out: bigint[] = [];
   for (let k = 561n; out.length < n; k += 2n) if (isCarmichael(k)) out.push(k);
   return out;
 }
 
-/** SymPy carmichael (the deprecated class): its static methods. */
+/**
+ * Groups the membership test and enumeration functions for Carmichael numbers.
+ *
+ * @see SymPy `sympy.functions.combinatorial.numbers.carmichael`
+ * @example
+ * ```ts
+ * import { carmichael } from '@symjs/symjs';
+ *
+ * carmichael.isCarmichael(561); // => True
+ * ```
+ */
 export const carmichael = { isCarmichael, findCarmichaelNumbersInRange, findFirstNCarmichaels } as const;
 
 /** Input to the multiset counting functions: a size, a sequence, or item multiplicities. */
@@ -1137,17 +1529,61 @@ function selections(n: CountingInput, k: IntLike | undefined, replacement: boole
   return k === undefined ? row.reduce((a, b) => a + b, 0n) : at(row, degree);
 }
 
-/** Number of combinations of a multiset, optionally allowing replacement. */
+/**
+ * Number of combinations of a multiset, optionally allowing replacement.
+ *
+ * @param n - The collection or size being counted.
+ * @param k - The selection size.
+ * @param opts - `replacement` permits selecting the same item more than once.
+ * @returns The number of combinations.
+ * @see SymPy `sympy.functions.combinatorial.numbers.nC`
+ * @example
+ * ```ts
+ * import { nC } from '@symjs/symjs';
+ *
+ * nC(3, 2); // => 3
+ * nC('abc', 2); // => 3
+ * ```
+ */
 export function nC(n: CountingInput, k?: IntLike, opts: { replacement?: boolean } = {}): bigint {
   return selections(n, k, opts.replacement ?? false, false);
 }
 
-/** Number of distinct ordered selections of a multiset. */
+/**
+ * Number of distinct ordered selections of a multiset.
+ *
+ * @param n - The collection or size being counted.
+ * @param k - The selection size.
+ * @param opts - `replacement` permits selecting the same item more than once.
+ * @returns The number of permutations.
+ * @see SymPy `sympy.functions.combinatorial.numbers.nP`
+ * @example
+ * ```ts
+ * import { nP } from '@symjs/symjs';
+ *
+ * nP(3, 2); // => 6
+ * nP('aab', 2); // => 3
+ * ```
+ */
 export function nP(n: CountingInput, k?: IntLike, opts: { replacement?: boolean } = {}): bigint {
   return selections(n, k, opts.replacement ?? false, true);
 }
 
-/** Number of derangements; brute is accepted as an algorithm hint. */
+/**
+ * Number of derangements; brute is accepted as an algorithm hint.
+ *
+ * @param i - The collection or size being counted.
+ * @param opts - `n` gives the size or `m` the multiplicities instead of a collection. `brute` is accepted as an algorithm hint.
+ * @returns The number of derangements.
+ * @throws TypeError when the input does not specify exactly one collection, size or multiplicity distribution.
+ * @see SymPy `sympy.functions.combinatorial.numbers.nD`
+ * @example
+ * ```ts
+ * import { nD } from '@symjs/symjs';
+ *
+ * nD('abc'); // => 2
+ * ```
+ */
 export function nD(i?: CountingInput, opts: { brute?: boolean; n?: IntLike; m?: Iterable<IntLike> | Map<IntLike, IntLike> } = {}): bigint {
   if ([i, opts.n, opts.m].filter((v) => v !== undefined).length !== 1) throw new TypeError('supply exactly one of i, n, or m');
   if (i !== undefined && (typeof i === 'number' || typeof i === 'bigint' || i instanceof Expr)) throw new TypeError('items must be a sequence or multiset');
@@ -1185,7 +1621,20 @@ export function nD(i?: CountingInput, opts: { brute?: boolean; n?: IntLike; m?: 
   return count(0);
 }
 
-/** Number of partitions of a multiset; an integer denotes identical items. */
+/**
+ * Number of partitions of a multiset; an integer denotes identical items.
+ *
+ * @param n - The collection or size being counted.
+ * @param k - The number of blocks.
+ * @returns The number of partitions.
+ * @see SymPy `sympy.functions.combinatorial.numbers.nT`
+ * @example
+ * ```ts
+ * import { nT } from '@symjs/symjs';
+ *
+ * nT('1111'); // => 5
+ * ```
+ */
 export function nT(n: CountingInput, k?: IntLike): bigint {
   const counts = histogram(n, true).filter((v) => v > 0);
   if (k !== undefined && intOf(k) < 0n) return 0n;
@@ -1196,7 +1645,23 @@ export function nT(n: CountingInput, k?: IntLike): bigint {
   return result;
 }
 
-/** Stirling numbers of either kind, including signed and reduced variants. */
+/**
+ * Stirling numbers of either kind, including signed and reduced variants.
+ *
+ * @param nIn - The index.
+ * @param kIn - The number of cycles or blocks.
+ * @param d - The minimum separation for reduced Stirling numbers.
+ * @param opts - `kind` selects the first or second kind and `signed` selects signed first-kind numbers.
+ * @returns The selected Stirling number.
+ * @throws RangeError when the requested kind is neither one nor two.
+ * @see SymPy `sympy.functions.combinatorial.numbers.stirling`
+ * @example
+ * ```ts
+ * import { stirling } from '@symjs/symjs';
+ *
+ * stirling(5, 3, 2); // => 7
+ * ```
+ */
 export function stirling(nIn: IntLike, kIn: IntLike, d?: IntLike, opts: { kind?: number; signed?: boolean } = {}): bigint {
   const n = countSize(nIn), k = countSize(kIn);
   if (k > n) return 0n;

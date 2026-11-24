@@ -149,7 +149,19 @@ export function normal(e: Expr): Expr {
   return isOne(d) ? n : mul(n, pow(d, -1));
 }
 
-/** SymPy L: the number of trigonometric functions. */
+/**
+ * The number of trigonometric functions.
+ *
+ * @param rv - The input expression.
+ * @returns The number of trigonometric functions.
+ * @see SymPy `sympy.simplify.fu.L`
+ * @example
+ * ```ts
+ * import { L, ex } from '@symjs/symjs';
+ *
+ * L(ex`sin(x) + cos(x)`); // => 2
+ * ```
+ */
 export function L(rv: ExprLike): Expr {
   return Rational.of(count(sympify(rv), isTrigFunction));
 }
@@ -297,12 +309,30 @@ export function greedy(tree: Tree, objective: (e: Expr) => Measured): Rule {
 // the transformation rules
 // ---------------------------------------------------------------------------
 
-/** TR0: simplification of rational polynomials (normal, factor, expand). */
+/**
+ * TR0: simplification of rational polynomials (normal, factor, expand).
+ *
+ * @param rv - The input expression.
+ * @returns The expression after applying the trigonometric identity.
+ * @see SymPy `sympy.simplify.fu.TR0`
+ */
 export function TR0(rv: ExprLike): Expr {
   return expand(factor(normal(sympify(rv))));
 }
 
-/** TR1: sec -> 1/cos, csc -> 1/sin. */
+/**
+ * TR1: sec -> 1/cos, csc -> 1/sin.
+ *
+ * @param rv - The input expression.
+ * @returns The expression after applying the trigonometric identity.
+ * @see SymPy `sympy.simplify.fu.TR1`
+ * @example
+ * ```ts
+ * import { TR1, ex } from '@symjs/symjs';
+ *
+ * TR1(ex`2*csc(x) + sec(x)`); // => 1/cos(x) + 2/sin(x)
+ * ```
+ */
 export function TR1(rv: ExprLike): Expr {
   return bottomUp(sympify(rv), (e) => {
     if (isF(e, 'sec')) return pow(F('cos', arg0(e)), -1);
@@ -311,7 +341,20 @@ export function TR1(rv: ExprLike): Expr {
   });
 }
 
-/** TR2: tan -> sin/cos, cot -> cos/sin. */
+/**
+ * TR2: tan -> sin/cos, cot -> cos/sin.
+ *
+ * @param rv - The input expression.
+ * @returns The expression after applying the trigonometric identity.
+ * @see SymPy `sympy.simplify.fu.TR2`
+ * @example
+ * ```ts
+ * import { TR2, ex } from '@symjs/symjs';
+ *
+ * TR2(ex`tan(x)`); // => sin(x)/cos(x)
+ * TR2(ex`cot(x)`); // => cos(x)/sin(x)
+ * ```
+ */
 export function TR2(rv: ExprLike): Expr {
   return bottomUp(sympify(rv), (e) => {
     if (isF(e, 'tan')) return mul(F('sin', arg0(e)), pow(F('cos', arg0(e)), -1));
@@ -320,7 +363,21 @@ export function TR2(rv: ExprLike): Expr {
   });
 }
 
-/** TR2i: sin/cos -> tan (and, with half, sin/(1 + cos) -> tan of the half angle). */
+/**
+ * TR2i: sin/cos -> tan (and, with half, sin/(1 + cos) -> tan of the half angle).
+ *
+ * @param rv - The input expression.
+ * @param half - Whether to use the tangent half-angle identity.
+ * @returns The expression after applying the trigonometric identity.
+ * @see SymPy `sympy.simplify.fu.TR2i`
+ * @example
+ * ```ts
+ * import { TR2i, ex } from '@symjs/symjs';
+ *
+ * TR2i(ex`sin(x)/cos(x)`); // => tan(x)
+ * TR2i(ex`sin(x)**a/(cos(x) + 1)**a`); // => sin(x)**a/(cos(x) + 1)**a
+ * ```
+ */
 export function TR2i(rv: ExprLike, half = false): Expr {
   const ok = (k: Expr, e: Expr): boolean =>
     (isTrue(isIntegerQ(e)) || isTrue(positive(k))) &&
@@ -411,7 +468,20 @@ export function TR2i(rv: ExprLike, half = false): Expr {
 /** The cos(...) term of 1 + cos(...). */
 const cosArg = (k: Expr): Fn => cast(at(k.args, 1), Fn);
 
-/** TR3: induced formulas, e.g. sin(-a) = -sin(a), and reduction to angles in [0, pi/4]. */
+/**
+ * TR3: induced formulas, e.g. sin(-a) = -sin(a), and reduction to angles in [0, pi/4].
+ *
+ * @param rv - The input expression.
+ * @returns The expression after applying the trigonometric identity.
+ * @see SymPy `sympy.simplify.fu.TR3`
+ * @example
+ * ```ts
+ * import { TR3, ex } from '@symjs/symjs';
+ *
+ * TR3(ex`cos(x*(-x + y) - y)`); // => cos(x*(x - y) + y)
+ * TR3(ex`cos(pi/9)*cos(2*pi/9)*cos(4*pi/9)/2`); // => sin(pi/18)*cos(pi/9)*cos(2*pi/9)/2
+ * ```
+ */
 export function TR3(rv: ExprLike): Expr {
   const fmap: Record<TrigName, TrigName> = { cos: 'sin', sin: 'cos', tan: 'cot', cot: 'tan', sec: 'csc', csc: 'sec' };
   return bottomUp(sympify(rv), (e0) => {
@@ -427,7 +497,19 @@ export function TR3(rv: ExprLike): Expr {
   });
 }
 
-/** TR4: the values at special angles (applied by the automatic evaluation). */
+/**
+ * TR4: the values at special angles (applied by the automatic evaluation).
+ *
+ * @param rv - The input expression.
+ * @returns The expression after applying the trigonometric identity.
+ * @see SymPy `sympy.simplify.fu.TR4`
+ * @example
+ * ```ts
+ * import { TR4, ex } from '@symjs/symjs';
+ *
+ * TR4(ex`cos(pi/3)`); // => 1/2
+ * ```
+ */
 export function TR4(rv: ExprLike): Expr {
   return bottomUp(sympify(rv), (e) => {
     if (!isTrigFunction(e)) return e;
@@ -460,17 +542,58 @@ export function TR56(rv: ExprLike, f: FnName, g: FnName, h: (x: Expr) => Expr, m
   });
 }
 
-/** TR5: sin**2 -> 1 - cos**2. */
+/**
+ * TR5: sin**2 -> 1 - cos**2.
+ *
+ * @param rv - The input expression.
+ * @param opts - `max` limits the exponent and `pow` restricts the power reductions to perfect powers where applicable.
+ * @returns The expression after applying the trigonometric identity.
+ * @see SymPy `sympy.simplify.fu.TR5`
+ * @example
+ * ```ts
+ * import { TR5, ex } from '@symjs/symjs';
+ *
+ * TR5(ex`sin(x)**2`); // => 1 - cos(x)**2
+ * TR5(ex`sin(x)**(-2)`); // => sin(x)**(-2)
+ * ```
+ */
 export function TR5(rv: ExprLike, opts: { max?: number; pow?: boolean } = {}): Expr {
   return TR56(rv, 'sin', 'cos', (x) => sub(1, x), opts.max ?? 4, opts.pow ?? false);
 }
 
-/** TR6: cos**2 -> 1 - sin**2. */
+/**
+ * TR6: cos**2 -> 1 - sin**2.
+ *
+ * @param rv - The input expression.
+ * @param opts - `max` limits the exponent and `pow` restricts the power reductions to perfect powers where applicable.
+ * @returns The expression after applying the trigonometric identity.
+ * @see SymPy `sympy.simplify.fu.TR6`
+ * @example
+ * ```ts
+ * import { TR6, ex } from '@symjs/symjs';
+ *
+ * TR6(ex`cos(x)**2`); // => 1 - sin(x)**2
+ * TR6(ex`cos(x)**(-2)`); // => cos(x)**(-2)
+ * ```
+ */
 export function TR6(rv: ExprLike, opts: { max?: number; pow?: boolean } = {}): Expr {
   return TR56(rv, 'cos', 'sin', (x) => sub(1, x), opts.max ?? 4, opts.pow ?? false);
 }
 
-/** TR7: lowering the degree of cos(x)**2. */
+/**
+ * TR7: lowering the degree of cos(x)**2.
+ *
+ * @param rv - The input expression.
+ * @returns The expression after applying the trigonometric identity.
+ * @see SymPy `sympy.simplify.fu.TR7`
+ * @example
+ * ```ts
+ * import { TR7, ex } from '@symjs/symjs';
+ *
+ * TR7(ex`cos(x)**2`); // => cos(2*x)/2 + 1/2
+ * TR7(ex`cos(x)**2 + 1`); // => cos(2*x)/2 + 3/2
+ * ```
+ */
 export function TR7(rv: ExprLike): Expr {
   return bottomUp(sympify(rv), (e) => {
     if (!(isPowNode(e) && isF(e.base, 'cos') && eq(e.exp, S.Two))) return e;
@@ -478,7 +601,21 @@ export function TR7(rv: ExprLike): Expr {
   });
 }
 
-/** TR8: products of sin and cos -> sums. */
+/**
+ * TR8: products of sin and cos -> sums.
+ *
+ * @param rv - The input expression.
+ * @param first0 - Whether to perform the initial preprocessing pass.
+ * @returns The expression after applying the trigonometric identity.
+ * @see SymPy `sympy.simplify.fu.TR8`
+ * @example
+ * ```ts
+ * import { TR8, ex } from '@symjs/symjs';
+ *
+ * TR8(ex`cos(2)*cos(3)`); // => cos(5)/2 + cos(1)/2
+ * TR8(ex`sin(3)*cos(2)`); // => sin(5)/2 + sin(1)/2
+ * ```
+ */
 export function TR8(rv: ExprLike, first0 = true): Expr {
   const f = (e: Expr): Expr => {
     if (!(e instanceof Mul || (isPowNode(e) && isF(e.base, 'cos', 'sin') && (isTrue(isIntegerQ(e.exp)) || isTrue(positive(e.base)))))) return e;
@@ -567,7 +704,20 @@ function pairwise(rv: Expr, two: (a: Expr, b: Expr, rv: Expr) => Expr): Expr {
   return go(rv);
 }
 
-/** TR9: sums of sin or cos -> products. */
+/**
+ * TR9: sums of sin or cos -> products.
+ *
+ * @param rv - The input expression.
+ * @returns The expression after applying the trigonometric identity.
+ * @see SymPy `sympy.simplify.fu.TR9`
+ * @example
+ * ```ts
+ * import { TR9, ex } from '@symjs/symjs';
+ *
+ * TR9(ex`cos(1) + cos(2)`); // => 2*cos(1/2)*cos(3/2)
+ * TR9(ex`cos(2)*cos(3) + cos(3)`); // => cos(3) + cos(2)*cos(3)
+ * ```
+ */
 export function TR9(rv: ExprLike): Expr {
   const two = (x: Expr, y: Expr, r: Expr): Expr => {
     const split = trigSplit(x, y);
@@ -586,7 +736,21 @@ export function TR9(rv: ExprLike): Expr {
   return bottomUp(sympify(rv), (e) => (e instanceof Add ? processCommonAddends(e, (x) => pairwise(x, two)) : e));
 }
 
-/** TR10: sin and cos of sums -> sums of products. */
+/**
+ * TR10: sin and cos of sums -> sums of products.
+ *
+ * @param rv - The input expression.
+ * @param first0 - Whether to perform the initial preprocessing pass.
+ * @returns The expression after applying the trigonometric identity.
+ * @see SymPy `sympy.simplify.fu.TR10`
+ * @example
+ * ```ts
+ * import { TR10, ex } from '@symjs/symjs';
+ *
+ * TR10(ex`sin(a + b)`); // => sin(a)*cos(b) + sin(b)*cos(a)
+ * TR10(ex`cos(a + b)`); // => -sin(a)*sin(b) + cos(a)*cos(b)
+ * ```
+ */
 export function TR10(rv: ExprLike, first0 = true): Expr {
   return bottomUp(sympify(rv), (e) => {
     if (!isF(e, 'cos', 'sin')) return e;
@@ -604,7 +768,20 @@ export function TR10(rv: ExprLike, first0 = true): Expr {
   });
 }
 
-/** TR10i: sums of products -> sin and cos of sums. */
+/**
+ * TR10i: sums of products -> sin and cos of sums.
+ *
+ * @param rv - The input expression.
+ * @returns The expression after applying the trigonometric identity.
+ * @see SymPy `sympy.simplify.fu.TR10i`
+ * @example
+ * ```ts
+ * import { TR10i, ex } from '@symjs/symjs';
+ *
+ * TR10i(ex`sin(1)*sin(3) + cos(1)*cos(3)`); // => cos(2)
+ * TR10i(ex`sin(1)*cos(3) + sin(3)*cos(1) + cos(3)`); // => cos(3) + sin(4)
+ * ```
+ */
 export function TR10i(rv: ExprLike): Expr {
   const two = (x: Expr, y: Expr, r: Expr): Expr => {
     const split = trigSplit(x, y, true);
@@ -668,7 +845,21 @@ export function TR10i(rv: ExprLike): Expr {
   return bottomUp(sympify(rv), f);
 }
 
-/** TR11: double angles -> products of the single angle. */
+/**
+ * TR11: double angles -> products of the single angle.
+ *
+ * @param rv - The input expression.
+ * @param base - The base of the power.
+ * @returns The expression after applying the trigonometric identity.
+ * @see SymPy `sympy.simplify.fu.TR11`
+ * @example
+ * ```ts
+ * import { TR11, ex } from '@symjs/symjs';
+ *
+ * TR11(ex`cos(2)`); // => cos(2)
+ * TR11(ex`sin(2*x)`); // => 2*sin(x)*cos(x)
+ * ```
+ */
 export function TR11(rv: ExprLike, base?: Expr): Expr {
   return bottomUp(sympify(rv), (e) => {
     if (!isF(e, 'cos', 'sin')) return e;
@@ -727,7 +918,20 @@ export function TR11Half(rv: ExprLike): Expr {
 
 const isBooleanNode = (e: Expr): boolean => e instanceof Rel || e instanceof BoolAtom || e instanceof BoolOp;
 
-/** TR12: tan of sums -> quotients of tan. */
+/**
+ * TR12: tan of sums -> quotients of tan.
+ *
+ * @param rv - The input expression.
+ * @param first0 - Whether to perform the initial preprocessing pass.
+ * @returns The expression after applying the trigonometric identity.
+ * @see SymPy `sympy.simplify.fu.TR12`
+ * @example
+ * ```ts
+ * import { TR12, ex } from '@symjs/symjs';
+ *
+ * TR12(ex`tan(x + y)`); // => (tan(x) + tan(y))/(-tan(x)*tan(y) + 1)
+ * ```
+ */
 export function TR12(rv: ExprLike, first0 = true): Expr {
   return bottomUp(sympify(rv), (e) => {
     if (!isF(e, 'tan')) return e;
@@ -741,7 +945,20 @@ export function TR12(rv: ExprLike, first0 = true): Expr {
   });
 }
 
-/** TR12i: (tan(y) + tan(x))/(tan(x)*tan(y) - 1) -> -tan(x + y). */
+/**
+ * TR12i: (tan(y) + tan(x))/(tan(x)*tan(y) - 1) -> -tan(x + y).
+ *
+ * @param rv - The input expression.
+ * @returns The expression after applying the trigonometric identity.
+ * @see SymPy `sympy.simplify.fu.TR12i`
+ * @example
+ * ```ts
+ * import { TR12i, ex } from '@symjs/symjs';
+ *
+ * TR12i(ex`(tan(a) + tan(b))/(tan(a)*tan(b) - 1)`); // => -tan(a + b)
+ * TR12i(ex`(tan(a) + tan(b))/(-tan(a)*tan(b) + 1)`); // => tan(a + b)
+ * ```
+ */
 export function TR12i(rv: ExprLike): Expr {
   const f = (e: Expr): Expr => {
     if (!(e instanceof Add || e instanceof Mul || isPowNode(e))) return e;
@@ -855,7 +1072,20 @@ export function TR12i(rv: ExprLike): Expr {
   return bottomUp(sympify(rv), f);
 }
 
-/** TR13: products of tan or cot -> sums. */
+/**
+ * TR13: products of tan or cot -> sums.
+ *
+ * @param rv - The input expression.
+ * @returns The expression after applying the trigonometric identity.
+ * @see SymPy `sympy.simplify.fu.TR13`
+ * @example
+ * ```ts
+ * import { TR13, ex } from '@symjs/symjs';
+ *
+ * TR13(ex`cot(2)*cot(3)`); // => cot(2)*cot(5) + 1 + cot(3)*cot(5)
+ * TR13(ex`tan(2)*tan(3)`); // => -tan(2)/tan(5) - tan(3)/tan(5) + 1
+ * ```
+ */
 export function TR13(rv: ExprLike): Expr {
   return bottomUp(sympify(rv), (e) => {
     if (!(e instanceof Mul)) return e;
@@ -886,7 +1116,20 @@ export function TR13(rv: ExprLike): Expr {
   });
 }
 
-/** TRmorrie: cos(x)*cos(2*x)*...*cos(2**(k-1)*x) -> sin(2**k*x)/(2**k*sin(x)). */
+/**
+ * TRmorrie: cos(x)*cos(2*x)*...*cos(2**(k-1)*x) -> sin(2**k*x)/(2**k*sin(x)).
+ *
+ * @param rv - The input expression.
+ * @returns The expression after applying the trigonometric identity.
+ * @see SymPy `sympy.simplify.fu.TRmorrie`
+ * @example
+ * ```ts
+ * import { TRmorrie, ex } from '@symjs/symjs';
+ *
+ * TRmorrie(ex`cos(x)*cos(2*x)`); // => sin(4*x)/(4*sin(x))
+ * TRmorrie(ex`cos(pi/9)*cos(2*pi/9)*cos(4*pi/9)/2`); // => 1/16
+ * ```
+ */
 export function TRmorrie(rv: ExprLike): Expr {
   const f = (e: Expr, first0 = true): Expr => {
     if (!(e instanceof Mul)) return e;
@@ -948,7 +1191,21 @@ export function TRmorrie(rv: ExprLike): Expr {
   return bottomUp(sympify(rv), (e) => f(e));
 }
 
-/** TR14: factored powers of sin or cos -> cos or sin powers, e.g. (1 - cos(x))*(1 + cos(x)) -> sin(x)**2. */
+/**
+ * TR14: factored powers of sin or cos -> cos or sin powers, e.g. (1 - cos(x))*(1 + cos(x)) -> sin(x)**2.
+ *
+ * @param rv - The input expression.
+ * @param first0 - Whether to perform the initial preprocessing pass.
+ * @returns The expression after applying the trigonometric identity.
+ * @see SymPy `sympy.simplify.fu.TR14`
+ * @example
+ * ```ts
+ * import { TR14, ex } from '@symjs/symjs';
+ *
+ * TR14(ex`(cos(x) - 1)*(cos(x) + 1)`); // => -sin(x)**2
+ * TR14(ex`(sin(x) - 1)*(sin(x) + 1)`); // => -cos(x)**2
+ * ```
+ */
 export function TR14(rv: ExprLike, first0 = true): Expr {
   const f = (e: Expr): Expr => {
     if (!(e instanceof Mul)) return e;
@@ -1044,12 +1301,38 @@ export function nodeCount(e: Expr): number {
   return n;
 }
 
-/** TR15: negative powers of sin -> cot powers. */
+/**
+ * TR15: negative powers of sin -> cot powers.
+ *
+ * @param rv - The input expression.
+ * @param opts - `max` limits the exponent and `pow` restricts the power reductions to perfect powers where applicable.
+ * @returns The expression after applying the trigonometric identity.
+ * @see SymPy `sympy.simplify.fu.TR15`
+ * @example
+ * ```ts
+ * import { TR15, ex } from '@symjs/symjs';
+ *
+ * TR15(ex`1 - 1/sin(x)**2`); // => -cot(x)**2
+ * ```
+ */
 export function TR15(rv: ExprLike, opts: { max?: number; pow?: boolean } = {}): Expr {
   return TR1516(rv, 'sin', 'cot', opts);
 }
 
-/** TR16: negative powers of cos -> tan powers. */
+/**
+ * TR16: negative powers of cos -> tan powers.
+ *
+ * @param rv - The input expression.
+ * @param opts - `max` limits the exponent and `pow` restricts the power reductions to perfect powers where applicable.
+ * @returns The expression after applying the trigonometric identity.
+ * @see SymPy `sympy.simplify.fu.TR16`
+ * @example
+ * ```ts
+ * import { TR16, ex } from '@symjs/symjs';
+ *
+ * TR16(ex`1 - 1/cos(x)**2`); // => -tan(x)**2
+ * ```
+ */
 export function TR16(rv: ExprLike, opts: { max?: number; pow?: boolean } = {}): Expr {
   return TR1516(rv, 'cos', 'tan', opts);
 }
@@ -1066,7 +1349,19 @@ function TR1516(rv: ExprLike, f: FnName, g: FnName, opts: { max?: number; pow?: 
   });
 }
 
-/** TR111: negative powers of sin, cos and tan -> positive powers of csc, sec and cot. */
+/**
+ * TR111: negative powers of sin, cos and tan -> positive powers of csc, sec and cot.
+ *
+ * @param rv - The input expression.
+ * @returns The expression after applying the trigonometric identity.
+ * @see SymPy `sympy.simplify.fu.TR111`
+ * @example
+ * ```ts
+ * import { TR111, ex } from '@symjs/symjs';
+ *
+ * TR111(ex`1 - 1/tan(x)**2`); // => 1 - cot(x)**2
+ * ```
+ */
 export function TR111(rv: ExprLike): Expr {
   const inv: Partial<Record<FnName, FnName>> = { tan: 'cot', sin: 'csc', cos: 'sec' };
   return bottomUp(sympify(rv), (e) => {
@@ -1079,7 +1374,21 @@ export function TR111(rv: ExprLike): Expr {
   });
 }
 
-/** TR22: tan**2 -> sec**2 - 1, cot**2 -> csc**2 - 1. */
+/**
+ * TR22: tan**2 -> sec**2 - 1, cot**2 -> csc**2 - 1.
+ *
+ * @param rv - The input expression.
+ * @param opts - `max` limits the exponent and `pow` restricts the power reductions to perfect powers where applicable.
+ * @returns The expression after applying the trigonometric identity.
+ * @see SymPy `sympy.simplify.fu.TR22`
+ * @example
+ * ```ts
+ * import { TR22, ex } from '@symjs/symjs';
+ *
+ * TR22(ex`tan(x)**2 + 1`); // => sec(x)**2
+ * TR22(ex`cot(x)**2 + 1`); // => csc(x)**2
+ * ```
+ */
 export function TR22(rv: ExprLike, opts: { max?: number; pow?: boolean } = {}): Expr {
   const max = opts.max ?? 4;
   const p = opts.pow ?? false;
@@ -1090,7 +1399,20 @@ export function TR22(rv: ExprLike, opts: { max?: number; pow?: boolean } = {}): 
   });
 }
 
-/** TRpower: positive integer powers of sin and cos -> sums of multiple angles. */
+/**
+ * TRpower: positive integer powers of sin and cos -> sums of multiple angles.
+ *
+ * @param rv - The input expression.
+ * @returns The expression after applying the trigonometric identity.
+ * @see SymPy `sympy.simplify.fu.TRpower`
+ * @example
+ * ```ts
+ * import { TRpower, ex } from '@symjs/symjs';
+ *
+ * TRpower(ex`sin(x)**6`); // => -15*cos(2*x)/32 + 3*cos(4*x)/16 - cos(6*x)/32 + 5/16
+ * TRpower(ex`sin(x)**3*cos(2*x)**4`); // => (3*sin(x)/4 - sin(3*x)/4)*(cos(4*x)/2 + cos(8*x)/8 + 3/8)
+ * ```
+ */
 export function TRpower(rv: ExprLike): Expr {
   return bottomUp(sympify(rv), (e) => {
     if (!(isPowNode(e) && isF(e.base, 'sin', 'cos'))) return e;
@@ -1148,6 +1470,18 @@ const defaultMeasure = (x: Expr): Measured => [count(x, isTrigFunction), countOp
  * (SymPy fu): the rule lists RL1 (tan and cot) and RL2 (sin and cos) are
  * applied greedily, keeping the result with the smallest measure (by
  * default the number of trigonometric functions, then count_ops).
+ *
+ * @param rvIn - The input expression.
+ * @param opts - `measure` ranks competing trigonometric expressions.
+ * @returns The trigonometric form preferred by the measure.
+ * @see SymPy `sympy.simplify.fu.fu`
+ * @example
+ * ```ts
+ * import { ex, fu } from '@symjs/symjs';
+ *
+ * fu(ex`cos(4*pi/9)`); // => sin(pi/18)
+ * fu(ex`sin(x)/cos(x)`); // => tan(x)
+ * ```
  */
 export function fu(rvIn: ExprLike, opts: { measure?: (e: Expr) => Measured } = {}): Expr {
   const measure = opts.measure ?? defaultMeasure;
@@ -1173,6 +1507,14 @@ export function fu(rvIn: ExprLike, opts: { measure?: (e: Expr) => Measured } = {
 /**
  * Apply `doit` to the groups of terms of a sum that share the absolute
  * value of their numeric coefficient (and, with key2, its value).
+ *
+ * @param rv - The input expression.
+ * @param doit - The transformation applied to each group of addends.
+ * @param key2 - A key function for grouping compatible terms.
+ * @param key1 - A key function for grouping compatible terms.
+ * @returns The sum after transforming groups of compatible addends.
+ * @throws RangeError when neither grouping key is supplied.
+ * @see SymPy `sympy.simplify.fu.process_common_addends`
  */
 export function processCommonAddends(rv: Expr, doit: Rule, key2?: (e: Expr) => string, key1 = true): Expr {
   if (!key1 && !key2) throw new RangeError('At least one group key is required');
@@ -1201,7 +1543,19 @@ export function processCommonAddends(rv: Expr, doit: Rule, key2?: (e: Expr) => s
   return hit ? add(...args) : rv;
 }
 
-/** The rules of fu by name (SymPy FU). */
+/**
+ * The rules of fu by name (SymPy FU).
+ *
+ * @param e - The expression passed to the selected transformation.
+ * @returns The expression after applying the selected transformation.
+ * @see SymPy `sympy.simplify.fu.FU`
+ * @example
+ * ```ts
+ * import { FU, ex } from '@symjs/symjs';
+ *
+ * FU.get('TR1')!(ex`sec(x)`); // => 1/cos(x)
+ * ```
+ */
 export const FU: ReadonlyMap<string, (e: Expr) => Expr> = new Map<string, (e: Expr) => Expr>([
   ['TR0', TR0], ['TR1', TR1], ['TR2', (e) => TR2(e)], ['TR3', TR3], ['TR4', TR4], ['TR5', TR5r], ['TR6', TR6r],
   ['TR7', TR7], ['TR8', (e) => TR8(e)], ['TR9', TR9], ['TR10', (e) => TR10(e)], ['TR10i', TR10i], ['TR11', (e) => TR11(e)],
@@ -1407,7 +1761,19 @@ export function hyperAsTrig(rvIn: ExprLike): [Expr, (x: Expr) => Expr] {
   return [osborne(masked, d), (x: Expr) => collect(signsimp(xreplace(osbornei(x, d), back)), S.I)];
 }
 
-/** SymPy sincos_to_sum: powers and products of sin and cos -> sums of multiple angles. */
+/**
+ * powers and products of sin and cos -> sums of multiple angles.
+ *
+ * @param expr - The input expression.
+ * @returns The equivalent sum of trigonometric functions.
+ * @see SymPy `sympy.simplify.fu.sincos_to_sum`
+ * @example
+ * ```ts
+ * import { ex, sincosToSum } from '@symjs/symjs';
+ *
+ * sincosToSum(ex`16*sin(x)**3*cos(2*x)**2`); // => 7*sin(x) - 5*sin(3*x) + 3*sin(5*x) - sin(7*x)
+ * ```
+ */
 export function sincosToSum(expr: ExprLike): Expr {
   const e = sympify(expr);
   if (!hasF(e, 'cos', 'sin')) return e;

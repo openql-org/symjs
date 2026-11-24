@@ -18,8 +18,21 @@ import type { IntLike } from '../../ntheory/intutil';
 import { asInt } from '../../ntheory/intutil';
 
 /**
- * SymPy migcdex: [u, g] with u_1*x_1 + ... + u_n*x_n = g = gcd(x_1, ..., x_n),
+ * [u, g] with u_1*x_1 + ... + u_n*x_n = g = gcd(x_1, ..., x_n),
  * the extended Euclidean algorithm for several integers.
+ *
+ * @remarks
+ * For `migcdex(4)`, SymPy displays `((1,), 4)`. For `migcdex(4, 6)`, SymPy displays `((-1, 1), 2)`.
+ * @param xIn - The integers in the Bézout identity.
+ * @returns [u, g] with u_1*x_1 + ... + u_n*x_n = g = gcd(x_1, ..., x_n), the extended Euclidean algorithm for several integers.
+ * @see SymPy `sympy.functions.elementary._trigonometric_special.migcdex`
+ * @example
+ * ```ts
+ * import { migcdex } from '@symjs/symjs';
+ *
+ * migcdex(4); // => [[1], 4]
+ * migcdex(4, 6); // => [[-1, 1], 2]
+ * ```
  */
 export function migcdex(...xIn: IntLike[]): [bigint[], bigint] {
   const x = xIn.map((v) => asInt(v));
@@ -36,8 +49,20 @@ export function migcdex(...xIn: IntLike[]): [bigint[], bigint] {
 }
 
 /**
- * SymPy ipartfrac: integers a_i with sum(a_i/d_i) = 1/(d_1*...*d_n) for
+ * Integers a_i with sum(a_i/d_i) = 1/(d_1*...*d_n) for
  * pairwise coprime denominators d_i.
+ *
+ * @remarks
+ * For `numers`, SymPy displays `(1, 7, -14)`.
+ * @param denomsIn - The pairwise coprime denominators.
+ * @returns The integer partial-fraction coefficients in denominator order.
+ * @see SymPy `sympy.functions.elementary._trigonometric_special.ipartfrac`
+ * @example
+ * ```ts
+ * import { ipartfrac } from '@symjs/symjs';
+ *
+ * ipartfrac(2, 3, 5); // => [1, 7, -14]
+ * ```
  */
 export function ipartfrac(...denomsIn: IntLike[]): bigint[] {
   if (!denomsIn.length) return [];
@@ -46,7 +71,13 @@ export function ipartfrac(...denomsIn: IntLike[]): bigint[] {
   return migcdex(...denoms.map((x) => d / x))[0];
 }
 
-/** SymPy fermat_coords: the distinct Fermat primes whose product is n, or NoMatch (SymPy None). */
+/**
+ * The distinct Fermat primes whose product is n, or NoMatch (SymPy None).
+ *
+ * @param nIn - The index.
+ * @returns The distinct Fermat primes whose product is n, or NoMatch (SymPy None).
+ * @see SymPy `sympy.functions.elementary._trigonometric_special.fermat_coords`
+ */
 export function fermatCoords(nIn: IntLike): number[] | NoMatchResult {
   let n = asInt(nIn);
   const primes: number[] = [];
@@ -60,24 +91,44 @@ export function fermatCoords(nIn: IntLike): number[] | NoMatchResult {
   return NoMatch;
 }
 
-/** Exact square-root representation of cos(pi/3), from SymPy 1.14. */
+/**
+ * The exact value of `cos(pi/3)` in radicals.
+ *
+ * @returns The exact cosine expressed using rational arithmetic and square roots.
+ * @see SymPy `sympy.functions.elementary._trigonometric_special.cos_3`
+ */
 export function cos3(): Expr {
   return S.Half;
 }
 
-/** Exact square-root representation of cos(pi/5), from SymPy 1.14. */
+/**
+ * The exact value of `cos(pi/5)` in radicals.
+ *
+ * @returns The exact cosine expressed using rational arithmetic and square roots.
+ * @see SymPy `sympy.functions.elementary._trigonometric_special.cos_5`
+ */
 export function cos5(): Expr {
   return mul(add(sqrt(5), 1), pow(4, -1));
 }
 
-/** Exact square-root representation of cos(pi/17), from SymPy 1.14. */
+/**
+ * The exact value of `cos(pi/17)` in radicals.
+ *
+ * @returns The exact cosine expressed using rational arithmetic and square roots.
+ * @see SymPy `sympy.functions.elementary._trigonometric_special.cos_17`
+ */
 export function cos17(): Expr {
   const r = sqrt(17), a = sqrt(add(17, mul(-1, r))), b = sqrt(add(17, r));
   const inner = sqrt(add(mul(sqrt(2), add(mul(-8, b), mul(-1, add(1, mul(-1, r)), a))), mul(6, r), 34));
   return sqrt(mul(add(15, r, mul(sqrt(2), add(a, inner))), pow(32, -1)));
 }
 
-/** Exact square-root representation of cos(pi/257), from SymPy 1.14. */
+/**
+ * The exact value of `cos(pi/257)` in radicals.
+ *
+ * @returns The exact cosine expressed using rational arithmetic and square roots.
+ * @see SymPy `sympy.functions.elementary._trigonometric_special.cos_257`
+ */
 export function cos257(): Expr {
   const f1 = (a: ExprLike, b: ExprLike): [Expr, Expr] => {
     return [mul(add(a, sqrt(add(pow(a, 2), b))), pow(2, -1)), mul(add(a, mul(-1, sqrt(add(pow(a, 2), b)))), pow(2, -1))];
@@ -112,7 +163,12 @@ export function cos257(): Expr {
   return sqrt(add(mul(mul(sqrt(2), sqrt(add(w1, 4))), pow(8, -1)), S.Half));
 }
 
-/** Lazy Fermat-prime cosine table (SymPy cos_table). */
+/**
+ * Lazy Fermat-prime cosine table (SymPy cos_table).
+ *
+ * @returns A map from Fermat primes to functions computing the corresponding cosine.
+ * @see SymPy `sympy.functions.elementary._trigonometric_special.cos_table`
+ */
 export function cosTable(): Map<number, () => Expr> {
   return new Map([[3, cos3], [5, cos5], [17, cos17], [257, cos257]]);
 }

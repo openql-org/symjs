@@ -21,9 +21,13 @@ import { fraction } from './rational';
 import { cast, defined, first, getOrThrow } from '../core/guard';
 
 type Combine = 'all' | 'exp' | 'base';
+/** Rules for combining powers and recursing into function arguments. */
 export interface PowsimpOptions {
+  /** Apply the rules inside function arguments. */
   deep?: boolean;
+  /** Select base combination, exponent combination, or both. */
   combine?: Combine;
+  /** Apply power and logarithm identities without requiring their usual sign assumptions. */
   force?: boolean;
 }
 
@@ -110,7 +114,21 @@ function multiplicity(p: Rational, n: Rational): number {
 
 const absR = (r: Rational): Rational => (r.isNegative ? Rational.of(-r.p, r.q) : r);
 
-/** Reduce x**y by combining bases and exponents (SymPy powsimp). */
+/**
+ * Reduce x**y by combining bases and exponents (SymPy powsimp).
+ *
+ * @param exIn - The input expression.
+ * @param opts - The combination mode, recursion and positivity settings in {@link PowsimpOptions}.
+ * @returns The expression with compatible powers combined.
+ * @see SymPy `sympy.simplify.powsimp.powsimp`
+ * @example
+ * ```ts
+ * import { ex, powsimp } from '@symjs/symjs';
+ *
+ * powsimp(ex`x*y*sqrt(x*sqrt(y))`); // => x*y*sqrt(x*sqrt(y))
+ * powsimp(ex`x**y*x**z*y**z`, { combine: 'all' }); // => x**(y + z)*y**z
+ * ```
+ */
 export function powsimp(exIn: ExprLike, opts: PowsimpOptions = {}): Expr {
   const deep = opts.deep ?? false;
   const combine = opts.combine ?? 'all';
@@ -524,7 +542,21 @@ function gcdI(aIn: bigint, bIn: bigint): bigint {
   return a;
 }
 
-/** Collect exponents on powers as assumptions allow (SymPy powdenest). */
+/**
+ * Collect exponents on powers as assumptions allow (SymPy powdenest).
+ *
+ * @param eqIn - The input expression.
+ * @param opts - `force` treats symbols with unknown signs as positive where the identity needs positivity.
+ * @returns The expression with compatible nested powers combined.
+ * @see SymPy `sympy.simplify.powsimp.powdenest`
+ * @example
+ * ```ts
+ * import { ex, powdenest } from '@symjs/symjs';
+ *
+ * powdenest(ex`a**3*b**3`); // => a**3*b**3
+ * powdenest(ex`sqrt(x**2)`); // => sqrt(x**2)
+ * ```
+ */
 export function powdenest(eqIn: ExprLike, opts: { force?: boolean } = {}): Expr {
   let eq = sympify(eqIn);
   if (opts.force) {
@@ -560,6 +592,16 @@ function transformPows(e: Expr): Expr {
 /**
  * Replace symbols that are not known to be positive with positive dummies
  * (SymPy posify). Returns the new expression and the map back.
+ *
+ * @param eIn - The input expression.
+ * @returns The transformed expression and replacements that restore the original symbols.
+ * @see SymPy `sympy.simplify.simplify.posify`
+ * @example
+ * ```ts
+ * import { ex, posify } from '@symjs/symjs';
+ *
+ * posify(ex`x**2`)[0]; // => _x**2
+ * ```
  */
 export function posify(eIn: ExprLike): [Expr, Map<Expr, Expr>] {
   const e = sympify(eIn);
@@ -575,7 +617,21 @@ export function posify(eIn: ExprLike): [Expr, Map<Expr, Expr>] {
   return [xreplace(e, reps), back];
 }
 
-/** Combine logarithms using log(x) + log(y) = log(x*y) and a*log(x) = log(x**a) (SymPy logcombine). */
+/**
+ * Combine logarithms using log(x) + log(y) = log(x*y) and a*log(x) = log(x**a) (SymPy logcombine).
+ *
+ * @param exprIn - The input expression.
+ * @param opts - `force` treats symbols with unknown signs as positive where the identity needs positivity.
+ * @returns The expression with compatible logarithms combined.
+ * @see SymPy `sympy.simplify.simplify.logcombine`
+ * @example
+ * ```ts
+ * import { ex, logcombine } from '@symjs/symjs';
+ *
+ * logcombine(ex`a*log(x) + log(y) - log(z)`); // => a*log(x) + log(y) - log(z)
+ * logcombine(ex`a*log(x) + log(y) - log(z)`, { force: true }); // => log(x**a*y/z)
+ * ```
+ */
 export function logcombine(exprIn: ExprLike, opts: { force?: boolean } = {}): Expr {
   const force = opts.force ?? false;
   const isLog = (e: Expr): e is Fn => e instanceof Fn && e.name === 'log' && e.args.length === 1;

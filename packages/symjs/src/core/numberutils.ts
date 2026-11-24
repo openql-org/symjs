@@ -17,7 +17,14 @@ import type { NoMatchResult } from './truth';
 
 type MpfTuple = readonly [sign: number, mantissa: bigint, exponent: bigint, bits: number];
 
-/** Normalize an mpf tuple to binary precision, preserving the special values. */
+/**
+ * Normalize an mpf tuple to binary precision, preserving the special values.
+ *
+ * @param tuple - The raw binary floating-point tuple.
+ * @param precision - The precision in bits.
+ * @returns The normalized and rounded floating-point tuple.
+ * @see SymPy `sympy.core.numbers.mpf_norm`
+ */
 export function mpfNorm(tuple: MpfTuple, precision: number): MpfTuple {
   const [sign, mantissa, exponent, bits] = tuple;
   if (mantissa === 0n) return bits === 0 ? [0, 0n, 0n, 0] : tuple;
@@ -67,7 +74,22 @@ export function rationalFromString(s0: string): Rational {
   return exp >= 0 ? Rational.of(num * 10n ** BigInt(exp)) : Rational.of(num, 10n ** BigInt(-exp));
 }
 
-/** SymPy integer_log(n, b): (e, exact) with b**e <= |n| and exact when b**e == n. */
+/**
+ * (e, exact) with b**e <= |n| and exact when b**e == n.
+ *
+ * @param n - The integer argument or logarithm base, respectively.
+ * @param b - The integer argument or logarithm base, respectively.
+ * @returns The integer logarithm and whether the argument is an exact power.
+ * @throws RangeError when the argument is zero or the base has magnitude less than two.
+ * @remarks SymPy returns the tuple `(3, True)` for the example below.
+ * @see SymPy `sympy.core.intfunc.integer_log`
+ * @example
+ * ```ts
+ * import { integerLog } from '@symjs/symjs';
+ *
+ * integerLog(8n, 2n); // => [3, True]
+ * ```
+ */
 export function integerLog(n: bigint, b: bigint): [bigint, boolean] {
   if (b < 0n) {
     const [e, t] = integerLog(n < 0n ? -n : n, -b);
@@ -162,7 +184,20 @@ impl.rationalFromFloat = rationalFromFloat;
 
 const babs = (n: bigint): bigint => (n < 0n ? -n : n);
 
-/** Greatest common divisor of integers (SymPy igcd). */
+/**
+ * Greatest common divisor of integers (SymPy igcd).
+ *
+ * @param xs - The operands, in order.
+ * @returns The greatest common divisor.
+ * @throws RangeError when an argument is not an integer.
+ * @see SymPy `sympy.core.intfunc.igcd`
+ * @example
+ * ```ts
+ * import { igcd } from '@symjs/symjs';
+ *
+ * igcd(12n, 18n); // => 6
+ * ```
+ */
 export function igcd(...xs: bigint[]): bigint {
   if (xs.some((x) => typeof x !== 'bigint')) throw new RangeError('igcd: expected integers');
   let g = 0n;
@@ -175,7 +210,19 @@ export function igcd(...xs: bigint[]): bigint {
   return g;
 }
 
-/** Least common multiple of integers (SymPy ilcm). */
+/**
+ * Least common multiple of integers (SymPy ilcm).
+ *
+ * @param xs - The operands, in order.
+ * @returns The least common multiple.
+ * @see SymPy `sympy.core.intfunc.ilcm`
+ * @example
+ * ```ts
+ * import { ilcm } from '@symjs/symjs';
+ *
+ * ilcm(12n, 18n); // => 36
+ * ```
+ */
 export function ilcm(...xs: bigint[]): bigint {
   let l = 1n;
   for (const x of xs) {
@@ -186,8 +233,20 @@ export function ilcm(...xs: bigint[]): bigint {
 }
 
 /**
- * SymPy igcdex: [x, y, g] with x*a + y*b = g = gcd(a, b), from the extended
+ * [x, y, g] with x*a + y*b = g = gcd(a, b), from the extended
  * Euclidean algorithm (x and y are those SymPy gives).
+ *
+ * @param aIn - One of the two integers.
+ * @param bIn - One of the two integers.
+ * @returns The two Bézout coefficients followed by the greatest common divisor.
+ * @remarks SymPy returns the tuple `(-1, 1, 1)` for the example below.
+ * @see SymPy `sympy.core.intfunc.igcdex`
+ * @example
+ * ```ts
+ * import { igcdex } from '@symjs/symjs';
+ *
+ * igcdex(2n, 3n); // => [-1, 1, 1]
+ * ```
  */
 export function igcdex(aIn: bigint, bIn: bigint): [bigint, bigint, bigint] {
   if (aIn === 0n && bIn === 0n) return [0n, 0n, 0n];
@@ -204,7 +263,20 @@ export function igcdex(aIn: bigint, bIn: bigint): [bigint, bigint, bigint] {
   return [x * xSign, y * ySign, a];
 }
 
-/** SymPy isqrt: floor(sqrt(n)) of a nonnegative integer. */
+/**
+ * floor(sqrt(n)) of a nonnegative integer.
+ *
+ * @param value - The value to examine.
+ * @returns The integer part of the square root.
+ * @throws RangeError when the radicand is negative.
+ * @see SymPy `sympy.core.intfunc.isqrt`
+ * @example
+ * ```ts
+ * import { isqrt } from '@symjs/symjs';
+ *
+ * isqrt(15n); // => 3
+ * ```
+ */
 export function isqrt(value: bigint | Rational | Float): bigint {
   let n: bigint;
   if (value instanceof Rational) {
@@ -218,7 +290,22 @@ export function isqrt(value: bigint | Rational | Float): bigint {
   return integerNthroot(n, 2)[0];
 }
 
-/** (floor(y**(1/n)), exact) for nonnegative integers (SymPy integer_nthroot). */
+/**
+ * (floor(y**(1/n)), exact) for nonnegative integers (SymPy integer_nthroot).
+ *
+ * @param y - The nonnegative radicand.
+ * @param n - The root degree.
+ * @returns The floor of the root and whether the root is exact.
+ * @throws RangeError when the radicand is negative or the degree is not a positive integer.
+ * @remarks SymPy returns the tuple `(4, True)` for the example below.
+ * @see SymPy `sympy.core.intfunc.integer_nthroot`
+ * @example
+ * ```ts
+ * import { integerNthroot } from '@symjs/symjs';
+ *
+ * integerNthroot(16n, 2); // => [4, True]
+ * ```
+ */
 export function integerNthroot(y: bigint, n: number | bigint): [bigint, boolean] {
   if (!(n > 0) || typeof n === 'number' && !Number.isInteger(n)) throw new RangeError('integer_nthroot: n must be positive');
   if (y < 0n) throw new RangeError('integer_nthroot: y must be nonnegative');
@@ -235,7 +322,19 @@ export function integerNthroot(y: bigint, n: number | bigint): [bigint, boolean]
   return [x, x ** N === y];
 }
 
-/** Number of trailing zero bits (SymPy trailing). */
+/**
+ * Number of trailing zero bits (SymPy trailing).
+ *
+ * @param nIn - The integer whose trailing zero bits to count.
+ * @returns The number of trailing zero bits.
+ * @see SymPy `sympy.core.intfunc.trailing`
+ * @example
+ * ```ts
+ * import { trailing } from '@symjs/symjs';
+ *
+ * trailing(24n); // => 3
+ * ```
+ */
 export function trailing(nIn: bigint): number {
   let n = nIn;
   n = babs(n);
@@ -248,7 +347,21 @@ export function trailing(nIn: bigint): number {
   return k;
 }
 
-/** Number of digits of |n| in the given base (SymPy num_digits). */
+/**
+ * Number of digits of |n| in the given base (SymPy num_digits).
+ *
+ * @param n - The index.
+ * @param base - The integer base.
+ * @returns The number of digits in the chosen base.
+ * @throws RangeError when the base is not an integer greater than one.
+ * @see SymPy `sympy.core.intfunc.num_digits`
+ * @example
+ * ```ts
+ * import { numDigits } from '@symjs/symjs';
+ *
+ * numDigits(12345n); // => 5
+ * ```
+ */
 export function numDigits(n: bigint, base = 10): number {
   if (base < 0) throw new RangeError('num_digits: base must be int greater than 1');
   if (n === 0n) return 1;
@@ -258,7 +371,22 @@ export function numDigits(n: bigint, base = 10): number {
   return 1 + Number(integerLog(babs(n), BigInt(base))[0]);
 }
 
-/** Inverse of a modulo m (SymPy mod_inverse); for non-integers 1/a when m > 1. */
+/**
+ * Inverse of a modulo m (SymPy mod_inverse); for non-integers 1/a when m > 1.
+ *
+ * @param a - The first operand.
+ * @param m - The modulus.
+ * @returns The multiplicative inverse modulo the modulus.
+ * @throws TypeError when an argument is nonnumeric.
+ * @throws RangeError when no inverse exists.
+ * @see SymPy `sympy.core.intfunc.mod_inverse`
+ * @example
+ * ```ts
+ * import { ex, modInverse } from '@symjs/symjs';
+ *
+ * modInverse(ex`2/7`, ex`5/2`); // => 7/2
+ * ```
+ */
 export function modInverse(a: Rational, m: Rational): Rational;
 export function modInverse(a: Expr, m: Expr): Expr;
 export function modInverse(a: Expr, m: Expr): Expr {
@@ -286,7 +414,20 @@ export function modInverse(a: Expr, m: Expr): Expr {
   throw new RangeError('mod_inverse: inverse does not exist');
 }
 
-/** Closest rational with denominator at most maxDen (Python Fraction.limit_denominator). */
+/**
+ * Closest rational with denominator at most maxDen (Python Fraction.limit_denominator).
+ *
+ * @param r - The rational number to approximate.
+ * @param maxDen - The largest allowed denominator.
+ * @returns The closest rational with a denominator within the bound.
+ * @see SymPy `sympy.core.numbers.Rational.limit_denominator`
+ * @example
+ * ```ts
+ * import { Rational, limitDenominator } from '@symjs/symjs';
+ *
+ * limitDenominator(Rational.of(22, 7), 5n); // => 16/5
+ * ```
+ */
 export function limitDenominator(r: Rational, maxDen: bigint): Rational {
   if (r.q <= maxDen) return r;
   let [p0, q0, p1, q1] = [0n, 1n, 1n, 0n];
@@ -310,7 +451,13 @@ export function limitDenominator(r: Rational, maxDen: bigint): Rational {
   return d2.p * d1.q <= d1.p * d2.q ? b2 : b1;
 }
 
-/** Whether a literal number has no fractional part, without symbolic inference. */
+/**
+ * Whether a literal number has no fractional part, without symbolic inference.
+ *
+ * @param value - The value to examine.
+ * @returns True when the numeric value represents an integer.
+ * @see SymPy `sympy.core.numbers.int_valued`
+ */
 export function intValued(value: unknown): boolean {
   if (typeof value === 'bigint') return true;
   if (typeof value === 'number') return Number.isInteger(value);
@@ -319,7 +466,14 @@ export function intValued(value: unknown): boolean {
   return false;
 }
 
-/** Greatest common divisor using Lehmer's leading-digit quotient batches. */
+/**
+ * Greatest common divisor using Lehmer's leading-digit quotient batches.
+ *
+ * @param aIn - One of the two integers.
+ * @param bIn - One of the two integers.
+ * @returns The greatest common divisor.
+ * @see SymPy `sympy.core.intfunc.igcd_lehmer`
+ */
 export function igcdLehmer(aIn: bigint, bIn: bigint): bigint {
   let a = babs(aIn), b = babs(bIn);
   if (a < b) [a, b] = [b, a];
@@ -349,7 +503,14 @@ export function igcdLehmer(aIn: bigint, bIn: bigint): bigint {
   return igcd(a, b);
 }
 
-/** Proven enclosing intervals for SymPy's real number symbols. */
+/**
+ * Proven enclosing intervals for SymPy's real number symbols.
+ *
+ * @param value - The symbolic number constant to enclose.
+ * @param numberClass - The number class for the bounding values.
+ * @returns The matching result, or `NoMatch` when the required form is absent.
+ * @see SymPy `sympy.core.numbers.Pi.approximation_interval`
+ */
 export function approximationInterval(value: Constant, numberClass: 'Integer' | 'Rational' = 'Integer'): readonly [Rational, Rational] | NoMatchResult {
   if (numberClass === 'Rational') {
     switch (value.name) {

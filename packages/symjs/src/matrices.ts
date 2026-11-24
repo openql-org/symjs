@@ -163,12 +163,52 @@ import { ldl as _ldl_ } from './matrices/linalg';
 import { luDecomposition as _luDecomposition_ } from './matrices/linalg';
 import { qrDecomposition as _qrDecomposition_ } from './matrices/linalg';
 
-/** @deprecated Use `LDLdecomposition`. */
+/**
+ * Alias for {@link LDLdecomposition}.
+ *
+ * @deprecated Use {@link LDLdecomposition}.
+ * @param m - The matrix to decompose.
+ * @param hermitian - Whether to use conjugate transposition during decomposition.
+ * @returns The unit lower triangular factor and diagonal factor.
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.LDLdecomposition`
+ * @example
+ * ```ts
+ * import { Matrix, ldl } from '@symjs/symjs';
+ *
+ * ldl(Matrix.of([[4, 2], [2, 3]]))[1].get(1, 1); // => 2
+ * ```
+ */
 export const ldl = _ldl_;
 
-/** @deprecated Use `LUdecomposition`. */
+/**
+ * Alias for {@link LUdecomposition}.
+ *
+ * @deprecated Use {@link LUdecomposition}.
+ * @param m - The matrix to decompose.
+ * @returns The lower and upper triangular factors and the row swaps.
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.LUdecomposition`
+ * @example
+ * ```ts
+ * import { Matrix, luDecomposition } from '@symjs/symjs';
+ *
+ * luDecomposition(Matrix.of([[1, 2], [3, 4]]))[1].get(1, 1); // => -2
+ * ```
+ */
 export const luDecomposition = _luDecomposition_;
 
-/** @deprecated Use `QRdecomposition`. */
+/**
+ * Alias for {@link QRdecomposition}.
+ *
+ * @deprecated Use {@link QRdecomposition}.
+ * @param m - The matrix to decompose.
+ * @returns The orthogonal and upper triangular factors.
+ * @see SymPy `sympy.matrices.matrixbase.MatrixBase.QRdecomposition`
+ * @example
+ * ```ts
+ * import { Matrix, qrDecomposition } from '@symjs/symjs';
+ *
+ * qrDecomposition(Matrix.of([[3], [4]]))[1].get(0, 0); // => 5
+ * ```
+ */
 export const qrDecomposition = _qrDecomposition_;
 export { MatrixKind, MatrixKindNode } from './matrices/kind';

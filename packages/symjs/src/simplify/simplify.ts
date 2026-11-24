@@ -37,7 +37,22 @@ import { ordered } from '../core/match';
 import type { SetExpr } from '../sets/sets';
 import { EmptySet, Interval, Reals, cmpReal, complement, intersection, interval, union } from '../sets/sets';
 
-/** Strip rational coefficients from an equation, applying the same operations to its right side. */
+/**
+ * Strip rational coefficients from an equation, applying the same operations to its right side.
+ *
+ * @remarks
+ * For `clear_coefficients(expr - 2)`, SymPy displays `(y*(2*x + 1), 1/6)`.
+ * @param exprIn - The input expression.
+ * @param rhsIn - The right-hand side.
+ * @returns The transformed left- and right-hand sides.
+ * @see SymPy `sympy.simplify.simplify.clear_coefficients`
+ * @example
+ * ```ts
+ * import { clearCoefficients, ex } from '@symjs/symjs';
+ *
+ * clearCoefficients(ex`4*y*(6*x + 3) - 2`); // => [y*(2*x + 1), 1/6]
+ * ```
+ */
 export function clearCoefficients(exprIn: ExprLike, rhsIn: ExprLike = 0): [Expr, Expr] {
   let expr = sympify(exprIn);
   let rhs = sympify(rhsIn);
@@ -57,7 +72,21 @@ export function clearCoefficients(exprIn: ExprLike, rhsIn: ExprLike = 0): [Expr,
   return couldExtractMinusSign(expr) ? [mul(-1, expr), mul(-1, rhs)] : [expr, rhs];
 }
 
-/** Extract constant factors from a Sum, or from a summand and its limits. */
+/**
+ * Extract constant factors from a Sum, or from a summand and its limits.
+ *
+ * @param expr - The input expression.
+ * @param limits - The index and its inclusive lower and upper bounds.
+ * @param opts - `radical` extracts common radicals, `clear` clears rational coefficients, `fraction` combines denominators and `sign` extracts a common minus sign.
+ * @returns The sum with independent factors extracted.
+ * @see SymPy `sympy.simplify.simplify.factor_sum`
+ * @example
+ * ```ts
+ * import { ex, factorSum, symbols } from '@symjs/symjs';
+ *
+ * factorSum(ex`a*k`, [[symbols('k')[0], 1, 5]]); // => a*Sum(k, (k, 1, 5))
+ * ```
+ */
 export function factorSum(expr: ExprLike, limits?: readonly [Sym, ExprLike, ExprLike][], opts: { radical?: boolean; clear?: boolean; fraction?: boolean; sign?: boolean } = {}): Expr {
   return factorTerms(limits === undefined ? expr : Sum(expr, ...limits), opts);
 }
@@ -66,6 +95,17 @@ export function factorSum(expr: ExprLike, limits?: readonly [Sym, ExprLike, Expr
  * Formally cancel functions with their inverses (SymPy inversecombine).
  * As in SymPy, this explicitly assumes the relevant principal branch:
  * asin(sin(x)) = x and log(exp(x)) = x are not global complex identities.
+ *
+ * @param expr - The input expression.
+ * @returns The expression with inverse-function pairs cancelled.
+ * @see SymPy `sympy.simplify.simplify.inversecombine`
+ * @example
+ * ```ts
+ * import { ex, inversecombine } from '@symjs/symjs';
+ *
+ * inversecombine(ex`asin(sin(x))`); // => x
+ * inversecombine(ex`2*log(exp(3*x))`); // => 6*x
+ * ```
  */
 export function inversecombine(expr: ExprLike): Expr {
   const inverse: Partial<Record<FnName, FnName>> = {
@@ -92,7 +132,21 @@ export function inversecombine(expr: ExprLike): Expr {
   });
 }
 
-/** Find a real root of a sum of surds; every numerically proposed denesting is verified exactly. */
+/**
+ * Find a real root of a sum of surds; every numerically proposed denesting is verified exactly.
+ *
+ * @param exprIn - The input expression.
+ * @param nIn - The root degree.
+ * @param opts - `maxLen` limits the number of surds used in identifying a candidate.
+ * @returns The real root, expressed in radicals when identified.
+ * @see SymPy `sympy.simplify.simplify.nthroot`
+ * @example
+ * ```ts
+ * import { ex, nthroot } from '@symjs/symjs';
+ *
+ * nthroot(ex`34*sqrt(7) + 90`, 3); // => sqrt(7) + 3
+ * ```
+ */
 export function nthroot(exprIn: ExprLike, nIn: ExprLike, opts: { maxLen?: number } = {}): Expr {
   const expr = sympify(exprIn);
   const n = sympify(nIn);
@@ -115,6 +169,17 @@ export function nthroot(exprIn: ExprLike, nIn: ExprLike, opts: { maxLen?: number
 /**
  * Compress repeated words in noncommutative products. Dynamic programming minimizes
  * the number of factors, including factors inside powers, while preserving order.
+ *
+ * @param exprIn - The input expression.
+ * @param opts - `deep` also simplifies arguments of compound expressions.
+ * @returns The product with repeated noncommutative factors compressed.
+ * @see SymPy `sympy.simplify.simplify.nc_simplify`
+ * @example
+ * ```ts
+ * import { ex, ncSimplify } from '@symjs/symjs';
+ *
+ * ncSimplify(ex`x`); // => x
+ * ```
  */
 export function ncSimplify(exprIn: ExprLike, opts: { deep?: boolean } = {}): Expr {
   const expr = sympify(exprIn);
@@ -658,7 +723,14 @@ function algebraicZero(e: Expr): boolean {
   }
 }
 
-/** SymPy Expr.equals: mathematical equality, with an unknown result when undecidable. */
+/**
+ * mathematical equality, with an unknown result when undecidable.
+ *
+ * @param lhs - The left-hand side.
+ * @param rhs - The right-hand side.
+ * @returns The truth value, or `'unknown'` when it cannot be determined.
+ * @see SymPy `sympy.core.expr.Expr.equals`
+ */
 export function exprEquals(lhs: ExprLike, rhs: ExprLike): Truth {
   const a = sympify(lhs), b = sympify(rhs);
   if (a.equals(b)) return true;

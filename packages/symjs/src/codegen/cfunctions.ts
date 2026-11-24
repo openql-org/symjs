@@ -334,6 +334,11 @@ abstract class CFunctionBase extends ExtensionExpr {
  * @experimental May change in a minor release.
  */
 export abstract class CFunction extends CFunctionBase {
+  /**
+   * Whether the function supports Taylor expansion in its argument.
+   *
+   * @returns Whether a Taylor expansion in the argument is supported.
+   */
   override get isTaylorExpandable(): boolean {
     return true;
   }
@@ -345,27 +350,55 @@ export abstract class CFunction extends CFunctionBase {
  * @experimental May change in a minor release.
  */
 export abstract class CBooleanFunction extends CFunctionBase {
-  /** SymPy as_set: the set of values of the free symbol where the predicate holds. */
+  /**
+   * The set of values of the free symbol where the predicate holds.
+   *
+   * @returns The set of real solutions.
+   */
   asSet(): Expr {
     return impl.asSet ? impl.asSet(this) : notLoaded('asSet', 'solvers');
   }
-  /** SymPy binary_symbols: the symbols used as booleans (none: the arguments are numbers). */
+  /**
+   * The symbols used as booleans (none: the arguments are numbers).
+   *
+   * @returns The symbols used as booleans (none: the arguments are numbers).
+   */
   get binarySymbols(): Map<string, Expr> {
     return binarySymbolsOf(this);
   }
-  /** SymPy to_nnf. */
+  /**
+   * Converts the predicate to negation normal form.
+   *
+   * @param simplify - Whether to simplify the result.
+   * @returns The predicate in negation normal form.
+   */
   toNnf(simplify = true): Expr {
     return toNnfExpr(this, simplify);
   }
-  /** SymPy to_anf. */
+  /**
+   * Converts the predicate to algebraic normal form.
+   *
+   * @param deep - The deep.
+   * @returns The predicate in algebraic normal form.
+   */
   toAnf(deep = true): Expr {
     return toAnfExpr(this, deep);
   }
-  /** SymPy self >> other: Implies(self, other). */
+  /**
+   * Forms the implication from this predicate to the other proposition.
+   *
+   * @param other - The other operand.
+   * @returns The corresponding implication.
+   */
   rshift(other: ExprLike): Expr {
     return Implies(this, other);
   }
-  /** SymPy self << other: Implies(other, self). */
+  /**
+   * Forms the implication from the other proposition to this predicate.
+   *
+   * @param other - The other operand.
+   * @returns The corresponding implication.
+   */
   lshift(other: ExprLike): Expr {
     return Implies(other, this);
   }
@@ -499,9 +532,11 @@ function logBaseEval(base: Expr, a: Expr): Expr | undefined {
 }
 
 /**
- * SymPy expm1(x): exp(x) - 1, without the cancellation of exp(x) - 1 in
- * finite precision arithmetic when x is close to zero.
+ * Computes `exp(x) - 1` accurately for arguments near zero.
  *
+ * @param args - The single numerical or symbolic argument.
+ * @returns The value of `exp(x) - 1`.
+ * @see SymPy `sympy.codegen.cfunctions.expm1`
  * @example
  * ```ts
  * import { evalf, expm1, symbols } from '@symjs/symjs';
@@ -531,9 +566,11 @@ export const expm1: CFunctionClass = /* @__PURE__ */ defineClass('expm1', {
 });
 
 /**
- * SymPy log1p(x): log(x + 1), without the cancellation of log(x + 1) in
- * finite precision arithmetic when x is close to zero.
+ * Computes `log(1 + x)` accurately for arguments near zero.
  *
+ * @param args - The single numerical or symbolic argument.
+ * @returns The value of `log(1 + x)`.
+ * @see SymPy `sympy.codegen.cfunctions.log1p`
  * @example
  * ```ts
  * import { log1p, symbols } from '@symjs/symjs';
@@ -569,8 +606,11 @@ export const log1p: CFunctionClass = /* @__PURE__ */ defineClass('log1p', {
 });
 
 /**
- * SymPy exp2(x): 2**x.
+ * Raises two to the supplied exponent.
  *
+ * @param args - The single numerical or symbolic argument.
+ * @returns Two raised to the given exponent.
+ * @see SymPy `sympy.codegen.cfunctions.exp2`
  * @example
  * ```ts
  * import { exp2, symbols } from '@symjs/symjs';
@@ -592,8 +632,11 @@ export const exp2: CFunctionClass = /* @__PURE__ */ defineClass('exp2', {
 });
 
 /**
- * SymPy log2(x): the logarithm of x to base 2.
+ * Computes the logarithm to base two.
  *
+ * @param args - The single numerical or symbolic argument.
+ * @returns The logarithm in the specified base.
+ * @see SymPy `sympy.codegen.cfunctions.log2`
  * @example
  * ```ts
  * import { log2, symbols } from '@symjs/symjs';
@@ -618,8 +661,11 @@ export const log2: CFunctionClass = /* @__PURE__ */ defineClass('log2', {
 });
 
 /**
- * SymPy fma(x, y, z): the fused multiply-add x*y + z.
+ * Represents the fused multiply-add operation `x*y + z`.
  *
+ * @param args - The two factors followed by the addend.
+ * @returns The fused multiply-add expression.
+ * @see SymPy `sympy.codegen.cfunctions.fma`
  * @example
  * ```ts
  * import { fma, symbols } from '@symjs/symjs';
@@ -637,8 +683,11 @@ export const fma: CFunctionClass = /* @__PURE__ */ defineClass('fma', {
 });
 
 /**
- * SymPy log10(x): the logarithm of x to base 10.
+ * Computes the logarithm to base ten.
  *
+ * @param args - The single numerical or symbolic argument.
+ * @returns The logarithm in the specified base.
+ * @see SymPy `sympy.codegen.cfunctions.log10`
  * @example
  * ```ts
  * import { log10, symbols } from '@symjs/symjs';
@@ -662,9 +711,12 @@ export const log10: CFunctionClass = /* @__PURE__ */ defineClass('log10', {
 });
 
 /**
- * SymPy Sqrt(x): the square root as a function (sqrt(x) is the power
+ * The square root as a function (sqrt(x) is the power
  * x**(1/2)). Like SymPy, it stays unevaluated, also numerically.
  *
+ * @param args - The single numerical or symbolic argument.
+ * @returns The symbolic root function.
+ * @see SymPy `sympy.codegen.cfunctions.Sqrt`
  * @example
  * ```ts
  * import { Sqrt, symbols } from '@symjs/symjs';
@@ -682,9 +734,12 @@ export const Sqrt: CFunctionClass = /* @__PURE__ */ defineClass('Sqrt', {
 });
 
 /**
- * SymPy Cbrt(x): the cube root as a function, the principal value
+ * The cube root as a function, the principal value
  * x**(1/3). Like SymPy, it stays unevaluated, also numerically.
  *
+ * @param args - The single numerical or symbolic argument.
+ * @returns The symbolic root function.
+ * @see SymPy `sympy.codegen.cfunctions.Cbrt`
  * @example
  * ```ts
  * import { Cbrt, symbols } from '@symjs/symjs';
@@ -702,8 +757,11 @@ export const Cbrt: CFunctionClass = /* @__PURE__ */ defineClass('Cbrt', {
 });
 
 /**
- * SymPy hypot(x, y): sqrt(x**2 + y**2).
+ * Computes the Euclidean length `sqrt(x**2 + y**2)`.
  *
+ * @param args - The two orthogonal components.
+ * @returns The Euclidean length of the two components.
+ * @see SymPy `sympy.codegen.cfunctions.hypot`
  * @example
  * ```ts
  * import { hypot, symbols } from '@symjs/symjs';
@@ -726,8 +784,11 @@ export const hypot: CFunctionClass = /* @__PURE__ */ defineClass('hypot', {
 });
 
 /**
- * SymPy isnan(x): true for nan, false for any other number.
+ * True for nan, false for any other number.
  *
+ * @param args - The single numerical or symbolic argument.
+ * @returns The Boolean result or the unevaluated predicate.
+ * @see SymPy `sympy.codegen.cfunctions.isnan`
  * @example
  * ```ts
  * import { isnan, S } from '@symjs/symjs';
@@ -742,8 +803,11 @@ export const isnan: CBooleanFunctionClass = /* @__PURE__ */ defineClass('isnan',
 });
 
 /**
- * SymPy isinf(x): true for an infinite x, false for a finite one.
+ * True for an infinite x, false for a finite one.
  *
+ * @param args - The single numerical or symbolic argument.
+ * @returns The Boolean result or the unevaluated predicate.
+ * @see SymPy `sympy.codegen.cfunctions.isinf`
  * @example
  * ```ts
  * import { isinf, S } from '@symjs/symjs';

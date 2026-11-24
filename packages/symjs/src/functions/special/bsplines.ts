@@ -42,20 +42,69 @@ function asPiecewise(parts: readonly Expr[], knots: readonly Expr[], x: Expr, de
   return piecewise(...pairs);
 }
 
-/** The n-th B-spline of degree d on the given knot vector. */
+/**
+ * The n-th B-spline of degree d on the given knot vector.
+ *
+ * @param d - The degree of the spline.
+ * @param knots - The knot sequence in nondecreasing order.
+ * @param n - The zero-based basis index.
+ * @param x - The argument of the function.
+ * @returns The n-th B-spline of degree d on the given knot vector.
+ * @throws RangeError when the degree or index is invalid for the supplied knots.
+ * @see SymPy `sympy.functions.special.bsplines.bspline_basis`
+ * @example
+ * ```ts
+ * import { bsplineBasis, ex } from '@symjs/symjs';
+ *
+ * bsplineBasis(0, [0, 1, 2, 3, 4], 0, ex`x`); // => Piecewise((1, (x >= 0) & (x <= 1)), (0, True))
+ * bsplineBasis(1, [0, 0, 2, 3, 4], 0, ex`x`); // => Piecewise((1 - x/2, (x >= 0) & (x <= 2)), (0, True))
+ * ```
+ */
 export function bsplineBasis(d: IntLike, knots: readonly ExprLike[], n: IntLike, x: Expr): Expr {
   const ks = knots.map(sympify);
   return asPiecewise(pieces(degree(d), ks, degree(n), x), ks, x, true);
 }
 
-/** All B-splines of degree d on the given knot vector. */
+/**
+ * All B-splines of degree d on the given knot vector.
+ *
+ * @param d - The degree of the spline.
+ * @param knots - The knot sequence in nondecreasing order.
+ * @param x - The argument of the function.
+ * @returns The piecewise basis functions in knot order.
+ * @throws RangeError when there are too few knots for the degree.
+ * @see SymPy `sympy.functions.special.bsplines.bspline_basis_set`
+ * @example
+ * ```ts
+ * import { bsplineBasisSet, symbols } from '@symjs/symjs';
+ *
+ * bsplineBasisSet(0, [0, 1], symbols('x')[0]); // => [Piecewise((1, (x >= 0) & (x <= 1)), (0, True))]
+ * ```
+ */
 export function bsplineBasisSet(d: IntLike, knots: readonly ExprLike[], x: Expr): Expr[] {
   const order = degree(d);
   if (knots.length < order + 2) throw new RangeError('not enough knots for the spline degree');
   return Array.from({ length: knots.length - order - 1 }, (_, i) => bsplineBasis(order, knots, i, x));
 }
 
-/** Spline of degree d interpolating strictly increasing real abscissae. */
+/**
+ * Spline of degree d interpolating strictly increasing real abscissae.
+ *
+ * @param d - The degree of the spline.
+ * @param x - The argument of the function.
+ * @param X - The sample abscissas.
+ * @param Y - The corresponding ordinates.
+ * @returns The piecewise interpolating polynomial.
+ * @throws RangeError when the sample lengths or degree are incompatible, or the coordinates are not strictly increasing.
+ * @see SymPy `sympy.functions.special.bsplines.interpolating_spline`
+ * @example
+ * ```ts
+ * import { ex, interpolatingSpline } from '@symjs/symjs';
+ *
+ * interpolatingSpline(1, ex`x`, [1, 2, 4, 7], [3, 6, 5, 7]); // => Piecewise((3*x, (x >= 1) & (x <= 2)), (7 - x/2, (x >= 2) & (x <= 4)), (2*x/3 + 7/3, (x >= 4) & (x <= 7)))
+ * interpolatingSpline(3, ex`x`, [-2, 0, 1, 3, 4], [4, 2, 1, 1, 3]); // => Piecewise((7*x**3/117 + 7*x**2/117 - 131*x/117 + 2, (x >= -2) & (x <= 1)), (10*x**3/117 - 2*x**2/117 - 122*x/117 + 77/39, (x >= 1) & (x <= 4)))
+ * ```
+ */
 export function interpolatingSpline(d: IntLike, x: Expr, X: readonly ExprLike[], Y: readonly ExprLike[]): Expr {
   const order = degree(d), xs = X.map(sympify), ys = Y.map(sympify);
   if (order === 0 || xs.length <= order || xs.length !== ys.length) throw new RangeError('interpolation requires 0 < degree < number of matching X and Y values');
