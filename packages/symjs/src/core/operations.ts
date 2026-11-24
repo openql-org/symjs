@@ -11,6 +11,11 @@ import { ordered } from './match';
 /** A commutative, associative and idempotent operation with identity and absorbing elements. */
 export interface LatticeOperation {
   (...args: ExprLike[]): Expr;
+  /**
+   * Decomposes an application into the distinct operands of this operation.
+   * @param expression - The expression to decompose.
+   * @returns Its operands, or a singleton containing the expression.
+   */
   makeArgs(expression: ExprLike): Set<Expr>;
 }
 
@@ -28,7 +33,21 @@ class LatticeNode extends ExtensionExpr {
   }
 }
 
-/** Create a symbolic lattice operation with the specified identity and absorbing element. */
+/**
+ * Create a symbolic lattice operation with the specified identity and absorbing element.
+ *
+ * @param name - The symbolic name or names.
+ * @param identity - The neutral element.
+ * @param zero - The absorbing element.
+ * @returns A callable lattice operation with a factor-decomposition method.
+ * @see SymPy `sympy.core.operations.LatticeOp`
+ * @example
+ * ```ts
+ * import { LatticeOp, ex } from '@symjs/symjs';
+ *
+ * LatticeOp('Join', 0, 1)(ex`x`, ex`x`, 0); // => x
+ * ```
+ */
 export function LatticeOp(name: string, identity: ExprLike, zero: ExprLike): LatticeOperation {
   const unit = sympify(identity);
   const absorbing = sympify(zero);

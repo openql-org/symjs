@@ -415,19 +415,41 @@ const REPS: Record<HyperRepName, RepForms> = {
   },
 };
 
-/** A representative of a hypergeometric function branched at 1 (SymPy HyperRep_*). */
+/**
+ * A representative of a hypergeometric function branched at 1 (SymPy HyperRep_*).
+ *
+ * @see SymPy `sympy.functions.special.hyper.HyperRep`
+ */
 export class HyperRep extends ExtensionExpr {
+  /**
+   * Creates a `HyperRep`.
+   *
+   * @param rep - The hypergeometric representative identifying the formula family.
+   * @param args - The arguments in positional order.
+   */
   constructor(
+    /** The hypergeometric representative identifying the formula family. */
     readonly rep: HyperRepName,
     args: readonly ExprLike[],
   ) {
     // the parameters are not polar (SymPy HyperRep.eval)
     super(`HyperRep_${rep}`, [...args.slice(0, -1).map((a) => unpolarify(sympify(a))), sympify(at(args, -1))]);
   }
+  /**
+   * Rebuilds the node with the supplied arguments.
+   *
+   * @param args - The replacement arguments, in node order.
+   * @returns The expression rebuilt with the new arguments.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new HyperRep(this.rep, args);
   }
-  /** The closed form: 'nonrepsmall' for |x| < 1, 'nonrep' with the branch for |x| > 1 as well. */
+  /**
+   * The closed form: 'nonrepsmall' for |x| < 1, 'nonrep' with the branch for |x| > 1 as well.
+   *
+   * @param target - The target function or representation.
+   * @returns The closed form: 'nonrepsmall' for |x| < 1, 'nonrep' with the branch for |x| > 1 as well.
+   */
   closedForm(target: 'nonrep' | 'nonrepsmall'): Expr {
     const [x, n0] = extractBranchFactor(at(this.args, -1), true);
     const params = this.args.length > 1 ? first(this.args) : S.Zero;
@@ -1094,8 +1116,18 @@ function denestPolarPow(t: Expr): Expr {
 }
 
 /**
- * SymPy powdenest(e, polar=True): polarify (the symbols replaced by polar dummies), unpolarify the
+ * polarify (the symbols replaced by polar dummies), unpolarify the
  * exponents, denest, then substitute the symbols back and unpolarify.
+ *
+ * @param e - The input expression.
+ * @returns The expression with compatible nested powers combined.
+ * @see SymPy `sympy.simplify.powsimp.powdenest`
+ * @example
+ * ```ts
+ * import { ex, powdenestPolar } from '@symjs/symjs';
+ *
+ * powdenestPolar(ex`(x**a)**b`); // => x**(a*b)
+ * ```
  */
 export function powdenestPolar(e: Expr): Expr {
   const [eq, rep] = expectType(polarify(e), (r): r is [Expr, [Expr, Expr][]] => Array.isArray(r), 'polarify');
@@ -1327,6 +1359,17 @@ export interface HyperexpandOptions {
 /**
  * Expand the hypergeometric functions and Meijer G-functions of f in closed
  * form where possible (SymPy hyperexpand); the others are left unchanged.
+ *
+ * @param fIn - The function or expression to transform.
+ * @param opts - The expansion settings in {@link HyperexpandOptions}.
+ * @returns The expression with known hypergeometric closed forms substituted.
+ * @see SymPy `sympy.simplify.hyperexpand.hyperexpand`
+ * @example
+ * ```ts
+ * import { ex, hyper, hyperexpand } from '@symjs/symjs';
+ *
+ * hyperexpand(hyper([], [], ex`z`)); // => exp(z)
+ * ```
  */
 export function hyperexpand(fIn: ExprLike, opts: HyperexpandOptions = {}): Expr {
   const f = sympify(fIn);
@@ -1349,14 +1392,23 @@ expandFuncRules.meijerg = (e) => hyperexpand(e);
 // ---- the parameter objects of SymPy's hyperexpand --------------------------------------
 
 /**
- * SymPy Operator: a differential operator, a polynomial whose generator (by convention
+ * A differential operator, a polynomial whose generator (by convention
  * D = z*d/dz) acts to the right of all coefficients. `new Operator(x**2 + z*x + y, x)` is SymPy's
  * `op._poly = Poly(x**2 + z*x + y, x)`; without a generator the polynomial is constant.
+ *
  * @experimental May change in a minor release.
+ * @see SymPy `sympy.simplify.hyperexpand.Operator`
  */
 export class Operator {
   /** The coefficients of the polynomial, the constant one first. */
   readonly poly: readonly Expr[];
+  /**
+   * Creates an `Operator`.
+   *
+   * @param poly - The polynomial defining the operator.
+   * @param gen - The polynomial generator.
+   * @throws PolynomialError when the expression is not polynomial in the generator.
+   */
   constructor(poly: ExprLike = 0, gen?: Expr) {
     const p = sympify(poly);
     if (gen === undefined) this.poly = [p];
@@ -1366,20 +1418,64 @@ export class Operator {
       this.poly = Array.from({ length: Math.max(0, ...cs.keys()) + 1 }, (_, k) => cs.get(k) ?? S.Zero);
     }
   }
+  /**
+   * Constructs the operator that raises an upper parameter by one.
+   *
+   * @param a - The first operand.
+   * @returns The operator that raises an upper parameter by one.
+   */
   static shiftA(a: ExprLike): Operator { return publicOperator(shiftA(sympify(a))); }
+  /**
+   * Constructs the operator that lowers a lower parameter by one.
+   *
+   * @param b - The second operand.
+   * @returns The operator that lowers a lower parameter by one.
+   */
   static shiftB(b: ExprLike): Operator { return publicOperator(shiftB(sympify(b))); }
+  /**
+   * Constructs the inverse shift that lowers a selected upper parameter.
+   *
+   * @param ap - The upper parameters.
+   * @param bq - The lower parameters.
+   * @param i - The zero-based index.
+   * @param z - The argument of the function.
+   * @returns The inverse shift that lowers a selected upper parameter.
+   */
   static unShiftA(ap: readonly ExprLike[], bq: readonly ExprLike[], i: number, z: Expr): Operator {
     return publicOperator(unShiftA(ap.map(sympify), bq.map(sympify), i, z));
   }
+  /**
+   * Constructs the inverse shift that raises a selected lower parameter.
+   *
+   * @param ap - The upper parameters.
+   * @param bq - The lower parameters.
+   * @param i - The zero-based index.
+   * @param z - The argument of the function.
+   * @returns The inverse shift that raises a selected lower parameter.
+   */
   static unShiftB(ap: readonly ExprLike[], bq: readonly ExprLike[], i: number, z: Expr): Operator {
     return publicOperator(unShiftB(ap.map(sympify), bq.map(sympify), i, z));
   }
+  /**
+   * Finds the operator reducing a compatible pair of upper and lower parameters.
+   *
+   * @param a - The first operand.
+   * @param b - The second operand.
+   * @returns The operator reducing a compatible pair of upper and lower parameters.
+   */
   static reduceOrder(a: ExprLike, b: ExprLike): Operator | NoMatchResult {
     const op = reduceOrderOp(sympify(a), sympify(b));
     return op ? publicOperator(op) : NoMatch;
   }
 
-  /** SymPy apply: the operator applied to obj, where op applies the generator. */
+  /**
+   * The operator applied to obj, where op applies the generator.
+   *
+   * @param obj - The object to transform.
+   * @param op - The action of the generator on an operand.
+   * @returns The operator applied to obj, where op applies the generator.
+   * @see SymPy `sympy.simplify.hyperexpand.Operator.apply`
+   */
   apply(obj: ExprLike, op: (e: Expr) => Expr): Expr {
     let d = sympify(obj);
     let r = mul(first(this.poly), d);
@@ -1392,37 +1488,90 @@ export class Operator {
 }
 
 /**
- * SymPy Hyper_Function(ap, bq): the parameters of a generalized hypergeometric
+ * The parameters of a generalized hypergeometric
  * function, as hyperexpand classifies them.
+ *
  * @experimental May change in a minor release.
+ * @see SymPy `sympy.simplify.hyperexpand.Hyper_Function`
  */
 export class Hyper_Function {
   /** The numerator parameters. */
   readonly ap: readonly Expr[];
   /** The denominator parameters. */
   readonly bq: readonly Expr[];
+  /**
+   * Creates a `Hyper_Function`.
+   *
+   * @param ap - The upper parameters.
+   * @param bq - The lower parameters.
+   */
   constructor(ap: readonly ExprLike[], bq: readonly ExprLike[]) {
     const f = hyperFunc(ap, bq);
     this.ap = f.ap;
     this.bq = f.bq;
   }
+  /**
+   * The upper and lower parameter tuples.
+   *
+   * @returns The upper and lower parameter tuples.
+   * @see SymPy `sympy.simplify.hyperexpand.Hyper_Function.args`
+   */
   get args(): [Tuple, Tuple] { return [Tuple(...this.ap), Tuple(...this.bq)]; }
+  /**
+   * The numbers of upper and lower parameters.
+   *
+   * @returns The numbers of upper and lower parameters.
+   * @see SymPy `sympy.simplify.hyperexpand.Hyper_Function.sizes`
+   */
   get sizes(): [number, number] { return [this.ap.length, this.bq.length]; }
+  /**
+   * Applies this parameter configuration at the given argument.
+   *
+   * @param z - The argument of the function.
+   * @returns The hypergeometric function at the given argument.
+   */
   call(z: ExprLike): Expr { return hyper(this.ap, this.bq, z); }
+  /**
+   * Tests whether either parameter tuple contains an expression.
+   *
+   * @param value - The value to examine.
+   * @returns True if either parameter tuple contains an expression, otherwise false.
+   * @see SymPy `sympy.simplify.hyperexpand.Hyper_Function.has`
+   */
   has(value: Expr): boolean { return this.args.some((arg) => arg.has(value)); }
+  /**
+   * Tests for structural equality with the other object.
+   *
+   * @param other - The other operand.
+   * @returns Whether the two objects have equal components.
+   * @see SymPy `sympy.simplify.hyperexpand.Hyper_Function.equals`
+   */
   equals(other: unknown): boolean {
     return other instanceof Hyper_Function && this.args.every((arg, i) => arg.equals(at(other.args, i)));
   }
+  /**
+   * Formats the object as a string.
+   *
+   * @returns The formatted string.
+   */
   toString(): string {
     return `Hyper_Function(${parameterTuple(this.ap)}, ${parameterTuple(this.bq)})`;
   }
-  /** The number of negative integer numerator parameters. */
+  /**
+   * The number of negative integer numerator parameters.
+   *
+   * @returns The number of negative integer numerator parameters.
+   * @see SymPy `sympy.simplify.hyperexpand.Hyper_Function.gamma`
+   */
   get gamma(): number {
     return hfGamma({ ap: [...this.ap], bq: [...this.bq] });
   }
   /**
-   * SymPy build_invariants: [gamma, ((mod, count), ...) of ap, ((mod, count), ...) of bq], the
+   * [gamma, ((mod, count), ...) of ap, ((mod, count), ...) of bq], the
    * parameters grouped by their residue mod 1 (sorted), which shift operators leave unchanged.
+   *
+   * @returns The negative-integer count and the grouped parameter residues.
+   * @see SymPy `sympy.simplify.hyperexpand.Hyper_Function.build_invariants`
    */
   buildInvariants(): [number, [Expr, number][], [Expr, number][]] {
     const tr = (xs: readonly Expr[]): [Expr, number][] =>
@@ -1432,15 +1581,29 @@ export class Hyper_Function {
 }
 
 /**
- * SymPy G_Function(an, ap, bm, bq): the parameters of a Meijer G-function, as
+ * The parameters of a Meijer G-function, as
  * hyperexpand classifies them.
+ *
  * @experimental May change in a minor release.
+ * @see SymPy `sympy.simplify.hyperexpand.G_Function`
  */
 export class G_Function {
+  /** The first group of upper Meijer G parameters. */
   readonly an: readonly Expr[];
+  /** The second group of upper Meijer G parameters. */
   readonly ap: readonly Expr[];
+  /** The first group of lower Meijer G parameters. */
   readonly bm: readonly Expr[];
+  /** The second group of lower Meijer G parameters. */
   readonly bq: readonly Expr[];
+  /**
+   * Creates a `G_Function`.
+   *
+   * @param an - The first group of upper Meijer G parameters.
+   * @param ap - The upper parameters.
+   * @param bm - The first group of lower Meijer G parameters.
+   * @param bq - The lower parameters.
+   */
   constructor(an: readonly ExprLike[], ap: readonly ExprLike[], bm: readonly ExprLike[], bq: readonly ExprLike[]) {
     const g = gFunc(an.map(sympify), ap.map(sympify), bm.map(sympify), bq.map(sympify));
     this.an = g.an;
@@ -1448,12 +1611,20 @@ export class G_Function {
     this.bm = g.bm;
     this.bq = g.bq;
   }
+  /**
+   * Formats the object as a string.
+   *
+   * @returns The formatted string.
+   */
   toString(): string {
     return `G_Function(${[this.an, this.ap, this.bm, this.bq].map(parameterTuple).join(', ')})`;
   }
   /**
-   * SymPy compute_buckets: the parameters of an, ap, bm and bq grouped by their
+   * The parameters of an, ap, bm and bq grouped by their
    * residue mod 1, each group sorted by real part (an and bq descending, ap and bm ascending).
+   *
+   * @returns The parameters of an, ap, bm and bq grouped by their residue mod 1, each group sorted by real part (an and bq descending, ap and bm ascending).
+   * @see SymPy `sympy.simplify.hyperexpand.G_Function.compute_buckets`
    */
   computeBuckets(): [ExprMap<Expr[]>, ExprMap<Expr[]>, ExprMap<Expr[]>, ExprMap<Expr[]>] {
     const toMap = (b: Buckets): ExprMap<Expr[]> => new ExprMap([...b.values()].map((v) => [v.mod, v.items] as const));
@@ -1470,23 +1641,75 @@ const publicOperator = (op: OpPoly): Operator => {
   return new Operator(add(...op.poly.map((c, i) => mul(c, pow(D, i)))), D);
 };
 
-/** Differential operators shifting an origin hypergeometric function to the target. */
+/**
+ * Differential operators shifting an origin hypergeometric function to the target.
+ *
+ * @param target - The desired parameter configuration.
+ * @param origin - The starting parameter configuration.
+ * @param z - The argument of the function.
+ * @returns The sequence of parameter-shift operators.
+ * @see SymPy `sympy.simplify.hyperexpand.devise_plan`
+ * @example
+ * ```ts
+ * import { Hyper_Function, devisePlan, ex } from '@symjs/symjs';
+ *
+ * devisePlan(new Hyper_Function([], []), new Hyper_Function([], []), ex`z`); // => []
+ * ```
+ */
 export function devisePlan(target: Hyper_Function, origin: Hyper_Function, z: Expr): Operator[] {
   return devisePlanInternal(hyperParameters(target), hyperParameters(origin), z).map(publicOperator);
 }
 
-/** Differential operators shifting the parameters of a Meijer G-function. */
+/**
+ * Differential operators shifting the parameters of a Meijer G-function.
+ *
+ * @param fro - The starting parameter configuration.
+ * @param to - The desired parameter configuration.
+ * @param z - The argument of the function.
+ * @returns The sequence of parameter-shift operators.
+ * @see SymPy `sympy.simplify.hyperexpand.devise_plan_meijer`
+ * @example
+ * ```ts
+ * import { G_Function, devisePlanMeijer, ex } from '@symjs/symjs';
+ *
+ * devisePlanMeijer(new G_Function([], [], [0], []), new G_Function([], [], [0], []), ex`z`); // => []
+ * ```
+ */
 export function devisePlanMeijer(fro: G_Function, to: G_Function, z: Expr): Operator[] {
   return devisePlanMeijerInternal(gParameters(fro), gParameters(to), z).map(publicOperator);
 }
 
-/** Cancel hypergeometric parameters, retaining the operators that restore the original function. */
+/**
+ * Cancel hypergeometric parameters, retaining the operators that restore the original function.
+ *
+ * @param func - The func.
+ * @returns The reduced parameter configuration and the operators restoring the original function.
+ * @see SymPy `sympy.simplify.hyperexpand.reduce_order`
+ * @example
+ * ```ts
+ * import { Hyper_Function, reduceOrder } from '@symjs/symjs';
+ *
+ * reduceOrder(new Hyper_Function([1], [1]))[0].sizes; // => [0, 0]
+ * ```
+ */
 export function reduceOrder(func: Hyper_Function): [Hyper_Function, Operator[]] {
   const [f, ops] = reduceOrderHyper(hyperParameters(func));
   return [new Hyper_Function(f.ap, f.bq), ops.map(publicOperator)];
 }
 
-/** Cancel Meijer G parameters, retaining the corresponding differential operators. */
+/**
+ * Cancel Meijer G parameters, retaining the corresponding differential operators.
+ *
+ * @param func - The func.
+ * @returns The reduced parameter configuration and the operators restoring the original function.
+ * @see SymPy `sympy.simplify.hyperexpand.reduce_order_meijer`
+ * @example
+ * ```ts
+ * import { G_Function, reduceOrderMeijer } from '@symjs/symjs';
+ *
+ * reduceOrderMeijer(new G_Function([], [], [0], []))[1]; // => []
+ * ```
+ */
 export function reduceOrderMeijer(func: G_Function): [G_Function, Operator[]] {
   const [f, ops] = reduceOrderG(gParameters(func));
   return [new G_Function(f.an, f.ap, f.bm, f.bq), ops.map(publicOperator)];
@@ -1495,17 +1718,48 @@ export function reduceOrderMeijer(func: G_Function): [G_Function, Operator[]] {
 /**
  * A hypergeometric formula specified by its differential basis B, coefficient row C,
  * and connection matrix M: the closed form is C*B and z*dB/dz = M*B.
+ *
+ * @see SymPy `sympy.simplify.hyperexpand.Formula`
+ * @example
+ * ```ts
+ * import { Formula, Hyper_Function, ex } from '@symjs/symjs';
+ *
+ * new Formula(new Hyper_Function([], []), ex`z`, [ex`exp(z)`], [1], [[ex`z`]]).closedForm; // => exp(z)
+ * ```
  */
 export class Formula {
+  /** The column of basis functions. */
   readonly B: readonly Expr[];
+  /** The coefficient row expressing the closed form in the basis. */
   readonly C: readonly Expr[];
+  /** The matrix taking the basis to its Euler derivative. */
   readonly M: readonly (readonly Expr[])[];
-  constructor(readonly func: Hyper_Function, readonly z: Expr, B: readonly ExprLike[], C: readonly ExprLike[], M: readonly (readonly ExprLike[])[]) {
+  /**
+   * Creates a `Formula`.
+   *
+   * @param func - The constructor head of the expression.
+   * @param z - The argument of the function.
+   * @param B - The column of basis functions.
+   * @param C - The coefficient row.
+   * @param M - The connection matrix for the Euler derivative.
+   * @throws RangeError when the basis, coefficient row and connection matrix have incompatible dimensions.
+   */
+  constructor(
+    /** The hypergeometric parameters represented by the formula. */
+    readonly func: Hyper_Function,
+    /** The independent variable of the formula. */
+    readonly z: Expr, B: readonly ExprLike[], C: readonly ExprLike[], M: readonly (readonly ExprLike[])[]) {
     if (B.length !== C.length || M.length !== B.length || M.some((row) => row.length !== B.length)) throw new RangeError('Inconsistent formula basis dimensions');
     this.B = B.map(sympify);
     this.C = C.map(sympify);
     this.M = M.map((row) => row.map(sympify));
   }
+  /**
+   * The expression obtained by multiplying the coefficient row by the basis column.
+   *
+   * @returns The expression obtained by multiplying the coefficient row by the basis column.
+   * @see SymPy `sympy.simplify.hyperexpand.Formula.closed_form`
+   */
   get closedForm(): Expr {
     return add(...this.B.map((b, i) => mul(b, at(this.C, i))));
   }

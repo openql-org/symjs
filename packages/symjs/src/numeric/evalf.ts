@@ -69,7 +69,20 @@ import { fn } from '../functions/elementary/elementary';
 import { fromInt } from './mpf';
 import type { Mpf } from './mpf';
 
-/** SymPy is_comparable: a real numerical value whose evalf(2) has precision. */
+/**
+ * A real numerical value whose evalf(2) has precision.
+ *
+ * @param ex - The expression to transform.
+ * @returns Whether numerical evaluation permits a real-valued comparison.
+ * @see SymPy `sympy.core.basic.Basic.is_comparable`
+ * @example
+ * ```ts
+ * import { ex, isComparable } from '@symjs/symjs';
+ *
+ * isComparable(ex`I*exp_polar(I*pi/2)`); // => True
+ * isComparable(ex`I*exp_polar(2*I*pi)`); // => False
+ * ```
+ */
 export function isComparable(ex: ExprLike): boolean {
   const e = sympify(ex);
   if (!e.isNumber) return false;
@@ -88,7 +101,22 @@ export function isComparable(ex: ExprLike): boolean {
   }
 }
 
-/** SymPy pure_complex: a + I*b with numeric atoms a and b, or NoMatch. */
+/**
+ * A + I*b with numeric atoms a and b, or NoMatch.
+ *
+ * @remarks
+ * For `pure_complex(I)`, SymPy displays `(0, 1)`.
+ * @param v - The value to examine.
+ * @param orReal - Whether to accept a purely real number.
+ * @returns The real and imaginary components, or `NoMatch` when the expression lacks the required form.
+ * @see SymPy `sympy.core.evalf.pure_complex`
+ * @example
+ * ```ts
+ * import { ex, pureComplex } from '@symjs/symjs';
+ *
+ * pureComplex(ex`I`); // => [0, 1]
+ * ```
+ */
 export function pureComplex(v: ExprLike, orReal = false): [Expr, Expr] | NoMatchResult {
   const e = sympify(v);
   const terms = e instanceof Add ? e.args : [e];
@@ -110,7 +138,23 @@ export type RawMpfTuple = readonly [number, number, number, number];
 /** A scaled zero wraps the sign to distinguish it from an ordinary mpf value. */
 export type ScaledZero = readonly [readonly [number], number, number, number];
 
-/** SymPy scaled_zero: encode a magnitude with unknown precision, or unwrap its sign. */
+/**
+ * encode a magnitude with unknown precision, or unwrap its sign.
+ *
+ * @remarks
+ * For `ok`, SymPy displays `(0, 1, 100, 1)`.
+ * @param mag - The binary magnitude exponent or an encoded scaled zero.
+ * @param sign - The sign, one or minus one.
+ * @returns The scaled-zero and accuracy pair, or the unwrapped raw tuple.
+ * @throws RangeError when the magnitude is not a safe integer or the sign is not one or minus one.
+ * @see SymPy `sympy.core.evalf.scaled_zero`
+ * @example
+ * ```ts
+ * import { scaledZero } from '@symjs/symjs';
+ *
+ * scaledZero([[0], 1, 100, 1]); // => [0, 1, 100, 1]
+ * ```
+ */
 export function scaledZero(mag: number, sign?: number): [ScaledZero, -1];
 export function scaledZero(mag: ScaledZero): RawMpfTuple;
 export function scaledZero(mag: number | ScaledZero, sign = 1): RawMpfTuple | [ScaledZero, -1] {
@@ -277,6 +321,10 @@ function compileCond(e: Expr, resolve: (s: Sym) => Compiled): (env: readonly C[]
  * Evaluate to a complex number. All free symbols must be given values.
  *
  * @experimental May change in a minor release.
+ * @param ex - The expression to transform.
+ * @param values - The numerical substitutions for free symbols.
+ * @returns The numerical real and imaginary components.
+ * @throws TypeError when a free symbol lacks a numerical value.
  */
 export function toComplex(ex: ExprLike, values?: NumericValues): C {
   const e = sympify(ex);
@@ -509,13 +557,23 @@ impl.isComparable = isComparable;
 
 impl.toComplex = toComplex;
 
+/** Real and imaginary components of a numerical approximation with their accuracies in bits. */
 export type EvalfResult = readonly [Mpf, Mpf, number, number];
 
 type RawPart = Mpf | NoMatchResult;
 type RawAccuracy = number | NoMatchResult;
+/** A numerical approximation with components represented as raw binary floating-point tuples. */
 export type RawEvalfResult = readonly [RawPart, RawPart, RawAccuracy, RawAccuracy];
 
-/** Evaluate a closed number at binary precision and preserve its component accuracies. */
+/**
+ * Evaluate a closed number at binary precision and preserve its component accuracies.
+ *
+ * @param expression - The input expression.
+ * @param precision - The precision in bits.
+ * @returns The real and imaginary components and their accuracies, or `NoMatch`.
+ * @throws RangeError when the binary precision is not a positive integer.
+ * @see SymPy `sympy.core.evalf.evalf`
+ */
 export function evalfRaw(expression: ExprLike, precision: number): RawEvalfResult | NoMatchResult {
   const e = sympify(expression);
   if (!Number.isSafeInteger(precision) || precision < 1) throw new RangeError('precision must be a positive integer');
@@ -545,7 +603,14 @@ function rawParts(real: Mpf, imaginary: Mpf, realAccuracy: number, imaginaryAccu
   return [r ? NoMatch : real, i ? NoMatch : imaginary, r && !i ? NoMatch : realAccuracy, i ? NoMatch : imaginaryAccuracy];
 }
 
-/** Relative accuracy in bits, using SymPy's maximum-norm error estimate. */
+/**
+ * Relative accuracy in bits, using SymPy's maximum-norm error estimate.
+ *
+ * @param result - The real and imaginary approximations with their precision estimates.
+ * @returns The relative accuracy in bits.
+ * @throws TypeError when the argument is not an evaluation result.
+ * @see SymPy `sympy.core.evalf.complex_accuracy`
+ */
 export function complexAccuracy(result: EvalfResult | Expr): number {
   if (result === S.ComplexInfinity) return Infinity;
   if (result instanceof Expr) throw new TypeError('expected an evalf result');
@@ -557,7 +622,17 @@ export function complexAccuracy(result: EvalfResult | Expr): number {
   return Math.max(reSize, imSize) - Math.max(reSize - reAccuracy, imSize - imAccuracy);
 }
 
-/** Exact floor/ceiling of the real and imaginary parts; unresolved parts signal failure. */
+/**
+ * Exact floor/ceiling of the real and imaginary parts; unresolved parts signal failure.
+ *
+ * @param expr - The input expression.
+ * @param direction - One for a ceiling or minus one for a floor.
+ * @param options - An empty options map.
+ * @param returnInts - Whether to return integer components.
+ * @returns The integer components as bigints, or as floating-point components with accuracy information.
+ * @throws RangeError when the integer part is undefined, cannot be determined exactly, or the options map is nonempty.
+ * @see SymPy `sympy.core.evalf.get_integer_part`
+ */
 export function getIntegerPart(expr: Expr, direction: 1 | -1, options: ReadonlyMap<string, unknown> = new Map(), returnInts = false): readonly [bigint, bigint] | readonly [Mpf | NoMatchResult, Mpf | NoMatchResult, number | NoMatchResult, number | NoMatchResult] {
   if (expr === S.ComplexInfinity) throw new RangeError('Cannot get integer part of Complex Infinity');
   if (options.size !== 0) throw new RangeError('unsupported integer-part options');

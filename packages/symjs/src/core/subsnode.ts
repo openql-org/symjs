@@ -21,20 +21,46 @@ class SubsPoint extends Sym {
 
 /** Subs(expr, variables, points): args are [expr, ...variables, ...points]. */
 export class SubsNode extends ExtensionExpr {
+  /**
+   * Creates a held substitution from its expression, variables and values.
+   *
+   * @param args - The operands in node order.
+   */
   constructor(args: readonly Expr[]) {
     super('Subs', args);
   }
+  /**
+   * The expression in which the substitution will take place.
+   *
+   * @see SymPy `sympy.core.function.Subs.expr`
+   */
   get expr(): Expr {
     return at(this.args, 0);
   }
+  /**
+   * The expressions to replace.
+   *
+   * @see SymPy `sympy.core.function.Subs.variables`
+   */
   get variables(): Expr[] {
     const n = (this.args.length - 1) / 2;
     return this.args.slice(1, 1 + n);
   }
+  /**
+   * The replacement values in variable order.
+   *
+   * @see SymPy `sympy.core.function.Subs.point`
+   */
   get point(): Expr[] {
     const n = (this.args.length - 1) / 2;
     return this.args.slice(1 + n);
   }
+  /**
+   * Rebuilds the node with the supplied arguments.
+   *
+   * @param args - The operands in node order.
+   * @returns The rebuilt expression.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new SubsNode(args);
   }
@@ -46,18 +72,42 @@ export class SubsNode extends ExtensionExpr {
     const unused = this.variables.flatMap((v, i) => this.expr.has(v) ? [] : [`${v.key}:${at(this.point, i).key}`]).sort();
     return `Subs(${body.key};${unused.join(',')})`;
   }
+  /**
+   * Identifies the argument positions binding variables and the positions in their scope.
+   *
+   * @returns The bound-variable and scope positions.
+   */
   override bindings(): { variables: readonly number[]; scope: readonly number[] } {
     const n = (this.args.length - 1) / 2;
     return { variables: Array.from({ length: n }, (_, i) => 1 + i), scope: [0] };
   }
+  /**
+   * Formats the node using the supplied printer for its children.
+   *
+   * @param print - The expression printer for child nodes.
+   * @returns The formatted expression.
+   */
   override printStr(print: (e: Expr) => string): string {
     const tuple = (xs: Expr[]) => (xs.length === 1 ? print(at(xs, 0)) : `(${xs.map(print).join(', ')})`);
     return `Subs(${print(this.expr)}, ${tuple(this.variables)}, ${tuple(this.point)})`;
   }
+  /**
+   * Formats the node in LaTeX using the supplied printer for its children.
+   *
+   * @param print - The expression printer for child nodes.
+   * @returns The LaTeX representation.
+   */
   override printLatex(print: (e: Expr) => string): string {
     const eqs = this.variables.map((v, i) => `${print(v)}=${print(at(this.point, i))}`).join('\\\\ ');
     return `\\left. ${print(this.expr)} \\right|_{\\substack{ ${eqs} }}`;
   }
+  /**
+   * Differentiates the substitution, including the dependence of its evaluation point.
+   *
+   * @param x - The differentiation variable.
+   * @param d - The callback for differentiating a subexpression.
+   * @returns The derivative under this node’s differentiation rule.
+   */
   override diffSelf(x: Expr, d: (e: Expr, x: Expr) => Expr): Expr | undefined {
     // d/dx Subs(e, v, p) = Subs(de/dx, v, p) (x not substituted) + sum_i Subs(de/dv_i, v, p) * dp_i/dx
     // (each Subs evaluated by subs, which keeps it unevaluated only where needed)
@@ -72,12 +122,27 @@ export class SubsNode extends ExtensionExpr {
     }
     return add(...terms);
   }
+  /**
+   * Evaluates the substitution numerically.
+   *
+   * @param evaluate - The numerical evaluator for a child expression.
+   * @returns The numerically evaluated substitution.
+   */
   override evalfSelf(evaluate: (x: Expr) => Expr): Expr {
     const value = this.doitSelf();
     return value.key === this.key ? this : evaluate(value);
   }
+  /** Whether to evaluate child nodes before performing this substitution. */
   override get doitDeep(): boolean { return false; }
 
+  /**
+   * Substitutes within the expression while respecting its bound variables.
+   *
+   * @param old - The expression to replace.
+   * @param replacement - The value to substitute.
+   * @param recurse - The substitution callback for child expressions.
+   * @returns The expression with the requested substitution applied.
+   */
   override subsSelf(old: Expr, replacement: Expr, recurse: (e: Expr) => Expr): Expr {
     const variables = this.variables;
     const points = this.point;
@@ -93,6 +158,12 @@ export class SubsNode extends ExtensionExpr {
     return new SubsNode([recurse(this.expr), ...variables, ...points.map(recurse)]);
   }
 
+  /**
+   * Performs the substitution, carrying out pending derivatives when possible.
+   *
+   * @returns The expression after applying the substitution.
+   * @see SymPy `sympy.core.function.Subs.doit`
+   */
   override doitSelf(): Expr {
     const substitutions = this.variables.map((v, i): [Expr, Expr] => [v, at(this.point, i)]).filter(([v, p]) => v.key !== p.key);
     if (!substitutions.length) return this.expr;

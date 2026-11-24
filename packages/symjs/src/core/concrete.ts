@@ -19,17 +19,42 @@ import { isZero, isNegative, isPositive } from './assumptions';
  * @experimental May change in a minor release.
  */
 export class Concrete extends Expr {
+  /** The node's discriminant. */
   readonly kind = 'Concrete' as const;
-  constructor(readonly kind2: 'Sum' | 'Product', readonly args: readonly Expr[]) {
+  /**
+   * Creates a `Concrete`.
+   *
+   * @param kind2 - Whether the operation is a sum or a product.
+   * @param args - The summand or factor followed by index and endpoint triples.
+   */
+  constructor(
+    /** Whether the operation is a sum or a product. */
+    readonly kind2: 'Sum' | 'Product',
+    /** The node's arguments in canonical order. */
+    readonly args: readonly Expr[]) {
     super();
   }
+  /**
+   * The summand or product factor.
+   *
+   * @returns The summand or product factor.
+   */
   get function(): Expr {
     return at(this.args, 0);
   }
+  /**
+   * Whether this expression represents a number.
+   *
+   * @returns Whether the expression represents a number.
+   */
   override get isNumber(): boolean {
     return this.freeSymbols().size === 0;
   }
-  /** ExprWithLimits.free_symbols: each outer variable binds the preceding limits too. */
+  /**
+   * ExprWithLimits.free_symbols: each outer variable binds the preceding limits too.
+   *
+   * @returns The free symbols in the expression.
+   */
   override freeSymbols(): Set<Expr> {
     const replacements = new Map<string, readonly [Expr, Expr]>();
     for (const [k] of this.limits) {
@@ -44,6 +69,11 @@ export class Concrete extends Expr {
     }
     return new Set(free.values());
   }
+  /**
+   * The index, lower bound and upper bound of each limit, innermost first.
+   *
+   * @returns The index, lower bound and upper bound of each limit, innermost first.
+   */
   get limits(): [Expr, Expr, Expr][] {
     const out: [Expr, Expr, Expr][] = [];
     for (let i = 1; i < this.args.length; i += 3) out.push([at(this.args, i), at(this.args, i + 1), at(this.args, i + 2)]);
@@ -56,7 +86,14 @@ export class Concrete extends Expr {
   private withLimits(f: Expr, limits: readonly (readonly [Expr, Expr, Expr])[]): Concrete {
     return new Concrete(this.kind2, [f, ...limits.flat()]);
   }
-  /** SymPy ExprWithIntLimits.index: the position of the limit of variable x (which must occur once). */
+  /**
+   * The position of the limit of variable x (which must occur once).
+   *
+   * @param x - The argument of the function.
+   * @returns The position of the limit of variable x (which must occur once).
+   * @throws RangeError when the variable does not occur in exactly one limit.
+   * @see SymPy `sympy.concrete.expr_with_intlimits.ExprWithIntLimits.index`
+   */
   index(x: ExprLike): number {
     const v = sympify(x);
     const vars = this.limits.map((l) => l[0].key);
@@ -64,8 +101,14 @@ export class Concrete extends Expr {
     return vars.indexOf(v.key);
   }
   /**
-   * SymPy ExprWithIntLimits.reorder_limit: the limits at positions x and y
+   * The limits at positions x and y
    * interchanged, when neither depends on a summation variable (else a ReorderError).
+   *
+   * @param x - A zero-based limit position to interchange.
+   * @param y - A zero-based limit position to interchange.
+   * @returns The limits at positions x and y interchanged, when neither depends on a summation variable (else a ReorderError).
+   * @throws ReorderError when the dependence of the limits prevents their interchange.
+   * @see SymPy `sympy.concrete.expr_with_intlimits.ExprWithIntLimits.reorder_limit`
    */
   reorderLimit(x: number, y: number): Concrete {
     const vars = new Set(this.limits.map((l) => l[0].key));
@@ -79,8 +122,14 @@ export class Concrete extends Expr {
     );
   }
   /**
-   * SymPy ExprWithIntLimits.reorder: the limits interchanged pair by pair; a
+   * The limits interchanged pair by pair; a
    * pair names the limits by position or by variable.
+   *
+   * @param pairs - The pairs of limit positions or variables to interchange.
+   * @returns The limits interchanged pair by pair; a pair names the limits by position or by variable.
+   * @throws RangeError when a pair does not identify two limits.
+   * @throws ReorderError when the limits cannot be interchanged.
+   * @see SymPy `sympy.concrete.expr_with_intlimits.ExprWithIntLimits.reorder`
    */
   reorder(...pairs: readonly (readonly (number | ExprLike)[])[]): Concrete {
     let e: Concrete = this;
@@ -92,9 +141,16 @@ export class Concrete extends Expr {
     return e;
   }
   /**
-   * SymPy ExprWithIntLimits.change_index: the variable var replaced by the
+   * The variable var replaced by the
    * linear transformation trafo = alpha*var + beta (alpha = 1 or -1, or a
    * symbol), renamed newvar.
+   *
+   * @param varIn - The index being changed.
+   * @param trafoIn - The affine transformation of the index.
+   * @param newvarIn - The replacement index symbol.
+   * @returns The variable var replaced by the linear transformation trafo = alpha*var + beta (alpha = 1 or -1, or a symbol), renamed newvar.
+   * @throws RangeError when the change of variable does not yield a supported linear index.
+   * @see SymPy `sympy.concrete.expr_with_intlimits.ExprWithIntLimits.change_index`
    */
   changeIndex(varIn: ExprLike, trafoIn: ExprLike, newvarIn?: ExprLike): Concrete {
     const v = sympify(varIn);
@@ -115,8 +171,10 @@ export class Concrete extends Expr {
     return this.withLimits(f, limits);
   }
   /**
-   * SymPy ExprWithIntLimits.has_empty_sequence: some limit (k, a, b) has
+   * Some limit (k, a, b) has
    * a - b = 1 (an empty range); 'unknown' when undecided.
+   *
+   * @returns The truth value, or `'unknown'` when it cannot be determined.
    */
   get hasEmptySequence(): Truth {
     let unknown = false;

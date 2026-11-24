@@ -85,12 +85,39 @@ export type PredicateName =
   | 'real_elements'
   | 'complex_elements';
 
-/** A predicate applied to arguments, such as Q.positive(x) (SymPy AppliedPredicate). */
+/**
+ * A predicate applied to arguments, such as Q.positive(x) (SymPy AppliedPredicate).
+ *
+ * @see SymPy `sympy.assumptions.assume.AppliedPredicate`
+ * @example
+ * ```ts
+ * import { AppliedPredicate, ex } from '@symjs/symjs';
+ *
+ * new AppliedPredicate('positive', [ex`x`]); // => Q.positive(x)
+ * ```
+ */
 export class AppliedPredicate extends ExtensionExpr {
-  /** The arguments of this applied predicate (SymPy AppliedPredicate.arguments). */
+  /**
+   * The arguments of this applied predicate (SymPy AppliedPredicate.arguments).
+   *
+   * @returns The arguments of this applied predicate (SymPy AppliedPredicate.arguments).
+   * @see SymPy `sympy.assumptions.assume.AppliedPredicate.arguments`
+   */
   get arguments(): readonly Expr[] { return this.args; }
-  /** The predicate applied by this expression (SymPy AppliedPredicate.function). */
+  /**
+   * The predicate applied by this expression (SymPy AppliedPredicate.function).
+   *
+   * @returns The predicate applied by this expression (SymPy AppliedPredicate.function).
+   * @see SymPy `sympy.assumptions.assume.AppliedPredicate.function`
+   */
   get function(): Predicate { return this.appliedFunction ?? Q[this.predicate] ?? Predicate(this.predicate); }
+  /**
+   * Creates an `AppliedPredicate`.
+   *
+   * @param args - The arguments in positional order.
+   * @param appliedFunction - The predicate head that created the application.
+   * @param predicate - The predicate that selects matching expressions.
+   */
   constructor(
     /** The predicate name (positive for Q.positive). */
     readonly predicate: string,
@@ -99,25 +126,56 @@ export class AppliedPredicate extends ExtensionExpr {
   ) {
     super(`Q.${predicate}`, args);
   }
+  /**
+   * Rebuilds the node with the supplied arguments.
+   *
+   * @param args - The replacement arguments, in node order.
+   * @returns The expression rebuilt with the new arguments.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new AppliedPredicate(this.predicate, args, this.appliedFunction);
   }
-  /** The (first) argument. */
+  /**
+   * The (first) argument.
+   *
+   * @returns The (first) argument.
+   * @see SymPy `sympy.assumptions.assume.AppliedPredicate.arg`
+   */
   get arg(): Expr {
     return at(this.args, 0);
   }
+  /**
+   * Formats the node in LaTeX using the supplied child printer.
+   *
+   * @param print - The printer to use for child expressions.
+   * @returns The formatted string.
+   */
   override printLatex(print: (e: Expr) => string): string {
     return `\\operatorname{Q}_{\\text{${this.predicate.replace(/_/g, '\\_')}}}(${this.args.map(print).join(', ')})`;
   }
-  /** Conjunction (SymPy &). */
+  /**
+   * Conjunction (SymPy &).
+   *
+   * @param others - The callback applied to the selected expressions.
+   * @returns The resulting logical expression.
+   */
   and(...others: (Expr | readonly Expr[])[]): Expr {
     return and(this, ...others.flat());
   }
-  /** Disjunction (SymPy |). */
+  /**
+   * Disjunction (SymPy |).
+   *
+   * @param others - The others.
+   * @returns The resulting logical expression.
+   */
   or(...others: Expr[]): Expr {
     return or(this, ...others);
   }
-  /** Negation (SymPy ~). */
+  /**
+   * Negation (SymPy ~).
+   *
+   * @returns The resulting logical expression.
+   */
   not(): Expr {
     return not(this);
   }
@@ -129,12 +187,26 @@ export class AppliedPredicate extends ExtensionExpr {
  */
 export type PredicateHandler = (expr: Expr, assumptions: Expr, args: readonly Expr[]) => Truth;
 
-/** A predicate such as Q.positive; calling it applies it (SymPy Predicate). */
+/**
+ * A predicate such as Q.positive; calling it applies it (SymPy Predicate).
+ *
+ * @see SymPy `sympy.assumptions.assume.Predicate`
+ * @example
+ * ```ts
+ * import { Predicate, ex } from '@symjs/symjs';
+ *
+ * Predicate('primeCandidate')(ex`x`); // => Q.primeCandidate(x)
+ * ```
+ */
 export interface Predicate {
   (...args: (ExprLike | boolean)[]): AppliedPredicate;
   /** The name (positive for Q.positive). */
   readonly predicateName: string;
-  /** Dispatch on one expression class per argument. The handler receives the arguments followed by the assumptions. */
+  /**
+   * Registers a handler for a combination of argument classes.
+   * @param signature - One class or class name per argument.
+   * @param handler - The evaluator called with the arguments followed by the assumptions.
+   */
   register<T extends PredicateClass[]>(signature: readonly [...T], handler: (...args: [...PredicateArgs<T>, Expr]) => Truth): void;
 }
 
@@ -145,7 +217,11 @@ type PredicateArgs<T extends PredicateClass[]> = { [K in keyof T]: InstanceOfCla
 // The signature trie invokes each method only after matching its registered argument types.
 type DispatchHandler = (...args: never) => Truth;
 
-/** Base for legacy handlers with static methods named for expression classes (SymPy AskHandler). */
+/**
+ * Base for legacy handlers with static methods named for expression classes (SymPy AskHandler).
+ *
+ * @see SymPy `sympy.assumptions.handlers.common.AskHandler`
+ */
 export class AskHandler {}
 
 type LegacyHandler = typeof AskHandler | PredicateHandler;
@@ -255,6 +331,11 @@ const REL_PREDICATES = { Gt: 'gt', Lt: 'lt', Ge: 'ge', Le: 'le', Eq: 'eq', Ne: '
  * Create a callable predicate. Assign it to a custom key on Q and register methods by argument type,
  * for example `p.register([Sym], (symbol, assumptions) => ask(Q.real(symbol), assumptions))`.
  * Use `'Integer'` to select the integer members of Rational.
+ *
+ * @param name - The name displayed after `Q.` in applications.
+ * @param handler - The optional evaluator of the predicate under assumptions.
+ * @returns The callable predicate.
+ * @see SymPy `sympy.assumptions.assume.Predicate`
  */
 export function Predicate(name: string, handler?: PredicateHandler): Predicate {
   const apply = (...argsIn: (ExprLike | boolean)[]): AppliedPredicate => {
@@ -293,13 +374,27 @@ const BUILTIN = [
 const predicates: Record<string, Predicate> = Object.create(null);
 for (const name of BUILTIN) predicates[name] = Predicate(name);
 
-/** SymPy Q: the assumption predicates (Q.positive(x), Q.even(n), Q.gt(x, y), ...). */
+/**
+ * The assumption predicates (Q.positive(x), Q.even(n), Q.gt(x, y), ...).
+ *
+ * @see SymPy `sympy.assumptions.ask.Q`
+ * @example
+ * ```ts
+ * import { Q, ask } from '@symjs/symjs';
+ *
+ * ask(Q.positive(2)); // => True
+ * ```
+ */
 // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- predicates holds an entry for every name in BUILTIN, which covers PredicateName (checked by satisfies above)
 export const Q = predicates as { readonly [K in PredicateName]: Predicate } & { [name: string]: Predicate | undefined };
 
 /**
  * Adds a handler for a predicate (SymPy register_handler); a predicate not
  * in Q is added to it. The handler is tried before the built-in rules.
+ *
+ * @param key - The predicate or its name.
+ * @param handler - The predicate handler.
+ * @see SymPy `sympy.assumptions.ask.register_handler`
  */
 export function registerHandler(key: string | Predicate, handler: LegacyHandler): void {
   const name = typeof key === 'string' ? key : key.predicateName;
@@ -307,7 +402,13 @@ export function registerHandler(key: string | Predicate, handler: LegacyHandler)
   handlers.set(predicate, [...(handlers.get(predicate) ?? []), handler]);
 }
 
-/** Removes a handler added by registerHandler (SymPy remove_handler). */
+/**
+ * Removes a handler added by registerHandler (SymPy remove_handler).
+ *
+ * @param key - The predicate or its name.
+ * @param handler - The predicate handler.
+ * @see SymPy `sympy.assumptions.ask.remove_handler`
+ */
 export function removeHandler(key: string | Predicate, handler: LegacyHandler): void {
   const name = typeof key === 'string' ? key : key.predicateName;
   const predicate = Q[name];
@@ -317,46 +418,110 @@ export function removeHandler(key: string | Predicate, handler: LegacyHandler): 
 /** Assumptions: a boolean expression of predicates, a list of them (a conjunction), or true. */
 export type Assumption = Expr | readonly Expr[] | boolean;
 
-/** A set of assumptions in force for ask and refine (SymPy AssumptionsContext). */
+/**
+ * A set of assumptions in force for ask and refine (SymPy AssumptionsContext).
+ *
+ * @see SymPy `sympy.assumptions.assume.AssumptionsContext`
+ * @example
+ * ```ts
+ * import { AssumptionsContext } from '@symjs/symjs';
+ *
+ * new AssumptionsContext().size; // => 0
+ * ```
+ */
 export class AssumptionsContext {
   private readonly items = new Map<string, Expr>();
-  /** Adds assumptions. */
+  /**
+   * Adds assumptions.
+   *
+   * @param assumptions - The facts to assume.
+   * @see SymPy `sympy.assumptions.assume.AssumptionsContext.add`
+   */
   add(...assumptions: Expr[]): void {
     for (const a of assumptions) this.items.set(a.key, a);
   }
-  /** Removes assumptions. */
+  /**
+   * Removes assumptions.
+   *
+   * @param assumptions - The facts to assume.
+   * @see SymPy `sympy.assumptions.assume.AssumptionsContext.remove`
+   */
   remove(...assumptions: Expr[]): void {
     for (const a of assumptions) this.items.delete(a.key);
   }
-  /** Removes every assumption. */
+  /**
+   * Removes every assumption.
+   *
+   * @see SymPy `sympy.assumptions.assume.AssumptionsContext.clear`
+   */
   clear(): void {
     this.items.clear();
   }
-  /** The assumption is present. */
+  /**
+   * The assumption is present.
+   *
+   * @param assumption - The assumption.
+   * @returns Whether the context contains the assumption.
+   */
   has(assumption: Expr): boolean {
     return this.items.has(assumption.key);
   }
+  /**
+   * The number of assumptions in the context.
+   *
+   * @returns The number of assumptions in the context.
+   */
   get size(): number {
     return this.items.size;
   }
   [Symbol.iterator](): IterableIterator<Expr> {
     return this.items.values();
   }
-  /** The conjunction of the assumptions. */
+  /**
+   * The conjunction of the assumptions.
+   *
+   * @returns The conjunction of the assumptions.
+   */
   toExpr(): Expr {
     return and(...this.items.values());
   }
+  /**
+   * Formats the object as a string.
+   *
+   * @returns The formatted string.
+   */
   toString(): string {
     return `AssumptionsContext({${[...this.items.values()].map((e) => e.toString()).join(', ')}})`;
   }
 }
 
-/** The assumptions used by every ask and refine (SymPy global_assumptions). */
+/**
+ * The assumptions used by every ask and refine (SymPy global_assumptions).
+ *
+ * @see SymPy `sympy.assumptions.assume.global_assumptions`
+ * @example
+ * ```ts
+ * import { globalAssumptions } from '@symjs/symjs';
+ *
+ * globalAssumptions.size; // => 0
+ * ```
+ */
 export const globalAssumptions: AssumptionsContext = new AssumptionsContext();
 
 /**
  * Runs body with the assumptions added to the global assumptions (SymPy
  * `with assuming(...)`), and returns its result.
+ *
+ * @param assumptions - The facts to assume.
+ * @param body - The callback to run.
+ * @returns The value returned by the callback.
+ * @see SymPy `sympy.assumptions.assume.assuming`
+ * @example
+ * ```ts
+ * import { Q, ask, assuming, ex } from '@symjs/symjs';
+ *
+ * assuming([Q.positive(ex`x`)], () => ask(Q.positive(ex`x`))); // => True
+ * ```
  */
 export function assuming<T>(assumptions: Assumption, body: () => T): T {
   const added = asList(assumptions).filter((a) => !globalAssumptions.has(a));
@@ -1363,6 +1528,20 @@ export function askExpressionFact(proposition: Expr): Truth {
   }
 }
 
+/**
+ * Determines the truth of a proposition under the supplied assumptions.
+ *
+ * @param proposition - The proposition whose truth to determine.
+ * @param assumptions - The facts to assume.
+ * @returns The truth value, or `'unknown'` when it cannot be determined.
+ * @see SymPy `sympy.assumptions.ask.ask`
+ * @example
+ * ```ts
+ * import { Q, ask, ex } from '@symjs/symjs';
+ *
+ * ask(Q.even(ex`x`), Q.even(ex`x`)); // => True
+ * ```
+ */
 export function ask(proposition: ExprLike | boolean, assumptions: Assumption = true): Truth {
   const prop = typeof proposition === 'boolean' ? (proposition ? S.true : S.false) : sympify(proposition);
   const assumed = and(...asList(assumptions), ...globalAssumptions);
@@ -1412,10 +1591,22 @@ function refineSignPowers(e: Expr, d: Decider): Expr {
 }
 
 /**
- * SymPy refine(expr, assumptions): expr simplified under the assumptions,
+ * expr simplified under the assumptions,
  * e.g. refine(sqrt(x**2), Q.real(x)) = Abs(x),
  * refine(Abs(x), Q.positive(x)) = x; a predicate becomes true or false
  * when the assumptions decide it (refine(Q.real(x), Q.positive(x)) = true).
+ *
+ * @param expr - The input expression.
+ * @param assumptions - The facts to assume.
+ * @param f - The entry transformation supplied to a matrix's `map` callback.
+ * @returns The expression or matrix simplified under the assumptions.
+ * @see SymPy `sympy.assumptions.refine.refine`
+ * @example
+ * ```ts
+ * import { Q, ex, refine } from '@symjs/symjs';
+ *
+ * refine(ex`sqrt(x**2)`, Q.positive(ex`x`)); // => x
+ * ```
  */
 export function refine(expr: ExprLike, assumptions?: Assumption): Expr;
 /** A matrix (any object with map) refined entry by entry (SymPy Matrix.refine). */

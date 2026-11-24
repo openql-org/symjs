@@ -37,11 +37,24 @@ const sign = (e: Expr): number => Math.sign(e.toNumber());
 /** A Map input of Factors (its values are converted by sympify). */
 const isExprMap = (x: unknown): x is ReadonlyMap<Expr, ExprLike> => x instanceof Map;
 
-/** A product as base -> exponent (SymPy Factors). */
+/**
+ * A product as base -> exponent (SymPy Factors).
+ *
+ * @see SymPy `sympy.core.exprtools.Factors`
+ */
 export class Factors {
-  /** The underlying map from base to exponent (SymPy factors). */
+  /**
+   * The underlying map from base to exponent (SymPy factors).
+   *
+   * @see SymPy `sympy.core.exprtools.Factors.factors`
+   */
   readonly factors: ExprMap<Expr>;
 
+  /**
+   * Creates a `Factors`.
+   *
+   * @param factors - The product or base-to-exponent mapping.
+   */
   constructor(factors?: Factors | ExprLike | ReadonlyMap<Expr, ExprLike> | null) {
     this.factors = Factors.build(factors);
   }
@@ -114,20 +127,40 @@ export class Factors {
     return f;
   }
 
-  /** The bases (SymPy gens). */
+  /**
+   * The bases (SymPy gens).
+   *
+   * @returns The bases (SymPy gens).
+   * @see SymPy `sympy.core.exprtools.Factors.gens`
+   */
   get gens(): Set<Expr> {
     return new Set(this.factors.keys());
   }
-  /** The product is zero. */
+  /**
+   * The product is zero.
+   *
+   * @returns Whether the value is zero.
+   * @see SymPy `sympy.core.exprtools.Factors.is_zero`
+   */
   get isZero(): boolean {
     return this.factors.size === 1 && this.factors.has(S.Zero);
   }
-  /** The product is one. */
+  /**
+   * The product is one.
+   *
+   * @returns Whether the value equals one.
+   * @see SymPy `sympy.core.exprtools.Factors.is_one`
+   */
   get isOne(): boolean {
     return this.factors.size === 0;
   }
 
-  /** The product as an expression (SymPy as_expr). */
+  /**
+   * The product as an expression (SymPy as_expr).
+   *
+   * @returns The product of the stored factors raised to their exponents.
+   * @see SymPy `sympy.core.exprtools.Factors.as_expr`
+   */
   asExpr(): Expr {
     const args: Expr[] = [];
     for (const [factor, e] of this.factors) {
@@ -140,7 +173,13 @@ export class Factors {
     return mul(...args);
   }
 
-  /** Factors of self * other (SymPy mul). */
+  /**
+   * Factors of self * other (SymPy mul).
+   *
+   * @param other - The other operand.
+   * @returns The product of the operands.
+   * @see SymPy `sympy.core.exprtools.Factors.mul`
+   */
   mul(other: Factors | ExprLike): Factors {
     const o = other instanceof Factors ? other : new Factors(other);
     if (this.isZero || o.isZero) return new Factors(S.Zero);
@@ -162,6 +201,11 @@ export class Factors {
   /**
    * self and other with their common part removed (SymPy div): the
    * quotient and the remaining factors of other.
+   *
+   * @param other - The other operand.
+   * @returns The numerator and denominator products after cancelling common factors.
+   * @throws RangeError when the divisor is zero.
+   * @see SymPy `sympy.core.exprtools.Factors.div`
    */
   div(other: Factors | ExprLike): [Factors, Factors] {
     const quo = new ExprMap(this.factors);
@@ -217,7 +261,13 @@ export class Factors {
     return [new Factors(quo), new Factors(rem)];
   }
 
-  /** Remove the common factors, allowing a zero denominator (SymPy normal). */
+  /**
+   * Remove the common factors, allowing a zero denominator (SymPy normal).
+   *
+   * @param other - The other operand.
+   * @returns The reduced pair of factor products.
+   * @see SymPy `sympy.core.exprtools.Factors.normal`
+   */
   normal(other: Factors | ExprLike): [Factors, Factors] {
     if (!(other instanceof Factors)) {
       const o = new Factors(other);
@@ -228,14 +278,27 @@ export class Factors {
     return this.div(other);
   }
 
-  /** Raise the product to a nonnegative integer power. */
+  /**
+   * Raise the product to a nonnegative integer power.
+   *
+   * @param other - The other operand.
+   * @returns The resulting power.
+   * @throws RangeError when the exponent is not a nonnegative integer.
+   * @see SymPy `sympy.core.exprtools.Factors.pow`
+   */
   pow(other: Factors | ExprLike): Factors {
     const e = other instanceof Factors ? other.asExpr() : sympify(other);
     if (!(e instanceof Rational) || !e.isInteger || e.p < 0n) throw new RangeError('expected non-negative integer');
     return new Factors(new ExprMap(e.isZero ? [] : [...this.factors].map(([b, x]) => [b, mul(x, e)] as const)));
   }
 
-  /** Common bases with the smaller provable exponent (SymPy gcd). */
+  /**
+   * Common bases with the smaller provable exponent (SymPy gcd).
+   *
+   * @param other - The other operand.
+   * @returns The common bases raised to their smaller exponents.
+   * @see SymPy `sympy.core.exprtools.Factors.gcd`
+   */
   gcd(other: Factors | ExprLike): Factors {
     const o = other instanceof Factors ? other : new Factors(other);
     if (!(other instanceof Factors) && o.isZero) return new Factors(this);
@@ -249,7 +312,14 @@ export class Factors {
     return new Factors(factors);
   }
 
-  /** Union of bases with their larger exponent (SymPy lcm). */
+  /**
+   * Union of bases with their larger exponent (SymPy lcm).
+   *
+   * @param other - The other operand.
+   * @returns The combined bases raised to their larger exponents.
+   * @throws TypeError when the relative order of symbolic exponents cannot be decided.
+   * @see SymPy `sympy.core.exprtools.Factors.lcm`
+   */
   lcm(other: Factors | ExprLike): Factors {
     const o = other instanceof Factors ? other : new Factors(other);
     if (!(other instanceof Factors) && (this.isZero || o.isZero)) return new Factors(S.Zero);
@@ -266,28 +336,71 @@ export class Factors {
     return new Factors(factors);
   }
 
-  /** The numerator Factors of self / other (SymPy quo, the / operator). */
+  /**
+   * The numerator Factors of self / other (SymPy quo, the / operator).
+   *
+   * @param other - The other operand.
+   * @returns The numerator Factors of self / other (SymPy quo, the / operator).
+   * @see SymPy `sympy.core.exprtools.Factors.quo`
+   */
   quo(other: Factors | ExprLike): Factors {
     return this.div(other)[0];
   }
-  /** The denominator Factors of self / other (SymPy rem). */
+  /**
+   * The denominator Factors of self / other (SymPy rem).
+   *
+   * @param other - The other operand.
+   * @returns The denominator Factors of self / other (SymPy rem).
+   * @see SymPy `sympy.core.exprtools.Factors.rem`
+   */
   rem(other: Factors | ExprLike): Factors {
     return this.div(other)[1];
   }
 
-  /** SymPy repr: Factors({x: 1, y: 2}), the bases in SymPy's order. */
+  /**
+   * Factors({x: 1, y: 2}), the bases in SymPy's order.
+   *
+   * @returns The formatted string.
+   */
   toString(): string {
     const items = ordered([...this.factors.keys()]).map((k) => `${str(k)}: ${str(getOrThrow(this.factors, k))}`);
     return `Factors({${items.join(', ')}})`;
   }
 }
 
-/** A commutative term as a coefficient times a quotient of two factor products. */
+/**
+ * A commutative term as a coefficient times a quotient of two factor products.
+ *
+ * @see SymPy `sympy.core.exprtools.Term`
+ */
 export class Term {
+  /**
+   * The multiplicative coefficient of the term.
+   *
+   * @see SymPy `sympy.core.exprtools.Term.coeff`
+   */
   readonly coeff: Expr;
+  /**
+   * The factorization of the numerator.
+   *
+   * @see SymPy `sympy.core.exprtools.Term.numer`
+   */
   readonly numer: Factors;
+  /**
+   * The factorization of the denominator.
+   *
+   * @see SymPy `sympy.core.exprtools.Term.denom`
+   */
   readonly denom: Factors;
 
+  /**
+   * Creates a `Term`.
+   *
+   * @param term - The expression to decompose, or the coefficient when factors are supplied.
+   * @param numer - The factorization of the numerator.
+   * @param denom - The factorization of the denominator.
+   * @throws TypeError when the expression is noncommutative.
+   */
   constructor(term: ExprLike, numer?: Factors, denom?: Factors) {
     const expr = sympify(term);
     if (numer !== undefined || denom !== undefined) {
@@ -314,23 +427,57 @@ export class Term {
     this.denom = new Factors(denominator);
   }
 
+  /**
+   * Reconstructs the expression from its coefficient and factors.
+   *
+   * @returns The coefficient times the numerator divided by the denominator.
+   * @see SymPy `sympy.core.exprtools.Term.as_expr`
+   */
   asExpr(): Expr {
     return mul(this.coeff, this.numer.asExpr(), pow(this.denom.asExpr(), -1));
   }
 
+  /**
+   * Multiplies the terms and cancels shared numerator and denominator factors.
+   *
+   * @param other - The other operand.
+   * @returns The product of the operands.
+   * @see SymPy `sympy.core.exprtools.Term.mul`
+   */
   mul(other: Term): Term {
     const [numer, denom] = this.numer.mul(other.numer).normal(this.denom.mul(other.denom));
     return new Term(mul(this.coeff, other.coeff), numer, denom);
   }
 
+  /**
+   * Takes the reciprocal of the term.
+   *
+   * @returns The reciprocal term.
+   * @see SymPy `sympy.core.exprtools.Term.inv`
+   */
   inv(): Term {
     return new Term(pow(this.coeff, -1), this.denom, this.numer);
   }
 
+  /**
+   * Divides by another term.
+   *
+   * @param other - The other operand.
+   * @returns The reduced quotient term.
+   * @see SymPy `sympy.core.exprtools.Term.quo`
+   */
   quo(other: Term): Term {
     return this.mul(other.inv());
   }
 
+  /**
+   * Raises the term to an integer power.
+   *
+   * @param exponent - The exponent.
+   * @returns The resulting power.
+   * @throws TypeError when the exponent is not an integer.
+   * @see SymPy `sympy.core.exprtools.Term.pow`
+   */
   pow(exponent: ExprLike): Term {
     const n = sympify(exponent);
     if (!(n instanceof Rational && n.isInteger)) throw new TypeError('Term powers require integer exponents');
@@ -338,20 +485,45 @@ export class Term {
     return new Term(pow(this.coeff, n), this.numer.pow(n), this.denom.pow(n));
   }
 
+  /**
+   * Computes the greatest common divisor of the two terms.
+   *
+   * @param other - The other operand.
+   * @returns The greatest common divisor of the two terms.
+   * @see SymPy `sympy.core.exprtools.Term.gcd`
+   */
   gcd(other: Term): Term {
     return new Term(termContent(this.coeff, other.coeff, false), this.numer.gcd(other.numer), this.denom.gcd(other.denom));
   }
 
+  /**
+   * Computes the least common multiple of the two terms.
+   *
+   * @param other - The other operand.
+   * @returns The least common multiple of the two terms.
+   * @see SymPy `sympy.core.exprtools.Term.lcm`
+   */
   lcm(other: Term): Term {
     return new Term(termContent(this.coeff, other.coeff, true), this.numer.lcm(other.numer), this.denom.lcm(other.denom));
   }
 
+  /**
+   * Tests for structural equality with the other object.
+   *
+   * @param other - The other operand.
+   * @returns Whether the two objects have equal components.
+   */
   equals(other: Term): boolean {
     const sameFactors = (a: Factors, b: Factors): boolean => a.factors.size === b.factors.size &&
       [...a.factors].every(([base, exponent]) => b.factors.get(base)?.key === exponent.key);
     return this.coeff.key === other.coeff.key && sameFactors(this.numer, other.numer) && sameFactors(this.denom, other.denom);
   }
 
+  /**
+   * Formats the object as a string.
+   *
+   * @returns The formatted string.
+   */
   toString(): string {
     return `Term(${str(this.coeff)}, ${String(this.numer)}, ${String(this.denom)})`;
   }

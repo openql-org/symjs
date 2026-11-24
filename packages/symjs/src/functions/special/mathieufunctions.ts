@@ -47,13 +47,73 @@ for (const name of ['mathieus', 'mathieuc', 'mathieusprime', 'mathieucprime'] as
   conjugateCommutes.add(name);
 }
 
-/** SymPy mathieus(a, q, z): the Mathieu sine function. */
+/**
+ * The Mathieu sine function.
+ *
+ * @param a - The characteristic value.
+ * @param q - The Mathieu parameter.
+ * @param z - The argument of the function.
+ * @returns The Mathieu sine function.
+ * @see SymPy `sympy.functions.special.mathieu_functions.mathieus`
+ * @example
+ * ```ts
+ * import { ex, mathieus } from '@symjs/symjs';
+ *
+ * mathieus(ex`a`, 0, ex`z`); // => sin(sqrt(a)*z)
+ * mathieus(ex`a`, ex`q`, ex`z`); // => mathieus(a, q, z)
+ * ```
+ */
 export const mathieus = (a: ExprLike, q: ExprLike, z: ExprLike): Expr => fn('mathieus', [a, q, z]);
-/** SymPy mathieuc(a, q, z): the Mathieu cosine function. */
+/**
+ * The Mathieu cosine function.
+ *
+ * @param a - The characteristic value.
+ * @param q - The Mathieu parameter.
+ * @param z - The argument of the function.
+ * @returns The Mathieu cosine function.
+ * @see SymPy `sympy.functions.special.mathieu_functions.mathieuc`
+ * @example
+ * ```ts
+ * import { ex, mathieuc } from '@symjs/symjs';
+ *
+ * mathieuc(ex`a`, 0, ex`z`); // => cos(sqrt(a)*z)
+ * mathieuc(ex`a`, ex`q`, ex`z`); // => mathieuc(a, q, z)
+ * ```
+ */
 export const mathieuc = (a: ExprLike, q: ExprLike, z: ExprLike): Expr => fn('mathieuc', [a, q, z]);
-/** SymPy mathieusprime(a, q, z): the derivative of the Mathieu sine function. */
+/**
+ * The derivative of the Mathieu sine function.
+ *
+ * @param a - The characteristic value.
+ * @param q - The Mathieu parameter.
+ * @param z - The argument of the function.
+ * @returns The derivative of the Mathieu sine function.
+ * @see SymPy `sympy.functions.special.mathieu_functions.mathieusprime`
+ * @example
+ * ```ts
+ * import { ex, mathieusprime } from '@symjs/symjs';
+ *
+ * mathieusprime(ex`a`, 0, ex`z`); // => sqrt(a)*cos(sqrt(a)*z)
+ * mathieusprime(ex`a`, ex`q`, ex`z`); // => mathieusprime(a, q, z)
+ * ```
+ */
 export const mathieusprime = (a: ExprLike, q: ExprLike, z: ExprLike): Expr => fn('mathieusprime', [a, q, z]);
-/** SymPy mathieucprime(a, q, z): the derivative of the Mathieu cosine function. */
+/**
+ * The derivative of the Mathieu cosine function.
+ *
+ * @param a - The characteristic value.
+ * @param q - The Mathieu parameter.
+ * @param z - The argument of the function.
+ * @returns The derivative of the Mathieu cosine function.
+ * @see SymPy `sympy.functions.special.mathieu_functions.mathieucprime`
+ * @example
+ * ```ts
+ * import { ex, mathieucprime } from '@symjs/symjs';
+ *
+ * mathieucprime(ex`a`, 0, ex`z`); // => -sqrt(a)*sin(sqrt(a)*z)
+ * mathieucprime(ex`a`, ex`q`, ex`z`); // => mathieucprime(a, q, z)
+ * ```
+ */
 export const mathieucprime = (a: ExprLike, q: ExprLike, z: ExprLike): Expr => fn('mathieucprime', [a, q, z]);
 
 registerFunctionHeads([

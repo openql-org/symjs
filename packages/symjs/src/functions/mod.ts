@@ -285,4 +285,17 @@ const modDefinition: FunctionDefinition = {
   eval: (p, q) => evalMod(p, q),
   rewrite: { floor: (p, q) => add(p, mul(-1, q, new Fn('floor', [mul(p, pow(q, -1))]))) },
 };
+/**
+ * Computes the remainder with the sign of the divisor.
+ *
+ * @param args - The dividend followed by the divisor.
+ * @returns The symbolic remainder.
+ * @see SymPy `sympy.core.mod.Mod`
+ * @example
+ * ```ts
+ * import { Mod } from '@symjs/symjs';
+ *
+ * Mod(5, 3); // => 2
+ * ```
+ */
 export const Mod: DefinedFunction = /* @__PURE__ */ defineFunction('Mod', modDefinition);

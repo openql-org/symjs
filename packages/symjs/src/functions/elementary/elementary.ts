@@ -695,7 +695,20 @@ function transformOrder(order: Order, name: 'conjugate' | 'transpose' | 'adjoint
   return impl.rebuildOrder?.(args) ?? new Order(args);
 }
 
-/** Complex conjugate, pushed through the expression tree. */
+/**
+ * Complex conjugate, pushed through the expression tree.
+ *
+ * @param xx - The argument of the function.
+ * @returns The complex conjugate.
+ * @see SymPy `sympy.functions.elementary.complexes.conjugate`
+ * @example
+ * ```ts
+ * import { conjugate, ex } from '@symjs/symjs';
+ *
+ * conjugate(2); // => 2
+ * conjugate(ex`I`); // => -I
+ * ```
+ */
 export function conjugate(xx: ExprLike): Expr {
   const x = sympify(xx);
   if (x instanceof Order) return transformOrder(x, 'conjugate', conjugate);
@@ -746,6 +759,16 @@ export function conjugate(xx: ExprLike): Expr {
 /**
  * Hermitian adjoint (SymPy adjoint): conjugate of commutative factors,
  * reversed product order for non-commutative ones.
+ *
+ * @param xx - The argument of the function.
+ * @returns The conjugate transpose.
+ * @see SymPy `sympy.functions.elementary.complexes.adjoint`
+ * @example
+ * ```ts
+ * import { adjoint } from '@symjs/symjs';
+ *
+ * adjoint(2); // => 2
+ * ```
  */
 export function adjoint(xx: ExprLike): Expr {
   const x = sympify(xx);
@@ -774,7 +797,19 @@ export function adjoint(xx: ExprLike): Expr {
   return new Fn('adjoint', [x]);
 }
 
-/** Transpose (SymPy transpose): commutative scalars are unchanged, products reverse. */
+/**
+ * Transpose (SymPy transpose): commutative scalars are unchanged, products reverse.
+ *
+ * @param xx - The argument of the function.
+ * @returns The transpose.
+ * @see SymPy `sympy.functions.elementary.complexes.transpose`
+ * @example
+ * ```ts
+ * import { transpose } from '@symjs/symjs';
+ *
+ * transpose(2); // => 2
+ * ```
+ */
 export function transpose(xx: ExprLike): Expr {
   const x = sympify(xx);
   if (x instanceof Order) return transformOrder(x, 'transpose', transpose);
@@ -969,6 +1004,10 @@ const INFINITE_LIMITS: Partial<Record<FnName, (f: InfiniteForm) => Expr | undefi
  * keeps the call as written (SymPy cos(pi/2 - x, evaluate=False)).
  *
  * @experimental May change in a minor release.
+ * @param name - The symbolic name or names.
+ * @param args - The arguments in positional order.
+ * @param opts - Set `evaluate` to false to suppress automatic evaluation.
+ * @returns The symbolic function value or its unevaluated application.
  */
 export function fn(name: FnName, args: readonly ExprLike[], opts: { evaluate?: boolean } = {}): Expr {
   const xs = args.map(sympify);
@@ -1206,15 +1245,80 @@ export function log(x: ExprLike, base?: ExprLike): Expr {
   }
   return mul(fn('log', [a]), pow(fn('log', [b]), -1));
 }
+/**
+ * Computes the absolute value of a real number or the modulus of a complex number.
+ *
+ * @param x - The argument of the function.
+ * @returns The absolute value of a real number or the modulus of a complex number.
+ * @see SymPy `sympy.functions.elementary.complexes.Abs`
+ * @example
+ * ```ts
+ * import { abs, ex } from '@symjs/symjs';
+ *
+ * abs(-1); // => 1
+ * abs(ex`8*I`); // => 8
+ * ```
+ */
 export const abs = (x: ExprLike): Expr => fn('abs', [x]);
+/**
+ * Extracts the real part of a complex expression.
+ *
+ * @param x - The argument of the function.
+ * @returns The real part of a complex expression.
+ * @see SymPy `sympy.functions.elementary.complexes.re`
+ * @example
+ * ```ts
+ * import { ex, re } from '@symjs/symjs';
+ *
+ * re(ex`2*I`); // => 0
+ * re(ex`2*E`); // => 2*E
+ * ```
+ */
 export const re = (x: ExprLike): Expr => fn('re', [x]);
+/**
+ * Extracts the imaginary part of a complex expression.
+ *
+ * @param x - The argument of the function.
+ * @returns The imaginary part of a complex expression.
+ * @see SymPy `sympy.functions.elementary.complexes.im`
+ * @example
+ * ```ts
+ * import { ex, im } from '@symjs/symjs';
+ *
+ * im(ex`2*E`); // => 0
+ * im(ex`I*x`); // => re(x)
+ * ```
+ */
 export const im = (x: ExprLike): Expr => fn('im', [x]);
+/**
+ * Computes the principal argument of a complex number in radians.
+ *
+ * @param x - The argument of the function.
+ * @returns The principal argument of a complex number in radians.
+ * @see SymPy `sympy.functions.elementary.complexes.arg`
+ * @example
+ * ```ts
+ * import { arg, ex } from '@symjs/symjs';
+ *
+ * arg(2.0); // => 0
+ * arg(ex`I`); // => pi/2
+ * ```
+ */
 export const arg = (x: ExprLike): Expr => fn('arg', [x]);
 
 /**
  * Hermitian adjoint of a scalar is its conjugate.
  *
  * @experimental May change in a minor release.
+ * @param xx - The argument of the function.
+ * @returns The Hermitian conjugate.
+ * @see SymPy `sympy.physics.quantum.dagger.Dagger`
+ * @example
+ * ```ts
+ * import { dagger } from '@symjs/symjs';
+ *
+ * dagger(2); // => 2
+ * ```
  */
 export const dagger = conjugate;
 

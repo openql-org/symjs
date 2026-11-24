@@ -25,7 +25,14 @@ import { at, first, pair } from '../core/guard';
 export type { RewriteRule };
 export { rewriteRules };
 
-/** @experimental May change in a minor release. */
+/**
+ * Registers a rule for expressing one function in terms of another.
+ *
+ * @experimental May change in a minor release.
+ * @param fnName - The name of the function being rewritten.
+ * @param target - The target function or representation.
+ * @param rule - The rule that constructs the replacement expression.
+ */
 export function registerRewrite(fnName: string, target: string, rule: RewriteRule): void {
   addRewrite(fnName, target, rule);
 }
@@ -83,6 +90,18 @@ function withArgs(e: Expr, args: Expr[]): Expr {
  * Rewrite in terms of `target` (a SymPy function or class name such as
  * 'exp', 'cos', 'gamma', 'Piecewise'). With `pattern`, only nodes of those
  * functions are rewritten.
+ *
+ * @param exprIn - The input expression.
+ * @param target - The target function or representation.
+ * @param opts - `pattern` restricts the source heads, `deep` controls recursion and `hints` supplies arguments to the rule.
+ * @returns The expression rewritten in the target representation where rules apply.
+ * @see SymPy `sympy.core.basic.Basic.rewrite`
+ * @example
+ * ```ts
+ * import { ex, rewrite } from '@symjs/symjs';
+ *
+ * rewrite(ex`SingularityFunction(x, -3, -1) - SingularityFunction(x, 0, -2) + SingularityFunction(x, 4, 5)`, 'HeavisideDiracDelta'); // => (x - 4)**5*Heaviside(x - 4, 1) + DiracDelta(x + 3) - DiracDelta(x, 1)
+ * ```
  */
 export function rewrite(exprIn: ExprLike, target: string, opts: { pattern?: readonly string[]; deep?: boolean; hints?: Readonly<Record<string, Expr>> } = {}): Expr {
   const expr = sympify(exprIn);

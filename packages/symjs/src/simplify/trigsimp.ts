@@ -174,9 +174,20 @@ function couldExtractMinusSignCoeff(e: Expr): boolean {
 // ---------------------------------------------------------------------------
 
 /**
- * SymPy futrig: Fu's rules applied bottom-up to every subexpression; with
+ * Fu's rules applied bottom-up to every subexpression; with
  * hyper (the default), hyperbolic functions are simplified through their
  * trigonometric forms (Osborne's rule).
+ *
+ * @param eIn - The input expression.
+ * @param opts - `hyper` enables simplification of hyperbolic functions.
+ * @returns The simplified trigonometric expression.
+ * @see SymPy `sympy.simplify.trigsimp.futrig`
+ * @example
+ * ```ts
+ * import { ex, futrig } from '@symjs/symjs';
+ *
+ * futrig(ex`sinh(x)/tanh(x)`); // => cosh(x)
+ * ```
  */
 export function futrig(eIn: ExprLike, opts: { hyper?: boolean } = {}): Expr {
   const old = sympify(eIn);
@@ -304,9 +315,21 @@ const FAMS: readonly Fam[] = [
 const F = (name: FnName, a: ExprLike): Expr => fn(name, [a]);
 
 /**
- * SymPy trigsimp_groebner: simplification modulo the ideal of the
+ * simplification modulo the ideal of the
  * trigonometric relations (sin**2 + cos**2 = 1, tan*cos = sin, the
  * multiple-angle formulas) with ratsimpmodprime.
+ *
+ * @param exprIn - The input expression.
+ * @param opts - The generators, monomial order and search settings in {@link TrigsimpOptions}.
+ * @returns The simplified trigonometric expression.
+ * @see SymPy `sympy.simplify.trigsimp.trigsimp_groebner`
+ * @example
+ * ```ts
+ * import { ex, trigsimpGroebner } from '@symjs/symjs';
+ *
+ * trigsimpGroebner(ex`sin(x)*cos(x)`); // => sin(x)*cos(x)
+ * trigsimpGroebner(ex`sinh(2*x)/sinh(x)`); // => 2*cosh(x)
+ * ```
  */
 export function trigsimpGroebner(exprIn: ExprLike, opts: TrigsimpOptions = {}): Expr {
   const order = opts.order ?? 'grlex';
@@ -834,6 +857,17 @@ function expAtoms(e: Expr): ExprMap<true> {
  * exptrigsimp): every subexpression is replaced by the shortest of itself
  * and its forms in exp and cos, and products of sums with exponentials
  * are recombined into cosh, sinh and tanh.
+ *
+ * @param ex - The expression to transform.
+ * @returns The simplified trigonometric expression.
+ * @see SymPy `sympy.simplify.trigsimp.exptrigsimp`
+ * @example
+ * ```ts
+ * import { ex, exptrigsimp } from '@symjs/symjs';
+ *
+ * exptrigsimp(ex`exp(-z) + exp(z)`); // => 2*cosh(z)
+ * exptrigsimp(ex`-sinh(z) + cosh(z)`); // => exp(-z)
+ * ```
  */
 export function exptrigsimp(ex: ExprLike): Expr {
   const expr = sympify(ex);

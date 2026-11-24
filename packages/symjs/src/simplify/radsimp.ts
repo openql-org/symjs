@@ -24,9 +24,20 @@ export { radsimp } from './sqrtdenest';
 const isAbs = (e: Expr): e is Fn => e instanceof Fn && e.name === 'abs';
 
 /**
- * SymPy collect_abs: the arguments of several Abs factors of a product (or of one Abs with a
+ * The arguments of several Abs factors of a product (or of one Abs with a
  * negative real power) collected under a single Abs, which stays unevaluated when evaluating it
  * would split it again: Abs(x + 1)/Abs(x**2 - 1) -> Abs((x + 1)/(x**2 - 1)).
+ *
+ * @param e - The input expression.
+ * @returns The product with compatible absolute values combined.
+ * @see SymPy `sympy.simplify.radsimp.collect_abs`
+ * @example
+ * ```ts
+ * import { collectAbs, ex } from '@symjs/symjs';
+ *
+ * collectAbs(ex`1/Abs(x)`); // => Abs(1/x)
+ * collectAbs(ex`Abs(x + 1)/Abs(x**2 - 1)`); // => Abs((x + 1)/(x**2 - 1))
+ * ```
  */
 export function collectAbs(e: Expr): Expr {
   const collect1 = (m: Expr, factors: readonly Expr[], nc: readonly Expr[] = []): Expr => {
@@ -50,7 +61,23 @@ export function collectAbs(e: Expr): Expr {
   return mapBottomUp(muls, (m) => (m instanceof Pow ? collect1(m, [m]) : m));
 }
 
-/** Collect numeric square-root factors, including I; optionally return the terms and radical count. */
+/**
+ * Collect numeric square-root factors, including I; optionally return the terms and radical count.
+ *
+ * @remarks
+ * For `collect_sqrt(a + b, evaluate=False)`, SymPy displays `((a + b,), 0)`.
+ * @param expr - The input expression.
+ * @param opts - `evaluate: false` requests the terms and the count containing radicals.
+ * @returns The collected expression, or a list of terms and a radical count.
+ * @see SymPy `sympy.simplify.radsimp.collect_sqrt`
+ * @example
+ * ```ts
+ * import { collectSqrt, ex } from '@symjs/symjs';
+ *
+ * collectSqrt(ex`sqrt(2)*a + sqrt(2)*b`); // => sqrt(2)*(a + b)
+ * collectSqrt(ex`a + b`, { evaluate: false }); // => [[a + b], 0]
+ * ```
+ */
 export function collectSqrt(expr: ExprLike, opts: { evaluate: false }): [Expr[], number];
 export function collectSqrt(expr: ExprLike, opts?: { evaluate?: true }): Expr;
 export function collectSqrt(expr: ExprLike, opts: { evaluate?: boolean } = {}): Expr | [Expr[], number] {
@@ -217,7 +244,20 @@ export function collect(ex: ExprLike, syms: readonly Expr[] | Expr, opts: Collec
 
 impl.collect = (e, syms) => collect(e, syms);
 
-/** SymPy rcollect(expr, *vars): collect recursively, innermost sums first. */
+/**
+ * Collect recursively, innermost sums first.
+ *
+ * @param ex - The expression to transform.
+ * @param vars - The vars.
+ * @returns The recursively collected expression.
+ * @see SymPy `sympy.simplify.radsimp.rcollect`
+ * @example
+ * ```ts
+ * import { ex, rcollect } from '@symjs/symjs';
+ *
+ * rcollect(ex`(x**2*y + x*y + x + y)/(x + y)`, ex`y`); // => (x + y*(x**2 + x + 1))/(x + y)
+ * ```
+ */
 export function rcollect(ex: ExprLike, ...vars: Expr[]): Expr {
   const go = (e: Expr): Expr => {
     if (e.isAtom || !vars.some((v) => e.has(v))) return e;

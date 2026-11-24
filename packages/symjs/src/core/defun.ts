@@ -53,27 +53,67 @@ export interface DefinedFunction {
   isApplied(e: Expr): e is DefinedFunctionCall;
 }
 
-/** An application of a function created by defineFunction. *
+/**
+ * An application of a function created by defineFunction. *
+ *
  * @experimental May change in a minor release.
+ * @example
+ * ```ts
+ * import { DefinedFunctionCall, defineFunction, ex } from '@symjs/symjs';
+ *
+ * defineFunction('f', { nargs: 1 })(ex`x`) instanceof DefinedFunctionCall; // => True
+ * ```
  */
 export class DefinedFunctionCall extends ExtensionExpr {
+  /**
+   * Whether the function supports Taylor expansion in its argument.
+   *
+   * @returns Whether a Taylor expansion in the argument is supported.
+   */
   override get isTaylorExpandable(): boolean {
     return true;
   }
+  /**
+   * Creates a `DefinedFunctionCall`.
+   *
+   * @param name - The symbolic name or names.
+   * @param args - The arguments in positional order.
+   * @param definition - The rules used to evaluate or transform this application.
+   */
   constructor(
     name: string,
     args: readonly Expr[],
+    /** The rules used to evaluate or transform this application. */
     readonly definition: FunctionDefinition,
   ) {
     super(name, args);
   }
+  /**
+   * Rebuilds the node with the supplied arguments.
+   *
+   * @param args - The replacement arguments, in node order.
+   * @returns The expression rebuilt with the new arguments.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return applyDefined(this.name, this.definition, args);
   }
+  /**
+   * Formats the node in LaTeX using the supplied child printer.
+   *
+   * @param print - The printer to use for child expressions.
+   * @returns The formatted string.
+   */
   override printLatex(print: (e: Expr) => string): string {
     // by default like an undefined function of the same name (SymPy \operatorname{name}{\left(x \right)})
     return this.definition.latex ? this.definition.latex(this.args.map(print)) : print(new UndefFn(this.name, this.args));
   }
+  /**
+   * Computes the derivative using the node's differentiation rule.
+   *
+   * @param x - The differentiation variable.
+   * @param d - The callback for differentiating a subexpression.
+   * @returns The derivative using the node's differentiation rule.
+   */
   override diffSelf(x: Expr, d: (e: Expr, x: Expr) => Expr): Expr {
     const fdiff = (args: readonly Expr[], i: number): ExprLike => {
       const result = this.definition.fdiff?.(args, i) ?? NoMatch;
@@ -92,14 +132,34 @@ export class DefinedFunctionCall extends ExtensionExpr {
     const xi = new Dummy(`xi_${i + 1}`);
     return new SubsNode([derivative(this.withArgs(args.map((b, j) => (j === i ? xi : b))), [[xi, 1]]), xi, a]);
   }
+  /**
+   * Applies the rule for rewriting this function in terms of the target.
+   *
+   * @param target - The target function or representation.
+   * @param args - The arguments in positional order.
+   * @returns The specialized result, or `undefined` to use the default behavior.
+   */
   override rewriteSelf(target: string, args: readonly Expr[]): Expr | undefined {
     const r = this.definition.rewrite?.[target]?.(...args);
     return r === undefined ? undefined : sympify(r);
   }
+  /**
+   * Applies the function's expansion rule for the selected hint.
+   *
+   * @param hint - The expansion rule to apply.
+   * @param hints - The additional options for the transformation.
+   * @returns The specialized result, or `undefined` to use the default behavior.
+   */
   override expandSelf(hint: string, hints: Readonly<Record<string, unknown>>): Expr | undefined {
     const r = this.definition.expand?.[hint]?.(this, hints);
     return r === undefined ? undefined : sympify(r);
   }
+  /**
+   * Evaluates the node using its numeric implementation when applicable.
+   *
+   * @param _dps - The precision in decimal digits.
+   * @returns The specialized result, or `undefined` to use the default behavior.
+   */
   override numericValue(_dps: number): Expr | undefined {
     const f = this.definition.evalf;
     if (!f || this.args.some((a) => !a.isNumber)) return undefined;
@@ -124,6 +184,10 @@ function applyDefined(name: string, def: FunctionDefinition, args: readonly Expr
  * Define a function with its own evaluation, derivative, rewrites and
  * expansions (SymPy: subclassing Function).
  *
+ * @param name - The symbolic name or names.
+ * @param def - The function's evaluation and transformation rules.
+ * @returns The callable function head.
+ * @throws SyntaxError when the function name is invalid.
  * @example
  * ```ts
  * import { cos, defineFunction, fn, pi, sub, symbols } from '@symjs/symjs';
@@ -160,6 +224,16 @@ export function defineFunction(name: string, def: FunctionDefinition = {}): Defi
  * symbolic otherwise, evaluated by evalf/N when its arguments are numbers.
  *
  * @experimental May change in a minor release.
+ * @param name - The symbolic name or names.
+ * @param impl - The numeric implementation invoked on numerical arguments.
+ * @returns The callable function head.
+ * @see SymPy `sympy.utilities.lambdify.implemented_function`
+ * @example
+ * ```ts
+ * import { implementedFunction } from '@symjs/symjs';
+ *
+ * implementedFunction('f', x => x + 1)(2).evalf(); // => 3.00000000000000
+ * ```
  */
 export function implementedFunction(name: string, impl: (...args: number[]) => number): DefinedFunction {
   return defineFunction(name, { evalf: impl });
@@ -205,12 +279,22 @@ function parameters(f: (...args: never[]) => unknown): [number, number] | undefi
 }
 
 /**
- * SymPy arity(f): the number of arguments f takes, the possible numbers
+ * The number of arguments f takes, the possible numbers
  * [n, n + 1, ...] when some have default values, or NoMatch when it takes
  * any number (a rest parameter; SymPy None). A function of defineFunction
  * has the counts of its `nargs` (else of its `eval`). TypeScript optional
  * parameters leave no trace at run time and count as required (symjs `log`
  * has arity 2, SymPy's (1, 2)).
+ *
+ * @param f - The callable to inspect.
+ * @returns A count, a sorted list of allowed counts, or `NoMatch` for unrestricted arity.
+ * @see SymPy `sympy.core.function.arity`
+ * @example
+ * ```ts
+ * import { arity, sin } from '@symjs/symjs';
+ *
+ * arity(sin); // => 1
+ * ```
  */
 export function arity(f: (...args: never[]) => unknown): number | number[] | NoMatchResult {
   const counts = definedCounts.get(f);

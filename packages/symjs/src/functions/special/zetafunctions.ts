@@ -48,15 +48,82 @@ const binom = (n: bigint, k: bigint): bigint => {
 
 // ---- constructors ---------------------------------------------------------------------
 
-/** SymPy lerchphi(z, s, a): the Lerch transcendent sum_n z**n/(n + a)**s. */
+/**
+ * The Lerch transcendent sum_n z**n/(n + a)**s.
+ *
+ * @param z - The argument of the function.
+ * @param s - The complex order.
+ * @param a - The shift parameter.
+ * @returns The Lerch transcendent sum_n z**n/(n + a)**s.
+ * @see SymPy `sympy.functions.special.zeta_functions.lerchphi`
+ * @example
+ * ```ts
+ * import { ex, lerchphi } from '@symjs/symjs';
+ *
+ * lerchphi(ex`z`, ex`s`, ex`a`); // => lerchphi(z, s, a)
+ * ```
+ */
 export const lerchphi = (z: ExprLike, s: ExprLike, a: ExprLike): Expr => fn('lerchphi', [z, s, a]);
-/** SymPy polylog(s, z): the polylogarithm sum_n z**n/n**s. */
+/**
+ * The polylogarithm sum_n z**n/n**s.
+ *
+ * @param s - The complex order.
+ * @param z - The argument of the function.
+ * @returns The polylogarithm sum_n z**n/n**s.
+ * @see SymPy `sympy.functions.special.zeta_functions.polylog`
+ * @example
+ * ```ts
+ * import { ex, polylog } from '@symjs/symjs';
+ *
+ * polylog(ex`s`, 0); // => 0
+ * polylog(ex`s`, 1); // => zeta(s)
+ * ```
+ */
 export const polylog = (s: ExprLike, z: ExprLike): Expr => fn('polylog', [s, z]);
-/** SymPy dirichlet_eta(s) and dirichlet_eta(s, a): the alternating zeta function. */
+/**
+ * The alternating zeta function.
+ *
+ * @param s - The complex order.
+ * @param a - The shift parameter.
+ * @returns The alternating zeta function.
+ * @see SymPy `sympy.functions.special.zeta_functions.dirichlet_eta`
+ * @example
+ * ```ts
+ * import { dirichletEta } from '@symjs/symjs';
+ *
+ * dirichletEta(1); // => log(2)
+ * ```
+ */
 export const dirichletEta = (s: ExprLike, a?: ExprLike): Expr => fn('dirichlet_eta', a === undefined ? [s] : [s, a]);
-/** SymPy riemann_xi(s): the Riemann Xi function s*(s - 1)*gamma(s/2)*zeta(s)/(2*pi**(s/2)). */
+/**
+ * The Riemann Xi function s*(s - 1)*gamma(s/2)*zeta(s)/(2*pi**(s/2)).
+ *
+ * @param s - The complex order.
+ * @returns The Riemann Xi function s*(s - 1)*gamma(s/2)*zeta(s)/(2*pi**(s/2)).
+ * @see SymPy `sympy.functions.special.zeta_functions.riemann_xi`
+ * @example
+ * ```ts
+ * import { riemannXi } from '@symjs/symjs';
+ *
+ * riemannXi(0); // => 1/2
+ * ```
+ */
 export const riemannXi = (s: ExprLike): Expr => fn('riemann_xi', [s]);
-/** SymPy stieltjes(n) and stieltjes(n, a): the (generalized) Stieltjes constants. */
+/**
+ * The (generalized) Stieltjes constants.
+ *
+ * @param n - The index.
+ * @param a - The shift parameter.
+ * @returns The (generalized) Stieltjes constants.
+ * @see SymPy `sympy.functions.special.zeta_functions.stieltjes`
+ * @example
+ * ```ts
+ * import { stieltjes } from '@symjs/symjs';
+ *
+ * stieltjes(-1); // => zoo
+ * stieltjes(0); // => EulerGamma
+ * ```
+ */
 export const stieltjes = (n: ExprLike, a?: ExprLike): Expr => fn('stieltjes', a === undefined ? [n] : [n, a]);
 
 const zeta = (s: Expr, a?: Expr): Expr => fn('zeta', a === undefined ? [s] : [s, a]);

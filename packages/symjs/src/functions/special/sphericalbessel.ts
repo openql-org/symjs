@@ -46,7 +46,20 @@ const scale = (p: Poly, c: bigint): Poly => p.map((x) => x * c);
 /** p - q for q not longer than p. */
 const sub = (p: Poly, q: Poly): Poly => p.map((x, i) => x - (q[i] ?? 0n));
 
-/** SymPy spherical_bessel_fn(n, z) (polys/orthopolys.py): fn(0) = 1/z, fn(1) = 1/z**2, fn(n - 1) + fn(n + 1) = (2n + 1)/z fn(n). */
+/**
+ * fn(0) = 1/z, fn(1) = 1/z**2, fn(n - 1) + fn(n + 1) = (2n + 1)/z fn(n).
+ *
+ * @param n - The spherical Bessel order.
+ * @param z - The argument of the function.
+ * @returns The coefficient polynomial in the reciprocal argument.
+ * @see SymPy `sympy.polys.orthopolys.spherical_bessel_fn`
+ * @example
+ * ```ts
+ * import { ex, sphericalBesselFn } from '@symjs/symjs';
+ *
+ * sphericalBesselFn(1, ex`z`); // => z**(-2)
+ * ```
+ */
 export function sphericalBesselFn(n: number, z: ExprLike): Expr {
   let m2: Poly;
   let m1: Poly;
@@ -214,15 +227,48 @@ registerRewrite('airybiprime', 'hyper', (args) => {
 
 // ---- public API ---------------------------------------------------------------------
 
-/** SymPy hn1(n, z) = jn(n, z) + I*yn(n, z): spherical Hankel function of the first kind. */
+/**
+ * spherical Hankel function of the first kind.
+ *
+ * @param n - The spherical Bessel order.
+ * @param z - The argument of the function.
+ * @returns The value of the specified Hankel function.
+ * @see SymPy `sympy.functions.special.bessel.hn1`
+ * @example
+ * ```ts
+ * import { ex, hn1 } from '@symjs/symjs';
+ *
+ * hn1(0, ex`z`); // => hn1(0, z)
+ * ```
+ */
 export const hn1 = (n: ExprLike, z: ExprLike): Expr => fn('hn1', [n, z]);
-/** SymPy hn2(n, z) = jn(n, z) - I*yn(n, z): spherical Hankel function of the second kind. */
+/**
+ * spherical Hankel function of the second kind.
+ *
+ * @param n - The spherical Bessel order.
+ * @param z - The argument of the function.
+ * @returns The value of the specified Hankel function.
+ * @see SymPy `sympy.functions.special.bessel.hn2`
+ * @example
+ * ```ts
+ * import { ex, hn2 } from '@symjs/symjs';
+ *
+ * hn2(0, ex`z`); // => hn2(0, z)
+ * ```
+ */
 export const hn2 = (n: ExprLike, z: ExprLike): Expr => fn('hn2', [n, z]);
 
 /**
- * SymPy jn_zeros(n, k, dps=15): the first k positive zeros of the spherical
+ * The first k positive zeros of the spherical
  * Bessel function jn(n, z), i.e. of besselj(n + 1/2, z), as Floats with dps digits.
  * Only SymPy's default method ("sympy", by mpmath besseljzero) is available.
+ *
+ * @param n - The spherical Bessel order.
+ * @param k - The number of positive zeros.
+ * @param opts - `dps` is the decimal precision and `method` selects the supported `'sympy'` algorithm.
+ * @returns The requested positive zeros in ascending order.
+ * @throws NotImplementedError when a method other than `'sympy'` is requested.
+ * @see SymPy `sympy.functions.special.bessel.jn_zeros`
  * @example
  * ```ts
  * import { jnZeros } from '@symjs/symjs';

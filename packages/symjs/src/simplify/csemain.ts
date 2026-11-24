@@ -211,14 +211,28 @@ const BASIC_OPTIMIZATIONS: readonly CseOptimization[] = [
   [(e) => factorTerms(e), null],
 ];
 
-/** SymPy preprocess_for_cse: the preprocessors in order. */
+/**
+ * The preprocessors in order.
+ *
+ * @param expr - The input expression.
+ * @param optimizations - The ordered preprocessing and postprocessing pairs.
+ * @returns The preprocessors in order.
+ * @see SymPy `sympy.simplify.cse_main.preprocess_for_cse`
+ */
 export function preprocessForCse(expr: Expr, optimizations: readonly CseOptimization[]): Expr {
   let e = expr;
   for (const [pre] of optimizations) if (pre) e = pre(e);
   return e;
 }
 
-/** SymPy postprocess_for_cse: the postprocessors in reverse order. */
+/**
+ * The postprocessors in reverse order.
+ *
+ * @param expr - The input expression.
+ * @param optimizations - The ordered preprocessing and postprocessing pairs.
+ * @returns The postprocessors in reverse order.
+ * @see SymPy `sympy.simplify.cse_main.postprocess_for_cse`
+ */
 export function postprocessForCse(expr: Expr, optimizations: readonly CseOptimization[]): Expr {
   let e = expr;
   for (const [, post] of [...optimizations].reverse()) if (post) e = post(e);
@@ -611,6 +625,20 @@ const isCseResult = (v: unknown): v is CseResult => Array.isArray(v) && v.length
  * expression, an array, a Set, a Map of expressions, a matrix or a string).
  * Explicit matrices keep their mutability. `postprocess` receives the two
  * results and its value is returned instead.
+ *
+ * @remarks
+ * For `cse(x)`, SymPy displays `([], [x])`. For `cse(x, list=False)`, SymPy displays `([], x)`.
+ * @param exprs - The expressions to process.
+ * @param options - The temporary symbols, ordering and output settings in {@link CseOptions}.
+ * @returns The common-subexpression replacements and reduced input, or the postprocessor's return value.
+ * @see SymPy `sympy.simplify.cse_main.cse`
+ * @example
+ * ```ts
+ * import { cse, ex } from '@symjs/symjs';
+ *
+ * cse(ex`x`); // => [[], [x]]
+ * cse(ex`x`, { list: false }); // => [[], x]
+ * ```
  */
 export function cse(exprs: CseItem | Iterable<CseItem>, options?: CseOptions & { list?: true; postprocess?: undefined }): CseResult;
 export function cse<R>(exprs: CseItem | Iterable<CseItem>, options: CseOptions & { list?: true; postprocess: (replacements: CseReplacement[], reduced: CseReduced[]) => R }): R;
@@ -652,8 +680,18 @@ export function cse(
 // ---------------------------------------------------------------------------
 
 /**
- * SymPy reps_toposort: the replacements ordered so that [k1, v1] comes
+ * The replacements ordered so that [k1, v1] comes
  * before [k2, v2] when k1 is a free symbol of v2.
+ *
+ * @param r - The replacement pairs.
+ * @returns The replacement pairs in dependency order.
+ * @see SymPy `sympy.simplify.cse_main.reps_toposort`
+ * @example
+ * ```ts
+ * import { ex, repsToposort } from '@symjs/symjs';
+ *
+ * repsToposort([[ex`y`, ex`x + 1`], [ex`x`, ex`2`]]); // => [[x, 2], [y, x + 1]]
+ * ```
  */
 export function repsToposort(r: readonly (readonly [Expr, Expr])[]): [Expr, Expr][] {
   const edges: [number, number][] = [];
@@ -670,6 +708,17 @@ export function repsToposort(r: readonly (readonly [Expr, Expr])[]): [Expr, Expr
  * SymPy cse_separate (a postprocess for {@link cse}): the reduced
  * expressions Eq(symbol, value) become replacements, all sorted by
  * {@link repsToposort}.
+ *
+ * @param r - The replacement pairs.
+ * @param e - The reduced expression list.
+ * @returns The sorted replacement pairs and remaining reduced expressions.
+ * @see SymPy `sympy.simplify.cse_main.cse_separate`
+ * @example
+ * ```ts
+ * import { cseSeparate, ex } from '@symjs/symjs';
+ *
+ * cseSeparate([], [ex`x`]); // => [[], [x]]
+ * ```
  */
 export function cseSeparate(r: readonly (readonly [Expr, Expr])[], e: readonly CseReduced[]): [[Expr, Expr][], CseReduced[]] {
   const isDef = (w: CseReduced): w is Rel => w instanceof Rel && w.op === 'Eq' && w.lhs instanceof Sym;

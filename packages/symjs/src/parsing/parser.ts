@@ -27,6 +27,7 @@ import { piecewise, rel } from '../core/logic';
 import { SymFunction, derivative } from '../core/undef';
 import { modInverse } from '../core/numberutils';
 
+/** Names, assumptions and syntax transformations available when parsing an expression. */
 export interface ParseOptions {
   /** Predefined symbols (by name). */
   symbols?: Readonly<Record<string, Expr>> | readonly Sym[];
@@ -455,7 +456,13 @@ const TUPLE_FUNCTIONS: Record<string, (args: readonly Arg[]) => Expr> = {
 };
 
 const GREEK = new Set(['alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta', 'eta', 'theta', 'iota', 'kappa', 'lamda', 'mu', 'nu', 'xi', 'omicron', 'pi', 'rho', 'sigma', 'tau', 'upsilon', 'phi', 'chi', 'psi', 'omega']);
-/** SymPy _token_splittable: a name of letters only, not the name of a Greek letter. */
+/**
+ * A name of letters only, not the name of a Greek letter.
+ *
+ * @param name - The symbolic name or names.
+ * @returns Whether the identifier may be split into single-letter symbols.
+ * @see SymPy `sympy.parsing.sympy_parser._token_splittable`
+ */
 export const tokenSplittable = (name: string): boolean => name.length > 1 && /^[A-Za-z][A-Za-z0-9]*$/.test(name) && !GREEK.has(name.toLowerCase());
 
 const CONSTANTS: Record<string, Expr> = {

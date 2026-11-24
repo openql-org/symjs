@@ -1524,68 +1524,680 @@ forEachEntry(SPECS, (name, spec) => {
 // public constructors
 // ---------------------------------------------------------------------------
 
+/**
+ * Computes the factorial of a nonnegative integer.
+ *
+ * @param n - The index.
+ * @returns The factorial of a nonnegative integer.
+ * @see SymPy `sympy.functions.combinatorial.factorials.factorial`
+ * @example
+ * ```ts
+ * import { factorial } from '@symjs/symjs';
+ *
+ * factorial(0); // => 1
+ * factorial(7); // => 5040
+ * ```
+ */
 export const factorial = (n: ExprLike): Expr => fn('factorial', [n]);
+/**
+ * Computes the double factorial by multiplying successive factors two apart.
+ *
+ * @param n - The index.
+ * @returns The double factorial by multiplying successive factors two apart.
+ * @see SymPy `sympy.functions.combinatorial.factorials.factorial2`
+ * @example
+ * ```ts
+ * import { factorial2 } from '@symjs/symjs';
+ *
+ * factorial2(5); // => 15
+ * factorial2(-1); // => 1
+ * ```
+ */
 export const factorial2 = (n: ExprLike): Expr => fn('factorial2', [n]);
+/**
+ * Computes the binomial coefficient.
+ *
+ * @param n - The upper binomial argument.
+ * @param k - The number selected.
+ * @returns The binomial coefficient.
+ * @see SymPy `sympy.functions.combinatorial.factorials.binomial`
+ * @example
+ * ```ts
+ * import { binomial, ex } from '@symjs/symjs';
+ *
+ * binomial(15, 8); // => 6435
+ * binomial(ex`5/4`, 3); // => -5/128
+ * ```
+ */
 export const binomial = (n: ExprLike, k: ExprLike): Expr => fn('binomial', [n, k]);
+/**
+ * Counts permutations of a set with no fixed points.
+ *
+ * @param n - The index.
+ * @returns The number of permutations of a set with no fixed points.
+ * @see SymPy `sympy.functions.combinatorial.factorials.subfactorial`
+ * @example
+ * ```ts
+ * import { ex, subfactorial } from '@symjs/symjs';
+ *
+ * subfactorial(5); // => 44
+ * subfactorial(ex`n + 1`); // => subfactorial(n + 1)
+ * ```
+ */
 export const subfactorial = (n: ExprLike): Expr => fn('subfactorial', [n]);
+/**
+ * Computes an ordinary or generalized harmonic number.
+ *
+ * @param n - The index.
+ * @param m - The order, one for the ordinary harmonic number.
+ * @returns An ordinary or generalized harmonic number.
+ * @see SymPy `sympy.functions.combinatorial.numbers.harmonic`
+ * @example
+ * ```ts
+ * import { harmonic } from '@symjs/symjs';
+ *
+ * harmonic(8); // => 761/280
+ * harmonic(11); // => 83711/27720
+ * ```
+ */
 export const harmonic = (n: ExprLike, m?: ExprLike): Expr => (m === undefined ? fn('harmonic', [n]) : fn('harmonic', [n, m]));
+/**
+ * Computes a Catalan number.
+ *
+ * @param n - The Catalan index.
+ * @returns A Catalan number.
+ * @see SymPy `sympy.functions.combinatorial.numbers.catalan`
+ * @example
+ * ```ts
+ * import { catalan } from '@symjs/symjs';
+ *
+ * catalan(4); // => 14
+ * ```
+ */
 export function catalan(n: ExprLike): Expr {
   if (arguments.length !== 1) throw new TypeError('catalan requires one argument');
   return fn('catalan', [n]);
 }
+/**
+ * Computes the gamma function, the meromorphic extension of the shifted factorial.
+ *
+ * @param x - The argument of the function.
+ * @returns The gamma function, the meromorphic extension of the shifted factorial.
+ * @see SymPy `sympy.functions.special.gamma_functions.gamma`
+ * @example
+ * ```ts
+ * import { gamma } from '@symjs/symjs';
+ *
+ * gamma(1); // => 1
+ * gamma(4); // => 6
+ * ```
+ */
 export const gamma = (x: ExprLike): Expr => fn('gamma', [x]);
+/**
+ * Computes the principal branch of the logarithm of the gamma function.
+ *
+ * @param x - The argument of the function.
+ * @returns The principal branch of the logarithm of the gamma function.
+ * @see SymPy `sympy.functions.special.gamma_functions.loggamma`
+ * @example
+ * ```ts
+ * import { loggamma } from '@symjs/symjs';
+ *
+ * loggamma(1); // => 0
+ * loggamma(2); // => 0
+ * ```
+ */
 export const loggamma = (x: ExprLike): Expr => fn('loggamma', [x]);
+/**
+ * Computes a derivative of the logarithmic derivative of the gamma function.
+ *
+ * @param n - The derivative order, zero for the digamma function.
+ * @param x - The argument of the function.
+ * @returns A derivative of the logarithmic derivative of the gamma function.
+ * @see SymPy `sympy.functions.special.gamma_functions.polygamma`
+ * @example
+ * ```ts
+ * import { ex, polygamma } from '@symjs/symjs';
+ *
+ * polygamma(0, 1); // => -EulerGamma
+ * polygamma(0, ex`oo`); // => oo
+ * ```
+ */
 export const polygamma = (n: ExprLike, x: ExprLike): Expr => fn('polygamma', [n, x]);
-/** SymPy digamma(x) = polygamma(0, x); with `{ evaluate: false }` the unevaluated digamma(x). */
+/**
+ * Computes the logarithmic derivative of the gamma function. Set `evaluate` to false to preserve the named function.
+ *
+ * @param x - The argument of the function.
+ * @param opts - Set `evaluate` to false to suppress automatic evaluation.
+ * @returns The logarithmic derivative of the gamma function.
+ * @see SymPy `sympy.functions.special.gamma_functions.digamma`
+ * @example
+ * ```ts
+ * import { digamma, ex } from '@symjs/symjs';
+ *
+ * digamma(0); // => zoo
+ * digamma(ex`z`); // => polygamma(0, z)
+ * ```
+ */
 export const digamma = (x: ExprLike, opts: { evaluate?: boolean } = {}): Expr =>
   opts.evaluate === false ? new Fn('digamma', [sympify(x)]) : fn('polygamma', [0, x]);
-/** SymPy trigamma(x) = polygamma(1, x); with `{ evaluate: false }` the unevaluated trigamma(x). */
+/**
+ * Computes the first derivative of the digamma function. Set `evaluate` to false to preserve the named function.
+ *
+ * @param x - The argument of the function.
+ * @param opts - Set `evaluate` to false to suppress automatic evaluation.
+ * @returns The derivative of the digamma function.
+ * @see SymPy `sympy.functions.special.gamma_functions.trigamma`
+ * @example
+ * ```ts
+ * import { ex, trigamma } from '@symjs/symjs';
+ *
+ * trigamma(0); // => zoo
+ * trigamma(ex`z`); // => polygamma(1, z)
+ * ```
+ */
 export const trigamma = (x: ExprLike, opts: { evaluate?: boolean } = {}): Expr =>
   opts.evaluate === false ? new Fn('trigamma', [sympify(x)]) : fn('polygamma', [1, x]);
 fnPartials.digamma = (args) => fn('polygamma', [1, first(args)]);
 fnPartials.trigamma = (args) => fn('polygamma', [2, first(args)]);
+/**
+ * Computes the lower incomplete gamma function.
+ *
+ * @param s - The shape parameter.
+ * @param x - The integration endpoint.
+ * @returns The lower incomplete gamma function.
+ * @see SymPy `sympy.functions.special.gamma_functions.lowergamma`
+ * @example
+ * ```ts
+ * import { ex, lowergamma } from '@symjs/symjs';
+ *
+ * lowergamma(ex`s`, ex`x`); // => lowergamma(s, x)
+ * lowergamma(3, ex`x`); // => -2*(x**2/2 + x + 1)*exp(-x) + 2
+ * ```
+ */
 export const lowergamma = (s: ExprLike, x: ExprLike): Expr => fn('lowergamma', [s, x]);
+/**
+ * Computes the upper incomplete gamma function.
+ *
+ * @param s - The shape parameter.
+ * @param x - The integration endpoint.
+ * @returns The upper incomplete gamma function.
+ * @see SymPy `sympy.functions.special.gamma_functions.uppergamma`
+ * @example
+ * ```ts
+ * import { ex, uppergamma } from '@symjs/symjs';
+ *
+ * uppergamma(-2, ex`x`); // => expint(3, x)/x**2
+ * uppergamma(ex`s`, ex`x`); // => uppergamma(s, x)
+ * ```
+ */
 export const uppergamma = (s: ExprLike, x: ExprLike): Expr => fn('uppergamma', [s, x]);
+/**
+ * Computes Euler's beta function.
+ *
+ * @param a - The beta-function shape parameter.
+ * @param b - The beta-function shape parameter.
+ * @returns Euler's beta function.
+ * @see SymPy `sympy.functions.special.beta_functions.beta`
+ * @example
+ * ```ts
+ * import { beta } from '@symjs/symjs';
+ *
+ * beta(2, 3); // => 1/12
+ * ```
+ */
 export const beta = (a: ExprLike, b: ExprLike = a): Expr => fn('beta', [a, b]);
-/** SymPy betainc(a, b, x1, x2): the generalized incomplete beta function, the integral of t**(a - 1)*(1 - t)**(b - 1) from x1 to x2. */
+/**
+ * The generalized incomplete beta function, the integral of t**(a - 1)*(1 - t)**(b - 1) from x1 to x2.
+ *
+ * @param a - The beta-function shape parameter.
+ * @param b - The beta-function shape parameter.
+ * @param x1 - The lower integration endpoint.
+ * @param x2 - The upper integration endpoint.
+ * @returns The generalized incomplete beta function, the integral of t**(a - 1)*(1 - t)**(b - 1) from x1 to x2.
+ * @see SymPy `sympy.functions.special.beta_functions.betainc`
+ * @example
+ * ```ts
+ * import { betainc, ex } from '@symjs/symjs';
+ *
+ * betainc(ex`a`, ex`b`, 0, ex`x`); // => betainc(a, b, 0, x)
+ * betainc(ex`a`, ex`b`, ex`x1`, ex`x2`); // => betainc(a, b, x1, x2)
+ * ```
+ */
 export const betainc = (a: ExprLike, b: ExprLike, x1: ExprLike, x2: ExprLike): Expr => fn('betainc', [a, b, x1, x2]);
-/** SymPy betainc_regularized(a, b, x1, x2): betainc(a, b, x1, x2)/beta(a, b). */
+/**
+ * betainc(a, b, x1, x2)/beta(a, b).
+ *
+ * @param a - The beta-function shape parameter.
+ * @param b - The beta-function shape parameter.
+ * @param x1 - The lower integration endpoint.
+ * @param x2 - The upper integration endpoint.
+ * @returns The incomplete beta integral divided by the complete beta function.
+ * @see SymPy `sympy.functions.special.beta_functions.betainc_regularized`
+ * @example
+ * ```ts
+ * import { betaincRegularized, ex } from '@symjs/symjs';
+ *
+ * betaincRegularized(ex`a`, ex`b`, 0, ex`x`); // => betainc_regularized(a, b, 0, x)
+ * betaincRegularized(ex`a`, ex`b`, ex`x1`, ex`x2`); // => betainc_regularized(a, b, x1, x2)
+ * ```
+ */
 export const betaincRegularized = (a: ExprLike, b: ExprLike, x1: ExprLike, x2: ExprLike): Expr => fn('betainc_regularized', [a, b, x1, x2]);
-/** SymPy zeta(s) (Riemann) and zeta(s, a) (Hurwitz). */
+/**
+ * Computes the Riemann zeta function, or the Hurwitz zeta function with a shift.
+ *
+ * @param s - The complex order.
+ * @param a - The shift parameter.
+ * @returns The Riemann or Hurwitz zeta function.
+ * @see SymPy `sympy.functions.special.zeta_functions.zeta`
+ * @example
+ * ```ts
+ * import { zeta } from '@symjs/symjs';
+ *
+ * zeta(-4); // => 0
+ * zeta(0); // => -1/2
+ * ```
+ */
 export const zeta = (s: ExprLike, a?: ExprLike): Expr => fn('zeta', a === undefined ? [s] : [s, a]);
+/**
+ * Computes the Gaussian error function.
+ *
+ * @param z - The argument of the function.
+ * @returns The Gaussian error function.
+ * @see SymPy `sympy.functions.special.error_functions.erf`
+ * @example
+ * ```ts
+ * import { erf, ex } from '@symjs/symjs';
+ *
+ * erf(0); // => 0
+ * erf(ex`oo`); // => 1
+ * ```
+ */
 export const erf = (z: ExprLike): Expr => fn('erf', [z]);
+/**
+ * Computes the complementary error function.
+ *
+ * @param z - The argument of the function.
+ * @returns The complementary error function.
+ * @see SymPy `sympy.functions.special.error_functions.erfc`
+ * @example
+ * ```ts
+ * import { erfc, ex } from '@symjs/symjs';
+ *
+ * erfc(0); // => 1
+ * erfc(ex`oo`); // => 0
+ * ```
+ */
 export const erfc = (z: ExprLike): Expr => fn('erfc', [z]);
+/**
+ * Computes the imaginary error function.
+ *
+ * @param z - The argument of the function.
+ * @returns The imaginary error function.
+ * @see SymPy `sympy.functions.special.error_functions.erfi`
+ * @example
+ * ```ts
+ * import { erfi, ex } from '@symjs/symjs';
+ *
+ * erfi(0); // => 0
+ * erfi(ex`oo`); // => oo
+ * ```
+ */
 export const erfi = (z: ExprLike): Expr => fn('erfi', [z]);
+/**
+ * Computes the difference of the error function at two endpoints.
+ *
+ * @param x - An endpoint of the error-function integral, lower for `x` and upper for `y`.
+ * @param y - An endpoint of the error-function integral, lower for `x` and upper for `y`.
+ * @returns The difference of the error function at two endpoints.
+ * @see SymPy `sympy.functions.special.error_functions.erf2`
+ * @example
+ * ```ts
+ * import { erf2, ex } from '@symjs/symjs';
+ *
+ * erf2(0, 0); // => 0
+ * erf2(ex`x`, ex`x`); // => 0
+ * ```
+ */
 export const erf2 = (x: ExprLike, y: ExprLike): Expr => fn('erf2', [x, y]);
+/**
+ * Computes the inverse error function.
+ *
+ * @param z - The argument of the function.
+ * @returns The inverse error function.
+ * @see SymPy `sympy.functions.special.error_functions.erfinv`
+ * @example
+ * ```ts
+ * import { erfinv } from '@symjs/symjs';
+ *
+ * erfinv(0); // => 0
+ * erfinv(1); // => oo
+ * ```
+ */
 export const erfinv = (z: ExprLike): Expr => fn('erfinv', [z]);
+/**
+ * Computes the inverse complementary error function.
+ *
+ * @param z - The argument of the function.
+ * @returns The inverse complementary error function.
+ * @see SymPy `sympy.functions.special.error_functions.erfcinv`
+ * @example
+ * ```ts
+ * import { erfcinv } from '@symjs/symjs';
+ *
+ * erfcinv(1); // => 0
+ * erfcinv(0); // => oo
+ * ```
+ */
 export const erfcinv = (z: ExprLike): Expr => fn('erfcinv', [z]);
+/**
+ * Inverts the two-argument error function in its upper endpoint.
+ *
+ * @param x - The argument of the function.
+ * @param y - The second argument.
+ * @returns The upper endpoint giving the prescribed two-argument error-function value.
+ * @see SymPy `sympy.functions.special.error_functions.erf2inv`
+ * @example
+ * ```ts
+ * import { erf2inv } from '@symjs/symjs';
+ *
+ * erf2inv(0, 0); // => 0
+ * erf2inv(1, 0); // => 1
+ * ```
+ */
 export const erf2inv = (x: ExprLike, y: ExprLike): Expr => fn('erf2inv', [x, y]);
+/**
+ * Computes the exponential integral.
+ *
+ * @param z - The argument of the function.
+ * @returns The exponential integral.
+ * @see SymPy `sympy.functions.special.error_functions.Ei`
+ * @example
+ * ```ts
+ * import { Ei, ex } from '@symjs/symjs';
+ *
+ * Ei(-1); // => Ei(-1)
+ * Ei(ex`x*exp_polar(2*I*pi)`); // => Ei(x) + 2*I*pi
+ * ```
+ */
 export const Ei = (z: ExprLike): Expr => fn('Ei', [z]);
+/**
+ * Computes a branch of the inverse of `w*exp(w)`.
+ *
+ * @param x - The argument of the function.
+ * @param k - The branch index, zero for the principal branch.
+ * @returns A branch of the inverse of `w*exp(w)`.
+ * @see SymPy `sympy.functions.elementary.exponential.LambertW`
+ * @example
+ * ```ts
+ * import { LambertW } from '@symjs/symjs';
+ *
+ * LambertW(1.2); // => 0.635564016364870
+ * ```
+ */
 export const LambertW = (x: ExprLike, k?: ExprLike): Expr => fn('LambertW', k === undefined ? [x] : [x, k]);
 impl.lambertW = (x, k) => LambertW(x, k);
+/**
+ * Computes the logarithmic integral.
+ *
+ * @param z - The argument of the function.
+ * @returns The logarithmic integral.
+ * @see SymPy `sympy.functions.special.error_functions.li`
+ * @example
+ * ```ts
+ * import { li } from '@symjs/symjs';
+ *
+ * li(0); // => 0
+ * li(1); // => -oo
+ * ```
+ */
 export const li = (z: ExprLike): Expr => fn('li', [z]);
+/**
+ * Computes the offset logarithmic integral, normalized to vanish at two.
+ *
+ * @param z - The argument of the function.
+ * @returns The offset logarithmic integral, normalized to vanish at two.
+ * @see SymPy `sympy.functions.special.error_functions.Li`
+ * @example
+ * ```ts
+ * import { Li } from '@symjs/symjs';
+ *
+ * Li(2); // => 0
+ * ```
+ */
 export const Li = (z: ExprLike): Expr => fn('Li', [z]);
+/**
+ * Computes the sine integral.
+ *
+ * @param z - The argument of the function.
+ * @returns The sine integral.
+ * @see SymPy `sympy.functions.special.error_functions.Si`
+ * @example
+ * ```ts
+ * import { Si, ex } from '@symjs/symjs';
+ *
+ * Si(ex`-z`); // => -Si(z)
+ * Si(ex`I*z`); // => I*Shi(z)
+ * ```
+ */
 export const Si = (z: ExprLike): Expr => fn('Si', [z]);
+/**
+ * Computes the cosine integral.
+ *
+ * @param z - The argument of the function.
+ * @returns The cosine integral.
+ * @see SymPy `sympy.functions.special.error_functions.Ci`
+ * @example
+ * ```ts
+ * import { Ci, ex } from '@symjs/symjs';
+ *
+ * Ci(ex`z*exp_polar(I*pi)`); // => Ci(z) + I*pi
+ * Ci(ex`z*exp_polar(2*I*pi)`); // => Ci(z) + 2*I*pi
+ * ```
+ */
 export const Ci = (z: ExprLike): Expr => fn('Ci', [z]);
+/**
+ * Computes the hyperbolic sine integral.
+ *
+ * @param z - The argument of the function.
+ * @returns The hyperbolic sine integral.
+ * @see SymPy `sympy.functions.special.error_functions.Shi`
+ * @example
+ * ```ts
+ * import { Shi, ex } from '@symjs/symjs';
+ *
+ * Shi(ex`-z`); // => -Shi(z)
+ * Shi(ex`I*z`); // => I*Si(z)
+ * ```
+ */
 export const Shi = (z: ExprLike): Expr => fn('Shi', [z]);
+/**
+ * Computes the hyperbolic cosine integral.
+ *
+ * @param z - The argument of the function.
+ * @returns The hyperbolic cosine integral.
+ * @see SymPy `sympy.functions.special.error_functions.Chi`
+ * @example
+ * ```ts
+ * import { Chi, ex } from '@symjs/symjs';
+ *
+ * Chi(ex`z*exp_polar(I*pi)`); // => Chi(z) + I*pi
+ * Chi(ex`z*exp_polar(2*I*pi)`); // => Chi(z) + 2*I*pi
+ * ```
+ */
 export const Chi = (z: ExprLike): Expr => fn('Chi', [z]);
+/**
+ * Computes the generalized exponential integral of a given order.
+ *
+ * @param nu - The order of the function.
+ * @param z - The argument of the function.
+ * @returns The generalized exponential integral of a given order.
+ * @see SymPy `sympy.functions.special.error_functions.expint`
+ * @example
+ * ```ts
+ * import { ex, expint } from '@symjs/symjs';
+ *
+ * expint(0, ex`z`); // => exp(-z)/z
+ * expint(-1, ex`z`); // => exp(-z)/z + exp(-z)/z**2
+ * ```
+ */
 export const expint = (nu: ExprLike, z: ExprLike): Expr => fn('expint', [nu, z]);
+/**
+ * Computes the generalized exponential integral of order one.
+ *
+ * @param z - The argument of the function.
+ * @returns The generalized exponential integral of order one.
+ * @see SymPy `sympy.functions.special.error_functions.E1`
+ * @example
+ * ```ts
+ * import { E1 } from '@symjs/symjs';
+ *
+ * E1(0); // => expint(1, 0)
+ * E1(5); // => expint(1, 5)
+ * ```
+ */
 export const E1 = (z: ExprLike): Expr => fn('expint', [1, z]);
+/**
+ * Computes the Fresnel sine integral.
+ *
+ * @param z - The argument of the function.
+ * @returns The Fresnel sine integral.
+ * @see SymPy `sympy.functions.special.error_functions.fresnels`
+ * @example
+ * ```ts
+ * import { ex, fresnels } from '@symjs/symjs';
+ *
+ * fresnels(0); // => 0
+ * fresnels(ex`oo`); // => 1/2
+ * ```
+ */
 export const fresnels = (z: ExprLike): Expr => fn('fresnels', [z]);
+/**
+ * Computes the Fresnel cosine integral.
+ *
+ * @param z - The argument of the function.
+ * @returns The Fresnel cosine integral.
+ * @see SymPy `sympy.functions.special.error_functions.fresnelc`
+ * @example
+ * ```ts
+ * import { ex, fresnelc } from '@symjs/symjs';
+ *
+ * fresnelc(0); // => 0
+ * fresnelc(ex`oo`); // => 1/2
+ * ```
+ */
 export const fresnelc = (z: ExprLike): Expr => fn('fresnelc', [z]);
+/**
+ * Computes the sign of a real argument or the unit phase of a nonzero complex argument.
+ *
+ * @param x - The argument of the function.
+ * @returns The sign of a real argument or the unit phase of a nonzero complex argument.
+ * @see SymPy `sympy.functions.elementary.complexes.sign`
+ * @example
+ * ```ts
+ * import { sign } from '@symjs/symjs';
+ *
+ * sign(0); // => 0
+ * sign(-1); // => -1
+ * ```
+ */
 export const sign = (x: ExprLike): Expr => fn('sign', [x]);
+/**
+ * Rounds down to an integer, acting separately on real and imaginary parts.
+ *
+ * @param x - The argument of the function.
+ * @returns The rounded value, represented symbolically when necessary.
+ * @see SymPy `sympy.functions.elementary.integers.floor`
+ * @example
+ * ```ts
+ * import { ex, floor } from '@symjs/symjs';
+ *
+ * floor(ex`-7/3`); // => -3
+ * floor(17); // => 17
+ * ```
+ */
 export const floor = (x: ExprLike): Expr => fn('floor', [x]);
 
-/** SymPy Rem(p, q): the remainder of truncated division (sign of p); unevaluated for symbols. */
+/**
+ * The remainder of truncated division (sign of p); unevaluated for symbols.
+ *
+ * @param p - The dividend.
+ * @param q - The divisor.
+ * @returns The remainder of truncated division (sign of p); unevaluated for symbols.
+ * @see SymPy `sympy.functions.elementary.miscellaneous.Rem`
+ * @example
+ * ```ts
+ * import { Rem, ex } from '@symjs/symjs';
+ *
+ * Rem(ex`x**3`, ex`y`); // => Rem(x**3, y)
+ * ```
+ */
 export const Rem = (p: ExprLike, q: ExprLike): Expr => fn('Rem', [p, q]);
 evaluators.Rem = (p, q) => {
   if (p instanceof Rational && q instanceof Rational && p.isInteger && q.isInteger && q.p !== 0n) return Rational.of(p.p % q.p);
   if (p.key === q.key) return S.Zero;
   return undefined;
 };
+/**
+ * Rounds up to an integer, acting separately on real and imaginary parts.
+ *
+ * @param x - The argument of the function.
+ * @returns The rounded value, represented symbolically when necessary.
+ * @see SymPy `sympy.functions.elementary.integers.ceiling`
+ * @example
+ * ```ts
+ * import { ceiling, ex } from '@symjs/symjs';
+ *
+ * ceiling(ex`-7/3`); // => -2
+ * ceiling(17); // => 17
+ * ```
+ */
 export const ceiling = (x: ExprLike): Expr => fn('ceiling', [x]);
+/**
+ * Computes the quadrant-aware angle of the point `(x, y)` in radians.
+ *
+ * @param y - The vertical coordinate.
+ * @param x - The horizontal coordinate.
+ * @returns The quadrant-aware angle of the point `(x, y)` in radians.
+ * @see SymPy `sympy.functions.elementary.trigonometric.atan2`
+ * @example
+ * ```ts
+ * import { atan2 } from '@symjs/symjs';
+ *
+ * atan2(0, 1); // => 0
+ * atan2(1, 1); // => pi/4
+ * ```
+ */
 export const atan2 = (y: ExprLike, x: ExprLike): Expr => fn('atan2', [y, x]);
+/**
+ * Computes the least of the arguments.
+ *
+ * @param xs - The operands, in order.
+ * @returns The least of the arguments.
+ * @see SymPy `sympy.functions.elementary.miscellaneous.Min`
+ * @example
+ * ```ts
+ * import { Min, ex } from '@symjs/symjs';
+ *
+ * Min(ex`x`, -2); // => Min(-2, x)
+ * Min(ex`x`, ex`y`); // => Min(x, y)
+ * ```
+ */
 export const Min = (...xs: ExprLike[]): Expr => fn('Min', xs);
+/**
+ * Computes the greatest of the arguments.
+ *
+ * @param xs - The operands, in order.
+ * @returns The greatest of the arguments.
+ * @see SymPy `sympy.functions.elementary.miscellaneous.Max`
+ * @example
+ * ```ts
+ * import { Max, ex } from '@symjs/symjs';
+ *
+ * Max(ex`x`, -2); // => Max(-2, x)
+ * Max(ex`x`, ex`y`); // => Max(x, y)
+ * ```
+ */
 export const Max = (...xs: ExprLike[]): Expr => fn('Max', xs);
 
 /**
@@ -1643,7 +2255,20 @@ funcExpanders.erf2 = (args) => {
  */
 export const expandFuncRules: Partial<Record<string, (e: Expr) => Expr | undefined>> = {};
 
-/** SymPy expand_func: rewrite special functions into elementary terms where possible. */
+/**
+ * Rewrite special functions into elementary terms where possible.
+ *
+ * @param e - The input expression.
+ * @returns The expression after applying function-specific expansion formulas.
+ * @see SymPy `sympy.core.function.expand_func`
+ * @example
+ * ```ts
+ * import { ex, expandFunc, jn } from '@symjs/symjs';
+ *
+ * expandFunc(jn(0, ex`z`)); // => sin(z)/z
+ * expandFunc(ex`gamma(x + 2)`); // => x*(x + 1)*gamma(x)
+ * ```
+ */
 export function expandFunc(e: Expr): Expr {
   const go = (x: Expr): Expr => {
     if (x instanceof Constant && x.name === 'GoldenRatio') return add(S.Half, mul(S.Half, sqrt(5)));

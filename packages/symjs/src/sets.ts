@@ -63,40 +63,159 @@ import { containsQ as _containsQ_, isSubset as _isSubset_, type SetExpr as _SetE
 import { type Truth, toTruth as _toTruth_ } from './core/truth';
 import type { Expr as _Expr_ } from './core/nodes';
 
-/** @deprecated Internal; removed from the public API in 1.0. */
+/**
+ * An unevaluated union, intersection or complement of sets.
+ *
+ * @deprecated Internal; removed from the public API in 1.0.
+ */
 export const SetOp = _SetOp_;
 
 /** @deprecated Internal; removed from the public API in 1.0. */
 export type SetOp = _SetOp_;
 
-/** @deprecated Use `imageset`. */
+/**
+ * Alias for {@link imageset}.
+ *
+ * @deprecated Use {@link imageset}.
+ * @param v - The value to examine.
+ * @param exprIn - The input expression.
+ * @param base - The base of the power.
+ * @returns The image of the base set under the mapping.
+ * @see SymPy `sympy.sets.sets.imageset`
+ * @example
+ * ```ts
+ * import { ex, finiteSet, imageSet } from '@symjs/symjs';
+ *
+ * imageSet(ex`x`, ex`x**2`, finiteSet(1, 2)); // => {1, 4}
+ * ```
+ */
 export const imageSet = _imageSet_;
 
-/** @deprecated Use `Interval.of`. */
+/**
+ * Alias for {@link Interval.of}.
+ *
+ * @deprecated Use {@link Interval.of}.
+ * @param aIn - The first operand.
+ * @param bIn - The second operand.
+ * @param leftOpenIn - The left open in.
+ * @param rightOpenIn - The right open in.
+ * @returns The resulting set.
+ * @see SymPy `sympy.sets.sets.Interval`
+ * @example
+ * ```ts
+ * import { interval } from '@symjs/symjs';
+ *
+ * interval(0, 1); // => Interval(0, 1)
+ * ```
+ */
 export const interval = _interval_;
 
-/** @deprecated Use `Interval.open`. */
+/**
+ * Alias for {@link Interval.open}.
+ *
+ * @deprecated Use {@link Interval.open}.
+ * @param a - The first operand.
+ * @param b - The second operand.
+ * @returns The resulting set.
+ * @see SymPy `sympy.sets.sets.Interval.open`
+ */
 export const openInterval = _openInterval_;
 
-/** @deprecated Use `Interval.Lopen`. */
+/**
+ * Alias for {@link Interval.Lopen}.
+ *
+ * @deprecated Use {@link Interval.Lopen}.
+ * @param a - The first operand.
+ * @param b - The second operand.
+ * @returns The resulting set.
+ * @see SymPy `sympy.sets.sets.Interval.Lopen`
+ */
 export const Lopen = _Lopen_;
 
-/** @deprecated Use `Interval.Ropen`. */
+/**
+ * Alias for {@link Interval.Ropen}.
+ *
+ * @deprecated Use {@link Interval.Ropen}.
+ * @param a - The first operand.
+ * @param b - The second operand.
+ * @returns The resulting set.
+ * @see SymPy `sympy.sets.sets.Interval.Ropen`
+ */
 export const Ropen = _Ropen_;
 
-/** @deprecated Use `FiniteSet.of`. */
+/**
+ * Alias for {@link FiniteSet.of}.
+ *
+ * @deprecated Use {@link FiniteSet.of}.
+ * @param xs - The operands, in order.
+ * @returns The resulting set.
+ * @see SymPy `sympy.sets.sets.FiniteSet`
+ * @example
+ * ```ts
+ * import { finiteSet } from '@symjs/symjs';
+ *
+ * finiteSet(1, 2, 3, 4); // => {1, 2, 3, 4}
+ * ```
+ */
 export const finiteSet = _finiteSet_;
 
-/** @deprecated Use `Union`. */
+/**
+ * Alias for {@link Union}.
+ *
+ * @deprecated Use {@link Union}.
+ * @param sets0 - The sets0.
+ * @returns The resulting set.
+ * @see SymPy `sympy.sets.sets.Union`
+ * @example
+ * ```ts
+ * import { finiteSet, union } from '@symjs/symjs';
+ *
+ * union(finiteSet(1), finiteSet(2)); // => {1, 2}
+ * ```
+ */
 export const union = _union_;
 
-/** @deprecated Use `Complement`. */
+/**
+ * Alias for {@link Complement}.
+ *
+ * @deprecated Use {@link Complement}.
+ * @param a - The first operand.
+ * @param b - The second operand.
+ * @returns The resulting set.
+ * @see SymPy `sympy.sets.sets.Complement`
+ * @example
+ * ```ts
+ * import { complement, finiteSet } from '@symjs/symjs';
+ *
+ * complement(finiteSet(1, 2), finiteSet(2)); // => {1}
+ * ```
+ */
 export const complement = _complement_;
 
-/** @deprecated Internal; removed from the public API in 1.0. */
+/**
+ * Tests whether an element belongs to a set.
+ *
+ * @deprecated Internal; removed from the public API in 1.0.
+ * @param s - The input value.
+ * @param x - The argument of the function.
+ * @returns The truth value, or `'unknown'` when it cannot be determined.
+ */
 export const containsQ = (s: _SetExpr_, x: _Expr_): Truth => _toTruth_(_containsQ_(s, x));
 
-/** SymPy is_subset: a is a subset of b (true, false or 'unknown'). */
+/**
+ * A is a subset of b (true, false or 'unknown').
+ *
+ * @param a - The first operand.
+ * @param b - The second operand.
+ * @returns The truth value, or `'unknown'` when it cannot be determined.
+ * @see SymPy `sympy.sets.sets.Set.is_subset`
+ * @example
+ * ```ts
+ * import { finiteSet, isSubset } from '@symjs/symjs';
+ *
+ * isSubset(finiteSet(1), finiteSet(1, 2)); // => True
+ * ```
+ */
 export function isSubset(a: _SetExpr_, b: _SetExpr_): Truth {
   return _toTruth_(_isSubset_(a, b));
 }

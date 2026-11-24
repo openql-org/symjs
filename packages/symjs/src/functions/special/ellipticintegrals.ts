@@ -36,13 +36,49 @@ const delta = (z: Expr, m: Expr): Expr => sqrt(sub(1, mul(m, pow(sin(z), 2))));
 
 // ---- constructors ---------------------------------------------------------------------
 
-/** SymPy elliptic_k(m): the complete elliptic integral of the first kind K(m). */
+/**
+ * The complete elliptic integral of the first kind K(m).
+ *
+ * @param m - The elliptic parameter (the squared modulus).
+ * @returns The complete elliptic integral of the first kind K(m).
+ * @see SymPy `sympy.functions.special.elliptic_integrals.elliptic_k`
+ * @example
+ * ```ts
+ * import { ellipticK } from '@symjs/symjs';
+ *
+ * ellipticK(0); // => pi/2
+ * ```
+ */
 export const ellipticK = (m: ExprLike): Expr => fn('elliptic_k', [m]);
-/** SymPy elliptic_f(z, m): the incomplete elliptic integral of the first kind F(z|m). */
+/**
+ * The incomplete elliptic integral of the first kind F(z|m).
+ *
+ * @param z - The amplitude in radians.
+ * @param m - The elliptic parameter (the squared modulus).
+ * @returns The incomplete elliptic integral of the first kind F(z|m).
+ * @see SymPy `sympy.functions.special.elliptic_integrals.elliptic_f`
+ * @example
+ * ```ts
+ * import { ellipticF, ex } from '@symjs/symjs';
+ *
+ * ellipticF(ex`z`, 0); // => z
+ * ```
+ */
 export const ellipticF = (z: ExprLike, m: ExprLike): Expr => fn('elliptic_f', [z, m]);
 /**
- * SymPy elliptic_e: elliptic_e(m) is the complete elliptic integral of the
+ * elliptic_e(m) is the complete elliptic integral of the
  * second kind E(m), elliptic_e(z, m) the incomplete one E(z|m).
+ *
+ * @param m - The elliptic parameter (the squared modulus).
+ * @param z - The amplitude in radians.
+ * @returns The complete or incomplete elliptic integral of the second kind.
+ * @see SymPy `sympy.functions.special.elliptic_integrals.elliptic_e`
+ * @example
+ * ```ts
+ * import { ellipticE } from '@symjs/symjs';
+ *
+ * ellipticE(0); // => pi/2
+ * ```
  */
 export function ellipticE(m: ExprLike): Expr;
 export function ellipticE(z: ExprLike, m: ExprLike): Expr;
@@ -50,8 +86,20 @@ export function ellipticE(a: ExprLike, b?: ExprLike): Expr {
   return fn('elliptic_e', b === undefined ? [a] : [a, b]);
 }
 /**
- * SymPy elliptic_pi: elliptic_pi(n, m) is the complete elliptic integral of
+ * elliptic_pi(n, m) is the complete elliptic integral of
  * the third kind Pi(n|m), elliptic_pi(n, z, m) the incomplete one Pi(n; z|m).
+ *
+ * @param n - The characteristic of the third-kind integral.
+ * @param m - The elliptic parameter (the squared modulus).
+ * @param z - The amplitude in radians.
+ * @returns The complete or incomplete elliptic integral of the third kind.
+ * @see SymPy `sympy.functions.special.elliptic_integrals.elliptic_pi`
+ * @example
+ * ```ts
+ * import { ellipticPi } from '@symjs/symjs';
+ *
+ * ellipticPi(0, 0); // => pi/2
+ * ```
  */
 export function ellipticPi(n: ExprLike, m: ExprLike): Expr;
 export function ellipticPi(n: ExprLike, z: ExprLike, m: ExprLike): Expr;

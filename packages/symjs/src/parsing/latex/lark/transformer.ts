@@ -57,15 +57,36 @@ class DiracExpr extends ExtensionExpr {
 /**
  * Traverses grammar trees to build expressions. Subclass number(), symbol(), or
  * transform() to customize conversion, and pass that class to LarkLaTeXParser.
+ *
+ * @see SymPy `sympy.parsing.latex.lark.transformer.TransformToSymPyExpr`
  */
 export class TransformToSymPyExpr {
+  /**
+   * Creates a `TransformToSymPyExpr`.
+   *
+   * @param backend - The parser backend whose conventions to use.
+   */
   constructor(private readonly backend: 'lark' | 'antlr' = 'lark') {}
   private get evaluating(): boolean { return this.backend === 'lark' && globalParameters.evaluate; }
+  /**
+   * Converts a numeric token into an expression.
+   *
+   * @param tokens - The tokens in source order.
+   * @returns The numerical expression represented by the token.
+   * @see SymPy `sympy.parsing.latex.lark.transformer.TransformToSymPyExpr.number`
+   */
   number(tokens: readonly string[]): Expr {
     const value = at(tokens, 0);
     if (value === '\\imaginaryunit') return S.I;
     return value.includes('.') ? float(value.replaceAll(',', '')) : Rational.of(BigInt(value.replaceAll(',', '')));
   }
+  /**
+   * Converts a symbol token into an expression.
+   *
+   * @param value - The value to examine.
+   * @returns The newly constructed symbol.
+   * @see SymPy `sympy.parsing.latex.lark.transformer.TransformToSymPyExpr.SYMBOL`
+   */
   symbol(value: string): Expr {
     if (this.backend === 'antlr') return new Sym(value);
     const name = value.replaceAll('\\', '').replace(/var(?=epsilon|theta|rho|phi)/g, '').replace(/_([^{}]+?)(?='*$)/, '_{$1}');
@@ -159,6 +180,14 @@ export class TransformToSymPyExpr {
     }
     return this.power(base, sup);
   }
+  /**
+   * Converts a LaTeX grammar tree into an expression or ambiguity tree.
+   *
+   * @param tree - The grammar tree to convert.
+   * @returns The expression or an explicit ambiguity tree.
+   * @throws LaTeXParsingError when the input cannot be parsed or transformed into a mathematical expression.
+   * @see SymPy `sympy.parsing.latex.lark.transformer.TransformToSymPyExpr.transform`
+   */
   transform(tree: LatexTree): LatexResult {
     const name = tree.data;
     const relation = RELATIONS.get(name);

@@ -34,6 +34,22 @@ function decimalIsInteger(s: string): boolean {
  * - `dps` is the decimal precision; `''` infers it from the digits of a
  *   string. Without `dps`, strings get max(15, their digit count).
  * - `precision` gives the binary precision instead of `dps`.
+ *
+ * @param num - The number, decimal string or raw floating-point tuple to convert.
+ * @param dpsIn - The precision in decimal digits.
+ * @param precision - The precision in bits.
+ * @returns The rounded floating-point expression.
+ * @throws RangeError when both decimal and binary precision are supplied.
+ * @throws SyntaxError when the input string is not a floating-point literal.
+ * @throws TypeError when the value cannot be represented as a float.
+ * @see SymPy `sympy.core.numbers.Float`
+ * @example
+ * ```ts
+ * import { ex, float } from '@symjs/symjs';
+ *
+ * float('-inf'); // => -oo
+ * float(ex`3`, ''); // => 3.
+ * ```
  */
 export function float(num: number | bigint | string | Expr, dpsIn?: number | '', precision?: number): Expr {
   if (dpsIn !== undefined && precision !== undefined) throw new RangeError('Both decimal and binary precision supplied');

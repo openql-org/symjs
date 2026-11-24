@@ -28,6 +28,9 @@ const isSubsPairs = (s: Substitution): s is readonly (readonly [Expr, ExprLike])
  * canonicalizes nodes built unevaluated.
  *
  * @experimental May change in a minor release.
+ * @param e - The input expression.
+ * @param args - The arguments in positional order.
+ * @returns The expression reconstructed from the supplied arguments.
  */
 export function rebuild(e: Expr, args?: readonly Expr[]): Expr {
   if (args === undefined) return e.isAtom ? e : rebuild(e, e.args.map((a) => rebuild(a)));
@@ -58,7 +61,14 @@ export function rebuild(e: Expr, args?: readonly Expr[]): Expr {
 
 impl.rebuild = (e, args) => rebuild(e, args);
 
-/** Apply f bottom-up to every node. */
+/**
+ * Apply f bottom-up to every node.
+ *
+ * @param e - The input expression.
+ * @param f - The transformation to apply to each selected subexpression.
+ * @returns The transformed root after visiting all its descendants.
+ * @see SymPy `sympy.core.traversal.bottom_up`
+ */
 export function mapBottomUp(e: Expr, f: (e: Expr) => Expr): Expr {
   if (e.args.length === 0) return f(e);
   const args = e.args.map((a) => mapBottomUp(a, f));
@@ -93,6 +103,17 @@ function toRules(s: Substitution): Rule[] {
  * Simultaneous structural substitution (SymPy `xreplace`): only exact
  * subtrees are replaced. Keys may be expressions or (in a plain object)
  * symbol names.
+ *
+ * @param e - The input expression.
+ * @param s - The simultaneous replacements, matched by structure.
+ * @returns The expression after simultaneous structural replacement.
+ * @see SymPy `sympy.core.basic.Basic.xreplace`
+ * @example
+ * ```ts
+ * import { ex, xreplace } from '@symjs/symjs';
+ *
+ * xreplace(ex`x*y`, [[ex`x`, ex`2`]]); // => 2*y
+ * ```
  */
 export function xreplace(e: Expr, s: Substitution): Expr {
   const rules = toRules(s);
@@ -433,7 +454,15 @@ function subsMul(e: Mul, old: Mul, nw: Expr): Expr | undefined {
   return mul(pow(nw, k), ...rest);
 }
 
-/** Substitute a function head while preserving argument arity and differentiation variables. */
+/**
+ * Substitute a function head while preserving argument arity and differentiation variables.
+ *
+ * @param expr - The input expression.
+ * @param name - The symbolic name or names.
+ * @param replacement - The callable to substitute.
+ * @param arities - The allowed argument counts.
+ * @returns The expression with matching function applications replaced.
+ */
 export function subsFunction(expr: Expr, name: string, replacement: (...args: Expr[]) => Expr, arities?: readonly number[]): Expr {
   const go = (e: Expr): Expr => {
     if (e instanceof Derivative) {
@@ -618,6 +647,19 @@ export function subs(e: Expr, s: Substitution, opts: { simultaneous?: boolean } 
   return r;
 }
 
+/**
+ * Collects the symbols that occur free in an expression.
+ *
+ * @param e - The input expression.
+ * @returns The free symbols in the expression.
+ * @see SymPy `sympy.core.expr.Expr.free_symbols`
+ * @example
+ * ```ts
+ * import { ex, freeSymbols } from '@symjs/symjs';
+ *
+ * freeSymbols(ex`x + 1`); // => {x}
+ * ```
+ */
 export function freeSymbols(e: Expr): Set<Expr> {
   const out = new Map<string, Expr>();
   const go = (x: Expr) => {
@@ -678,8 +720,20 @@ impl.xreplace = xreplace;
 impl.freeSymbols = freeSymbols;
 
 /**
- * SymPy use(expr, func, level): func applied to the subexpressions at depth
+ * func applied to the subexpressions at depth
  * `level` (0 is the expression itself); atoms above that depth are kept.
+ *
+ * @param e - The input expression.
+ * @param func - The transformation to apply to each selected subexpression.
+ * @param level - The depth at which to apply the function, counting the root as zero.
+ * @returns The expression with the transformation applied at the given depth.
+ * @see SymPy `sympy.core.traversal.use`
+ * @example
+ * ```ts
+ * import { ex, expand, use } from '@symjs/symjs';
+ *
+ * use(ex`(x + 1)**2`, expand, 0); // => x**2 + 2*x + 1
+ * ```
  */
 export function use(e: ExprLike, func: (x: Expr) => Expr, level = 0): Expr {
   const go = (x: Expr, k: number): Expr => {
@@ -693,14 +747,36 @@ export function use(e: ExprLike, func: (x: Expr) => Expr, level = 0): Expr {
   return go(sympify(e), level);
 }
 
-/** A pre-order traversal of an expression tree (SymPy preorder_traversal), with skip() to leave out the subtree of the last node. */
+/**
+ * A pre-order traversal of an expression tree (SymPy preorder_traversal), with skip() to leave out the subtree of the last node.
+ *
+ * @see SymPy `sympy.core.traversal.preorder_traversal`
+ * @example
+ * ```ts
+ * import { PreorderTraversal, ex } from '@symjs/symjs';
+ *
+ * [...new PreorderTraversal(ex`x + 1`)]; // => [x + 1, 1, x]
+ * ```
+ */
 export class PreorderTraversal implements Iterable<Expr> {
   private skipped = false;
+  /**
+   * Creates a `PreorderTraversal`.
+   *
+   * @param node - The root of the expression tree being traversed.
+   * @param keys - The ordering applied to child nodes during traversal.
+   */
   constructor(
+    /** The root of the expression tree being traversed. */
     readonly node: Expr,
+    /** The ordering applied to child nodes during traversal. */
     readonly keys: boolean | ((e: Expr) => unknown) = false,
   ) {}
-  /** Do not visit the arguments of the node yielded last. */
+  /**
+   * Do not visit the arguments of the node yielded last.
+   *
+   * @see SymPy `sympy.core.traversal.preorder_traversal.skip`
+   */
   skip(): void {
     this.skipped = true;
   }
@@ -730,9 +806,20 @@ export class PreorderTraversal implements Iterable<Expr> {
 const toKey = (v: unknown): Key => (v instanceof Expr ? sortKey(v) : typeof v === 'number' || typeof v === 'string' ? v : String(v));
 
 /**
- * SymPy preorder_traversal(node, keys): the nodes of the tree, each before
+ * The nodes of the tree, each before
  * its arguments; with keys (true for the default sort key, or a key
  * function) the arguments of each node are visited in sorted order.
+ *
+ * @param node - The root of the traversal.
+ * @param keys - Whether to sort children, or the ordering key to sort by.
+ * @returns An iterable visiting each node before its children.
+ * @see SymPy `sympy.core.traversal.preorder_traversal`
+ * @example
+ * ```ts
+ * import { ex, preorderTraversal } from '@symjs/symjs';
+ *
+ * [...preorderTraversal(ex`x + 1`)]; // => [x + 1, 1, x]
+ * ```
  */
 export function preorderTraversal(node: ExprLike, keys: boolean | ((e: Expr) => unknown) = false): PreorderTraversal {
   return new PreorderTraversal(sympify(node), keys);
@@ -746,6 +833,16 @@ export const piecewiseFoldHooks: { normalizeIte?: (condition: Expr) => Expr } = 
  * expression with Piecewise arguments as one Piecewise whose branches are
  * the expression at each branch of the arguments. Extension nodes and
  * boolean connectives are not folded (their arguments are).
+ *
+ * @param e - The input expression.
+ * @returns An equivalent piecewise expression with combined branch conditions.
+ * @see SymPy `sympy.functions.elementary.piecewise.piecewise_fold`
+ * @example
+ * ```ts
+ * import { Piecewise, ex, piecewiseFold } from '@symjs/symjs';
+ *
+ * piecewiseFold(Piecewise([1, ex`x > 0`], [2, true]).add(3)); // => Piecewise((4, x > 0), (5, True))
+ * ```
  */
 export function piecewiseFold(e: Expr): Expr {
   if (e.isAtom) return e;

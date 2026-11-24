@@ -35,6 +35,16 @@ export function antiderivativeAt(F: Expr, v: Sym, b: Expr): Expr {
 /**
  * Evaluate all unevaluated Integral, Limit, Sum, Product and Derivative objects.
  * A matrix is evaluated entry by entry (SymPy MatrixBase.doit).
+ *
+ * @param ex - The expression to transform.
+ * @returns The evaluated expression, with unresolved operations held symbolically.
+ * @see SymPy `sympy.core.basic.Basic.doit`
+ * @example
+ * ```ts
+ * import { doit, ex } from '@symjs/symjs';
+ *
+ * doit(ex`2*exp(1/2)`); // => 2*exp(1/2)
+ * ```
  */
 export function doit(ex: Matrix): Matrix;
 export function doit(ex: ExprLike): Expr;

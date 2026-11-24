@@ -30,7 +30,21 @@ arrayOperationHooks.symbolic = {
 
 import { ImmutableDenseNDimArray as _ImmutableDenseNDimArray_ } from './tensor/index';
 
-/** @deprecated Use `SymArray` (`Array` shadows the JavaScript global); removed in 1.0. */
+/**
+ * Alias for {@link SymArray}.
+ *
+ * @deprecated Use {@link SymArray} (`Array` shadows the JavaScript global); removed in 1.0.
+ * @param iterable - The iterable.
+ * @param shape - The shape.
+ * @returns The immutable symbolic array.
+ * @see SymPy `sympy.tensor.array.dense_ndim_array.ImmutableDenseNDimArray`
+ * @example
+ * ```ts
+ * import { Array } from '@symjs/symjs';
+ *
+ * Array([1, 2, 3]); // => [1, 2, 3]
+ * ```
+ */
 export const Array = _ImmutableDenseNDimArray_;
 
 /** @deprecated Use `SymArray` (`Array` shadows the JavaScript global); removed in 1.0. */

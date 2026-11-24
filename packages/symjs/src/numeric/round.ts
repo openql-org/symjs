@@ -40,6 +40,19 @@ function decimalMag(v: F.Mpf): number {
 /**
  * Round a numeric expression to n decimal places (SymPy `round`). Without
  * `n` the result is an Integer; complex values round both parts.
+ *
+ * @param xIn - The argument of the function.
+ * @param n - The number of decimal places.
+ * @returns The number rounded to the requested decimal place.
+ * @throws TypeError when the expression cannot be rounded numerically.
+ * @see SymPy `sympy.core.expr.Expr.round`
+ * @example
+ * ```ts
+ * import { ex, round } from '@symjs/symjs';
+ *
+ * round(ex`pi`); // => 3
+ * round(ex`pi`, 2); // => 3.14
+ * ```
  */
 export function round(xIn: ExprLike, n?: number): Expr {
   const x = sympify(xIn);

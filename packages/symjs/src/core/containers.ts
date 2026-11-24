@@ -18,35 +18,84 @@ import { at, cast } from './guard';
 import { ordered } from './match';
 import { compareKeys, sortKey } from '../printing/sortkey';
 
-/** SymPy Tuple(*args): an immutable sequence of expressions. */
+/**
+ * An immutable sequence of expressions.
+ *
+ * @see SymPy `sympy.core.containers.Tuple`
+ * @example
+ * ```ts
+ * import { TupleNode, ex } from '@symjs/symjs';
+ *
+ * new TupleNode([ex`1`, ex`2`]).at(-1); // => 2
+ * ```
+ */
 export class TupleNode extends ExtensionExpr {
+  /**
+   * Creates a `TupleNode`.
+   *
+   * @param args - The arguments in positional order.
+   */
   constructor(args: readonly Expr[]) {
     super('Tuple', args);
   }
+  /**
+   * Rebuilds the node with the supplied arguments.
+   *
+   * @param args - The replacement arguments, in node order.
+   * @returns The expression rebuilt with the new arguments.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new TupleNode(args);
   }
-  /** The number of elements (SymPy len(Tuple)). */
+  /**
+   * The number of elements (SymPy len(Tuple)).
+   *
+   * @returns The number of elements (SymPy len(Tuple)).
+   */
   get length(): number {
     return this.args.length;
   }
-  /** The element at index i (negative indices count from the end). */
+  /**
+   * The element at index i (negative indices count from the end).
+   *
+   * @param i - The zero-based index.
+   * @returns The element at index i (negative indices count from the end).
+   */
   at(i: number): Expr {
     return at(this.args, i < 0 ? this.args.length + i : i);
   }
-  /** The elements as an array. */
+  /**
+   * The elements as an array.
+   *
+   * @returns The elements as an array.
+   */
   toArray(): Expr[] {
     return [...this.args];
   }
   [Symbol.iterator](): Iterator<Expr> {
     return this.args[Symbol.iterator]();
   }
-  /** SymPy Tuple.count(value): the number of elements equal to value. */
+  /**
+   * The number of elements equal to value.
+   *
+   * @param value - The value to examine.
+   * @returns The number of matching occurrences.
+   * @see SymPy `sympy.core.containers.Tuple.count`
+   */
   count(value: ExprLike): number {
     const k = sympify(value).key;
     return this.args.filter((a) => a.key === k).length;
   }
-  /** SymPy Tuple.index(value): the first position of value (RangeError when absent). */
+  /**
+   * The first position of value (RangeError when absent).
+   *
+   * @param value - The value to examine.
+   * @param start - The starting value or index.
+   * @param stop - The exclusive upper index.
+   * @returns The first position of value (RangeError when absent).
+   * @throws RangeError when the requested element is absent from the search range.
+   * @see SymPy `sympy.core.containers.Tuple.index`
+   */
   index(value: ExprLike, start = 0, stop = this.length): number {
     const k = sympify(value).key;
     const from = start < 0 ? Math.max(0, this.length + start) : start;
@@ -55,22 +104,50 @@ export class TupleNode extends ExtensionExpr {
     if (i < 0) throw new RangeError(`${String(value)} is not in the Tuple`);
     return i;
   }
-  /** SymPy Tuple + Tuple: the concatenation. */
+  /**
+   * Concatenates the tuples in order.
+   *
+   * @param other - The other operand.
+   * @returns The tuple containing both sequences in order.
+   */
   concat(other: TupleNode | readonly ExprLike[]): TupleNode {
     return new TupleNode([...this.args, ...(other instanceof TupleNode ? other.args : other.map(sympify))]);
   }
-  /** Repeat the tuple like Python sequence multiplication. */
+  /**
+   * Repeat the tuple like Python sequence multiplication.
+   *
+   * @param count - The repetition count.
+   * @returns The tuple repeated the requested number of times.
+   * @throws TypeError when the repetition count is not an integer.
+   */
   repeat(count: number): TupleNode {
     if (!Number.isSafeInteger(count)) throw new TypeError('Tuple repetition requires an integer');
     return new TupleNode(Array.from({ length: Math.max(0, count) }, () => this.args).flat());
   }
-  /** SymPy StrPrinter._print_tuple: (a, b), (a,) and (). */
+  /**
+   * (a, b), (a,) and ().
+   *
+   * @param print - The printer to use for child expressions.
+   * @returns The formatted string.
+   */
   override printStr(print: (e: Expr) => string): string {
     return this.args.length === 1 ? `(${print(at(this.args, 0))},)` : `(${this.args.map(print).join(', ')})`;
   }
 }
 
-/** SymPy Tuple(a, b, ...). */
+/**
+ * Constructs an immutable ordered sequence of expressions.
+ *
+ * @param xs - The elements of the tuple.
+ * @returns The immutable tuple.
+ * @see SymPy `sympy.core.containers.Tuple`
+ * @example
+ * ```ts
+ * import { Tuple } from '@symjs/symjs';
+ *
+ * Tuple(1, 2).at(-1); // => 2
+ * ```
+ */
 export const Tuple = /* @__PURE__ */ callableClass(TupleNode, (...xs: ExprLike[]): TupleNode => new TupleNode(xs.map(sympify)));
 export type Tuple = TupleNode;
 
@@ -78,44 +155,101 @@ export type Tuple = TupleNode;
 type DictInput = ReadonlyMap<ExprLike, ExprLike> | readonly (readonly [ExprLike, ExprLike])[];
 const isMapInput = (x: DictInput): x is ReadonlyMap<ExprLike, ExprLike> => !Array.isArray(x);
 
-/** SymPy Dict: an immutable mapping of expressions; its arguments are the (key, value) Tuples in canonical order. */
+/**
+ * An immutable mapping of expressions; its arguments are the (key, value) Tuples in canonical order.
+ *
+ * @see SymPy `sympy.core.containers.Dict`
+ * @example
+ * ```ts
+ * import { DictNode, Tuple, ex } from '@symjs/symjs';
+ *
+ * new DictNode([Tuple(ex`x`, 2)]).get(ex`x`); // => 2
+ * ```
+ */
 export class DictNode extends ExtensionExpr {
   private readonly map: ReadonlyMap<string, readonly [Expr, Expr]>;
+  /**
+   * Creates a `DictNode`.
+   *
+   * @param items - The expressions to search for.
+   */
   constructor(items: readonly TupleNode[]) {
     super('Dict', ordered(items));
     this.map = new Map(this.args.map((t) => [at(t.args, 0).key, [at(t.args, 0), at(t.args, 1)] as const]));
   }
+  /**
+   * Rebuilds the node with the supplied arguments.
+   *
+   * @param args - The replacement arguments, in node order.
+   * @returns The expression rebuilt with the new arguments.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new DictNode(args.map((t) => cast(t, TupleNode, 'Dict item')));
   }
-  /** The number of entries. */
+  /**
+   * The number of entries.
+   *
+   * @returns The number of entries.
+   */
   get size(): number {
     return this.map.size;
   }
-  /** The value of key, or `fallback` (SymPy Dict.get; undefined is never returned without a fallback: RangeError). */
+  /**
+   * The value of key, or `fallback` (SymPy Dict.get; undefined is never returned without a fallback: RangeError).
+   *
+   * @param key - The lookup key.
+   * @param fallback - The value to return for a missing key.
+   * @returns The value of key, or `fallback` (SymPy Dict.get; undefined is never returned without a fallback: RangeError).
+   * @throws RangeError when the key is absent and no fallback was supplied.
+   * @see SymPy `sympy.core.containers.Dict.get`
+   */
   get(key: ExprLike, fallback?: Expr): Expr {
     const v = this.map.get(sympify(key).key);
     if (v) return v[1];
     if (fallback) return fallback;
     throw new RangeError(`${String(key)} is not a key of the Dict`);
   }
-  /** SymPy `key in Dict`. */
+  /**
+   * Tests whether the key occurs in the dictionary.
+   *
+   * @param key - The lookup key.
+   * @returns Whether the key occurs in the dictionary.
+   */
   containsKey(key: ExprLike): boolean {
     return this.map.has(sympify(key).key);
   }
-  /** SymPy Dict.keys(). */
+  /**
+   * Lists the keys in canonical order.
+   *
+   * @returns The resulting expressions in order.
+   * @see SymPy `sympy.core.containers.Dict.keys`
+   */
   keys(): Expr[] {
     return [...this.map.values()].map(([k]) => k);
   }
-  /** SymPy Dict.values(). */
+  /**
+   * Lists the values in canonical key order.
+   *
+   * @returns The resulting expressions in order.
+   * @see SymPy `sympy.core.containers.Dict.values`
+   */
   values(): Expr[] {
     return [...this.map.values()].map(([, v]) => v);
   }
-  /** SymPy Dict.items(). */
+  /**
+   * Lists the key-value pairs in canonical key order.
+   *
+   * @returns The key-value pairs in canonical key order.
+   * @see SymPy `sympy.core.containers.Dict.items`
+   */
   items(): (readonly [Expr, Expr])[] {
     return [...this.map.values()];
   }
-  /** The entries as a Map keyed by expression. */
+  /**
+   * The entries as a Map keyed by expression.
+   *
+   * @returns The entries as a Map keyed by expression.
+   */
   toMap(): Map<Expr, Expr> {
     return new Map(this.items());
   }
@@ -123,17 +257,39 @@ export class DictNode extends ExtensionExpr {
   private sortedItems(): Expr[] {
     return [...this.args].sort((a, b) => compareKeys(sortKey(at(a.args, 0)), sortKey(at(b.args, 0))));
   }
-  /** SymPy StrPrinter._print_Dict: {k: v, ...} with the keys in default_sort_key order. */
+  /**
+   * {k: v, ...} with the keys in default_sort_key order.
+   *
+   * @param print - The printer to use for child expressions.
+   * @returns The formatted string.
+   */
   override printStr(print: (e: Expr) => string): string {
     return `{${this.sortedItems().map((t) => `${print(at(t.args, 0))}: ${print(at(t.args, 1))}`).join(', ')}}`;
   }
-  /** SymPy LatexPrinter._print_dict. */
+  /**
+   * Formats the key-value pairs as a LaTeX mapping.
+   *
+   * @param print - The printer to use for child expressions.
+   * @returns The formatted string.
+   */
   override printLatex(print: (e: Expr) => string): string {
     return `\\left\\{ ${this.sortedItems().map((t) => `${print(at(t.args, 0))} : ${print(at(t.args, 1))}`).join(', \\  ')}\\right\\}`;
   }
 }
 
-/** SymPy Dict({k: v}) or Dict((k1, v1), (k2, v2), ...). */
+/**
+ * Constructs an immutable mapping from expression keys to expression values.
+ *
+ * @param items - The map or sequence of key-value pairs.
+ * @returns The immutable dictionary.
+ * @see SymPy `sympy.core.containers.Dict`
+ * @example
+ * ```ts
+ * import { Dict, ex } from '@symjs/symjs';
+ *
+ * Dict([[ex`x`, 2]]).get(ex`x`); // => 2
+ * ```
+ */
 export const Dict = /* @__PURE__ */ callableClass(DictNode, (items: DictInput): DictNode => {
   const pairs = isMapInput(items) ? [...items] : items;
   const m = new Map<string, TupleNode>();
@@ -163,7 +319,19 @@ export function traversalArgs(e: Expr): readonly Expr[] {
   return e.args;
 }
 
-/** Visit the expression and its arguments breadth first. */
+/**
+ * Visit the expression and its arguments breadth first.
+ *
+ * @param e - The input expression.
+ * @returns An iterable visiting the selected expressions in breadth-first order.
+ * @see SymPy `sympy.core.traversal.iterargs`
+ * @example
+ * ```ts
+ * import { ex, iterArgs } from '@symjs/symjs';
+ *
+ * [...iterArgs(ex`x + 1`)]; // => [x + 1, 1, x]
+ * ```
+ */
 export function* iterArgs(e: Expr): Generator<Expr, void, undefined> {
   const queue = [e];
   for (const node of queue) {

@@ -18,19 +18,35 @@ export type BoolOpName = 'And' | 'Or' | 'Not' | 'Xor' | 'ITE';
 
 /** And(...), Or(...) or Not(x). @internal ctor: use and/or/not. */
 export class BoolOp extends Expr {
+  /** The discriminant identifying the expression node. */
   readonly kind = 'BoolOp' as const;
+  /**
+   * Creates a Boolean expression.
+   *
+   * @param op - The logical operator.
+   * @param args - The operands in node order.
+   */
   constructor(
+    /** The logical operator applied to the arguments. */
     readonly op: BoolOpName,
+    /** The operands of the expression in node order. */
     readonly args: readonly Expr[],
   ) {
     super();
   }
+  /** The name of the logical operator. */
   get className(): string {
     return this.op;
   }
   protected computeKey(): string {
     return `${this.op}(${this.args.map((a) => a.key).join(',')})`;
   }
+  /**
+   * Tests whether a subexpression occurs in the Boolean expression.
+   *
+   * @param sub - The subexpression to find.
+   * @returns Whether the queried expression occurs.
+   */
   override has(sub: Expr): boolean {
     if ((this.op === 'And' || this.op === 'Or') && sub instanceof BoolOp && sub.op === this.op) {
       const keys = new Set(this.args.map((a) => a.key));
@@ -38,7 +54,14 @@ export class BoolOp extends Expr {
     }
     return super.has(sub);
   }
-  /** Substitute inside associative gates, including subsets of their operands. */
+  /**
+   * Substitute inside associative gates, including subsets of their operands.
+   *
+   * @param old - The expression to replace.
+   * @param replacement - The value to substitute.
+   * @param recurse - The substitution callback for child expressions.
+   * @returns The expression with the requested substitution applied.
+   */
   subsSelf(old: Expr, replacement: Expr, recurse: (arg: Expr) => Expr): Expr | undefined {
     if (this.op !== 'And' && this.op !== 'Or' && this.op !== 'Xor') return undefined;
     const absorbing = this.op === 'And' ? S.false : this.op === 'Or' ? S.true : undefined;
@@ -63,7 +86,12 @@ export class BoolOp extends Expr {
     }
     return terms.some((a, i) => a !== this.args[i]) ? this.withArgs(terms) : this;
   }
-  /** A node of the same class with new arguments (re-evaluated). */
+  /**
+   * A node of the same class with new arguments (re-evaluated).
+   *
+   * @param args - The operands in node order.
+   * @returns The rebuilt expression.
+   */
   withArgs(args: readonly Expr[]): Expr {
     switch (this.op) {
       case 'And':
@@ -78,7 +106,12 @@ export class BoolOp extends Expr {
         return new BoolOp('ITE', args);
     }
   }
-  /** SymPy LatexPrinter: x \wedge y, x \vee y, x \veebar y, \neg x, \operatorname{ITE}(c, a, b). */
+  /**
+   * SymPy LatexPrinter: x \wedge y, x \vee y, x \veebar y, \neg x, \operatorname{ITE}(c, a, b).
+   *
+   * @param p - The expression printer for child nodes.
+   * @returns The LaTeX representation.
+   */
   printLatex(p: (e: Expr) => string): string {
     const paren = (a: Expr) => (a instanceof BoolOp && a.op !== 'Not' ? `\\left(${p(a)}\\right)` : p(a));
     if (this.op === 'Not') {
@@ -92,7 +125,12 @@ export class BoolOp extends Expr {
     const sep = this.op === 'And' ? ' \\wedge ' : this.op === 'Or' ? ' \\vee ' : ' \\veebar ';
     return this.args.map(paren).join(sep);
   }
-  /** SymPy StrPrinter: args sorted by default_sort_key, joined by & or |. */
+  /**
+   * SymPy StrPrinter: args sorted by default_sort_key, joined by & or |.
+   *
+   * @param p - The expression printer for child nodes.
+   * @returns The formatted expression.
+   */
   printStr(p: (e: Expr) => string): string {
     if (this.op === 'ITE') return `ITE(${this.args.map(p).join(', ')})`;
     if (this.op === 'Not') {
@@ -157,7 +195,33 @@ function lattice(op: 'And' | 'Or', xs: readonly (ExprLike | boolean)[]): Expr {
   return new BoolOp(op, sortArgs([...out.values()]));
 }
 
+/**
+ * Forms the logical conjunction of the propositions.
+ *
+ * @param xs - The propositions to combine.
+ * @returns The simplified Boolean expression.
+ * @see SymPy `sympy.logic.boolalg.And`
+ * @example
+ * ```ts
+ * import { And } from '@symjs/symjs';
+ *
+ * And(true, false); // => False
+ * ```
+ */
 export const and = (...xs: (ExprLike | boolean)[]): Expr => lattice('And', xs);
+/**
+ * Forms the logical disjunction of the propositions.
+ *
+ * @param xs - The propositions to combine.
+ * @returns The simplified Boolean expression.
+ * @see SymPy `sympy.logic.boolalg.Or`
+ * @example
+ * ```ts
+ * import { Or } from '@symjs/symjs';
+ *
+ * Or(true, false); // => True
+ * ```
+ */
 export const or = (...xs: (ExprLike | boolean)[]): Expr => lattice('Or', xs);
 export function not(x0: ExprLike | boolean): Expr {
   // SymPy Not(n) for a number n is the negation of its truth value (Not(2) is False)
@@ -173,7 +237,20 @@ export function not(x0: ExprLike | boolean): Expr {
   return new BoolOp('Not', [x]);
 }
 
-/** SymPy Xor(*args): true when an odd number of the arguments is true. */
+/**
+ * True when an odd number of the arguments is true.
+ *
+ * @param xs - The propositions to combine.
+ * @returns The exclusive disjunction of the arguments.
+ * @see SymPy `sympy.logic.boolalg.Xor`
+ * @example
+ * ```ts
+ * import { Xor } from '@symjs/symjs';
+ *
+ * Xor(true, true); // => False
+ * Xor(true, false); // => True
+ * ```
+ */
 export function xor(...xs: (ExprLike | boolean)[]): Expr {
   return xorArgs(xs.map(boolArg), true);
 }

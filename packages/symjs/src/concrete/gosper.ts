@@ -25,10 +25,25 @@ import { Matrix } from '../matrices/matrix';
 const field = (e: Expr, n: Sym): Poly => Poly.from(e, [n], { field: true });
 
 /**
- * SymPy gosper_normal: polynomials A, B, C with f/g = Z*A/B*C(n + 1)/C(n),
+ * Polynomials A, B, C with f/g = Z*A/B*C(n + 1)/C(n),
  * gcd(A(n), B(n + h)) = 1 for all nonnegative integers h, gcd(A, C(n + 1)) =
  * gcd(B, C) = 1 (Z is folded into A). Poly objects, or expressions with
  * `polys: false`.
+ *
+ * @remarks
+ * For `gosper_normal(4*n+5, 2*(4*n+1)*(2*n+3), n, polys=False)`, SymPy displays `(1/4, n + 3/2, n + 1/4)`.
+ * @param f - The numerator or denominator, respectively, of the rational term ratio.
+ * @param g - The numerator or denominator, respectively, of the rational term ratio.
+ * @param n - The discrete variable.
+ * @param opts - Set `polys` to false to return expressions in place of polynomial objects.
+ * @returns The three polynomials in Gosper normal form, as polynomials or expressions.
+ * @see SymPy `sympy.concrete.gosper.gosper_normal`
+ * @example
+ * ```ts
+ * import { ex, gosperNormal, symbols } from '@symjs/symjs';
+ *
+ * gosperNormal(ex`4*n + 5`, ex`(2*n + 3)*(8*n + 2)`, symbols('n')[0], { polys: false }); // => [1/4, n + 3/2, n + 1/4]
+ * ```
  */
 export function gosperNormal(f: ExprLike, g: ExprLike, n: Sym, opts?: { polys?: true }): [Poly, Poly, Poly];
 export function gosperNormal(f: ExprLike, g: ExprLike, n: Sym, opts: { polys: false }): [Expr, Expr, Expr];
@@ -60,9 +75,20 @@ export function gosperNormal(fIn: ExprLike, gIn: ExprLike, n: Sym, opts: { polys
 }
 
 /**
- * SymPy gosper_term: the rational function g such that f*g is an
+ * The rational function g such that f*g is an
  * antidifference of the hypergeometric term f (g(n + 1)*f(n + 1) - g(n)*f(n)
  * = f(n)); NoMatch (SymPy None) when f is not Gosper-summable.
+ *
+ * @param fIn - The hypergeometric summand.
+ * @param n - The discrete variable.
+ * @returns The rational multiplier of the antidifference, or `NoMatch`.
+ * @see SymPy `sympy.concrete.gosper.gosper_term`
+ * @example
+ * ```ts
+ * import { ex, gosperTerm, symbols } from '@symjs/symjs';
+ *
+ * gosperTerm(ex`(4*n + 1)*factorial(n)/factorial(2*n + 1)`, symbols('n')[0]); // => (-n - 1/2)/(n + 1/4)
+ * ```
  */
 export function gosperTerm(fIn: ExprLike, n: Sym): Expr | NoMatchResult {
   const r = hypersimp(fIn, n);
@@ -97,9 +123,20 @@ export function gosperTerm(fIn: ExprLike, n: Sym): Expr | NoMatchResult {
 }
 
 /**
- * SymPy gosper_sum: the indefinite sum of the hypergeometric term f in k
+ * The indefinite sum of the hypergeometric term f in k
  * (k a symbol), or the sum from a to b (k given as [k, a, b]), by Gosper's
  * algorithm; NoMatch when f is not Gosper-summable.
+ *
+ * @param fIn - The hypergeometric summand.
+ * @param k - The summation variable, or a triple giving the variable and both endpoints.
+ * @returns The definite sum or an indefinite antidifference, or `NoMatch`.
+ * @see SymPy `sympy.concrete.gosper.gosper_sum`
+ * @example
+ * ```ts
+ * import { ex, gosperSum, symbols } from '@symjs/symjs';
+ *
+ * gosperSum(ex`k`, [symbols('k')[0], 1, 10]); // => 55
+ * ```
  */
 export function gosperSum(fIn: ExprLike, k: Sym | readonly [Sym, ExprLike, ExprLike]): Expr | NoMatchResult {
   const f = sympify(fIn);

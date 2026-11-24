@@ -96,11 +96,58 @@ numericFns.Ynm = (args) => {
 
 // ---- public API ---------------------------------------------------------------------
 
-/** SymPy Ynm(n, m, theta, phi): the spherical harmonic Y_n^m. */
+/**
+ * The spherical harmonic Y_n^m.
+ *
+ * @param n - The index.
+ * @param m - The order.
+ * @param theta - The polar angle in radians.
+ * @param phi - The azimuthal angle in radians.
+ * @returns The spherical harmonic Y_n^m.
+ * @see SymPy `sympy.functions.special.spherical_harmonics.Ynm`
+ * @example
+ * ```ts
+ * import { Ynm, ex } from '@symjs/symjs';
+ *
+ * Ynm(ex`n`, ex`m`, ex`theta`, ex`phi`); // => Ynm(n, m, theta, phi)
+ * Ynm(ex`n`, ex`m`, ex`-theta`, ex`phi`); // => Ynm(n, m, theta, phi)
+ * ```
+ */
 export const Ynm = (n: ExprLike, m: ExprLike, theta: ExprLike, phi: ExprLike): Expr => fn('Ynm', [n, m, theta, phi]);
-/** SymPy Ynm_c(n, m, theta, phi) = conjugate(Ynm(n, m, theta, phi)): the conjugate spherical harmonic. */
+/**
+ * The conjugate spherical harmonic.
+ *
+ * @param n - The index.
+ * @param m - The order.
+ * @param theta - The polar angle in radians.
+ * @param phi - The azimuthal angle in radians.
+ * @returns The conjugate spherical harmonic.
+ * @see SymPy `sympy.functions.special.spherical_harmonics.Ynm_c`
+ * @example
+ * ```ts
+ * import { YnmC, ex } from '@symjs/symjs';
+ *
+ * YnmC(ex`n`, ex`m`, ex`theta`, ex`phi`); // => (-1)**(2*m)*exp(-2*I*m*phi)*Ynm(n, m, theta, phi)
+ * YnmC(ex`n`, ex`m`, ex`-theta`, ex`phi`); // => (-1)**(2*m)*exp(-2*I*m*phi)*Ynm(n, m, theta, phi)
+ * ```
+ */
 export const YnmC = (n: ExprLike, m: ExprLike, theta: ExprLike, phi: ExprLike): Expr => conjugate(Ynm(n, m, theta, phi));
-/** SymPy Znm(n, m, theta, phi): the real spherical harmonic. */
+/**
+ * The real spherical harmonic.
+ *
+ * @param n - The index.
+ * @param m - The order.
+ * @param theta - The polar angle in radians.
+ * @param phi - The azimuthal angle in radians.
+ * @returns The real spherical harmonic.
+ * @see SymPy `sympy.functions.special.spherical_harmonics.Znm`
+ * @example
+ * ```ts
+ * import { Znm, ex } from '@symjs/symjs';
+ *
+ * Znm(ex`n`, ex`m`, ex`theta`, ex`phi`); // => Znm(n, m, theta, phi)
+ * ```
+ */
 export const Znm = (n: ExprLike, m: ExprLike, theta: ExprLike, phi: ExprLike): Expr => fn('Znm', [n, m, theta, phi]);
 
 registerFunctionHeads([

@@ -22,13 +22,76 @@ function deltaIndices(e: Expr): readonly [Expr, Expr] {
 const above = (i: Expr): boolean => i instanceof Sym && i.assumptions.aboveFermi === true;
 const below = (i: Expr): boolean => i instanceof Sym && i.assumptions.belowFermi === true;
 
-/** The delta can be nonzero above / below the Fermi level. */
+/**
+ * The delta can be nonzero above / below the Fermi level.
+ *
+ * @param e - The Kronecker delta to inspect.
+ * @returns Whether the delta can be nonzero in the selected sector.
+ * @see SymPy `sympy.functions.special.tensor_functions.KroneckerDelta.is_above_fermi`
+ * @example
+ * ```ts
+ * import { ex, isAboveFermi } from '@symjs/symjs';
+ *
+ * isAboveFermi(ex`KroneckerDelta(p, q)`); // => True
+ * ```
+ */
 export function isAboveFermi(e: Expr): boolean { return !deltaIndices(e).some(below); }
+/**
+ * Tests whether the Kronecker delta can be nonzero below the Fermi level.
+ *
+ * @param e - The Kronecker delta to inspect.
+ * @returns Whether the delta can be nonzero in the selected sector.
+ * @see SymPy `sympy.functions.special.tensor_functions.KroneckerDelta.is_below_fermi`
+ * @example
+ * ```ts
+ * import { ex, isBelowFermi } from '@symjs/symjs';
+ *
+ * isBelowFermi(ex`KroneckerDelta(p, q)`); // => True
+ * ```
+ */
 export function isBelowFermi(e: Expr): boolean { return !deltaIndices(e).some(above); }
-/** At least one index is restricted to the indicated Fermi sector. */
+/**
+ * At least one index is restricted to the indicated Fermi sector.
+ *
+ * @param e - The Kronecker delta to inspect.
+ * @returns Whether the delta is confined to the selected sector.
+ * @see SymPy `sympy.functions.special.tensor_functions.KroneckerDelta.is_only_above_fermi`
+ * @example
+ * ```ts
+ * import { ex, isOnlyAboveFermi } from '@symjs/symjs';
+ *
+ * isOnlyAboveFermi(ex`KroneckerDelta(p, q)`); // => False
+ * ```
+ */
 export function isOnlyAboveFermi(e: Expr): boolean { return deltaIndices(e).some(above); }
+/**
+ * Tests whether a delta index restricts the delta to states below the Fermi level.
+ *
+ * @param e - The Kronecker delta to inspect.
+ * @returns Whether the delta is confined to the selected sector.
+ * @see SymPy `sympy.functions.special.tensor_functions.KroneckerDelta.is_only_below_fermi`
+ * @example
+ * ```ts
+ * import { ex, isOnlyBelowFermi } from '@symjs/symjs';
+ *
+ * isOnlyBelowFermi(ex`KroneckerDelta(p, q)`); // => False
+ * ```
+ */
 export function isOnlyBelowFermi(e: Expr): boolean { return deltaIndices(e).some(below); }
-/** Whether either index can be eliminated without losing a Fermi restriction. */
+/**
+ * Whether either index can be eliminated without losing a Fermi restriction.
+ *
+ * @param e - The Kronecker delta to inspect.
+ * @returns Whether both indices impose the same Fermi restrictions.
+ * @see SymPy `sympy.functions.special.tensor_functions.KroneckerDelta.indices_contain_equal_information`
+ * @example
+ * ```ts
+ * import { ex, indicesContainEqualInformation } from '@symjs/symjs';
+ *
+ * indicesContainEqualInformation(ex`KroneckerDelta(p, q)`); // => True
+ * indicesContainEqualInformation(ex`KroneckerDelta(p, q + 1)`); // => True
+ * ```
+ */
 export function indicesContainEqualInformation(e: Expr): boolean {
   const indices = deltaIndices(e);
   return indices.every(below) || indices.every(above) || (isAboveFermi(e) && isBelowFermi(e));
@@ -39,9 +102,33 @@ function preferredPosition(e: Expr): number {
   if (!isBelowFermi(e)) return above(i) ? 0 : 1;
   return 0;
 }
-/** The index carrying the most information, with ties resolved by argument order. */
+/**
+ * The index carrying the most information, with ties resolved by argument order.
+ *
+ * @param e - The Kronecker delta to inspect.
+ * @returns The index to retain in a substitution.
+ * @see SymPy `sympy.functions.special.tensor_functions.KroneckerDelta.preferred_index`
+ * @example
+ * ```ts
+ * import { KroneckerDelta, ex, preferredIndex } from '@symjs/symjs';
+ *
+ * preferredIndex(KroneckerDelta(ex`i`, ex`j`)); // => i
+ * ```
+ */
 export function preferredIndex(e: Expr): Expr { return at(deltaIndices(e), preferredPosition(e)); }
-/** The index eliminated when the delta is applied. */
+/**
+ * The index eliminated when the delta is applied.
+ *
+ * @param e - The Kronecker delta to inspect.
+ * @returns The index to eliminate in a substitution.
+ * @see SymPy `sympy.functions.special.tensor_functions.KroneckerDelta.killable_index`
+ * @example
+ * ```ts
+ * import { KroneckerDelta, ex, killableIndex } from '@symjs/symjs';
+ *
+ * killableIndex(KroneckerDelta(ex`i`, ex`j`)); // => j
+ * ```
+ */
 export function killableIndex(e: Expr): Expr { return at(deltaIndices(e), 1 - preferredPosition(e)); }
 
 /** SymPy eval_levicivita: prod_{i<j} (a_j - a_i) / prod_i i!, for integer arguments. */
@@ -91,13 +178,30 @@ const leviCivita = defineFunction('LeviCivita', leviCivitaDefinition);
 /**
  * The Levi-Civita symbol (SymPy LeviCivita): the sign of the permutation of
  * integer arguments, 0 for a repeated index, unevaluated otherwise.
+ *
+ * @param args - The arguments in positional order.
+ * @returns The Levi-Civita symbol (SymPy LeviCivita): the sign of the permutation of integer arguments, 0 for a repeated index, unevaluated otherwise.
+ * @see SymPy `sympy.functions.special.tensor_functions.LeviCivita`
+ * @example
+ * ```ts
+ * import { LeviCivita } from '@symjs/symjs';
+ *
+ * LeviCivita(1, 2, 3); // => 1
+ * LeviCivita(1, 2, 2); // => 0
+ * ```
  */
 export function LeviCivita(...args: ExprLike[]): Expr {
   return leviCivita(...args);
 }
 registerHeadResolver(LeviCivitaCall, () => leviCivita);
 
-/** SymPy Eijk: the Levi-Civita symbol, LeviCivita(*args). */
+/**
+ * The Levi-Civita symbol, LeviCivita(*args).
+ *
+ * @param args - The arguments in positional order.
+ * @returns The Levi-Civita symbol, LeviCivita(*args).
+ * @see SymPy `sympy.functions.special.tensor_functions.Eijk`
+ */
 export function Eijk(...args: ExprLike[]): Expr {
   return LeviCivita(...args);
 }

@@ -83,7 +83,13 @@ export function splitCoeff(e: Expr): [Num, Expr] {
   return [S.One, e];
 }
 
-/** Return [base, exponent] of e (exponent 1 for non-powers). */
+/**
+ * Return [base, exponent] of e (exponent 1 for non-powers).
+ *
+ * @param e - The input expression.
+ * @returns The base and exponent.
+ * @see SymPy `sympy.core.expr.Expr.as_base_exp`
+ */
 export function asBaseExp(e: Expr): [Expr, Expr] {
   if (e instanceof Pow) return [e.base, e.exp];
   if (e instanceof Mul) {
@@ -233,6 +239,20 @@ function infTerm(e: Expr): [Special, Expr] | undefined {
   return [negative ? S.NegativeInfinity : S.Infinity, t.length === 1 ? at(t, 0) : new Mul(t)];
 }
 
+/**
+ * Adds the operands and combines like terms.
+ *
+ * @param xs - The operands, in order.
+ * @returns The sum of the operands.
+ * @see SymPy `sympy.core.add.Add`
+ * @example
+ * ```ts
+ * import { add, ex } from '@symjs/symjs';
+ *
+ * add(ex`x`, 1); // => x + 1
+ * add(ex`x`, ex`x`); // => 2*x
+ * ```
+ */
 export function add(...xs: ExprLike[]): Expr {
   const sx = xs.map(sympify);
   rejectRel(sx, 'Add');
@@ -519,6 +539,20 @@ function mulSpecial(args: Expr[]): Expr {
   return new Mul(sign > 0 ? factors : [S.NegOne, ...factors]);
 }
 
+/**
+ * Multiplies the operands and combines compatible factors.
+ *
+ * @param xs - The operands, in order.
+ * @returns The product of the operands.
+ * @see SymPy `sympy.core.mul.Mul`
+ * @example
+ * ```ts
+ * import { ex, mul } from '@symjs/symjs';
+ *
+ * mul(ex`x`, 1); // => x
+ * mul(ex`x`, ex`x`); // => x**2
+ * ```
+ */
 export function mul(...xs: ExprLike[]): Expr {
   const args = xs.map(sympify);
   rejectRel(args, 'Mul');
@@ -749,6 +783,14 @@ export function knownNonreal(e: Expr): boolean {
   return terms.filter((v) => v === false).length === 1 && !terms.includes(undefined);
 }
 
+/**
+ * Raises a base to an exponent.
+ *
+ * @param bx - The base of the power.
+ * @param ex - The exponent.
+ * @returns The resulting power.
+ * @see SymPy `sympy.core.power.Pow`
+ */
 export function pow(bx: ExprLike, ex: ExprLike): Expr {
   const b = sympify(bx);
   const e = sympify(ex);
@@ -1187,10 +1229,23 @@ function pureComplex(e: Add): [Num, Num] | undefined {
   return undefined;
 }
 
+/**
+ * Takes the additive inverse of an expression.
+ *
+ * @param x - The argument of the function.
+ * @returns The additive inverse.
+ */
 export function neg(x: ExprLike): Expr {
   return mul(S.NegOne, x);
 }
 
+/**
+ * Subtracts the second operand from the first.
+ *
+ * @param a - The first operand.
+ * @param b - The second operand.
+ * @returns The difference of the two operands.
+ */
 export function sub(a: ExprLike, b: ExprLike): Expr {
   return impl.arithmetic?.('sub', [sympify(a), sympify(b)]) ?? add(a, mul(S.NegOne, b));
 }
@@ -1256,6 +1311,16 @@ export function rational(p: bigint | number, q: bigint | number = 1): Rational {
 /**
  * Heuristic: does the expression "look negative" (a leading minus sign could be
  * extracted)? Used to choose canonical signs, e.g. sin(-x) -> -sin(x).
+ *
+ * @param e - The input expression.
+ * @returns Whether a leading minus sign can be canonically extracted.
+ * @see SymPy `sympy.core.expr.Expr.could_extract_minus_sign`
+ * @example
+ * ```ts
+ * import { couldExtractMinusSign, ex } from '@symjs/symjs';
+ *
+ * couldExtractMinusSign(ex`x*(-x + y)`); // => False
+ * ```
  */
 export function couldExtractMinusSign(e: Expr): boolean {
   if (isNum(e)) return e.isNegative;
@@ -1289,7 +1354,23 @@ impl.div = div;
 impl.pow = pow;
 impl.couldExtractMinusSign = couldExtractMinusSign;
 
-/** SymPy root(x, n, k): the k-th n-th root, x**(1/n)*(-1)**(2*k/n). */
+/**
+ * The k-th n-th root, x**(1/n)*(-1)**(2*k/n).
+ *
+ * @param x - The argument of the function.
+ * @param n - The root degree.
+ * @param k - The branch index, zero for the principal branch.
+ * @param opts - Set `evaluate` to false to suppress automatic evaluation.
+ * @returns The k-th n-th root, x**(1/n)*(-1)**(2*k/n).
+ * @see SymPy `sympy.functions.elementary.miscellaneous.root`
+ * @example
+ * ```ts
+ * import { root } from '@symjs/symjs';
+ *
+ * root(-32, 5, 2); // => -2
+ * root(-8, 3); // => 2*(-1)**(1/3)
+ * ```
+ */
 export function root(x: ExprLike, n: ExprLike, k: ExprLike = 0, opts: { evaluate?: boolean } = {}): Expr {
   const nn = sympify(n);
   const kk = sympify(k);
@@ -1298,12 +1379,40 @@ export function root(x: ExprLike, n: ExprLike, k: ExprLike = 0, opts: { evaluate
   return mul(r, pow(S.NegOne, mul(2, kk, pow(nn, -1))));
 }
 
-/** SymPy cbrt(x) = x**(1/3). */
+/**
+ * Computes the principal cube root as a power with exponent one third.
+ *
+ * @param x - The argument of the function.
+ * @returns The principal cube root.
+ * @see SymPy `sympy.functions.elementary.miscellaneous.cbrt`
+ * @example
+ * ```ts
+ * import { cbrt, ex } from '@symjs/symjs';
+ *
+ * cbrt(ex`x`); // => x**(1/3)
+ * cbrt(ex`x**3`); // => (x**3)**(1/3)
+ * ```
+ */
 export function cbrt(x: ExprLike): Expr {
   return pow(x, Rational.of(1n, 3n));
 }
 
-/** SymPy real_root: real odd roots, or conversion of principal odd roots when n is omitted. */
+/**
+ * Real odd roots, or conversion of principal odd roots when n is omitted.
+ *
+ * @param xIn - The argument of the function.
+ * @param nIn - The root degree.
+ * @param opts - Set `evaluate` to false to suppress automatic evaluation.
+ * @returns The expression with real roots selected where applicable.
+ * @see SymPy `sympy.functions.elementary.miscellaneous.real_root`
+ * @example
+ * ```ts
+ * import { realRoot } from '@symjs/symjs';
+ *
+ * realRoot(-8, 3); // => -2
+ * realRoot(-32, 5); // => -2
+ * ```
+ */
 export function realRoot(xIn: ExprLike, nIn?: ExprLike, opts: { evaluate?: boolean } = {}): Expr {
   const x = sympify(xIn);
   if (nIn === undefined) {

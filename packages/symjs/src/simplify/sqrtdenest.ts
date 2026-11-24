@@ -46,7 +46,20 @@ const asCoeffMul = (e: Expr): [Expr, Expr] => {
   return [S.One, e];
 };
 
-/** Nesting depth of square roots (I counts as one). */
+/**
+ * Nesting depth of square roots (I counts as one).
+ *
+ * @param p - The numerator.
+ * @returns The maximum nesting depth.
+ * @see SymPy `sympy.simplify.sqrtdenest.sqrt_depth`
+ * @example
+ * ```ts
+ * import { ex, sqrtDepth } from '@symjs/symjs';
+ *
+ * sqrtDepth(ex`1 + sqrt(2)*(1 + sqrt(3))`); // => 1
+ * sqrtDepth(ex`1 + sqrt(2)*sqrt(1 + sqrt(3))`); // => 2
+ * ```
+ */
 export function sqrtDepth(p: Expr): number {
   if (p instanceof Constant && p.name === 'I') return 1;
   if (p.args.length === 0) return 0;
@@ -108,7 +121,21 @@ function splitGcd(...a: Expr[]): [Expr, Expr[], Expr[]] {
   return [g, b1, b2];
 }
 
-/** SymPy split_surds: [g, a, b] with expr = a*sqrt(g) + b. */
+/**
+ * [g, a, b] with expr = a*sqrt(g) + b.
+ *
+ * @remarks
+ * For `split_surds(3*sqrt(3) + sqrt(5)/7 + sqrt(6) + sqrt(10) + sqrt(15))`, SymPy displays `(3, sqrt(2) + sqrt(5) + 3, sqrt(5)/7 + sqrt(10))`.
+ * @param expr - The input expression.
+ * @returns The triple `[g, a, b]` representing `a*sqrt(g) + b`.
+ * @see SymPy `sympy.simplify.radsimp.split_surds`
+ * @example
+ * ```ts
+ * import { ex, splitSurds } from '@symjs/symjs';
+ *
+ * splitSurds(ex`sqrt(5)/7 + sqrt(6) + sqrt(10) + sqrt(15) + 3*sqrt(3)`); // => [3, sqrt(2) + sqrt(5) + 3, sqrt(5)/7 + sqrt(10)]
+ * ```
+ */
 export function splitSurds(expr: Expr): [Expr, Expr, Expr] {
   const args = sortedArgs(expr);
   const coeffMuls = args.map(asCoeffMul);
@@ -137,7 +164,22 @@ const NAN_OR_ZOO = new Set(['nan', 'zoo']);
 const hasZeroOrNaN = (e: Expr): boolean =>
   (e instanceof Rational && e.isZero) || (e instanceof Special && NAN_OR_ZOO.has(e.name)) || e.args.some(hasZeroOrNaN);
 
-/** SymPy rad_rationalize(num, den): rationalize den = a*sqrt(g) + b step by step. */
+/**
+ * rationalize den = a*sqrt(g) + b step by step.
+ *
+ * @remarks
+ * For `rad_rationalize(sqrt(3), 1 + sqrt(2)/3)`, SymPy displays `(-sqrt(3) + sqrt(6)/3, -7/9)`.
+ * @param numIn - The num in.
+ * @param den - The denominator to rationalize.
+ * @returns The transformed numerator and denominator.
+ * @see SymPy `sympy.simplify.radsimp.rad_rationalize`
+ * @example
+ * ```ts
+ * import { ex, radRationalize } from '@symjs/symjs';
+ *
+ * radRationalize(ex`sqrt(3)`, ex`sqrt(2)/3 + 1`); // => [-sqrt(3) + sqrt(6)/3, -7/9]
+ * ```
+ */
 export function radRationalize(numIn: Expr, den: Expr): [Expr, Expr] {
   if (!(den instanceof Add)) return [numIn, den];
   const [g, a0, b] = splitSurds(den);
@@ -146,8 +188,20 @@ export function radRationalize(numIn: Expr, den: Expr): [Expr, Expr] {
 }
 
 /**
- * SymPy radsimp: rationalize the denominator, removing square roots (up to
+ * rationalize the denominator, removing square roots (up to
  * four radical terms; symbolic radicands unless `symbolic` is false).
+ *
+ * @param exIn - The input expression.
+ * @param opts - `symbolic` permits symbolic radicands and `maxTerms` bounds the number of radical terms.
+ * @returns The rationalized expression.
+ * @see SymPy `sympy.simplify.radsimp.radsimp`
+ * @example
+ * ```ts
+ * import { ex, radsimp } from '@symjs/symjs';
+ *
+ * radsimp(ex`1/(sqrt(2) + 2)`); // => (2 - sqrt(2))/2
+ * radsimp(ex`sqrt(2)*x + sqrt(2)`); // => sqrt(2)*x + sqrt(2)
+ * ```
  */
 export function radsimp(exIn: ExprLike, opts: { symbolic?: boolean; maxTerms?: number } = {}): Expr {
   const symbolic = opts.symbolic ?? true;
@@ -335,7 +389,21 @@ function powersOf(e: Expr): Expr[] {
 
 // ---- sqrtdenest -------------------------------------------------------------------
 
-/** SymPy sqrtdenest: denest the square roots of an expression (at most maxIter passes). */
+/**
+ * denest the square roots of an expression (at most maxIter passes).
+ *
+ * @param exIn - The input expression.
+ * @param maxIter - The maximum number of denesting passes.
+ * @returns The expression with nested radicals simplified.
+ * @see SymPy `sympy.simplify.sqrtdenest.sqrtdenest`
+ * @example
+ * ```ts
+ * import { ex, sqrtdenest } from '@symjs/symjs';
+ *
+ * sqrtdenest(ex`sqrt(2*sqrt(6) + 5)`); // => sqrt(2) + sqrt(3)
+ * sqrtdenest(ex`-sqrt(10 + 6*sqrt(3)) + sqrt(1 + sqrt(3)) + sqrt(3 + 3*sqrt(3))`); // => 0
+ * ```
+ */
 export function sqrtdenest(exIn: ExprLike, maxIter = 3): Expr {
   let expr = expand(sympify(exIn), { basic: false, power_exp: false, power_base: false, log: false, multinomial: false });
   for (let i = 0; i < maxIter; i++) {

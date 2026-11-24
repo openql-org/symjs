@@ -452,8 +452,18 @@ function absorb(numerGammas: Expr[], denomGammas: Expr[], numerOthers: Expr[], d
 const isFunctionNode = (x: Expr): boolean => x instanceof Fn || x instanceof UndefFn || x instanceof Piecewise || isExpPow(x);
 
 /**
- * SymPy `gammasimp`: simplify expressions with gamma functions, minimizing
+ * simplify expressions with gamma functions, minimizing
  * the number of gamma functions and the size of their arguments.
+ *
+ * @param exIn - The input expression.
+ * @returns The expression after applying gamma and factorial identities.
+ * @see SymPy `sympy.simplify.gammasimp.gammasimp`
+ * @example
+ * ```ts
+ * import { ex, gammasimp } from '@symjs/symjs';
+ *
+ * gammasimp(ex`gamma(x)/gamma(x - 3)`); // => (x - 3)*(x - 2)*(x - 1)
+ * ```
  */
 export function gammasimp(exIn: ExprLike): Expr {
   const expr = toGamma(sympify(exIn), true);
@@ -535,10 +545,20 @@ function gammaAsComb(e: Expr): Expr {
 }
 
 /**
- * SymPy `combsimp`: simplify combinatorial expressions (factorials,
+ * simplify combinatorial expressions (factorials,
  * binomials, rising and falling factorials), keeping integer arguments;
  * the result is written with factorials and binomials. An expression with
  * a gamma of a non-integer argument is passed to gammasimp.
+ *
+ * @param exIn - The input expression.
+ * @returns The expression after applying gamma and factorial identities.
+ * @see SymPy `sympy.simplify.combsimp.combsimp`
+ * @example
+ * ```ts
+ * import { combsimp, ex } from '@symjs/symjs';
+ *
+ * combsimp(ex`RisingFactorial(b, a - b + 1)*RisingFactorial(a + 1, -a + b - 1)`); // => 1
+ * ```
  */
 export function combsimp(exIn: ExprLike): Expr {
   const ex = toGamma(sympify(exIn));
@@ -577,12 +597,27 @@ function isPolyIn(e: Expr, k: Expr): boolean {
   return polyCoefficients(xreplace(expand(e), [[k, d]]), d) !== undefined;
 }
 
-/** SymPy Expr.is_hypergeometric(k). */
+/**
+ * Tests whether the ratio of consecutive terms is rational in the index.
+ *
+ * @param f - The function or expression to transform.
+ * @param k - The index.
+ * @returns True if the ratio of consecutive terms is rational in the index, otherwise false.
+ * @see SymPy `sympy.core.basic.Basic.is_hypergeometric`
+ */
 export function isHypergeometric(f: ExprLike, k: Expr): boolean {
   return hypersimp(f, k) !== undefined;
 }
 
-/** SymPy hypersimilar(f, g, k): is f/g a rational function of k (after combinatorial simplification)? */
+/**
+ * is f/g a rational function of k (after combinatorial simplification)?
+ *
+ * @param f - The function or expression to transform.
+ * @param g - The second function.
+ * @param k - The index.
+ * @returns Whether the ratio of the two terms is rational in the index.
+ * @see SymPy `sympy.simplify.simplify.hypersimilar`
+ */
 export function hypersimilar(f: ExprLike, g: ExprLike, k: Expr): boolean {
   const r = combsimp(mul(sympify(f), pow(sympify(g), -1)));
   const [n, d] = fraction(cancel(r));

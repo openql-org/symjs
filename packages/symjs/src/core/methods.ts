@@ -75,7 +75,23 @@ export function keepCoeff(coeffIn: Expr, factorsIn: Expr): Expr {
   return m;
 }
 
-/** SymPy `args_cnc`: commutative factors (a negative coefficient is split into -1 and its absolute value). */
+/**
+ * commutative factors (a negative coefficient is split into -1 and its absolute value).
+ *
+ * @remarks
+ * For `(-oo).args_cnc() # -oo is a singleton`, SymPy displays `[[-1, oo], []]`. For `(-2*x*y).args_cnc()`, SymPy displays `[[-1, 2, x, y], []]`.
+ * @param e - The input expression.
+ * @param split1 - Whether to split a negative coefficient into its magnitude and a factor of minus one.
+ * @returns The commutative factors.
+ * @see SymPy `sympy.core.expr.Expr.args_cnc`
+ * @example
+ * ```ts
+ * import { argsCnc, ex } from '@symjs/symjs';
+ *
+ * argsCnc(ex`-oo`); // => [-1, oo]
+ * argsCnc(ex`-2*x*y`); // => [-1, 2, x, y]
+ * ```
+ */
 export function argsCnc(e: Expr, split1 = true): Expr[] {
   return argsCncSplit(e, split1)[0];
 }
@@ -100,7 +116,24 @@ function argsCncCommutative(c: Expr[], split1: boolean): Expr[] {
   return c;
 }
 
-/** SymPy `Expr.coeff(x, n)` (commutative case). */
+/**
+ * Finds the coefficient of a given power in the expression.
+ *
+ * @param eIn - The input expression.
+ * @param xIn - The factor whose power to collect.
+ * @param n - The exponent whose coefficient to extract.
+ * @param right - Whether to extract the coefficient on the right in a noncommutative product.
+ * @param first - Whether to try extracting a common factor on the initial call.
+ * @returns The coefficient of a given power in the expression.
+ * @see SymPy `sympy.core.expr.Expr.coeff`
+ * @example
+ * ```ts
+ * import { coeff, ex } from '@symjs/symjs';
+ *
+ * coeff(ex`x + 2*y`, 1); // => x
+ * coeff(ex`-x + 2*y`, -1); // => x
+ * ```
+ */
 export function coeff(eIn: ExprLike, xIn: ExprLike, n = 1, right = false, first = true): Expr {
   const e = sympify(eIn);
   let x = sympify(xIn);
@@ -214,7 +247,22 @@ export function coeff(eIn: ExprLike, xIn: ExprLike, n = 1, right = false, first 
   return S.Zero;
 }
 
-/** SymPy `as_independent(*deps, as_Add=...)`: [independent, dependent]. */
+/**
+ * [independent, dependent].
+ *
+ * @param eIn - The input expression.
+ * @param deps - The expressions that the independent part must be free of.
+ * @param opts - `asAdd` requests additive separation when true and multiplicative separation when false.
+ * @returns The independent part followed by the dependent part.
+ * @remarks SymPy returns the tuple `(2*y, x)` for the example below.
+ * @see SymPy `sympy.core.expr.Expr.as_independent`
+ * @example
+ * ```ts
+ * import { asIndependent, ex } from '@symjs/symjs';
+ *
+ * asIndependent(ex`2*x*y`, [ex`x`]); // => [2*y, x]
+ * ```
+ */
 export function asIndependent(eIn: ExprLike, deps: readonly Expr[], opts: { asAdd?: boolean } = {}): [Expr, Expr] {
   const e = sympify(eIn);
   if (isZeroE(e)) return [e, e];
@@ -250,7 +298,23 @@ export function asIndependent(eIn: ExprLike, deps: readonly Expr[], opts: { asAd
   return [mul(...indep), depend.length === 0 ? S.One : depend.length === 1 ? at(depend, 0) : new Mul(depend)];
 }
 
-/** SymPy `as_coeff_add(*deps)`. */
+/**
+ * Splits a sum into an independent coefficient and its remaining terms.
+ *
+ * @remarks
+ * For `(S(3)).as_coeff_add()`, SymPy displays `(3, ())`. For `(3 + x).as_coeff_add()`, SymPy displays `(3, (x,))`.
+ * @param eIn - The input expression.
+ * @param deps - The expressions that the independent part must be free of.
+ * @returns The additive coefficient and the remaining terms.
+ * @see SymPy `sympy.core.expr.Expr.as_coeff_add`
+ * @example
+ * ```ts
+ * import { asCoeffAdd, ex } from '@symjs/symjs';
+ *
+ * asCoeffAdd(3); // => [3, []]
+ * asCoeffAdd(ex`x + 3`); // => [3, [x]]
+ * ```
+ */
 export function asCoeffAdd(eIn: ExprLike, deps: readonly Expr[] = []): [Expr, Expr[]] {
   const e = sympify(eIn);
   if (deps.length) {
@@ -264,7 +328,24 @@ export function asCoeffAdd(eIn: ExprLike, deps: readonly Expr[] = []): [Expr, Ex
   return [S.Zero, [...addArgs(e)]];
 }
 
-/** SymPy `as_coeff_mul(*deps)`. */
+/**
+ * Splits a product into an independent coefficient and its remaining factors.
+ *
+ * @remarks
+ * For `(S(3)).as_coeff_mul()`, SymPy displays `(3, ())`. For `(3*x*y).as_coeff_mul()`, SymPy displays `(3, (x, y))`.
+ * @param eIn - The input expression.
+ * @param deps - The expressions that the independent part must be free of.
+ * @param rational - Whether to extract only rational coefficients.
+ * @returns The multiplicative coefficient and the remaining factors.
+ * @see SymPy `sympy.core.expr.Expr.as_coeff_mul`
+ * @example
+ * ```ts
+ * import { asCoeffMul, ex } from '@symjs/symjs';
+ *
+ * asCoeffMul(3); // => [3, []]
+ * asCoeffMul(ex`3*x*y`); // => [3, [x, y]]
+ * ```
+ */
 export function asCoeffMul(eIn: ExprLike, deps: readonly Expr[] = [], rational = true): [Expr, Expr[]] {
   const e = sympify(eIn);
   if (deps.length) {
@@ -285,7 +366,22 @@ export function asCoeffMul(eIn: ExprLike, deps: readonly Expr[] = [], rational =
   return [S.One, args];
 }
 
-/** SymPy `primitive()`: [content, primitive] with rational content. */
+/**
+ * [content, primitive] with rational content.
+ *
+ * @remarks
+ * For `(3*(x + 1)**2).primitive()`, SymPy displays `(3, (x + 1)**2)`. For `(2*x + 4*y).primitive()`, SymPy displays `(2, x + 2*y)`.
+ * @param eIn - The input expression.
+ * @returns The content and the remaining primitive expression.
+ * @see SymPy `sympy.core.expr.Expr.primitive`
+ * @example
+ * ```ts
+ * import { ex, primitive } from '@symjs/symjs';
+ *
+ * primitive(ex`3*(x + 1)**2`); // => [3, (x + 1)**2]
+ * primitive(ex`2*x + 4*y`); // => [2, x + 2*y]
+ * ```
+ */
 export function primitive(eIn: ExprLike): [Rational, Expr] {
   const e = sympify(eIn);
   if (e instanceof Add) {
@@ -313,7 +409,23 @@ export function primitive(eIn: ExprLike): [Rational, Expr] {
   return [c, r];
 }
 
-/** SymPy `as_content_primitive(radical=False, clear=True)`. */
+/**
+ * Extracts positive rational content recursively from an expression.
+ *
+ * @remarks
+ * For `(x/2 + y).as_content_primitive()`, SymPy displays `(1/2, x + 2*y)`. For `((2 + 6*x)**2).as_content_primitive()`, SymPy displays `(4, (3*x + 1)**2)`.
+ * @param eIn - The input expression.
+ * @param opts - `clear` permits clearing rational denominators and `radical` extracts common radical factors.
+ * @returns The content and the remaining primitive expression.
+ * @see SymPy `sympy.core.expr.Expr.as_content_primitive`
+ * @example
+ * ```ts
+ * import { asContentPrimitive, ex } from '@symjs/symjs';
+ *
+ * asContentPrimitive(ex`x/2 + y`); // => [1/2, x + 2*y]
+ * asContentPrimitive(ex`(6*x + 2)**2`); // => [4, (3*x + 1)**2]
+ * ```
+ */
 export function asContentPrimitive(eIn: ExprLike, opts: { clear?: boolean; radical?: boolean } = {}): [Rational, Expr] {
   const e = sympify(eIn);
   const clear = opts.clear ?? true;
@@ -561,7 +673,20 @@ function symsOrAll(e: Expr, syms: readonly Expr[]): Expr[] {
   return syms.length ? [...syms] : [...freeSymbols(e)];
 }
 
-/** SymPy `is_polynomial(*syms)`. */
+/**
+ * Tests whether an expression is polynomial in the specified generators.
+ *
+ * @param eIn - The input expression.
+ * @param syms - The generators to consider.
+ * @returns True if an expression is polynomial in the specified generators, otherwise false.
+ * @see SymPy `sympy.core.expr.Expr.is_polynomial`
+ * @example
+ * ```ts
+ * import { ex, isPolynomial } from '@symjs/symjs';
+ *
+ * isPolynomial(ex`(x**2 + 1)**4`); // => True
+ * ```
+ */
 export function isPolynomial(eIn: ExprLike, syms: readonly Expr[] = []): boolean {
   const e = sympify(eIn);
   const s = symsOrAll(e, syms);
@@ -581,7 +706,21 @@ export function isPolynomial(eIn: ExprLike, syms: readonly Expr[] = []): boolean
   return go(e);
 }
 
-/** SymPy `is_rational_function(*syms)`. */
+/**
+ * Tests whether an expression is a quotient of polynomials in the generators.
+ *
+ * @param eIn - The input expression.
+ * @param syms - The generators to consider.
+ * @returns True if an expression is a quotient of polynomials in the generators, otherwise false.
+ * @see SymPy `sympy.core.expr.Expr.is_rational_function`
+ * @example
+ * ```ts
+ * import { ex, isRationalFunction } from '@symjs/symjs';
+ *
+ * isRationalFunction(ex`x/y`); // => True
+ * isRationalFunction(ex`x**2`); // => True
+ * ```
+ */
 export function isRationalFunction(eIn: ExprLike, syms: readonly Expr[] = []): boolean {
   const e = sympify(eIn);
   // A symbol's metadata, such as a random variable's support, is not part of the rational function.
@@ -607,7 +746,21 @@ const knownZeroExpression = (e: Expr): boolean => isZeroQ(e) === true
   || e instanceof Add && e.args.every(knownZeroExpression)
   || e instanceof Mul && e.args.every((factor) => factor instanceof Rational || factor instanceof Sym && factor.assumptions0.get('finite') === true) && e.args.some(knownZeroExpression);
 
-/** SymPy `is_constant(*wrt)` (symbolic check via derivatives). */
+/**
+ * Tests constancy with respect to the specified variables.
+ *
+ * @param eIn - The input expression.
+ * @param wrt - The variable or variables with respect to which to perform the operation.
+ * @returns True if constancy can be established.
+ * @see SymPy `sympy.core.expr.Expr.is_constant`
+ * @example
+ * ```ts
+ * import { ex, isConstant } from '@symjs/symjs';
+ *
+ * isConstant(2); // => True
+ * isConstant(ex`x`); // => False
+ * ```
+ */
 export function isConstant(eIn: ExprLike, wrt: readonly Sym[] = []): boolean {
   const e = sympify(eIn);
   const free = [...freeSymbols(e)];
@@ -635,6 +788,18 @@ export function isConstant(eIn: ExprLike, wrt: readonly Sym[] = []): boolean {
 /**
  * SymPy's fuzzy constancy check. An undecided zero denominator leaves a
  * derivative-based proof inconclusive because the original expression can have poles.
+ *
+ * @param eIn - The input expression.
+ * @param wrt - The variable or variables with respect to which to perform the operation.
+ * @returns The truth value, or `'unknown'` when it cannot be determined.
+ * @see SymPy `sympy.core.expr.Expr.is_constant`
+ * @example
+ * ```ts
+ * import { ex, isConstantTruth } from '@symjs/symjs';
+ *
+ * isConstantTruth(2); // => True
+ * isConstantTruth(ex`x`); // => False
+ * ```
  */
 export function isConstantTruth(eIn: ExprLike, wrt: readonly Sym[] = []): Truth {
   const e = sympify(eIn);
@@ -658,7 +823,22 @@ export function isConstantTruth(eIn: ExprLike, wrt: readonly Sym[] = []): Truth 
 }
 
 
-/** SymPy `as_real_imag()`. */
+/**
+ * Separates the real and imaginary parts of an expression.
+ *
+ * @remarks
+ * For `(z + w*I).as_real_imag()`, SymPy displays `(re(z) - im(w), re(w) + im(z))`. For `exp(1).as_real_imag()`, SymPy displays `(E, 0)`.
+ * @param eIn - The input expression.
+ * @returns The real and imaginary components, in that order.
+ * @see SymPy `sympy.core.expr.Expr.as_real_imag`
+ * @example
+ * ```ts
+ * import { asRealImag, ex } from '@symjs/symjs';
+ *
+ * asRealImag(ex`I*w + z`); // => [re(z) - im(w), re(w) + im(z)]
+ * asRealImag(ex`E`); // => [E, 0]
+ * ```
+ */
 export function asRealImag(eIn: ExprLike): [Expr, Expr] {
   const e0 = sympify(eIn);
   if (e0 instanceof Special && e0.name === 'nan') return [S.NaN, S.NaN];
@@ -687,7 +867,13 @@ export function asRealImag(eIn: ExprLike): [Expr, Expr] {
   return [re(e), im(e)];
 }
 
-/** SymPy `as_numer_denom()` (port of the Add, Mul and Pow methods). */
+/**
+ * Separates an expression into a numerator and a denominator.
+ *
+ * @param eIn - The input expression.
+ * @returns The numerator and denominator, in that order.
+ * @see SymPy `sympy.core.expr.Expr.as_numer_denom`
+ */
 export function asNumerDenom(eIn: ExprLike): [Expr, Expr] {
   const e = sympify(eIn);
   // SymPy Mul.as_numer_denom of a MatMul: the products of the numerators and of the denominators
@@ -759,7 +945,22 @@ export function asNumerDenom(eIn: ExprLike): [Expr, Expr] {
   return [e, S.One];
 }
 
-/** Atoms of the expression, optionally filtered by a predicate. */
+/**
+ * Atoms of the expression, optionally filtered by a predicate.
+ *
+ * @remarks
+ * For `(1 + x + 2*sin(y + I*pi)).atoms()`, SymPy displays `{1, 2, pi, y, x, I}`.
+ * @param eIn - The input expression.
+ * @param pred - The predicate that selects matching expressions.
+ * @returns The distinct matching atoms.
+ * @see SymPy `sympy.core.basic.Basic.atoms`
+ * @example
+ * ```ts
+ * import { atoms, ex } from '@symjs/symjs';
+ *
+ * atoms(ex`x + 2*sin(y + I*pi) + 1`); // => [1, x, 2, y, I, pi]
+ * ```
+ */
 export function atoms(eIn: ExprLike, pred: (a: Expr) => boolean = () => true): Expr[] {
   const e = sympify(eIn);
   const out = new Map<string, Expr>();
@@ -776,9 +977,20 @@ export function atoms(eIn: ExprLike, pred: (a: Expr) => boolean = () => true): E
 
 
 /**
- * SymPy `has_free(*patterns)`: does the expression contain any of the
+ * does the expression contain any of the
  * patterns as a free subexpression (a free symbol, an applied function of
  * the given name, or a subexpression)?
+ *
+ * @param eIn - The input expression.
+ * @param patterns - The expressions to search for.
+ * @returns True if any pattern occurs outside the scope of a binding.
+ * @see SymPy `sympy.core.basic.Basic.has_free`
+ * @example
+ * ```ts
+ * import { ex, hasFree } from '@symjs/symjs';
+ *
+ * hasFree(ex`x + y + 1`, ex`y + 1`); // => True
+ * ```
  */
 export function hasFree(eIn: ExprLike, ...patterns: (ExprLike | { fn: string })[]): boolean {
   const e = sympify(eIn);
@@ -831,7 +1043,14 @@ function extractCommonRadical(e: Add): Expr {
   return e;
 }
 
-/** SymPy as_coeff_exponent(x): [c, e] with self = c*x**e and c free of x, else [self, 0]. */
+/**
+ * [c, e] with self = c*x**e and c free of x, else [self, 0].
+ *
+ * @param eIn - The input expression.
+ * @param x - The factor whose power to collect.
+ * @returns The coefficient and exponent relative to the requested base.
+ * @see SymPy `sympy.core.expr.Expr.as_coeff_exponent`
+ */
 export function asCoeffExponent(eIn: ExprLike, x: Expr): [Expr, Expr] {
   const e = sympify(eIn);
   if (e instanceof Add) {
@@ -850,7 +1069,13 @@ export function asCoeffExponent(eIn: ExprLike, x: Expr): [Expr, Expr] {
   return [mul(...cs), add(...es)];
 }
 
-/** SymPy as_powers_dict: base -> exponent of the factors of a product. */
+/**
+ * base -> exponent of the factors of a product.
+ *
+ * @param eIn - The input expression.
+ * @returns A map from bases to exponents.
+ * @see SymPy `sympy.core.expr.Expr.as_powers_dict`
+ */
 export function asPowersDict(eIn: ExprLike): ExprMap<Expr> {
   const e = sympify(eIn);
   const out = new ExprMap<Expr>();
@@ -861,7 +1086,22 @@ export function asPowersDict(eIn: ExprLike): ExprMap<Expr> {
   return out;
 }
 
-/** SymPy `as_coefficients_dict(*syms)`: term -> coefficient. */
+/**
+ * term -> coefficient.
+ *
+ * @remarks
+ * For `(3*a*x).as_coefficients_dict()`, SymPy displays `defaultdict(<class 'int'>, {a*x: 3})`.
+ * @param eIn - The input expression.
+ * @param syms - The generators to consider.
+ * @returns A map from terms to coefficients.
+ * @see SymPy `sympy.core.expr.Expr.as_coefficients_dict`
+ * @example
+ * ```ts
+ * import { asCoefficientsDict, ex } from '@symjs/symjs';
+ *
+ * asCoefficientsDict(ex`3*a*x`); // => {a*x: 3}
+ * ```
+ */
 export function asCoefficientsDict(eIn: ExprLike, syms: readonly Expr[] = []): ExprMap<Expr> {
   const e = sympify(eIn);
   const out = new Map<string, [Expr, Expr[]]>();
@@ -892,7 +1132,22 @@ export function asCoefficientsDict(eIn: ExprLike, syms: readonly Expr[] = []): E
   return res;
 }
 
-/** SymPy as_two_terms: (head, tail) of an Add or Mul. */
+/**
+ * (head, tail) of an Add or Mul.
+ *
+ * @remarks
+ * For `(3*x - 2*y + 5).as_two_terms()`, SymPy displays `(5, 3*x - 2*y)`. For `(3*x*y).as_two_terms()`, SymPy displays `(3, x*y)`.
+ * @param eIn - The input expression.
+ * @returns The head and tail of the sum or product.
+ * @see SymPy `sympy.core.add.Add.as_two_terms`
+ * @example
+ * ```ts
+ * import { asTwoTerms, ex } from '@symjs/symjs';
+ *
+ * asTwoTerms(ex`3*x - 2*y + 5`); // => [5, 3*x - 2*y]
+ * asTwoTerms(ex`3*x*y`); // => [3, x*y]
+ * ```
+ */
 export function asTwoTerms(eIn: ExprLike): [Expr, Expr] {
   const e = sympify(eIn);
   if (e instanceof Add) return [at(e.args, 0), add(...e.args.slice(1))];
@@ -900,7 +1155,20 @@ export function asTwoTerms(eIn: ExprLike): [Expr, Expr] {
   return [S.One, e];
 }
 
-/** SymPy has_xfree(set): does any given expression occur as a node? */
+/**
+ * does any given expression occur as a node?
+ *
+ * @param eIn - The input expression.
+ * @param items - The expressions to search for.
+ * @returns True if any requested expression occurs exactly as a free node.
+ * @see SymPy `sympy.core.basic.Basic.has_xfree`
+ * @example
+ * ```ts
+ * import { ex, hasXfree } from '@symjs/symjs';
+ *
+ * hasXfree(ex`x + 1`, [ex`x`]); // => True
+ * ```
+ */
 export function hasXfree(eIn: ExprLike, items: readonly Expr[]): boolean {
   const e = sympify(eIn);
   const keys = new Set(items.map((i) => i.key));
@@ -908,7 +1176,20 @@ export function hasXfree(eIn: ExprLike, items: readonly Expr[]): boolean {
   return go(e);
 }
 
-/** SymPy is_algebraic_expr(*syms): built from the symbols with +, *, and rational powers. */
+/**
+ * built from the symbols with +, *, and rational powers.
+ *
+ * @param eIn - The input expression.
+ * @param syms - The generators to consider.
+ * @returns Whether the expression is algebraic in the specified generators.
+ * @see SymPy `sympy.core.expr.Expr.is_algebraic_expr`
+ * @example
+ * ```ts
+ * import { isAlgebraicExpr } from '@symjs/symjs';
+ *
+ * isAlgebraicExpr(1); // => True
+ * ```
+ */
 export function isAlgebraicExpr(eIn: ExprLike, syms: readonly Expr[] = []): boolean {
   const e = sympify(eIn);
   const s = syms.length ? [...syms] : [...freeSymbols(e)];
@@ -922,7 +1203,21 @@ export function isAlgebraicExpr(eIn: ExprLike, syms: readonly Expr[] = []): bool
   return go(e);
 }
 
-/** SymPy dummy_eq: normalize bound indices, then rename a single free dummy. */
+/**
+ * normalize bound indices, then rename a single free dummy.
+ *
+ * @param aIn - The first operand.
+ * @param bIn - The second operand.
+ * @param symbol - The free symbol to match to a dummy.
+ * @returns Whether the expressions agree after renaming dummy symbols.
+ * @see SymPy `sympy.core.basic.Basic.dummy_eq`
+ * @example
+ * ```ts
+ * import { Dummy, dummyEq, ex } from '@symjs/symjs';
+ *
+ * dummyEq(Dummy('x'), ex`y`); // => True
+ * ```
+ */
 export function dummyEq(aIn: ExprLike, bIn: ExprLike, symbol?: Expr): boolean {
   const a0 = sympify(aIn);
   const b0 = sympify(bIn);
@@ -1067,9 +1362,21 @@ const BESSEL_FUNCTIONS = new Set(['besselj', 'bessely', 'besseli', 'besselk', 'h
 const BESSEL_INTEGER_MEROMORPHIC = new Set(['besselj', 'besseli', 'jn', 'yn', 'hn1', 'hn2']);
 
 /**
- * SymPy Basic.is_same(a, b, approx): structural equality where the numbers
+ * structural equality where the numbers
  * are compared with `approx` when it is given (e.g. equalValued). Objects
  * other than expressions (matrices) compare by their own isSame.
+ *
+ * @param a - The first operand.
+ * @param b - The second operand.
+ * @param approx - An optional numerical equality predicate.
+ * @returns Whether the structures match under the requested numeric comparison.
+ * @see SymPy `sympy.core.basic.Basic.is_same`
+ * @example
+ * ```ts
+ * import { ex, isSame } from '@symjs/symjs';
+ *
+ * isSame(ex`1/2`, ex`1/2`); // => True
+ * ```
  */
 export function isSame(a: unknown, b: unknown, approx?: (x: Expr, y: Expr) => boolean): boolean {
   if (a instanceof Expr && b instanceof Expr) {
@@ -1093,7 +1400,21 @@ function exactRational(e: Expr): Rational | undefined {
   return undefined;
 }
 
-/** SymPy equal_valued: two numbers with exactly the same value (Float(2.0) and 2). */
+/**
+ * two numbers with exactly the same value (Float(2.0) and 2).
+ *
+ * @param x - The argument of the function.
+ * @param y - The second argument.
+ * @returns Whether the two numerical values are exactly equal.
+ * @see SymPy `sympy.core.numbers.equal_valued`
+ * @example
+ * ```ts
+ * import { equalValued } from '@symjs/symjs';
+ *
+ * equalValued(1, 2); // => False
+ * equalValued(1, 1); // => True
+ * ```
+ */
 export function equalValued(x: ExprLike, y: ExprLike): boolean {
   const a = sympify(x);
   const b = sympify(y);
@@ -1116,9 +1437,13 @@ export function decomposePower(e: Expr): readonly [Expr, bigint] {
 }
 
 /**
- * SymPy Expr.as_terms: the terms with their complex coefficient
+ * The terms with their complex coefficient
  * [re, im], exponent vector over the generators and noncommutative part,
  * and the sorted generators.
+ *
+ * @param eIn - The input expression.
+ * @returns The term decompositions and the corresponding list of generators.
+ * @see SymPy `sympy.core.expr.Expr.as_terms`
  */
 export function asTerms(eIn: ExprLike): [[Expr, [[number, number], number[], Expr[]]][], Expr[]] {
   const e = sympify(eIn);
@@ -1164,10 +1489,20 @@ export function asTerms(eIn: ExprLike): [[Expr, [[number, number], number[], Exp
 // ---------------------------------------------------------------------------
 
 /**
- * SymPy `as_dummy()`: the expression with the variables bound by each object
+ * The expression with the variables bound by each object
  * (integrals, sums, lambdas, ...) replaced by the canonical symbols `_0`,
  * `_1`, ... within that object; a symbol gives a new Dummy of the same name
  * (keeping only its commutativity).
+ *
+ * @param eIn - The input expression.
+ * @returns The expression with canonical dummy variables.
+ * @see SymPy `sympy.core.basic.Basic.as_dummy`
+ * @example
+ * ```ts
+ * import { asDummy, ex } from '@symjs/symjs';
+ *
+ * asDummy(ex`x + 1`); // => x + 1
+ * ```
  */
 export function asDummy(eIn: ExprLike): Expr {
   const e = sympify(eIn);
@@ -1227,9 +1562,19 @@ function canonicalBound(xIn: Expr): Expr {
 }
 
 /**
- * SymPy `canonical_variables`: each variable bound by the expression (an integral, a sum, a
+ * Each variable bound by the expression (an integral, a sum, a
  * lambda) mapped to the symbols `_0`, `_1`, ... that do not clash with its free symbols; empty for
  * an expression that binds nothing.
+ *
+ * @param eIn - The input expression.
+ * @returns A map from bound variables to collision-free canonical symbols.
+ * @see SymPy `sympy.core.expr.Expr.canonical_variables`
+ * @example
+ * ```ts
+ * import { canonicalVariables, ex, integral, symbols } from '@symjs/symjs';
+ *
+ * canonicalVariables(integral(ex`x`, [symbols('x')[0], 0, 1])).size; // => 1
+ * ```
  */
 export function canonicalVariables(eIn: ExprLike): Map<Expr, Sym> {
   const e = sympify(eIn);
@@ -1245,7 +1590,19 @@ export function canonicalVariables(eIn: ExprLike): Map<Expr, Sym> {
   return reps;
 }
 
-/** Visit free subexpressions breadth first, masking the variables bound by an enclosing expression. */
+/**
+ * Visit free subexpressions breadth first, masking the variables bound by an enclosing expression.
+ *
+ * @param e - The input expression.
+ * @returns An iterable visiting the selected expressions in breadth-first order.
+ * @see SymPy `sympy.core.traversal.iterfreeargs`
+ * @example
+ * ```ts
+ * import { ex, iterFreeArgs } from '@symjs/symjs';
+ *
+ * [...iterFreeArgs(ex`x + 1`)]; // => [x + 1, 1, x]
+ * ```
+ */
 export function* iterFreeArgs(e: Expr): Generator<Expr, void, undefined> {
   const queue = [e];
   for (const node of queue) {
@@ -1262,7 +1619,19 @@ export function* iterFreeArgs(e: Expr): Generator<Expr, void, undefined> {
   }
 }
 
-/** The deprecated SymPy Expr.expr_free_symbols query, limited to expression nodes. */
+/**
+ * The deprecated SymPy Expr.expr_free_symbols query, limited to expression nodes.
+ *
+ * @param eIn - The input expression.
+ * @returns The free symbols in the expression.
+ * @see SymPy `sympy.core.expr.Expr.expr_free_symbols`
+ * @example
+ * ```ts
+ * import { ex, exprFreeSymbols } from '@symjs/symjs';
+ *
+ * exprFreeSymbols(ex`x`).size; // => 1
+ * ```
+ */
 export function exprFreeSymbols(eIn: ExprLike): Set<Expr> {
   const e = sympify(eIn);
   const collect = (node: Expr): Expr[] => {
@@ -1278,26 +1647,63 @@ export function exprFreeSymbols(eIn: ExprLike): Set<Expr> {
 }
 
 /**
- * SymPy `assumptions0`: the assumptions a symbol was created with and those they imply (a Map
+ * The assumptions a symbol was created with and those they imply (a Map
  * from the fact name to its value); empty for any other expression.
+ *
+ * @remarks
+ * For `x.assumptions0`, SymPy displays `{'commutative': True}`.
+ * @param eIn - The input expression.
+ * @returns The known facts keyed by their SymPy names.
+ * @see SymPy `sympy.core.expr.Expr.assumptions0`
+ * @example
+ * ```ts
+ * import { assumptions0, ex } from '@symjs/symjs';
+ *
+ * assumptions0(ex`x`); // => {commutative: True}
+ * ```
  */
 export function assumptions0(eIn: ExprLike): Map<string, boolean> {
   const e = sympify(eIn);
   return e instanceof Sym ? e.assumptions0 : new Map();
 }
 
-/** SymPy `is_scalar`: true for an ordinary expression, false for a matrix expression or tensor. */
+/**
+ * True for an ordinary expression, false for a matrix expression or tensor.
+ *
+ * @param eIn - The input expression.
+ * @returns Whether the expression has scalar values.
+ * @see SymPy `sympy.core.expr.Expr.is_scalar`
+ */
 export function isScalar(eIn: ExprLike): boolean {
   const e = sympify(eIn);
   return e instanceof ExtensionExpr ? e.isScalar : true;
 }
 
-/** SymPy `Expr.as_expr(*gens)`: the expression itself (Poly.asExpr converts a polynomial). */
+/**
+ * The expression itself (Poly.asExpr converts a polynomial).
+ *
+ * @param e - The input expression.
+ * @param _gens - Optional generators for compatibility with polynomial expressions.
+ * @returns The expression itself.
+ * @see SymPy `sympy.core.expr.Expr.as_expr`
+ * @example
+ * ```ts
+ * import { asExpr, ex } from '@symjs/symjs';
+ *
+ * asExpr(ex`sin(x)`); // => sin(x)
+ * ```
+ */
 export function asExpr(e: ExprLike, ..._gens: readonly Expr[]): Expr {
   return sympify(e);
 }
 
-/** SymPy `copy()`: expressions are immutable, so the expression itself. */
+/**
+ * expressions are immutable, so the expression itself.
+ *
+ * @param e - The input expression.
+ * @returns The expression itself.
+ * @see SymPy `sympy.core.basic.Basic.copy`
+ */
 export function copy(e: ExprLike): Expr {
   return sympify(e);
 }
@@ -1310,14 +1716,26 @@ export function getO(eIn: ExprLike): Expr | undefined {
   return orders.length ? add(...orders) : undefined;
 }
 
-/** SymPy `removeO()`: e without its additive order term. */
+/**
+ * e without its additive order term.
+ *
+ * @param eIn - The input expression.
+ * @returns The expression with its additive order term removed.
+ * @see SymPy `sympy.core.expr.Expr.removeO`
+ */
 export function removeO(eIn: ExprLike): Expr {
   const e = sympify(eIn);
   if (e instanceof Order) return S.Zero;
   return e instanceof Add ? add(...e.args.filter((a) => !(a instanceof Order))) : e;
 }
 
-/** SymPy `normal()`: n/d of as_numer_denom, with a numeric denominator kept as a coefficient. */
+/**
+ * n/d of as_numer_denom, with a numeric denominator kept as a coefficient.
+ *
+ * @param eIn - The input expression.
+ * @returns The quotient reconstructed from the numerator and denominator.
+ * @see SymPy `sympy.core.expr.Expr.normal`
+ */
 export function normal(eIn: ExprLike): Expr {
   const [n, d] = asNumerDenom(sympify(eIn));
   if (isOne(d)) return n;
@@ -1334,6 +1752,26 @@ export function normal(eIn: ExprLike): Expr {
  */
 type NseriesOptions = { dir?: '+' | '-'; logx?: Expr; cdir?: number };
 
+/**
+ * Expands an expression as a truncated series around the specified point.
+ *
+ * @param eIn - The input expression.
+ * @param variable - The expansion variable.
+ * @param x0 - The point about which to expand or differentiate.
+ * @param n - The truncation order.
+ * @param directionOrOptions - The side of approach, or the series options.
+ * @param options - `logx` supplies a symbol to stand for the logarithm of the expansion variable.
+ * @returns The truncated series with its order term.
+ * @throws RangeError when a multivariate expression needs an explicit expansion variable.
+ * @see SymPy `sympy.core.expr.Expr.nseries`
+ * @example
+ * ```ts
+ * import { ex, nseries, symbols } from '@symjs/symjs';
+ *
+ * nseries(ex`x**y`, symbols('x')[0], 0, 2); // => x**y
+ * nseries(ex`sin(x)`, symbols('x')[0], 0, 6); // => x - x**3/6 + x**5/120 + O(x**6)
+ * ```
+ */
 export function nseries(
   eIn: ExprLike, variable?: Sym, x0: ExprLike = 0, n = 6,
   directionOrOptions: '+' | '-' | NseriesOptions = '+', options: { logx?: Expr } = {},
@@ -1359,10 +1797,21 @@ export function nseries(
 const isCallableExpr = (e: Expr): e is Expr & { call(...args: (ExprLike | null)[]): Expr } => 'call' in e && typeof e.call === 'function';
 
 /**
- * SymPy `rcall(*args)`: applies the callable parts of the expression to args
+ * applies the callable parts of the expression to args
  * (`rcall(x + Lambda(y, 2*y), z)` is `x + 2*z`), the abuse of notation for
  * operators. A null argument leaves that tensor slot uncontracted when the
  * callable supports partial contractions (sympy.diffgeom).
+ *
+ * @param eIn - The input expression.
+ * @param args - The arguments in positional order.
+ * @returns The expression with its callable parts applied to the arguments.
+ * @see SymPy `sympy.core.basic.Basic.rcall`
+ * @example
+ * ```ts
+ * import { Lambda, ex, rcall, symbols } from '@symjs/symjs';
+ *
+ * rcall(Lambda(symbols('x')[0], ex`2*x`), ex`y`); // => 2*y
+ * ```
  */
 export function rcall(eIn: ExprLike, ...args: (ExprLike | null)[]): Expr {
   const e = sympify(eIn);
@@ -1371,7 +1820,21 @@ export function rcall(eIn: ExprLike, ...args: (ExprLike | null)[]): Expr {
   return rebuildM(e, e.args.map((a) => rcall(a, ...args)));
 }
 
-/** SymPy `prod(a, start=1)`: start times the product of the items of a. */
+/**
+ * start times the product of the items of a.
+ *
+ * @param a - The iterable of factors.
+ * @param start - The initial multiplicative factor.
+ * @returns The product including the initial factor.
+ * @see SymPy `sympy.core.mul.prod`
+ * @example
+ * ```ts
+ * import { prod } from '@symjs/symjs';
+ *
+ * prod([2, 3]); // => 6
+ * prod([0, 1, 2]); // => 0
+ * ```
+ */
 export function prod(a: Iterable<ExprLike>, start: ExprLike = 1): Expr {
   return mul(start, ...a);
 }

@@ -15,21 +15,51 @@
  */
 export type Truth = boolean | 'unknown';
 
-/** The answer is known to be true. */
+/**
+ * The answer is known to be true.
+ *
+ * @param t - The truth value to inspect.
+ * @returns True only for a known true answer.
+ */
 export const isTrue = (t: Truth): t is true => t === true;
-/** The answer is known to be false. */
+/**
+ * The answer is known to be false.
+ *
+ * @param t - The truth value to inspect.
+ * @returns True only for a known false answer.
+ */
 export const isFalse = (t: Truth): t is false => t === false;
-/** The answer cannot be decided. */
+/**
+ * The answer cannot be decided.
+ *
+ * @param t - The truth value to inspect.
+ * @returns True only for an undecidable answer.
+ */
 export const isUnknown = (t: Truth): t is 'unknown' => t === 'unknown';
 
 /** @internal A Truth from the base module's boolean | undefined. */
 export const toTruth = (v: boolean | undefined | null): Truth => (v ?? 'unknown');
 
-/** Negation (unknown stays unknown). */
+/**
+ * Negation (unknown stays unknown).
+ *
+ * @param t - The truth value to inspect.
+ * @returns The truth value, or `'unknown'` when it cannot be determined.
+ */
 export const truthNot = (t: Truth): Truth => (t === 'unknown' ? t : !t);
-/** Conjunction: false if any is false, unknown if any is unknown, else true. */
+/**
+ * Conjunction: false if any is false, unknown if any is unknown, else true.
+ *
+ * @param ts - The truth values to combine.
+ * @returns The truth value, or `'unknown'` when it cannot be determined.
+ */
 export const truthAnd = (...ts: Truth[]): Truth => (ts.includes(false) ? false : ts.includes('unknown') ? 'unknown' : true);
-/** Disjunction: true if any is true, unknown if any is unknown, else false. */
+/**
+ * Disjunction: true if any is true, unknown if any is unknown, else false.
+ *
+ * @param ts - The truth values to combine.
+ * @returns The truth value, or `'unknown'` when it cannot be determined.
+ */
 export const truthOr = (...ts: Truth[]): Truth => (ts.includes(true) ? true : ts.includes('unknown') ? 'unknown' : false);
 
 /**
@@ -39,8 +69,18 @@ export const truthOr = (...ts: Truth[]): Truth => (ts.includes(true) ? true : ts
 export type FuzzyLike = Truth | null | undefined;
 
 /**
- * SymPy `fuzzy_bool(x)`: true or false for a boolean (or the numbers 1 and
+ * True or false for a boolean (or the numbers 1 and
  * 0, which equal Python's True and False), 'unknown' for anything else.
+ *
+ * @param x - The argument of the function.
+ * @returns The truth value, or `'unknown'` when it cannot be determined.
+ * @see SymPy `sympy.core.logic.fuzzy_bool`
+ * @example
+ * ```ts
+ * import { fuzzyBool } from '@symjs/symjs';
+ *
+ * fuzzyBool(true); // => True
+ * ```
  */
 export function fuzzyBool(x: unknown): Truth {
   if (x === true || x === 1) return true;
@@ -49,8 +89,18 @@ export function fuzzyBool(x: unknown): Truth {
 }
 
 /**
- * SymPy `fuzzy_and(args)`: false if any value is false, else 'unknown' if
+ * False if any value is false, else 'unknown' if
  * any is not known, else true (also for no values).
+ *
+ * @param args - The truth values to combine.
+ * @returns The truth value, or `'unknown'` when it cannot be determined.
+ * @see SymPy `sympy.core.logic.fuzzy_and`
+ * @example
+ * ```ts
+ * import { fuzzyAnd } from '@symjs/symjs';
+ *
+ * fuzzyAnd([false, true]); // => False
+ * ```
  */
 export function fuzzyAnd(args: Iterable<unknown>): Truth {
   let rv: Truth = true;
@@ -63,8 +113,19 @@ export function fuzzyAnd(args: Iterable<unknown>): Truth {
 }
 
 /**
- * SymPy `fuzzy_or(args)`: true if any value is true, else 'unknown' if any
+ * True if any value is true, else 'unknown' if any
  * is not known, else false (also for no values).
+ *
+ * @param args - The truth values to combine.
+ * @returns The truth value, or `'unknown'` when it cannot be determined.
+ * @see SymPy `sympy.core.logic.fuzzy_or`
+ * @example
+ * ```ts
+ * import { fuzzyOr } from '@symjs/symjs';
+ *
+ * fuzzyOr([true, false]); // => True
+ * fuzzyOr([false, false]); // => False
+ * ```
  */
 export function fuzzyOr(args: Iterable<unknown>): Truth {
   let rv: Truth = false;
@@ -76,14 +137,31 @@ export function fuzzyOr(args: Iterable<unknown>): Truth {
   return rv;
 }
 
-/** SymPy `fuzzy_not(v)`: the negation, 'unknown' for a value that is not known. */
+/**
+ * The negation, 'unknown' for a value that is not known.
+ *
+ * @param v - The truth value to inspect.
+ * @returns The truth value, or `'unknown'` when it cannot be determined.
+ * @see SymPy `sympy.core.logic.fuzzy_not`
+ * @example
+ * ```ts
+ * import { fuzzyNot } from '@symjs/symjs';
+ *
+ * fuzzyNot(true); // => False
+ * fuzzyNot(false); // => True
+ * ```
+ */
 export function fuzzyNot(v: FuzzyLike): Truth {
   return v === null || v === undefined || v === 'unknown' ? 'unknown' : !v;
 }
 
 /**
- * SymPy `fuzzy_xor(args)`: whether an odd number of the values is true;
+ * Whether an odd number of the values is true;
  * 'unknown' when a value is not known.
+ *
+ * @param args - The truth values to combine.
+ * @returns The truth value, or `'unknown'` when it cannot be determined.
+ * @see SymPy `sympy.core.logic.fuzzy_xor`
  */
 export function fuzzyXor(args: Iterable<unknown>): Truth {
   let t = 0;
@@ -95,12 +173,24 @@ export function fuzzyXor(args: Iterable<unknown>): Truth {
   return t % 2 === 1;
 }
 
-/** SymPy `fuzzy_nand(args)`: the negation of {@link fuzzyAnd}. */
+/**
+ * The negation of {@link fuzzyAnd}.
+ *
+ * @param args - The truth values to combine.
+ * @returns The truth value, or `'unknown'` when it cannot be determined.
+ * @see SymPy `sympy.core.logic.fuzzy_nand`
+ */
 export const fuzzyNand = (args: Iterable<unknown>): Truth => fuzzyNot(fuzzyAnd(args));
 
 /** The type of NoMatch. */
 export class NoMatchResult {
+  /** The node's discriminant. */
   readonly kind = 'NoMatch' as const;
+  /**
+   * Formats the object as a string.
+   *
+   * @returns The formatted string.
+   */
   toString(): string {
     return 'NoMatch';
   }
@@ -111,12 +201,23 @@ export class NoMatchResult {
  * hypergeometric, homogeneous or periodic (SymPy returns None).
  */
 export const NoMatch: NoMatchResult = new NoMatchResult();
-/** v is NoMatch. */
+/**
+ * v is NoMatch.
+ *
+ * @param v - The value to examine.
+ * @returns Whether the value is the `NoMatch` singleton.
+ */
 export const isNoMatch = (v: unknown): v is NoMatchResult => v === NoMatch;
 
 /** The type of Unsolved. */
 export class UnsolvedResult {
+  /** The node's discriminant. */
   readonly kind = 'Unsolved' as const;
+  /**
+   * Formats the object as a string.
+   *
+   * @returns The formatted string.
+   */
   toString(): string {
     return 'Unsolved';
   }
@@ -126,7 +227,12 @@ export class UnsolvedResult {
  * None); this is not a proof that no solution exists (that is EmptySet).
  */
 export const Unsolved: UnsolvedResult = new UnsolvedResult();
-/** v is Unsolved. */
+/**
+ * v is Unsolved.
+ *
+ * @param v - The value to examine.
+ * @returns Whether the value is the `Unsolved` singleton.
+ */
 export const isUnsolved = (v: unknown): v is UnsolvedResult => v === Unsolved;
 
 /** @internal NoMatch for undefined. */

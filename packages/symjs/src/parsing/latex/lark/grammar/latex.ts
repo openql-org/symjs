@@ -14,8 +14,11 @@ type Rule = 'expression' | 'mul' | 'power' | 'func' | 'core' | 'atomic' | 'symbo
 
 /** Terminal overrides supported by the hand-written grammar; no parser generator is needed. */
 export interface LatexGrammarOptions {
+  /** The character separating integer and fractional digits. */
   readonly decimalSeparator?: '.' | ',';
+  /** The tokens accepted as multiplication operators. */
   readonly multiplicationSymbols?: readonly string[];
+  /** The tokens accepted as division operators. */
   readonly divisionSymbols?: readonly string[];
 }
 

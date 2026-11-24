@@ -16,6 +16,11 @@ import { Expr, impl, type ExprLike } from './nodes';
 export class ExprMap<V> extends Map<Expr, V> {
   #byKey = new Map<string, Expr>();
 
+  /**
+   * Creates an `ExprMap`.
+   *
+   * @param entries - The initial key-value pairs.
+   */
   constructor(entries?: Iterable<readonly [ExprLike, V]> | null) {
     super();
     if (entries) for (const [k, v] of entries) this.set(k, v);
@@ -26,15 +31,34 @@ export class ExprMap<V> extends Map<Expr, V> {
     return this.#byKey.get(e.key);
   }
 
+  /**
+   * Looks up the value of a structurally equal expression key.
+   *
+   * @param k - The expression key, compared structurally.
+   * @returns The mapped value, or `undefined` for a missing key.
+   */
   override get(k: ExprLike): V | undefined {
     const c = this.#canonical(k);
     return c === undefined ? undefined : super.get(c);
   }
 
+  /**
+   * Tests whether the map contains a structurally equal key.
+   *
+   * @param k - The expression key, compared structurally.
+   * @returns True if the map contains a structurally equal key, otherwise false.
+   */
   override has(k: ExprLike): boolean {
     return this.#canonical(k) !== undefined;
   }
 
+  /**
+   * Associates a value with an expression key.
+   *
+   * @param k - The expression key, compared structurally.
+   * @param v - The value associated with the key.
+   * @returns This map.
+   */
   override set(k: ExprLike, v: V): this {
     const e = k instanceof Expr ? k : impl.sympify(k);
     const c = this.#byKey.get(e.key);
@@ -43,6 +67,12 @@ export class ExprMap<V> extends Map<Expr, V> {
     return super.set(e, v);
   }
 
+  /**
+   * Removes the entry with the given expression key.
+   *
+   * @param k - The expression key, compared structurally.
+   * @returns Whether a matching entry was removed.
+   */
   override delete(k: ExprLike): boolean {
     const c = this.#canonical(k);
     if (c === undefined) return false;
@@ -50,6 +80,7 @@ export class ExprMap<V> extends Map<Expr, V> {
     return super.delete(c);
   }
 
+  /** Removes all entries. */
   override clear(): void {
     this.#byKey.clear();
     super.clear();

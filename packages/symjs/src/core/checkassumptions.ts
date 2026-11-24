@@ -131,12 +131,17 @@ function factOf(e: Expr, name: string): Truth {
 const fuzzy = (v: FuzzyLike): Truth => v ?? 'unknown';
 
 /**
- * SymPy `assumptions(expr)`: the facts of an expression that are known, as
+ * The facts of an expression that are known, as
  * a map from the fact name to its value. For a symbol these are the closure
  * of the assumptions it was created with.
  *
  * `assumptions(x + I)` for a positive x is `{finite: true, complex: true,
  * real: false, zero: false, ...}`.
+ *
+ * @param expr - The input expression.
+ * @param check - The fact names to inspect.
+ * @returns A map from fact names to their truth values.
+ * @see SymPy `sympy.core.assumptions.assumptions`
  */
 export function assumptions(expr: ExprLike, check?: Iterable<string>): Map<AssumptionName, boolean> {
   const f = factsOf(sympify(expr));
@@ -148,9 +153,23 @@ export function assumptions(expr: ExprLike, check?: Iterable<string>): Map<Assum
 }
 
 /**
- * SymPy `common_assumptions(exprs, check=None)`: the facts known with the
+ * The facts known with the
  * same value for all the expressions (only the facts named in `check`, when
  * it is given).
+ *
+ * @remarks
+ * For `common_assumptions([0, 1, 2], ['positive', 'integer'])`, SymPy displays `{'integer': True}`. For `common_assumptions([-4, 0, sqrt(2), 2, pi, oo])`, SymPy displays `{'extended_real': True, 'odd': False, 'composite': False, 'imaginary': False, 'commutative': True}`.
+ * @param exprs - The expressions to process.
+ * @param check - The fact names to inspect.
+ * @returns A map from fact names to their truth values.
+ * @see SymPy `sympy.core.assumptions.common_assumptions`
+ * @example
+ * ```ts
+ * import { commonAssumptions, ex } from '@symjs/symjs';
+ *
+ * commonAssumptions([0, 1, 2], ['positive', 'integer']); // => {integer: True}
+ * commonAssumptions([-4, 0, ex`sqrt(2)`, 2, ex`pi`, ex`oo`]); // => {commutative: True, composite: False, extended_real: True, imaginary: False, odd: False}
+ * ```
  */
 export function commonAssumptions(exprs: Iterable<ExprLike>, check?: Iterable<string>): Map<AssumptionName, boolean> {
   const names = check === undefined ? ASSUMPTION_NAMES : ASSUMPTION_NAMES.filter((k) => new Set(check).has(k));
@@ -166,11 +185,22 @@ export function commonAssumptions(exprs: Iterable<ExprLike>, check?: Iterable<st
 }
 
 /**
- * SymPy `failing_assumptions(expr, **assumptions)`: the facts whose value
+ * The facts whose value
  * differs from the desired one, with the value the expression has
  * ('unknown' when it is not known). An empty map when all hold.
  *
  * `failingAssumptions(x**2 - 1, { positive: true })` is `{positive: 'unknown'}`.
+ *
+ * @param expr - The input expression.
+ * @param desired - The required fact values.
+ * @returns A map from fact names to their truth values.
+ * @see SymPy `sympy.core.assumptions.failing_assumptions`
+ * @example
+ * ```ts
+ * import { failingAssumptions } from '@symjs/symjs';
+ *
+ * failingAssumptions(2, { odd: true }).get('odd'); // => False
+ * ```
  */
 export function failingAssumptions(expr: ExprLike, desired: AssumptionValues): Map<string, Truth> {
   const e = sympify(expr);
@@ -183,12 +213,24 @@ export function failingAssumptions(expr: ExprLike, desired: AssumptionValues): M
 }
 
 /**
- * SymPy `check_assumptions(expr, against=None, **assume)`: whether the
+ * Whether the
  * facts of the expression agree with the desired values (`{ positive: true,
  * ... }`) or with the facts of another expression `against` (such as the
  * symbol the expression replaces). False when a fact contradicts, 'unknown'
  * when one is not known, otherwise true. Desired values that are null or
  * 'unknown' are ignored.
+ *
+ * @param expr - The input expression.
+ * @param against - The desired fact values or the expression whose assumptions to compare.
+ * @returns The truth value, or `'unknown'` when it cannot be determined.
+ * @see SymPy `sympy.core.assumptions.check_assumptions`
+ * @example
+ * ```ts
+ * import { checkAssumptions, ex } from '@symjs/symjs';
+ *
+ * checkAssumptions(-5, { integer: true }); // => True
+ * checkAssumptions(ex`pi`, { negative: true }); // => False
+ * ```
  */
 export function checkAssumptions(expr: ExprLike, against: ExprLike | AssumptionValues = {}): Truth {
   const e = sympify(expr);

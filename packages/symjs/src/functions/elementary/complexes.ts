@@ -26,11 +26,28 @@ import { abs, arg, conjugateCommutes, evaluators, fn, im, log, re } from './elem
 import { Chi, Ci, Ei, Shi, Si, expint, factorial, gamma } from '../special/special';
 import { parserHooks } from '../../parsing/parser';
 
+/**
+ * Computes the polar exponential on the logarithm's Riemann surface.
+ *
+ * @param z - The argument of the function.
+ * @returns The expression on the logarithm's Riemann surface.
+ * @see SymPy `sympy.functions.elementary.exponential.exp_polar`
+ * @example
+ * ```ts
+ * import { ex, expPolar } from '@symjs/symjs';
+ *
+ * expPolar(ex`2*I*pi`); // => exp_polar(2*I*pi)
+ * ```
+ */
 export const expPolar = (z: ExprLike): Expr => fn('exp_polar', [z]);
 
 /**
- * SymPy match_real_imag: [a, b] with expr = a + I*b for real a and b read off the expression as it
+ * [a, b] with expr = a + I*b for real a and b read off the expression as it
  * is (without expanding it or introducing re and im), or NoMatch.
+ *
+ * @param exprIn - The input expression.
+ * @returns The real and imaginary components, or `NoMatch` when the expression lacks the required form.
+ * @see SymPy `sympy.functions.elementary.exponential.match_real_imag`
  */
 export function matchRealImag(exprIn: ExprLike): [Expr, Expr] | NoMatchResult {
   const expr = sympify(exprIn);
@@ -39,15 +56,89 @@ export function matchRealImag(exprIn: ExprLike): [Expr, Expr] | NoMatchResult {
   const i = asCoefficient(rest, S.I);
   return i !== undefined && !(i instanceof Rational && i.isZero) && isReal(i) === true && isReal(r) === true ? [r, i] : NoMatch;
 }
+/**
+ * Lifts a complex number to the principal sheet of the logarithm's Riemann surface.
+ *
+ * @param z - The argument of the function.
+ * @returns The expression on the logarithm's Riemann surface.
+ * @see SymPy `sympy.functions.elementary.complexes.polar_lift`
+ * @example
+ * ```ts
+ * import { polarLift } from '@symjs/symjs';
+ *
+ * polarLift(4); // => 4*exp_polar(0)
+ * polarLift(-4); // => 4*exp_polar(I*pi)
+ * ```
+ */
 export const polarLift = (z: ExprLike): Expr => fn('polar_lift', [z]);
+/**
+ * Reduces the argument of a polar number to the interval `(-period/2, period/2]`.
+ *
+ * @param z - The argument of the function.
+ * @param period - The positive period of the argument.
+ * @returns The argument reduced modulo the given period.
+ * @see SymPy `sympy.functions.elementary.complexes.periodic_argument`
+ * @example
+ * ```ts
+ * import { ex, periodicArgument } from '@symjs/symjs';
+ *
+ * periodicArgument(ex`exp_polar(5*I*pi)`, ex`pi`); // => 0
+ * periodicArgument(ex`exp_polar(10*I*pi)`, ex`2*pi`); // => 0
+ * ```
+ */
 export const periodicArgument = (z: ExprLike, period: ExprLike): Expr => fn('periodic_argument', [z, period]);
+/**
+ * Reduces a polar number to the principal branch for the specified period.
+ *
+ * @param z - The argument of the function.
+ * @param period - The positive period of the argument.
+ * @returns The polar expression on the selected principal branch.
+ * @see SymPy `sympy.functions.elementary.complexes.principal_branch`
+ * @example
+ * ```ts
+ * import { ex, principalBranch } from '@symjs/symjs';
+ *
+ * principalBranch(ex`z`, ex`oo`); // => z
+ * principalBranch(ex`3*exp_polar(2*I*pi)`, ex`2*pi`); // => 3*exp_polar(0)
+ * ```
+ */
 export const principalBranch = (z: ExprLike, period: ExprLike): Expr => fn('principal_branch', [z, period]);
+/**
+ * Computes the argument of a polar number without reducing it modulo a period.
+ *
+ * @param z - The argument of the function.
+ * @returns The argument of a polar number without reducing it modulo a period.
+ * @see SymPy `sympy.functions.elementary.complexes.unbranched_argument`
+ * @example
+ * ```ts
+ * import { ex, unbranchedArgument } from '@symjs/symjs';
+ *
+ * unbranchedArgument(ex`exp_polar(7*I*pi)`); // => 7*pi
+ * unbranchedArgument(ex`exp_polar(15*I*pi)`); // => 15*pi
+ * ```
+ */
 export const unbranchedArgument = (z: ExprLike): Expr => periodicArgument(z, S.Infinity);
 
 const ipi = () => mul(S.Pi, S.I);
 const isFnN = (e: Expr, name: string): e is Fn => e instanceof Fn && e.name === name;
 const isOo = (e: Expr) => e instanceof Special && e.name === 'oo';
-/** SymPy Expr.extract_branch_factor: (rest, n) with the exp_polar argument reduced by 2*pi*I*n. */
+/**
+ * (rest, n) with the exp_polar argument reduced by 2*pi*I*n.
+ *
+ * @remarks
+ * For `exp_polar(2*I*pi).extract_branch_factor()`, SymPy displays `(1, 1)`. For `exp_polar(I*pi).extract_branch_factor()`, SymPy displays `(exp_polar(I*pi), 0)`.
+ * @param eIn - The input expression.
+ * @param allowHalf - Whether to allow extraction of a half turn.
+ * @returns The remaining expression and the extracted winding number.
+ * @see SymPy `sympy.core.expr.Expr.extract_branch_factor`
+ * @example
+ * ```ts
+ * import { ex, extractBranchFactor } from '@symjs/symjs';
+ *
+ * extractBranchFactor(ex`exp_polar(2*I*pi)`); // => [1, 1]
+ * extractBranchFactor(ex`exp_polar(I*pi)`); // => [exp_polar(I*pi), 0]
+ * ```
+ */
 export function extractBranchFactor(eIn: ExprLike, allowHalf = false): [Expr, Expr] {
   const e = sympify(eIn);
   let res: Expr = S.One;
@@ -151,6 +242,18 @@ const rebuildIfChanged = (eq: Expr, args: readonly Expr[]): Expr => (args.every(
  * is used). With `exponentsOnly`, only the exponents of powers are unpolarified. As in SymPy, polar
  * arguments of the functions that are not unbranched are kept: unpolarify(besselj(a, polar_lift(x)))
  * is besselj(a, polar_lift(x)), while unpolarify(sin(polar_lift(x))) is sin(x).
+ *
+ * @param eIn - The input expression.
+ * @param opts - `subs` supplies replacements and `exponentsOnly` limits projection to exponents.
+ * @returns The expression projected back to the complex plane.
+ * @see SymPy `sympy.functions.elementary.complexes.unpolarify`
+ * @example
+ * ```ts
+ * import { ex, unpolarify } from '@symjs/symjs';
+ *
+ * unpolarify(ex`polar_lift(2 + I)`); // => 2 + I
+ * unpolarify(ex`sin(polar_lift(7 + I))`); // => sin(7 + I)
+ * ```
  */
 export function unpolarify(eIn: ExprLike, opts: { subs?: Substitution; exponentsOnly?: boolean } = {}): Expr {
   const eq = sympify(eIn);
@@ -455,9 +558,23 @@ function polarifyInner(eq: Expr, lift: boolean, pause = false): Expr {
 }
 
 /**
- * SymPy polarify: numbers become polar numbers (exp_polar) and, with subs,
+ * Numbers become polar numbers (exp_polar) and, with subs,
  * the symbols are replaced by polar dummies; returns [expr, reps] in that
  * case (reps maps each dummy back to its symbol).
+ *
+ * @remarks
+ * For `polarify(expr)`, SymPy displays `((_x*exp_polar(I*pi))**_y, {_y: y, _x: x})`.
+ * @param ex - The expression to transform.
+ * @param opts - `lift` lifts the whole expression and `subs` controls substitution of polar dummy symbols.
+ * @returns The lifted expression, together with the reverse substitutions when requested.
+ * @see SymPy `sympy.functions.elementary.complexes.polarify`
+ * @example
+ * ```ts
+ * import { ex, polarify } from '@symjs/symjs';
+ *
+ * polarify(ex`x`, { lift: true }); // => polar_lift(x)
+ * polarify(ex`(-x)**y`); // => [(_x*exp_polar(I*pi))**_y, [[_x, x], [_y, y]]]
+ * ```
  */
 export function polarify(ex: ExprLike, opts: { subs?: boolean; lift?: boolean } = {}): Expr | [Expr, [Expr, Expr][]] {
   const lift = opts.lift ?? false;

@@ -6,7 +6,26 @@ import { S } from '../core/nodes';
 import { add, mul, sympify } from '../core/ops';
 import { xreplace } from '../core/traverse';
 
-/** Compare the symbolic derivative with a five-point numerical derivative inside a complex rectangle. */
+/**
+ * Compare the symbolic derivative with a five-point numerical derivative inside a complex rectangle.
+ *
+ * @param f - The function or expression to transform.
+ * @param z - The differentiation variable.
+ * @param tol - The tolerance for the numerical comparison.
+ * @param a - The coordinate of the first corner (real component for `a`, imaginary for `b`).
+ * @param b - The coordinate of the first corner (real component for `a`, imaginary for `b`).
+ * @param c - The coordinate of the opposite corner (real component for `c`, imaginary for `d`).
+ * @param d - The coordinate of the opposite corner (real component for `c`, imaginary for `d`).
+ * @returns True if the sampled derivatives agree within tolerance.
+ * @throws RangeError when the tolerance is nonpositive or a sampling bound or tolerance is nonfinite.
+ * @see SymPy `sympy.core.random.test_derivative_numerically`
+ * @example
+ * ```ts
+ * import { ex, symbols, testDerivativeNumerically } from '@symjs/symjs';
+ *
+ * testDerivativeNumerically(ex`sin(x)`, symbols('x')[0]); // => True
+ * ```
+ */
 export function testDerivativeNumerically(f: ExprLike, z: Sym, tol = 1e-6, a = 2, b = -1, c = 3, d = 1): boolean {
   if (!Number.isFinite(tol) || tol <= 0) throw new RangeError('tolerance must be finite and positive');
   if (![a, b, c, d].every(Number.isFinite)) throw new RangeError('sampling bounds must be finite');

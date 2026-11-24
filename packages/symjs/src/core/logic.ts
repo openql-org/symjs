@@ -213,9 +213,66 @@ export const Eq = (a: ExprLike, b: ExprLike): Expr => rel('Eq', a, b);
  * ```
  */
 export const Ne = (a: ExprLike, b: ExprLike): Expr => rel('Ne', a, b);
+/**
+ * Tests whether the left operand is strictly less than the right operand.
+ *
+ * @param a - The first operand.
+ * @param b - The second operand.
+ * @returns The comparison, evaluated to a Boolean atom when decidable.
+ * @see SymPy `sympy.core.relational.StrictLessThan`
+ * @example
+ * ```ts
+ * import { Lt, ex } from '@symjs/symjs';
+ *
+ * Lt(ex`x`, 1); // => x < 1
+ * Lt(1, ex`x`); // => 1 < x
+ * ```
+ */
 export const Lt = (a: ExprLike, b: ExprLike): Expr => rel('Lt', a, b);
+/**
+ * Tests whether the left operand is less than or equal to the right operand.
+ *
+ * @param a - The first operand.
+ * @param b - The second operand.
+ * @returns The comparison, evaluated to a Boolean atom when decidable.
+ * @see SymPy `sympy.core.relational.LessThan`
+ * @example
+ * ```ts
+ * import { Le, ex } from '@symjs/symjs';
+ *
+ * Le(ex`x`, 1); // => x <= 1
+ * ```
+ */
 export const Le = (a: ExprLike, b: ExprLike): Expr => rel('Le', a, b);
+/**
+ * Tests whether the left operand is strictly greater than the right operand.
+ *
+ * @param a - The first operand.
+ * @param b - The second operand.
+ * @returns The comparison, evaluated to a Boolean atom when decidable.
+ * @see SymPy `sympy.core.relational.StrictGreaterThan`
+ * @example
+ * ```ts
+ * import { Gt, ex } from '@symjs/symjs';
+ *
+ * Gt(ex`x`, 1); // => x > 1
+ * ```
+ */
 export const Gt = (a: ExprLike, b: ExprLike): Expr => rel('Gt', a, b);
+/**
+ * Tests whether the left operand is greater than or equal to the right operand.
+ *
+ * @param a - The first operand.
+ * @param b - The second operand.
+ * @returns The comparison, evaluated to a Boolean atom when decidable.
+ * @see SymPy `sympy.core.relational.GreaterThan`
+ * @example
+ * ```ts
+ * import { Ge, ex } from '@symjs/symjs';
+ *
+ * Ge(ex`x`, 1); // => x >= 1
+ * ```
+ */
 export const Ge = (a: ExprLike, b: ExprLike): Expr => rel('Ge', a, b);
 
 const relationHeads = { Eq, Ne, Lt, Le, Gt, Ge } as const;
@@ -227,9 +284,19 @@ const isNumber = (e: Expr): boolean => e.kind !== 'Set' && e.freeSymbols().size 
 const REVERSED: Record<RelOp, RelOp> = { Lt: 'Gt', Le: 'Ge', Gt: 'Lt', Ge: 'Le', Eq: 'Eq', Ne: 'Ne' };
 
 /**
- * SymPy Relational.canonical: a number on the right, otherwise the sides in
+ * A number on the right, otherwise the sides in
  * default_sort_key order, and no minus sign that can be extracted on the
  * left (-x < y is y > -x).
+ *
+ * @param r - The relation to transform.
+ * @returns A number on the right, otherwise the sides in default_sort_key order, and no minus sign that can be extracted on the left (-x < y is y > -x).
+ * @see SymPy `sympy.core.relational.Relational.canonical`
+ * @example
+ * ```ts
+ * import { Rel, canonicalRelation, ex } from '@symjs/symjs';
+ *
+ * canonicalRelation(new Rel('Gt', ex`2`, ex`x`)); // => x < 2
+ * ```
  */
 export function canonicalRelation(r: Rel): Expr {
   let [op, lhs, rhs] = [r.op, r.lhs instanceof Rel ? canonicalRelation(r.lhs) : r.lhs, r.rhs instanceof Rel ? canonicalRelation(r.rhs) : r.rhs];

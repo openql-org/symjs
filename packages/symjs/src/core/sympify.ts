@@ -36,6 +36,10 @@ export const sympifyMethod: unique symbol = Symbol.for('symjs.sympify');
  * @experimental May change in a minor release.
  */
 export interface Sympifiable {
+  /**
+   * Provides a symbolic representation for conversion by `sympify`.
+   * @returns A value that can be converted to an expression.
+   */
   [sympifyMethod](): unknown;
 }
 
@@ -44,6 +48,9 @@ export interface Sympifiable {
  * sympy.core.sympify.converter), looked up along the prototype chain.
  *
  * @experimental May change in a minor release.
+ * @param x - The instance passed to the registered converter.
+ * @returns The converted value produced by the registered callback.
+ * @see SymPy `sympy.core.sympify.converter`
  */
 export const converter = new Map<Function, (x: never) => unknown>();
 

@@ -12,17 +12,29 @@ import { isIntegerQ, isNegative, isZero } from './assumptions';
 import { cast } from './guard';
 import { NoMatch, isNoMatch, type NoMatchResult } from './truth';
 
-/** A callable undefined function: f(x, y) builds the application. */
+/**
+ * A callable undefined function: f(x, y) builds the application.
+ *
+ * @see SymPy `sympy.core.function.UndefinedFunction`
+ */
 export interface UndefinedFunction {
   (...args: ExprLike[]): Expr;
+  /** The name printed for applications of the function. */
   readonly functionName: string;
+  /** The allowed argument counts, or `NoMatch` for unrestricted arity. */
   readonly arity: readonly number[] | NoMatchResult;
+  /**
+   * Tests whether another function has the same defining properties.
+   * @param other - The candidate function.
+   * @returns Whether the function heads are equal.
+   */
   equals(other: unknown): boolean;
 }
 
 /** A function class (SymPy `FunctionClass`): a callable that builds applications of a named function. */
 export interface FunctionClassLike {
   (...args: never[]): unknown;
+  /** The function name of the head. */
   readonly functionName: string;
 }
 
@@ -95,14 +107,35 @@ export function functions(names: string): UndefinedFunction[] {
 
 /** A named function held as a symbolic argument of Subs. */
 export class FunctionHead extends ExtensionExpr {
-  constructor(name: string, readonly apply?: (...args: Expr[]) => Expr, readonly arities?: readonly number[]) {
+  /**
+   * Creates a `FunctionHead`.
+   *
+   * @param name - The symbolic name or names.
+   * @param apply - The callable used to construct applications.
+   * @param arities - The allowed argument counts of the function head.
+   */
+  constructor(name: string,
+    /** The optional callable for applying the function head. */
+    readonly apply?: (...args: Expr[]) => Expr,
+    /** The allowed argument counts of the function head. */
+    readonly arities?: readonly number[]) {
     super(name, []);
   }
 
+  /**
+   * Rebuilds the node with the supplied arguments.
+   *
+   * @returns The expression rebuilt with the new arguments.
+   */
   withArgs(): Expr { return this; }
 
   protected override computeKey(): string { return `FunctionHead(${JSON.stringify(this.name)})`; }
 
+  /**
+   * Formats the node using the expression printer for its arguments.
+   *
+   * @returns The formatted string.
+   */
   override printStr(): string { return this.name; }
 }
 
