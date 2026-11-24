@@ -24,18 +24,48 @@ import type { Permutation } from './permutations';
 export type PcRelatorValue = FreeGroupElement | readonly [];
 
 /**
- * SymPy PolycyclicGroup(pc_sequence, pc_series, relative_order, collector):
- * a polycyclic group given by a polycyclic generating sequence.
+ * A polycyclic group given by a polycyclic generating sequence.
+ * @see SymPy `sympy.combinatorics.pc_groups.PolycyclicGroup`
  */
 export class PolycyclicGroup {
+  /**
+   * Indicates whether the object represents a group.
+   * @see SymPy `sympy.combinatorics.pc_groups.PolycyclicGroup.is_group`
+   */
   readonly isGroup = true;
+  /**
+   * Indicates whether the group has a terminating derived series.
+   * @see SymPy `sympy.combinatorics.pc_groups.PolycyclicGroup.is_solvable`
+   */
   readonly isSolvable = true;
-  /** SymPy pcgs: the polycyclic generating sequence. */
+  /**
+   * The polycyclic generating sequence.
+   * @see SymPy `sympy.combinatorics.pc_groups.PolycyclicGroup.pcgs`
+   */
   readonly pcgs: Permutation[];
+  /**
+   * The subnormal series associated with the generating sequence.
+   * @see SymPy `sympy.combinatorics.pc_groups.PolycyclicGroup.pc_series`
+   */
   readonly pcSeries: PermutationGroupNode[];
+  /**
+   * The orders of the generators in successive quotients.
+   * @see SymPy `sympy.combinatorics.pc_groups.PolycyclicGroup.relative_order`
+   */
   readonly relativeOrder: bigint[];
+  /**
+   * The collector for words in the polycyclic generators.
+   * @see SymPy `sympy.combinatorics.pc_groups.PolycyclicGroup.collector`
+   */
   readonly collector: Collector;
 
+  /**
+   * Constructs a `PolycyclicGroup`.
+   * @param pcSequence - The polycyclic generating sequence.
+   * @param pcSeries - The corresponding subnormal series.
+   * @param relativeOrder - The generator orders modulo the next subgroup.
+   * @param collector - The collector for words in the polycyclic generators.
+   */
   constructor(pcSequence: readonly Permutation[], pcSeries: readonly PermutationGroupNode[], relativeOrder: readonly (bigint | number)[], collector?: Collector) {
     this.pcgs = [...pcSequence];
     this.pcSeries = [...pcSeries];
@@ -43,16 +73,28 @@ export class PolycyclicGroup {
     this.collector = collector ?? new Collector(this.pcgs, this.pcSeries, this.relativeOrder);
   }
 
-  /** SymPy is_prime_order(): whether every relative order is prime. */
+  /**
+   * Whether every relative order is prime.
+   * @returns Whether the object is prime order.
+   * @see SymPy `sympy.combinatorics.pc_groups.PolycyclicGroup.is_prime_order`
+   */
   isPrimeOrder(): boolean {
     return this.relativeOrder.every((o) => isprime(o));
   }
 
-  /** SymPy length(): the length of the polycyclic sequence. */
+  /**
+   * Returns the length of the polycyclic sequence.
+   * @returns The length of the polycyclic sequence.
+   * @see SymPy `sympy.combinatorics.pc_groups.PolycyclicGroup.length`
+   */
   length(): number {
     return this.pcgs.length;
   }
 
+  /**
+   * Formats the object as plain text.
+   * @returns The printable representation.
+   */
   toString(): string {
     return `PolycyclicGroup(${this.pcgs.length})`;
   }
@@ -72,20 +114,48 @@ const isWord = (v: PcRelatorValue): v is FreeGroupElement => !Array.isArray(v);
 export type PcSyllable = [Expr, number];
 
 /**
- * SymPy Collector(pcgs, pc_series, relative_order, free_group_,
- * pc_presentation): the collector of a polycyclic group, on the free group
+ * The collector of a polycyclic group, on the free group
  * x0, x1, ... of its polycyclic generators.
+ * @see SymPy `sympy.combinatorics.pc_groups.Collector`
+ * @example
+ * ```ts
+ * import { Collector, Perm, PermutationGroup } from '@symjs/symjs';
+ * new Collector([new Perm([1, 0, 2]), new Perm([2, 0, 1])], [PermutationGroup([new Perm([1, 0, 2]), new Perm([2, 0, 1]), new Perm([1, 2, 0])]), PermutationGroup([new Perm([2, 0, 1])]), PermutationGroup([new Perm([0, 1, 2])])], [2, 3]).depth(new Perm([1, 2, 0])); // => 2
+ * ```
  */
 export class Collector {
+  /**
+   * The polycyclic generating sequence.
+   * @see SymPy `sympy.combinatorics.pc_groups.Collector.pcgs`
+   */
   readonly pcgs: Permutation[];
+  /**
+   * The subnormal series associated with the generating sequence.
+   * @see SymPy `sympy.combinatorics.pc_groups.Collector.pc_series`
+   */
   readonly pcSeries: PermutationGroupNode[];
+  /**
+   * The orders of the generators in successive quotients.
+   * @see SymPy `sympy.combinatorics.pc_groups.Collector.relative_order`
+   */
   readonly relativeOrder: bigint[];
+  /**
+   * The free group on the generators.
+   * @see SymPy `sympy.combinatorics.pc_groups.Collector.free_group`
+   */
   readonly freeGroup: FreeGroup;
   /** SymPy index: the position of each symbol of the free group (by symbol key). */
   readonly #index: Map<string, number>;
-  /** @internal The pc presentation, keyed by the relator's key. */
+  /** The pc presentation, keyed by the relator's key. @internal */
   presentationMap = new Map<string, [FreeGroupElement, PcRelatorValue]>();
 
+  /**
+   * Constructs a `Collector`.
+   * @param pcgs - The polycyclic generating sequence.
+   * @param pcSeries - The corresponding subnormal series.
+   * @param relativeOrder - The generator orders modulo the next subgroup.
+   * @param freeGroup - The free group containing the words.
+   */
   constructor(pcgs: readonly Permutation[], pcSeries: readonly PermutationGroupNode[], relativeOrder: readonly (bigint | number)[], freeGroup?: FreeGroup) {
     this.pcgs = [...pcgs];
     this.pcSeries = [...pcSeries];
@@ -95,12 +165,20 @@ export class Collector {
     this.presentationMap = this.#pcRelators();
   }
 
-  /** SymPy index: the position of each symbol of the free group. */
+  /**
+   * Gets the position of each symbol of the free group.
+   * @returns The position of each symbol of the free group.
+   * @see SymPy `sympy.combinatorics.pc_groups.Collector.index`
+   */
   get index(): Map<Expr, number> {
     return new Map(this.freeGroup.symbols.map((s, i) => [s, i]));
   }
 
-  /** SymPy pc_presentation: the power and conjugate relators and their collected values. */
+  /**
+   * Gets the power and conjugate relators and their collected values.
+   * @returns The power and conjugate relators and their collected values.
+   * @see SymPy `sympy.combinatorics.pc_groups.Collector.pc_presentation`
+   */
   get pcPresentation(): Map<FreeGroupElement, PcRelatorValue> {
     return new Map(this.presentationMap.values());
   }
@@ -114,9 +192,12 @@ export class Collector {
   }
 
   /**
-   * SymPy minimal_uncollected_subword(word): the leftmost minimal subword
+   * The leftmost minimal subword
    * that is not collected (a power out of range or two generators out of
-   * order), as syllables; NoMatch (SymPy None) when the word is collected.
+   * order), as syllables; NoMatch when the word is collected.
+   * @param word - The group word to examine.
+   * @returns The leftmost minimal subword that is not collected (a power out of range or two generators out of order).
+   * @see SymPy `sympy.combinatorics.pc_groups.Collector.minimal_uncollected_subword`
    */
   minimalUncollectedSubword(word: FreeGroupElement): PcSyllable[] | NoMatchResult {
     if (word.isIdentity) return NoMatch;
@@ -134,7 +215,11 @@ export class Collector {
     return NoMatch;
   }
 
-  /** SymPy relations(): the power relators and the conjugate relators, separately. */
+  /**
+   * Returns the power relators and the conjugate relators, separately.
+   * @returns The power relators and the conjugate relators, separately.
+   * @see SymPy `sympy.combinatorics.pc_groups.Collector.relations`
+   */
   relations(): [Map<FreeGroupElement, PcRelatorValue>, Map<FreeGroupElement, PcRelatorValue>] {
     const power = new Map<FreeGroupElement, PcRelatorValue>();
     const conjugate = new Map<FreeGroupElement, PcRelatorValue>();
@@ -142,13 +227,24 @@ export class Collector {
     return [power, conjugate];
   }
 
-  /** SymPy subword_index(word, w): the start and end of the first occurrence of w in word ((-1, -1) when absent). */
+  /**
+   * Returns the start and end of the first occurrence of w in word ((-1, -1) when absent).
+   * @param word - The group word to examine.
+   * @param w - The group word to scan or rewrite.
+   * @returns The start and end of the first occurrence of w in word ((-1, -1) when absent).
+   * @see SymPy `sympy.combinatorics.pc_groups.Collector.subword_index`
+   */
   subwordIndex(word: FreeGroupElement, w: FreeGroupElement): [number, number] {
     for (let i = 0; i < word.length - w.length + 1; i++) if (word.subword(i, i + w.length).equals(w)) return [i, i + w.length];
     return [-1, -1];
   }
 
-  /** SymPy map_relation(w): the value of the conjugate relator x_j**-1*x_i*x_j for the subword x_i*x_j. */
+  /**
+   * Returns the value of the conjugate relator x_j**-1*x_i*x_j for the subword x_i*x_j.
+   * @param w - The group word to scan or rewrite.
+   * @returns The value of the conjugate relator x_j**-1*x_i*x_j for the subword x_i*x_j.
+   * @see SymPy `sympy.combinatorics.pc_groups.Collector.map_relation`
+   */
   mapRelation(w: FreeGroupElement): PcRelatorValue {
     const array = w.arrayForm;
     const s1 = at(array, 0)[0];
@@ -157,7 +253,12 @@ export class Collector {
     return defined(this.presentationMap.get(key.key), 'conjugate relator')[1];
   }
 
-  /** SymPy collected_word(word): the collected form x0**e0*x1**e1*... of a word. */
+  /**
+   * The collected form x0**e0*x1**e1*... of a word.
+   * @param wordIn - The group word to examine.
+   * @returns The collected form x0**e0*x1**e1*.
+   * @see SymPy `sympy.combinatorics.pc_groups.Collector.collected_word`
+   */
   collectedWord(wordIn: FreeGroupElement): FreeGroupElement {
     const F = this.freeGroup;
     let word = wordIn;
@@ -191,7 +292,11 @@ export class Collector {
     return word;
   }
 
-  /** SymPy pc_relators(): the pc presentation (power and conjugate relators with their collected values). */
+  /**
+   * Returns the pc presentation (power and conjugate relators with their collected values).
+   * @returns The pc presentation (power and conjugate relators with their collected values).
+   * @see SymPy `sympy.combinatorics.pc_groups.Collector.pc_relators`
+   */
   pcRelators(): Map<FreeGroupElement, PcRelatorValue> {
     return new Map(this.#pcRelators().values());
   }
@@ -238,7 +343,12 @@ export class Collector {
     return pcRelators;
   }
 
-  /** SymPy exponent_vector(element): the exponents of the collected word of a group element. */
+  /**
+   * Returns the exponents of the collected word of a group element.
+   * @param element - The group element to express in the generating sequence.
+   * @returns The exponents of the collected word of a group element.
+   * @see SymPy `sympy.combinatorics.pc_groups.Collector.exponent_vector`
+   */
   exponentVector(element: Permutation): number[] {
     const F = this.freeGroup;
     let G = new PermutationGroupNode([]);
@@ -257,14 +367,24 @@ export class Collector {
     return v;
   }
 
-  /** SymPy depth(element): 1 + the position of the first nonzero exponent (length + 1 for the identity). */
+  /**
+   * Finds the one-based position of the leading exponent in the polycyclic sequence.
+   * @param element - The group element to express in the generating sequence.
+   * @returns The one-based position of the leading exponent in the polycyclic sequence.
+   * @see SymPy `sympy.combinatorics.pc_groups.Collector.depth`
+   */
   depth(element: Permutation): number {
     const v = this.exponentVector(element);
     const i = v.findIndex((x) => x !== 0);
     return i < 0 ? this.pcgs.length + 1 : i + 1;
   }
 
-  /** SymPy leading_exponent(element): the first nonzero exponent (NoMatch, SymPy None, for the identity). */
+  /**
+   * Finds the exponent of the first generator with a nonzero exponent.
+   * @param element - The group element to express in the generating sequence.
+   * @returns The leading nonzero exponent, or `NoMatch` for the identity.
+   * @see SymPy `sympy.combinatorics.pc_groups.Collector.leading_exponent`
+   */
   leadingExponent(element: Permutation): number | NoMatchResult {
     const v = this.exponentVector(element);
     const d = this.depth(element);
@@ -292,10 +412,10 @@ export class Collector {
   }
 
   /**
-   * SymPy induced_pcgs(gens): the induced polycyclic sequence of the
-   * subgroup generated by gens. SymPy keeps only elements of depth below
-   * the length of the sequence, so it loses the subgroups that meet the last
-   * term of the series (it returns [] for the last generator); symjs keeps them.
+   * Computes an induced polycyclic generating sequence for the subgroup.
+   * @param gensIn - The group generators.
+   * @returns An induced polycyclic generating sequence for the subgroup.
+   * @see SymPy `sympy.combinatorics.pc_groups.Collector.induced_pcgs`
    */
   inducedPcgs(gensIn: readonly Permutation[]): Permutation[] {
     const z: (Permutation | 1)[] = Array<1>(this.pcgs.length).fill(1);
@@ -314,9 +434,11 @@ export class Collector {
   }
 
   /**
-   * SymPy constructive_membership_test(ipcgs, g): the exponents of g in an
-   * induced pcgs, or false. SymPy compares the remainder with the integer 1
-   * (always unequal) and so always returns False; symjs tests for the identity.
+   * Expresses a group element in the supplied induced polycyclic generating sequence.
+   * @param ipcgs - The induced polycyclic generating sequence of the subgroup.
+   * @param g - The group element on which to operate.
+   * @returns The exponents in the induced sequence, or `false` if the element is outside the subgroup.
+   * @see SymPy `sympy.combinatorics.pc_groups.Collector.constructive_membership_test`
    */
   constructiveMembershipTest(ipcgs: readonly Permutation[], g: Permutation): number[] | false {
     const e = Array<number>(ipcgs.length).fill(0);
@@ -334,6 +456,10 @@ export class Collector {
     return h.isIdentity ? e : false;
   }
 
+  /**
+   * Formats the object as plain text.
+   * @returns The printable representation.
+   */
   toString(): string {
     return `Collector(${String(this.freeGroup)})`;
   }

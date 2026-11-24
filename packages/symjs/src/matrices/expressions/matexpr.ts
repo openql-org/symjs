@@ -45,11 +45,11 @@ import { precedence as scalarPrecedence } from '../../printing/str';
 /** Anything accepted where SymPy sympifies a matrix argument: expressions and explicit matrices. */
 export type MatArg = ExprLike | Matrix;
 
-/** Hints of doit (SymPy keyword arguments). */
+/** Hints of doit. */
 export interface DoitHints {
   /** Evaluate the arguments first (default true). */
   readonly deep?: boolean;
-  /** false keeps Inverse unevaluated (SymPy inv_expand). */
+  /** False keeps Inverse unevaluated. */
   readonly invExpand?: boolean;
 }
 
@@ -61,13 +61,22 @@ export type SliceSpec = ExprLike | readonly [(ExprLike | null)?, (ExprLike | nul
 // sympify for matrices
 // ---------------------------------------------------------------------------
 
-/** sympify that turns explicit matrices into ImmutableMatrix nodes (SymPy _sympify of a Matrix). */
+/**
+ * Converts an explicit matrix to an immutable matrix expression and sympifies scalar inputs.
+ * @param x - The expression or entry to examine.
+ * @returns The resulting symbolic expression.
+ * @see SymPy `sympy.matrices.immutable.sympify_matrix`
+ */
 export function toExpr(x: MatArg): Expr {
   if (x instanceof Matrix) return new ImmutableMatrixNode(x);
   return sympify(x);
 }
 
-/** True for matrix expressions (SymPy is_Matrix), including explicit ImmutableMatrix nodes. */
+/**
+ * Tests whether a value is a matrix expression.
+ * @param e - The expression to examine.
+ * @returns Whether the value is an instance of `MatrixExpr`.
+ */
 export const isMatrix = (e: unknown): e is MatrixExpr => e instanceof MatrixExpr;
 
 /** A matrix expression from an argument, or a TypeError. */
@@ -232,21 +241,46 @@ export function doitArg(a: Expr, hints: DoitHints = {}): Expr {
 // Str: a name as an argument (SymPy Str)
 // ---------------------------------------------------------------------------
 
-/** SymPy Str: a string as an expression argument (the name of a MatrixSymbol). */
+/**
+ * A string as an expression argument (the name of a MatrixSymbol).
+ * @see SymPy `sympy.core.symbol.Str`
+ */
 export class Str extends ExtensionExpr {
-  constructor(readonly value: string) {
+  /**
+   * Constructs a `Str`.
+   * @param value - The value represented by this object.
+   */
+  constructor(
+    /** The literal string value. */
+    readonly value: string
+  ) {
     super('Str', []);
   }
+  /**
+   * Rebuilds the expression with replacement operands.
+   * @returns The expression with the given operands.
+   */
   withArgs(): Expr {
     return this;
   }
-  /** SymPy Str is an Atom. */
+  /**
+   * Gets the ordering class for a literal string atom.
+   * @returns The ordering class for a literal string atom.
+   */
   override get atomClass(): boolean {
     return true;
   }
+  /**
+   * Formats the expression as plain text.
+   * @returns The plain-text representation.
+   */
   override printStr(): string {
     return this.value;
   }
+  /**
+   * Formats the expression in LaTeX.
+   * @returns The LaTeX representation.
+   */
   override printLatex(): string {
     return this.value;
   }
@@ -261,204 +295,402 @@ export class Str extends ExtensionExpr {
 
 /** Context of entry(): the generator of summation dummies shared by nested products. */
 export interface EntryContext {
+  /** Supplies a fresh dummy index for an entry formula. */
   readonly dummy: () => Dummy;
 }
 
 /**
- * SymPy MatrixExpr: the base class of matrix expressions. Matrix expressions
+ * The base class of matrix expressions. Matrix expressions
  * do not commute; `A.mul(B)`, `A.add(B)` and `A.pow(n)` build and evaluate
  * MatMul, MatAdd and MatPow like SymPy's operators.
+ * @see SymPy `sympy.matrices.expressions.matexpr.MatrixExpr`
+ * @example
+ * ```ts
+ * import { MatrixExpr, MatrixSymbol } from '@symjs/symjs';
+ * MatrixSymbol('A', 3, 3) instanceof MatrixExpr; // => True
+ * ```
  */
 export abstract class MatrixExpr extends ExtensionExpr {
+  /**
+   * The mathematical kind of the matrix expression.
+   * @returns The resulting matrix expression.
+   */
   override kindSelf(): MatrixKindNode { return MatrixKind(); }
-  /** The shape (rows, cols). */
+  /**
+   * The shape (rows, cols).
+   * @returns The row and column dimensions.
+   * @see SymPy `sympy.matrices.expressions.matexpr.MatrixExpr.shape`
+   */
   abstract get shape(): [Expr, Expr];
+  /**
+   * The number of rows.
+   * @returns The row count.
+   * @see SymPy `sympy.matrices.expressions.matexpr.MatrixExpr.rows`
+   */
   get rows(): Expr {
     return this.shape[0];
   }
+  /**
+   * The number of columns.
+   * @returns The column count.
+   * @see SymPy `sympy.matrices.expressions.matexpr.MatrixExpr.cols`
+   */
   get cols(): Expr {
     return this.shape[1];
   }
+  /**
+   * Indicates whether the expression represents a scalar.
+   * @returns Whether the matrix is scalar.
+   * @see SymPy `sympy.matrices.expressions.matexpr.MatrixExpr.is_scalar`
+   */
   override get isScalar(): boolean {
     return false;
   }
   protected override computeCommutative(): boolean {
     return false;
   }
-  /** SymPy is_MatrixExpr: false for explicit matrices. */
+  /**
+   * False for explicit matrices.
+   * @returns Whether the matrix is matrix expr.
+   * @see SymPy `sympy.matrices.expressions.matexpr.MatrixExpr.is_MatrixExpr`
+   */
   get isMatrixExpr(): boolean {
     return true;
   }
-  /** SymPy is_square. */
+  /**
+   * Tests whether the row and column counts agree.
+   * @returns Whether the property holds, or `'unknown'` if undecidable.
+   * @see SymPy `sympy.matrices.expressions.matexpr.MatrixExpr.is_square`
+   */
   get isSquare(): Truth {
     const [r, c] = this.shape;
     if (isInt(r) && isInt(c)) return r.p === c.p;
     if (same(r, c)) return true;
     return 'unknown';
   }
-  /** SymPy is_Identity. */
+  /**
+   * Tests whether the matrix is the identity.
+   * @returns Whether the property holds, or `'unknown'` if undecidable.
+   * @see SymPy `sympy.matrices.expressions.matexpr.MatrixExpr.is_Identity`
+   */
   get isIdentity(): Truth {
     return 'unknown';
   }
-  /** SymPy is_ZeroMatrix. */
+  /**
+   * Tests whether the expression represents a zero matrix.
+   * @returns Whether the matrix is zero matrix.
+   * @see SymPy `sympy.matrices.expressions.matexpr.MatrixExpr.is_ZeroMatrix`
+   */
   get isZeroMatrix(): boolean {
     return false;
   }
 
   // ---- arithmetic (SymPy operators) ----
 
-  /** this + o (SymPy MatAdd(self, other).doit()). */
+  /**
+   * Adds a matrix expression to the other operand.
+   * @param o - The other operand.
+   * @returns The resulting symbolic expression.
+   * @see SymPy `sympy.matrices.expressions.matexpr.MatrixExpr.__add__`
+   */
   override add(o: MatArg): Expr {
     return MatAddNode.create([this, toExpr(o)]).doit();
   }
-  /** this - o. */
+  /**
+   * Subtracts the other operand from this matrix.
+   * @param o - The other operand.
+   * @returns The resulting symbolic expression.
+   * @see SymPy `sympy.matrices.expressions.matexpr.MatrixExpr.__sub__`
+   */
   override sub(o: MatArg): Expr {
     return MatAddNode.create([this, negate(toExpr(o))]).doit();
   }
-  /** SymPy reflected addition, with the same matrix validation as addition. */
+  /**
+   * Adds this matrix on the right of the other operand.
+   * @param o - The other operand.
+   * @returns The resulting symbolic expression.
+   */
   radd(o: MatArg): Expr {
     return this.add(o);
   }
-  /** SymPy reflected subtraction. */
+  /**
+   * Subtracts this matrix from the other operand.
+   * @param o - The other operand.
+   * @returns The resulting symbolic expression.
+   */
   rsub(o: MatArg): Expr {
     return MatAddNode.create([toExpr(o), negate(this)]).doit();
   }
-  /** this * o (SymPy MatMul(self, other).doit()). */
+  /**
+   * Multiplies this matrix by the right operand.
+   * @param o - The other operand.
+   * @returns The resulting symbolic expression.
+   * @see SymPy `sympy.matrices.expressions.matexpr.MatrixExpr.__mul__`
+   */
   override mul(o: MatArg): Expr {
     return matMul(this, toExpr(o));
   }
-  /** o * this (SymPy __rmul__). */
+  /**
+   * Multiplies the left operand by this matrix.
+   * @param o - The other operand.
+   * @returns The resulting symbolic expression.
+   */
   rmul(o: MatArg): Expr {
     return matMul(toExpr(o), this);
   }
-  /** this / o for a scalar o (SymPy self * other**-1). */
+  /**
+   * Multiplies by the inverse of the other operand.
+   * @param o - The other operand.
+   * @returns The resulting symbolic expression.
+   * @see SymPy `sympy.matrices.expressions.matexpr.MatrixExpr.__truediv__`
+   */
   override div(o: MatArg): Expr {
     const e = toExpr(o);
     return this.mul(e instanceof MatrixExpr ? e.pow(-1) : pow(e, -1));
   }
-  /** SymPy does not define division by a matrix from the left. */
+  /**
+   * Handles division with this matrix as the divisor.
+   * @param _o - The other operand.
+   * @returns This operation always throws.
+   * @throws NotImplementedError when the divisor is a matrix.
+   */
   rdiv(_o: MatArg): Expr {
     throw new NotImplementedError('Division by a matrix is not defined');
   }
-  /** SymPy does not define a scalar raised to a matrix power. */
+  /**
+   * Handles exponentiation with this matrix as the exponent.
+   * @param _o - The exponent.
+   * @returns This operation always throws.
+   * @throws NotImplementedError when the exponent is a matrix.
+   */
   rpow(_o: ExprLike): Expr {
     throw new NotImplementedError('Matrix Power not defined');
   }
-  /** this**o (SymPy MatPow(self, other).doit()). */
+  /**
+   * Raises this matrix to the specified exponent.
+   * @param o - The exponent.
+   * @returns The resulting symbolic expression.
+   * @see SymPy `sympy.matrices.expressions.matexpr.MatrixExpr._pow`
+   */
   override pow(o: ExprLike): Expr {
     return MatPowNode.create(this, sympify(o)).doit();
   }
-  /** -this (SymPy MatMul(-1, self).doit()). */
+  /**
+   * Negates all entries of the matrix expression.
+   * @returns The resulting symbolic expression.
+   */
   override neg(): Expr {
     return negate(this);
   }
 
   // ---- transposition, inversion ----
 
-  /** The transpose (SymPy .T). */
+  /**
+   * The transpose.
+   * @returns The transposed matrix.
+   * @see SymPy `sympy.matrices.expressions.matexpr.MatrixExpr.T`
+   */
   get T(): Expr {
     return this.transpose();
   }
-  /** SymPy transpose(): Transpose(self).doit(deep=False). */
+  /**
+   * Exchanges the row and column axes.
+   * @returns The resulting symbolic expression.
+   * @see SymPy `sympy.matrices.expressions.matexpr.MatrixExpr.transpose`
+   */
   transpose(): Expr {
     return this.evalTranspose();
   }
-  /** SymPy adjoint(). */
+  /**
+   * Computes the conjugate transpose.
+   * @returns The conjugate transpose.
+   * @see SymPy `sympy.matrices.expressions.matexpr.MatrixExpr.adjoint`
+   */
   adjoint(): Expr {
     return this.evalAdjoint();
   }
-  /** The Hermitian adjoint (adjoint()). */
+  /**
+   * The Hermitian adjoint (adjoint()).
+   * @returns The conjugate transpose.
+   */
   get H(): Expr {
     return this.adjoint();
   }
-  /** SymPy conjugate(). */
+  /**
+   * Conjugates the matrix entries.
+   * @returns The resulting symbolic expression.
+   * @see SymPy `sympy.matrices.expressions.matexpr.MatrixExpr.conjugate`
+   */
   override conjugate(): Expr {
     return this.evalConjugate();
   }
-  /** SymPy inverse(). */
+  /**
+   * Forms the inverse of this square matrix.
+   * @returns The inverse of this square matrix.
+   * @throws NonSquareMatrixError when the matrix is not square.
+   * @see SymPy `sympy.matrices.expressions.matexpr.MatrixExpr.inverse`
+   */
   inverse(): Expr {
     if (this.isSquare === false) throw new NonSquareMatrixError('Inverse of non-square matrix');
     return this.evalInverse();
   }
-  /** SymPy inv(). */
+  /**
+   * Forms the inverse of this square matrix.
+   * @returns The inverse of this square matrix.
+   * @see SymPy `sympy.matrices.expressions.matexpr.MatrixExpr.inv`
+   */
   inv(): Expr {
     return this.inverse();
   }
-  /** The inverse (SymPy .I). */
+  /**
+   * The inverse.
+   * @returns The inverse matrix.
+   * @see SymPy `sympy.matrices.expressions.matexpr.MatrixExpr.I`
+   */
   get I(): Expr {
     return this.inverse();
   }
-  /** SymPy det(): the determinant. */
+  /**
+   * The determinant.
+   * @returns The resulting symbolic expression.
+   * @see SymPy `sympy.matrices.expressions.matexpr.MatrixExpr.det`
+   */
   det(): Expr {
     return det(this);
   }
 
   // ---- protocol (SymPy _eval_*); the defaults give the unevaluated forms ----
 
-  /** SymPy _eval_transpose. @internal */
+  /**
+   * Computes the transpose using the structure of this expression.
+   * @returns The transpose using the structure of this expression.
+   * @internal
+   */
   evalTranspose(): Expr {
     return new TransposeNode(this);
   }
-  /** SymPy _eval_adjoint. @internal */
+  /**
+   * Computes the conjugate transpose of this expression.
+   * @returns The conjugate transpose of this expression.
+   * @internal
+   */
   evalAdjoint(): Expr {
     return new AdjointNode(this);
   }
-  /** SymPy _eval_conjugate. @internal */
+  /**
+   * Conjugates the entries of this expression.
+   * @returns The resulting symbolic expression.
+   * @internal
+   */
   evalConjugate(): Expr {
     return new AdjointNode(new TransposeNode(this));
   }
-  /** SymPy _eval_inverse. @internal */
+  /**
+   * Computes the inverse using the structure of this matrix.
+   * @returns The inverse using the structure of this matrix.
+   * @internal
+   */
   evalInverse(): Expr {
     return new InverseNode(this);
   }
-  /** SymPy _eval_determinant. @internal */
+  /**
+   * Computes the determinant using the structure of this matrix.
+   * @returns The determinant using the structure of this matrix.
+   * @internal
+   */
   evalDeterminant(): Expr {
     return new DeterminantNode(this);
   }
-  /** SymPy _eval_trace. @internal */
+  /**
+   * Computes the trace using the structure of this matrix.
+   * @returns The trace using the structure of this matrix.
+   * @internal
+   */
   evalTrace(): Expr {
     return new TraceNode(this);
   }
-  /** SymPy _eval_power (the exponents -1, 0 and 1 are handled by MatPow.doit). @internal */
+  /**
+   * Evaluates a power of this matrix when its structure determines the result.
+   * @param exp - The exponent to apply.
+   * @returns The resulting symbolic expression.
+   * @internal
+   */
   evalPower(exp: Expr): Expr {
     return new MatPowNode(this, exp);
   }
-  /** SymPy _entry(i, j): the entry without index validation. @internal */
+  /**
+   * The entry without index validation.
+   * @param _i - The zero-based row index.
+   * @param _j - The zero-based column index.
+   * @param _ctx - The index context for evaluating matrix entries.
+   * @returns The scalar at the requested position.
+   * @throws NotImplementedError when the matrix expression has no entry formula.
+   * @internal
+   */
   entry(_i: Expr, _j: Expr, _ctx?: EntryContext): Expr {
     throw new NotImplementedError(`Indexing not implemented for ${this.name}`);
   }
-  /** SymPy MatrixExpr._eval_as_real_imag: ((M + conjugate(M))/2, (M - conjugate(M))/(2*I)). */
+  /**
+   * Separates the real and imaginary parts of the matrix.
+   * @returns The real-part matrix followed by the imaginary-part matrix.
+   */
   override asRealImagSelf(): [Expr, Expr] {
     const c = this.evalConjugate();
     return [mul(S.Half, add(this, c)), mul(add(this, mul(-1, c)), pow(mul(2, S.I), -1))];
   }
-  /** SymPy as_coeff_mmul. */
+  /**
+   * Separates the scalar coefficient from the matrix product.
+   * @returns The scalar coefficient followed by the matrix product.
+   * @see SymPy `sympy.matrices.expressions.matexpr.MatrixExpr.as_coeff_mmul`
+   */
   asCoeffMmul(): [Expr, MatMulNode] {
     return [S.One, new MatMulNode([this])];
   }
-  /** Arguments used by the sort key (SymPy args). @internal */
+  /**
+   * Arguments used by the sort key.
+   * @returns The expression operands used for canonical ordering.
+   * @internal
+   */
   sortArgs(): readonly Expr[] {
     return this.args;
   }
-  /** SymPy precedence() for the str printer. @internal */
+  /**
+   * Returns the binding precedence used to parenthesize expressions in plain text.
+   * @returns The binding precedence used to parenthesize expressions in plain text.
+   * @internal
+   */
   strPrecedence(): number {
     return PRECEDENCE.Atom;
   }
-  /** SymPy precedence_traditional() for the LaTeX printer. @internal */
+  /**
+   * Returns the binding precedence used to parenthesize LaTeX output.
+   * @returns The binding precedence used to parenthesize LaTeX output.
+   * @internal
+   */
   latexPrecedence(): number {
     return this.strPrecedence();
   }
 
   // ---- indexing ----
 
-  /** SymPy valid_index. */
+  /**
+   * Tests whether the indices can select an entry of this matrix.
+   * @param i - The zero-based row index.
+   * @param j - The zero-based column index.
+   * @returns Whether the indices can select an entry of this matrix.
+   * @see SymPy `sympy.matrices.expressions.matexpr.MatrixExpr.valid_index`
+   */
   validIndex(i: Expr, j: Expr): boolean {
     const ok = (idx: Expr, d: Expr): boolean => relTruth('Ge', idx, mul(-1, d)) !== false && relTruth('Lt', idx, d) !== false;
     return ok(i, this.rows) && ok(j, this.cols);
   }
   /**
-   * SymPy M[i, j] (an entry) or M[k] (row-major single index, which needs
-   * a known number of columns).
+   * Selects an entry, row, column or slice by index.
+   * @param i - The zero-based row index.
+   * @param j - The zero-based column index.
+   * @returns The resulting symbolic expression.
+   * @throws RangeError when a single index is not an integer or a linear index is used with a symbolic column count or an index is out of bounds.
+   * @see SymPy `sympy.matrices.expressions.matexpr.MatrixExpr.__getitem__`
    */
   at(i: ExprLike, j?: ExprLike): Expr {
     if (j === undefined) {
@@ -479,27 +711,42 @@ export abstract class MatrixExpr extends ExtensionExpr {
     if (this.validIndex(a, b)) return this.entry(a, b);
     throw new RangeError(`Invalid indices (${str(a)}, ${str(b)})`);
   }
-  /** SymPy M[rows, cols] with slices: a MatrixSlice. A single index selects one row (or column). */
+  /**
+   * A MatrixSlice. A single index selects one row (or column).
+   * @param rows - The number of rows.
+   * @param cols - The number of columns.
+   * @returns A MatrixSlice.
+   */
   slice(rows: SliceSpec, cols: SliceSpec = [null, null, null]): Expr {
     return MatrixSliceNode.create(this, rows, cols);
   }
 
   // ---- explicit forms ----
 
-  /** SymPy as_explicit(): an explicit Matrix. */
+  /**
+   * An explicit Matrix.
+   * @returns The resulting matrix.
+   * @throws RangeError when the dimensions are symbolic.
+   * @see SymPy `sympy.matrices.expressions.matexpr.MatrixExpr.as_explicit`
+   */
   asExplicit(): Matrix {
     const [r, c] = this.shape;
     if (!isInt(r) || !isInt(c)) throw new RangeError('Matrix with symbolic shape cannot be represented explicitly.');
     return Matrix.fromFunction(toInt(r), toInt(c), (i, j) => this.at(i, j));
   }
-  /** SymPy as_mutable(): an explicit matrix. */
+  /**
+   * An explicit matrix.
+   * @returns The resulting matrix.
+   * @see SymPy `sympy.matrices.expressions.matexpr.MatrixExpr.as_mutable`
+   */
   asMutable(): Matrix {
     return this.asExplicit();
   }
   /**
-   * SymPy MatrixExpr.equals: entrywise equality with another matrix of
-   * explicit shape (false when it cannot be shown). The method `equals` of
-   * symjs expressions is SymPy's structural ==.
+   * Compares entries when both matrices have explicit dimensions.
+   * @param other - The other matrix operand.
+   * @returns Whether entrywise equality can be established.
+   * @see SymPy `sympy.matrices.expressions.matexpr.MatrixExpr.equals`
    */
   equalsExplicit(other: ExprLike | Matrix): boolean {
     const o = toExpr(other);
@@ -524,41 +771,85 @@ export abstract class MatrixExpr extends ExtensionExpr {
 
   // ---- evaluation ----
 
-  /** SymPy doit(). */
+  /**
+   * Evaluates the operations represented by this expression.
+   * @param hints - Evaluation options, including whether to evaluate the operands recursively.
+   * @returns The evaluated expression.
+   * @see SymPy `sympy.matrices.expressions.matexpr.MatrixExpr.doit`
+   */
   doit(hints: DoitHints = {}): Expr {
     if (hints.deep === false) return this;
     const args = this.args.map((a) => doitArg(a, hints));
     return sameList(args, this.args) ? this : this.withArgs(args);
   }
+  /**
+   * Evaluates the operation represented by this node.
+   * @returns The resulting symbolic expression.
+   */
   override doitSelf(): Expr {
     return this.doit({ deep: false });
   }
-  /** SymPy canonicalize() (the identity for matrix expressions, as in SymPy). */
+  /**
+   * Evaluates the matrix expression in canonical form.
+   * @returns The resulting symbolic expression.
+   * @see SymPy `sympy.matrices.expressions.matexpr.MatrixExpr.canonicalize`
+   */
   canonicalize(): Expr {
     return this;
   }
-  /** SymPy applyfunc(f): the function applied to every entry (ElementwiseApplyFunction). */
+  /**
+   * The function applied to every entry (ElementwiseApplyFunction).
+   * @param f - The function to apply to the entries.
+   * @returns The resulting symbolic expression.
+   * @see SymPy `sympy.matrices.expressions.matexpr.MatrixExpr.applyfunc`
+   */
   applyfunc(f: LambdaNode | ((x: Expr) => Expr)): Expr {
     return ElementwiseApplyFunctionNode.create(f, this);
   }
-  /** SymPy simplify of a matrix expression: the arguments simplified. */
+  /**
+   * The arguments simplified.
+   * @returns The resulting symbolic expression.
+   * @see SymPy `sympy.matrices.expressions.matexpr.MatrixExpr.simplify`
+   */
   override simplify(): Expr {
     if (!this.args.length || this instanceof MatrixSymbolNode) return this;
     return this.withArgs(this.args.map(simplifyArg));
   }
-  /** SymPy expand: products distributed over sums. */
+  /**
+   * Products distributed over sums.
+   * @returns The resulting symbolic expression.
+   * @see SymPy `sympy.matrices.expressions.matexpr.MatrixExpr.expand`
+   */
   override expand(): Expr {
     return this.withArgs(this.args.map(expandArg));
   }
+  /**
+   * Transposes the expression.
+   * @returns The resulting symbolic expression.
+   */
   override transposeSelf(): Expr {
     return this.evalTranspose();
   }
+  /**
+   * Forms the conjugate transpose.
+   * @returns The conjugate transpose.
+   */
   override adjointSelf(): Expr {
     return this.evalAdjoint();
   }
+  /**
+   * Conjugates the expression.
+   * @returns The resulting symbolic expression.
+   */
   override conjugateSelf(): Expr {
     return this.evalConjugate();
   }
+  /**
+   * Differentiates the expression with respect to the given variable.
+   * @param x - The differentiation variable.
+   * @param d - Differentiates a subexpression.
+   * @returns The derivative when this matrix expression supplies a differentiation rule.
+   */
   override diffSelf(x: Expr, d: (e: Expr, x: Expr) => Expr): Expr | undefined {
     void x;
     void d;
@@ -574,34 +865,60 @@ export abstract class MatScalar extends ExtensionExpr {
   protected override computeCommutative(): boolean {
     return true;
   }
-  /** SymPy doit(). */
+  /**
+   * Evaluates the operations represented by this expression.
+   * @param hints - Evaluation options, including whether to evaluate the operands recursively.
+   * @returns The evaluated expression.
+   */
   doit(hints: DoitHints = {}): Expr {
     if (hints.deep === false) return this;
     const args = this.args.map((a) => doitArg(a, hints));
     return sameList(args, this.args) ? this : this.withArgs(args);
   }
+  /**
+   * Evaluates the operation represented by this node.
+   * @returns The resulting symbolic expression.
+   */
   override doitSelf(): Expr {
     return this.doit({ deep: false });
   }
-  /** Arguments used by the sort key. @internal */
+  /**
+   * Arguments used by the sort key.
+   * @returns The expression operands used for canonical ordering.
+   * @internal
+   */
   sortArgs(): readonly Expr[] {
     return this.args;
   }
-  /** SymPy precedence(). @internal */
+  /**
+   * Returns the binding precedence used to parenthesize expressions in plain text.
+   * @returns The binding precedence used to parenthesize expressions in plain text.
+   * @internal
+   */
   strPrecedence(): number {
     return PRECEDENCE.Atom;
   }
-  /** SymPy precedence_traditional(). @internal */
+  /**
+   * Returns the binding precedence used to parenthesize LaTeX output.
+   * @returns The binding precedence used to parenthesize LaTeX output.
+   * @internal
+   */
   latexPrecedence(): number {
     return this.strPrecedence();
   }
-  /** SymPy simplify: doit, then the scalar simplification. */
+  /**
+   * Doit, then the scalar simplification.
+   * @returns The resulting symbolic expression.
+   */
   override simplify(): Expr {
     const r = this.doit();
     if (r instanceof MatScalar) return r.withArgs(r.args.map(simplifyArg));
     return simplifyArg(r);
   }
-  /** SymPy expand of the arguments. */
+  /**
+   * Expands the scalar matrix expression according to the requested hints.
+   * @returns The resulting symbolic expression.
+   */
   override expand(): Expr {
     return this.withArgs(this.args.map(expandArg));
   }
@@ -635,37 +952,84 @@ function mdiff(e: Expr, x: Expr, d: (e: Expr, x: Expr) => Expr): Expr {
 // MatrixSymbol
 // ---------------------------------------------------------------------------
 
-/** SymPy MatrixSymbol(name, n, m): a symbolic n x m matrix. */
+/**
+ * A symbolic n x m matrix.
+ * @see SymPy `sympy.matrices.expressions.matexpr.MatrixSymbol`
+ */
 export class MatrixSymbolNode extends MatrixExpr {
-  /** `extra`: further arguments of a subclass (SymPy RandomMatrixSymbol carries its probability space). */
+  /**
+   * Constructs a `MatrixSymbol`.
+   * @param symbolName - The name of the matrix symbol.
+   * @param rows - The number of rows.
+   * @param cols - The number of columns.
+   * @param extra - Additional operands of the matrix symbol.
+   */
   constructor(symbolName: string, rows: ExprLike, cols: ExprLike, extra: readonly Expr[] = []) {
     super('MatrixSymbol', [new Str(symbolName), dim(rows), dim(cols), ...extra]);
   }
+  /**
+   * Collects this matrix symbol as a free variable.
+   * @returns A singleton set containing this matrix symbol.
+   */
   override freeSymbolsSelf(): ReadonlySet<Expr> { return new Set([this]); }
-  /** The name of the matrix (SymPy MatrixSymbol.name). */
+  /**
+   * Gets the name of the matrix.
+   * @returns The name of the matrix.
+   */
   get symbolName(): string {
     return cast(this.args[0], Str).value;
   }
+  /**
+   * The number of rows and columns, in that order.
+   * @returns The row and column dimensions.
+   * @see SymPy `sympy.matrices.expressions.matexpr.MatrixSymbol.shape`
+   */
   get shape(): [Expr, Expr] {
     return [at(this.args, 1), at(this.args, 2)];
   }
+  /**
+   * Rebuilds the expression with replacement operands.
+   * @param args - The ordered operands of the matrix expression.
+   * @returns The expression with the given operands.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new MatrixSymbolNode(cast(args[0], Str).value, at(args, 1), at(args, 2));
   }
+  /**
+   * Computes the matrix entry at the given row and column.
+   * @param i - The zero-based row index.
+   * @param j - The zero-based column index.
+   * @returns The scalar at the requested position.
+   * @see SymPy `sympy.matrices.expressions.matexpr.MatrixSymbol._entry`
+   */
   override entry(i: Expr, j: Expr): Expr {
     return new MatrixElementNode(this, i, j);
   }
+  /**
+   * Formats the expression as plain text.
+   * @returns The plain-text representation.
+   */
   override printStr(): string {
     return this.symbolName;
   }
-  /** SymPy _print_MatrixSymbol: the symbol in the matrix symbol style. */
+  /**
+   * Formats the expression in LaTeX.
+   * @returns The LaTeX representation.
+   */
   override printLatex(): string {
     return latexMatrixSymbol(this.symbolName);
   }
+  /**
+   * Differentiates the expression with respect to the given variable.
+   * @returns The derivative when this matrix expression supplies a differentiation rule.
+   */
   override diffSelf(): Expr {
     return new ZeroMatrixNode(this.rows, this.cols);
   }
-  /** SymPy evalf of a MatrixSymbol: the symbol itself (its dimensions stay integers). */
+  /**
+   * The symbol itself (its dimensions stay integers).
+   * @returns The resulting symbolic expression.
+   */
   override evalfSelf(): Expr {
     return this;
   }
@@ -692,24 +1056,58 @@ export function explicitLatexContents(m: Matrix, print: (e: Expr) => string = la
   return `\\begin{${env}}${spec}${lines.join('\\\\')}\\end{${env}}`;
 }
 
-/** SymPy ImmutableMatrix (ImmutableDenseMatrix): an explicit matrix inside matrix expressions. */
+/**
+ * An explicit matrix inside matrix expressions.
+ * @see SymPy `sympy.matrices.immutable.ImmutableDenseMatrix`
+ */
 export class ImmutableMatrixNode extends MatrixExpr {
+  /**
+   * Gets the priority for choosing the result class in mixed matrix operations.
+   * @returns The priority for choosing the result class in mixed matrix operations.
+   * @see SymPy `sympy.matrices.immutable.ImmutableDenseMatrix._class_priority`
+   */
   get classPriority(): number { return 8; }
-  constructor(readonly matrix: Matrix) {
+  /**
+   * Constructs an `ImmutableMatrix`.
+   * @param matrix - The matrix whose entries are used.
+   */
+  constructor(
+    /** The explicit matrix. */
+    readonly matrix: Matrix) {
     super('ImmutableDenseMatrix', matrix.data);
   }
+  /**
+   * The number of rows and columns, in that order.
+   * @returns The row and column dimensions.
+   * @see SymPy `sympy.matrices.immutable.ImmutableDenseMatrix.shape`
+   */
   get shape(): [Expr, Expr] {
     return [Rational.of(this.matrix.rows), Rational.of(this.matrix.cols)];
   }
+  /**
+   * Indicates whether the object represents a matrix expression.
+   * @returns Whether the matrix is matrix expr.
+   * @see SymPy `sympy.matrices.immutable.ImmutableDenseMatrix.is_MatrixExpr`
+   */
   override get isMatrixExpr(): boolean {
     return false;
   }
+  /**
+   * Tests whether the matrix is the identity.
+   * @returns Whether the property holds, or `'unknown'` if undecidable.
+   * @see SymPy `sympy.matrices.immutable.ImmutableDenseMatrix.is_Identity`
+   */
   override get isIdentity(): Truth {
     const m = this.matrix;
     if (m.rows !== m.cols) return false;
     for (let i = 0; i < m.rows; i++) for (let j = 0; j < m.cols; j++) if (!same(m.get(i, j), i === j ? S.One : S.Zero)) return false;
     return true;
   }
+  /**
+   * Rebuilds the expression with replacement operands.
+   * @param args - The ordered operands of the matrix expression.
+   * @returns The expression with the given operands.
+   */
   withArgs(args: readonly Expr[]): Expr {
     const { rows, cols } = this.matrix;
     return new ImmutableMatrixNode(Matrix.fromFunction(rows, cols, (i, j) => at(args, i * cols + j)));
@@ -717,6 +1115,13 @@ export class ImmutableMatrixNode extends MatrixExpr {
   protected override computeKey(): string {
     return `ImmutableDenseMatrix(${this.matrix.rows},${this.matrix.cols};${this.args.map((a) => a.key).join(',')})`;
   }
+  /**
+   * Computes the matrix entry at the given row and column.
+   * @param i - The zero-based row index.
+   * @param j - The zero-based column index.
+   * @returns The scalar at the requested position.
+   * @see SymPy `sympy.matrices.immutable.ImmutableDenseMatrix._entry`
+   */
   override entry(i: Expr, j: Expr): Expr {
     if (isInt(i) && isInt(j)) {
       const r = toInt(i) < 0 ? toInt(i) + this.matrix.rows : toInt(i);
@@ -725,18 +1130,44 @@ export class ImmutableMatrixNode extends MatrixExpr {
     }
     return new MatrixElementNode(this, i, j);
   }
+  /**
+   * Evaluates the entries to construct an explicit matrix.
+   * @returns The resulting matrix.
+   * @see SymPy `sympy.matrices.immutable.ImmutableDenseMatrix.as_explicit`
+   */
   override asExplicit(): Matrix {
     return this.matrix;
   }
+  /**
+   * Computes the transpose using the structure of this expression.
+   * @returns The transpose using the structure of this expression.
+   * @see SymPy `sympy.matrices.immutable.ImmutableDenseMatrix._eval_transpose`
+   */
   override evalTranspose(): Expr {
     return new ImmutableMatrixNode(this.matrix.transpose());
   }
+  /**
+   * Computes the conjugate transpose of this expression.
+   * @returns The conjugate transpose of this expression.
+   * @see SymPy `sympy.matrices.immutable.ImmutableDenseMatrix._eval_adjoint`
+   */
   override evalAdjoint(): Expr {
     return new ImmutableMatrixNode(this.matrix.transpose().map((e) => conjugateFn(e)));
   }
+  /**
+   * Conjugates the entries of this expression.
+   * @returns The resulting symbolic expression.
+   * @see SymPy `sympy.matrices.immutable.ImmutableDenseMatrix._eval_conjugate`
+   */
   override evalConjugate(): Expr {
     return new ImmutableMatrixNode(this.matrix.map((e) => conjugateFn(e)));
   }
+  /**
+   * Computes the inverse using the structure of this matrix.
+   * @returns The inverse using the structure of this matrix.
+   * @throws NonInvertibleMatrixError when the matrix is singular.
+   * @see SymPy `sympy.matrices.immutable.ImmutableDenseMatrix._eval_inverse`
+   */
   override evalInverse(): Expr {
     try {
       return new ImmutableMatrixNode(this.matrix.inv());
@@ -745,12 +1176,28 @@ export class ImmutableMatrixNode extends MatrixExpr {
       throw new NonInvertibleMatrixError('Matrix det == 0; not invertible.');
     }
   }
+  /**
+   * Computes the determinant using the structure of this matrix.
+   * @returns The determinant using the structure of this matrix.
+   * @see SymPy `sympy.matrices.immutable.ImmutableDenseMatrix._eval_determinant`
+   */
   override evalDeterminant(): Expr {
     return this.matrix.det();
   }
+  /**
+   * Computes the trace using the structure of this matrix.
+   * @returns The trace using the structure of this matrix.
+   * @see SymPy `sympy.matrices.immutable.ImmutableDenseMatrix._eval_trace`
+   */
   override evalTrace(): Expr {
     return this.matrix.trace();
   }
+  /**
+   * Evaluates a power of this matrix when its structure determines the result.
+   * @param exp - The exponent to apply.
+   * @returns The resulting symbolic expression.
+   * @see SymPy `sympy.matrices.immutable.ImmutableDenseMatrix._eval_power`
+   */
   override evalPower(exp: Expr): Expr {
     if (isInt(exp)) {
       const n = toInt(exp);
@@ -759,22 +1206,54 @@ export class ImmutableMatrixNode extends MatrixExpr {
     const p = explicitPower(this.matrix, exp);
     return p === undefined ? new MatPowNode(this, exp) : new ImmutableMatrixNode(p);
   }
+  /**
+   * Evaluates the operations represented by this expression.
+   * @param hints - Evaluation options, including whether to evaluate the operands recursively.
+   * @returns The evaluated expression.
+   * @see SymPy `sympy.matrices.immutable.ImmutableDenseMatrix.doit`
+   */
   override doit(hints: DoitHints = {}): Expr {
     if (hints.deep === false) return this;
     return new ImmutableMatrixNode(this.matrix.map((e) => doitArg(e, hints)));
   }
+  /**
+   * Apply simplify to each element of the matrix.
+   * @returns The resulting symbolic expression.
+   * @see SymPy `sympy.matrices.immutable.ImmutableDenseMatrix.simplify`
+   */
   override simplify(): Expr {
     return new ImmutableMatrixNode(this.matrix.map((e) => simplifyArg(e)));
   }
+  /**
+   * Apply core.function.expand to each entry of the matrix.
+   * @returns The resulting symbolic expression.
+   * @see SymPy `sympy.matrices.immutable.ImmutableDenseMatrix.expand`
+   */
   override expand(): Expr {
     return new ImmutableMatrixNode(this.matrix.map((e) => expandArg(e)));
   }
+  /**
+   * Formats the expression as plain text.
+   * @param print - Formats a child expression.
+   * @returns The plain-text representation.
+   */
   override printStr(print: (e: Expr) => string): string {
     return explicitStr(this.matrix, print);
   }
+  /**
+   * Formats the expression in LaTeX.
+   * @param print - Formats a child expression.
+   * @returns The LaTeX representation.
+   */
   override printLatex(print: (e: Expr) => string): string {
     return `\\left[${explicitLatexContents(this.matrix, print)}\\right]`;
   }
+  /**
+   * Differentiates the expression with respect to the given variable.
+   * @param x - The differentiation variable.
+   * @param d - Differentiates a subexpression.
+   * @returns The derivative when this matrix expression supplies a differentiation rule.
+   */
   override diffSelf(x: Expr, d: (e: Expr, x: Expr) => Expr): Expr {
     return new ImmutableMatrixNode(this.matrix.map((e) => d(e, x)));
   }
@@ -789,34 +1268,74 @@ function explicitOf(e: Expr): Matrix {
 // MatrixElement
 // ---------------------------------------------------------------------------
 
-/** SymPy MatrixElement(parent, i, j): the entry M[i, j] of a matrix expression. */
+/**
+ * The entry M[i, j] of a matrix expression.
+ * @see SymPy `sympy.matrices.expressions.matexpr.MatrixElement`
+ */
 export class MatrixElementNode extends MatScalar {
+  /**
+   * Constructs a `MatrixElement`.
+   * @param parent - The object containing the selected element.
+   * @param i - The zero-based row index.
+   * @param j - The zero-based column index.
+   */
   constructor(parent: Expr, i: Expr, j: Expr) {
     super('MatrixElement', [parent, i, j]);
   }
-  /** The matrix. */
+  /**
+   * Gets the matrix.
+   * @returns The matrix.
+   * @see SymPy `sympy.matrices.expressions.matexpr.MatrixElement.parent`
+   */
   get parent(): Expr {
     return at(this.args, 0);
   }
-  /** The matrix owning this entry (SymPy MatrixElement.symbol). */
+  /**
+   * Gets the matrix owning this entry.
+   * @returns The matrix owning this entry.
+   * @see SymPy `sympy.matrices.expressions.matexpr.MatrixElement.symbol`
+   */
   get symbol(): Expr {
     return this.parent;
   }
-  /** The row index. */
+  /**
+   * Gets the row index.
+   * @returns The row index.
+   * @see SymPy `sympy.matrices.expressions.matexpr.MatrixElement.i`
+   */
   get i(): Expr {
     return at(this.args, 1);
   }
-  /** The column index. */
+  /**
+   * Gets the column index.
+   * @returns The column index.
+   * @see SymPy `sympy.matrices.expressions.matexpr.MatrixElement.j`
+   */
   get j(): Expr {
     return at(this.args, 2);
   }
-  /** [i, j]. */
+  /**
+   * Identifies the position of this matrix entry.
+   * @returns The row and column indices.
+   * @see SymPy `sympy.matrices.expressions.matexpr.MatrixElement.indices`
+   */
   get indices(): [Expr, Expr] {
     return [this.i, this.j];
   }
+  /**
+   * Rebuilds the expression with replacement operands.
+   * @param args - The ordered operands of the matrix expression.
+   * @returns The expression with the given operands.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return matrixElement(at(args, 0), at(args, 1), at(args, 2));
   }
+  /**
+   * Evaluates the operations represented by this expression.
+   * @param hints - Evaluation options, including whether to evaluate the operands recursively.
+   * @returns The evaluated expression.
+   * @see SymPy `sympy.matrices.expressions.matexpr.MatrixElement.doit`
+   */
   override doit(hints: DoitHints = {}): Expr {
     const evaluate = (a: Expr): Expr => (hints.deep === false ? a : doitArg(a, hints));
     const parent = at(this.args, 0);
@@ -824,17 +1343,36 @@ export class MatrixElementNode extends MatScalar {
     if (p instanceof MatrixExpr) return p.at(evaluate(at(this.args, 1)), evaluate(at(this.args, 2)));
     return this;
   }
-  /** evalf: the entry of the evaluated matrix ((M**5)[1, 2] of an explicit M is a number); undefined when it stays an element. */
+  /**
+   * Evalf: the entry of the evaluated matrix ((M**5)[1, 2] of an explicit M is a number); undefined when it stays an element.
+   * @returns The evaluated scalar entry when the indices and matrix are explicit.
+   */
   override numericValue(): Expr | undefined {
     const v = this.doit();
     return v instanceof MatrixElementNode ? undefined : v;
   }
+  /**
+   * Formats the expression as plain text.
+   * @param print - Formats a child expression.
+   * @returns The plain-text representation.
+   */
   override printStr(print: (e: Expr) => string): string {
     return `${parenStr(this.parent, PRECEDENCE.Atom, true)}[${print(this.i)}, ${print(this.j)}]`;
   }
+  /**
+   * Formats the expression in LaTeX.
+   * @param print - Formats a child expression.
+   * @returns The LaTeX representation.
+   */
   override printLatex(print: (e: Expr) => string): string {
     return `{${parenLatex(this.parent, PRECEDENCE.Atom, true)}}_{${print(this.i)},${print(this.j)}}`;
   }
+  /**
+   * Differentiates the expression with respect to the given variable.
+   * @param v - The variable of differentiation.
+   * @param d - Differentiates a subexpression.
+   * @returns The derivative when this matrix expression supplies a differentiation rule.
+   */
   override diffSelf(v: Expr, d: (e: Expr, x: Expr) => Expr): Expr | undefined {
     if (v instanceof MatrixElementNode) {
       if (same(v.parent, this.parent)) {
@@ -855,7 +1393,16 @@ export class MatrixElementNode extends MatScalar {
   }
 }
 
-/** SymPy MatrixElement(parent, i, j): an explicit parent with integer indices gives the entry. */
+/**
+ * An explicit parent with integer indices gives the entry.
+ * @param parentIn - The object containing the selected element.
+ * @param iIn - The zero-based row index.
+ * @param jIn - The zero-based column index.
+ * @returns The resulting symbolic expression.
+ * @throws TypeError when a matrix operand is required.
+ * @throws RangeError when an index is out of bounds.
+ * @see SymPy `sympy.matrices.expressions.matexpr.MatrixElement`
+ */
 export function matrixElement(parentIn: MatArg, iIn: ExprLike, jIn: ExprLike): Expr {
   const parent = toExpr(parentIn);
   const i = sympify(iIn);
@@ -894,69 +1441,164 @@ function explicitMatrixValue(e: Expr, evaluate: (a: Expr) => Expr): Expr {
 // Special matrices
 // ---------------------------------------------------------------------------
 
-/** SymPy Identity(n): the n x n identity matrix, printed I. */
+/**
+ * The n x n identity matrix, printed I.
+ * @see SymPy `sympy.matrices.expressions.special.Identity`
+ */
 export class IdentityNode extends MatrixExpr {
+  /**
+   * Constructs an `Identity`.
+   * @param n - The order of the identity matrix.
+   */
   constructor(n: ExprLike) {
     super('Identity', [dim(n)]);
   }
+  /**
+   * The number of rows and columns, in that order.
+   * @returns The row and column dimensions.
+   * @see SymPy `sympy.matrices.expressions.special.Identity.shape`
+   */
   get shape(): [Expr, Expr] {
     return [at(this.args, 0), at(this.args, 0)];
   }
+  /**
+   * Tests whether the row and column counts agree.
+   * @returns Whether the property holds, or `'unknown'` if undecidable.
+   * @see SymPy `sympy.matrices.expressions.special.Identity.is_square`
+   */
   override get isSquare(): Truth {
     return true;
   }
+  /**
+   * Tests whether the matrix is the identity.
+   * @returns Whether the property holds, or `'unknown'` if undecidable.
+   * @see SymPy `sympy.matrices.expressions.special.Identity.is_Identity`
+   */
   override get isIdentity(): Truth {
     return true;
   }
+  /**
+   * Rebuilds the expression with replacement operands.
+   * @param args - The ordered operands of the matrix expression.
+   * @returns The expression with the given operands.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new IdentityNode(at(args, 0));
   }
+  /**
+   * Computes the transpose using the structure of this expression.
+   * @returns The transpose using the structure of this expression.
+   * @see SymPy `sympy.matrices.expressions.special.Identity._eval_transpose`
+   */
   override evalTranspose(): Expr {
     return this;
   }
+  /**
+   * Computes the trace using the structure of this matrix.
+   * @returns The trace using the structure of this matrix.
+   * @see SymPy `sympy.matrices.expressions.special.Identity._eval_trace`
+   */
   override evalTrace(): Expr {
     return this.rows;
   }
+  /**
+   * Computes the inverse using the structure of this matrix.
+   * @returns The inverse using the structure of this matrix.
+   * @see SymPy `sympy.matrices.expressions.special.Identity._eval_inverse`
+   */
   override evalInverse(): Expr {
     return this;
   }
+  /**
+   * Conjugates the entries of this expression.
+   * @returns The resulting symbolic expression.
+   * @see SymPy `sympy.matrices.expressions.special.Identity._eval_conjugate`
+   */
   override evalConjugate(): Expr {
     return this;
   }
+  /**
+   * Computes the conjugate transpose of this expression.
+   * @returns The conjugate transpose of this expression.
+   * @see SymPy `sympy.matrices.expressions.special.Identity._eval_adjoint`
+   */
   override evalAdjoint(): Expr {
     return this;
   }
+  /**
+   * Computes the determinant using the structure of this matrix.
+   * @returns The determinant using the structure of this matrix.
+   * @see SymPy `sympy.matrices.expressions.special.Identity._eval_determinant`
+   */
   override evalDeterminant(): Expr {
     return S.One;
   }
+  /**
+   * Evaluates a power of this matrix when its structure determines the result.
+   * @returns The resulting symbolic expression.
+   * @see SymPy `sympy.matrices.expressions.special.Identity._eval_power`
+   */
   override evalPower(): Expr {
     return this;
   }
+  /**
+   * Computes the matrix entry at the given row and column.
+   * @param i - The zero-based row index.
+   * @param j - The zero-based column index.
+   * @returns The scalar at the requested position.
+   * @see SymPy `sympy.matrices.expressions.special.Identity._entry`
+   */
   override entry(i: Expr, j: Expr): Expr {
     const t = relTruth('Eq', i, j);
     if (t === true) return S.One;
     if (t === false) return S.Zero;
     return KroneckerDelta(i, j);
   }
+  /**
+   * Formats the expression as plain text.
+   * @returns The plain-text representation.
+   */
   override printStr(): string {
     return 'I';
   }
+  /**
+   * Formats the expression in LaTeX.
+   * @returns The LaTeX representation.
+   */
   override printLatex(): string {
     return latexSettings().bold ? '\\mathbf{I}' : '\\mathbb{I}';
   }
+  /**
+   * Differentiates the expression with respect to the given variable.
+   * @returns The derivative when this matrix expression supplies a differentiation rule.
+   */
   override diffSelf(): Expr {
     return new ZeroMatrixNode(this.rows, this.cols);
   }
 }
 
-/** SymPy GenericIdentity: the identity of unspecified size (the empty MatMul). */
+/**
+ * The identity of unspecified size (the empty MatMul).
+ * @see SymPy `sympy.matrices.expressions.special.GenericIdentity`
+ */
 export class GenericIdentityNode extends IdentityNode {
+  /** Constructs a `GenericIdentity`. */
   constructor() {
     super(0);
   }
+  /**
+   * The number of rows and columns, in that order.
+   * @returns The row and column dimensions.
+   * @throws TypeError when the shape of a dimensionless matrix is requested.
+   * @see SymPy `sympy.matrices.expressions.special.GenericIdentity.shape`
+   */
   override get shape(): [Expr, Expr] {
     throw new TypeError('GenericIdentity does not have a specified shape');
   }
+  /**
+   * Rebuilds the expression with replacement operands.
+   * @returns The expression with the given operands.
+   */
   override withArgs(): Expr {
     return this;
   }
@@ -965,64 +1607,156 @@ export class GenericIdentityNode extends IdentityNode {
   }
 }
 
-/** SymPy ZeroMatrix(m, n): the zero matrix, printed 0. */
+/**
+ * The zero matrix, printed 0.
+ * @see SymPy `sympy.matrices.expressions.special.ZeroMatrix`
+ */
 export class ZeroMatrixNode extends MatrixExpr {
+  /**
+   * Constructs a `ZeroMatrix`.
+   * @param m - The number of rows.
+   * @param n - The order of the identity matrix.
+   */
   constructor(m: ExprLike, n: ExprLike) {
     super('ZeroMatrix', [dim(m), dim(n)]);
   }
+  /**
+   * The number of rows and columns, in that order.
+   * @returns The row and column dimensions.
+   * @see SymPy `sympy.matrices.expressions.special.ZeroMatrix.shape`
+   */
   get shape(): [Expr, Expr] {
     return [at(this.args, 0), at(this.args, 1)];
   }
+  /**
+   * Tests whether all matrix entries are zero.
+   * @returns Whether the matrix is zero matrix.
+   * @see SymPy `sympy.matrices.expressions.special.ZeroMatrix.is_ZeroMatrix`
+   */
   override get isZeroMatrix(): boolean {
     return true;
   }
+  /**
+   * Rebuilds the expression with replacement operands.
+   * @param args - The ordered operands of the matrix expression.
+   * @returns The expression with the given operands.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new ZeroMatrixNode(at(args, 0), at(args, 1));
   }
+  /**
+   * Evaluates a power of this matrix when its structure determines the result.
+   * @param exp - The exponent to apply.
+   * @returns The resulting symbolic expression.
+   * @throws NonInvertibleMatrixError when the matrix is singular.
+   * @see SymPy `sympy.matrices.expressions.special.ZeroMatrix._eval_power`
+   */
   override evalPower(exp: Expr): Expr {
     if (relTruth('Lt', exp, S.Zero) === true) throw new NonInvertibleMatrixError('Matrix det == 0; not invertible');
     return this;
   }
+  /**
+   * Computes the transpose using the structure of this expression.
+   * @returns The transpose using the structure of this expression.
+   * @see SymPy `sympy.matrices.expressions.special.ZeroMatrix._eval_transpose`
+   */
   override evalTranspose(): Expr {
     return new ZeroMatrixNode(this.cols, this.rows);
   }
+  /**
+   * Computes the conjugate transpose of this expression.
+   * @returns The conjugate transpose of this expression.
+   * @see SymPy `sympy.matrices.expressions.special.ZeroMatrix._eval_adjoint`
+   */
   override evalAdjoint(): Expr {
     return new ZeroMatrixNode(this.cols, this.rows);
   }
+  /**
+   * Computes the trace using the structure of this matrix.
+   * @returns The trace using the structure of this matrix.
+   * @see SymPy `sympy.matrices.expressions.special.ZeroMatrix._eval_trace`
+   */
   override evalTrace(): Expr {
     return S.Zero;
   }
+  /**
+   * Computes the determinant using the structure of this matrix.
+   * @returns The determinant using the structure of this matrix.
+   * @see SymPy `sympy.matrices.expressions.special.ZeroMatrix._eval_determinant`
+   */
   override evalDeterminant(): Expr {
     return S.Zero;
   }
+  /**
+   * Computes the inverse using the structure of this matrix.
+   * @returns The inverse using the structure of this matrix.
+   * @throws NonInvertibleMatrixError when the matrix is singular.
+   * @see SymPy `sympy.matrices.expressions.special.ZeroMatrix._eval_inverse`
+   */
   override evalInverse(): Expr {
     throw new NonInvertibleMatrixError('Matrix det == 0; not invertible.');
   }
+  /**
+   * Conjugates the entries of this expression.
+   * @returns The resulting symbolic expression.
+   * @see SymPy `sympy.matrices.expressions.special.ZeroMatrix._eval_conjugate`
+   */
   override evalConjugate(): Expr {
     return this;
   }
+  /**
+   * Computes the matrix entry at the given row and column.
+   * @returns The scalar at the requested position.
+   * @see SymPy `sympy.matrices.expressions.special.ZeroMatrix._entry`
+   */
   override entry(): Expr {
     return S.Zero;
   }
+  /**
+   * Formats the expression as plain text.
+   * @returns The plain-text representation.
+   */
   override printStr(): string {
     return '0';
   }
+  /**
+   * Formats the expression in LaTeX.
+   * @returns The LaTeX representation.
+   */
   override printLatex(): string {
     return latexSettings().bold ? '\\mathbf{0}' : '0';
   }
+  /**
+   * Differentiates the expression with respect to the given variable.
+   * @returns The derivative when this matrix expression supplies a differentiation rule.
+   */
   override diffSelf(): Expr {
     return this;
   }
 }
 
-/** SymPy GenericZeroMatrix: the zero matrix of unspecified size (the empty MatAdd). */
+/**
+ * The zero matrix of unspecified size (the empty MatAdd).
+ * @see SymPy `sympy.matrices.expressions.special.GenericZeroMatrix`
+ */
 export class GenericZeroMatrixNode extends ZeroMatrixNode {
+  /** Constructs a `GenericZeroMatrix`. */
   constructor() {
     super(0, 0);
   }
+  /**
+   * The number of rows and columns, in that order.
+   * @returns The row and column dimensions.
+   * @throws TypeError when the shape of a dimensionless matrix is requested.
+   * @see SymPy `sympy.matrices.expressions.special.GenericZeroMatrix.shape`
+   */
   override get shape(): [Expr, Expr] {
     throw new TypeError('GenericZeroMatrix does not have a specified shape');
   }
+  /**
+   * Rebuilds the expression with replacement operands.
+   * @returns The expression with the given operands.
+   */
   override withArgs(): Expr {
     return this;
   }
@@ -1031,81 +1765,181 @@ export class GenericZeroMatrixNode extends ZeroMatrixNode {
   }
 }
 
-/** SymPy OneMatrix(m, n): the matrix of ones, printed 1. */
+/**
+ * The matrix of ones, printed 1.
+ * @see SymPy `sympy.matrices.expressions.special.OneMatrix`
+ */
 export class OneMatrixNode extends MatrixExpr {
+  /**
+   * Constructs an `OneMatrix`.
+   * @param m - The number of rows.
+   * @param n - The order of the identity matrix.
+   */
   constructor(m: ExprLike, n: ExprLike) {
     super('OneMatrix', [dim(m), dim(n)]);
   }
-  /** SymPy OneMatrix(m, n, evaluate=True): Identity(1) for a 1 x 1 matrix. */
+  /**
+   * Constructs the one matrix expression from its operands.
+   * @param m - The number of rows.
+   * @param n - The order of the identity matrix.
+   * @param evaluate - Whether to evaluate the expression immediately.
+   * @returns The one matrix expression from its operands.
+   */
   static create(m: ExprLike, n: ExprLike, evaluate = false): MatrixExpr {
     const o = new OneMatrixNode(m, n);
     if (evaluate && o.is1x1() === true) return new IdentityNode(1);
     return o;
   }
+  /**
+   * The number of rows and columns, in that order.
+   * @returns The row and column dimensions.
+   * @see SymPy `sympy.matrices.expressions.special.OneMatrix.shape`
+   */
   get shape(): [Expr, Expr] {
     return [at(this.args, 0), at(this.args, 1)];
   }
-  /** True when the matrix is known to be 1 x 1. */
+  /**
+   * True when the matrix is known to be 1 x 1.
+   * @returns Whether the property holds, or `'unknown'` if undecidable.
+   * @see SymPy `sympy.matrices.expressions.special.OneMatrix._is_1x1`
+   */
   is1x1(): Truth {
     const a = relTruth('Eq', at(this.args, 0), S.One);
     const b = relTruth('Eq', at(this.args, 1), S.One);
     if (a === false || b === false) return false;
     return a === true && b === true ? true : 'unknown';
   }
+  /**
+   * Tests whether the matrix is the identity.
+   * @returns Whether the property holds, or `'unknown'` if undecidable.
+   * @see SymPy `sympy.matrices.expressions.special.OneMatrix.is_Identity`
+   */
   override get isIdentity(): Truth {
     return this.is1x1() === true;
   }
+  /**
+   * Rebuilds the expression with replacement operands.
+   * @param args - The ordered operands of the matrix expression.
+   * @returns The expression with the given operands.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new OneMatrixNode(at(args, 0), at(args, 1));
   }
+  /**
+   * Evaluates the entries to construct an explicit matrix.
+   * @returns The resulting matrix.
+   * @throws RangeError when the dimensions are symbolic.
+   * @see SymPy `sympy.matrices.expressions.special.OneMatrix.as_explicit`
+   */
   override asExplicit(): Matrix {
     const [r, c] = this.shape;
     if (!isInt(r) || !isInt(c)) throw new RangeError('Matrix with symbolic shape cannot be represented explicitly.');
     return Matrix.fromFunction(toInt(r), toInt(c), () => 1);
   }
+  /**
+   * Evaluates the operations represented by this expression.
+   * @param hints - Evaluation options, including whether to evaluate the operands recursively.
+   * @returns The evaluated expression.
+   * @see SymPy `sympy.matrices.expressions.special.OneMatrix.doit`
+   */
   override doit(hints: DoitHints = {}): Expr {
     const args = hints.deep === false ? this.args : this.args.map((a) => doitArg(a, hints));
     return OneMatrixNode.create(at(args, 0), at(args, 1), true);
   }
+  /**
+   * Evaluates a power of this matrix when its structure determines the result.
+   * @param exp - The exponent to apply.
+   * @returns The resulting symbolic expression.
+   * @throws NonInvertibleMatrixError when the matrix is singular.
+   * @see SymPy `sympy.matrices.expressions.special.OneMatrix._eval_power`
+   */
   override evalPower(exp: Expr): Expr {
     if (this.is1x1() === true) return new IdentityNode(1);
     if (relTruth('Lt', exp, S.Zero) === true) throw new NonInvertibleMatrixError('Matrix det == 0; not invertible');
     if (isIntegerQ(exp) === true) return matMul(pow(this.rows, add(exp, -1)), new OneMatrixNode(this.rows, this.cols));
     return new MatPowNode(this, exp);
   }
+  /**
+   * Computes the transpose using the structure of this expression.
+   * @returns The transpose using the structure of this expression.
+   * @see SymPy `sympy.matrices.expressions.special.OneMatrix._eval_transpose`
+   */
   override evalTranspose(): Expr {
     return new OneMatrixNode(this.cols, this.rows);
   }
+  /**
+   * Computes the conjugate transpose of this expression.
+   * @returns The conjugate transpose of this expression.
+   * @see SymPy `sympy.matrices.expressions.special.OneMatrix._eval_adjoint`
+   */
   override evalAdjoint(): Expr {
     return new OneMatrixNode(this.cols, this.rows);
   }
+  /**
+   * Computes the trace using the structure of this matrix.
+   * @returns The trace using the structure of this matrix.
+   * @see SymPy `sympy.matrices.expressions.special.OneMatrix._eval_trace`
+   */
   override evalTrace(): Expr {
     return this.rows;
   }
+  /**
+   * Computes the determinant using the structure of this matrix.
+   * @returns The determinant using the structure of this matrix.
+   * @see SymPy `sympy.matrices.expressions.special.OneMatrix._eval_determinant`
+   */
   override evalDeterminant(): Expr {
     const c = this.is1x1();
     if (c === true) return S.One;
     if (c === false) return S.Zero;
     return new DeterminantNode(this);
   }
+  /**
+   * Computes the inverse using the structure of this matrix.
+   * @returns The inverse using the structure of this matrix.
+   * @throws NonInvertibleMatrixError when the matrix is singular.
+   * @see SymPy `sympy.matrices.expressions.special.OneMatrix._eval_inverse`
+   */
   override evalInverse(): Expr {
     const c = this.is1x1();
     if (c === true) return new IdentityNode(1);
     if (c === false) throw new NonInvertibleMatrixError('Matrix det == 0; not invertible.');
     return new InverseNode(this);
   }
+  /**
+   * Conjugates the entries of this expression.
+   * @returns The resulting symbolic expression.
+   * @see SymPy `sympy.matrices.expressions.special.OneMatrix._eval_conjugate`
+   */
   override evalConjugate(): Expr {
     return this;
   }
+  /**
+   * Computes the matrix entry at the given row and column.
+   * @returns The scalar at the requested position.
+   * @see SymPy `sympy.matrices.expressions.special.OneMatrix._entry`
+   */
   override entry(): Expr {
     return S.One;
   }
+  /**
+   * Formats the expression as plain text.
+   * @returns The plain-text representation.
+   */
   override printStr(): string {
     return '1';
   }
+  /**
+   * Formats the expression in LaTeX.
+   * @returns The LaTeX representation.
+   */
   override printLatex(): string {
     return latexSettings().bold ? '\\mathbf{1}' : '1';
   }
+  /**
+   * Differentiates the expression with respect to the given variable.
+   * @returns The derivative when this matrix expression supplies a differentiation rule.
+   */
   override diffSelf(): Expr {
     return new ZeroMatrixNode(this.rows, this.cols);
   }
@@ -1115,7 +1949,12 @@ export class OneMatrixNode extends MatrixExpr {
 // Shape validation (sympy.matrices.expressions._shape)
 // ---------------------------------------------------------------------------
 
-/** SymPy validate_matadd_integer: integer dimensions of a sum must agree. */
+/**
+ * Integer dimensions of a sum must agree.
+ * @param args - The ordered operands of the matrix expression.
+ * @throws ShapeError when the matrix shapes differ.
+ * @see SymPy `sympy.matrices.expressions._shape.validate_matadd_integer`
+ */
 export function validateMatAdd(args: readonly MatrixExpr[]): void {
   const rows = args.map((a) => a.rows);
   const cols = args.map((a) => a.cols);
@@ -1125,7 +1964,12 @@ export function validateMatAdd(args: readonly MatrixExpr[]): void {
   if (new Set(cols.filter(isInt).map((r) => r.key)).size > 1) throw new ShapeError(`Matrices have mismatching shape: ${fmt(cols)}`);
 }
 
-/** SymPy validate_matmul_integer: integer inner dimensions of a product must agree. */
+/**
+ * Integer inner dimensions of a product must agree.
+ * @param args - The ordered operands of the matrix expression.
+ * @throws ShapeError when the inner dimensions do not agree.
+ * @see SymPy `sympy.matrices.expressions._shape.validate_matmul_integer`
+ */
 export function validateMatMul(args: readonly MatrixExpr[]): void {
   for (let k = 0; k + 1 < args.length; k++) {
     const i = at(args, k).cols;
@@ -1134,7 +1978,19 @@ export function validateMatMul(args: readonly MatrixExpr[]): void {
   }
 }
 
-/** SymPy is_matadd_valid: the condition for the matrices to be added. */
+/**
+ * The condition for the matrices to be added.
+ * @param args - The ordered operands of the matrix expression.
+ * @returns The resulting symbolic expression.
+ * @see SymPy `sympy.matrices.expressions._shape.is_matadd_valid`
+ * @example
+ * ```ts
+ * import { MatrixSymbol, isMataddValid, symbols } from '@symjs/symjs';
+ *
+ * const [m, n, p, q] = symbols('m n p q');
+ * isMataddValid(MatrixSymbol('A', m, n), MatrixSymbol('B', p, q)); // => Eq(m, p) & Eq(n, q)
+ * ```
+ */
 export function isMataddValid(...args: MatArg[]): Expr {
   const ms = args.map((a) => toMatrix(a));
   const conds: Expr[] = [];
@@ -1143,7 +1999,19 @@ export function isMataddValid(...args: MatArg[]): Expr {
   return and(...conds);
 }
 
-/** SymPy is_matmul_valid: the condition for the matrices to be multiplied. */
+/**
+ * The condition for the matrices to be multiplied.
+ * @param args - The ordered operands of the matrix expression.
+ * @returns The resulting symbolic expression.
+ * @see SymPy `sympy.matrices.expressions._shape.is_matmul_valid`
+ * @example
+ * ```ts
+ * import { MatrixSymbol, isMatmulValid, symbols } from '@symjs/symjs';
+ *
+ * const [m, n, p, q] = symbols('m n p q');
+ * isMatmulValid(MatrixSymbol('A', m, n), MatrixSymbol('B', p, q)); // => Eq(n, p)
+ * ```
+ */
 export function isMatmulValid(...args: MatArg[]): Expr {
   const ms = args.map(toExpr).filter((a): a is MatrixExpr => a instanceof MatrixExpr);
   const conds: Expr[] = [];
@@ -1151,7 +2019,19 @@ export function isMatmulValid(...args: MatArg[]): Expr {
   return and(...conds);
 }
 
-/** SymPy is_square: Eq(rows, cols) for matrices, or the perfect-square predicate for integers. */
+/**
+ * Tests whether the row and column counts agree.
+ * @param arg - The expression to operate on.
+ * @returns The resulting symbolic expression.
+ * @see SymPy `sympy.matrices.expressions._shape.is_square`
+ * @example
+ * ```ts
+ * import { MatrixSymbol, isSquare, symbols } from '@symjs/symjs';
+ *
+ * const [m, n] = symbols('m n');
+ * isSquare(MatrixSymbol('A', m, n)); // => Eq(m, n)
+ * ```
+ */
 export function isSquare(arg: MatArg): Expr {
   if (typeof arg === 'number' || typeof arg === 'bigint' || arg instanceof Rational) return integerIsSquare(asInt(arg)) ? S.true : S.false;
   const m = toMatrix(arg);
@@ -1162,16 +2042,31 @@ export function isSquare(arg: MatArg): Expr {
 // MatAdd
 // ---------------------------------------------------------------------------
 
-/** SymPy MatAdd: a sum of matrix expressions. */
+/**
+ * A sum of matrix expressions.
+ * @see SymPy `sympy.matrices.expressions.matadd.MatAdd`
+ */
 export class MatAddNode extends MatrixExpr {
+  /**
+   * Constructs a `MatAdd`.
+   * @param args - The ordered operands of the matrix expression.
+   */
   constructor(args: readonly Expr[]) {
     super('MatAdd', args);
   }
-  /** SymPy MatAdd derives from Add. */
+  /**
+   * Gets the associative operation joining the operands.
+   * @returns The associative operation joining the operands.
+   */
   override get assocOp(): 'Add' {
     return 'Add';
   }
-  /** SymPy MatAdd(*args): validated, unevaluated (the empty sum is GenericZeroMatrix). */
+  /**
+   * Constructs the mat add expression from its operands.
+   * @param argsIn - The ordered operands of the matrix expression.
+   * @returns The mat add expression from its operands.
+   * @throws TypeError when the sum mixes matrix and scalar terms.
+   */
   static create(argsIn: readonly MatArg[]): MatrixExpr {
     const args = argsIn.map(toExpr).filter((a) => !(a instanceof GenericZeroMatrixNode));
     if (!args.length) return new GenericZeroMatrixNode();
@@ -1179,34 +2074,87 @@ export class MatAddNode extends MatrixExpr {
     validateMatAdd(args);
     return new MatAddNode(args);
   }
+  /**
+   * The number of rows and columns, in that order.
+   * @returns The row and column dimensions.
+   * @see SymPy `sympy.matrices.expressions.matadd.MatAdd.shape`
+   */
   get shape(): [Expr, Expr] {
     return cast(this.args[0], MatrixExpr).shape;
   }
+  /**
+   * Rebuilds the expression with replacement operands.
+   * @param args - The ordered operands of the matrix expression.
+   * @returns The expression with the given operands.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new MatAddNode(args);
   }
+  /**
+   * Computes the matrix entry at the given row and column.
+   * @param i - The zero-based row index.
+   * @param j - The zero-based column index.
+   * @param ctx - The index context for evaluating matrix entries.
+   * @returns The scalar at the requested position.
+   * @see SymPy `sympy.matrices.expressions.matadd.MatAdd._entry`
+   */
   override entry(i: Expr, j: Expr, ctx?: EntryContext): Expr {
     return add(...this.args.map((a) => cast(a, MatrixExpr).entry(i, j, ctx)));
   }
+  /**
+   * Computes the transpose using the structure of this expression.
+   * @returns The transpose using the structure of this expression.
+   * @see SymPy `sympy.matrices.expressions.matadd.MatAdd._eval_transpose`
+   */
   override evalTranspose(): Expr {
     return MatAddNode.create(this.args.map(transposeOf)).doit();
   }
+  /**
+   * Computes the conjugate transpose of this expression.
+   * @returns The conjugate transpose of this expression.
+   * @see SymPy `sympy.matrices.expressions.matadd.MatAdd._eval_adjoint`
+   */
   override evalAdjoint(): Expr {
     return MatAddNode.create(this.args.map((a) => adjointFn(a))).doit();
   }
+  /**
+   * Computes the trace using the structure of this matrix.
+   * @returns The trace using the structure of this matrix.
+   * @see SymPy `sympy.matrices.expressions.matadd.MatAdd._eval_trace`
+   */
   override evalTrace(): Expr {
     return add(...this.args.map((a) => trace(a)));
   }
+  /**
+   * Evaluates the operations represented by this expression.
+   * @param hints - Evaluation options, including whether to evaluate the operands recursively.
+   * @returns The evaluated expression.
+   * @see SymPy `sympy.matrices.expressions.matadd.MatAdd.doit`
+   */
   override doit(hints: DoitHints = {}): Expr {
     const args = hints.deep === false ? this.args : this.args.map((a) => doitArg(a, hints));
     return canonicalizeMatAdd(MatAddNode.create(args));
   }
+  /**
+   * Expand an expression using hints.
+   * @returns The resulting symbolic expression.
+   * @see SymPy `sympy.matrices.expressions.matadd.MatAdd.expand`
+   */
   override expand(): Expr {
     return canonicalizeMatAdd(MatAddNode.create(this.args.map(expandArg)));
   }
+  /**
+   * Returns the binding precedence used to parenthesize expressions in plain text.
+   * @returns The binding precedence used to parenthesize expressions in plain text.
+   */
   override strPrecedence(): number {
     return PRECEDENCE.Add;
   }
+  /**
+   * Formats the expression as plain text.
+   * @param print - Formats a child expression.
+   * @returns The plain-text representation.
+   */
   override printStr(print: (e: Expr) => string): string {
     const parts: string[] = [];
     for (const term of orderedTerms(this.args)) {
@@ -1221,6 +2169,11 @@ export class MatAddNode extends MatrixExpr {
     const first = parts.shift();
     return (first === '-' ? '-' : '') + parts.join(' ');
   }
+  /**
+   * Formats the expression in LaTeX.
+   * @param print - Formats a child expression.
+   * @returns The LaTeX representation.
+   */
   override printLatex(print: (e: Expr) => string): string {
     let tex = '';
     orderedTerms(this.args).forEach((t0, k) => {
@@ -1236,6 +2189,12 @@ export class MatAddNode extends MatrixExpr {
     });
     return tex;
   }
+  /**
+   * Differentiates the expression with respect to the given variable.
+   * @param x - The differentiation variable.
+   * @param d - Differentiates a subexpression.
+   * @returns The derivative when this matrix expression supplies a differentiation rule.
+   */
   override diffSelf(x: Expr, d: (e: Expr, x: Expr) => Expr): Expr {
     return MatAddNode.create(this.args.map((a) => mdiff(a, x, d))).doit();
   }
@@ -1246,7 +2205,18 @@ export function transposeOf(e: Expr): Expr {
   return e instanceof MatrixExpr ? e.transpose() : transposeFn(e);
 }
 
-/** SymPy MatAdd(*args): an unevaluated sum of matrices. */
+/**
+ * An unevaluated sum of matrices.
+ * @param args - The ordered operands of the matrix expression.
+ * @returns The resulting matrix expression.
+ * @throws TypeError when the sum mixes matrix and scalar terms.
+ * @see SymPy `sympy.matrices.expressions.matadd.MatAdd`
+ * @example
+ * ```ts
+ * import { MatAdd, MatrixSymbol } from '@symjs/symjs';
+ * MatAdd(MatrixSymbol('A', 5, 5), MatrixSymbol('B', 5, 5), MatrixSymbol('C', 5, 5)); // => A + B + C
+ * ```
+ */
 export const MatAdd = /* @__PURE__ */ callableClass(MatAddNode, (...args: MatArg[]): MatrixExpr => MatAddNode.create(args));
 export type MatAdd = MatAddNode;
 
@@ -1327,7 +2297,19 @@ export const canonicalizeMatAdd: Rule = exhaustWhile(
   [(e) => rmId(e, (a) => same(a, S.Zero) || (a instanceof MatrixExpr && a.isZeroMatrix), (args) => new MatAddNode(args)), unpackRule, flattenAdd, glomAdd, mergeExplicitAdd, sortAdd],
 );
 
-/** SymPy matadd.merge_explicit: explicit matrices of a sum added together. */
+/**
+ * Explicit matrices of a sum added together.
+ * @param e - The expression to examine.
+ * @returns The resulting symbolic expression.
+ * @see SymPy `sympy.matrices.expressions.matadd.merge_explicit`
+ * @example
+ * ```ts
+ * import { MatAdd, Matrix, MatrixSymbol, mergeExplicitMatAdd } from '@symjs/symjs';
+ *
+ * const A = MatrixSymbol('A', 2, 2);
+ * mergeExplicitMatAdd(MatAdd(A, Matrix.eye(2), Matrix.eye(2))).args.length; // => 2
+ * ```
+ */
 export function mergeExplicitMatAdd(e: Expr): Expr {
   return e instanceof MatAddNode ? mergeExplicitAdd(e) : e;
 }
@@ -1336,16 +2318,30 @@ export function mergeExplicitMatAdd(e: Expr): Expr {
 // MatMul
 // ---------------------------------------------------------------------------
 
-/** SymPy MatMul: a product of scalars and matrix expressions. */
+/**
+ * A product of scalars and matrix expressions.
+ * @see SymPy `sympy.matrices.expressions.matmul.MatMul`
+ */
 export class MatMulNode extends MatrixExpr {
+  /**
+   * Constructs a `MatMul`.
+   * @param args - The ordered operands of the matrix expression.
+   */
   constructor(args: readonly Expr[]) {
     super('MatMul', args);
   }
-  /** SymPy MatMul derives from Mul. */
+  /**
+   * Gets the associative operation joining the operands.
+   * @returns The associative operation joining the operands.
+   */
   override get assocOp(): 'Mul' {
     return 'Mul';
   }
-  /** SymPy MatMul(*args): validated, unevaluated; a product without matrices is its scalar factor. */
+  /**
+   * Constructs the mat mul expression from its operands.
+   * @param argsIn - The ordered operands of the matrix expression.
+   * @returns The mat mul expression from its operands.
+   */
   static create(argsIn: readonly MatArg[]): Expr {
     const args = argsIn.map(toExpr).filter((a) => !(a instanceof GenericIdentityNode));
     if (!args.length) return new GenericIdentityNode();
@@ -1355,17 +2351,37 @@ export class MatMulNode extends MatrixExpr {
     if (!matrices.length) return factor;
     return obj;
   }
+  /**
+   * The number of rows and columns, in that order.
+   * @returns The row and column dimensions.
+   * @see SymPy `sympy.matrices.expressions.matmul.MatMul.shape`
+   */
   get shape(): [Expr, Expr] {
     const ms = this.args.filter((a): a is MatrixExpr => a instanceof MatrixExpr);
     return [at(ms, 0).rows, last(ms).cols];
   }
+  /**
+   * Rebuilds the expression with replacement operands.
+   * @param args - The ordered operands of the matrix expression.
+   * @returns The expression with the given operands.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new MatMulNode(args);
   }
+  /**
+   * Simplifies the expression and its operands.
+   * @param simplify - The simplifier to apply to subexpressions.
+   * @returns The resulting symbolic expression.
+   */
   override simplifySelf(simplify: (e: Expr) => Expr): Expr {
     return this.withArgs(this.args.map((a) => a instanceof MatrixExpr ? a.simplify() : simplify(a)));
   }
-  /** SymPy as_coeff_matrices: the scalar factor and the matrices. */
+  /**
+   * Returns the scalar factor and the matrices.
+   * @returns The scalar factor and the matrices.
+   * @throws NotImplementedError when a scalar factor is noncommutative.
+   * @see SymPy `sympy.matrices.expressions.matmul.MatMul.as_coeff_matrices`
+   */
   asCoeffMatrices(): [Expr, MatrixExpr[]] {
     const scalars = this.args.filter((a) => !(a instanceof MatrixExpr));
     const matrices = this.args.filter((a): a is MatrixExpr => a instanceof MatrixExpr);
@@ -1373,10 +2389,23 @@ export class MatMulNode extends MatrixExpr {
     if (!coeff.isCommutative) throw new NotImplementedError('noncommutative scalars in MatMul are not supported.');
     return [coeff, matrices];
   }
+  /**
+   * Separates the scalar coefficient from the matrix product.
+   * @returns The scalar coefficient followed by the matrix product.
+   * @see SymPy `sympy.matrices.expressions.matmul.MatMul.as_coeff_mmul`
+   */
   override asCoeffMmul(): [Expr, MatMulNode] {
     const [c, ms] = this.asCoeffMatrices();
     return [c, new MatMulNode(ms)];
   }
+  /**
+   * Computes the matrix entry at the given row and column.
+   * @param i - The zero-based row index.
+   * @param j - The zero-based column index.
+   * @param ctx - The index context for evaluating matrix entries.
+   * @returns The scalar at the requested position.
+   * @see SymPy `sympy.matrices.expressions.matmul.MatMul._entry`
+   */
   override entry(i: Expr, j: Expr, ctx?: EntryContext): Expr {
     const [coeff, matrices] = this.asCoeffMatrices();
     if (matrices.length === 1) return mul(coeff, at(matrices, 0).at(i, j));
@@ -1393,33 +2422,69 @@ export class MatMulNode extends MatrixExpr {
     const expand = ranges.some(isInt);
     return expand ? doitArg(result) : result;
   }
+  /**
+   * Computes the transpose using the structure of this expression.
+   * @returns The transpose using the structure of this expression.
+   * @see SymPy `sympy.matrices.expressions.matmul.MatMul._eval_transpose`
+   */
   override evalTranspose(): Expr {
     const [coeff, matrices] = this.asCoeffMatrices();
     return matMul(coeff, ...[...matrices].reverse().map((m) => m.transpose()));
   }
+  /**
+   * Computes the conjugate transpose of this expression.
+   * @returns The conjugate transpose of this expression.
+   * @see SymPy `sympy.matrices.expressions.matmul.MatMul._eval_adjoint`
+   */
   override evalAdjoint(): Expr {
     return matMul(...[...this.args].reverse().map((a) => adjointFn(a)));
   }
+  /**
+   * Computes the trace using the structure of this matrix.
+   * @returns The trace using the structure of this matrix.
+   * @see SymPy `sympy.matrices.expressions.matmul.MatMul._eval_trace`
+   */
   override evalTrace(): Expr {
     const [factor, mmul] = this.asCoeffMmul();
     if (!same(factor, S.One)) return mul(factor, trace(mmul.doit()));
     return super.evalTrace();
   }
+  /**
+   * Computes the determinant using the structure of this matrix.
+   * @returns The determinant using the structure of this matrix.
+   * @see SymPy `sympy.matrices.expressions.matmul.MatMul._eval_determinant`
+   */
   override evalDeterminant(): Expr {
     const [factor, matrices] = this.asCoeffMatrices();
     const squares = onlySquares(matrices);
     return mul(pow(factor, this.rows), ...squares.map((m) => new DeterminantNode(m)));
   }
+  /**
+   * Computes the inverse using the structure of this matrix.
+   * @returns The inverse using the structure of this matrix.
+   * @see SymPy `sympy.matrices.expressions.matmul.MatMul._eval_inverse`
+   */
   override evalInverse(): Expr {
     if (this.args.every((a) => !(a instanceof MatrixExpr) || a.isSquare === true)) {
       return matMul(...[...this.args].reverse().map((a) => (a instanceof MatrixExpr ? a.inverse() : pow(a, -1))));
     }
     return new InverseNode(this);
   }
+  /**
+   * Evaluates the operations represented by this expression.
+   * @param hints - Evaluation options, including whether to evaluate the operands recursively.
+   * @returns The evaluated expression.
+   * @see SymPy `sympy.matrices.expressions.matmul.MatMul.doit`
+   */
   override doit(hints: DoitHints = {}): Expr {
     const args = hints.deep === false ? this.args : this.args.map((a) => doitArg(a, hints));
     return canonicalizeMatMul(MatMulNode.create(args));
   }
+  /**
+   * Expand an expression using hints.
+   * @returns The resulting symbolic expression.
+   * @see SymPy `sympy.matrices.expressions.matmul.MatMul.expand`
+   */
   override expand(): Expr {
     const factors = this.args.map(expandArg);
     let products: Expr[][] = [[]];
@@ -1430,9 +2495,17 @@ export class MatMulNode extends MatrixExpr {
     if (products.length === 1) return mul(...at(products, 0));
     return MatAddNode.create(products.map((p) => mul(...p))).doit();
   }
+  /**
+   * Returns the binding precedence used to parenthesize expressions in plain text.
+   * @returns The binding precedence used to parenthesize expressions in plain text.
+   */
   override strPrecedence(): number {
     return mulCouldExtractMinus(this) ? PRECEDENCE.Add : PRECEDENCE.Mul;
   }
+  /**
+   * Formats the expression as plain text.
+   * @returns The plain-text representation.
+   */
   override printStr(): string {
     const [c, matrices] = this.asCoeffMatrices();
     let args: readonly Expr[] = this.args;
@@ -1454,6 +2527,10 @@ export class MatMulNode extends MatrixExpr {
     }
     return sign + args.map((a) => parenStr(a, level)).join('*');
   }
+  /**
+   * Formats the expression in LaTeX.
+   * @returns The LaTeX representation.
+   */
   override printLatex(): string {
     const level = this.latexPrecedence();
     const parens = (x: Expr): string => (x instanceof Mul ? latex(x) : parenLatex(x, level));
@@ -1465,6 +2542,12 @@ export class MatMulNode extends MatrixExpr {
     }
     return args.map(parens).join(' ');
   }
+  /**
+   * Differentiates the expression with respect to the given variable.
+   * @param x - The differentiation variable.
+   * @param d - Differentiates a subexpression.
+   * @returns The derivative when this matrix expression supplies a differentiation rule.
+   */
   override diffSelf(x: Expr, d: (e: Expr, x: Expr) => Expr): Expr {
     const terms: Expr[] = [];
     this.args.forEach((a, k) => {
@@ -1531,11 +2614,27 @@ registerArithmetic((op, args) => {
 registerFromiter(MatAddNode, (args) => MatAddNode.create(args));
 registerFromiter(MatMulNode, (args) => MatMulNode.create(args));
 
-/** SymPy MatMul(*args): an unevaluated product of scalars and matrices. */
+/**
+ * An unevaluated product of scalars and matrices.
+ * @param args - The ordered operands of the matrix expression.
+ * @returns The resulting matrix expression.
+ * @see SymPy `sympy.matrices.expressions.matmul.MatMul`
+ * @example
+ * ```ts
+ * import { Identity, MatMul, MatrixSymbol } from '@symjs/symjs';
+ * MatMul(2, MatrixSymbol('A', 3, 4), MatrixSymbol('B', 4, 3)).add(Identity(3)); // => I + 2*A*B
+ * ```
+ */
 export const MatMul = /* @__PURE__ */ callableClass(MatMulNode, (...args: MatArg[]): Expr => MatMulNode.create(args));
 export type MatMul = MatMulNode;
 
-/** SymPy only_squares: consecutive matrices grouped into square products. */
+/**
+ * Consecutive matrices grouped into square products.
+ * @param matrices - The matrix operands in order.
+ * @returns The resulting expressions in order.
+ * @throws MatrixError when the inner dimensions do not agree.
+ * @see SymPy `sympy.matrices.expressions.matmul.only_squares`
+ */
 export function onlySquares(matrices: readonly MatrixExpr[]): Expr[] {
   if (!same(at(matrices, 0).rows, last(matrices).cols)) throw new MatrixError('Invalid matrices being multiplied');
   const out: Expr[] = [];
@@ -1565,7 +2664,12 @@ function distributeMonom(e: Expr): Expr {
   return e;
 }
 
-/** SymPy matmul.any_zeros: a zero matrix absorbs the product. */
+/**
+ * A zero matrix absorbs the product.
+ * @param e - The expression to examine.
+ * @returns The resulting symbolic expression.
+ * @see SymPy `sympy.matrices.expressions.matmul.any_zeros`
+ */
 export function anyZeros(e: Expr): Expr {
   if (e.args.some((a) => (a instanceof MatrixExpr ? a.isZeroMatrix : isZero(a) === true))) {
     const ms = e.args.filter((a): a is MatrixExpr => a instanceof MatrixExpr);
@@ -1574,7 +2678,12 @@ export function anyZeros(e: Expr): Expr {
   return e;
 }
 
-/** SymPy matmul.remove_ids: remove identity factors in one rewrite step. */
+/**
+ * Remove identity factors in one rewrite step.
+ * @param e - The expression to examine.
+ * @returns The resulting symbolic expression.
+ * @see SymPy `sympy.matrices.expressions.matmul.remove_ids`
+ */
 export function removeIds(e: Expr): Expr {
   const [factor, mmul] = cast(e, MatMulNode).asCoeffMmul();
   const result = rmId(mmul, (a) => a instanceof MatrixExpr && a.isIdentity === true, (args) => new MatMulNode(args));
@@ -1599,7 +2708,12 @@ function combineOneMatrices(e: Expr): Expr {
   return newmul([factor, ...newArgs]);
 }
 
-/** SymPy matmul.combine_powers: combine adjacent powers and inverse products. */
+/**
+ * Combine adjacent powers and inverse products.
+ * @param e - The expression to examine.
+ * @returns The resulting symbolic expression.
+ * @see SymPy `sympy.matrices.expressions.matmul.combine_powers`
+ */
 export function combinePowers(e: Expr): Expr {
   const [factor, args0] = cast(e, MatMulNode).asCoeffMatrices();
   const args: MatrixExpr[] = [...args0];
@@ -1678,7 +2792,12 @@ function mergeExplicitMul(e: Expr): Expr {
   return MatMulNode.create(newArgs);
 }
 
-/** SymPy matmul.factor_in_front: collect commutative factors before the matrices. */
+/**
+ * Collect commutative factors before the matrices.
+ * @param e - The expression to examine.
+ * @returns The resulting symbolic expression.
+ * @see SymPy `sympy.matrices.expressions.matmul.factor_in_front`
+ */
 export function factorInFront(e: Expr): Expr {
   const [factor, matrices] = cast(e, MatMulNode).asCoeffMatrices();
   if (!same(factor, S.One)) return newmul([factor, ...matrices]);
@@ -1711,7 +2830,19 @@ export const canonicalizeMatMul: Rule = exhaustWhile(
   [distributeMonom, anyZeros, removeIds, combineOneMatrices, combinePowers, unpackRule, mergeExplicitMul, factorInFront, flattenMul, combinePermutations],
 );
 
-/** SymPy matmul.merge_explicit: adjacent explicit matrices (and numbers) of a product multiplied. */
+/**
+ * Adjacent explicit matrices (and numbers) of a product multiplied.
+ * @param e - The expression to examine.
+ * @returns The resulting symbolic expression.
+ * @see SymPy `sympy.matrices.expressions.matmul.merge_explicit`
+ * @example
+ * ```ts
+ * import { MatMul, Matrix, MatrixSymbol, mergeExplicitMatMul } from '@symjs/symjs';
+ *
+ * const A = MatrixSymbol('A', 2, 2);
+ * mergeExplicitMatMul(MatMul(A, Matrix.eye(2), Matrix.eye(2))).args.length; // => 2
+ * ```
+ */
 export function mergeExplicitMatMul(e: Expr): Expr {
   return e instanceof MatMulNode ? mergeExplicitMul(e) : e;
 }
@@ -1726,31 +2857,73 @@ function explicitPower(m: Matrix, exp: Expr): Matrix | undefined {
   return m.isDiagonal() ? m.pow(exp) : undefined;
 }
 
+/**
+ * Represents a symbolic power of a square matrix.
+ * @see SymPy `sympy.matrices.expressions.matpow.MatPow`
+ */
 export class MatPowNode extends MatrixExpr {
+  /**
+   * Constructs a `MatPow`.
+   * @param base - The base of the power.
+   * @param exp - The exponent to apply.
+   * @param name - The name used to identify the object.
+   */
   constructor(base: Expr, exp: Expr, name = 'MatPow') {
     super(name, [base, exp]);
   }
-  /** SymPy MatPow(base, exp): validated, unevaluated. */
+  /**
+   * Constructs the mat pow expression from its operands.
+   * @param baseIn - The base of the power.
+   * @param expIn - The exponent to apply.
+   * @returns The mat pow expression from its operands.
+   * @throws TypeError when a matrix operand is required.
+   * @throws NonSquareMatrixError when the matrix is not square.
+   */
   static create(baseIn: MatArg, expIn: ExprLike): MatPowNode {
     const base = toExpr(baseIn);
     if (!(base instanceof MatrixExpr)) throw new TypeError('MatPow base should be a matrix');
     if (base.isSquare === false) throw new NonSquareMatrixError(`Power of non-square matrix ${str(base)}`);
     return new MatPowNode(base, sympify(expIn));
   }
-  /** The base. */
+  /**
+   * The base.
+   * @returns The operand being raised to a power.
+   * @see SymPy `sympy.matrices.expressions.matpow.MatPow.base`
+   */
   get base(): MatrixExpr {
     return cast(this.args[0], MatrixExpr);
   }
-  /** The exponent. */
+  /**
+   * The exponent.
+   * @returns The power applied to the base.
+   * @see SymPy `sympy.matrices.expressions.matpow.MatPow.exp`
+   */
   get exp(): Expr {
     return at(this.args, 1);
   }
+  /**
+   * The number of rows and columns, in that order.
+   * @returns The row and column dimensions.
+   * @see SymPy `sympy.matrices.expressions.matpow.MatPow.shape`
+   */
   get shape(): [Expr, Expr] {
     return this.base.shape;
   }
+  /**
+   * Rebuilds the expression with replacement operands.
+   * @param args - The ordered operands of the matrix expression.
+   * @returns The expression with the given operands.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new MatPowNode(at(args, 0), at(args, 1));
   }
+  /**
+   * Computes the matrix entry at the given row and column.
+   * @param i - The zero-based row index.
+   * @param j - The zero-based column index.
+   * @returns The scalar at the requested position.
+   * @see SymPy `sympy.matrices.expressions.matpow.MatPow._entry`
+   */
   override entry(i: Expr, j: Expr): Expr {
     let A = this.doit();
     if (A instanceof MatPowNode) {
@@ -1766,6 +2939,12 @@ export class MatPowNode extends MatrixExpr {
     }
     return cast(A, MatrixExpr).at(i, j);
   }
+  /**
+   * Evaluates the operations represented by this expression.
+   * @param hints - Evaluation options, including whether to evaluate the operands recursively.
+   * @returns The evaluated expression.
+   * @see SymPy `sympy.matrices.expressions.matpow.MatPow.doit`
+   */
   override doit(hints: DoitHints = {}): Expr {
     let base: Expr = at(this.args, 0);
     let exp: Expr = at(this.args, 1);
@@ -1795,28 +2974,65 @@ export class MatPowNode extends MatrixExpr {
     }
     return m.rows === 2 ? m.pow(this.exp) : explicitPower(m, this.exp);
   }
-  /** SymPy MatPow.as_explicit: the power of the explicit base. */
+  /**
+   * The power of the explicit base.
+   * @returns The resulting matrix.
+   * @see SymPy `sympy.matrices.expressions.matpow.MatPow.as_explicit`
+   */
   override asExplicit(): Matrix {
     return (isInt(this.exp) ? undefined : this.explicitNonIntegerPower()) ?? super.asExplicit();
   }
+  /**
+   * Computes the transpose using the structure of this expression.
+   * @returns The transpose using the structure of this expression.
+   * @see SymPy `sympy.matrices.expressions.matpow.MatPow._eval_transpose`
+   */
   override evalTranspose(): Expr {
     return new MatPowNode(this.base.transpose(), this.exp);
   }
+  /**
+   * Computes the conjugate transpose of this expression.
+   * @returns The conjugate transpose of this expression.
+   * @see SymPy `sympy.matrices.expressions.matpow.MatPow._eval_adjoint`
+   */
   override evalAdjoint(): Expr {
     return new MatPowNode(this.base.adjoint(), this.exp);
   }
+  /**
+   * Conjugates the entries of this expression.
+   * @returns The resulting symbolic expression.
+   * @see SymPy `sympy.matrices.expressions.matpow.MatPow._eval_conjugate`
+   */
   override evalConjugate(): Expr {
     return new MatPowNode(this.base.conjugate(), this.exp);
   }
+  /**
+   * Computes the inverse using the structure of this matrix.
+   * @returns The inverse using the structure of this matrix.
+   * @see SymPy `sympy.matrices.expressions.matpow.MatPow._eval_inverse`
+   */
   override evalInverse(): Expr {
     return new MatPowNode(this.base, mul(-1, this.exp));
   }
+  /**
+   * Returns the binding precedence used to parenthesize expressions in plain text.
+   * @returns The binding precedence used to parenthesize expressions in plain text.
+   */
   override strPrecedence(): number {
     return PRECEDENCE.Pow;
   }
+  /**
+   * Formats the expression as plain text.
+   * @returns The plain-text representation.
+   */
   override printStr(): string {
     return `${parenStr(this.base, PRECEDENCE.Pow)}**${parenStr(this.exp, PRECEDENCE.Pow)}`;
   }
+  /**
+   * Formats the expression in LaTeX.
+   * @param print - Formats a child expression.
+   * @returns The LaTeX representation.
+   */
   override printLatex(print: (e: Expr) => string): string {
     const base = this.base;
     const e = print(this.exp);
@@ -1824,6 +3040,12 @@ export class MatPowNode extends MatrixExpr {
     const b = print(base);
     return b.includes('^') ? `\\left(${b}\\right)^{${e}}` : `${b}^{${e}}`;
   }
+  /**
+   * Differentiates the expression with respect to the given variable.
+   * @param x - The differentiation variable.
+   * @param d - Differentiates a subexpression.
+   * @returns The derivative when this matrix expression supplies a differentiation rule.
+   */
   override diffSelf(x: Expr, d: (e: Expr, x: Expr) => Expr): Expr | undefined {
     const e = this.exp;
     if (e.has(x)) return undefined;
@@ -1833,58 +3055,146 @@ export class MatPowNode extends MatrixExpr {
   }
 }
 
-/** SymPy MatPow(base, exp): an unevaluated power. */
+/**
+ * An unevaluated power.
+ * @param base - The base of the power.
+ * @param exp - The exponent to apply.
+ * @returns The resulting matrix expression.
+ * @throws TypeError when a matrix operand is required.
+ * @throws NonSquareMatrixError when the matrix is not square.
+ * @see SymPy `sympy.matrices.expressions.matpow.MatPow`
+ * @example
+ * ```ts
+ * import { Identity, MatPow } from '@symjs/symjs';
+ * MatPow(Identity(3), 2).doit(); // => I
+ * ```
+ */
 export const MatPow = /* @__PURE__ */ callableClass(MatPowNode, (base: MatArg, exp: ExprLike): MatPowNode => MatPowNode.create(base, exp));
 export type MatPow = MatPowNode;
 
-/** SymPy Inverse(A): the inverse of a square matrix, printed A**(-1). */
+/**
+ * The inverse of a square matrix, printed A**(-1).
+ * @see SymPy `sympy.matrices.expressions.inverse.Inverse`
+ */
 export class InverseNode extends MatPowNode {
+  /**
+   * Constructs an `Inverse`.
+   * @param mat - The matrix operand.
+   */
   constructor(mat: Expr) {
     super(mat, S.NegOne, 'Inverse');
   }
-  /** SymPy Inverse(mat): validated, unevaluated. */
+  /**
+   * Constructs the inverse expression from its operands.
+   * @param matIn - The matrix operand.
+   * @returns The inverse expression from its operands.
+   * @throws TypeError when a matrix operand is required.
+   * @throws NonSquareMatrixError when the matrix is not square.
+   */
   static override create(matIn: MatArg): InverseNode {
     const mat = toExpr(matIn);
     if (!(mat instanceof MatrixExpr)) throw new TypeError('mat should be a matrix');
     if (mat.isSquare === false) throw new NonSquareMatrixError(`Inverse of non-square matrix ${str(mat)}`);
     return new InverseNode(mat);
   }
-  /** The inverted matrix. */
+  /**
+   * The inverted matrix.
+   * @returns The operand of the expression.
+   * @see SymPy `sympy.matrices.expressions.inverse.Inverse.arg`
+   */
   get arg(): MatrixExpr {
     return cast(this.args[0], MatrixExpr);
   }
+  /**
+   * Rebuilds the expression with replacement operands.
+   * @param args - The ordered operands of the matrix expression.
+   * @returns The expression with the given operands.
+   */
   override withArgs(args: readonly Expr[]): Expr {
     return new InverseNode(at(args, 0));
   }
+  /**
+   * Computes the inverse using the structure of this matrix.
+   * @returns The inverse using the structure of this matrix.
+   * @see SymPy `sympy.matrices.expressions.inverse.Inverse._eval_inverse`
+   */
   override evalInverse(): Expr {
     return this.arg;
   }
+  /**
+   * Computes the transpose using the structure of this expression.
+   * @returns The transpose using the structure of this expression.
+   * @see SymPy `sympy.matrices.expressions.inverse.Inverse._eval_transpose`
+   */
   override evalTranspose(): Expr {
     return new InverseNode(asMat(this.arg.transpose()));
   }
+  /**
+   * Computes the conjugate transpose of this expression.
+   * @returns The conjugate transpose of this expression.
+   * @see SymPy `sympy.matrices.expressions.inverse.Inverse._eval_adjoint`
+   */
   override evalAdjoint(): Expr {
     return new InverseNode(asMat(this.arg.adjoint()));
   }
+  /**
+   * Conjugates the entries of this expression.
+   * @returns The resulting symbolic expression.
+   * @see SymPy `sympy.matrices.expressions.inverse.Inverse._eval_conjugate`
+   */
   override evalConjugate(): Expr {
     return new InverseNode(asMat(this.arg.conjugate()));
   }
+  /**
+   * Computes the determinant using the structure of this matrix.
+   * @returns The determinant using the structure of this matrix.
+   * @see SymPy `sympy.matrices.expressions.inverse.Inverse._eval_determinant`
+   */
   override evalDeterminant(): Expr {
     return pow(det(this.arg), -1);
   }
+  /**
+   * Evaluates the operations represented by this expression.
+   * @param hints - Evaluation options, including whether to evaluate the operands recursively.
+   * @returns The evaluated expression.
+   * @see SymPy `sympy.matrices.expressions.inverse.Inverse.doit`
+   */
   override doit(hints: DoitHints = {}): Expr {
     if (hints.invExpand === false) return this;
     const arg = hints.deep === false ? this.arg : doitArg(this.arg, hints);
     return asMat(arg).inverse();
   }
+  /**
+   * Formats the expression as plain text.
+   * @returns The plain-text representation.
+   */
   override printStr(): string {
     return `${parenStr(this.arg, PRECEDENCE.Pow)}**(-1)`;
   }
+  /**
+   * Differentiates the expression with respect to the given variable.
+   * @param x - The differentiation variable.
+   * @param d - Differentiates a subexpression.
+   * @returns The derivative when this matrix expression supplies a differentiation rule.
+   */
   override diffSelf(x: Expr, d: (e: Expr, x: Expr) => Expr): Expr {
     return matMul(-1, this, mdiff(this.arg, x, d), this);
   }
 }
 
-/** SymPy Inverse(A): an unevaluated inverse. */
+/**
+ * An unevaluated inverse.
+ * @param mat - The matrix operand.
+ * @returns The resulting matrix expression.
+ * @throws TypeError when a matrix operand is required.
+ * @throws NonSquareMatrixError when the matrix is not square.
+ * @see SymPy `sympy.matrices.expressions.inverse.Inverse`
+ * @example
+ * ```ts
+ * import { Inverse, MatrixSymbol } from '@symjs/symjs';
+ * Inverse(MatrixSymbol('A', 3, 3)); // => A**(-1)
+ * ```
+ */
 export const Inverse = /* @__PURE__ */ callableClass(InverseNode, (mat: MatArg): InverseNode => InverseNode.create(mat));
 export type Inverse = InverseNode;
 
@@ -1892,53 +3202,137 @@ export type Inverse = InverseNode;
 // Transpose and Adjoint
 // ---------------------------------------------------------------------------
 
-/** SymPy Transpose(A): the transpose, printed A.T. */
+/**
+ * The transpose, printed A.T.
+ * @see SymPy `sympy.matrices.expressions.transpose.Transpose`
+ * @example
+ * ```ts
+ * import { MatrixSymbol, MatrixTranspose } from '@symjs/symjs';
+ * new MatrixTranspose(MatrixSymbol('A', 3, 5)).shape; // => [5, 3]
+ * ```
+ */
 export class TransposeNode extends MatrixExpr {
+  /**
+   * Constructs a `Transpose`.
+   * @param arg - The expression to operate on.
+   */
   constructor(arg: Expr) {
     super('Transpose', [arg]);
   }
-  /** The transposed matrix. */
+  /**
+   * The transposed matrix.
+   * @returns The operand of the expression.
+   * @see SymPy `sympy.matrices.expressions.transpose.Transpose.arg`
+   */
   get arg(): MatrixExpr {
     return cast(this.args[0], MatrixExpr);
   }
+  /**
+   * The number of rows and columns, in that order.
+   * @returns The row and column dimensions.
+   * @see SymPy `sympy.matrices.expressions.transpose.Transpose.shape`
+   */
   get shape(): [Expr, Expr] {
     const [r, c] = this.arg.shape;
     return [c, r];
   }
+  /**
+   * Rebuilds the expression with replacement operands.
+   * @param args - The ordered operands of the matrix expression.
+   * @returns The expression with the given operands.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new TransposeNode(at(args, 0));
   }
+  /**
+   * Evaluates the operations represented by this expression.
+   * @param hints - Evaluation options, including whether to evaluate the operands recursively.
+   * @returns The evaluated expression.
+   * @see SymPy `sympy.matrices.expressions.transpose.Transpose.doit`
+   */
   override doit(hints: DoitHints = {}): Expr {
     const arg = hints.deep === false ? at(this.args, 0) : doitArg(at(this.args, 0), hints);
     return arg instanceof MatrixExpr ? arg.evalTranspose() : transposeFn(arg);
   }
+  /**
+   * Computes the matrix entry at the given row and column.
+   * @param i - The zero-based row index.
+   * @param j - The zero-based column index.
+   * @param ctx - The index context for evaluating matrix entries.
+   * @returns The scalar at the requested position.
+   * @see SymPy `sympy.matrices.expressions.transpose.Transpose._entry`
+   */
   override entry(i: Expr, j: Expr, ctx?: EntryContext): Expr {
     return this.arg.entry(j, i, ctx);
   }
+  /**
+   * Computes the conjugate transpose of this expression.
+   * @returns The conjugate transpose of this expression.
+   * @see SymPy `sympy.matrices.expressions.transpose.Transpose._eval_adjoint`
+   */
   override evalAdjoint(): Expr {
     return this.arg.conjugate();
   }
+  /**
+   * Conjugates the entries of this expression.
+   * @returns The resulting symbolic expression.
+   * @see SymPy `sympy.matrices.expressions.transpose.Transpose._eval_conjugate`
+   */
   override evalConjugate(): Expr {
     return this.arg.adjoint();
   }
+  /**
+   * Computes the transpose using the structure of this expression.
+   * @returns The transpose using the structure of this expression.
+   * @see SymPy `sympy.matrices.expressions.transpose.Transpose._eval_transpose`
+   */
   override evalTranspose(): Expr {
     return this.arg;
   }
+  /**
+   * Computes the trace using the structure of this matrix.
+   * @returns The trace using the structure of this matrix.
+   * @see SymPy `sympy.matrices.expressions.transpose.Transpose._eval_trace`
+   */
   override evalTrace(): Expr {
     return new TraceNode(this.arg);
   }
+  /**
+   * Computes the determinant using the structure of this matrix.
+   * @returns The determinant using the structure of this matrix.
+   * @see SymPy `sympy.matrices.expressions.transpose.Transpose._eval_determinant`
+   */
   override evalDeterminant(): Expr {
     return det(this.arg);
   }
+  /**
+   * Returns the binding precedence used to parenthesize LaTeX output.
+   * @returns The binding precedence used to parenthesize LaTeX output.
+   */
   override latexPrecedence(): number {
     return PRECEDENCE.Pow;
   }
+  /**
+   * Formats the expression as plain text.
+   * @returns The plain-text representation.
+   */
   override printStr(): string {
     return `${parenStr(this.arg, PRECEDENCE.Pow)}.T`;
   }
+  /**
+   * Formats the expression in LaTeX.
+   * @param print - Formats a child expression.
+   * @returns The LaTeX representation.
+   */
   override printLatex(print: (e: Expr) => string): string {
     return postfixLatex(this.arg, 'T', print);
   }
+  /**
+   * Differentiates the expression with respect to the given variable.
+   * @param x - The differentiation variable.
+   * @param d - Differentiates a subexpression.
+   * @returns The derivative when this matrix expression supplies a differentiation rule.
+   */
   override diffSelf(x: Expr, d: (e: Expr, x: Expr) => Expr): Expr {
     return transposeOf(mdiff(this.arg, x, d));
   }
@@ -1951,57 +3345,152 @@ function postfixLatex(mat: MatrixExpr, sup: string, print: (e: Expr) => string):
   return s.includes('^') ? `\\left(${s}\\right)^{${sup}}` : `${s}^{${sup}}`;
 }
 
-/** SymPy Transpose(A): an unevaluated transpose (of a scalar too, which doit returns unchanged). */
+/**
+ * An unevaluated transpose (of a scalar too, which doit returns unchanged).
+ * @param arg - The expression to operate on.
+ * @returns The resulting matrix expression.
+ * @see SymPy `sympy.matrices.expressions.transpose.Transpose`
+ * @example
+ * ```ts
+ * import { MatrixSymbol, Transpose } from '@symjs/symjs';
+ * Transpose(MatrixSymbol('A', 3, 5)); // => A.T
+ * ```
+ */
 export const Transpose = /* @__PURE__ */ callableClass(TransposeNode, (arg: MatArg): TransposeNode => new TransposeNode(toExpr(arg)));
 export type Transpose = TransposeNode;
 
-/** SymPy Adjoint(A): the conjugate transpose. */
+/**
+ * The conjugate transpose.
+ * @see SymPy `sympy.matrices.expressions.adjoint.Adjoint`
+ * @example
+ * ```ts
+ * import { MatrixAdjoint, MatrixSymbol } from '@symjs/symjs';
+ * new MatrixAdjoint(MatrixSymbol('A', 3, 5)).shape; // => [5, 3]
+ * ```
+ */
 export class AdjointNode extends MatrixExpr {
+  /**
+   * Constructs an `Adjoint`.
+   * @param arg - The expression to operate on.
+   */
   constructor(arg: Expr) {
     super('Adjoint', [arg]);
   }
-  /** The matrix. */
+  /**
+   * The matrix.
+   * @returns The operand of the expression.
+   * @see SymPy `sympy.matrices.expressions.adjoint.Adjoint.arg`
+   */
   get arg(): MatrixExpr {
     return cast(this.args[0], MatrixExpr);
   }
+  /**
+   * The number of rows and columns, in that order.
+   * @returns The row and column dimensions.
+   * @see SymPy `sympy.matrices.expressions.adjoint.Adjoint.shape`
+   */
   get shape(): [Expr, Expr] {
     const [r, c] = this.arg.shape;
     return [c, r];
   }
+  /**
+   * Rebuilds the expression with replacement operands.
+   * @param args - The ordered operands of the matrix expression.
+   * @returns The expression with the given operands.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new AdjointNode(at(args, 0));
   }
+  /**
+   * Evaluates the operations represented by this expression.
+   * @param hints - Evaluation options, including whether to evaluate the operands recursively.
+   * @returns The evaluated expression.
+   * @see SymPy `sympy.matrices.expressions.adjoint.Adjoint.doit`
+   */
   override doit(hints: DoitHints = {}): Expr {
     const arg = hints.deep === false ? at(this.args, 0) : doitArg(at(this.args, 0), hints);
     return adjointFn(arg);
   }
+  /**
+   * Computes the matrix entry at the given row and column.
+   * @param i - The zero-based row index.
+   * @param j - The zero-based column index.
+   * @param ctx - The index context for evaluating matrix entries.
+   * @returns The scalar at the requested position.
+   * @see SymPy `sympy.matrices.expressions.adjoint.Adjoint._entry`
+   */
   override entry(i: Expr, j: Expr, ctx?: EntryContext): Expr {
     return conjugateFn(this.arg.entry(j, i, ctx));
   }
+  /**
+   * Computes the conjugate transpose of this expression.
+   * @returns The conjugate transpose of this expression.
+   * @see SymPy `sympy.matrices.expressions.adjoint.Adjoint._eval_adjoint`
+   */
   override evalAdjoint(): Expr {
     return this.arg;
   }
+  /**
+   * Computes the transpose using the structure of this expression.
+   * @returns The transpose using the structure of this expression.
+   * @see SymPy `sympy.matrices.expressions.adjoint.Adjoint._eval_transpose`
+   */
   override evalTranspose(): Expr {
     return this.arg.conjugate();
   }
+  /**
+   * Conjugates the entries of this expression.
+   * @returns The resulting symbolic expression.
+   * @see SymPy `sympy.matrices.expressions.adjoint.Adjoint._eval_conjugate`
+   */
   override evalConjugate(): Expr {
     return this.arg.transpose();
   }
+  /**
+   * Computes the trace using the structure of this matrix.
+   * @returns The trace using the structure of this matrix.
+   * @see SymPy `sympy.matrices.expressions.adjoint.Adjoint._eval_trace`
+   */
   override evalTrace(): Expr {
     return conjugateFn(new TraceNode(this.arg));
   }
+  /**
+   * Returns the binding precedence used to parenthesize LaTeX output.
+   * @returns The binding precedence used to parenthesize LaTeX output.
+   */
   override latexPrecedence(): number {
     return PRECEDENCE.Pow;
   }
+  /**
+   * Formats the expression in LaTeX.
+   * @param print - Formats a child expression.
+   * @returns The LaTeX representation.
+   */
   override printLatex(print: (e: Expr) => string): string {
     return postfixLatex(this.arg, latexSettings().adjoint, print);
   }
+  /**
+   * Differentiates the expression with respect to the given variable.
+   * @param x - The differentiation variable.
+   * @param d - Differentiates a subexpression.
+   * @returns The derivative when this matrix expression supplies a differentiation rule.
+   */
   override diffSelf(x: Expr, d: (e: Expr, x: Expr) => Expr): Expr {
     return adjointFn(mdiff(this.arg, x, d));
   }
 }
 
-/** SymPy Adjoint(A): an unevaluated adjoint (of a scalar too, which doit conjugates). */
+/**
+ * An unevaluated adjoint (of a scalar too, which doit conjugates).
+ * @param arg - The expression to operate on.
+ * @returns The resulting matrix expression.
+ * @see SymPy `sympy.matrices.expressions.adjoint.Adjoint`
+ * @example
+ * ```ts
+ * import { Adjoint, MatMul, MatrixSymbol } from '@symjs/symjs';
+ * Adjoint(MatMul(MatrixSymbol('A', 3, 5), MatrixSymbol('B', 5, 3))); // => Adjoint(A*B)
+ * ```
+ */
 export const Adjoint = /* @__PURE__ */ callableClass(AdjointNode, (arg: MatArg): AdjointNode => new AdjointNode(toExpr(arg)));
 export type Adjoint = AdjointNode;
 
@@ -2042,12 +3531,28 @@ function sliceOfSlice(s: Triple, t: Triple): Triple {
   return [start, stop, step];
 }
 
-/** SymPy MatrixSlice(parent, rowslice, colslice): a slice of a matrix expression. */
+/**
+ * A slice of a matrix expression.
+ * @see SymPy `sympy.matrices.expressions.slice.MatrixSlice`
+ */
 export class MatrixSliceNode extends MatrixExpr {
+  /**
+   * Constructs a `MatrixSlice`.
+   * @param parent - The object containing the selected element.
+   * @param rowslice - The row index or slice.
+   * @param colslice - The column index or slice.
+   */
   constructor(parent: Expr, rowslice: Triple, colslice: Triple) {
     super('MatrixSlice', [parent, ...rowslice, ...colslice]);
   }
-  /** SymPy MatrixSlice(parent, rowslice, colslice) with normalization and bounds checks. */
+  /**
+   * Constructs the matrix slice expression from its operands.
+   * @param parentIn - The object containing the selected element.
+   * @param rowSpec - The rows to select.
+   * @param colSpec - The columns to select.
+   * @returns The matrix slice expression from its operands.
+   * @throws RangeError when the slice bounds or step are invalid.
+   */
   static create(parentIn: MatArg, rowSpec: SliceSpec, colSpec: SliceSpec): Expr {
     const parent = toMatrix(parentIn);
     const rs = normalizeSlice(rowSpec, parent.rows);
@@ -2058,22 +3563,43 @@ export class MatrixSliceNode extends MatrixExpr {
     if (parent instanceof MatrixSliceNode) return new MatrixSliceNode(parent.parent, sliceOfSlice(parent.rowslice, rs), sliceOfSlice(parent.colslice, cs));
     return new MatrixSliceNode(parent, rs, cs);
   }
-  /** The sliced matrix. */
+  /**
+   * Gets the sliced matrix.
+   * @returns The sliced matrix.
+   * @see SymPy `sympy.matrices.expressions.slice.MatrixSlice.parent`
+   */
   get parent(): MatrixExpr {
     return cast(this.args[0], MatrixExpr);
   }
-  /** (start, stop, step) of the rows. */
+  /**
+   * Describes the selected sequence of rows.
+   * @returns The starting row, exclusive stop and step.
+   * @see SymPy `sympy.matrices.expressions.slice.MatrixSlice.rowslice`
+   */
   get rowslice(): Triple {
     return [at(this.args, 1), at(this.args, 2), at(this.args, 3)];
   }
-  /** (start, stop, step) of the columns. */
+  /**
+   * Describes the selected sequence of columns.
+   * @returns The starting column, exclusive stop and step.
+   * @see SymPy `sympy.matrices.expressions.slice.MatrixSlice.colslice`
+   */
   get colslice(): Triple {
     return [at(this.args, 4), at(this.args, 5), at(this.args, 6)];
   }
-  /** SymPy on_diag: the row and column slices agree. */
+  /**
+   * Gets the row and column slices agree.
+   * @returns The row and column slices agree.
+   * @see SymPy `sympy.matrices.expressions.slice.MatrixSlice.on_diag`
+   */
   get onDiag(): boolean {
     return sameList(this.rowslice, this.colslice);
   }
+  /**
+   * The number of rows and columns, in that order.
+   * @returns The row and column dimensions.
+   * @see SymPy `sympy.matrices.expressions.slice.MatrixSlice.shape`
+   */
   get shape(): [Expr, Expr] {
     const len = ([a, b, s]: Triple): Expr => {
       const n = add(b, mul(-1, a));
@@ -2081,17 +3607,39 @@ export class MatrixSliceNode extends MatrixExpr {
     };
     return [len(this.rowslice), len(this.colslice)];
   }
+  /**
+   * Rebuilds the expression with replacement operands.
+   * @param args - The ordered operands of the matrix expression.
+   * @returns The expression with the given operands.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new MatrixSliceNode(at(args, 0), [at(args, 1), at(args, 2), at(args, 3)], [at(args, 4), at(args, 5), at(args, 6)]);
   }
+  /**
+   * Orders the operands for canonical comparison.
+   * @returns The expression operands used for canonical ordering.
+   */
   override sortArgs(): readonly Expr[] {
     return [this.parent, new TupleNode(this.rowslice), new TupleNode(this.colslice)];
   }
+  /**
+   * Computes the matrix entry at the given row and column.
+   * @param i - The zero-based row index.
+   * @param j - The zero-based column index.
+   * @param ctx - The index context for evaluating matrix entries.
+   * @returns The scalar at the requested position.
+   * @see SymPy `sympy.matrices.expressions.slice.MatrixSlice._entry`
+   */
   override entry(i: Expr, j: Expr, ctx?: EntryContext): Expr {
     const [r0, , rs] = this.rowslice;
     const [c0, , cs] = this.colslice;
     return this.parent.entry(add(mul(i, rs), r0), add(mul(j, cs), c0), ctx);
   }
+  /**
+   * Formats the expression as plain text.
+   * @param print - Formats a child expression.
+   * @returns The plain-text representation.
+   */
   override printStr(print: (e: Expr) => string): string {
     const sl = (x: Triple, d: Expr): string => {
       const parts: string[] = [same(x[0], S.Zero) ? '' : print(x[0]), same(x[1], d) ? '' : print(x[1])];
@@ -2100,6 +3648,11 @@ export class MatrixSliceNode extends MatrixExpr {
     };
     return `${parenStr(this.parent, PRECEDENCE.Atom, true)}[${sl(this.rowslice, this.parent.rows)}, ${sl(this.colslice, this.parent.cols)}]`;
   }
+  /**
+   * Formats the expression in LaTeX.
+   * @param print - Formats a child expression.
+   * @returns The LaTeX representation.
+   */
   override printLatex(print: (e: Expr) => string): string {
     const sl = (x: Triple, d: Expr): string => {
       const parts: string[] = [same(x[0], S.Zero) ? '' : print(x[0]), same(x[1], d) ? '' : print(x[1])];
@@ -2120,7 +3673,20 @@ class TupleNode extends ExtensionExpr {
   }
 }
 
-/** SymPy MatrixSlice(parent, rowslice, colslice). */
+/**
+ * Selects a rectangular slice of a matrix expression.
+ * @param parent - The object containing the selected element.
+ * @param rowslice - The row index or slice.
+ * @param colslice - The column index or slice.
+ * @returns The resulting matrix expression.
+ * @throws RangeError when the slice bounds or step are invalid.
+ * @see SymPy `sympy.matrices.expressions.slice.MatrixSlice`
+ * @example
+ * ```ts
+ * import { MatrixSlice, MatrixSymbol, sympify } from '@symjs/symjs';
+ * MatrixSlice(MatrixSlice(MatrixSymbol('X', 10, 10), [1, 9, 2], [2, 6, 1]), [1, 3], sympify(2)); // => X[3:7:2, 4:5]
+ * ```
+ */
 export const MatrixSlice = /* @__PURE__ */ callableClass(MatrixSliceNode, (parent: MatArg, rowslice: SliceSpec, colslice: SliceSpec): Expr => MatrixSliceNode.create(parent, rowslice, colslice));
 export type MatrixSlice = MatrixSliceNode;
 
@@ -2128,25 +3694,53 @@ export type MatrixSlice = MatrixSliceNode;
 // Trace, Determinant, Permanent
 // ---------------------------------------------------------------------------
 
-/** SymPy Trace(A): the unevaluated trace of a square matrix. */
+/**
+ * The unevaluated trace of a square matrix.
+ * @see SymPy `sympy.matrices.expressions.trace.Trace`
+ */
 export class TraceNode extends MatScalar {
+  /**
+   * Constructs a `Trace`.
+   * @param mat - The matrix operand.
+   */
   constructor(mat: Expr) {
     super('Trace', [mat]);
   }
-  /** SymPy Trace(mat): validated, unevaluated. */
+  /**
+   * Constructs the trace expression from its operands.
+   * @param matIn - The matrix operand.
+   * @returns The trace expression from its operands.
+   * @throws TypeError when a matrix operand is required.
+   * @throws NonSquareMatrixError when the matrix is not square.
+   */
   static create(matIn: MatArg): TraceNode {
     const mat = toExpr(matIn);
     if (!(mat instanceof MatrixExpr)) throw new TypeError(`input to Trace, ${str(mat)}, is not a matrix`);
     if (mat.isSquare === false) throw new NonSquareMatrixError('Trace of a non-square matrix');
     return new TraceNode(mat);
   }
-  /** The matrix. */
+  /**
+   * The matrix.
+   * @returns The operand of the expression.
+   * @see SymPy `sympy.matrices.expressions.trace.Trace.arg`
+   */
   get arg(): MatrixExpr {
     return cast(this.args[0], MatrixExpr);
   }
+  /**
+   * Rebuilds the expression with replacement operands.
+   * @param args - The ordered operands of the matrix expression.
+   * @returns The expression with the given operands.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new TraceNode(at(args, 0));
   }
+  /**
+   * Evaluates the operations represented by this expression.
+   * @param hints - Evaluation options, including whether to evaluate the operands recursively.
+   * @returns The evaluated expression.
+   * @see SymPy `sympy.matrices.expressions.trace.Trace.doit`
+   */
   override doit(hints: DoitHints = {}): Expr {
     if (hints.deep !== false) {
       // the doit of a matrix expression is a matrix expression
@@ -2154,28 +3748,58 @@ export class TraceNode extends MatScalar {
     }
     return this.arg instanceof ImmutableMatrixNode ? trace(this.arg) : this;
   }
-  /** The generic doit (SymPy Basic.doit is deep): the argument is evaluated already, the trace is taken (Trace(c*A) = c*Trace(A)). */
+  /**
+   * The generic doit: the argument is evaluated already, the trace is taken (Trace(c*A) = c*Trace(A)).
+   * @returns The generic doit.
+   */
   override doitSelf(): Expr {
     return this.arg.evalTrace();
   }
-  /** SymPy Trace.as_explicit: the trace of the explicit matrix. */
+  /**
+   * The trace of the explicit matrix.
+   * @returns The resulting symbolic expression.
+   * @see SymPy `sympy.matrices.expressions.trace.Trace.as_explicit`
+   */
   asExplicit(): Expr {
     return new TraceNode(new ImmutableMatrixNode(this.arg.asExplicit())).doit();
   }
-  /** SymPy Trace.rewrite(Sum): the sum of the diagonal entries. */
+  /**
+   * The sum of the diagonal entries.
+   * @returns The resulting symbolic expression.
+   */
   rewriteAsSum(): Expr {
     const i = new Sym(uniqueName('i', this));
     return doitArg(Sum(this.arg.at(i, i), [i, S.Zero, add(this.arg.rows, -1)]));
   }
+  /**
+   * Rewrites the expression in terms of the requested operation.
+   * @param target - The target form of the rewrite.
+   * @returns The equivalent expression when the target representation is supported.
+   */
   override rewriteSelf(target: string): Expr | undefined {
     return target === 'Sum' ? this.rewriteAsSum() : undefined;
   }
+  /**
+   * Transposes the expression.
+   * @returns The resulting symbolic expression.
+   */
   override transposeSelf(): Expr {
     return this;
   }
+  /**
+   * Formats the expression in LaTeX.
+   * @param print - Formats a child expression.
+   * @returns The LaTeX representation.
+   */
   override printLatex(print: (e: Expr) => string): string {
     return `\\operatorname{tr}\\left(${print(this.arg)} \\right)`;
   }
+  /**
+   * Differentiates the expression with respect to the given variable.
+   * @param x - The differentiation variable.
+   * @param d - Differentiates a subexpression.
+   * @returns The derivative when this matrix expression supplies a differentiation rule.
+   */
   override diffSelf(x: Expr, d: (e: Expr, x: Expr) => Expr): Expr | undefined {
     if (x instanceof MatrixElementNode) return d(this.rewriteAsSum(), x);
     // the derivative of a matrix expression is a matrix expression (or diff throws)
@@ -2190,39 +3814,94 @@ function uniqueName(base: string, e: Expr): string {
   for (let k = 0; ; k++) if (!used.has(`${base}${k}`)) return `${base}${k}`;
 }
 
-/** SymPy Trace(A): an unevaluated trace. */
+/**
+ * An unevaluated trace.
+ * @param mat - The matrix operand.
+ * @returns The resulting matrix expression.
+ * @throws TypeError when a matrix operand is required.
+ * @throws NonSquareMatrixError when the matrix is not square.
+ * @see SymPy `sympy.matrices.expressions.trace.Trace`
+ * @example
+ * ```ts
+ * import { MatrixSymbol, Trace } from '@symjs/symjs';
+ * Trace(MatrixSymbol('A', 3, 3)); // => Trace(A)
+ * ```
+ */
 export const Trace = /* @__PURE__ */ callableClass(TraceNode, (mat: MatArg): TraceNode => TraceNode.create(mat));
 export type Trace = TraceNode;
 
-/** SymPy trace(A): the trace, evaluated where possible (trace(eye(3)) = 3, trace(2*X) = 2*Trace(X)). */
+/**
+ * The trace, evaluated where possible (trace(eye(3)) = 3, trace(2*X) = 2*Trace(X)).
+ * @param expr - The expression to transform.
+ * @returns The sum of the diagonal entries, left symbolic when necessary.
+ * @see SymPy `sympy.matrices.expressions.trace.trace`
+ * @example
+ * ```ts
+ * import { Matrix, trace } from '@symjs/symjs';
+ * trace(Matrix.of([[1, 0, 0], [0, 1, 0], [0, 0, 1]])); // => 3
+ * ```
+ */
 export function trace(expr: MatArg): Expr {
   if (expr instanceof Matrix) return expr.trace();
   return TraceNode.create(expr).doit();
 }
 
-/** SymPy Determinant(A): the unevaluated determinant of a square matrix. */
+/**
+ * The unevaluated determinant of a square matrix.
+ * @see SymPy `sympy.matrices.expressions.determinant.Determinant`
+ */
 export class DeterminantNode extends MatScalar {
+  /**
+   * Constructs a `Determinant`.
+   * @param mat - The matrix operand.
+   */
   constructor(mat: Expr) {
     super('Determinant', [mat]);
   }
-  /** SymPy Determinant(mat): validated, unevaluated. */
+  /**
+   * Constructs the determinant expression from its operands.
+   * @param matIn - The matrix operand.
+   * @returns The determinant expression from its operands.
+   * @throws TypeError when a matrix operand is required.
+   * @throws NonSquareMatrixError when the matrix is not square.
+   */
   static create(matIn: MatArg): DeterminantNode {
     const mat = toExpr(matIn);
     if (!(mat instanceof MatrixExpr)) throw new TypeError(`Input to Determinant, ${str(mat)}, not a matrix`);
     if (mat.isSquare === false) throw new NonSquareMatrixError('Det of a non-square matrix');
     return new DeterminantNode(mat);
   }
-  /** The matrix. */
+  /**
+   * The matrix.
+   * @returns The operand of the expression.
+   * @see SymPy `sympy.matrices.expressions.determinant.Determinant.arg`
+   */
   get arg(): MatrixExpr {
     return cast(this.args[0], MatrixExpr);
   }
+  /**
+   * Rebuilds the expression with replacement operands.
+   * @param args - The ordered operands of the matrix expression.
+   * @returns The expression with the given operands.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new DeterminantNode(at(args, 0));
   }
+  /**
+   * Evaluates the operations represented by this expression.
+   * @param hints - Evaluation options, including whether to evaluate the operands recursively.
+   * @returns The evaluated expression.
+   * @see SymPy `sympy.matrices.expressions.determinant.Determinant.doit`
+   */
   override doit(hints: DoitHints = {}): Expr {
     // the doit of a matrix expression is a matrix expression
     return (hints.deep === false ? this.arg : asMat(doitArg(this.arg, hints))).evalDeterminant();
   }
+  /**
+   * Formats the expression in LaTeX.
+   * @param print - Formats a child expression.
+   * @returns The LaTeX representation.
+   */
   override printLatex(print: (e: Expr) => string): string {
     const m = this.arg;
     if (m instanceof ImmutableMatrixNode) return `\\left|{${explicitLatexContents(m.matrix, print)}}\\right|`;
@@ -2234,45 +3913,114 @@ export class DeterminantNode extends MatScalar {
   }
 }
 
-/** SymPy Determinant(A): an unevaluated determinant. */
+/**
+ * An unevaluated determinant.
+ * @param mat - The matrix operand.
+ * @returns The resulting matrix expression.
+ * @throws TypeError when a matrix operand is required.
+ * @throws NonSquareMatrixError when the matrix is not square.
+ * @see SymPy `sympy.matrices.expressions.determinant.Determinant`
+ * @example
+ * ```ts
+ * import { Determinant, MatrixSymbol } from '@symjs/symjs';
+ * Determinant(MatrixSymbol('A', 3, 3)); // => Determinant(A)
+ * ```
+ */
 export const Determinant = /* @__PURE__ */ callableClass(DeterminantNode, (mat: MatArg): DeterminantNode => DeterminantNode.create(mat));
 export type Determinant = DeterminantNode;
 
-/** SymPy det(A): the determinant, evaluated where possible (det(A) = Determinant(A), det(eye(3)) = 1). */
+/**
+ * The determinant, evaluated where possible (det(A) = Determinant(A), det(eye(3)) = 1).
+ * @param matexpr - The matrix expression to evaluate.
+ * @returns The determinant, left symbolic when necessary.
+ * @see SymPy `sympy.matrices.expressions.determinant.det`
+ * @example
+ * ```ts
+ * import { MatrixSymbol, det } from '@symjs/symjs';
+ * det(MatrixSymbol('A', 3, 3)); // => Determinant(A)
+ * ```
+ */
 export function det(matexpr: MatArg): Expr {
   if (matexpr instanceof Matrix) return matexpr.det();
   return DeterminantNode.create(matexpr).doit();
 }
 
-/** SymPy Permanent(A): the unevaluated permanent of a matrix. */
+/**
+ * The unevaluated permanent of a matrix.
+ * @see SymPy `sympy.matrices.expressions.determinant.Permanent`
+ */
 export class PermanentNode extends MatScalar {
+  /**
+   * Constructs a `Permanent`.
+   * @param mat - The matrix operand.
+   */
   constructor(mat: Expr) {
     super('Permanent', [mat]);
   }
-  /** SymPy Permanent(mat): validated, unevaluated. */
+  /**
+   * Constructs the permanent expression from its operands.
+   * @param matIn - The matrix operand.
+   * @returns The permanent expression from its operands.
+   * @throws TypeError when a matrix operand is required.
+   */
   static create(matIn: MatArg): PermanentNode {
     const mat = toExpr(matIn);
     if (!(mat instanceof MatrixExpr)) throw new TypeError(`Input to Permanent, ${str(mat)}, not a matrix`);
     return new PermanentNode(mat);
   }
-  /** The matrix. */
+  /**
+   * The matrix.
+   * @returns The operand of the expression.
+   * @see SymPy `sympy.matrices.expressions.determinant.Permanent.arg`
+   */
   get arg(): MatrixExpr {
     return cast(this.args[0], MatrixExpr);
   }
+  /**
+   * Rebuilds the expression with replacement operands.
+   * @param args - The ordered operands of the matrix expression.
+   * @returns The expression with the given operands.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new PermanentNode(at(args, 0));
   }
+  /**
+   * Evaluates the operations represented by this expression.
+   * @returns The evaluated expression.
+   * @see SymPy `sympy.matrices.expressions.determinant.Permanent.doit`
+   */
   override doit(): Expr {
     if (this.arg instanceof ImmutableMatrixNode) return explicitPermanent(this.arg.matrix);
     return this;
   }
 }
 
-/** SymPy Permanent(A): an unevaluated permanent. */
+/**
+ * An unevaluated permanent.
+ * @param mat - The matrix operand.
+ * @returns The resulting matrix expression.
+ * @throws TypeError when a matrix operand is required.
+ * @see SymPy `sympy.matrices.expressions.determinant.Permanent`
+ * @example
+ * ```ts
+ * import { MatrixSymbol, Permanent } from '@symjs/symjs';
+ * Permanent(MatrixSymbol('A', 3, 3)); // => Permanent(A)
+ * ```
+ */
 export const Permanent = /* @__PURE__ */ callableClass(PermanentNode, (mat: MatArg): PermanentNode => PermanentNode.create(mat));
 export type Permanent = PermanentNode;
 
-/** SymPy per(A): the permanent, evaluated for explicit matrices (per(ones(5, 5)) = 120). */
+/**
+ * The permanent, evaluated for explicit matrices (per(ones(5, 5)) = 120).
+ * @param matexpr - The matrix expression to evaluate.
+ * @returns The permanent, left symbolic when necessary.
+ * @see SymPy `sympy.matrices.expressions.determinant.per`
+ * @example
+ * ```ts
+ * import { Matrix, per } from '@symjs/symjs';
+ * per(Matrix.of([[1], [2], [5]])); // => 8
+ * ```
+ */
 export function per(matexpr: MatArg): Expr {
   return PermanentNode.create(matexpr).doit();
 }
@@ -2290,12 +4038,26 @@ const toLambda = (f: ElementFunction): LambdaNode => {
   return new LambdaNode([d, f(d)]);
 };
 
-/** SymPy ElementwiseApplyFunction(function, expr): a function applied to every entry, printed f.(X). */
+/**
+ * A function applied to every entry, printed f.(X).
+ * @see SymPy `sympy.matrices.expressions.applyfunc.ElementwiseApplyFunction`
+ */
 export class ElementwiseApplyFunctionNode extends MatrixExpr {
+  /**
+   * Constructs an `ElementwiseApplyFunction`.
+   * @param fn - The function to apply to each entry.
+   * @param expr - The expression to transform.
+   */
   constructor(fn: LambdaNode, expr: Expr) {
     super('ElementwiseApplyFunction', [fn, expr]);
   }
-  /** SymPy ElementwiseApplyFunction(function, expr). */
+  /**
+   * Constructs the elementwise apply function expression from its operands.
+   * @param f - The scalar function to evaluate or differentiate.
+   * @param exprIn - The expression to transform.
+   * @returns The elementwise apply function expression from its operands.
+   * @throws TypeError when a matrix operand is required or the function does not accept one argument.
+   */
   static create(f: ElementFunction, exprIn: MatArg): Expr {
     const expr = toExpr(exprIn);
     if (!(expr instanceof MatrixExpr)) throw new TypeError(`${str(expr)} must be a matrix instance.`);
@@ -2307,20 +4069,44 @@ export class ElementwiseApplyFunctionNode extends MatrixExpr {
     if (lam.variables.length !== 1) throw new TypeError(`${str(lam)} should be able to accept 1 arguments.`);
     return new ElementwiseApplyFunctionNode(lam, expr);
   }
-  /** The function (a Lambda). */
+  /**
+   * Gets the function (a Lambda).
+   * @returns The function (a Lambda).
+   * @see SymPy `sympy.matrices.expressions.applyfunc.ElementwiseApplyFunction.function`
+   */
   get function(): LambdaNode {
     return cast(this.args[0], LambdaNode);
   }
-  /** The matrix. */
+  /**
+   * Gets the matrix.
+   * @returns The matrix.
+   * @see SymPy `sympy.matrices.expressions.applyfunc.ElementwiseApplyFunction.expr`
+   */
   get expr(): MatrixExpr {
     return cast(this.args[1], MatrixExpr);
   }
+  /**
+   * The number of rows and columns, in that order.
+   * @returns The row and column dimensions.
+   * @see SymPy `sympy.matrices.expressions.applyfunc.ElementwiseApplyFunction.shape`
+   */
   get shape(): [Expr, Expr] {
     return this.expr.shape;
   }
+  /**
+   * Rebuilds the expression with replacement operands.
+   * @param args - The ordered operands of the matrix expression.
+   * @returns The expression with the given operands.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new ElementwiseApplyFunctionNode(cast(args[0], LambdaNode), at(args, 1));
   }
+  /**
+   * Evaluates the operations represented by this expression.
+   * @param hints - Evaluation options, including whether to evaluate the operands recursively.
+   * @returns The evaluated expression.
+   * @see SymPy `sympy.matrices.expressions.applyfunc.ElementwiseApplyFunction.doit`
+   */
   override doit(hints: DoitHints = {}): Expr {
     const expr = hints.deep === false ? this.expr : doitArg(this.expr, hints);
     const f = this.function;
@@ -2332,25 +4118,66 @@ export class ElementwiseApplyFunctionNode extends MatrixExpr {
     }
     return expr === this.expr ? this : new ElementwiseApplyFunctionNode(f, expr);
   }
+  /**
+   * Computes the matrix entry at the given row and column.
+   * @param i - The zero-based row index.
+   * @param j - The zero-based column index.
+   * @param ctx - The index context for evaluating matrix entries.
+   * @returns The scalar at the requested position.
+   * @see SymPy `sympy.matrices.expressions.applyfunc.ElementwiseApplyFunction._entry`
+   */
   override entry(i: Expr, j: Expr, ctx?: EntryContext): Expr {
     return this.function.call(this.expr.entry(i, j, ctx));
   }
+  /**
+   * Computes the transpose using the structure of this expression.
+   * @returns The transpose using the structure of this expression.
+   * @see SymPy `sympy.matrices.expressions.applyfunc.ElementwiseApplyFunction._eval_transpose`
+   */
   override evalTranspose(): Expr {
     return new ElementwiseApplyFunctionNode(this.function, this.expr.transpose());
   }
-  /** SymPy MatrixExpr._eval_simplify: the arguments simplified, the application kept. */
+  /**
+   * The arguments simplified, the application kept.
+   * @param simplify - The simplifier to apply to subexpressions.
+   * @returns The resulting symbolic expression.
+   */
   override simplifySelf(simplify: (e: Expr) => Expr): Expr {
     return ElementwiseApplyFunctionNode.create(cast(simplify(this.function), LambdaNode), simplify(this.expr));
   }
+  /**
+   * Formats the expression as plain text.
+   * @param print - Formats a child expression.
+   * @returns The plain-text representation.
+   */
   override printStr(print: (e: Expr) => string): string {
     return `${print(this.function)}.(${print(this.expr)})`;
   }
+  /**
+   * Formats the expression in LaTeX.
+   * @param print - Formats a child expression.
+   * @returns The LaTeX representation.
+   */
   override printLatex(print: (e: Expr) => string): string {
     return `{${print(this.function)}}_{\\circ}\\left({${print(this.expr)}}\\right)`;
   }
 }
 
-/** SymPy ElementwiseApplyFunction(function, expr). */
+/**
+ * Applies a scalar function to each entry of a matrix expression.
+ * @param f - The scalar function to evaluate or differentiate.
+ * @param expr - The expression to transform.
+ * @returns The resulting matrix expression.
+ * @throws TypeError when a matrix operand is required or the function does not accept one argument.
+ * @see SymPy `sympy.matrices.expressions.applyfunc.ElementwiseApplyFunction`
+ * @example
+ * ```ts
+ * import { Dummy, ElementwiseApplyFunction, Lambda, MatrixSymbol, fn, symbols } from '@symjs/symjs';
+ *
+ * const [k, i] = symbols('k i');
+ * ElementwiseApplyFunction(Lambda([new Dummy('d', {}, 1000000)], fn('sin', [new Dummy('d', {}, 1000000)], { evaluate: false })), MatrixSymbol('x', k, 1)).diff(i); // => 0
+ * ```
+ */
 export const ElementwiseApplyFunction = /* @__PURE__ */ callableClass(ElementwiseApplyFunctionNode, (f: ElementFunction, expr: MatArg): Expr => ElementwiseApplyFunctionNode.create(f, expr));
 export type ElementwiseApplyFunction = ElementwiseApplyFunctionNode;
 registerHead(ElementwiseApplyFunctionNode, ElementwiseApplyFunction);
@@ -2359,37 +4186,120 @@ registerHead(ElementwiseApplyFunctionNode, ElementwiseApplyFunction);
 // Constructors
 // ---------------------------------------------------------------------------
 
-/** SymPy MatrixSymbol(name, n, m): a symbolic n x m matrix (also usable with new). */
+/**
+ * A symbolic n x m matrix (also usable with new).
+ * @param name - The name used to identify the object.
+ * @param n - The number of rows.
+ * @param m - The number of columns.
+ * @returns The resulting matrix expression.
+ * @see SymPy `sympy.matrices.expressions.matexpr.MatrixSymbol`
+ * @example
+ * ```ts
+ * import { MatrixSymbol } from '@symjs/symjs';
+ * MatrixSymbol('X', 2, 2).T; // => X.T
+ * ```
+ */
 export const MatrixSymbol = /* @__PURE__ */ callableClass(MatrixSymbolNode, (name: string, n: ExprLike, m: ExprLike): MatrixSymbolNode => new MatrixSymbolNode(name, n, m));
 export type MatrixSymbol = MatrixSymbolNode;
 
-/** SymPy Identity(n). */
+/**
+ * Creates an identity matrix of the given order.
+ * @param n - The order of the identity matrix.
+ * @returns The resulting matrix expression.
+ * @see SymPy `sympy.matrices.expressions.special.Identity`
+ * @example
+ * ```ts
+ * import { Identity } from '@symjs/symjs';
+ * Identity(3); // => I
+ * ```
+ */
 export const Identity = /* @__PURE__ */ callableClass(IdentityNode, (n: ExprLike): IdentityNode => new IdentityNode(n));
 export type Identity = IdentityNode;
 
-/** SymPy ZeroMatrix(m, n). */
+/**
+ * Creates a rectangular zero matrix.
+ * @param m - The number of rows.
+ * @param n - The number of columns.
+ * @returns The resulting matrix expression.
+ * @see SymPy `sympy.matrices.expressions.special.ZeroMatrix`
+ * @example
+ * ```ts
+ * import { MatrixSymbol, Transpose, ZeroMatrix } from '@symjs/symjs';
+ * ZeroMatrix(3, 5).mul(Transpose(MatrixSymbol('A', 3, 5))); // => 0
+ * ```
+ */
 export const ZeroMatrix = /* @__PURE__ */ callableClass(ZeroMatrixNode, (m: ExprLike, n: ExprLike): ZeroMatrixNode => new ZeroMatrixNode(m, n));
 export type ZeroMatrix = ZeroMatrixNode;
 
-/** SymPy OneMatrix(m, n, evaluate=false). */
+/**
+ * Creates a rectangular matrix of ones.
+ * @param m - The number of rows.
+ * @param n - The number of columns.
+ * @param evaluate - Whether to evaluate the expression immediately.
+ * @returns The resulting matrix expression.
+ * @see SymPy `sympy.matrices.expressions.special.OneMatrix`
+ * @example
+ * ```ts
+ * import { OneMatrix } from '@symjs/symjs';
+ * OneMatrix(1, 1).I; // => I
+ * ```
+ */
 export const OneMatrix = /* @__PURE__ */ callableClass(OneMatrixNode, (m: ExprLike, n: ExprLike, evaluate = false): MatrixExpr => OneMatrixNode.create(m, n, evaluate));
 export type OneMatrix = OneMatrixNode;
 
-/** SymPy GenericIdentity(). */
+/**
+ * Represents a multiplicative identity with unspecified dimensions.
+ * @returns The resulting matrix expression.
+ * @see SymPy `sympy.matrices.expressions.special.GenericIdentity`
+ * @example
+ * ```ts
+ * import { GenericIdentity } from '@symjs/symjs';
+ * GenericIdentity(); // => I
+ * ```
+ */
 export const GenericIdentity = /* @__PURE__ */ callableClass(GenericIdentityNode, (): GenericIdentityNode => new GenericIdentityNode());
 export type GenericIdentity = GenericIdentityNode;
 
-/** SymPy GenericZeroMatrix(). */
+/**
+ * Represents an additive identity with unspecified dimensions.
+ * @returns The resulting matrix expression.
+ * @see SymPy `sympy.matrices.expressions.special.GenericZeroMatrix`
+ * @example
+ * ```ts
+ * import { GenericZeroMatrix } from '@symjs/symjs';
+ * GenericZeroMatrix(); // => 0
+ * ```
+ */
 export const GenericZeroMatrix = /* @__PURE__ */ callableClass(GenericZeroMatrixNode, (): GenericZeroMatrixNode => new GenericZeroMatrixNode());
 export type GenericZeroMatrix = GenericZeroMatrixNode;
 
-/** SymPy MatrixElement(parent, i, j). */
+/**
+ * The entry M[i, j] of a matrix expression.
+ * @see SymPy `sympy.matrices.expressions.matexpr.MatrixElement`
+ * @example
+ * ```ts
+ * import { MatrixElement, MatrixSymbol, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * MatrixElement(MatrixSymbol('A', 1, 1), 0, 0).mul(x); // => x*A[0, 0]
+ * ```
+ */
 export const MatrixElement = /* @__PURE__ */ callableClass(MatrixElementNode, matrixElement);
 export type MatrixElement = MatrixElementNode;
 
 /**
- * SymPy ImmutableMatrix: an explicit matrix as a matrix expression, from a
+ * An explicit matrix as a matrix expression, from a
  * Matrix, nested rows, or (rows, cols, entries).
+ * @param a - The source matrix, row arrays, or number of rows.
+ * @param cols - The number of columns.
+ * @param entries - The matrix entries in row-major order.
+ * @returns The resulting matrix expression.
+ * @see SymPy `sympy.matrices.immutable.ImmutableDenseMatrix`
+ * @example
+ * ```ts
+ * import { ImmutableDenseMatrix, Matrix } from '@symjs/symjs';
+ * ImmutableDenseMatrix(Matrix.of([[1, 0, 0], [0, 1, 0], [0, 0, 1]])); // => Matrix([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+ * ```
  */
 export const ImmutableMatrix = /* @__PURE__ */ callableClass(
   ImmutableMatrixNode,
@@ -2407,7 +4317,12 @@ export const ImmutableMatrix = /* @__PURE__ */ callableClass(
 );
 export type ImmutableMatrix = ImmutableMatrixNode;
 
-/** SymPy matrix_symbols(expr): the MatrixSymbols of an expression. */
+/**
+ * Returns the MatrixSymbols of an expression.
+ * @param expr - The expression to transform.
+ * @returns The MatrixSymbols of an expression.
+ * @see SymPy `sympy.matrices.expressions.matexpr.matrix_symbols`
+ */
 export function matrixSymbols(expr: MatArg): MatrixSymbolNode[] {
   const out = new Map<string, MatrixSymbolNode>();
   const go = (e: Expr): void => {

@@ -139,42 +139,103 @@ function denseEntries(args: SparseMatrixArgs): { rows: number; cols: number; cel
 }
 
 /**
- * SymPy MutableSparseMatrix (SparseMatrix): a mutable matrix built from its
+ * A mutable matrix built from its
  * nonzero entries, e.g. `new SparseMatrix(2, 2, new Map([[[1, 1], 2]]))`,
  * `new SparseMatrix([[1, 2, 3], [1, 2], [1]])` (ragged rows are padded with
  * zeros) or `new SparseMatrix(null, new Map([[[3, 3], 3]]))` (sized by the
  * entries). A matrix value of the map is a block placed at its position.
+ * @see SymPy `sympy.matrices.sparse.MutableSparseMatrix`
+ * @example
+ * ```ts
+ * import { MutableSparseMatrix } from '@symjs/symjs';
+ * new MutableSparseMatrix(null, [[1, 2, 3]]); // => Matrix([[1, 2, 3]])
+ * ```
  */
 export class MutableSparseMatrix extends MutableDenseMatrix {
+  /**
+   * Gets the priority for choosing the result class in mixed matrix operations.
+   * @returns The priority for choosing the result class in mixed matrix operations.
+   * @see SymPy `sympy.matrices.sparse.MutableSparseMatrix._class_priority`
+   */
   override get classPriority(): number { return 3; }
-  /** Nonzero entries (row, column, value), sorted by row / column. */
+  /**
+   * Lists the nonzero entries in row-major order.
+   * @returns Triples of row, column and value sorted by row, then column.
+   * @see SymPy `sympy.matrices.sparse.MutableSparseMatrix.RL`
+   */
   get RL(): [number, number, Expr][] { return [...this.todok()].map(([[i,j],e]) => [i,j,e]); }
+  /**
+   * Lists the nonzero entries in column-major order.
+   * @returns Triples of row, column and value sorted by column, then row.
+   * @see SymPy `sympy.matrices.sparse.MutableSparseMatrix.CL`
+   */
   get CL(): [number, number, Expr][] { return this.RL.sort((a,b) => a[1]-b[1] || a[0]-b[0]); }
+  /**
+   * Constructs a `MutableSparseMatrix`.
+   * @param args - The operands in their defining order.
+   */
   constructor(...args: SparseMatrixArgs) {
     const { rows, cols, cells } = denseEntries(args);
     super(rows, cols, cells);
   }
 }
 
-/** SymPy SparseMatrix, an alias of MutableSparseMatrix. */
+/**
+ * An alias for the mutable sparse matrix class.
+ * @see SymPy `sympy.matrices.sparse.MutableSparseMatrix`
+ * @example
+ * ```ts
+ * import { SparseMatrix } from '@symjs/symjs';
+ * new SparseMatrix([[1, 2, 3], [1, 2], [1]]).toArray(); // => [[1, 2, 3], [1, 2, 0], [1, 0, 0]]
+ * ```
+ */
 export const SparseMatrix = MutableSparseMatrix;
 export type SparseMatrix = MutableSparseMatrix;
 
 /**
- * SymPy ImmutableSparseMatrix: an immutable explicit matrix (a matrix
+ * An immutable explicit matrix (a matrix
  * expression, like ImmutableMatrix) built from its nonzero entries, with the
  * constructor forms of {@link MutableSparseMatrix}.
+ * @see SymPy `sympy.matrices.immutable.ImmutableSparseMatrix`
+ * @example
+ * ```ts
+ * import { ImmutableSparseMatrix } from '@symjs/symjs';
+ * new ImmutableSparseMatrix(1, 1, new Map()); // => Matrix([[0]])
+ * ```
  */
 export class ImmutableSparseMatrix extends ImmutableMatrixNode {
+  /**
+   * Gets the priority for choosing the result class in mixed matrix operations.
+   * @returns The priority for choosing the result class in mixed matrix operations.
+   * @see SymPy `sympy.matrices.immutable.ImmutableSparseMatrix._class_priority`
+   */
   override get classPriority(): number { return 9; }
+  /**
+   * Lists the nonzero entries in row-major order.
+   * @returns Triples of row, column and value sorted by row, then column.
+   * @see SymPy `sympy.matrices.immutable.ImmutableSparseMatrix.RL`
+   */
   get RL(): [number, number, Expr][] { return [...this.todok()].map(([[i,j],e]) => [i,j,e]); }
+  /**
+   * Lists the nonzero entries in column-major order.
+   * @returns Triples of row, column and value sorted by column, then row.
+   * @see SymPy `sympy.matrices.immutable.ImmutableSparseMatrix.CL`
+   */
   get CL(): [number, number, Expr][] { return this.RL.sort((a,b) => a[1]-b[1] || a[0]-b[0]); }
+  /**
+   * Constructs an `ImmutableSparseMatrix`.
+   * @param args - The operands in their defining order.
+   */
   constructor(...args: SparseMatrixArgs) {
     const m = new MutableSparseMatrix(...args);
     super(Matrix.fromFunction(m.rows, m.cols, (i, j) => m.get(i, j)));
   }
 
-  /** SymPy todok(): the nonzero entries by position. */
+  /**
+   * Returns the nonzero entries by position.
+   * @returns The nonzero entries by position.
+   * @see SymPy `sympy.matrices.immutable.ImmutableSparseMatrix.todok`
+   */
   todok(): Map<MatrixPosition, Expr> {
     return this.matrix.todok();
   }

@@ -71,9 +71,9 @@ function lettersToSyllables(letters: readonly number[]): Syllable[] {
 }
 
 /**
- * SymPy FreeGroup(symbols): the free group on the given symbols. Like
+ * The free group on the given symbols. Like
  * SymPy, groups on the same symbols are the same object.
- *
+ * @see SymPy `sympy.combinatorics.free_groups.FreeGroup`
  * @example
  * ```ts
  * import { freeGroup } from '@symjs/symjs';
@@ -83,18 +83,46 @@ function lettersToSyllables(letters: readonly number[]): Syllable[] {
  * ```
  */
 export class FreeGroup {
+  /**
+   * Indicates that the group operation is associative.
+   * @see SymPy `sympy.combinatorics.free_groups.FreeGroup.is_associative`
+   */
   readonly isAssociative = true;
+  /**
+   * Indicates whether the object represents a group.
+   * @see SymPy `sympy.combinatorics.free_groups.FreeGroup.is_group`
+   */
   readonly isGroup = true;
+  /**
+   * Indicates whether the group is free.
+   * @see SymPy `sympy.combinatorics.free_groups.FreeGroup.is_FreeGroup`
+   */
   readonly isFreeGroup = true;
+  /**
+   * Indicates whether the group acts by permutations.
+   * @see SymPy `sympy.combinatorics.free_groups.FreeGroup.is_PermutationGroup`
+   */
   readonly isPermutationGroup = false;
-  /** SymPy relators: a free group has none. */
+  /**
+   * A free group has none.
+   * @see SymPy `sympy.combinatorics.free_groups.FreeGroup.relators`
+   */
   readonly relators: readonly FreeGroupElement[] = [];
+  /** The symbols naming the free generators. */
   readonly symbols!: readonly Expr[];
+  /**
+   * The generators in their defining order.
+   * @see SymPy `sympy.combinatorics.free_groups.FreeGroup._generators`
+   */
   readonly generators!: readonly FreeGroupElement[];
-  /** @internal The symbol keys, for the index of a symbol. */
+  /** The symbol keys, for the index of a symbol. @internal */
   readonly symbolIndex!: ReadonlyMap<string, number>;
   readonly #identity!: FreeGroupElement;
 
+  /**
+   * Constructs a `FreeGroup`.
+   * @param symbols - The names or symbols of the free generators.
+   */
   constructor(symbols: FreeGroupSymbols = []) {
     const syms = parseSymbols(symbols);
     const key = syms.map((s) => s.key).join('\u0000');
@@ -108,7 +136,12 @@ export class FreeGroup {
     cache.set(key, this);
   }
 
-  /** SymPy dtype(array_form): the element with these (symbol, exponent) syllables. */
+  /**
+   * The element with these (symbol, exponent) syllables.
+   * @param arrayForm - The image of each point in order.
+   * @returns The resulting group word.
+   * @throws RangeError when the element is not one of the generators.
+   */
   dtype(arrayForm: readonly (readonly [Expr, number | bigint])[] = []): FreeGroupElement {
     const syllables: Syllable[] = [];
     for (const [s, e] of arrayForm) {
@@ -119,70 +152,127 @@ export class FreeGroup {
     return new FreeGroupElement(this, lettersToSyllables(syllables.flatMap(([g, e]) => Array<number>(Math.abs(e)).fill(Math.sign(e) * (g + 1)))));
   }
 
-  /** SymPy clone(symbols): the free group on other symbols (or the same ones). */
+  /**
+   * Returns the free group on other symbols (or the same ones).
+   * @param symbols - The names or symbols of the free generators.
+   * @returns The free group on other symbols (or the same ones).
+   * @see SymPy `sympy.combinatorics.free_groups.FreeGroup.clone`
+   */
   clone(symbols?: FreeGroupSymbols): FreeGroup {
     const empty = symbols === undefined || symbols === '' || (isSymbolList(symbols) && symbols.length === 0);
     return new FreeGroup(empty ? this.symbols : symbols);
   }
 
-  /** SymPy len(F): the rank. */
+  /**
+   * Gets the rank.
+   * @returns The rank.
+   */
   get length(): number {
     return this.rank;
   }
 
-  /** SymPy F[i]: the free group on the ith symbol. */
+  /**
+   * Returns the free group on the ith symbol.
+   * @param i - The zero-based position in the sequence.
+   * @returns The free group on the ith symbol.
+   */
   getItem(i: number): FreeGroup {
     return this.clone([at(this.symbols, i < 0 ? this.symbols.length + i : i)]);
   }
 
-  /** SymPy F[i:j]: the free group on a slice of the symbols. */
+  /**
+   * Returns the free group on a slice of the symbols.
+   * @param start - The starting position, inclusive.
+   * @param end - The stopping position, exclusive.
+   * @returns The free group on a slice of the symbols.
+   */
   slice(start: number, end: number = this.symbols.length): FreeGroup {
     return this.clone(pySlice(this.symbols, start, end));
   }
 
-  /** SymPy index(gen): the position of a generator. */
+  /**
+   * Returns the position of a generator.
+   * @param gen - The generator to locate or count.
+   * @returns The position of a generator.
+   * @throws RangeError when the element is not one of the generators.
+   * @see SymPy `sympy.combinatorics.free_groups.FreeGroup.index`
+   */
   index(gen: FreeGroupElement): number {
     const i = this.generators.findIndex((g) => g.equals(gen));
     if (gen.group !== this || i < 0) throw new RangeError(`expected a generator of Free Group ${String(this)}, got ${String(gen)}`);
     return i;
   }
 
-  /** SymPy order(): 1 for the trivial group, else infinity. */
+  /**
+   * Computes the cardinality of the free group.
+   * @returns The cardinality of the free group.
+   * @see SymPy `sympy.combinatorics.free_groups.FreeGroup.order`
+   */
   order(): Expr {
     return this.rank === 0 ? S.One : S.Infinity;
   }
 
-  /** SymPy elements: the elements of the trivial group (other free groups are infinite). */
+  /**
+   * Gets the elements of the trivial group (other free groups are infinite).
+   * @returns The elements of the trivial group (other free groups are infinite).
+   * @throws RangeError when the group is infinite.
+   * @see SymPy `sympy.combinatorics.free_groups.FreeGroup.elements`
+   */
   get elements(): Set<FreeGroupElement> {
     if (this.rank === 0) return new Set([this.identity]);
     throw new RangeError('Group contains infinitely many elements, hence cannot be represented');
   }
 
-  /** SymPy rank: the number of generators. */
+  /**
+   * Gets the number of generators.
+   * @returns The number of generators.
+   * @see SymPy `sympy.combinatorics.free_groups.FreeGroup.rank`
+   */
   get rank(): number {
     return this.symbols.length;
   }
 
-  /** SymPy is_abelian: only the free groups of rank 0 and 1. */
+  /**
+   * Only the free groups of rank 0 and 1.
+   * @returns Whether the object is abelian.
+   * @see SymPy `sympy.combinatorics.free_groups.FreeGroup.is_abelian`
+   */
   get isAbelian(): boolean {
     return this.rank <= 1;
   }
 
-  /** SymPy identity: the empty word. */
+  /**
+   * Gets the empty word.
+   * @returns The empty word.
+   * @see SymPy `sympy.combinatorics.free_groups.FreeGroup.identity`
+   */
   get identity(): FreeGroupElement {
     return this.#identity;
   }
 
-  /** SymPy contains(g) (and `g in F`): whether g is an element of this group. */
+  /**
+   * Whether g is an element of this group.
+   * @param g - The element to test for membership.
+   * @returns Whether the argument is an element of this free group.
+   * @see SymPy `sympy.combinatorics.free_groups.FreeGroup.contains`
+   */
   contains(g: unknown): boolean {
     return g instanceof FreeGroupElement && g.group === this;
   }
 
-  /** SymPy center(): the identity only. */
+  /**
+   * Returns the identity only.
+   * @returns The identity only.
+   * @see SymPy `sympy.combinatorics.free_groups.FreeGroup.center`
+   */
   center(): Set<FreeGroupElement> {
     return new Set([this.identity]);
   }
 
+  /**
+   * Formats the object as plain text.
+   * @returns The printable representation.
+   */
   toString(): string {
     if (this.rank > 30) return `<free group with ${this.rank} generators>`;
     return `<free group on the generators ${tupleStr(this.generators)}>`;
@@ -202,34 +292,57 @@ export function uniqueWords(words: Iterable<FreeGroupElement>): FreeGroupElement
 const isWordMap = (w: Iterable<FreeGroupElement> | ReadonlyMap<FreeGroupElement, FreeGroupElement>): w is ReadonlyMap<FreeGroupElement, FreeGroupElement> => w instanceof Map;
 
 /**
- * SymPy FreeGroupElement: an element of a free group, a reduced associative
+ * An element of a free group, a reduced associative
  * word. Elements are immutable and compared by value (`equals`, `key`).
+ * @see SymPy `sympy.combinatorics.free_groups.FreeGroupElement`
  */
 export class FreeGroupElement {
+  /**
+   * Identifies a word in associative generators.
+   * @see SymPy `sympy.combinatorics.free_groups.FreeGroupElement.is_assoc_word`
+   */
   readonly isAssocWord = true;
+  /** The group to which the words belong. */
   readonly group: FreeGroup;
-  /** @internal The syllables as (generator index, exponent). */
+  /** The syllables as (generator index, exponent). @internal */
   readonly syllables: readonly Syllable[];
   #letters: number[] | undefined;
   #key: string | undefined;
 
-  /** @internal Use FreeGroup.dtype, the generators and the group operations. */
+  /**
+   * Constructs a `FreeGroupElement`.
+   * @param group - The ambient group.
+   * @param syllables - The generators and their exponents in word order.
+   * @internal
+   */
   constructor(group: FreeGroup, syllables: readonly Syllable[]) {
     this.group = group;
     this.syllables = syllables;
   }
 
-  /** A string identifying the word within its group. */
+  /**
+   * Gets a string identifying the word within its group.
+   * @returns A string identifying the word within its group.
+   */
   get key(): string {
     return (this.#key ??= this.syllables.map(([g, e]) => `${g}^${e}`).join(' '));
   }
 
-  /** @internal The letters, +(i+1) for generator i and -(i+1) for its inverse. */
+  /**
+   * Gets the letters, +(i+1) for generator i and -(i+1) for its inverse.
+   * @returns The letters, +(i+1) for generator i and -(i+1) for its inverse.
+   * @internal
+   */
   get letters(): readonly number[] {
     return (this.#letters ??= this.syllables.flatMap(([g, e]) => Array<number>(Math.abs(e)).fill(Math.sign(e) * (g + 1))));
   }
 
-  /** @internal The word with these letters. */
+  /**
+   * The word with these letters.
+   * @param letters - The signed letters in word order.
+   * @returns The resulting group word.
+   * @internal
+   */
   fromLetters(letters: readonly number[]): FreeGroupElement {
     return new FreeGroupElement(this.group, lettersToSyllables(letters));
   }
@@ -242,32 +355,58 @@ export class FreeGroupElement {
     return at(this.group.symbols, g);
   }
 
-  /** SymPy new(init): an element of the same group from (symbol, exponent) pairs. */
+  /**
+   * Constructs an element of the same free group from a sequence of syllables.
+   * @param init - The initial terms, starting at index zero.
+   * @returns An element of the same free group from a sequence of syllables.
+   * @see SymPy `sympy.combinatorics.free_groups.FreeGroupElement.new`
+   */
   new(init: readonly (readonly [Expr, number | bigint])[]): FreeGroupElement {
     return this.group.dtype(init);
   }
 
-  /** SymPy copy(). */
+  /**
+   * Creates a copy of this object.
+   * @returns A copy of this object.
+   * @see SymPy `sympy.combinatorics.free_groups.FreeGroupElement.copy`
+   */
   copy(): FreeGroupElement {
     return this.#new(this.syllables);
   }
 
-  /** SymPy is_identity: the empty word. */
+  /**
+   * Tests whether the reduced word is empty.
+   * @returns Whether the object is identity.
+   * @see SymPy `sympy.combinatorics.free_groups.FreeGroupElement.is_identity`
+   */
   get isIdentity(): boolean {
     return this.syllables.length === 0;
   }
 
-  /** SymPy array_form: the (symbol, exponent) syllables. */
+  /**
+   * Gets the (symbol, exponent) syllables.
+   * @returns The (symbol, exponent) syllables.
+   * @see SymPy `sympy.combinatorics.free_groups.FreeGroupElement.array_form`
+   */
   get arrayForm(): [Expr, number][] {
     return this.syllables.map(([g, e]) => [this.#sym(g), e]);
   }
 
-  /** SymPy letter_form: the word letter by letter, an inverse letter as -symbol. */
+  /**
+   * Gets the word letter by letter, an inverse letter as -symbol.
+   * @returns The word letter by letter, an inverse letter as -symbol.
+   * @see SymPy `sympy.combinatorics.free_groups.FreeGroupElement.letter_form`
+   */
   get letterForm(): Expr[] {
     return this.letters.map((c) => (c > 0 ? this.#sym(c - 1) : mul(-1, this.#sym(-c - 1))));
   }
 
-  /** SymPy w[i]: the ith letter as an element (negative i counts from the end). */
+  /**
+   * The ith letter as an element (negative i counts from the end).
+   * @param i - The zero-based position in the sequence.
+   * @returns The resulting group word.
+   * @throws RangeError when an index is out of bounds.
+   */
   getItem(i: number): FreeGroupElement {
     const ls = this.letters;
     const c = ls[i < 0 ? ls.length + i : i];
@@ -275,7 +414,13 @@ export class FreeGroupElement {
     return this.#new([[Math.abs(c) - 1, Math.sign(c)]]);
   }
 
-  /** SymPy index(gen): the position of the first occurrence of a letter. */
+  /**
+   * Returns the position of the first occurrence of a letter.
+   * @param gen - The generator to locate or count.
+   * @returns The position of the first occurrence of a letter.
+   * @throws RangeError when the element does not occur in the sequence.
+   * @see SymPy `sympy.combinatorics.free_groups.FreeGroupElement.index`
+   */
   index(gen: FreeGroupElement): number {
     if (gen.length !== 1) throw new RangeError('');
     const i = this.letters.indexOf(at(gen.letters, 0));
@@ -283,28 +428,50 @@ export class FreeGroupElement {
     return i;
   }
 
-  /** SymPy letter_form_elm: the letters as elements. */
+  /**
+   * Gets the letters as elements.
+   * @returns The letters as elements.
+   * @see SymPy `sympy.combinatorics.free_groups.FreeGroupElement.letter_form_elm`
+   */
   get letterFormElm(): FreeGroupElement[] {
     return this.letters.map((c) => this.#new([[Math.abs(c) - 1, Math.sign(c)]]));
   }
 
-  /** SymPy ext_rep: the flattened array form. */
+  /**
+   * Gets the flattened array form.
+   * @returns The flattened array form.
+   * @see SymPy `sympy.combinatorics.free_groups.FreeGroupElement.ext_rep`
+   */
   get extRep(): (Expr | number)[] {
     return this.syllables.flatMap(([g, e]) => [this.#sym(g), e]);
   }
 
-  /** SymPy `gen in w`: whether the generator of gen occurs in this word. */
+  /**
+   * Whether the generator of gen occurs in this word.
+   * @param gen - The generator to locate or count.
+   * @returns Whether the specified generator occurs with either sign.
+   */
   has(gen: FreeGroupElement): boolean {
     const g = at(gen.syllables, 0)[0];
     return this.syllables.some((s) => s[0] === g);
   }
 
+  /**
+   * Formats the object as plain text.
+   * @returns The printable representation.
+   */
   toString(): string {
     if (this.isIdentity) return '<identity>';
     return this.syllables.map(([g, e]) => (e === 1 ? String(this.#sym(g)) : `${String(this.#sym(g))}**${e}`)).join('*');
   }
 
-  /** SymPy w**n. */
+  /**
+   * Raises this element to a power.
+   * @param nIn - The integer exponent.
+   * @returns The resulting group word.
+   * @throws RangeError when the argument is not integral.
+   * @see SymPy `sympy.combinatorics.free_groups.FreeGroupElement.__pow__`
+   */
   pow(nIn: number | bigint | Expr): FreeGroupElement {
     let n = Number(typeof nIn === 'object' ? nIn.toString() : nIn);
     if (!Number.isInteger(n)) throw new RangeError(`${String(nIn)} is not an integer`);
@@ -336,7 +503,12 @@ export class FreeGroupElement {
     return other;
   }
 
-  /** SymPy w1*w2. */
+  /**
+   * Multiplies two words and cancels adjacent inverse letters.
+   * @param other - The value to combine with or compare against.
+   * @returns The resulting group word.
+   * @see SymPy `sympy.combinatorics.free_groups.FreeGroupElement.__mul__`
+   */
   mul(other: FreeGroupElement): FreeGroupElement {
     const o = this.#check(other, 'multiplied');
     if (this.isIdentity) return o;
@@ -344,30 +516,54 @@ export class FreeGroupElement {
     return this.#new(joinSyllables(this.syllables, o.syllables));
   }
 
-  /** SymPy w1/w2 = w1*w2**-1. */
+  /**
+   * Divides this element by the other operand.
+   * @param other - The value to combine with or compare against.
+   * @returns The resulting group word.
+   * @see SymPy `sympy.combinatorics.free_groups.FreeGroupElement.__truediv__`
+   */
   div(other: FreeGroupElement): FreeGroupElement {
     return this.mul(this.#check(other, 'multiplied').inverse());
   }
 
-  /** SymPy inverse(). */
+  /**
+   * Reverses the word and inverts each letter.
+   * @returns The resulting group word.
+   * @see SymPy `sympy.combinatorics.free_groups.FreeGroupElement.inverse`
+   */
   inverse(): FreeGroupElement {
     return this.#new([...this.syllables].reverse().map(([g, e]) => [g, -e]));
   }
 
-  /** SymPy order(): 1 for the identity, else infinity. */
+  /**
+   * Computes the order of this word in the free group.
+   * @returns The order of this word in the free group.
+   * @see SymPy `sympy.combinatorics.free_groups.FreeGroupElement.order`
+   */
   order(): Expr {
     return this.isIdentity ? S.One : S.Infinity;
   }
 
-  /** SymPy commutator(other): self**-1*other**-1*self*other. */
+  /**
+   * Forms the commutator of this word with the other word.
+   * @param other - The value to combine with or compare against.
+   * @returns The commutator of this word with the other word.
+   * @throws RangeError when the words belong to different free groups.
+   * @see SymPy `sympy.combinatorics.free_groups.FreeGroupElement.commutator`
+   */
   commutator(other: FreeGroupElement): FreeGroupElement {
     if (!(other instanceof FreeGroupElement) || other.group !== this.group) throw new RangeError('commutator of only FreeGroupElement of the same FreeGroup exists');
     return this.inverse().mul(other.inverse()).mul(this).mul(other);
   }
 
   /**
-   * SymPy eliminate_words(words, _all, inverse): replace each word of a list
+   * Replace each word of a list
    * by the identity, or each key of a Map by its value, until nothing changes.
+   * @param words - The words to eliminate and their replacements.
+   * @param all - Whether to repeat the replacement at all occurrences.
+   * @param inverse - Whether to match the inverse word as well.
+   * @returns The resulting group word.
+   * @see SymPy `sympy.combinatorics.free_groups.FreeGroupElement.eliminate_words`
    */
   eliminateWords(words: Iterable<FreeGroupElement> | ReadonlyMap<FreeGroupElement, FreeGroupElement>, all = false, inverse = true): FreeGroupElement {
     const pairs: [FreeGroupElement, FreeGroupElement | undefined][] = isWordMap(words) ? [...words] : [...words].map((w) => [w, undefined]);
@@ -385,9 +581,15 @@ export class FreeGroupElement {
   }
 
   /**
-   * SymPy eliminate_word(gen, by, _all, inverse): replace the first
+   * Replace the first
    * occurrence of gen (or of its inverse) by `by` (default the identity), or
    * every occurrence with `all`.
+   * @param gen - The generator to locate or count.
+   * @param byIn - The replacement word.
+   * @param allIn - Whether to repeat the replacement at all occurrences.
+   * @param inverse - Whether to match the inverse word as well.
+   * @returns The resulting group word.
+   * @see SymPy `sympy.combinatorics.free_groups.FreeGroupElement.eliminate_word`
    */
   eliminateWord(gen: FreeGroupElement, byIn?: FreeGroupElement, allIn = false, inverse = true): FreeGroupElement {
     // SymPy recurses once per occurrence (and once per pass with _all); the same steps as loops
@@ -429,17 +631,28 @@ export class FreeGroupElement {
     }
   }
 
-  /** SymPy len(w): the number of letters. */
+  /**
+   * Gets the number of letters.
+   * @returns The number of letters.
+   */
   get length(): number {
     return this.syllables.reduce((s, [, e]) => s + Math.abs(e), 0);
   }
 
-  /** SymPy w1 == w2: the same word of the same group. */
+  /**
+   * The same word of the same group.
+   * @param other - The value to combine with or compare against.
+   * @returns The result of the comparison.
+   */
   equals(other: unknown): boolean {
     return other instanceof FreeGroupElement && other.group === this.group && other.key === this.key;
   }
 
-  /** SymPy w1 < w2: shorter words first, then letter by letter (generator order, inverses first). */
+  /**
+   * Shorter words first, then letter by letter (generator order, inverses first).
+   * @param other - The value to combine with or compare against.
+   * @returns The result of the comparison.
+   */
   lt(other: FreeGroupElement): boolean {
     const o = this.#check(other, 'compared');
     const l = this.length;
@@ -456,28 +669,52 @@ export class FreeGroupElement {
     return false;
   }
 
-  /** SymPy w1 <= w2. */
+  /**
+   * Compares the operands in nondecreasing order.
+   * @param other - The value to combine with or compare against.
+   * @returns The result of the comparison.
+   */
   le(other: FreeGroupElement): boolean {
     return this.equals(other) || this.lt(other);
   }
 
-  /** SymPy w1 > w2. */
+  /**
+   * Tests whether this operand follows the other.
+   * @param other - The value to combine with or compare against.
+   * @returns The result of the comparison.
+   */
   gt(other: FreeGroupElement): boolean {
     this.#check(other, 'compared');
     return !this.le(other);
   }
 
-  /** SymPy w1 >= w2. */
+  /**
+   * Compares the operands in nonincreasing order.
+   * @param other - The value to combine with or compare against.
+   * @returns The result of the comparison.
+   */
   ge(other: FreeGroupElement): boolean {
     return !this.lt(other);
   }
 
-  /** @internal A comparator for sorting (SymPy's order of words). */
+  /**
+   * Compares two reduced words in the group’s ordering.
+   * @param a - The first operand.
+   * @param b - The second operand.
+   * @returns The compare.
+   * @internal
+   */
   static compare(a: FreeGroupElement, b: FreeGroupElement): number {
     return a.lt(b) ? -1 : b.lt(a) ? 1 : 0;
   }
 
-  /** SymPy exponent_sum(gen): the total exponent of a generator (negated for an inverse generator). */
+  /**
+   * Returns the total exponent of a generator (negated for an inverse generator).
+   * @param gen - The generator to locate or count.
+   * @returns The total exponent of a generator (negated for an inverse generator).
+   * @throws RangeError when the letter is neither a generator nor its inverse.
+   * @see SymPy `sympy.combinatorics.free_groups.FreeGroupElement.exponent_sum`
+   */
   exponentSum(gen: FreeGroupElement): number {
     if (gen.length !== 1) throw new RangeError('gen must be a generator or inverse of a generator');
     const [g, s] = at(gen.syllables, 0);
@@ -485,14 +722,28 @@ export class FreeGroupElement {
     return t === 0 ? 0 : t;
   }
 
-  /** SymPy generator_count(gen): the number of letters of a generator or its inverse. */
+  /**
+   * Returns the number of letters of a generator or its inverse.
+   * @param gen - The generator to locate or count.
+   * @returns The number of letters of a generator or its inverse.
+   * @throws RangeError when the element is not one of the generators.
+   * @see SymPy `sympy.combinatorics.free_groups.FreeGroupElement.generator_count`
+   */
   generatorCount(gen: FreeGroupElement): number {
     if (gen.length !== 1 || at(gen.syllables, 0)[1] < 0) throw new RangeError('gen must be a generator');
     const g = at(gen.syllables, 0)[0];
     return this.syllables.reduce((t, [h, e]) => (h === g ? t + Math.abs(e) : t), 0);
   }
 
-  /** SymPy subword(from_i, to_j, strict): the letters from_i .. to_j - 1. */
+  /**
+   * The letters from_i .. to_j - 1.
+   * @param fromIn - The index where the selected segment starts.
+   * @param toIn - The exclusive end of the selected segment.
+   * @param strict - Whether to reject bounds outside the word rather than clipping them.
+   * @returns The letters from_i.
+   * @throws RangeError when the word bounds are outside the permitted interval.
+   * @see SymPy `sympy.combinatorics.free_groups.FreeGroupElement.subword`
+   */
   subword(fromIn: number, toIn: number, strict = true): FreeGroupElement {
     let from = fromIn;
     let to = toIn;
@@ -516,29 +767,56 @@ export class FreeGroupElement {
     return -1;
   }
 
-  /** SymPy subword_index(word, start): where word first occurs as a subword. */
+  /**
+   * Where word first occurs as a subword.
+   * @param word - The group word to examine.
+   * @param start - The starting position, inclusive.
+   * @returns The subword index.
+   * @throws RangeError when the word does not occur as a subword.
+   * @see SymPy `sympy.combinatorics.free_groups.FreeGroupElement.subword_index`
+   */
   subwordIndex(word: FreeGroupElement, start = 0): number {
     const i = this.#find(word.letters, start);
     if (i < 0) throw new RangeError('The given word is not a subword of self');
     return i;
   }
 
-  /** SymPy is_dependent(word): whether word or its inverse is a subword. */
+  /**
+   * Whether word or its inverse is a subword.
+   * @param word - The group word to examine.
+   * @returns Whether the object is dependent.
+   * @see SymPy `sympy.combinatorics.free_groups.FreeGroupElement.is_dependent`
+   */
   isDependent(word: FreeGroupElement): boolean {
     return this.#find(word.letters) >= 0 || this.#find(word.inverse().letters) >= 0;
   }
 
-  /** SymPy is_independent(word). */
+  /**
+   * See Also ========.
+   * @param word - The group word to examine.
+   * @returns Whether the object is independent.
+   * @see SymPy `sympy.combinatorics.free_groups.FreeGroupElement.is_independent`
+   */
   isIndependent(word: FreeGroupElement): boolean {
     return !this.isDependent(word);
   }
 
-  /** SymPy contains_generators(): the generators occurring in the word. */
+  /**
+   * Returns the generators occurring in the word.
+   * @returns The generators occurring in the word.
+   * @see SymPy `sympy.combinatorics.free_groups.FreeGroupElement.contains_generators`
+   */
   containsGenerators(): Set<FreeGroupElement> {
     return new Set(uniqueWords(this.syllables.map(([g]) => at(this.group.generators, g))));
   }
 
-  /** SymPy cyclic_subword(from_i, to_j): a subword of the word repeated cyclically. */
+  /**
+   * A subword of the word repeated cyclically.
+   * @param fromIn - The index where the selected segment starts.
+   * @param toIn - The exclusive end of the selected segment.
+   * @returns The resulting group word.
+   * @see SymPy `sympy.combinatorics.free_groups.FreeGroupElement.cyclic_subword`
+   */
   cyclicSubword(fromIn: number, toIn: number): FreeGroupElement {
     const l = this.length;
     const letters = this.letters;
@@ -557,12 +835,21 @@ export class FreeGroupElement {
     return this.fromLetters(word);
   }
 
-  /** SymPy cyclic_conjugates(): the words obtained by rotating this one. */
+  /**
+   * Returns the words obtained by rotating this one.
+   * @returns The words obtained by rotating this one.
+   * @see SymPy `sympy.combinatorics.free_groups.FreeGroupElement.cyclic_conjugates`
+   */
   cyclicConjugates(): Set<FreeGroupElement> {
     return new Set(uniqueWords(Array.from({ length: this.length }, (_, i) => this.cyclicSubword(i, i + this.length))));
   }
 
-  /** SymPy is_cyclic_conjugate(w): whether w is a rotation of this word (after cyclic reduction). */
+  /**
+   * Whether w is a rotation of this word (after cyclic reduction).
+   * @param w - The group word to scan or rewrite.
+   * @returns Whether the object is cyclic conjugate.
+   * @see SymPy `sympy.combinatorics.free_groups.FreeGroupElement.is_cyclic_conjugate`
+   */
   isCyclicConjugate(w: FreeGroupElement): boolean {
     if (this.length !== w.length) return false;
     // SymPy compares the printed letter forms ("x -y ..."): a substring of the doubled other word
@@ -576,29 +863,58 @@ export class FreeGroupElement {
     return letters.map((c) => (c > 0 ? String(this.#sym(c - 1)) : `-${String(this.#sym(-c - 1))}`)).join(' ');
   }
 
-  /** SymPy number_syllables(). */
+  /**
+   * Returns the number of syllables of the associative word `self`.
+   * @returns The number of syllables of the associative word `self`.
+   * @see SymPy `sympy.combinatorics.free_groups.FreeGroupElement.number_syllables`
+   */
   numberSyllables(): number {
     return this.syllables.length;
   }
 
-  /** SymPy exponent_syllable(i) (negative i counts from the end). */
+  /**
+   * Returns the exponent of the `i`-th syllable of the associative word `self`.
+   * @param i - The zero-based position in the sequence.
+   * @returns The exponent of the `i`-th syllable of the associative word `self`.
+   * @see SymPy `sympy.combinatorics.free_groups.FreeGroupElement.exponent_syllable`
+   */
   exponentSyllable(i: number): number {
     return at(this.syllables, i < 0 ? this.syllables.length + i : i)[1];
   }
 
-  /** SymPy generator_syllable(i) (negative i counts from the end). */
+  /**
+   * Returns the symbol of the generator that is involved in the i-th syllable of the associative word `self`.
+   * @param i - The zero-based position in the sequence.
+   * @returns The symbol of the generator that is involved in the i-th syllable of the associative word `self`.
+   * @see SymPy `sympy.combinatorics.free_groups.FreeGroupElement.generator_syllable`
+   */
   generatorSyllable(i: number): Expr {
     return this.#sym(at(this.syllables, i < 0 ? this.syllables.length + i : i)[0]);
   }
 
-  /** SymPy sub_syllables(from_i, to_j): the syllables from_i .. to_j - 1. */
+  /**
+   * The syllables from_i .. to_j - 1.
+   * @param from - The index where the selected segment starts.
+   * @param to - The exclusive end of the selected segment.
+   * @returns The syllables from_i.
+   * @throws RangeError when an argument is not an integer.
+   * @see SymPy `sympy.combinatorics.free_groups.FreeGroupElement.sub_syllables`
+   */
   subSyllables(from: number, to: number): FreeGroupElement {
     if (!Number.isInteger(from) || !Number.isInteger(to)) throw new RangeError('both arguments should be integers');
     if (to <= from) return this.group.identity;
     return this.#new(pySlice(this.syllables, from, to));
   }
 
-  /** SymPy substituted_word(from_i, to_j, by): the letters from_i .. to_j - 1 replaced by `by`. */
+  /**
+   * The letters from_i .. to_j - 1 replaced by `by`.
+   * @param from - The index where the selected segment starts.
+   * @param to - The exclusive end of the selected segment.
+   * @param by - The replacement word.
+   * @returns The letters from_i.
+   * @throws RangeError when a supplied value is outside the allowed interval.
+   * @see SymPy `sympy.combinatorics.free_groups.FreeGroupElement.substituted_word`
+   */
   substitutedWord(from: number, to: number, by: FreeGroupElement): FreeGroupElement {
     const lw = this.length;
     if (from >= to || from > lw || to > lw) throw new RangeError('values should be within bounds');
@@ -608,13 +924,21 @@ export class FreeGroupElement {
     return this.subword(0, from).mul(by).mul(this.subword(to, lw));
   }
 
-  /** SymPy is_cyclically_reduced(): the first letter is not the inverse of the last. */
+  /**
+   * The first letter is not the inverse of the last.
+   * @returns Whether the object is cyclically reduced.
+   * @see SymPy `sympy.combinatorics.free_groups.FreeGroupElement.is_cyclically_reduced`
+   */
   isCyclicallyReduced(): boolean {
     const ls = this.letters;
     return ls.length === 0 || at(ls, 0) !== -at(ls, ls.length - 1);
   }
 
-  /** SymPy identity_cyclic_reduction(): cancel the first and last syllables while they share a generator. */
+  /**
+   * Cancel the first and last syllables while they share a generator.
+   * @returns The resulting group word.
+   * @see SymPy `sympy.combinatorics.free_groups.FreeGroupElement.identity_cyclic_reduction`
+   */
   identityCyclicReduction(): FreeGroupElement {
     let syl = [...this.syllables];
     while (syl.length && !this.#new(syl).isCyclicallyReduced()) {
@@ -627,8 +951,11 @@ export class FreeGroupElement {
   }
 
   /**
-   * SymPy cyclic_reduction(removed): the cyclically reduced word w' with
+   * The cyclically reduced word w' with
    * this = g*w'*g**-1; with `removed`, the pair [w', g].
+   * @param removed - Whether to include the conjugating word removed by reduction.
+   * @returns The cyclically reduced word w' with this = g*w'*g**-1.
+   * @see SymPy `sympy.combinatorics.free_groups.FreeGroupElement.cyclic_reduction`
    */
   cyclicReduction(removed: true): [FreeGroupElement, FreeGroupElement];
   cyclicReduction(removed?: false): FreeGroupElement;
@@ -645,7 +972,12 @@ export class FreeGroupElement {
     return removed ? [word, g] : word;
   }
 
-  /** SymPy power_of(other): whether this word is a power of other. */
+  /**
+   * Whether this word is a power of other.
+   * @param otherIn - The value to combine with or compare against.
+   * @returns Whether an integral power of the other word equals this word.
+   * @see SymPy `sympy.combinatorics.free_groups.FreeGroupElement.power_of`
+   */
   powerOf(otherIn: FreeGroupElement): boolean {
     let other = otherIn;
     if (this.isIdentity) return true;
@@ -669,22 +1001,52 @@ export class FreeGroupElement {
   }
 }
 
-/** SymPy free_group(symbols): the free group and its generators, [F, x, y, ...]. */
+/**
+ * Constructs the free group on the given generator symbols.
+ * @param symbols - The names or symbols of the free generators.
+ * @returns The group followed by its free generators.
+ * @see SymPy `sympy.combinatorics.free_groups.free_group`
+ * @example
+ * ```ts
+ * import { freeGroup } from '@symjs/symjs';
+ *
+ * const [, x, y] = freeGroup('x, y, z');
+ * String(x.pow(2).mul(y.inverse())); // => x**2*y**-1
+ * ```
+ */
 export function freeGroup(symbols: FreeGroupSymbols): [FreeGroup, ...FreeGroupElement[]] {
   const F = new FreeGroup(symbols);
   return [F, ...F.generators];
 }
 
-/** SymPy xfree_group(symbols): the free group and the tuple of its generators. */
+/**
+ * Constructs a free group and collects its generators in a separate array.
+ * @param symbols - The names or symbols of the free generators.
+ * @returns The group and its array of free generators.
+ * @see SymPy `sympy.combinatorics.free_groups.xfree_group`
+ * @example
+ * ```ts
+ * import { xfreeGroup } from '@symjs/symjs';
+ *
+ * const [, [x, y]] = xfreeGroup('x, y, z');
+ * String(y.pow(2).mul(x.pow(-2))); // => y**2*x**-2
+ * ```
+ */
 export function xfreeGroup(symbols: FreeGroupSymbols): [FreeGroup, FreeGroupElement[]] {
   const F = new FreeGroup(symbols);
   return [F, [...F.generators]];
 }
 
 /**
- * SymPy vfree_group(symbols): the free group. SymPy also binds the
- * generators in the caller's namespace, which JavaScript has not; use
- * `F.generators`.
+ * Constructs a free group whose generators are accessible through `generators`.
+ * @param symbols - The names or symbols of the free generators.
+ * @returns The group on the named generators.
+ * @see SymPy `sympy.combinatorics.free_groups.vfree_group`
+ * @example
+ * ```ts
+ * import { vfreeGroup } from '@symjs/symjs';
+ * vfreeGroup('x, y, z').rank; // => 3
+ * ```
  */
 export function vfreeGroup(symbols: FreeGroupSymbols): FreeGroup {
   return new FreeGroup(symbols);

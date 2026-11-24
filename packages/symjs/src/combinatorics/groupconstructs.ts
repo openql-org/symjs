@@ -9,7 +9,19 @@
 import { afNew } from './permutations';
 import { PermutationGroupNode } from './permgroups';
 
-/** SymPy DirectProduct(*groups): the direct product, each group acting on its own block of points. */
+/**
+ * The direct product, each group acting on its own block of points.
+ * @param groups - The permutation groups acting on disjoint point sets in the product.
+ * @returns The resulting permutation group.
+ * @see SymPy `sympy.combinatorics.group_constructs.DirectProduct`
+ * @example
+ * ```ts
+ * import { CyclicGroup, DirectProduct } from '@symjs/symjs';
+ *
+ * const C = CyclicGroup(4);
+ * DirectProduct(C, C, C).order(); // => 64
+ * ```
+ */
 export function DirectProduct(...groups: PermutationGroupNode[]): PermutationGroupNode {
   const totalDegree = groups.reduce((s, g) => s + g.degree, 0);
   const gens: number[][] = [];

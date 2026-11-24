@@ -123,12 +123,34 @@ function seeded(seed: number): () => number {
 // Array-form helpers (SymPy's _af_* functions)
 // ---------------------------------------------------------------------------
 
-/** SymPy _af_rmul(a, b): the product b*a of array forms; the ith value is a[b[i]]. */
+/**
+ * The product b*a of array forms; the ith value is a[b[i]].
+ * @param a - The images of successive points under the permutation.
+ * @param b - The images of successive points under the second permutation.
+ * @returns The images under the composition.
+ * @see SymPy `sympy.combinatorics.permutations._af_rmul`
+ * @example
+ * ```ts
+ * import { afRmul } from '@symjs/symjs';
+ * afRmul([1, 0, 2], [0, 2, 1]); // => [1, 2, 0]
+ * ```
+ */
 export function afRmul(a: readonly number[], b: readonly number[]): number[] {
   return b.map((i) => pyIndex(a, i));
 }
 
-/** SymPy _af_rmuln(a, b, c, ...): the product ...*c*b*a of array forms; the ith value is a[b[c[i]]]. */
+/**
+ * The product ...*c*b*a of array forms; the ith value is a[b[c[i]]].
+ * @param abc - The permutations in composition order.
+ * @returns The composite permutation in array form.
+ * @throws RangeError when the string is empty.
+ * @see SymPy `sympy.combinatorics.permutations._af_rmuln`
+ * @example
+ * ```ts
+ * import { afRmuln } from '@symjs/symjs';
+ * afRmuln([1, 0, 2], [0, 2, 1]); // => [1, 2, 0]
+ * ```
+ */
 export function afRmuln(...abc: (readonly number[])[]): number[] {
   if (abc.length === 0) throw new RangeError('String must not be empty');
   let rv = [...last(abc)];
@@ -136,7 +158,17 @@ export function afRmuln(...abc: (readonly number[])[]): number[] {
   return rv;
 }
 
-/** SymPy _af_parity: the parity (0 or 1) of a permutation in array form. */
+/**
+ * The parity (0 or 1) of a permutation in array form.
+ * @param pi - The images of successive points under the permutation.
+ * @returns Zero for an even permutation, one for an odd one.
+ * @see SymPy `sympy.combinatorics.permutations._af_parity`
+ * @example
+ * ```ts
+ * import { afParity } from '@symjs/symjs';
+ * afParity([0, 1, 2, 3]); // => 0
+ * ```
+ */
 export function afParity(pi: readonly number[]): number {
   const n = pi.length;
   const seen = new Array<boolean>(n).fill(false);
@@ -155,7 +187,17 @@ export function afParity(pi: readonly number[]): number {
   return (n - c) % 2;
 }
 
-/** SymPy _af_invert: the inverse of a permutation in array form. */
+/**
+ * The inverse of a permutation in array form.
+ * @param a - The images of successive points under the permutation.
+ * @returns The preimage of each point in order.
+ * @see SymPy `sympy.combinatorics.permutations._af_invert`
+ * @example
+ * ```ts
+ * import { afInvert } from '@symjs/symjs';
+ * afInvert([1, 2, 0, 3]); // => [2, 0, 1, 3]
+ * ```
+ */
 export function afInvert(a: readonly number[]): number[] {
   const inv = new Array<number>(a.length).fill(0);
   a.forEach((ai, i) => {
@@ -164,7 +206,18 @@ export function afInvert(a: readonly number[]): number[] {
   return inv;
 }
 
-/** SymPy _af_pow: the nth power of a permutation in array form. */
+/**
+ * The nth power of a permutation in array form.
+ * @param a - The images of successive points under the permutation.
+ * @param n - The exponent.
+ * @returns The powered permutation in array form.
+ * @see SymPy `sympy.combinatorics.permutations._af_pow`
+ * @example
+ * ```ts
+ * import { afPow } from '@symjs/symjs';
+ * afPow([2, 0, 3, 1], 4); // => [0, 1, 2, 3]
+ * ```
+ */
 export function afPow(a: readonly number[], n: number | bigint): number[] {
   let e = BigInt(n);
   let base = [...a];
@@ -181,7 +234,18 @@ export function afPow(a: readonly number[], n: number | bigint): number[] {
   return b;
 }
 
-/** SymPy _af_commutes_with: whether the permutations with array forms a and b commute. */
+/**
+ * Whether the permutations with array forms a and b commute.
+ * @param a - The images of successive points under the permutation.
+ * @param b - The images of successive points under the second permutation.
+ * @returns Whether the two compositions agree.
+ * @see SymPy `sympy.combinatorics.permutations._af_commutes_with`
+ * @example
+ * ```ts
+ * import { afCommutesWith } from '@symjs/symjs';
+ * afCommutesWith([1, 2, 0], [0, 2, 1]); // => False
+ * ```
+ */
 export function afCommutesWith(a: readonly number[], b: readonly number[]): boolean {
   for (let i = 0; i < a.length - 1; i++) {
     if (pyIndex(a, pyIndex(b, i)) !== pyIndex(b, pyIndex(a, i))) return false;
@@ -197,14 +261,24 @@ export function afCommutesWith(a: readonly number[], b: readonly number[]): bool
 export type CycleArgs = readonly (number | bigint)[] | readonly [Permutation] | readonly [Cycle];
 
 /**
- * SymPy Cycle: a disjoint-cycle mapping (a dict whose missing keys map to
+ * A disjoint-cycle mapping (a dict whose missing keys map to
  * themselves). `new Cycle(1, 2).call(2, 3)` is SymPy's Cycle(1, 2)(2, 3);
  * cycles are applied from left to right.
+ * @see SymPy `sympy.combinatorics.permutations.Cycle`
+ * @example
+ * ```ts
+ * import { Cycle } from '@symjs/symjs';
+ * new Cycle(1, 2).list(); // => [0, 2, 1]
+ * ```
  */
 export class Cycle implements Iterable<number> {
   readonly #map = new Map<number, number>();
 
-  /** SymPy Cycle(*args): the cycle of the given integers, or a copy of a Permutation or Cycle. */
+  /**
+   * Constructs a `Cycle`.
+   * @param args - The operands in their defining order.
+   * @throws RangeError when a cycle contains a negative point or a cycle contains a repeated point.
+   */
   constructor(...args: CycleArgs) {
     if (args.length === 0) return;
     if (args.length === 1) {
@@ -227,33 +301,58 @@ export class Cycle implements Iterable<number> {
     for (let i = 0; i < ints.length; i++) this.#map.set(at(ints, i), at(ints, (i + 1) % ints.length));
   }
 
-  /** SymPy cycle[i]: the image of i (i itself when i is not in the cycle). */
+  /**
+   * Finds the image of a point, including points fixed by the cycle.
+   * @param i - The zero-based position in the sequence.
+   * @returns The image of a point, including points fixed by the cycle.
+   * @see SymPy `sympy.combinatorics.permutations.Cycle.get`
+   */
   get(i: number | bigint): number {
     const k = asInt(i);
     return this.#map.get(k) ?? k;
   }
 
-  /** SymPy items(): the stored (key, value) pairs in insertion order. */
+  /**
+   * Returns the stored (key, value) pairs in insertion order.
+   * @returns The stored (key, value) pairs in insertion order.
+   * @see SymPy `sympy.combinatorics.permutations.Cycle.items`
+   */
   items(): [number, number][] {
     return [...this.#map.entries()];
   }
 
-  /** SymPy keys(): the stored keys in insertion order. */
+  /**
+   * Returns the stored keys in insertion order.
+   * @returns The stored keys in insertion order.
+   * @see SymPy `sympy.combinatorics.permutations.Cycle.keys`
+   */
   keys(): number[] {
     return [...this.#map.keys()];
   }
 
-  /** Whether nothing is stored (SymPy `not cycle`). */
+  /**
+   * Whether nothing is stored.
+   * @returns Whether the object is empty.
+   */
   get isEmpty(): boolean {
     return this.#map.size === 0;
   }
 
-  /** SymPy size: one more than the largest stored element (0 when empty). */
+  /**
+   * One more than the largest stored element (0 when empty).
+   * @returns The size of the object.
+   * @see SymPy `sympy.combinatorics.permutations.Cycle.size`
+   */
   get size(): number {
     return this.#map.size === 0 ? 0 : Math.max(...this.#map.keys()) + 1;
   }
 
-  /** SymPy cycle(*other): the product of this cycle followed by the cycle of `other`. */
+  /**
+   * Returns the product of this cycle followed by the cycle of `other`.
+   * @param other - The value to combine with or compare against.
+   * @returns The product of this cycle followed by the cycle of `other`.
+   * @see SymPy `sympy.combinatorics.permutations.Cycle.__call__`
+   */
   call(...other: CycleArgs): Cycle {
     const rv = new Cycle(...other);
     const keys = this.keys();
@@ -263,8 +362,12 @@ export class Cycle implements Iterable<number> {
   }
 
   /**
-   * SymPy list(size): the array form from 0 up to the larger of the largest
+   * The array form from 0 up to the larger of the largest
    * moved element and size; size -1 trims trailing unmoved elements.
+   * @param size - The number of positions.
+   * @returns The array form from 0 up to the larger of the largest moved element and size.
+   * @throws RangeError when an empty cycle is given without a size.
+   * @see SymPy `sympy.combinatorics.permutations.Cycle.list`
    */
   list(size?: number): number[] {
     let n: number;
@@ -279,12 +382,19 @@ export class Cycle implements Iterable<number> {
     return Array.from({ length: n }, (_, i) => this.get(i));
   }
 
-  /** SymPy copy(). */
+  /**
+   * Copies the cycle mapping.
+   * @returns A separate cycle with the same point mapping.
+   * @see SymPy `sympy.combinatorics.permutations.Cycle.copy`
+   */
   copy(): Cycle {
     return new Cycle(this);
   }
 
-  /** The array form (SymPy iter(cycle)). */
+  /**
+   * Returns the array form (SymPy iter(cycle)).
+   * @returns The array form (SymPy iter(cycle)).
+   */
   [Symbol.iterator](): Iterator<number> {
     return this.list()[Symbol.iterator]();
   }
@@ -297,17 +407,26 @@ export class Cycle implements Iterable<number> {
     return s;
   }
 
-  /** SymPy str(cycle): (1 3 2), with the largest element shown as a singleton if needed. */
+  /**
+   * Formats the object as plain text.
+   * @returns The printable representation.
+   */
   toString(): string {
     return this.isEmpty ? '()' : this.#print(' ');
   }
 
-  /** SymPy repr(cycle): Cycle(1, 3, 2). */
+  /**
+   * Cycle(1, 3, 2).
+   * @returns The resulting text.
+   */
   repr(): string {
     return this.isEmpty ? 'Cycle()' : `Cycle${this.#print(', ')}`;
   }
 
-  /** SymPy latex(cycle). */
+  /**
+   * Formats the object in LaTeX.
+   * @returns The resulting text.
+   */
   toLatex(): string {
     return this.size === 0 ? '\\left( \\right)' : cycleLatex(new Permutation(this));
   }
@@ -319,6 +438,7 @@ export class Cycle implements Iterable<number> {
 
 /** The size keyword of Permutation(...). */
 export interface PermutationOptions {
+  /** The degree, including trailing fixed points. */
   size?: number;
 }
 
@@ -327,12 +447,15 @@ export type PermutationInput = Permutation | Cycle | readonly number[] | readonl
 
 /** Options of Permutation.random: a seed or a generator of numbers in [0, 1). */
 export interface RandomOptions {
+  /** The seed controlling random draws. */
   seed?: number;
+  /** The function supplying random draws. */
   prng?: () => number;
 }
 
-/** Printer settings of the Permutation printers (SymPy perm_cyclic, default true). */
+/** Printer settings of the Permutation printers. */
 export interface PermutationPrintOptions {
+  /** Whether to print permutations in cycle notation. */
   permCyclic?: boolean;
 }
 
@@ -404,20 +527,33 @@ export function afNew(perm: number[]): Permutation {
 }
 
 /**
- * SymPy Permutation: a bijection of {0, ..., n-1}, built from its array
+ * A bijection of {0, ..., n-1}, built from its array
  * form (`new Permutation([0, 2, 1])`), its cyclic form
  * (`new Permutation([[1, 2]])`), the integers of one cycle
  * (`new Permutation(1, 2)`), a size (`new Permutation(3)` is the identity of
  * size 4), a Cycle or another Permutation, with an optional trailing
  * `{ size }`. It is an atomic expression that prints like SymPy's str,
  * e.g. `(1 2)`.
+ * @throws RangeError when the images do not contain each point exactly once.
+ * @see SymPy `sympy.combinatorics.permutations.Permutation`
+ * @example
+ * ```ts
+ * import { Permutation } from '@symjs/symjs';
+ * new Permutation([0, 2, 1]).arrayForm; // => [0, 2, 1]
+ * ```
  */
 export class Permutation extends ExtensionExpr implements Iterable<number> {
   readonly #af: number[];
   #cyclic: number[][] | undefined;
   #rank: bigint | undefined;
 
-  /** SymPy Permutation(*cycle, size=...): the cycle of the integers, or the identity of size a + 1 for one integer. */
+  /**
+   * Constructs a `Permutation`.
+   * @param cycle - The cycle to apply.
+   * @param args - The operands in their defining order.
+   * @param arg - The expression to operate on.
+   * @param options - The settings described by {@link PermutationOptions}.
+   */
   constructor(...cycle: (number | bigint | Expr)[]);
   /** SymPy Permutation(*cycle, size=...). */
   constructor(...args: [...cycle: (number | bigint | Expr)[], options: PermutationOptions]);
@@ -430,12 +566,19 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
     this.#af = af ?? parseArgs(input);
   }
 
-  /** The node itself (a Permutation has no expression arguments). */
+  /**
+   * Rebuilds the expression with replacement operands.
+   * @param _args - The operands in their defining order.
+   * @returns The expression with the given operands.
+   */
   withArgs(_args: readonly Expr[]): Expr {
     return this;
   }
 
-  /** SymPy Permutation is an Atom: class_key (2, 0, 'Permutation'). */
+  /**
+   * Identifies this permutation as an atom for expression ordering.
+   * @returns Always `true` for permutations.
+   */
   override get atomClass(): boolean {
     return true;
   }
@@ -444,36 +587,58 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
     return `Permutation(${this.#af.join(',')})`;
   }
 
-  /** SymPy str(p): (1 2), (3)(0 1), () with the printer setting perm_cyclic, else Permutation([1, 0, 2]). */
+  /**
+   * Formats the expression as plain text.
+   * @param _print - Formats a child expression.
+   * @returns The plain-text representation.
+   */
   override printStr(_print: (e: Expr) => string): string {
     return permutationStr(this, { permCyclic: permCyclic() });
   }
 
-  /** SymPy latex(p): \left( 1\; 2\right) with the printer setting perm_cyclic, else a two-line pmatrix. */
+  /**
+   * Formats the expression in LaTeX.
+   * @param _print - Formats a child expression.
+   * @returns The LaTeX representation.
+   */
   override printLatex(_print: (e: Expr) => string): string {
     return permutationLatex(this, { permCyclic: permCyclic() });
   }
 
-  /** SymPy srepr(p): Permutation(1, 2) with the printer setting perm_cyclic, else Permutation([0, 2, 1]). */
+  /**
+   * Permutation(1, 2) with the printer setting perm_cyclic, else Permutation([0, 2, 1]).
+   * @returns The resulting text.
+   */
   printRepr(): string {
     return permutationRepr(this, { permCyclic: permCyclic() });
   }
 
   // ---- forms ----------------------------------------------------------------
 
-  /** SymPy array_form: a copy of the array form. */
+  /**
+   * Gets a copy of the array form.
+   * @returns A copy of the array form.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.array_form`
+   */
   get arrayForm(): number[] {
     return [...this.#af];
   }
 
-  /** SymPy size: the number of elements the permutation acts on. */
+  /**
+   * The number of elements the permutation acts on.
+   * @returns The size of the object.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.size`
+   */
   get size(): number {
     return this.#af.length;
   }
 
   /**
-   * SymPy list(size): the array form, extended to `size` when larger, or
+   * The array form, extended to `size` when larger, or
    * with trailing unmoved elements trimmed otherwise (size -1 always trims).
+   * @param size - The number of positions.
+   * @returns The array form, extended to `size` when larger, or with trailing unmoved elements trimmed otherwise (size -1 always trims).
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.list`
    */
   list(size?: number): number[] {
     const rv = this.arrayForm;
@@ -490,7 +655,11 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
     return rv;
   }
 
-  /** SymPy cyclic_form: the cycles without singletons, each starting with its smallest element, sorted. */
+  /**
+   * Gets the cycles without singletons, each starting with its smallest element, sorted.
+   * @returns The cycles without singletons, each starting with its smallest element, sorted.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.cyclic_form`
+   */
   get cyclicForm(): number[][] {
     if (this.#cyclic === undefined) {
       const af = this.#af;
@@ -514,7 +683,11 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
     return this.#cyclic.map((c) => [...c]);
   }
 
-  /** SymPy full_cyclic_form: the cycles including singletons, sorted. */
+  /**
+   * Gets the cycles including singletons, sorted.
+   * @returns The cycles including singletons, sorted.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.full_cyclic_form`
+   */
   get fullCyclicForm(): number[][] {
     const cyc = this.cyclicForm;
     const moved = new Set(cyc.flat());
@@ -522,7 +695,11 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
     return cyc.sort(pyCompare);
   }
 
-  /** SymPy support(): the elements i with p(i) != i. */
+  /**
+   * Returns the elements i with p(i) != i.
+   * @returns The elements i with p(i) != i.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.support`
+   */
   support(): number[] {
     const out: number[] = [];
     this.#af.forEach((e, i) => {
@@ -531,12 +708,20 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
     return out;
   }
 
-  /** SymPy cycles: the number of cycles, singletons included. */
+  /**
+   * Gets the number of cycles, singletons included.
+   * @returns The number of cycles, singletons included.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.cycles`
+   */
   get cycles(): number {
     return this.fullCyclicForm.length;
   }
 
-  /** SymPy cycle_structure: a Map from cycle length to its multiplicity. */
+  /**
+   * Gets a Map from cycle length to its multiplicity.
+   * @returns A Map from cycle length to its multiplicity.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.cycle_structure`
+   */
   get cycleStructure(): Map<number, number> {
     const rv = new Map<number, number>();
     let singletons = this.size;
@@ -548,24 +733,41 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
     return rv;
   }
 
-  /** SymPy atoms(): the set of elements of the array form. */
+  /**
+   * Returns the set of elements of the array form.
+   * @returns The set of elements of the array form.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.atoms`
+   */
   atoms(): Set<number> {
     return new Set(this.#af);
   }
 
-  /** SymPy copy(). */
+  /**
+   * Creates a copy of this object.
+   * @returns A copy of this object.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.copy`
+   */
   copy(): Permutation {
     return afNew(this.arrayForm);
   }
 
-  /** The array form (SymPy iter(p)). */
+  /**
+   * Returns the array form (SymPy iter(p)).
+   * @returns The array form (SymPy iter(p)).
+   */
   [Symbol.iterator](): Iterator<number> {
     return this.arrayForm[Symbol.iterator]();
   }
 
   // ---- group operations -------------------------------------------------------
 
-  /** SymPy p*q: first apply p, then q; the ith value is q(p(i)). The shorter operand is padded. */
+  /**
+   * First apply p, then q; the ith value is q(p(i)). The shorter operand is padded.
+   * @param other - The value to combine with or compare against.
+   * @returns The resulting permutation.
+   * @throws TypeError when the operand is not a permutation.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.__mul__`
+   */
   override mul(other: ExprLike): Permutation {
     if (!(other instanceof Permutation)) throw new TypeError('a Permutation can only be multiplied by a Permutation');
     const a = this.arrayForm;
@@ -575,20 +777,32 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
     return afNew([...a.map((i) => at(b, i)), ...b.slice(a.length)]);
   }
 
-  /** SymPy p**n: the nth power (n may be negative). */
+  /**
+   * The nth power (n may be negative).
+   * @param n - The exponent.
+   * @returns The resulting permutation.
+   * @throws NotImplementedError when the exponent is a permutation.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.__pow__`
+   */
   override pow(n: ExprLike): Permutation {
     if (n instanceof Permutation) throw new NotImplementedError('p**p is not defined; do you mean p^p (conjugate)?');
     return afNew(afPow(this.#af, toBig(n)));
   }
 
-  /** SymPy ~p: the inverse permutation. */
+  /**
+   * The inverse permutation.
+   * @returns The resulting permutation.
+   */
   inverse(): Permutation {
     return afNew(afInvert(this.#af));
   }
 
   /**
-   * SymPy p^h: the conjugate ~h*p*h (sizes must agree), so that p^q^r is
+   * The conjugate ~h*p*h (sizes must agree), so that p^q^r is
    * p^(q*r).
+   * @param h - The group element on which to operate.
+   * @returns The resulting permutation.
+   * @throws RangeError when the operand sizes differ.
    */
   xor(h: Permutation): Permutation {
     if (this.size !== h.size) throw new RangeError('The permutations must be of equal size.');
@@ -599,7 +813,12 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
     return afNew(a);
   }
 
-  /** SymPy p + k: the permutation whose lexicographic rank is k higher (modulo the cardinality). */
+  /**
+   * Moves forward in lexicographic order by the given number of permutations.
+   * @param k - The index of the selected element.
+   * @returns The resulting permutation.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.__add__`
+   */
   override add(k: ExprLike): Permutation {
     const rank = pmod(this.rank() + toBig(k), this.cardinality);
     const rv = Permutation.unrankLex(this.size, rank);
@@ -607,24 +826,42 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
     return rv;
   }
 
-  /** SymPy p - k: the permutation whose lexicographic rank is k lower. */
+  /**
+   * Moves backward in lexicographic order by the given number of permutations.
+   * @param k - The index of the selected element.
+   * @returns The resulting permutation.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.__sub__`
+   */
   override sub(k: ExprLike): Permutation {
     return this.add(-toBig(k));
   }
 
-  /** Not defined for permutations (TypeError, as in SymPy). */
+  /**
+   * Reports that division is undefined for permutations.
+   * @param _o - The other permutation.
+   * @returns This operation always throws.
+   * @throws TypeError when division of permutations is requested.
+   */
   override div(_o: ExprLike): Expr {
     throw new TypeError('unsupported operand type for /: Permutation');
   }
 
-  /** Not defined for permutations (TypeError, as in SymPy). */
+  /**
+   * Reports that arithmetic negation is undefined for a permutation.
+   * @returns This operation always throws.
+   * @throws TypeError when arithmetic negation of a permutation is requested.
+   */
   override neg(): Expr {
     throw new TypeError('bad operand type for unary -: Permutation');
   }
 
   /**
-   * SymPy Permutation.rmul(a, b, c, ...): the permutation whose ith value is
+   * The permutation whose ith value is
    * a(b(c(i))); items after the first may be array or cyclic forms.
+   * @param first - The first permutation in the product.
+   * @param rest - The remaining factors in order.
+   * @returns The permutation whose ith value is a(b(c(i))).
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.rmul`
    */
   static rmul(first: Permutation, ...rest: PermutationInput[]): Permutation {
     let rv = first;
@@ -632,22 +869,43 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
     return rv;
   }
 
-  /** SymPy Permutation.rmul_with_af(*args): rmul of Permutations through their array forms. */
+  /**
+   * Rmul of Permutations through their array forms.
+   * @param args - The operands in their defining order.
+   * @returns The resulting permutation.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.rmul_with_af`
+   */
   static rmulWithAf(...args: Permutation[]): Permutation {
     return afNew(afRmuln(...args.map((p) => p.#af)));
   }
 
-  /** SymPy mul_inv(other): other*~self. */
+  /**
+   * Other*~self.
+   * @param other - The value to combine with or compare against.
+   * @returns The resulting permutation.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.mul_inv`
+   */
   mulInv(other: Permutation): Permutation {
     return afNew(afRmul(afInvert(this.#af), other.#af));
   }
 
-  /** SymPy commutes_with(other): whether p*other == other*p. */
+  /**
+   * Tests whether multiplication by the two permutations is independent of their order.
+   * @param other - The value to combine with or compare against.
+   * @returns Whether both orders of composition give the same permutation.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.commutes_with`
+   */
   commutesWith(other: Permutation): boolean {
     return afCommutesWith(this.#af, other.#af);
   }
 
-  /** SymPy commutator(x): ~x*~p*x*p (sizes must agree). */
+  /**
+   * Forms the commutator of two permutations of the same degree.
+   * @param x - The element to examine.
+   * @returns The commutator of two permutations of the same degree.
+   * @throws RangeError when the operand sizes differ.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.commutator`
+   */
   commutator(x: Permutation): Permutation {
     const a = this.#af;
     const b = x.#af;
@@ -660,7 +918,15 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
 
   // ---- application -------------------------------------------------------------
 
-  /** SymPy p(i): the image of the index i. */
+  /**
+   * Returns the image of the index i.
+   * @param i - The zero-based position in the sequence.
+   * @param seq - The sequence whose sorted order determines the images.
+   * @param cycle - The cycle to apply.
+   * @returns The image of the index i.
+   * @throws TypeError when the operand sizes differ or the index is outside the permutation or is not an integer.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.__call__`
+   */
   call(i: number | bigint): number;
   /** SymPy p(seq): the items of seq rearranged, [seq[p(0)], seq[p(1)], ...]. */
   call<T>(seq: readonly T[]): T[];
@@ -684,8 +950,12 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
   }
 
   /**
-   * SymPy apply(i): the image of an integer i as an Integer, or an
+   * The image of an integer i as an Integer, or an
    * unevaluated AppliedPermutation for a symbolic i.
+   * @param i - The zero-based position in the sequence.
+   * @returns The image of an integer i as an Integer.
+   * @throws NotImplementedError when the index is not an integer or the index is outside the permutation or is not an integer.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.apply`
    */
   apply(i: ExprLike): Expr {
     const x = sympify(i);
@@ -701,29 +971,49 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
   // ---- Basic methods ---------------------------------------------------------------
   // SymPy's Permutation is an Atom: these are the shared Basic implementations of the core.
 
-  /** SymPy as_content_primitive(radical, clear): (1, p). */
+  /**
+   * A stub to allow Basic args (like Tuple) to be skipped when computing
+   * the content and primitive components of an expression.
+   * @param opts - The options controlling as content primitive.
+   * @returns A stub to allow Basic args (like Tuple) to be skipped when computing the content and primitive components of an expression.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.as_content_primitive`
+   */
   asContentPrimitive(opts: { radical?: boolean; clear?: boolean } = {}): [Rational, Expr] {
     return asContentPrimitive(this, opts);
   }
 
-  /** SymPy as_dummy(): the permutation itself (it binds no symbols). */
+  /**
+   * The permutation itself (it binds no symbols).
+   * @returns The resulting permutation.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.as_dummy`
+   */
   asDummy(): Permutation {
     return this;
   }
 
-  /** SymPy class_key(): (2, 0, 'Permutation'), the key of an Atom class. */
+  /**
+   * Supplies the class key used to order permutation atoms.
+   * @returns The ordering key `[2, 0, 'Permutation']`.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.class_key`
+   */
   static classKey(): [number, number, string] {
     return [2, 0, 'Permutation'];
   }
 
-  /** SymPy sort_key(order): the canonical sort key, with the class key of an Atom. */
+  /**
+   * The canonical sort key, with the class key of an Atom.
+   * @returns The canonical sort key.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.sort_key`
+   */
   sortKey(): Key[] {
     return [Permutation.classKey(), ...expectType(sortKey(this), isKeyList).slice(1)];
   }
 
   /**
-   * SymPy compare(other): -1, 0 or 1 by the canonical order of Basic.compare
-   * (the class first, then the array forms lexicographically).
+   * Compares the expression classes and then the permutation arrays lexicographically.
+   * @param other - The value to combine with or compare against.
+   * @returns The compare.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.compare`
    */
   compare(other: Expr): number {
     // SymPy _cmp_name: a class missing from ordering_of_classes (Permutation, and the extension classes
@@ -737,134 +1027,259 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
     return i < 0 ? 0 : at(a, i) > at(b, i) ? 1 : -1;
   }
 
-  /** SymPy could_extract_minus_sign(): false. */
+  /**
+   * Tests whether a minus sign can be factored out of the permutation.
+   * @returns Always `false` for a permutation atom.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.could_extract_minus_sign`
+   */
   couldExtractMinusSign(): boolean {
     return couldExtractMinusSign(this);
   }
 
-  /** SymPy count(query): the number of subexpressions matching the query (the permutation itself or nothing). */
+  /**
+   * Returns the number of subexpressions matching the query (the permutation itself or nothing).
+   * @param query - The pattern or predicate to match.
+   * @returns The number of subexpressions matching the query (the permutation itself or nothing).
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.count`
+   */
   count(query: Query): number {
     return count(this, query);
   }
 
-  /** SymPy count_ops(visual): 0 operations. */
+  /**
+   * Counts the symbolic operations in this atomic permutation.
+   * @param opts - The options controlling count ops.
+   * @returns Zero, as a symbolic integer when visual output is requested.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.count_ops`
+   */
   countOps(opts: { visual?: boolean } = {}): number | Expr {
     return opts.visual ? countOps(this, { visual: true }) : countOps(this);
   }
 
-  /** SymPy doit(): the permutation itself (SymPy Atom.doit). */
+  /**
+   * The permutation itself.
+   * @returns The evaluated expression.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.doit`
+   */
   doit(): Permutation {
     return this;
   }
 
-  /** SymPy dummy_eq(other, symbol): structural equality up to dummy symbols. */
+  /**
+   * Structural equality up to dummy symbols.
+   * @param other - The value to combine with or compare against.
+   * @param symbol - The symbol to treat as a dummy for comparison.
+   * @returns Whether both expressions agree up to the requested dummy-symbol substitution.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.dummy_eq`
+   */
   dummyEq(other: ExprLike, symbol?: Expr): boolean {
     return dummyEq(this, other, symbol);
   }
 
-  /** SymPy find(query): the matching subexpressions. */
+  /**
+   * The matching subexpressions.
+   * @param query - The pattern or predicate to match.
+   * @returns The resulting expressions in order.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.find`
+   */
   find(query: Query): Expr[] {
     return find(this, query);
   }
 
-  /** SymPy Basic.fromiter(args): Permutation(*args). */
+  /**
+   * Permutation(*args).
+   * @param args - The operands in their defining order.
+   * @returns The resulting permutation.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.fromiter`
+   */
   static fromiter(args: Iterable<number | bigint | Expr>): Permutation {
     return new Permutation(...args);
   }
 
-  /** SymPy has_free(*patterns): whether a pattern is the permutation or one of its free symbols (it has none). */
+  /**
+   * Whether a pattern is the permutation or one of its free symbols (it has none).
+   * @param patterns - The expressions to search for.
+   * @returns Whether any of the supplied patterns occurs freely.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.has_free`
+   */
   hasFree(...patterns: ExprLike[]): boolean {
     return hasFree(this, ...patterns);
   }
 
-  /** SymPy has_xfree(s): whether an item of s is the permutation or one of its free symbols. */
+  /**
+   * Whether an item of s is the permutation or one of its free symbols.
+   * @param items - The candidate free subexpressions.
+   * @returns Whether the iterable includes an exact free occurrence.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.has_xfree`
+   */
   hasXfree(items: Iterable<Expr>): boolean {
     return hasXfree(this, [...items]);
   }
 
-  /** SymPy is_hypergeometric(k): the term ratio p/p is not defined, so this throws TypeError as in SymPy. */
+  /**
+   * The term ratio p/p is not defined, so this throws TypeError as in SymPy.
+   * @param _k - The index of the selected element.
+   * @returns Whether the object is hypergeometric.
+   * @throws TypeError when division of permutations is requested.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.is_hypergeometric`
+   */
   isHypergeometric(_k: Expr): boolean {
     throw new TypeError("unsupported operand type(s) for /: 'Permutation' and 'Permutation'");
   }
 
-  /** SymPy is_same(b, approx): structural equality. */
+  /**
+   * Structural equality.
+   * @param b - The second operand.
+   * @param approx - An optional comparison for approximate numbers.
+   * @returns Whether the object is same.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.is_same`
+   */
   isSame(b: unknown, approx?: (x: Expr, y: Expr) => boolean): boolean {
     return isSame(this, b, approx);
   }
 
-  /** SymPy match(pattern): the Wild assignments making pattern equal to the permutation, NoMatch when none. */
+  /**
+   * The Wild assignments making pattern equal to the permutation, NoMatch when none.
+   * @param pattern - The pattern to match against this expression.
+   * @param opts - The options controlling match.
+   * @returns The matched value, or `NoMatch` if there is no match.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.match`
+   */
   match(pattern: ExprLike, opts: { old?: boolean } = {}): Map<Sym, Expr> | NoMatchResult {
     return match(this, pattern, opts);
   }
 
-  /** SymPy matches(expr): the assignments making the permutation (a pattern without Wilds) equal to expr ({} or NoMatch). */
+  /**
+   * The assignments making the permutation (a pattern without Wilds) equal to expr ({} or NoMatch).
+   * @param expr - The expression to transform.
+   * @param opts - The options controlling matches.
+   * @returns The matched value, or `NoMatch` if there is no match.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.matches`
+   */
   matches(expr: ExprLike, opts: { old?: boolean } = {}): Map<Sym, Expr> | NoMatchResult {
     return match(expr, this, opts);
   }
 
-  /** SymPy rcall(*args): the permutation called on the arguments (p(i), or p itself without arguments). */
+  /**
+   * Applies the permutation to the supplied point.
+   * @param args - The operands in their defining order.
+   * @returns The image of the point, or this permutation when called without arguments.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.rcall`
+   */
   rcall(...args: (number | bigint)[]): number | Permutation {
     return args.length === 1 ? this.call(at(args, 0)) : this.call(...args);
   }
 
-  /** SymPy refine(assumption): the permutation itself. */
+  /**
+   * The permutation itself.
+   * @param assumptions - The assumptions to apply.
+   * @returns The resulting symbolic expression.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.refine`
+   */
   refine(assumptions: Assumption = true): Expr {
     return refine(this, assumptions);
   }
 
-  /** SymPy replace(query, value): the permutation with matching subexpressions replaced. */
+  /**
+   * The permutation with matching subexpressions replaced.
+   * @param query - The pattern or predicate to match.
+   * @param value - The value represented by this object.
+   * @returns The resulting symbolic expression.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.replace`
+   */
   replace(query: Query, value: Replacement): Expr {
     return expectType(replace(this, query, value), isExpr);
   }
 
-  /** SymPy xreplace(rule): exact structural replacement. */
+  /**
+   * Exact structural replacement.
+   * @param rule - The mapping from subexpressions to replacements.
+   * @returns The resulting symbolic expression.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.xreplace`
+   */
   xreplace(rule: Substitution): Expr {
     return xreplace(this, rule);
   }
 
   // ---- properties ----------------------------------------------------------------
 
-  /** SymPy cardinality: size! as a bigint. */
+  /**
+   * Counts the permutations of this degree.
+   * @returns The factorial of the permutation size as a bigint.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.cardinality`
+   */
   get cardinality(): bigint {
     return ifac(this.size);
   }
 
-  /** SymPy parity(): 0 for an even permutation, 1 for an odd one. */
+  /**
+   * Computes the parity of the number of transpositions in the permutation.
+   * @returns The parity of the number of transpositions in the permutation.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.parity`
+   */
   parity(): number {
     return afParity(this.#af);
   }
 
-  /** SymPy is_even. */
+  /**
+   * Checks if a permutation is even.
+   * @returns Whether the object is even.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.is_even`
+   */
   get isEven(): boolean {
     return !this.isOdd;
   }
 
-  /** SymPy is_odd. */
+  /**
+   * Checks if a permutation is odd.
+   * @returns Whether the object is odd.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.is_odd`
+   */
   get isOdd(): boolean {
     return this.parity() % 2 === 1;
   }
 
-  /** SymPy is_Singleton: the size is 1. */
+  /**
+   * The size is 1.
+   * @returns Whether the object is singleton.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.is_Singleton`
+   */
   get isSingleton(): boolean {
     return this.size === 1;
   }
 
-  /** SymPy is_Empty: the size is 0. */
+  /**
+   * The size is 0.
+   * @returns Whether the object is empty.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.is_Empty`
+   */
   get isEmpty(): boolean {
     return this.size === 0;
   }
 
-  /** SymPy is_Identity (and is_identity): no element is moved. */
+  /**
+   * No element is moved.
+   * @returns Whether the object is identity.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.is_Identity`
+   */
   get isIdentity(): boolean {
     return this.#af.every((v, i) => v === i);
   }
 
-  /** SymPy signature(): 1 for an even permutation, -1 for an odd one. */
+  /**
+   * Computes the sign of the permutation.
+   * @returns The sign of the permutation.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.signature`
+   */
   signature(): number {
     return this.isEven ? 1 : -1;
   }
 
-  /** SymPy order(): the smallest positive n with p**n the identity, as an Integer. */
+  /**
+   * The smallest positive n with p**n the identity, as an Integer.
+   * @returns The smallest positive n with p**n the identity.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.order`
+   */
   order(): Rational {
     let l = 1n;
     for (const c of this.cyclicForm) {
@@ -874,12 +1289,20 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
     return Rational.of(l);
   }
 
-  /** SymPy length(): the number of moved elements. */
+  /**
+   * Returns the number of moved elements.
+   * @returns The number of moved elements.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.length`
+   */
   length(): number {
     return this.support().length;
   }
 
-  /** SymPy ascents(): the positions i with p[i] < p[i+1]. */
+  /**
+   * Returns the positions i with p[i] < p[i+1].
+   * @returns The positions i with p[i] < p[i+1].
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.ascents`
+   */
   ascents(): number[] {
     const a = this.#af;
     const out: number[] = [];
@@ -887,7 +1310,11 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
     return out;
   }
 
-  /** SymPy descents(): the positions i with p[i] > p[i+1]. */
+  /**
+   * Returns the positions i with p[i] > p[i+1].
+   * @returns The positions i with p[i] > p[i+1].
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.descents`
+   */
   descents(): number[] {
     const a = this.#af;
     const out: number[] = [];
@@ -895,7 +1322,12 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
     return out;
   }
 
-  /** SymPy max(): the largest element moved (0 for the empty permutation; RangeError when none moves). */
+  /**
+   * Finds the largest point moved by the permutation.
+   * @returns The largest moved point, or zero for the empty permutation.
+   * @throws RangeError when the collection is empty.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.max`
+   */
   max(): number {
     const a = this.#af;
     if (a.length === 0) return 0;
@@ -904,7 +1336,12 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
     return Math.max(...moved);
   }
 
-  /** SymPy min(): the smallest element moved (0 for the empty permutation; RangeError when none moves). */
+  /**
+   * Finds the smallest point moved by the permutation.
+   * @returns The smallest moved point, or zero for the empty permutation.
+   * @throws RangeError when the collection is empty.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.min`
+   */
   min(): number {
     const a = this.#af;
     if (a.length === 0) return 0;
@@ -913,7 +1350,11 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
     return Math.min(...moved);
   }
 
-  /** SymPy inversions(): the number of pairs i < j with p[i] > p[j]. */
+  /**
+   * Returns the number of pairs i < j with p[i] > p[j].
+   * @returns The number of pairs i < j with p[i] > p[j].
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.inversions`
+   */
   inversions(): number {
     const a = this.#af;
     const n = a.length;
@@ -948,7 +1389,11 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
     return inv;
   }
 
-  /** SymPy inversion_vector(): the Lehmer code without its last (always 0) entry. */
+  /**
+   * Returns the Lehmer code without its last (always 0) entry.
+   * @returns The Lehmer code without its last (always 0) entry.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.inversion_vector`
+   */
   inversionVector(): number[] {
     const a = this.#af;
     const n = a.length;
@@ -961,12 +1406,20 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
     return out;
   }
 
-  /** SymPy index(): the sum of the positions j with p[j] > p[j+1]. */
+  /**
+   * Returns the sum of the positions j with p[j] > p[j+1].
+   * @returns The sum of the positions j with p[j] > p[j+1].
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.index`
+   */
   index(): number {
     return this.descents().reduce((s, j) => s + j, 0);
   }
 
-  /** SymPy runs(): the maximal ascending runs of the array form. */
+  /**
+   * Returns the maximal ascending runs of the array form.
+   * @returns The maximal ascending runs of the array form.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.runs`
+   */
   runs(): number[][] {
     const a = this.#af;
     if (a.length === 0) return [];
@@ -984,7 +1437,11 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
     return out;
   }
 
-  /** SymPy transpositions(): the permutation as a product of transpositions. */
+  /**
+   * Returns the permutation as a product of transpositions.
+   * @returns The permutation as a product of transpositions.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.transpositions`
+   */
   transpositions(): [number, number][] {
     const res: [number, number][] = [];
     for (const x of this.cyclicForm) {
@@ -996,8 +1453,12 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
   }
 
   /**
-   * SymPy resize(n): the same permutation on n elements; RangeError when a
+   * The same permutation on n elements; RangeError when a
    * cycle would be broken.
+   * @param n - The number of positions.
+   * @returns The same permutation on n elements.
+   * @throws RangeError when truncation would split a nontrivial cycle.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.resize`
    */
   resize(n: number): Permutation {
     const l = this.size;
@@ -1021,7 +1482,11 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
 
   // ---- ranking --------------------------------------------------------------------
 
-  /** SymPy rank(): the lexicographic rank (the identity has rank 0). */
+  /**
+   * Returns the lexicographic rank (the identity has rank 0).
+   * @returns The lexicographic rank (the identity has rank 0).
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.rank`
+   */
   rank(): bigint {
     if (this.#rank !== undefined) return this.#rank;
     let rank = 0n;
@@ -1039,7 +1504,18 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
     return rank;
   }
 
-  /** SymPy Permutation.unrank_lex(size, rank): the permutation of the given lexicographic rank. */
+  /**
+   * The permutation of the given lexicographic rank.
+   * @param size - The number of positions.
+   * @param rank - The zero-based position in the enumeration.
+   * @returns The resulting permutation.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.unrank_lex`
+   * @example
+   * ```ts
+   * import { Permutation } from '@symjs/symjs';
+   * Permutation.unrankLex(3, 4).arrayForm; // => [2, 0, 1]
+   * ```
+   */
   static unrankLex(size: number, rank: number | bigint): Permutation {
     const perm = new Array<number>(size).fill(0);
     let r = BigInt(rank);
@@ -1056,7 +1532,11 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
     return afNew(perm);
   }
 
-  /** SymPy next_lex(): the next permutation in lexicographic order, NoMatch after the last one. */
+  /**
+   * The next permutation in lexicographic order, NoMatch after the last one.
+   * @returns The matched value, or `NoMatch` if there is no match.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.next_lex`
+   */
   nextLex(): Permutation | NoMatchResult {
     const perm = this.arrayForm;
     const n = perm.length;
@@ -1076,7 +1556,13 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
     return afNew(perm);
   }
 
-  /** SymPy Permutation.unrank_nonlex(n, r): Myrvold-Ruskey unranking (r is taken modulo n!). */
+  /**
+   * Myrvold-Ruskey unranking (r is taken modulo n!).
+   * @param n - The number of positions.
+   * @param r - The rank in Myrvold–Ruskey order.
+   * @returns The resulting permutation.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.unrank_nonlex`
+   */
   static unrankNonlex(n: number, r: number | bigint): Permutation {
     const a = Array.from({ length: n }, (_, i) => i);
     let rr = pmod(BigInt(r), ifac(n));
@@ -1089,7 +1575,12 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
     return afNew(a);
   }
 
-  /** SymPy rank_nonlex(inv_perm=None): the Myrvold-Ruskey rank. */
+  /**
+   * Returns the Myrvold-Ruskey rank.
+   * @param invPerm - The inverse permutation in array form, if already available.
+   * @returns The Myrvold-Ruskey rank.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.rank_nonlex`
+   */
   rankNonlex(invPerm?: readonly number[]): bigint {
     const inv = invPerm ? [...invPerm] : afInvert(this.#af);
     if (inv.length === 0) return 0n;
@@ -1105,14 +1596,22 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
     return rank1(perm.length);
   }
 
-  /** SymPy next_nonlex(): the next permutation in Myrvold-Ruskey order, NoMatch after the last one. */
+  /**
+   * The next permutation in Myrvold-Ruskey order, NoMatch after the last one.
+   * @returns The matched value, or `NoMatch` if there is no match.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.next_nonlex`
+   */
   nextNonlex(): Permutation | NoMatchResult {
     const r = this.rankNonlex();
     if (r === this.cardinality - 1n) return NoMatch;
     return Permutation.unrankNonlex(this.size, r + 1n);
   }
 
-  /** SymPy rank_trotterjohnson(): the rank in Trotter-Johnson (minimal change) order. */
+  /**
+   * Returns the rank in Trotter-Johnson (minimal change) order.
+   * @returns The rank in Trotter-Johnson (minimal change) order.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.rank_trotterjohnson`
+   */
   rankTrotterjohnson(): bigint {
     const perm = this.#af;
     if (perm.length === 0 || this.isIdentity) return 0n;
@@ -1132,7 +1631,14 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
     return rank;
   }
 
-  /** SymPy Permutation.unrank_trotterjohnson(size, rank), for 0 <= rank < size!. */
+  /**
+   * Trotter Johnson permutation unranking.
+   * @param size - The number of positions.
+   * @param rank - The zero-based position in the enumeration.
+   * @returns The resulting permutation.
+   * @throws RangeError when the rank is outside the enumeration.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.unrank_trotterjohnson`
+   */
   static unrankTrotterjohnson(size: number, rank: number | bigint): Permutation {
     const perm = new Array<number>(size).fill(0);
     const r = BigInt(rank);
@@ -1157,7 +1663,11 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
     return afNew(perm);
   }
 
-  /** SymPy next_trotterjohnson(): the next permutation in Trotter-Johnson order, NoMatch after the last one. */
+  /**
+   * The next permutation in Trotter-Johnson order, NoMatch after the last one.
+   * @returns The matched value, or `NoMatch` if there is no match.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.next_trotterjohnson`
+   */
   nextTrotterjohnson(): Permutation | NoMatchResult {
     const pi = this.arrayForm;
     const n = pi.length;
@@ -1205,12 +1715,22 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
     return m;
   }
 
-  /** SymPy get_precedence_matrix(): m[i, j] = 1 when i precedes j in the array form. */
+  /**
+   * M[i, j] = 1 when i precedes j in the array form.
+   * @returns The resulting matrix.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.get_precedence_matrix`
+   */
   getPrecedenceMatrix(): Matrix {
     return Matrix.of(this.#precedence());
   }
 
-  /** SymPy get_precedence_distance(other). */
+  /**
+   * Computes the precedence distance between two permutations.
+   * @param other - The value to combine with or compare against.
+   * @returns The precedence distance between two permutations.
+   * @throws RangeError when the operand sizes differ.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.get_precedence_distance`
+   */
   getPrecedenceDistance(other: Permutation): number {
     if (this.size !== other.size) throw new RangeError('The permutations must be of equal size.');
     const a = this.#precedence();
@@ -1221,12 +1741,22 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
     return Math.floor((n * Math.max(n - 1, 0)) / 2) - nPrec;
   }
 
-  /** SymPy get_adjacency_matrix(): m[i, j] = 1 when j immediately follows i in the array form. */
+  /**
+   * M[i, j] = 1 when j immediately follows i in the array form.
+   * @returns The resulting matrix.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.get_adjacency_matrix`
+   */
   getAdjacencyMatrix(): Matrix {
     return Matrix.of(this.#adjacency());
   }
 
-  /** SymPy get_adjacency_distance(other). */
+  /**
+   * Computes the adjacency distance between two permutations.
+   * @param other - The value to combine with or compare against.
+   * @returns The adjacency distance between two permutations.
+   * @throws RangeError when the operand sizes differ.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.get_adjacency_distance`
+   */
   getAdjacencyDistance(other: Permutation): number {
     if (this.size !== other.size) throw new RangeError('The permutations must be of the same size.');
     const a = this.#adjacency();
@@ -1237,7 +1767,13 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
     return n - nAdj - 1;
   }
 
-  /** SymPy get_positional_distance(other): the sum of |p[i] - q[i]|. */
+  /**
+   * Returns the sum of |p[i] - q[i]|.
+   * @param other - The value to combine with or compare against.
+   * @returns The sum of |p[i] - q[i]|.
+   * @throws RangeError when the operand sizes differ.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.get_positional_distance`
+   */
   getPositionalDistance(other: Permutation): number {
     const a = this.#af;
     const b = other.#af;
@@ -1248,8 +1784,13 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
   // ---- constructors --------------------------------------------------------------------
 
   /**
-   * SymPy Permutation.josephus(m, n, s=1): range(n) in the order in which
+   * Range(n) in the order in which
    * every mth item is selected, the last s items taken in order.
+   * @param m - The step between successive selections.
+   * @param n - The number of positions.
+   * @param s - The input sequence.
+   * @returns The resulting permutation.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.josephus`
    */
   static josephus(m: number, n: number, s = 1): Permutation {
     const q = Array.from({ length: n }, (_, i) => i);
@@ -1262,7 +1803,13 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
     return new Permutation(perm);
   }
 
-  /** SymPy Permutation.from_inversion_vector(inversion). */
+  /**
+   * Calculates the permutation from the inversion vector.
+   * @param inversion - The inversion counts in position order.
+   * @returns The resulting permutation.
+   * @throws RangeError when the inversion vector contains an invalid digit.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.from_inversion_vector`
+   */
   static fromInversionVector(inversion: readonly number[]): Permutation {
     const size = inversion.length;
     const N = Array.from({ length: size + 1 }, (_, i) => i);
@@ -1279,8 +1826,12 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
   }
 
   /**
-   * SymPy Permutation.from_sequence(i, key=None): the permutation that
+   * The permutation that
    * arranges the sorted elements of i into i (a stable sort, ties by position).
+   * @param seq - The sequence whose sorted order determines the images.
+   * @param key - The ordering key used to sort the elements.
+   * @returns The resulting permutation.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.from_sequence`
    */
   static fromSequence<T>(seq: readonly T[] | string, key?: (x: T) => unknown): Permutation {
     const items: readonly unknown[] = typeof seq === 'string' ? Array.from(seq) : seq;
@@ -1294,8 +1845,12 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
   }
 
   /**
-   * SymPy Permutation.random(n): a uniformly random permutation of size n
+   * A uniformly random permutation of size n
    * (Fisher-Yates), from Math.random, a seed or a given generator.
+   * @param n - The number of positions.
+   * @param opts - The settings described by {@link RandomOptions}.
+   * @returns The resulting permutation.
+   * @see SymPy `sympy.combinatorics.permutations.Permutation.random`
    */
   static random(n: number, opts: RandomOptions = {}): Permutation {
     const rnd = opts.prng ?? (opts.seed !== undefined ? seeded(opts.seed) : Math.random);
@@ -1308,7 +1863,15 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
   }
 }
 
-/** SymPy Perm: an alias of Permutation. */
+/**
+ * An alias of Permutation.
+ * @see SymPy `sympy.combinatorics.permutations.Permutation`
+ * @example
+ * ```ts
+ * import { Perm } from '@symjs/symjs';
+ * new Perm(5); // => (5)
+ * ```
+ */
 export const Perm = Permutation;
 
 // ---------------------------------------------------------------------------
@@ -1316,9 +1879,16 @@ export const Perm = Permutation;
 // ---------------------------------------------------------------------------
 
 /**
- * SymPy sstr(p, perm_cyclic=...): `(1 2)`, `(3)(0 1)` and `()` in cyclic
- * notation (the default), `Permutation([1, 0, 2, 3])` or
- * `Permutation([1, 0], size=20)` in array notation.
+ * Formats a permutation in cycle or array notation.
+ * @param p - The permutation to examine.
+ * @param opts - The settings described by {@link PermutationPrintOptions}.
+ * @returns The resulting text.
+ * @see SymPy `sympy.printing.str.StrPrinter._print_Permutation`
+ * @example
+ * ```ts
+ * import { Permutation, permutationStr } from '@symjs/symjs';
+ * permutationStr(new Permutation([0, 2, 1])); // => (1 2)
+ * ```
  */
 export function permutationStr(p: Permutation, opts: PermutationPrintOptions = {}): string {
   if (opts.permCyclic ?? true) {
@@ -1333,7 +1903,18 @@ export function permutationStr(p: Permutation, opts: PermutationPrintOptions = {
   return `Permutation(${trim.length < full.length ? trim : full})`;
 }
 
-/** SymPy srepr(p) / repr(p): `Permutation(1, 2)`, `Permutation(3)(0, 1)`, `Permutation()`. */
+/**
+ * Formats a permutation as a constructor expression.
+ * @param p - The permutation to examine.
+ * @param opts - The settings described by {@link PermutationPrintOptions}.
+ * @returns The resulting text.
+ * @see SymPy `sympy.printing.repr.ReprPrinter._print_Permutation`
+ * @example
+ * ```ts
+ * import { Permutation, permutationRepr } from '@symjs/symjs';
+ * permutationRepr(new Permutation([0, 2, 1])); // => Permutation(1, 2)
+ * ```
+ */
 export function permutationRepr(p: Permutation, opts: PermutationPrintOptions = {}): string {
   if (!(opts.permCyclic ?? true)) return permutationStr(p, opts);
   if (p.size === 0) return 'Permutation()';
@@ -1341,8 +1922,16 @@ export function permutationRepr(p: Permutation, opts: PermutationPrintOptions = 
 }
 
 /**
- * SymPy latex(p, perm_cyclic=...): `\left( 1\; 2\right)` in cyclic notation
- * (the default) or a two-line pmatrix in array notation.
+ * Formats the cycles or two-line array of a permutation in LaTeX.
+ * @param p - The permutation to examine.
+ * @param opts - The settings described by {@link PermutationPrintOptions}.
+ * @returns The resulting text.
+ * @see SymPy `sympy.printing.latex.LatexPrinter._print_Permutation`
+ * @example
+ * ```ts
+ * import { Permutation, permutationLatex } from '@symjs/symjs';
+ * permutationLatex(new Permutation([0, 2, 1])); // => \left( 1\; 2\right)
+ * ```
  */
 export function permutationLatex(p: Permutation, opts: PermutationPrintOptions = {}): string {
   if (p.size === 0) return '\\left( \\right)';
@@ -1365,40 +1954,72 @@ function cyclicBody(p: Permutation, sep: string): string {
 // ---------------------------------------------------------------------------
 
 /**
- * SymPy AppliedPermutation(perm, x): a permutation applied to a symbolic
+ * A permutation applied to a symbolic
  * integer; it evaluates once x becomes an Integer (for example by subs).
+ * @see SymPy `sympy.combinatorics.permutations.AppliedPermutation`
+ * @example
+ * ```ts
+ * import { AppliedPermutation, Perm } from '@symjs/symjs';
+ * AppliedPermutation.of(new Perm([1, 2, 0]), 1, { evaluate: true }); // => 2
+ * ```
  */
 export class AppliedPermutation extends ExtensionExpr {
-  /** @internal use AppliedPermutation.of or Permutation.apply */
+  /**
+   * Constructs an `AppliedPermutation`.
+   * @param perm - The permutation to apply.
+   * @param x - The element to examine.
+   * @internal
+   */
   constructor(perm: Permutation, x: Expr) {
     super('AppliedPermutation', [perm, x]);
   }
 
-  /** SymPy AppliedPermutation(perm, x, evaluate): evaluates to an Integer when x is one (unless evaluate is false). */
+  /**
+   * Evaluates to an Integer when x is one (unless evaluate is false).
+   * @param perm - The permutation to apply.
+   * @param x - The element to examine.
+   * @param opts - The options controlling of.
+   * @returns The resulting symbolic expression.
+   */
   static of(perm: Permutation, x: ExprLike, opts: { evaluate?: boolean } = {}): Expr {
     const e = sympify(x);
     if ((opts.evaluate ?? true) && e instanceof Rational && e.q === 1n) return perm.apply(e);
     return new AppliedPermutation(perm, e);
   }
 
-  /** The permutation. */
+  /**
+   * Gets the permutation.
+   * @returns The permutation.
+   */
   get perm(): Permutation {
     return cast(this.args[0], Permutation, 'AppliedPermutation perm');
   }
 
-  /** The argument. */
+  /**
+   * Gets the argument.
+   * @returns The argument.
+   */
   get x(): Expr {
     return at(this.args, 1);
   }
 
-  /** Rebuilds the node, evaluating it when the argument is an Integer. */
+  /**
+   * Rebuilds the expression with replacement operands.
+   * @param args - The operands in their defining order.
+   * @returns The expression with the given operands.
+   * @throws TypeError when the operands do not specify a permutation and its argument.
+   */
   withArgs(args: readonly Expr[]): Expr {
     const [perm, x] = args;
     if (!(perm instanceof Permutation) || x === undefined) throw new TypeError('AppliedPermutation needs a Permutation and an argument');
     return AppliedPermutation.of(perm, x);
   }
 
-  /** SymPy latex: \sigma_{perm}(x). */
+  /**
+   * Formats the expression in LaTeX.
+   * @param print - Formats a child expression.
+   * @returns The LaTeX representation.
+   */
   override printLatex(print: (e: Expr) => string): string {
     return `\\sigma_{${print(this.perm)}}(${print(this.x)})`;
   }

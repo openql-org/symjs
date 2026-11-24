@@ -16,17 +16,28 @@ import { freeGroup, uniqueWords } from './freegroups';
 
 /** The part of a finitely presented group a coset table uses. */
 export interface CosetGroup {
+  /** The generators in their defining order. */
   readonly generators: readonly FreeGroupElement[];
+  /** The words imposed as defining relations. */
   readonly relators: readonly FreeGroupElement[];
+  /** The identity. */
   readonly identity: FreeGroupElement;
+  /**
+   * Formats the object as plain text.
+   * @returns The printable representation.
+   */
   toString(): string;
 }
 
-/** A row of a coset table: the coset each letter of A leads to (null where not yet defined). */
+/** The cosets reached by applying each generator or inverse to one coset. An unfilled entry is `null`. */
 export type CosetRow = (number | null)[];
 
-/** The ValueError of a coset enumeration that defines more cosets than allowed. */
+/** Signals that a coset enumeration has reached its coset limit. */
 export class CosetLimitExceeded extends RangeError {
+  /**
+   * Constructs a `CosetLimitExceeded`.
+   * @param limit - The maximum number of cosets or rules permitted.
+   */
   constructor(limit: number) {
     super(`the coset enumeration has defined more than ${limit} cosets. Try with a greater value max number of cosets `);
     this.name = 'CosetLimitExceeded';
@@ -51,44 +62,84 @@ function bisectLeft(a: readonly number[], x: number): number {
 }
 
 /**
- * SymPy CosetTable(fp_grp, subgroup, max_cosets): the coset table of a
+ * The coset table of a
  * subgroup of a finitely presented group, built by coset enumeration.
  * Columns are the generators and their inverses in the order of A.
+ * @see SymPy `sympy.combinatorics.coset_table.CosetTable`
  */
 export class CosetTable {
-  /** SymPy coset_table_max_limit: the default maximum number of cosets. */
+  /**
+   * The default maximum number of cosets.
+   * @see SymPy `sympy.combinatorics.coset_table.CosetTable.coset_table_max_limit`
+   */
   static cosetTableMaxLimit = 4096000;
-  /** SymPy max_stack_size: the deduction stack size that triggers a look-ahead. */
+  /**
+   * The deduction stack size that triggers a look-ahead.
+   * @see SymPy `sympy.combinatorics.coset_table.CosetTable.max_stack_size`
+   */
   static maxStackSize = 100;
+  /**
+   * The finitely presented group whose cosets are enumerated.
+   * @see SymPy `sympy.combinatorics.coset_table.CosetTable.fp_group`
+   */
   readonly fpGroup: CosetGroup;
+  /**
+   * The generators of the subgroup whose cosets are enumerated.
+   * @see SymPy `sympy.combinatorics.coset_table.CosetTable.subgroup`
+   */
   readonly subgroup: readonly FreeGroupElement[];
-  /** SymPy coset_table_limit. */
+  /**
+   * The maximum number of cosets allowed in this table.
+   * @see SymPy `sympy.combinatorics.coset_table.CosetTable.coset_table_limit`
+   */
   readonly cosetTableLimit: number;
-  /** SymPy p: the coset each coset is equivalent to (p[i] = i for a live coset). */
+  /**
+   * The coset each coset is equivalent to (p[i] = i for a live coset).
+   * @see SymPy `sympy.combinatorics.coset_table.CosetTable.p`
+   */
   p: number[];
-  /** SymPy A: the generators and their inverses. */
+  /**
+   * The generators and their inverses.
+   * @see SymPy `sympy.combinatorics.coset_table.CosetTable.A`
+   */
   readonly A: FreeGroupElement[];
-  /** SymPy table. */
+  /**
+   * The transition rows indexed by coset and generator letter.
+   * @see SymPy `sympy.combinatorics.coset_table.CosetTable.table`
+   */
   table: CosetRow[];
-  /** SymPy P: the subgroup words of the modified enumeration. */
+  /**
+   * The subgroup words of the modified enumeration.
+   * @see SymPy `sympy.combinatorics.coset_table.CosetTable.P`
+   */
   P: (FreeGroupElement | null)[][];
-  /** SymPy deduction_stack: the (coset, letter column) deductions to process. */
+  /**
+   * The (coset, letter column) deductions to process.
+   * @see SymPy `sympy.combinatorics.coset_table.CosetTable.deduction_stack`
+   */
   deductionStack: [number, number][];
-  /** @internal SymPy _grp: the free group on the subgroup generators (a_0, a_1, ...). */
+  /** The free group on the subgroup generators (a_0, a_1, ...). @internal */
   readonly grp: FreeGroup;
-  /** @internal SymPy p_p: the subgroup words of the coincident cosets. */
+  /** The subgroup words of the coincident cosets. @internal */
   pP: Map<number, FreeGroupElement>;
-  /** @internal SymPy _schreier_free_group, _schreier_generators, ... of a Reidemeister-Schreier presentation. */
+  /** The free generators and relators discovered during subgroup rewriting. @internal */
   schreier: {
     freeGroup?: FreeGroup;
     generators?: FreeGroupElement[];
     genElements?: Map<string, FreeGroupElement>;
     relators?: FreeGroupElement[];
   } = {};
-  /** SymPy schreier_generators and reidemeister_relators, once computed. */
+  /** The Schreier generators obtained from the coset representatives. */
   schreierGenerators: FreeGroupElement[] = [];
+  /** The relators of the subgroup presentation. */
   reidemeisterRelators: FreeGroupElement[] = [];
 
+  /**
+   * Constructs a `CosetTable`.
+   * @param fpGroup - The finitely presented group being enumerated.
+   * @param subgroup - Generators of the subgroup.
+   * @param maxCosets - The maximum number of cosets to define.
+   */
   constructor(fpGroup: CosetGroup, subgroup: readonly FreeGroupElement[], maxCosets?: number) {
     this.fpGroup = fpGroup;
     this.subgroup = subgroup;
@@ -112,22 +163,38 @@ export class CosetTable {
     return column(at(x.letters, 0));
   }
 
-  /** SymPy A_dict: the column of each letter. */
+  /**
+   * Gets the column of each letter.
+   * @returns The column of each letter.
+   * @see SymPy `sympy.combinatorics.coset_table.CosetTable.A_dict`
+   */
   get ADict(): Map<FreeGroupElement, number> {
     return new Map(this.A.map((x, i) => [x, i]));
   }
 
-  /** SymPy A_dict_inv: the column of each letter's inverse. */
+  /**
+   * Gets the column of each letter's inverse.
+   * @returns The column of each letter's inverse.
+   * @see SymPy `sympy.combinatorics.coset_table.CosetTable.A_dict_inv`
+   */
   get ADictInv(): Map<FreeGroupElement, number> {
     return new Map(this.A.map((x, i) => [x, i ^ 1]));
   }
 
-  /** SymPy omega: the live cosets. */
+  /**
+   * Gets the live cosets.
+   * @returns The live cosets.
+   * @see SymPy `sympy.combinatorics.coset_table.CosetTable.omega`
+   */
   get omega(): number[] {
     return this.p.flatMap((c, i) => (c === i ? [i] : []));
   }
 
-  /** SymPy copy(): a copy of the table, p and the deduction stack. */
+  /**
+   * Returns a copy of the table, p and the deduction stack.
+   * @returns A copy of the table, p and the deduction stack.
+   * @see SymPy `sympy.combinatorics.coset_table.CosetTable.copy`
+   */
   copy(): CosetTable {
     const c = new CosetTable(this.fpGroup, this.subgroup);
     c.table = this.table.map((r) => [...r]);
@@ -136,22 +203,41 @@ export class CosetTable {
     return c;
   }
 
+  /**
+   * Formats the object as plain text.
+   * @returns The printable representation.
+   */
   toString(): string {
     return `Coset Table on ${String(this.fpGroup)} with ${listStr(this.subgroup)} as subgroup generators`;
   }
 
-  /** SymPy n: the number of cosets, 1 + the largest live one. */
+  /**
+   * Gets the number of cosets, 1 + the largest live one.
+   * @returns The number of cosets, 1 + the largest live one.
+   * @see SymPy `sympy.combinatorics.coset_table.CosetTable.n`
+   */
   get n(): number {
     if (!this.table.length) return 0;
     return Math.max(...this.omega) + 1;
   }
 
-  /** SymPy is_complete(): whether every live coset has all its entries. */
+  /**
+   * Whether every live coset has all its entries.
+   * @returns Whether the object is complete.
+   * @see SymPy `sympy.combinatorics.coset_table.CosetTable.is_complete`
+   */
   isComplete(): boolean {
     return this.omega.every((c) => !at(this.table, c).includes(null));
   }
 
-  /** @internal SymPy define(alpha, x, modified) with x a column. */
+  /**
+   * Defines a new coset as the image of the starting coset under the given generator column.
+   * @param alpha - The starting coset label.
+   * @param x - The column of the generator letter.
+   * @param modified - Whether to record subgroup words during enumeration.
+   * @throws CosetLimitExceeded when enumeration would exceed the coset limit.
+   * @internal
+   */
   defineCol(alpha: number, x: number, modified = false): void {
     const table = this.table;
     const len = table.length;
@@ -169,12 +255,24 @@ export class CosetTable {
     }
   }
 
-  /** SymPy define(alpha, x, modified): define a new coset alpha^x. */
+  /**
+   * Define a new coset alpha^x.
+   * @param alpha - The starting coset label.
+   * @param x - The generator letter labeling the transition.
+   * @param modified - Whether to record subgroup words during enumeration.
+   * @see SymPy `sympy.combinatorics.coset_table.CosetTable.define`
+   */
   define(alpha: number, x: FreeGroupElement, modified = false): void {
     this.defineCol(alpha, this.#col(x), modified);
   }
 
-  /** @internal SymPy define_c(alpha, x) with x a column. */
+  /**
+   * Defines a new coset and records the transition for deduction processing.
+   * @param alpha - The starting coset label.
+   * @param x - The column of the generator letter.
+   * @throws CosetLimitExceeded when enumeration would exceed the coset limit.
+   * @internal
+   */
   defineCCol(alpha: number, x: number): void {
     const table = this.table;
     const len = table.length;
@@ -187,7 +285,12 @@ export class CosetTable {
     this.deductionStack.push([alpha, x]);
   }
 
-  /** SymPy define_c(alpha, x): define a new coset for the Felsch strategy. */
+  /**
+   * Define a new coset for the Felsch strategy.
+   * @param alpha - The starting coset label.
+   * @param x - The generator letter labeling the transition.
+   * @see SymPy `sympy.combinatorics.coset_table.CosetTable.define_c`
+   */
   defineC(alpha: number, x: FreeGroupElement): void {
     this.defineCCol(alpha, this.#col(x));
   }
@@ -196,7 +299,12 @@ export class CosetTable {
     return at(at(this.table, f), x);
   }
 
-  /** SymPy scan_c(alpha, word): scan word under the Felsch strategy. */
+  /**
+   * Scan word under the Felsch strategy.
+   * @param alpha - The starting coset label.
+   * @param word - The group word to examine.
+   * @see SymPy `sympy.combinatorics.coset_table.CosetTable.scan_c`
+   */
   scanC(alpha: number, word: FreeGroupElement): void {
     const w = word.letters.map(column);
     const table = this.table;
@@ -225,7 +333,12 @@ export class CosetTable {
     }
   }
 
-  /** SymPy coincidence_c(alpha, beta): process the coincidence of two cosets (Felsch strategy). */
+  /**
+   * Process the coincidence of two cosets (Felsch strategy).
+   * @param alpha - The starting coset label.
+   * @param beta - The second coset label.
+   * @see SymPy `sympy.combinatorics.coset_table.CosetTable.coincidence_c`
+   */
   coincidenceC(alpha: number, beta: number): void {
     const table = this.table;
     const q: number[] = [];
@@ -252,7 +365,15 @@ export class CosetTable {
     }
   }
 
-  /** @internal SymPy scan(alpha, word, y, fill, modified) on the columns of a word. */
+  /**
+   * Scans a word expressed as generator columns from the given coset.
+   * @param alpha - The starting coset label.
+   * @param w - The group word to scan or rewrite.
+   * @param y - The subgroup word associated with this scan.
+   * @param fill - Whether to define cosets wherever the scan stops.
+   * @param modified - Whether to record subgroup words during enumeration.
+   * @internal
+   */
   scanCols(alpha: number, w: readonly number[], y?: FreeGroupElement, fill = false, modified = false): void {
     const table = this.table;
     const P = this.P;
@@ -299,12 +420,26 @@ export class CosetTable {
     }
   }
 
-  /** SymPy scan(alpha, word, y, fill, modified): scan word from coset alpha (HLT strategy). */
+  /**
+   * Scan word from coset alpha (HLT strategy).
+   * @param alpha - The starting coset label.
+   * @param word - The group word to examine.
+   * @param y - The subgroup word associated with this scan.
+   * @param fill - Whether to define cosets wherever the scan stops.
+   * @param modified - Whether to record subgroup words during enumeration.
+   * @see SymPy `sympy.combinatorics.coset_table.CosetTable.scan`
+   */
   scan(alpha: number, word: FreeGroupElement, y?: FreeGroupElement, fill = false, modified = false): void {
     this.scanCols(alpha, word.letters.map(column), y, fill, modified);
   }
 
-  /** SymPy scan_check(alpha, word): scan without defining cosets; false on an incompatibility. */
+  /**
+   * Scans a relator for deductions and detects inconsistent coset transitions.
+   * @param alpha - The starting coset label.
+   * @param word - The group word to examine.
+   * @returns Whether the relator scan succeeded without a contradiction.
+   * @see SymPy `sympy.combinatorics.coset_table.CosetTable.scan_check`
+   */
   scanCheck(alpha: number, word: FreeGroupElement): boolean {
     const w = word.letters.map(column);
     const table = this.table;
@@ -330,7 +465,15 @@ export class CosetTable {
     return true;
   }
 
-  /** SymPy merge(k, lamda, q, w, modified): merge the classes of two cosets. */
+  /**
+   * Merge the classes of two cosets.
+   * @param k - The first coset label.
+   * @param lamda - The second coset label.
+   * @param q - The queue of coincident cosets to process.
+   * @param w - The group word to scan or rewrite.
+   * @param modified - Whether to record subgroup words during enumeration.
+   * @see SymPy `sympy.combinatorics.coset_table.CosetTable.merge`
+   */
   merge(k: number, lamda: number, q: number[], w?: FreeGroupElement, modified = false): void {
     const phi = this.rep(k, modified);
     const psi = this.rep(lamda, modified);
@@ -351,7 +494,13 @@ export class CosetTable {
     return defined(this.pP.get(k), 'p_p entry');
   }
 
-  /** SymPy rep(k, modified): the representative of the class of k, compressing the path. */
+  /**
+   * Returns the representative of the class of k, compressing the path.
+   * @param k - The first coset label.
+   * @param modified - Whether to record subgroup words during enumeration.
+   * @returns The representative of the class of k, compressing the path.
+   * @see SymPy `sympy.combinatorics.coset_table.CosetTable.rep`
+   */
   rep(k: number, modified = false): number {
     const p = this.p;
     let lamda = k;
@@ -382,7 +531,14 @@ export class CosetTable {
     return lamda;
   }
 
-  /** SymPy coincidence(alpha, beta, w, modified): process the coincidence of two cosets (HLT strategy). */
+  /**
+   * Process the coincidence of two cosets (HLT strategy).
+   * @param alpha - The starting coset label.
+   * @param beta - The second coset label.
+   * @param w - The group word to scan or rewrite.
+   * @param modified - Whether to record subgroup words during enumeration.
+   * @see SymPy `sympy.combinatorics.coset_table.CosetTable.coincidence`
+   */
   coincidence(alpha: number, beta: number, w?: FreeGroupElement, modified = false): void {
     const table = this.table;
     const P = this.P;
@@ -423,12 +579,22 @@ export class CosetTable {
     }
   }
 
-  /** SymPy scan_and_fill(alpha, word): scan word, defining cosets where the scan stops. */
+  /**
+   * Scan word, defining cosets where the scan stops.
+   * @param alpha - The starting coset label.
+   * @param word - The group word to examine.
+   * @see SymPy `sympy.combinatorics.coset_table.CosetTable.scan_and_fill`
+   */
   scanAndFill(alpha: number, word: FreeGroupElement): void {
     this.scan(alpha, word, undefined, true);
   }
 
-  /** SymPy scan_and_fill_c(alpha, word): scan and fill under the Felsch strategy. */
+  /**
+   * Scan and fill under the Felsch strategy.
+   * @param alpha - The starting coset label.
+   * @param word - The group word to examine.
+   * @see SymPy `sympy.combinatorics.coset_table.CosetTable.scan_and_fill_c`
+   */
   scanAndFillC(alpha: number, word: FreeGroupElement): void {
     const w = word.letters.map(column);
     const table = this.table;
@@ -459,7 +625,10 @@ export class CosetTable {
     }
   }
 
-  /** SymPy look_ahead(): scan every relator from every live coset. */
+  /**
+   * Scan every relator from every live coset.
+   * @see SymPy `sympy.combinatorics.coset_table.CosetTable.look_ahead`
+   */
   lookAhead(): void {
     const R = this.fpGroup.relators;
     const p = this.p;
@@ -471,7 +640,12 @@ export class CosetTable {
     }
   }
 
-  /** SymPy process_deductions(R_c_x, R_c_x_inv): process the deduction stack (Felsch strategy). */
+  /**
+   * Process the deduction stack (Felsch strategy).
+   * @param RcX - Relator conjugates starting with the deduction letter.
+   * @param RcXInv - Relator conjugates starting with the inverse letter.
+   * @see SymPy `sympy.combinatorics.coset_table.CosetTable.process_deductions`
+   */
   processDeductions(RcX: readonly FreeGroupElement[], RcXInv: readonly FreeGroupElement[]): void {
     const p = this.p;
     const table = this.table;
@@ -501,7 +675,13 @@ export class CosetTable {
     }
   }
 
-  /** SymPy process_deductions_check(R_c_x, R_c_x_inv): check the deductions without defining cosets. */
+  /**
+   * Check the deductions without defining cosets.
+   * @param RcX - Relator conjugates starting with the deduction letter.
+   * @param RcXInv - Relator conjugates starting with the inverse letter.
+   * @returns Whether all pending deductions are consistent with the relators.
+   * @see SymPy `sympy.combinatorics.coset_table.CosetTable.process_deductions_check`
+   */
   processDeductionsCheck(RcX: readonly FreeGroupElement[], RcXInv: readonly FreeGroupElement[]): boolean {
     const table = this.table;
     while (this.deductionStack.length > 0) {
@@ -513,7 +693,12 @@ export class CosetTable {
     return true;
   }
 
-  /** SymPy switch(beta, gamma): interchange two cosets. */
+  /**
+   * Interchange two cosets.
+   * @param beta - The second coset label.
+   * @param gamma - The coset label to identify.
+   * @see SymPy `sympy.combinatorics.coset_table.CosetTable.switch`
+   */
   switch(beta: number, gamma: number): void {
     const table = this.table;
     for (let x = 0; x < this.A.length; x++) {
@@ -529,7 +714,10 @@ export class CosetTable {
     }
   }
 
-  /** SymPy standardize(): renumber the cosets in the standard order (a complete, compressed table). */
+  /**
+   * Renumber the cosets in the standard order (a complete, compressed table).
+   * @see SymPy `sympy.combinatorics.coset_table.CosetTable.standardize`
+   */
   standardize(): void {
     let gamma = 1;
     const n = this.n;
@@ -545,7 +733,10 @@ export class CosetTable {
     }
   }
 
-  /** SymPy compress(): remove the dead cosets and renumber the live ones. */
+  /**
+   * Remove the dead cosets and renumber the live ones.
+   * @see SymPy `sympy.combinatorics.coset_table.CosetTable.compress`
+   */
   compress(): void {
     let gamma = -1;
     const table = this.table;
@@ -564,12 +755,23 @@ export class CosetTable {
     }
   }
 
-  /** SymPy conjugates(R): the cyclic conjugates of the relators and their inverses, by first letter. */
+  /**
+   * The cyclic conjugates of the relators and their inverses, by first letter.
+   * @param R - The relators whose cyclic conjugates are required.
+   * @returns The resulting group elements.
+   * @see SymPy `sympy.combinatorics.coset_table.CosetTable.conjugates`
+   */
   conjugates(R: Iterable<FreeGroupElement>): FreeGroupElement[][] {
     return conjugatesByLetter(this.A, R);
   }
 
-  /** SymPy coset_representative(coset): a word leading from the subgroup's coset 0 to this coset (standardized table). */
+  /**
+   * A word leading from the subgroup's coset 0 to this coset (standardized table).
+   * @param coset - The coset label whose representative is sought.
+   * @returns The resulting group word.
+   * @throws RangeError when the table has no standardized representative for the coset.
+   * @see SymPy `sympy.combinatorics.coset_table.CosetTable.coset_representative`
+   */
   cosetRepresentative(coset: number): FreeGroupElement {
     for (let x = 0; x < this.A.length; x++) {
       const gamma = at(at(this.table, coset), x);
@@ -579,32 +781,67 @@ export class CosetTable {
     throw new RangeError(`no representative of coset ${coset}: the table is not standardized`);
   }
 
-  /** SymPy modified_define(alpha, x). */
+  /**
+   * Define a function p_p from from [1..n] to A* as an additional component of the modified coset table.
+   * @param alpha - The starting coset label.
+   * @param x - The generator letter labeling the transition.
+   * @see SymPy `sympy.combinatorics.coset_table.CosetTable.modified_define`
+   */
   modifiedDefine(alpha: number, x: FreeGroupElement): void {
     this.define(alpha, x, true);
   }
 
-  /** SymPy modified_scan(alpha, w, y, fill). */
+  /**
+   * Scans a word while tracking subgroup words on the coset transitions.
+   * @param alpha - The starting coset label.
+   * @param w - The group word to scan or rewrite.
+   * @param y - The subgroup word associated with this scan.
+   * @param fill - Whether to define cosets wherever the scan stops.
+   * @see SymPy `sympy.combinatorics.coset_table.CosetTable.modified_scan`
+   */
   modifiedScan(alpha: number, w: FreeGroupElement, y: FreeGroupElement, fill = false): void {
     this.scan(alpha, w, y, fill, true);
   }
 
-  /** SymPy modified_scan_and_fill(alpha, w, y). */
+  /**
+   * Scans the relator and fills missing cosets while tracking subgroup words.
+   * @param alpha - The starting coset label.
+   * @param w - The group word to scan or rewrite.
+   * @param y - The subgroup word associated with this scan.
+   * @see SymPy `sympy.combinatorics.coset_table.CosetTable.modified_scan_and_fill`
+   */
   modifiedScanAndFill(alpha: number, w: FreeGroupElement, y: FreeGroupElement): void {
     this.modifiedScan(alpha, w, y, true);
   }
 
-  /** SymPy modified_merge(k, lamda, w, q). */
+  /**
+   * Parameters ==========.
+   * @param k - The first coset label.
+   * @param lamda - The second coset label.
+   * @param w - The group word to scan or rewrite.
+   * @param q - The queue of coincident cosets to process.
+   * @see SymPy `sympy.combinatorics.coset_table.CosetTable.modified_merge`
+   */
   modifiedMerge(k: number, lamda: number, w: FreeGroupElement, q: number[]): void {
     this.merge(k, lamda, q, w, true);
   }
 
-  /** SymPy modified_rep(k). */
+  /**
+   * Parameters ==========.
+   * @param k - The first coset label.
+   * @see SymPy `sympy.combinatorics.coset_table.CosetTable.modified_rep`
+   */
   modifiedRep(k: number): void {
     this.rep(k, true);
   }
 
-  /** SymPy modified_coincidence(alpha, beta, w). */
+  /**
+   * Parameters ==========.
+   * @param alpha - The starting coset label.
+   * @param beta - The second coset label.
+   * @param w - The group word to scan or rewrite.
+   * @see SymPy `sympy.combinatorics.coset_table.CosetTable.modified_coincidence`
+   */
   modifiedCoincidence(alpha: number, beta: number, w: FreeGroupElement): void {
     this.coincidence(alpha, beta, w, true);
   }
@@ -632,14 +869,26 @@ export interface CosetEnumerationOptions {
   draft?: CosetTable;
   /** Return the incomplete table when the maximum is reached instead of throwing. */
   incomplete?: boolean;
-  /** Track the subgroup generators (SymPy modified_coset_enumeration_r). */
+  /** Track the subgroup generators. */
   modified?: boolean;
 }
 
 /**
- * SymPy coset_enumeration_r(fp_grp, Y, max_cosets, draft, incomplete,
- * modified): the coset table of the subgroup generated by Y, by the
- * relator-based (HLT) strategy.
+ * Enumerates right cosets by scanning the presentation relators.
+ * @param fpGroup - The finitely presented group being enumerated.
+ * @param Y - Generators required to lie in the subgroup.
+ * @param opts - The settings described by {@link CosetEnumerationOptions}.
+ * @returns The enumerated coset table.
+ * @throws CosetLimitExceeded when enumeration reaches the coset limit and an incomplete table was not requested.
+ * @see SymPy `sympy.combinatorics.coset_table.coset_enumeration_r`
+ * @example
+ * ```ts
+ * import { FpGroup, cosetEnumerationR, freeGroup } from '@symjs/symjs';
+ *
+ * const [F, x] = freeGroup('x');
+ * const G = new FpGroup(F, [x.pow(3)]);
+ * cosetEnumerationR(G, []).table; // => [[1, 2], [2, 0], [0, 1]]
+ * ```
  */
 export function cosetEnumerationR(fpGroup: CosetGroup, Y: readonly FreeGroupElement[], opts: CosetEnumerationOptions = {}): CosetTable {
   const { maxCosets, draft, incomplete = false, modified = false } = opts;
@@ -674,15 +923,43 @@ export function cosetEnumerationR(fpGroup: CosetGroup, Y: readonly FreeGroupElem
   return C;
 }
 
-/** SymPy modified_coset_enumeration_r(fp_grp, Y, max_cosets, draft, incomplete). */
+/**
+ * Enumerates right cosets using relators and records the subgroup words for each transition.
+ * @param fpGroup - The finitely presented group being enumerated.
+ * @param Y - Generators required to lie in the subgroup.
+ * @param opts - The enumeration limit, starting table and handling of incomplete enumeration.
+ * @returns The coset table with its subgroup words.
+ * @throws CosetLimitExceeded when enumeration reaches the coset limit and an incomplete table was not requested.
+ * @see SymPy `sympy.combinatorics.coset_table.modified_coset_enumeration_r`
+ * @example
+ * ```ts
+ * import { FpGroup, freeGroup, modifiedCosetEnumerationR } from '@symjs/symjs';
+ *
+ * const [F, x] = freeGroup('x');
+ * const G = new FpGroup(F, [x.pow(3)]);
+ * modifiedCosetEnumerationR(G, []).table; // => [[1, 2], [2, 0], [0, 1]]
+ * ```
+ */
 export function modifiedCosetEnumerationR(fpGroup: CosetGroup, Y: readonly FreeGroupElement[], opts: Omit<CosetEnumerationOptions, 'modified'> = {}): CosetTable {
   return cosetEnumerationR(fpGroup, Y, { ...opts, modified: true });
 }
 
 /**
- * SymPy coset_enumeration_c(fp_grp, Y, max_cosets, draft, incomplete): the
- * coset table of the subgroup generated by Y, by the coset-table-based
- * (Felsch) strategy.
+ * Enumerates right cosets by filling the coset table and processing deductions.
+ * @param fpGroup - The finitely presented group being enumerated.
+ * @param Y - Generators required to lie in the subgroup.
+ * @param opts - The enumeration limit, starting table and handling of incomplete enumeration.
+ * @returns The enumerated coset table.
+ * @throws CosetLimitExceeded when enumeration reaches the coset limit and an incomplete table was not requested.
+ * @see SymPy `sympy.combinatorics.coset_table.coset_enumeration_c`
+ * @example
+ * ```ts
+ * import { FpGroup, cosetEnumerationC, freeGroup } from '@symjs/symjs';
+ *
+ * const [F, x] = freeGroup('x');
+ * const G = new FpGroup(F, [x.pow(3)]);
+ * cosetEnumerationC(G, []).table; // => [[1, 2], [2, 0], [0, 1]]
+ * ```
  */
 export function cosetEnumerationC(fpGroup: CosetGroup, Y: readonly FreeGroupElement[], opts: Omit<CosetEnumerationOptions, 'modified'> = {}): CosetTable {
   const { maxCosets, draft, incomplete = false } = opts;

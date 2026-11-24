@@ -18,9 +18,17 @@ import type { Matrix } from './matrix';
 export { DomainMatrix } from '../polys/matrices/domainmatrix';
 
 /**
- * SymPy Matrix.to_DM(domain, field): the matrix as a sparse DomainMatrix
- * over the given domain or the one construct_domain chooses (EXRAW instead
- * of EX), optionally its field of fractions.
+ * Converts an explicit matrix to a sparse domain matrix over an inferred or specified domain.
+ * @param m - The input matrix.
+ * @param opts - An explicit `domain`, or inference options such as `field`, `extension` and `composite`.
+ * @returns The matrix with coefficients in the selected domain.
+ * @throws TypeError when an explicit domain is combined with inference options.
+ * @see SymPy `sympy.matrices.repmatrix.RepMatrix.to_DM`
+ * @example
+ * ```ts
+ * import { Matrix, toDM } from '@symjs/symjs';
+ * String(toDM(Matrix.of([[1, 2], [3, 4]])).domain); // => ZZ
+ * ```
  */
 export function toDM(m: Matrix, opts: ConstructDomainOptions & { domain?: Domain } = {}): DomainMatrix {
   const { domain, ...options } = opts;

@@ -68,21 +68,31 @@ function partitionBlocks(partition: readonly PartitionBlock[]): FiniteSet[] {
 }
 
 /**
- * SymPy Partition(*blocks): a partition of a set into disjoint blocks (each a
+ * A partition of a set into disjoint blocks (each a
  * list, a JavaScript Set or a FiniteSet). As SymPy's Partition (a FiniteSet
  * of its blocks), it is an expression node: it prints like SymPy,
  * `Partition({3}, {1, 2})`, and its LaTeX and pretty forms are those of the
  * set of its blocks.
+ * @see SymPy `sympy.combinatorics.partitions.Partition`
+ * @example
+ * ```ts
+ * import { Partition } from '@symjs/symjs';
+ * new Partition([1, 2, 3]).rank; // => 0
+ * ```
  */
 export class Partition extends ExtensionExpr {
   readonly #blocks: readonly FiniteSet[];
-  /** SymPy members: the elements of all blocks, in the order of their union. */
+  /** The elements of all blocks, in the order of their union. */
   readonly members: readonly Expr[];
-  /** SymPy size: the number of elements. */
+  /** The number of elements. */
   readonly size: number;
   #rank: bigint | undefined;
   #partition: Expr[][] | undefined;
 
+  /**
+   * Constructs a `Partition`.
+   * @param partition - The blocks or parts defining the partition.
+   */
   constructor(...partition: PartitionBlock[]) {
     super('Partition', partitionBlocks(partition));
     this.#blocks = super.args.map((b) => cast(b, FiniteSet));
@@ -92,66 +102,117 @@ export class Partition extends ExtensionExpr {
     this.size = all.size;
   }
 
-  /** The blocks as sets. */
+  /**
+   * Gets the blocks as sets.
+   * @returns The blocks as sets.
+   * @see SymPy `sympy.combinatorics.partitions.Partition.args`
+   */
   override get args(): readonly FiniteSet[] {
     return this.#blocks;
   }
 
-  /** A partition of the new blocks (SymPy Partition(*args)). */
+  /**
+   * Rebuilds the expression with replacement operands.
+   * @param args - The operands in their defining order.
+   * @returns The expression with the given operands.
+   */
   withArgs(args: readonly Expr[]): Expr {
     return new Partition(...args.map((a) => cast(a, FiniteSet)));
   }
 
-  /** SymPy str: Partition({3}, {1, 2}) (the blocks in sort-key order). */
+  /**
+   * Formats the expression as plain text.
+   * @param print - Formats a child expression.
+   * @returns The plain-text representation.
+   */
   override printStr(print: (e: Expr) => string): string {
     return `Partition(${this.args.map(print).join(', ')})`;
   }
 
-  /** SymPy latex: the LaTeX form of the set of the blocks (SymPy _print_FiniteSet). */
+  /**
+   * Formats the expression in LaTeX.
+   * @param print - Formats a child expression.
+   * @returns The LaTeX representation.
+   */
   override printLatex(print: (e: Expr) => string): string {
     return print(new FiniteSet(this.args));
   }
 
-  /** SymPy sort_key(): the size, the members and the rank. */
+  /**
+   * Orders set partitions by size, members and then rank.
+   * @param other - The value to combine with or compare against.
+   * @returns The compare.
+   * @see SymPy `sympy.combinatorics.partitions.Partition.compare`
+   */
   compare(other: Partition): number {
     return this.size - other.size || cmpLists(this.members, other.members) || (this.rank < other.rank ? -1 : this.rank > other.rank ? 1 : 0);
   }
 
-  /** SymPy partition: the blocks as a sorted list of sorted lists. */
+  /**
+   * Gets the blocks as a sorted list of sorted lists.
+   * @returns The blocks as a sorted list of sorted lists.
+   * @see SymPy `sympy.combinatorics.partitions.Partition.partition`
+   */
   get partition(): Expr[][] {
     this.#partition ??= this.args.map((p) => sortExprs(p.args)).sort(cmpLists);
     return this.#partition.map((p) => [...p]);
   }
 
-  /** SymPy a + k: the partition whose rank is k higher (modulo the number of partitions). */
+  /**
+   * Returns the partition whose rank is k higher (modulo the number of partitions).
+   * @param other - The value to combine with or compare against.
+   * @returns The partition whose rank is k higher (modulo the number of partitions).
+   * @see SymPy `sympy.combinatorics.partitions.Partition.__add__`
+   */
   add(other: number | bigint): Partition {
     const offset = this.rank + BigInt(other);
     const result = RGSUnrank(pmod(offset, RGSEnum(this.size)), this.size);
     return Partition.fromRgs(result, this.members);
   }
 
-  /** SymPy a - k: the partition whose rank is k lower. */
+  /**
+   * Returns the partition whose rank is k lower.
+   * @param other - The value to combine with or compare against.
+   * @returns The partition whose rank is k lower.
+   * @see SymPy `sympy.combinatorics.partitions.Partition.__sub__`
+   */
   sub(other: number | bigint): Partition {
     return this.add(-BigInt(other));
   }
 
-  /** SymPy a <= b (by the sort key). */
+  /**
+   * Compares the operands in nondecreasing order.
+   * @param other - The value to combine with or compare against.
+   * @returns The result of the comparison.
+   */
   le(other: Partition): boolean {
     return this.compare(other) <= 0;
   }
 
-  /** SymPy a < b (by the sort key). */
+  /**
+   * Tests whether this operand precedes the other.
+   * @param other - The value to combine with or compare against.
+   * @returns The result of the comparison.
+   */
   lt(other: Partition): boolean {
     return this.compare(other) < 0;
   }
 
-  /** SymPy rank: the rank of the restricted growth string. */
+  /**
+   * Gets the rank of the restricted growth string.
+   * @returns The rank of the restricted growth string.
+   * @see SymPy `sympy.combinatorics.partitions.Partition.rank`
+   */
   get rank(): bigint {
     this.#rank ??= RGSRank(this.RGS);
     return this.#rank;
   }
 
-  /** SymPy RGS: the restricted growth string (the block of each element, in sorted element order). */
+  /**
+   * Gets the restricted growth string (the block of each element, in sorted element order).
+   * @returns The restricted growth string (the block of each element, in sorted element order).
+   * @see SymPy `sympy.combinatorics.partitions.Partition.RGS`
+   */
   get RGS(): number[] {
     const rgs = new Map<string, number>();
     const partition = this.partition;
@@ -162,8 +223,13 @@ export class Partition extends ExtensionExpr {
   }
 
   /**
-   * SymPy Partition.from_rgs(rgs, elements): the partition whose block of
+   * The partition whose block of
    * elements[i] is rgs[i] (the elements are taken as given, not sorted).
+   * @param rgs - The restricted growth string encoding the partition.
+   * @param elements - The elements in restricted-growth-string order.
+   * @returns The partition whose block of elements[i] is rgs[i] (the elements are taken as given, not sorted).
+   * @throws RangeError when the string and the list of elements have different lengths or a partition block is empty.
+   * @see SymPy `sympy.combinatorics.partitions.Partition.from_rgs`
    */
   static fromRgs(rgs: readonly (number | bigint)[], elements: readonly PartitionElement[]): Partition {
     if (rgs.length !== elements.length) throw new RangeError('mismatch in rgs and element lengths');
@@ -186,17 +252,34 @@ const asInt = (v: number | bigint): number => {
 const isPartsList = (v: IntegerPartitionInput): v is readonly (number | bigint)[] => Array.isArray(v);
 
 /**
- * SymPy IntegerPartition(partition) or IntegerPartition(integer, partition):
- * a partition of a positive integer into positive parts, given as a list or
+ * A partition of a positive integer into positive parts, given as a list or
  * as a map part -> multiplicity; with the integer first, the parts must sum
  * to it.
+ * @see SymPy `sympy.combinatorics.partitions.IntegerPartition`
+ * @example
+ * ```ts
+ * import { IntegerPartition } from '@symjs/symjs';
+ * new IntegerPartition([5, 1, 1]).asFerrers(); // => #####
+ * //   #
+ * //   #
+ * ```
  */
 export class IntegerPartition {
   /** The parts in decreasing order. */
   readonly partition: readonly number[];
-  /** The partitioned integer. */
+  /**
+   * The partitioned integer.
+   * @see SymPy `sympy.combinatorics.partitions.IntegerPartition.integer`
+   */
   readonly integer: number;
 
+  /**
+   * Constructs an `IntegerPartition`.
+   * @param partition - The blocks or parts defining the partition.
+   * @param integer - The integer.
+   * @throws TypeError when the parts are omitted.
+   * @throws RangeError when the parts do not sum to the specified integer or an integer summand is less than two.
+   */
   constructor(partition: IntegerPartitionInput);
   constructor(integer: number | bigint, partition: IntegerPartitionInput);
   constructor(a: IntegerPartitionInput | number | bigint, b?: IntegerPartitionInput) {
@@ -221,7 +304,11 @@ export class IntegerPartition {
     this.integer = integer ?? sum;
   }
 
-  /** SymPy prev_lex(): the previous partition of the integer in lexical order (wrapping to [1, ..., 1]). */
+  /**
+   * Returns the previous partition of the integer in lexical order (wrapping to [1, ..., 1]).
+   * @returns The previous partition of the integer in lexical order (wrapping to [1, ..., 1]).
+   * @see SymPy `sympy.combinatorics.partitions.IntegerPartition.prev_lex`
+   */
   prevLex(): IntegerPartition {
     const [d, keys] = this.#groups();
     const get = (k: number): number => d.get(k) ?? 0;
@@ -251,7 +338,11 @@ export class IntegerPartition {
     return new IntegerPartition(this.integer, d);
   }
 
-  /** SymPy next_lex(): the next partition of the integer in lexical order (wrapping to [n]). */
+  /**
+   * Returns the next partition of the integer in lexical order (wrapping to [n]).
+   * @returns The next partition of the integer in lexical order (wrapping to [n]).
+   * @see SymPy `sympy.combinatorics.partitions.IntegerPartition.next_lex`
+   */
   nextLex(): IntegerPartition {
     const [d, key] = this.#groups();
     const get = (k: number): number => d.get(k) ?? 0;
@@ -292,7 +383,11 @@ export class IntegerPartition {
     return new IntegerPartition(this.integer, d);
   }
 
-  /** SymPy as_dict(): the map part -> multiplicity (parts in decreasing order). */
+  /**
+   * Returns the map part -> multiplicity (parts in decreasing order).
+   * @returns The map part -> multiplicity (parts in decreasing order).
+   * @see SymPy `sympy.combinatorics.partitions.IntegerPartition.as_dict`
+   */
   asDict(): Map<number, number> {
     return this.#groups()[0];
   }
@@ -304,7 +399,11 @@ export class IntegerPartition {
     return [d, [...d.keys()]];
   }
 
-  /** SymPy conjugate: the conjugate partition (the transposed Ferrers diagram). */
+  /**
+   * Gets the conjugate partition (the transposed Ferrers diagram).
+   * @returns The conjugate partition (the transposed Ferrers diagram).
+   * @see SymPy `sympy.combinatorics.partitions.IntegerPartition.conjugate`
+   */
   get conjugate(): number[] {
     let j = 1;
     const temp = [...this.partition, 0];
@@ -320,28 +419,47 @@ export class IntegerPartition {
     return b;
   }
 
-  /** SymPy a < b: the parts from smallest to largest compare lexicographically less. */
+  /**
+   * The parts from smallest to largest compare lexicographically less.
+   * @param other - The value to combine with or compare against.
+   * @returns The result of the comparison.
+   */
   lt(other: IntegerPartition): boolean {
     return cmpNumberLists([...this.partition].reverse(), [...other.partition].reverse()) < 0;
   }
 
-  /** SymPy a <= b. */
+  /**
+   * Compares the operands in nondecreasing order.
+   * @param other - The value to combine with or compare against.
+   * @returns The result of the comparison.
+   */
   le(other: IntegerPartition): boolean {
     return cmpNumberLists([...this.partition].reverse(), [...other.partition].reverse()) <= 0;
   }
 
-  /** SymPy as_ferrers(char='#'): the Ferrers diagram. */
+  /**
+   * The Ferrers diagram.
+   * @param char - The symbol used for each cell of the Ferrers diagram.
+   * @returns The formatted text.
+   * @see SymPy `sympy.combinatorics.partitions.IntegerPartition.as_ferrers`
+   */
   asFerrers(char = '#'): string {
     return this.partition.map((i) => char.repeat(i)).join('\n');
   }
 
-  /** SymPy repr: IntegerPartition(14, (5, 4, 3, 1, 1)). */
+  /**
+   * IntegerPartition(14, (5, 4, 3, 1, 1)).
+   * @returns The resulting text.
+   */
   repr(): string {
     const parts = this.partition.length === 1 ? `(${first(this.partition)},)` : `(${this.partition.join(', ')})`;
     return `IntegerPartition(${this.integer}, ${parts})`;
   }
 
-  /** SymPy str: the list of parts, [5, 4, 3, 1, 1]. */
+  /**
+   * Formats the object as plain text.
+   * @returns The printable representation.
+   */
   toString(): string {
     return `[${this.partition.join(', ')}]`;
   }
@@ -353,9 +471,19 @@ function cmpNumberLists(a: readonly number[], b: readonly number[]): number {
 }
 
 /**
- * SymPy random_integer_partition(n, seed=None): a random partition of n as
+ * A random partition of n as
  * a list of parts in decreasing order; a seed list gives the random values
  * to use, in order.
+ * @param nIn - The integer to partition.
+ * @param seed - The seed or prescribed random draws.
+ * @returns A random partition of n as a list of parts in decreasing order.
+ * @throws RangeError when `n` is not a positive integer or the prescribed random draws cannot supply the required values.
+ * @see SymPy `sympy.combinatorics.partitions.random_integer_partition`
+ * @example
+ * ```ts
+ * import { randomIntegerPartition } from '@symjs/symjs';
+ * randomIntegerPartition(10, [1, 2, 3, 1, 5, 1]); // => [5, 3, 1, 1]
+ * ```
  */
 export function randomIntegerPartition(nIn: number | bigint, seed?: readonly number[]): number[] {
   let n = asInt(nIn);
@@ -378,7 +506,25 @@ export function randomIntegerPartition(nIn: number | bigint, seed?: readonly num
   return partition.flatMap(([k, m]) => Array.from({ length: m }, () => k));
 }
 
-/** SymPy RGS_generalized(m): the (m + 1) x (m + 1) matrix of generalized unrestricted growth string counts. */
+/**
+ * Builds the table of completion counts used to rank and unrank restricted growth strings.
+ * @param m - The number of items in the partition.
+ * @returns The table of counts indexed by prefix length and current maximum.
+ * @see SymPy `sympy.combinatorics.partitions.RGS_generalized`
+ * @remarks SymPy prints this result as `Matrix([[1, 1, 1, 1, 1, 1, 1], [1, 2, 3, 4, 5, 6, 0], [2, 5, 10, 17, 26, 0, 0], [5, 15, 37, 77, 0, 0, 0], [15, 52, 151, 0, 0, 0, 0], [52, 203, 0, 0, 0, 0, 0], [203, 0, 0, 0, 0, 0, 0]])`.
+ * @example
+ * ```ts
+ * import { RGSGeneralized } from '@symjs/symjs';
+ * RGSGeneralized(6); // => Matrix([
+ * //   [  1,   1,   1,  1,  1, 1, 1],
+ * //   [  1,   2,   3,  4,  5, 6, 0],
+ * //   [  2,   5,  10, 17, 26, 0, 0],
+ * //   [  5,  15,  37, 77,  0, 0, 0],
+ * //   [ 15,  52, 151,  0,  0, 0, 0],
+ * //   [ 52, 203,   0,  0,  0, 0, 0],
+ * //   [203,   0,   0,  0,  0, 0, 0]])
+ * ```
+ */
 export function RGSGeneralized(m: number): Matrix {
   return Matrix.of(rgsTable(m).map((row) => row.map((v) => v)));
 }
@@ -392,7 +538,17 @@ function rgsTable(m: number): bigint[][] {
   return d;
 }
 
-/** SymPy RGS_enum(m): the number of restricted growth strings of length m (the Bell number). */
+/**
+ * The number of restricted growth strings of length m (the Bell number).
+ * @param m - The number of items in the partition.
+ * @returns The Bell number for the given length.
+ * @see SymPy `sympy.combinatorics.partitions.RGS_enum`
+ * @example
+ * ```ts
+ * import { RGSEnum } from '@symjs/symjs';
+ * RGSEnum(4); // => 15
+ * ```
+ */
 export function RGSEnum(m: number): bigint {
   if (m < 1) return 0n;
   // Bell numbers by the Bell triangle
@@ -405,7 +561,19 @@ export function RGSEnum(m: number): bigint {
   return last(row);
 }
 
-/** SymPy RGS_unrank(rank, m): the restricted growth string of length m with the given rank. */
+/**
+ * The restricted growth string of length m with the given rank.
+ * @param rankIn - The zero-based position in the enumeration.
+ * @param m - The number of items in the partition.
+ * @returns The digits of the restricted growth string.
+ * @throws RangeError when the superset is empty.
+ * @see SymPy `sympy.combinatorics.partitions.RGS_unrank`
+ * @example
+ * ```ts
+ * import { RGSUnrank } from '@symjs/symjs';
+ * RGSUnrank(14, 4); // => [0, 1, 2, 3]
+ * ```
+ */
 export function RGSUnrank(rankIn: number | bigint, m: number): number[] {
   if (m < 1) throw new RangeError('The superset size must be >= 1');
   let rank = BigInt(rankIn);
@@ -428,7 +596,17 @@ export function RGSUnrank(rankIn: number | bigint, m: number): number[] {
   return L.slice(1).map((x) => x - 1);
 }
 
-/** SymPy RGS_rank(rgs): the rank of a restricted growth string. */
+/**
+ * The rank of a restricted growth string.
+ * @param rgs - The restricted growth string encoding the partition.
+ * @returns The zero-based ordinal of the partition.
+ * @see SymPy `sympy.combinatorics.partitions.RGS_rank`
+ * @example
+ * ```ts
+ * import { RGSRank } from '@symjs/symjs';
+ * RGSRank([0, 1, 2, 1, 3]); // => 42
+ * ```
+ */
 export function RGSRank(rgs: readonly (number | bigint)[]): bigint {
   const r = rgs.map(Number);
   const size = r.length;

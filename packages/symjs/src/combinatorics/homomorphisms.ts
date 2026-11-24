@@ -27,17 +27,26 @@ import { Permutation } from './permutations';
 
 
 /**
- * SymPy homomorphism(domain, codomain, gens, images, check): the group
- * homomorphism sending gens to images and the other generators of the
- * domain to the identity; with `check` (the default), verify that the
- * images satisfy the relators. (symjs names it groupHomomorphism: the module
- * homomorphisms of sympy.polys.agca are `homomorphism`.)
+ * Defines a group homomorphism by assigning an image to each generator.
+ * @param domain - The source group.
+ * @param codomain - The target group.
+ * @param gens - The group generators.
+ * @param images - The images of the generators, in matching order.
+ * @param check - Whether to verify that the images respect the relations.
+ * @returns The map determined by the generator images.
+ * @see SymPy `sympy.combinatorics.homomorphisms.homomorphism`
  */
 export function groupHomomorphism(domain: PermutationGroupNode | FpGroup | FreeGroup, codomain: PermutationGroupNode | FpGroup | FreeGroup, gens: readonly GroupElement[], images: readonly GroupElement[] = [], check = true): GroupHomomorphism {
   return homomorphismOf(domain, codomain, gens, images, check);
 }
 
-/** SymPy orbit_homomorphism(group, omega): the action of a permutation group on an invariant set omega, into the symmetric group on omega. */
+/**
+ * The action of a permutation group on an invariant set omega, into the symmetric group on omega.
+ * @param group - The ambient group.
+ * @param omegaIn - The invariant set on which the group acts.
+ * @returns The induced homomorphism into the permutations of the invariant set.
+ * @see SymPy `sympy.combinatorics.homomorphisms.orbit_homomorphism`
+ */
 export function orbitHomomorphism(group: PermutationGroupNode, omegaIn: Iterable<number>): GroupHomomorphism {
   const omega = [...omegaIn];
   const codomain = SymmetricGroup(omega.length);
@@ -51,9 +60,13 @@ export function orbitHomomorphism(group: PermutationGroupNode, omegaIn: Iterable
 }
 
 /**
- * SymPy block_homomorphism(group, blocks): the action of a permutation group
+ * The action of a permutation group
  * on a block system (blocks[i] the representative of the block of i), into
  * the symmetric group on the blocks.
+ * @param group - The ambient group.
+ * @param blocks - The blocks in placement order.
+ * @returns The homomorphism induced on the blocks.
+ * @see SymPy `sympy.combinatorics.homomorphisms.block_homomorphism`
  */
 export function blockHomomorphism(group: PermutationGroupNode, blocks: readonly number[]): GroupHomomorphism {
   const n = blocks.length;
@@ -109,13 +122,19 @@ function totient(n: bigint): bigint {
 export type IsomorphismResult = [true, GroupHomomorphism] | [false, NoMatchResult];
 
 /**
- * SymPy group_isomorphism(G, H, isomorphism): whether two finite groups
- * (permutation or finitely presented) are isomorphic, with an isomorphism;
- * with isomorphism false, only the boolean.
- *
- * SymPy tries only images among the generators of H, so it can miss an
- * isomorphism; symjs tries those first (the same isomorphism as SymPy when
- * SymPy finds one) and then all elements of H.
+ * Tests two finite groups for isomorphism and optionally constructs an isomorphism.
+ * @param G - The ambient group.
+ * @param H - The subgroup or second group in the operation.
+ * @param isomorphism - Whether to construct a map when the groups are isomorphic.
+ * @returns The existence test and, if requested, the map or `NoMatch`.
+ * @throws TypeError when the supplied group has an unsupported representation.
+ * @throws NotImplementedError when the group is infinite.
+ * @see SymPy `sympy.combinatorics.homomorphisms.group_isomorphism`
+ * @example
+ * ```ts
+ * import { CyclicGroup, DihedralGroup, groupIsomorphism } from '@symjs/symjs';
+ * groupIsomorphism(DihedralGroup(8), CyclicGroup(8), false); // => False
+ * ```
  */
 export function groupIsomorphism(G: PermutationGroupNode | FpGroup, H: PermutationGroupNode | FpGroup, isomorphism?: true): IsomorphismResult;
 export function groupIsomorphism(G: PermutationGroupNode | FpGroup, H: PermutationGroupNode | FpGroup, isomorphism: false): boolean;
@@ -171,7 +190,18 @@ export function groupIsomorphism(GIn: PermutationGroupNode | FpGroup, HIn: Permu
   return isomorphism ? [false, NoMatch] : false;
 }
 
-/** SymPy is_isomorphic(G, H): whether two finite groups are isomorphic. */
+/**
+ * Whether two finite groups are isomorphic.
+ * @param G - The ambient group.
+ * @param H - The subgroup or second group in the operation.
+ * @returns Whether the object is isomorphic.
+ * @see SymPy `sympy.combinatorics.homomorphisms.is_isomorphic`
+ * @example
+ * ```ts
+ * import { Perm, PermutationGroup, isIsomorphic } from '@symjs/symjs';
+ * isIsomorphic(PermutationGroup([new Perm([4, 5, 6, 7, 0, 1, 2, 3])]), PermutationGroup([new Perm([1, 0])])); // => True
+ * ```
+ */
 export function isIsomorphic(G: PermutationGroupNode | FpGroup, H: PermutationGroupNode | FpGroup): boolean {
   return groupIsomorphism(G, H, false);
 }

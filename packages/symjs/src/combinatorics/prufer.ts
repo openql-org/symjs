@@ -47,11 +47,17 @@ function arrayLatex(input: readonly (readonly number[])[] | readonly number[]): 
 const isEdgeList = (arg: readonly PruferEdge[] | readonly number[]): arg is readonly PruferEdge[] => arg[0] !== undefined && typeof arg[0] !== 'number';
 
 /**
- * SymPy Prufer: a labelled tree with nodes 0 through n - 1, given by its
+ * A labelled tree with nodes 0 through n - 1, given by its
  * edges (`new Prufer([[0, 1], [0, 2], [0, 3]])`, optionally with the number
  * of nodes, which is then not checked) or by its Prufer sequence
  * (`new Prufer([1, 3])`, a tree with two more nodes than the sequence has
  * entries).
+ * @see SymPy `sympy.combinatorics.prufer.Prufer`
+ * @example
+ * ```ts
+ * import { Prufer } from '@symjs/symjs';
+ * new Prufer([0, 1]).rank; // => 1
+ * ```
  */
 export class Prufer extends ExtensionExpr {
   #prufer: number[] | undefined;
@@ -61,6 +67,12 @@ export class Prufer extends ExtensionExpr {
   readonly #input: readonly (readonly number[])[] | readonly number[];
   readonly #nInput: number | undefined;
 
+  /**
+   * Constructs a `Prufer`.
+   * @param arg - The edge list of a tree or its Prüfer sequence.
+   * @param n - The number of labeled vertices.
+   * @throws RangeError when the input contains no edges or node labels are missing from the tree.
+   */
   constructor(arg: readonly PruferEdge[] | readonly number[], n?: number) {
     super('Prufer', []);
     this.#input = arg;
@@ -83,35 +95,61 @@ export class Prufer extends ExtensionExpr {
     }
   }
 
-  /** SymPy prufer_repr: the Prufer sequence. */
+  /**
+   * Gets the Prufer sequence.
+   * @returns The Prufer sequence.
+   * @see SymPy `sympy.combinatorics.prufer.Prufer.prufer_repr`
+   */
   get pruferRepr(): number[] {
     this.#prufer ??= Prufer.toPrufer(defined(this.#tree).map((e) => [...e]), this.#nodes);
     return [...this.#prufer];
   }
 
-  /** SymPy tree_repr: the tree as a list of edges. */
+  /**
+   * Gets the tree as a list of edges.
+   * @returns The tree as a list of edges.
+   * @see SymPy `sympy.combinatorics.prufer.Prufer.tree_repr`
+   */
   get treeRepr(): number[][] {
     this.#tree ??= Prufer.toTree(defined(this.#prufer));
     return this.#tree.map((e) => [...e]);
   }
 
-  /** SymPy nodes: the number of nodes of the tree. */
+  /**
+   * Gets the number of nodes of the tree.
+   * @returns The number of nodes of the tree.
+   * @see SymPy `sympy.combinatorics.prufer.Prufer.nodes`
+   */
   get nodes(): number {
     return this.#nodes;
   }
 
-  /** SymPy rank: the rank of the Prufer sequence. */
+  /**
+   * Gets the rank of the Prufer sequence.
+   * @returns The rank of the Prufer sequence.
+   * @see SymPy `sympy.combinatorics.prufer.Prufer.rank`
+   */
   get rank(): bigint {
     this.#rank ??= this.pruferRank();
     return this.#rank;
   }
 
-  /** SymPy size: the number of trees with this number of nodes. */
+  /**
+   * The number of trees with this number of nodes.
+   * @returns The size of the object.
+   * @see SymPy `sympy.combinatorics.prufer.Prufer.size`
+   */
   get size(): bigint {
     return this.prev(this.rank).prev().rank + 1n;
   }
 
-  /** SymPy Prufer.to_prufer(tree, n): the Prufer sequence of a tree of n nodes given by its edges. */
+  /**
+   * Returns the Prufer sequence of a tree of n nodes given by its edges.
+   * @param treeIn - The edges of the labeled tree.
+   * @param n - The number of labeled vertices.
+   * @returns The Prufer sequence of a tree of n nodes given by its edges.
+   * @see SymPy `sympy.combinatorics.prufer.Prufer.to_prufer`
+   */
   static toPrufer(treeIn: readonly PruferEdge[], n: number): number[] {
     const tree = treeIn.map((e) => [...e]);
     const d = new Map<number, number>();
@@ -139,7 +177,17 @@ export class Prufer extends ExtensionExpr {
     return L;
   }
 
-  /** SymPy Prufer.to_tree(prufer): the edges of the tree of a Prufer sequence. */
+  /**
+   * Returns the edges of the tree of a Prufer sequence.
+   * @param prufer - The Prüfer sequence of node labels.
+   * @returns The edges of the tree of a Prufer sequence.
+   * @see SymPy `sympy.combinatorics.prufer.Prufer.to_tree`
+   * @example
+   * ```ts
+   * import { Prufer } from '@symjs/symjs';
+   * Prufer.toTree([0, 0]); // => [[0, 1], [0, 2], [0, 3]]
+   * ```
+   */
   static toTree(prufer: readonly number[]): number[][] {
     const tree: number[][] = [];
     const n = prufer.length + 2;
@@ -160,9 +208,13 @@ export class Prufer extends ExtensionExpr {
   }
 
   /**
-   * SymPy Prufer.edges(*runs): the unique edges of the paths given as runs
+   * The unique edges of the paths given as runs
    * of node labels, relabelled so that the smallest node is 0, and the
    * number of nodes.
+   * @param runs - The sequences of adjacent vertex labels.
+   * @returns The unique edges of the paths given as runs of node labels, relabelled so that the smallest node is 0, and the number of nodes.
+   * @throws RangeError when the input contains no edges or node labels are missing from the tree.
+   * @see SymPy `sympy.combinatorics.prufer.Prufer.edges`
    */
   static edges(...runs: (readonly number[])[]): [number[][], number] {
     const e = new Map<string, [number, number]>();
@@ -192,7 +244,11 @@ export class Prufer extends ExtensionExpr {
     return [rv, nmax - nmin + 1];
   }
 
-  /** SymPy prufer_rank(): the rank of the Prufer sequence. */
+  /**
+   * Returns the rank of the Prufer sequence.
+   * @returns The rank of the Prufer sequence.
+   * @see SymPy `sympy.combinatorics.prufer.Prufer.prufer_rank`
+   */
   pruferRank(): bigint {
     const seq = this.pruferRepr;
     let r = 0n;
@@ -204,7 +260,13 @@ export class Prufer extends ExtensionExpr {
     return r;
   }
 
-  /** SymPy Prufer.unrank(rank, n): the Prufer sequence of a tree of n nodes with the given rank. */
+  /**
+   * Returns the Prufer sequence of a tree of n nodes with the given rank.
+   * @param rankIn - The zero-based position in the enumeration.
+   * @param nIn - The number of labeled vertices.
+   * @returns The Prufer sequence of a tree of n nodes with the given rank.
+   * @see SymPy `sympy.combinatorics.prufer.Prufer.unrank`
+   */
   static unrank(rankIn: number | bigint, nIn: number | bigint): Prufer {
     const n = toBig(nIn);
     let rank = toBig(rankIn);
@@ -217,17 +279,31 @@ export class Prufer extends ExtensionExpr {
     return new Prufer(L);
   }
 
-  /** SymPy next(delta=1): the tree whose rank is delta higher. */
+  /**
+   * Returns the tree whose rank is delta higher.
+   * @param delta - The signed displacement in enumeration order.
+   * @returns The tree whose rank is delta higher.
+   * @see SymPy `sympy.combinatorics.prufer.Prufer.next`
+   */
   next(delta: number | bigint = 1): Prufer {
     return Prufer.unrank(this.rank + toBig(delta), this.#nodes);
   }
 
-  /** SymPy prev(delta=1): the tree whose rank is delta lower. */
+  /**
+   * Returns the tree whose rank is delta lower.
+   * @param delta - The signed displacement in enumeration order.
+   * @returns The tree whose rank is delta lower.
+   * @see SymPy `sympy.combinatorics.prufer.Prufer.prev`
+   */
   prev(delta: number | bigint = 1): Prufer {
     return Prufer.unrank(this.rank - toBig(delta), this.#nodes);
   }
 
-  /** The node itself (a Prufer object has no expression arguments). */
+  /**
+   * Rebuilds the expression with replacement operands.
+   * @param _args - The operands in their defining order.
+   * @returns The expression with the given operands.
+   */
   withArgs(_args: readonly Expr[]): Expr {
     return this;
   }
@@ -236,7 +312,10 @@ export class Prufer extends ExtensionExpr {
     return this.printStr();
   }
 
-  /** SymPy str: Prufer([0, 0]), Prufer([[0, 1], [0, 2]], 3). */
+  /**
+   * Formats the expression as plain text.
+   * @returns The plain-text representation.
+   */
   override printStr(): string {
     const items: readonly (number | readonly number[])[] = this.#input;
     const show = (v: number | readonly number[]): string => (typeof v === 'number' ? String(v) : `[${v.join(', ')}]`);
@@ -245,8 +324,8 @@ export class Prufer extends ExtensionExpr {
   }
 
   /**
-   * SymPy latex: \operatorname{Prufer} of its arguments, the sequence or the edges being an
-   * array (SymPy _print_NDimArray) and the empty sequence a tuple.
+   * Formats the expression in LaTeX.
+   * @returns The LaTeX representation.
    */
   override printLatex(): string {
     const n = this.#nInput === undefined ? '' : `, ${this.#nInput}`;

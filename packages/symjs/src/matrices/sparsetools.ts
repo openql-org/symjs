@@ -23,9 +23,11 @@ export type BandedValue = ExprLike | Matrix | ((i: number) => ExprLike) | readon
 export type BandedEntry = ExprLike | Matrix | readonly ExprLike[] | readonly (readonly ExprLike[])[];
 /** The diagonals of `banded`, by offset (positive above the main diagonal). */
 export type BandedDiagonals = ReadonlyMap<IntLike, BandedValue>;
-/** The size of a `banded` matrix given by keyword (SymPy rows=, cols=). */
+/** The size of a `banded` matrix given by keyword. */
 export interface BandedOptions {
+  /** The number of rows. */
   rows?: IntLike;
+  /** The number of columns. */
   cols?: IntLike;
 }
 /** The arguments of `banded`: [[rows,] cols,] diagonals, or diagonals with the size as options. */
@@ -51,13 +53,28 @@ function toMatrix(v: Matrix | readonly ExprLike[] | readonly (readonly ExprLike[
 const badInput = (): TypeError => new TypeError('unrecognized input to banded: expecting [[row,] col,] {int: value}');
 
 /**
- * A sparse matrix from its diagonals (SymPy banded), e.g.
+ * A sparse matrix from its diagonals, e.g.
  * `banded(new Map([[1, [1, 2, 3]], [-1, [4, 5, 6]], [0, x]]))`. Each key is
  * the offset of a diagonal; a scalar or a function of the position fills the
  * whole diagonal, a list gives its entries (nested lists and matrices are
  * blocks, the next entry follows the block), and a matrix value is repeated
  * as blocks as often as it fits. Without a size, the matrix is as large as
  * the lists and blocks need.
+ * @param args - The operands in their defining order.
+ * @returns The sparse matrix with the specified diagonal bands.
+ * @throws TypeError when the arguments do not specify diagonals and valid dimensions.
+ * @throws RangeError when two bands assign conflicting entries at the same position or the number of entries does not divide the matrix size or the specified dimensions cannot accommodate the entries.
+ * @see SymPy `sympy.matrices.sparsetools.banded`
+ * @remarks SymPy prints this result as `Matrix([[1, 1, 0, 0], [1, 1, 0, 0], [0, 0, 1, 1], [0, 0, 1, 1]])`.
+ * @example
+ * ```ts
+ * import { Matrix, banded } from '@symjs/symjs';
+ * banded(4, new Map([[0, Matrix.of([[1, 1], [1, 1]])]])); // => Matrix([
+ * //   [1, 1, 0, 0],
+ * //   [1, 1, 0, 0],
+ * //   [0, 0, 1, 1],
+ * //   [0, 0, 1, 1]])
+ * ```
  */
 export function banded(...args: BandedArgs): MutableSparseMatrix {
   let rows: number | undefined;

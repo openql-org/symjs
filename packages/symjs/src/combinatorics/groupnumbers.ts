@@ -33,18 +33,48 @@ function nilpotentFactors(factors: ReadonlyMap<bigint, bigint>): boolean {
   return true;
 }
 
-/** SymPy is_nilpotent_number: every group of order n is nilpotent. */
+/**
+ * Tests whether every group of the given order is nilpotent.
+ * @param n - The positive integer to test as a group order.
+ * @returns Whether the object is nilpotent number.
+ * @see SymPy `sympy.combinatorics.group_numbers.is_nilpotent_number`
+ * @example
+ * ```ts
+ * import { isNilpotentNumber } from '@symjs/symjs';
+ * isNilpotentNumber(15); // => True
+ * ```
+ */
 export function isNilpotentNumber(n: IntLike): boolean {
   return nilpotentFactors(positiveFactors(n));
 }
 
-/** SymPy is_abelian_number: every group of order n is abelian. */
+/**
+ * Tests whether every group of the given order is abelian.
+ * @param n - The positive integer to test as a group order.
+ * @returns Whether the object is abelian number.
+ * @see SymPy `sympy.combinatorics.group_numbers.is_abelian_number`
+ * @example
+ * ```ts
+ * import { isAbelianNumber } from '@symjs/symjs';
+ * isAbelianNumber(4); // => True
+ * ```
+ */
 export function isAbelianNumber(n: IntLike): boolean {
   const f = positiveFactors(n);
   return [...f.values()].every((e) => e < 3n) && nilpotentFactors(f);
 }
 
-/** SymPy is_cyclic_number: every group of order n is cyclic. */
+/**
+ * Tests whether every group of the given order is cyclic.
+ * @param n - The positive integer to test as a group order.
+ * @returns Whether the object is cyclic number.
+ * @see SymPy `sympy.combinatorics.group_numbers.is_cyclic_number`
+ * @example
+ * ```ts
+ * import { isCyclicNumber } from '@symjs/symjs';
+ * isCyclicNumber(15); // => True
+ * ```
+ */
 export function isCyclicNumber(n: IntLike): boolean {
   const f = positiveFactors(n);
   return [...f.values()].every((e) => e === 1n) && nilpotentFactors(f);
@@ -104,9 +134,18 @@ function primePowerCount(p: bigint, e: bigint): bigint | undefined {
 }
 
 /**
- * SymPy groups_count: the number of groups of order n (gnu(n)), for prime
+ * The number of groups of order n (gnu(n)), for prime
  * powers up to the seventh power, squarefree n and some small orders; a
  * RangeError when the number is unknown or not implemented.
+ * @param nIn - The positive integer to test as a group order.
+ * @returns The number of groups of order n (gnu(n)).
+ * @throws RangeError when the group count is unavailable for the given order.
+ * @see SymPy `sympy.combinatorics.group_numbers.groups_count`
+ * @example
+ * ```ts
+ * import { groupsCount } from '@symjs/symjs';
+ * groupsCount(3); // => 1
+ * ```
  */
 export function groupsCount(nIn: IntLike): bigint {
   const n = asInt(nIn);

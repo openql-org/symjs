@@ -23,9 +23,18 @@ function toDomain(m: Matrix, domain?: Domain): DomainMatrix {
 }
 
 /**
- * SymPy smith_normal_form: the Smith normal form of a matrix over a
+ * The Smith normal form of a matrix over a
  * principal ideal domain (of a DomainMatrix, as a DomainMatrix: SymPy
  * sympy.polys.matrices.normalforms.smith_normal_form).
+ * @param m - The input matrix.
+ * @param domain - The coefficient domain for the calculation.
+ * @returns The diagonal Smith form over the chosen domain.
+ * @see SymPy `sympy.matrices.normalforms.smith_normal_form`
+ * @example
+ * ```ts
+ * import { Matrix, smithNormalForm } from '@symjs/symjs';
+ * smithNormalForm(Matrix.of([[2, 4]])); // => Matrix([[2, 0]])
+ * ```
  */
 export function smithNormalForm(m: Matrix, domain?: Domain): MutableDenseMatrix;
 export function smithNormalForm(m: DomainMatrix): DomainMatrix;
@@ -34,12 +43,38 @@ export function smithNormalForm(m: Matrix | DomainMatrix, domain?: Domain): Muta
   return snf(toDomain(m, domain)).toMatrix();
 }
 
-/** SymPy is_smith_normal_form. */
+/**
+ * Tests whether the matrix is diagonal with each invariant factor dividing its successor.
+ * @param m - The input matrix.
+ * @param domain - The coefficient domain for the calculation.
+ * @returns Whether the matrix satisfies the Smith divisibility conditions.
+ * @see SymPy `sympy.matrices.normalforms.is_smith_normal_form`
+ * @example
+ * ```ts
+ * import { Matrix, isSmithNormalForm } from '@symjs/symjs';
+ * isSmithNormalForm(Matrix.of([[]])); // => True
+ * ```
+ */
 export function isSmithNormalForm(m: Matrix | DomainMatrix, domain?: Domain): boolean {
   return isSnf(m instanceof DomainMatrix ? m : toDomain(m, domain));
 }
 
-/** SymPy smith_normal_decomp: [smf, s, t] with smf = s*m*t (DomainMatrices for a DomainMatrix). */
+/**
+ * Return the Smith Normal Decomposition of a matrix `m` over the ring
+ * `domain`.
+ * @param m - The input matrix.
+ * @param domain - The coefficient domain for the calculation.
+ * @returns The Smith form and the left and right transformations.
+ * @see SymPy `sympy.matrices.normalforms.smith_normal_decomp`
+ * @example
+ * ```ts
+ * import { Matrix, ZZ, smithNormalDecomp } from '@symjs/symjs';
+ *
+ * const M = Matrix.of([[12, 6, 4], [3, 9, 6], [2, 16, 14]]);
+ * const [D, S, T] = smithNormalDecomp(M, ZZ);
+ * S.mul(M).mul(T).equals(D); // => True
+ * ```
+ */
 export function smithNormalDecomp(m: Matrix, domain?: Domain): [MutableDenseMatrix, MutableDenseMatrix, MutableDenseMatrix];
 export function smithNormalDecomp(m: DomainMatrix): [DomainMatrix, DomainMatrix, DomainMatrix];
 export function smithNormalDecomp(m: Matrix | DomainMatrix, domain?: Domain): [MutableDenseMatrix, MutableDenseMatrix, MutableDenseMatrix] | [DomainMatrix, DomainMatrix, DomainMatrix] {
@@ -48,7 +83,13 @@ export function smithNormalDecomp(m: Matrix | DomainMatrix, domain?: Domain): [M
   return [a.toMatrix(), s.toMatrix(), t.toMatrix()];
 }
 
-/** SymPy invariant_factors: the invariant factors of a matrix over a principal ideal domain (domain elements for a DomainMatrix). */
+/**
+ * The invariant factors of a matrix over a principal ideal domain (domain elements for a DomainMatrix).
+ * @param m - The input matrix.
+ * @param domain - The coefficient domain for the calculation.
+ * @returns The diagonal invariant factors in divisibility order.
+ * @see SymPy `sympy.matrices.normalforms.invariant_factors`
+ */
 export function invariantFactors(m: Matrix | DomainMatrix, domain?: Domain): Expr[] {
   if (m instanceof DomainMatrix) return invf(m);
   const dM = toDomain(m, domain);
@@ -56,9 +97,22 @@ export function invariantFactors(m: Matrix | DomainMatrix, domain?: Domain): Exp
 }
 
 /**
- * SymPy hermite_normal_form: the Hermite normal form of an integer matrix;
+ * The Hermite normal form of an integer matrix;
  * with D (a positive multiple of the determinant of a full-rank matrix) the
  * computation is done modulo D.
+ * @param A - The input matrix.
+ * @param opts - The optional determinant multiple `D` and whether to verify full row rank with `checkRank`.
+ * @returns The Hermite normal form over the integers.
+ * @see SymPy `sympy.matrices.normalforms.hermite_normal_form`
+ * @remarks SymPy prints this result as `Matrix([[1], [0], [0]])`.
+ * @example
+ * ```ts
+ * import { Matrix, hermiteNormalForm } from '@symjs/symjs';
+ * hermiteNormalForm(Matrix.of([[2, 7], [0, 0], [0, 0]])); // => Matrix([
+ * //   [1],
+ * //   [0],
+ * //   [0]])
+ * ```
  */
 export function hermiteNormalForm(A: Matrix, opts?: { D?: bigint | number | Expr; checkRank?: boolean }): MutableDenseMatrix;
 export function hermiteNormalForm(A: DomainMatrix, opts?: { D?: bigint | number | Expr; checkRank?: boolean }): DomainMatrix;

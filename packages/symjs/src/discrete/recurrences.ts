@@ -15,13 +15,19 @@ import type { IntLike } from '../ntheory/intutil';
 import { asIntValue, sympifySeq } from './transforms';
 
 /**
- * The value at n of the homogeneous linear recurrence with constant
- * coefficients y(n) = c[0]*y(n-1) + c[1]*y(n-2) + ... + c[k-1]*y(n-k) whose
- * initial values y(0), y(1), ... are `init` (missing ones are 0) (SymPy
- * linrec). x^n is reduced modulo the characteristic polynomial by
- * exponentiation by squaring.
- *
- * `linrec([1, 1], [0, 1], 10)` is `55`.
+ * Computes a term of a homogeneous linear recurrence with constant coefficients.
+ * @param coeffs - The recurrence coefficients in order of increasing lag.
+ * @param init - The initial terms, starting at index zero.
+ * @param nIn - The nonnegative index of the required term.
+ * @returns A term of a homogeneous linear recurrence with constant coefficients.
+ * @throws RangeError when the recurrence index is negative or nonintegral.
+ * @throws TypeError when the number of initial terms exceeds the recurrence order.
+ * @see SymPy `sympy.discrete.recurrences.linrec`
+ * @example
+ * ```ts
+ * import { linrec } from '@symjs/symjs';
+ * linrec([1, 1], [0, 1], 10); // => 55
+ * ```
  */
 export function linrec(coeffs: Iterable<ExprLike>, init: Iterable<ExprLike>, nIn: IntLike): Expr {
   const c = sympifySeq(coeffs, 'Expected a sequence of coefficients for the recurrence');
