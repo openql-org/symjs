@@ -6,6 +6,7 @@
  */
 
 import { NotImplementedError, PolynomialError } from '../core/errors';
+import { UnsolvableFactorError } from './polyerrors';
 import { isNegative, isNonZero, isPositive, isReal } from '../core/assumptions';
 import { Eq, piecewise } from '../core/logic';
 import { ExprMap } from '../core/exprmap';
@@ -352,11 +353,9 @@ function quadraticRoots(a: Expr, b: Expr, c: Expr): [Expr, Expr] {
  * quadratic factors), degree <= 2 with symbolic coefficients.
  */
 /**
- * SymPy `roots(f, x)`: the roots with their multiplicities. With
- * `{ multiple: true }` a list with each root repeated by its multiplicity
- * (SymPy `roots(f, x, multiple=True)`). With `{ skipQuintic: true }` the roots
- * of irreducible factors of degree 5 or more are omitted. `{ quintics: true }`
- * enables Dummit's radical formula for solvable quintics, as in SymPy.
+ * The roots with their multiplicities, as a map or (with `multiple`) a list in
+ * SymPy's order. Throws NotImplementedError for a factor without roots in
+ * radicals; the public {@link rootsInRadicals | roots} leaves such factors out.
  */
 export function rootsDict(ex: ExprLike, x: Sym, opts: RootOptions & { multiple: true }): Expr[];
 export function rootsDict(ex: ExprLike, x: Sym, opts?: RootOptions & { multiple?: false }): ExprMap<number>;
@@ -368,8 +367,44 @@ export function rootsDict(ex: ExprLike, x: Sym, opts: RootOptions & { multiple?:
   return ordered([...m.keys()]).flatMap((r) => Array.from({ length: getOrThrow(m, r) }, () => r));
 }
 
+/**
+ * The roots of a univariate polynomial in radicals, with their
+ * multiplicities. Roots that have no expression in radicals are left out (see
+ * `CRootOf` and `nroots` for them).
+ *
+ * @param ex - The polynomial.
+ * @param x - The variable.
+ * @param opts - `multiple` gives a list with each root repeated by its
+ *   multiplicity; `skipQuintic` leaves out the roots of irreducible factors of
+ *   degree 5 or more; `quintics` enables Dummit's formula for solvable quintics;
+ *   `filter` keeps the roots of a domain (`'Z'`, `'Q'`, `'R'`, `'I'`, `'C'`).
+ * @returns The roots and their multiplicities.
+ * @see SymPy `sympy.polys.polyroots.roots`
+ * @throws UnsolvableFactorError with `strict` when some roots have no expression in radicals.
+ * @example
+ * ```ts
+ * import { ex, roots, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * roots(ex`x**2 - 1`, x); // => {-1: 1, 1: 1}
+ * roots(ex`x**2 - y`, x); // => {-sqrt(y): 1, sqrt(y): 1}
+ * roots(ex`(x - 1)**3`, x); // => {1: 3}
+ * roots(ex`(x - 1)*(x**5 - x + 1)`, x); // => {1: 1}
+ * roots(ex`x**7 - 3*x**2 + 1`, x); // => {}
+ * roots(ex`x**2 - 1`, x, { multiple: true }); // => [-1, 1]
+ * ```
+ */
+export function rootsInRadicals(ex: ExprLike, x: Sym, opts: RootOptions & { multiple: true }): Expr[];
+export function rootsInRadicals(ex: ExprLike, x: Sym, opts?: RootOptions & { multiple?: false }): ExprMap<number>;
+export function rootsInRadicals(ex: ExprLike, x: Sym, opts: RootOptions & { multiple?: boolean } = {}): ExprMap<number> | Expr[] {
+  // SymPy roots leaves out the factors without roots in radicals (strict raises instead)
+  const { multiple, ...rest } = opts;
+  const options: FindRootOptions = { ...rest, omitUnsolvable: true };
+  return multiple === true ? rootsDict(ex, x, { ...options, multiple: true }) : rootsDict(ex, x, options);
+}
+
 /** Roots repeated by multiplicity (the list form used internally). */
-export function roots(ex: ExprLike, x: Sym, opts: RootOptions = {}): Expr[] {
+export function roots(ex: ExprLike, x: Sym, opts: FindRootOptions = {}): Expr[] {
   const { filter, strict, ...formulas } = opts;
   const result = findRoots(ex, x, formulas);
   const selected = result.filter((r) => {
@@ -383,21 +418,32 @@ export function roots(ex: ExprLike, x: Sym, opts: RootOptions = {}): Expr[] {
       default: throw new RangeError(`invalid root filter: ${String(filter)}`);
     }
   });
-  if (strict && selected.length < Math.max(0, ...defined(polyCoefficients(ex, x)).keys())) throw new NotImplementedError('not all roots are expressible with the selected formulas');
+  if (strict && selected.length < Math.max(0, ...defined(polyCoefficients(ex, x)).keys())) throw new UnsolvableFactorError('not all roots are expressible with the selected formulas');
   return selected;
 }
 
+/** RootOptions with the internal choice of leaving out the factors that cannot be solved. */
+type FindRootOptions = RootOptions & { omitUnsolvable?: boolean };
+
+/** Options of {@link rootsDict | roots} (SymPy's flags of `roots`). */
 export interface RootOptions {
+  /** Leave out the roots of irreducible factors of degree 5 or more; with Float coefficients, the roots are computed numerically. */
   skipQuintic?: boolean;
+  /** `false` leaves out the roots of irreducible cubics. */
   cubics?: boolean;
+  /** `false` leaves out the roots of irreducible quartics. */
   quartics?: boolean;
+  /** Solve solvable quintics by Dummit's formula. */
   quintics?: boolean;
+  /** Give the roots of cubics with three real roots by trigonometric functions. */
   trig?: boolean;
+  /** Keep only the roots in the integers, rationals, reals, imaginary numbers or complex numbers. */
   filter?: 'Z' | 'Q' | 'R' | 'I' | 'C';
+  /** Throw `UnsolvableFactorError` when some roots cannot be given in radicals. */
   strict?: boolean;
 }
 
-function findRoots(ex: ExprLike, x: Sym, opts: RootOptions): Expr[] {
+function findRoots(ex: ExprLike, x: Sym, opts: FindRootOptions): Expr[] {
   const coeffs = polyCoefficients(ex, x);
   if (!coeffs) throw new PolynomialError('roots: expression is not a polynomial in the given symbol');
   const deg = Math.max(-1, ...coeffs.keys());
@@ -423,7 +469,7 @@ function findRoots(ex: ExprLike, x: Sym, opts: RootOptions): Expr[] {
       else {
         rs = polyHooks.cyclotomic?.(f.toExpr(x), x) ?? [];
         if (!rs.length && f.degree === 5 && opts.quintics) rs = defined(polyHooks.quintic, 'quintic solver')(f.toExpr(x), x);
-        else if (!rs.length && !opts.skipQuintic) throw new NotImplementedError(`roots: cannot solve irreducible factor of degree ${f.degree}`);
+        else if (!rs.length && !opts.skipQuintic && !opts.omitUnsolvable) throw new NotImplementedError(`roots: cannot solve irreducible factor of degree ${f.degree}`);
       }
       for (const r of rs) for (let i = 0; i < m; i++) out.push(r);
     }

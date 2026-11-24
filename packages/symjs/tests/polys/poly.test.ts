@@ -34,7 +34,9 @@ describe('roots', () => {
   });
   it('quintics without radicals', () => {
     expect(sj.roots(E('x**5 - x - 1'), x, { multiple: true, skipQuintic: true })).toEqual([]);
-    expect(() => sj.roots(E('x**5 - x - 1'), x, { multiple: true })).toThrow(sj.NotImplementedError);
+    // SymPy roots leaves the factor out; strict raises UnsolvableFactorError
+    expect(sj.roots(E('x**5 - x - 1'), x, { multiple: true })).toEqual([]);
+    expect(() => sj.roots(E('x**5 - x - 1'), x, { strict: true })).toThrow(sj.UnsolvableFactorError);
   });
 });
 
@@ -319,7 +321,7 @@ describe('explicit root selection', () => {
     expect(roots(p, x, { multiple: true, filter: 'C', strict: true })).toHaveLength(4);
     expect(roots(0, x, { multiple: true })).toEqual([]);
     expect(roots(E('x**3 + x**2 - x + 1'), x, { multiple: true, cubics: false })).toEqual([]);
-    expect(() => roots(E('x**3 + x**2 - x + 1'), x, { cubics: false, strict: true })).toThrow(sj.NotImplementedError);
+    expect(() => roots(E('x**3 + x**2 - x + 1'), x, { cubics: false, strict: true })).toThrow(sj.UnsolvableFactorError);
     expect(roots(E('x**4 + x + 1'), x, { multiple: true, quartics: false })).toEqual([]);
   });
 
@@ -393,4 +395,16 @@ it('leaves irreducible quintics without expressible roots unresolved', () => {
   for (const coefficient of [sj.sqrt(2), sj.pi]) {
     expect(roots(x.pow(5).add(coefficient.mul(x)).add(1), x, { multiple: true, skipQuintic: true })).toEqual([]);
   }
+});
+
+describe('roots leaves out the factors without roots in radicals (SymPy roots)', () => {
+  const [x] = symbols('x');
+  it('omits an unsolvable quintic factor and returns {} for an unsolvable polynomial', () => {
+    expect(sj.sstr(roots(sj.ex`(x - 1)*(x**5 - x + 1)`, x))).toBe('{1: 1}');
+    expect(sj.sstr(roots(sj.ex`x**7 - 3*x**2 + 1`, x))).toBe('{}');
+    expect(sj.sstr(roots(sj.ex`(x - 1)*(x**5 - x + 1)`, x, { multiple: true }))).toBe('[1]');
+  });
+  it('throws UnsolvableFactorError with strict', () => {
+    expect(() => roots(sj.ex`(x - 1)*(x**5 - x + 1)`, x, { strict: true })).toThrow(sj.UnsolvableFactorError);
+  });
 });

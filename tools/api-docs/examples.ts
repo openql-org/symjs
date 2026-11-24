@@ -8,7 +8,8 @@
  * module in a temporary directory, type-checked with `tsc` against the sources
  * (through the `paths` of the root tsconfig), and run with `bun`: a statement
  * followed by `// => result` (continuation lines `//   ...`) must give `result`,
- * a string as it is and any other value printed by `sstr` (SymPy's `str()`);
+ * a string as it is, a number by `String()`, and any other value printed by
+ * `sstr` (SymPy's `str()`);
  * spaces at the ends of lines are ignored.
  *
  * Usage: `bun tools/api-docs/examples.ts [path filter...] [--no-run]`.
@@ -104,7 +105,7 @@ const RUNNER = `
 const { sstr } = await import(process.argv[3]);
 let failures = 0;
 globalThis.__check = (value, expected, where) => {
-  const got = typeof value === 'string' ? value : sstr(value);
+  const got = typeof value === 'string' ? value : typeof value === 'number' ? String(value) : sstr(value);
   const trim = (t) => t.split('\\n').map((l) => l.trimEnd()).join('\\n');
   if (trim(got) !== trim(expected)) { failures++; console.log(\`\${where}: expected \${JSON.stringify(expected)}, got \${JSON.stringify(got)}\`); }
 };

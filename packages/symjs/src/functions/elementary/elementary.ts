@@ -1023,9 +1023,9 @@ function shouldEvalf(a: Expr): number {
  * @see SymPy `sympy.functions.elementary.trigonometric.sin`
  * @example
  * ```ts
- * import { ex, pi, sin, Symbol } from '@symjs/symjs';
+ * import { ex, pi, sin, Sym } from '@symjs/symjs';
  *
- * const x = Symbol('x');
+ * const x = Sym('x');
  * sin(ex`x**2`).diff(x); // => 2*x*cos(x**2)
  * sin(pi); // => 0
  * sin(ex`pi/2`); // => 1
@@ -1043,9 +1043,9 @@ export const sin = (x: ExprLike): Expr => fn('sin', [x]);
  * @see SymPy `sympy.functions.elementary.trigonometric.cos`
  * @example
  * ```ts
- * import { cos, ex, pi, Symbol } from '@symjs/symjs';
+ * import { cos, ex, pi, Sym } from '@symjs/symjs';
  *
- * const x = Symbol('x');
+ * const x = Sym('x');
  * cos(ex`x**2`).diff(x); // => -2*x*sin(x**2)
  * cos(pi); // => -1
  * cos(ex`pi/2`); // => 0
@@ -1062,9 +1062,9 @@ export const cos = (x: ExprLike): Expr => fn('cos', [x]);
  * @see SymPy `sympy.functions.elementary.trigonometric.tan`
  * @example
  * ```ts
- * import { ex, tan, Symbol } from '@symjs/symjs';
+ * import { ex, tan, Sym } from '@symjs/symjs';
  *
- * const x = Symbol('x');
+ * const x = Sym('x');
  * tan(ex`pi/4`); // => 1
  * tan(ex`x`).diff(x); // => tan(x)**2 + 1
  * ```
@@ -1078,9 +1078,9 @@ export const tan = (x: ExprLike): Expr => fn('tan', [x]);
  * @see SymPy `sympy.functions.elementary.trigonometric.asin`
  * @example
  * ```ts
- * import { asin, ex, Symbol } from '@symjs/symjs';
+ * import { asin, ex, Sym } from '@symjs/symjs';
  *
- * const x = Symbol('x');
+ * const x = Sym('x');
  * asin(1); // => pi/2
  * asin(-1); // => -pi/2
  * asin(ex`x`).diff(x); // => 1/sqrt(1 - x**2)
@@ -1095,9 +1095,9 @@ export const asin = (x: ExprLike): Expr => fn('asin', [x]);
  * @see SymPy `sympy.functions.elementary.trigonometric.acos`
  * @example
  * ```ts
- * import { acos, ex, Symbol } from '@symjs/symjs';
+ * import { acos, ex, Sym } from '@symjs/symjs';
  *
- * const x = Symbol('x');
+ * const x = Sym('x');
  * acos(1); // => 0
  * acos(0); // => pi/2
  * acos(ex`x`).diff(x); // => -1/sqrt(1 - x**2)
@@ -1112,9 +1112,9 @@ export const acos = (x: ExprLike): Expr => fn('acos', [x]);
  * @see SymPy `sympy.functions.elementary.trigonometric.atan`
  * @example
  * ```ts
- * import { atan, ex, Symbol } from '@symjs/symjs';
+ * import { atan, ex, Sym } from '@symjs/symjs';
  *
- * const x = Symbol('x');
+ * const x = Sym('x');
  * atan(0); // => 0
  * atan(1); // => pi/4
  * atan(ex`x`).diff(x); // => 1/(x**2 + 1)
@@ -1129,9 +1129,9 @@ export const atan = (x: ExprLike): Expr => fn('atan', [x]);
  * @see SymPy `sympy.functions.elementary.hyperbolic.sinh`
  * @example
  * ```ts
- * import { ex, sinh, Symbol } from '@symjs/symjs';
+ * import { ex, sinh, Sym } from '@symjs/symjs';
  *
- * const x = Symbol('x');
+ * const x = Sym('x');
  * sinh(0); // => 0
  * sinh(ex`x`).diff(x); // => cosh(x)
  * ```
@@ -1145,9 +1145,9 @@ export const sinh = (x: ExprLike): Expr => fn('sinh', [x]);
  * @see SymPy `sympy.functions.elementary.hyperbolic.cosh`
  * @example
  * ```ts
- * import { cosh, ex, Symbol } from '@symjs/symjs';
+ * import { cosh, ex, Sym } from '@symjs/symjs';
  *
- * const x = Symbol('x');
+ * const x = Sym('x');
  * cosh(0); // => 1
  * cosh(ex`x`).diff(x); // => sinh(x)
  * ```
@@ -1161,9 +1161,9 @@ export const cosh = (x: ExprLike): Expr => fn('cosh', [x]);
  * @see SymPy `sympy.functions.elementary.hyperbolic.tanh`
  * @example
  * ```ts
- * import { ex, tanh, Symbol } from '@symjs/symjs';
+ * import { ex, tanh, Sym } from '@symjs/symjs';
  *
- * const x = Symbol('x');
+ * const x = Sym('x');
  * tanh(0); // => 0
  * tanh(ex`x`).diff(x); // => 1 - tanh(x)**2
  * ```

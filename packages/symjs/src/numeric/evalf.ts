@@ -289,7 +289,26 @@ export function toComplex(ex: ExprLike, values?: NumericValues): C {
   return f([]);
 }
 
-/** Numerically evaluate. Sub-expressions containing symbols without values stay symbolic. */
+/**
+ * Evaluates an expression numerically to `n` significant digits (15 by
+ * default) in arbitrary precision. Subexpressions with symbols without values
+ * stay symbolic. The method `Expr.evalf` takes the same arguments.
+ *
+ * @param ex - The expression.
+ * @param n - The number of significant digits, or the values of symbols.
+ * @param opts - See {@link EvalfOptions}.
+ * @returns The numerical value.
+ * @throws PrecisionExhausted when `strict` is set and the accuracy cannot be reached.
+ * @see SymPy `sympy.core.evalf.EvalfMixin.evalf`
+ * @example
+ * ```ts
+ * import { evalf, ex } from '@symjs/symjs';
+ *
+ * evalf(ex`sqrt(2)`, 20); // => 1.4142135623730950488
+ * evalf(ex`x + pi`); // => x + 3.14159265358979
+ * evalf(ex`exp(pi*sqrt(163))`, 30); // => 262537412640768743.999999999999
+ * ```
+ */
 export function evalf(ex: ExprLike, n?: number | NumericValues, opts: EvalfOptions = {}): Expr {
   const e = sympify(ex);
   let dps = 15;

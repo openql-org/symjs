@@ -268,10 +268,10 @@ export { fdiff } from './calculus/diff';
  * @see SymPy `sympy.core.function.diff`
  * @example
  * ```ts
- * import { diff, ex, Function, symbols } from '@symjs/symjs';
+ * import { diff, ex, SymFunction, symbols } from '@symjs/symjs';
  *
  * const [x, y] = symbols('x y');
- * const f = Function('f');
+ * const f = SymFunction('f');
  * diff(ex`sin(x)`, x); // => cos(x)
  * diff(f(x), x, 3); // => Derivative(f(x), (x, 3))
  * diff(diff(ex`sin(x)*cos(y)`, x, 2), y, 2); // => sin(x)*cos(y)
@@ -440,20 +440,42 @@ export function Not(x: ExprLikeT | boolean): ExprNode {
   return _not_(x);
 }
 
-const isCountPair = (v: ExprNode | readonly [ExprNode, number]): v is readonly [ExprNode, number] => Array.isArray(v);
+type DerivativeVariable = ExprNode | readonly [ExprNode, number];
+const isCountPair = (v: DerivativeVariable): v is readonly [ExprNode, number] => Array.isArray(v);
+const isDerivativeVariable = (v: DerivativeVariable | EvaluateOptions): v is DerivativeVariable => Array.isArray(v) || v instanceof ExprClass;
 
 /**
- * SymPy `Derivative(expr, *variables)`: an unevaluated derivative. Each
- * variable is a symbol or a `[symbol, count]` pair. Also the node class
- * (`e instanceof Derivative`).
+ * An unevaluated derivative of `expr` with respect to the variables, each a
+ * symbol (or a function application) or a `[symbol, count]` pair. With a last
+ * argument `{ evaluate: true }` the derivative is computed, as {@link diff}
+ * does. Also the node class (`e instanceof Derivative`).
+ *
+ * @see SymPy `sympy.core.function.Derivative`
+ * @example
+ * ```ts
+ * import { Derivative, ex, SymFunction, symbols } from '@symjs/symjs';
+ *
+ * const [x, y] = symbols('x y');
+ * const f = SymFunction('f');
+ * Derivative(ex`sin(x)`, x); // => Derivative(sin(x), x)
+ * Derivative(ex`x**3*y`, [x, 2], y); // => Derivative(x**3*y, (x, 2), y)
+ * Derivative(ex`x**2`, x, { evaluate: true }); // => 2*x
+ * Derivative(f(x).pow(2), f(x), { evaluate: true }); // => 2*f(x)
+ * ```
  */
 export const Derivative = /* @__PURE__ */ callableClass(
   DerivativeNode,
-  (expr: ExprLikeT, ...variables: (ExprNode | readonly [ExprNode, number])[]): ExprNode =>
-    derivativeFn(
-      sympifyFn(expr),
-      variables.map((v): [ExprNode, number] => (isCountPair(v) ? [v[0], v[1]] : [v, 1])),
-    ),
+  (expr: ExprLikeT, ...rest: (DerivativeVariable | EvaluateOptions)[]): ExprNode => {
+    const last = rest[rest.length - 1];
+    const options = last !== undefined && !isDerivativeVariable(last) ? last : undefined;
+    const pairs = (options === undefined ? rest : rest.slice(0, -1)).map((v): [ExprNode, number] => {
+      if (!isDerivativeVariable(v)) throw new TypeError('the options object must be the last argument');
+      return isCountPair(v) ? [v[0], v[1]] : [v, 1];
+    });
+    const e = sympifyFn(expr);
+    if (options?.evaluate === true) return pairs.reduce((acc, [v, n]) => diff(acc, v, n), e);
+    return derivativeFn(e, pairs);
+  },
 );
 export type Derivative = DerivativeNode;
 
@@ -508,7 +530,25 @@ export type Mul = MulNode;
 export const Pow = /* @__PURE__ */ callableClass(PowNode, (base: ExprLikeT, exp: ExprLikeT, options: EvaluateOptions = {}): ExprNode =>
   options.evaluate === false ? new PowNode(sympifyFn(base), sympifyFn(exp)) : powFn(base, exp));
 export type Pow = PowNode;
-/** SymPy Symbol: `Sym('x', { positive: true })`, or with `new`; `func(x) === Sym`. */
+/**
+ * Creates a symbol, a named variable with optional assumptions. Two symbols
+ * with the same name and assumptions are equal. Callable with or without
+ * `new`; also the node class (`e instanceof Sym`). {@link symbols} creates
+ * several at once.
+ *
+ * @see SymPy `sympy.core.symbol.Symbol`
+ * @example
+ * ```ts
+ * import { ex, isPositive, sqrt, Sym } from '@symjs/symjs';
+ *
+ * const x = Sym('x');
+ * const y = Sym('y', { positive: true });
+ * x.equals(Sym('x')); // => True
+ * isPositive(y); // => True
+ * sqrt(y.pow(2)); // => y
+ * ex`x + 1`.has(x); // => True
+ * ```
+ */
 export const Sym = /* @__PURE__ */ callableClass(SymbolNode, (name: string, assumptions: Assumptions = {}): SymbolNode => new SymbolNode(name, assumptions));
 export type Sym = SymbolNode;
 /** SymPy Dummy: a symbol unique to its creation, `Dummy('x')` or with `new`; `func(d) === Dummy`. */

@@ -5,7 +5,7 @@
 
 /**
  * @file SymPy's `srepr` (`ReprPrinter`): the tree of an expression as the
- * SymPy constructor calls that rebuild it (`Add(Symbol('x'), Integer(2))`),
+ * SymPy constructor calls that rebuild it (`Add(Sym('x'), Integer(2))`),
  * and the view of an expression as SymPy's class names and arguments that
  * the tree printers (`srepr`, `print_tree`, `dotprint`) share.
  */
@@ -285,7 +285,7 @@ let reprOrder: SreprOptions['order'];
 /**
  * SymPy `srepr(expr)`: the expression as the SymPy constructor calls that
  * rebuild it (`eval(srepr(expr)) == expr` in Python):
- * `srepr(x + 2)` is `Add(Symbol('x'), Integer(2))`.
+ * `srepr(x + 2)` is `Add(Sym('x'), Integer(2))`.
  *
  * Lists print as lists, `Map`s as dicts and `Set`s as sets, with their items
  * in srepr form; a JS number is a Python int (`2`), a string prints with its

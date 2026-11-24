@@ -175,12 +175,50 @@ function withProcessedLimits(kind: 'Sum' | 'Product', fIn: ExprLike, limits: rea
   return new Concrete(kind, [f, ...args]);
 }
 
-/** Unevaluated Sum(f, (k, a, b), ...) or Sum(f, (k, Range)). */
+/**
+ * An unevaluated sum of `f` over each limit `[k, a, b]` (or `[k, range]`),
+ * from the innermost (first) to the outermost. `doit` or {@link summation}
+ * evaluates it.
+ *
+ * @param f - The summand.
+ * @param limits - The indices with their bounds.
+ * @returns The sum.
+ * @see SymPy `sympy.concrete.summations.Sum`
+ * @example
+ * ```ts
+ * import { doit, ex, oo, Sum, symbols } from '@symjs/symjs';
+ *
+ * const [k, m] = symbols('k m');
+ * Sum(k, [k, 1, m]); // => Sum(k, (k, 1, m))
+ * doit(Sum(k, [k, 1, m])); // => m**2/2 + m/2
+ * doit(Sum(k.pow(2), [k, 1, m])); // => m**3/3 + m**2/2 + m/6
+ * doit(Sum(ex`x**k`, [k, 0, oo])); // => Piecewise((1/(1 - x), Abs(x) < 1), (Sum(x**k, (k, 0, oo)), True))
+ * doit(Sum(ex`x**k/factorial(k)`, [k, 0, oo])); // => exp(x)
+ * ```
+ */
 export function Sum(f: ExprLike, ...limits: ConcreteLimit[]): Expr {
   return withProcessedLimits('Sum', f, limits);
 }
 
-/** Unevaluated Product(f, (k, a, b), ...) or Product(f, (k, Range)). */
+/**
+ * An unevaluated product of `f` over each limit `[k, a, b]` (or `[k, range]`),
+ * from the innermost (first) to the outermost. `doit` or {@link product}
+ * evaluates it.
+ *
+ * @param f - The factor.
+ * @param limits - The indices with their bounds.
+ * @returns The product.
+ * @see SymPy `sympy.concrete.products.Product`
+ * @example
+ * ```ts
+ * import { doit, Product, symbols } from '@symjs/symjs';
+ *
+ * const [k, m] = symbols('k m');
+ * Product(k, [k, 1, m]); // => Product(k, (k, 1, m))
+ * doit(Product(k, [k, 1, m])); // => factorial(m)
+ * doit(Product(k.pow(2), [k, 1, m])); // => factorial(m)**2
+ * ```
+ */
 export function Product(f: ExprLike, ...limits: ConcreteLimit[]): Expr {
   return withProcessedLimits('Product', f, limits);
 }

@@ -4,7 +4,7 @@ Reference: SymPy 1.14.0. Independent of the doctest corpus and its ratchet.
 
 Measured **122663** cases: **120073 exact**, **2590 equivalent**, **0 failing**. Agreement: **100.00%**; exact: **97.89%**. The equivalent cases are listed in [unittest-equivalent-cases.md](unittest-equivalent-cases.md).
 
-Compatibility suite wall time: **200.49 s**. Sum of category replay times: **285.18 s** (projects run in parallel).
+Compatibility suite wall time: **209.71 s**. Sum of category replay times: **297.16 s** (projects run in parallel).
 
 Extraction wall time: **12.02 s**, 4 processes, 120 s per upstream test. Retained modules reuse established observations; their time covers loading and auditing, not re-execution.
 
@@ -18,39 +18,39 @@ Exact includes successful inequality, identity, boolean and exception assertions
 
 | Category | Measured | Exact | Equivalent | Failing | Agreement | Replay s |
 |---|---:|---:|---:|---:|---:|---:|
-| algebras | 133 | 133 | 0 | 0 | 100.00% | 0.45 |
-| assumptions | 2245 | 2208 | 37 | 0 | 100.00% | 1.49 |
-| calculus | 525 | 524 | 1 | 0 | 100.00% | 2.00 |
-| categories | 333 | 333 | 0 | 0 | 100.00% | 1.24 |
-| codegen | 71 | 67 | 4 | 0 | 100.00% | 0.46 |
-| combinatorics | 2196 | 2196 | 0 | 0 | 100.00% | 1.00 |
-| concrete | 937 | 880 | 57 | 0 | 100.00% | 8.75 |
-| core | 9291 | 9126 | 165 | 0 | 100.00% | 17.79 |
-| crypto | 5067 | 5067 | 0 | 0 | 100.00% | 0.67 |
-| diffgeom | 210 | 204 | 6 | 0 | 100.00% | 1.09 |
-| discrete | 192 | 191 | 1 | 0 | 100.00% | 0.74 |
-| functions | 10649 | 8899 | 1750 | 0 | 100.00% | 27.02 |
-| geometry | 1102 | 1096 | 6 | 0 | 100.00% | 3.84 |
-| holonomic | 190 | 186 | 4 | 0 | 100.00% | 2.78 |
-| integrals | 1424 | 1343 | 81 | 0 | 100.00% | 15.04 |
-| liealgebras | 93 | 88 | 5 | 0 | 100.00% | 0.07 |
-| logic | 7608 | 7606 | 2 | 0 | 100.00% | 2.04 |
-| matrices | 5093 | 5068 | 25 | 0 | 100.00% | 30.73 |
-| ntheory | 45168 | 45168 | 0 | 0 | 100.00% | 8.23 |
-| parsing | 868 | 801 | 67 | 0 | 100.00% | 0.35 |
-| plotting | 49 | 49 | 0 | 0 | 100.00% | 0.04 |
-| polys | 12154 | 12052 | 102 | 0 | 100.00% | 53.30 |
+| algebras | 133 | 133 | 0 | 0 | 100.00% | 0.51 |
+| assumptions | 2245 | 2208 | 37 | 0 | 100.00% | 1.62 |
+| calculus | 525 | 524 | 1 | 0 | 100.00% | 2.34 |
+| categories | 333 | 333 | 0 | 0 | 100.00% | 1.34 |
+| codegen | 71 | 67 | 4 | 0 | 100.00% | 0.49 |
+| combinatorics | 2196 | 2196 | 0 | 0 | 100.00% | 1.10 |
+| concrete | 937 | 880 | 57 | 0 | 100.00% | 9.08 |
+| core | 9291 | 9126 | 165 | 0 | 100.00% | 18.56 |
+| crypto | 5067 | 5067 | 0 | 0 | 100.00% | 0.71 |
+| diffgeom | 210 | 204 | 6 | 0 | 100.00% | 1.25 |
+| discrete | 192 | 191 | 1 | 0 | 100.00% | 0.75 |
+| functions | 10649 | 8899 | 1750 | 0 | 100.00% | 26.51 |
+| geometry | 1102 | 1096 | 6 | 0 | 100.00% | 3.88 |
+| holonomic | 190 | 186 | 4 | 0 | 100.00% | 2.80 |
+| integrals | 1424 | 1343 | 81 | 0 | 100.00% | 15.37 |
+| liealgebras | 93 | 88 | 5 | 0 | 100.00% | 0.08 |
+| logic | 7608 | 7606 | 2 | 0 | 100.00% | 2.13 |
+| matrices | 5093 | 5068 | 25 | 0 | 100.00% | 33.02 |
+| ntheory | 45168 | 45168 | 0 | 0 | 100.00% | 8.83 |
+| parsing | 868 | 801 | 67 | 0 | 100.00% | 0.39 |
+| plotting | 49 | 49 | 0 | 0 | 100.00% | 0.06 |
+| polys | 12154 | 12052 | 102 | 0 | 100.00% | 56.26 |
 | printing | 2143 | 2141 | 2 | 0 | 100.00% | 0.66 |
-| series | 1674 | 1643 | 31 | 0 | 100.00% | 26.08 |
-| sets | 1858 | 1848 | 10 | 0 | 100.00% | 0.66 |
-| simplify | 1525 | 1483 | 42 | 0 | 100.00% | 5.27 |
-| solvers | 4618 | 4467 | 151 | 0 | 100.00% | 37.87 |
-| stats | 2021 | 1991 | 30 | 0 | 100.00% | 21.42 |
+| series | 1674 | 1643 | 31 | 0 | 100.00% | 27.56 |
+| sets | 1858 | 1848 | 10 | 0 | 100.00% | 0.76 |
+| simplify | 1525 | 1483 | 42 | 0 | 100.00% | 5.37 |
+| solvers | 4618 | 4467 | 151 | 0 | 100.00% | 39.48 |
+| stats | 2021 | 1991 | 30 | 0 | 100.00% | 21.94 |
 | strategies | 7 | 7 | 0 | 0 | 100.00% | 0.01 |
-| tensor | 1953 | 1953 | 0 | 0 | 100.00% | 3.07 |
+| tensor | 1953 | 1953 | 0 | 0 | 100.00% | 3.04 |
 | unify | 16 | 16 | 0 | 0 | 100.00% | 0.02 |
-| utilities | 556 | 549 | 7 | 0 | 100.00% | 8.66 |
-| vector | 694 | 690 | 4 | 0 | 100.00% | 2.36 |
+| utilities | 556 | 549 | 7 | 0 | 100.00% | 8.83 |
+| vector | 694 | 690 | 4 | 0 | 100.00% | 2.42 |
 
 ## Extraction audit
 
@@ -538,7 +538,7 @@ Executed loop instances count individually. Duplicates count as omissions; never
 | ntheory | exception class mismatch (accepted) | 8 |
 | parsing | exception class mismatch (accepted) | 17 |
 | plotting | exception class mismatch (accepted) | 2 |
-| polys | exception class mismatch (accepted) | 242 |
+| polys | exception class mismatch (accepted) | 241 |
 | printing | exception class mismatch (accepted) | 2 |
 | series | exception class mismatch (accepted) | 10 |
 | sets | exception class mismatch (accepted) | 29 |
@@ -786,4 +786,4 @@ Case shards contain one JSON case per line, with ASCII escapes and finite JSON n
 | utilities/tests/test_timeutils.py | Python benchmark/timing infrastructure is runtime-specific. |
 | utilities/tests/test_xxe.py | XML stylesheet processing requires optional lxml. |
 
-Accepted exception class mismatches: **779**. Their case IDs and classes are retained in unittest-report.json.
+Accepted exception class mismatches: **778**. Their case IDs and classes are retained in unittest-report.json.

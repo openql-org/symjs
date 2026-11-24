@@ -37,7 +37,7 @@ function viewPurestr(v: BasicView): string {
 
 /**
  * SymPy `purestr(x)`: a string that rebuilds the expression like srepr,
- * with the arguments in SymPy's order (`Add(Integer(2), Symbol('x'))`).
+ * with the arguments in SymPy's order (`Add(Integer(2), Sym('x'))`).
  */
 export function purestr(x: Expr): string;
 export function purestr(x: Expr, options: { readonly withArgs: true }): [string, string[]];

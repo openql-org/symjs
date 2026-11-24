@@ -537,6 +537,27 @@ function fromiterItem(v: unknown): Expr {
   throw new TypeError(`fromiter: cannot sympify ${String(v)}`);
 }
 
+/**
+ * The base class of every expression: numbers, symbols, sums, products,
+ * powers, function applications, relations and the other nodes. Expressions
+ * are immutable and kept in a canonical form; two expressions are equal when
+ * their {@link Expr.key | keys} are equal. The methods give the fluent
+ * arithmetic (`x.add(1).pow(2)`) and the common operations of SymPy's `Expr`.
+ *
+ * @see SymPy `sympy.core.expr.Expr`
+ * @example
+ * ```ts
+ * import { symbols } from '@symjs/symjs';
+ *
+ * const [x, y] = symbols('x y');
+ * const e = x.add(y).pow(2);
+ * e; // => (x + y)**2
+ * e.expand(); // => x**2 + 2*x*y + y**2
+ * e.diff(x); // => 2*x + 2*y
+ * e.subs(y, 1); // => (x + 1)**2
+ * e.args; // => [x + y, 2]
+ * ```
+ */
 export abstract class Expr {
   /**
    * SymPy `fromiter(args)`: the class applied to the items of args
@@ -558,7 +579,16 @@ export abstract class Expr {
     const expr = impl.sympify(exprIn);
     return expr instanceof this ? [...expr.args] : [expr];
   }
+  /**
+   * The node type of the expression (`'Symbol'`, `'Add'`, `'Pow'`, ...).
+   * Use `instanceof` with the exported classes to test for a node type.
+   */
   abstract readonly kind: ExprKind;
+  /**
+   * The arguments of the expression; empty for an atom.
+   *
+   * @see SymPy `sympy.core.basic.Basic.args`
+   */
   abstract readonly args: readonly Expr[];
   #key: string | undefined;
 
@@ -569,6 +599,22 @@ export abstract class Expr {
 
   protected abstract computeKey(): string;
 
+  /**
+   * Structural equality: the same expression in canonical form. It does not
+   * test mathematical equality (`(x + 1)**2` and `x**2 + 2*x + 1` differ).
+   *
+   * @param other - The value to compare with; numbers are sympified.
+   * @returns Whether the two expressions are the same.
+   * @see SymPy `sympy.core.basic.Basic.__eq__`
+   * @example
+   * ```ts
+   * import { ex, Rational } from '@symjs/symjs';
+   *
+   * ex`x + 1`.equals(ex`1 + x`); // => True
+   * Rational.of(1, 2).equals(0.5); // => False
+   * ex`(x + 1)**2`.equals(ex`x**2 + 2*x + 1`); // => False
+   * ```
+   */
   equals(other: ExprLike): boolean {
     const o = impl.sympify(other);
     return this === o || this.key === o.key;
@@ -583,6 +629,12 @@ export abstract class Expr {
     return headOf(this);
   }
 
+  /**
+   * Whether the expression is a number: it has no free symbols and no
+   * undefined functions (`2`, `pi`, `sqrt(2) + 1`, `sin(1)`).
+   *
+   * @see SymPy `sympy.core.expr.Expr.is_number`
+   */
   get isNumber(): boolean {
     if (this instanceof Constant || this instanceof Special) return true;
     if (this instanceof Add || this instanceof Mul || this instanceof Pow || this instanceof Fn) return this.args.every((a) => a.isNumber);
@@ -594,6 +646,11 @@ export abstract class Expr {
     return impl.isComparable(this);
   }
 
+  /**
+   * Whether the expression has no arguments (a number, a symbol or a constant).
+   *
+   * @see SymPy `sympy.core.basic.Basic.is_Atom`
+   */
   get isAtom(): boolean {
     return this.args.length === 0;
   }
@@ -609,28 +666,114 @@ export abstract class Expr {
   }
 
   // ---- fluent arithmetic -------------------------------------------------
+  /**
+   * The sum `this + o` (JavaScript's `+` does not apply to expressions).
+   *
+   * @param o - The other term; numbers are sympified.
+   * @returns The sum.
+   * @see SymPy `sympy.core.expr.Expr.__add__`
+   * @example
+   * ```ts
+   * import { Sym } from '@symjs/symjs';
+   *
+   * const x = Sym('x');
+   * x.add(1).add(x); // => 2*x + 1
+   * ```
+   */
   add(o: ExprLike): Expr {
     return impl.add(this, o);
   }
+  /**
+   * The difference `this - o`.
+   *
+   * @param o - The subtrahend.
+   * @returns The difference.
+   * @see SymPy `sympy.core.expr.Expr.__sub__`
+   */
   sub(o: ExprLike): Expr {
     return impl.arithmetic?.('sub', [this, impl.sympify(o)]) ?? impl.add(this, impl.mul(-1, o));
   }
+  /**
+   * The product `this*o`.
+   *
+   * @param o - The other factor.
+   * @returns The product.
+   * @see SymPy `sympy.core.expr.Expr.__mul__`
+   */
   mul(o: ExprLike): Expr {
     return impl.mul(this, o);
   }
+  /**
+   * The quotient `this/o`; a division of integers gives a `Rational`.
+   *
+   * @param o - The divisor.
+   * @returns The quotient.
+   * @see SymPy `sympy.core.expr.Expr.__truediv__`
+   * @example
+   * ```ts
+   * import { Rational, Sym } from '@symjs/symjs';
+   *
+   * Rational.of(1).div(3); // => 1/3
+   * Sym('x').div(2); // => x/2
+   * ```
+   */
   div(o: ExprLike): Expr {
     return impl.div(this, o);
   }
+  /**
+   * The power `this**o`.
+   *
+   * @param o - The exponent.
+   * @returns The power.
+   * @see SymPy `sympy.core.expr.Expr.__pow__`
+   * @example
+   * ```ts
+   * import { Rational, Sym } from '@symjs/symjs';
+   *
+   * Sym('x').pow(2); // => x**2
+   * Rational.of(8).pow(Rational.of(1, 3)); // => 2
+   * ```
+   */
   pow(o: ExprLike): Expr {
     return impl.pow(this, o);
   }
+  /**
+   * The negation `-this`.
+   *
+   * @returns The negated expression.
+   * @see SymPy `sympy.core.expr.Expr.__neg__`
+   */
   neg(): Expr {
     return impl.mul(-1, this);
   }
 
   // ---- manipulation --------------------------------------------------------
+  /**
+   * Substitutes the pairs of `s`, one after the other, as {@link subs} does.
+   *
+   * @param s - The pairs `[old, new]`, as a `Map`, an array of pairs, or an
+   *   object whose keys are symbol names.
+   * @returns The expression after the substitution.
+   * @see SymPy `sympy.core.basic.Basic.subs`
+   * @example
+   * ```ts
+   * import { ex, pi, symbols } from '@symjs/symjs';
+   *
+   * const [x, y] = symbols('x y');
+   * ex`1 + x*y`.subs(x, pi); // => pi*y + 1
+   * ex`1 + x*y`.subs('x', 2); // => 2*y + 1
+   * ex`1 + x*y`.subs({ x: pi, y: 2 }); // => 1 + 2*pi
+   * ex`1 + x*y`.subs([[x, y], [y, 2]]); // => 5
+   * ```
+   */
   subs(s: Substitution): Expr;
-  /** `from` may be a symbol name: SymPy subs takes a string as the symbol of that name. */
+  /**
+   * Substitutes `to` for `from`.
+   *
+   * @param from - The expression to replace, or the name of a symbol.
+   * @param to - The replacement.
+   * @returns The expression after the substitution.
+   */
   subs(from: Expr | string, to: ExprLike): Expr;
   subs(a: Substitution | Expr | string, b?: ExprLike): Expr {
     if (a instanceof Expr || typeof a === 'string') {
@@ -641,56 +784,173 @@ export abstract class Expr {
     if (typeof a !== 'object') throw new SympifyError(`Cannot convert ${String(a)} to an expression`, a);
     return impl.subs(this, a);
   }
+  /**
+   * The `n`-th derivative with respect to `x`, as {@link diff}.
+   *
+   * @param x - The variable.
+   * @param n - The order.
+   * @returns The derivative.
+   * @see SymPy `sympy.core.expr.Expr.diff`
+   */
   diff(x: Expr, n: ExprLike = 1): Expr {
     return impl.diff(this, x, n);
   }
-  /** Limit as z -> z0 (dir '+' by default, like SymPy). */
+  /**
+   * The limit as `z` tends to `z0`, as {@link limit}.
+   *
+   * @param z - The variable.
+   * @param z0 - The point.
+   * @param dir - `'+'` (the default), `'-'` or `'+-'`.
+   * @returns The limit.
+   * @see SymPy `sympy.core.expr.Expr.limit`
+   */
   limit(z: Sym, z0: ExprLike, dir: '+' | '-' | '+-' = '+'): Expr {
     return impl.limit(this, z, z0, dir);
   }
-  /** Series expansion about x0 up to O((x - x0)**n). */
+  /**
+   * The series expansion about `x0` up to `O((x - x0)**n)`, as {@link series}.
+   *
+   * @param x - The variable.
+   * @param x0 - The point of the expansion.
+   * @param n - The order of the `Order` term.
+   * @returns The series.
+   * @see SymPy `sympy.core.expr.Expr.series`
+   */
   series(x: Sym, x0: ExprLike = 0, n = 6): Expr {
     return impl.series(this, x, x0, n);
   }
-  /** Indefinite integral w.r.t. x, or definite over [a, b] when limits are given. */
+  /**
+   * The antiderivative with respect to `x`, or the definite integral between
+   * `limits`, as {@link integrate}.
+   *
+   * @param x - The integration variable.
+   * @param limits - The lower and upper limits.
+   * @returns The integral.
+   * @see SymPy `sympy.core.expr.Expr.integrate`
+   */
   integrate(x: Sym, limits?: [ExprLike, ExprLike]): Expr {
     return impl.integrate(this, x, limits);
   }
-  /** Coefficient of `x**n` in the expression (SymPy `Expr.coeff`). */
+  /**
+   * The coefficient of `x**n` in the expression, which is taken as a sum of
+   * terms without expanding it.
+   *
+   * @param x - The base of the power, or any expression.
+   * @param n - The exponent; `0` gives the terms free of `x`.
+   * @param right - For non-commutative factors, the coefficient on the left
+   *   of `x` instead of on the right.
+   * @returns The coefficient, `0` when there is none.
+   * @see SymPy `sympy.core.expr.Expr.coeff`
+   * @example
+   * ```ts
+   * import { ex, symbols } from '@symjs/symjs';
+   *
+   * const [x] = symbols('x');
+   * ex`3*x**2 + a*x + b*x + c`.coeff(x); // => a + b
+   * ex`3*x**2 + a*x + c`.coeff(x, 2); // => 3
+   * ex`3*x**2 + a*x + c`.coeff(x, 0); // => c
+   * ```
+   */
   coeff(x: ExprLike, n = 1, right = false): Expr {
     return impl.coeff(this, x, n, right);
   }
+  /**
+   * Expands with the default hints, as {@link expand}.
+   *
+   * @returns The expanded expression.
+   * @see SymPy `sympy.core.expr.Expr.expand`
+   */
   expand(): Expr {
     return impl.expand(this);
   }
+  /**
+   * Simplifies with the default options, as {@link simplify}.
+   *
+   * @returns The simplified expression.
+   * @see SymPy `sympy.core.basic.Basic.simplify`
+   */
   simplify(): Expr {
     return impl.simplify(this);
   }
+  /**
+   * The complex conjugate.
+   *
+   * @returns The conjugate.
+   * @see SymPy `sympy.core.expr.Expr.conjugate`
+   * @example
+   * ```ts
+   * import { ex, symbols } from '@symjs/symjs';
+   *
+   * const [x] = symbols('x', { real: true });
+   * ex`2 + 3*I`.conjugate(); // => 2 - 3*I
+   * ex`${x} + I*y`.conjugate(); // => x - I*conjugate(y)
+   * ```
+   */
   conjugate(): Expr {
     return impl.conjugate(this);
   }
   /**
-   * Numerically evaluate to `n` significant digits (default 15); symbols
-   * without values stay symbolic. Passing values as the first argument is
-   * shorthand for `evalf(15, { subs: values })`.
+   * Evaluates numerically to `n` significant digits (15 by default) in
+   * arbitrary precision; symbols without values stay symbolic. Values as the
+   * first argument are shorthand for `evalf(15, { subs: values })`.
+   *
+   * @param n - The number of significant digits, or the values of symbols.
+   * @param opts - `subs` gives the values of symbols; `chop` drops tiny real
+   *   or imaginary parts; `maxn` bounds the working precision.
+   * @returns The numerical value.
+   * @see SymPy `sympy.core.evalf.EvalfMixin.evalf`
+   * @example
+   * ```ts
+   * import { ex, pi, Sym } from '@symjs/symjs';
+   *
+   * pi.evalf(); // => 3.14159265358979
+   * ex`sqrt(2)`.evalf(30); // => 1.41421356237309504880168872421
+   * ex`x**2 + 1`.evalf(5, { subs: new Map([[Sym('x'), 2]]) }); // => 5.0000
+   * ```
    */
   evalf(n?: number | NumericValues, opts?: EvalfOptions): Expr {
     return impl.evalf(this, n, opts);
   }
-  /** Rewrite in terms of another function (SymPy `rewrite`), e.g. `sin(x).rewrite('exp')`. */
+  /**
+   * Rewrites the expression in terms of another function.
+   *
+   * @param target - The name of the function to rewrite in terms of.
+   * @param opts - `pattern` restricts the rewriting to the named functions;
+   *   `deep: false` leaves the arguments alone.
+   * @returns The rewritten expression.
+   * @see SymPy `sympy.core.basic.Basic.rewrite`
+   * @example
+   * ```ts
+   * import { ex } from '@symjs/symjs';
+   *
+   * ex`sin(x)`.rewrite('exp'); // => -I*(exp(I*x) - exp(-I*x))/2
+   * ex`tan(x)`.rewrite('sin'); // => 2*sin(x)**2/sin(2*x)
+   * ```
+   */
   rewrite(target: string, opts?: { pattern?: readonly string[]; deep?: boolean; hints?: Readonly<Record<string, Expr>> }): Expr {
     if (!impl.rewrite) notLoaded('rewrite', 'simplify');
     return impl.rewrite(this, target, opts);
   }
-  /** Alias of evalf (SymPy `.n()`). */
+  /**
+   * Alias of {@link Expr.evalf}.
+   *
+   * @param n - The number of significant digits, or the values of symbols.
+   * @param opts - As for `evalf`.
+   * @returns The numerical value.
+   * @see SymPy `sympy.core.evalf.EvalfMixin.n`
+   */
   n(n?: number | NumericValues, opts?: EvalfOptions): Expr {
     return impl.evalf(this, n, opts);
   }
-  /** Numerically evaluate to a complex value. All symbols must have values. */
+  /**
+   * Evaluates numerically to a complex value in double precision.
+   *
+   * @param values - The values of the symbols; every free symbol needs one.
+   * @returns The value as `{ re, im }`.
+   */
   toComplex(values?: NumericValues): ComplexValue {
     return impl.toComplex(this, values);
   }
-  /** Numerically evaluate to a real number (throws if the result is not real). */
   /**
    * JavaScript's conversion of the expression to a primitive. A string is the printed form, so that
    * `'x = ' + expr` and template literals print it. A number (`2 * expr`, `Number(expr)`) is the
@@ -712,6 +972,20 @@ export abstract class Expr {
     }
     return value;
   }
+  /**
+   * Evaluates numerically to a real number in double precision.
+   *
+   * @param values - The values of the symbols; every free symbol needs one.
+   * @param tol - The relative size of an imaginary part that is ignored.
+   * @returns The value.
+   * @throws RangeError when the value is not real.
+   * @example
+   * ```ts
+   * import { ex } from '@symjs/symjs';
+   *
+   * ex`sqrt(2)/2`.toNumber(); // => 0.7071067811865476
+   * ```
+   */
   toNumber(values?: NumericValues, tol = 1e-12): number {
     const c = impl.toComplex(this, values);
     if (Math.abs(c.im) > tol * Math.max(1, Math.abs(c.re))) {
@@ -719,9 +993,39 @@ export abstract class Expr {
     }
     return c.re;
   }
+  /**
+   * The symbols of the expression that are not bound (by an integral, a sum,
+   * a `Lambda`, ...).
+   *
+   * @returns The free symbols.
+   * @see SymPy `sympy.core.basic.Basic.free_symbols`
+   * @example
+   * ```ts
+   * import { ex } from '@symjs/symjs';
+   *
+   * ex`x*y + sin(z)`.freeSymbols(); // => {x, y, z}
+   * ex`Integral(x*y, (x, 0, 1))`.freeSymbols(); // => {y}
+   * ```
+   */
   freeSymbols(): Set<Expr> {
     return impl.freeSymbols(this);
   }
+  /**
+   * Whether `sub` occurs in the expression, as a subexpression or as a sub-sum
+   * or sub-product of a sum or product.
+   *
+   * @param sub - The expression to look for.
+   * @returns Whether it occurs.
+   * @see SymPy `sympy.core.basic.Basic.has`
+   * @example
+   * ```ts
+   * import { ex } from '@symjs/symjs';
+   *
+   * ex`sin(x) + y + 1`.has(ex`x`); // => True
+   * ex`sin(x) + y + 1`.has(ex`y + 1`); // => True
+   * ex`sin(x) + y + 1`.has(ex`z`); // => False
+   * ```
+   */
   has(sub: Expr): boolean {
     if (this.key === sub.key) return true;
     if (this.constructor === sub.constructor && (this instanceof Add || this instanceof Mul)) {
@@ -735,9 +1039,21 @@ export abstract class Expr {
     return this.args.some((a) => a.has(sub));
   }
 
+  /**
+   * The printed form, as SymPy's `str()`.
+   *
+   * @returns The text of the expression.
+   * @see SymPy `sympy.printing.str.sstr`
+   */
   toString(): string {
     return impl.str(this);
   }
+  /**
+   * The LaTeX form, as {@link latex} with the default settings.
+   *
+   * @returns The LaTeX text.
+   * @see SymPy `sympy.printing.latex.latex`
+   */
   toLatex(): string {
     return impl.latex(this);
   }
@@ -1233,7 +1549,22 @@ export class Piecewise extends Expr {
   }
 }
 
-/** Unevaluated integral: [f, x] (indefinite) or [f, x, a, b] (definite). @internal ctor */
+/**
+ * An unevaluated integral, with the arguments `[f, x]` (indefinite) or
+ * `[f, x, a, b]` (definite). {@link integrate} returns it for an integral it
+ * cannot compute; `doit` evaluates it.
+ *
+ * @see SymPy `sympy.integrals.integrals.Integral`
+ * @example
+ * ```ts
+ * import { doit, ex, Integral } from '@symjs/symjs';
+ *
+ * const i = ex`Integral(x**2, (x, 0, 1))`;
+ * i instanceof Integral; // => True
+ * i.args; // => [x**2, x, 0, 1]
+ * doit(i); // => 1/3
+ * ```
+ */
 export class Integral extends Expr {
   readonly kind = 'Integral' as const;
   constructor(readonly args: readonly Expr[]) {
@@ -1324,7 +1655,22 @@ export class Derivative extends Expr {
   }
 }
 
-/** Unevaluated limit: args [e, z, z0]; dir is '+', '-' or '+-'. @internal ctor */
+/**
+ * An unevaluated limit of `expr` as `variable` tends to `point` from the
+ * side `dir` (`'+'`, `'-'` or `'+-'`). {@link limit} returns it for a limit
+ * it cannot determine; `doit` evaluates it.
+ *
+ * @see SymPy `sympy.series.limits.Limit`
+ * @example
+ * ```ts
+ * import { doit, ex } from '@symjs/symjs';
+ *
+ * const l = ex`Limit(sin(x)/x, x, 0)`;
+ * l; // => Limit(sin(x)/x, x, 0, dir='+')
+ * doit(l); // => 1
+ * ex`Limit(1/x, x, 0, '-')`; // => Limit(1/x, x, 0, dir='-')
+ * ```
+ */
 export class Limit extends Expr {
   readonly kind = 'Limit' as const;
   constructor(readonly args: readonly Expr[], readonly dir: '+' | '-' | '+-' = '+') {
@@ -1460,9 +1806,9 @@ export const I = S.I;
  * @see SymPy `sympy.core.numbers.Infinity`
  * @example
  * ```ts
- * import { ex, limit, oo, Symbol } from '@symjs/symjs';
+ * import { ex, limit, oo, Sym } from '@symjs/symjs';
  *
- * limit(ex`1/x`, Symbol('x'), oo); // => 0
+ * limit(ex`1/x`, Sym('x'), oo); // => 0
  * oo.add(1); // => oo
  * ```
  */

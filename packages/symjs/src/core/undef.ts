@@ -36,7 +36,27 @@ export const isFunctionClass = (v: unknown): v is FunctionClassLike => typeof v 
 /** Whether a value is an undefined function made by SymFunction (SymPy `UndefinedFunction`). */
 export const isUndefinedFunction = (v: unknown): v is UndefinedFunction => typeof v === 'function' && undefinedFunctions.has(v);
 
-/** Create an undefined function, like SymPy `Function('f')`. */
+/**
+ * Creates an undefined function: a named function without a definition,
+ * applied to arguments as `f(x)`. Derivatives of its applications stay
+ * unevaluated.
+ *
+ * @param name - The name of the function.
+ * @param options - `nargs` restricts the number of arguments; `assumptions`
+ *   apply to every application (`{ real: true }`).
+ * @returns The function.
+ * @see SymPy `sympy.core.function.Function`
+ * @example
+ * ```ts
+ * import { diff, ex, SymFunction, symbols } from '@symjs/symjs';
+ *
+ * const [x] = symbols('x');
+ * const f = SymFunction('f');
+ * f(x); // => f(x)
+ * diff(f(x).pow(2), x); // => 2*f(x)*Derivative(f(x), x)
+ * diff(f(ex`2*x + 3`), x); // => 2*Subs(Derivative(f(_xi_1), _xi_1), _xi_1, 2*x + 3)
+ * ```
+ */
 export function SymFunction(name: string, options: { nargs?: number | readonly number[]; assumptions?: Assumptions } = {}): UndefinedFunction {
   if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(name)) throw new SyntaxError(`Invalid function name: ${name}`);
   const arity = options.nargs === undefined ? NoMatch : Object.freeze([...new Set(typeof options.nargs === 'number' ? [options.nargs] : options.nargs)].sort((a,b) => a-b));

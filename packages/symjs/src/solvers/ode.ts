@@ -119,10 +119,10 @@ const isExprList = <T>(v: T | readonly T[] | undefined): v is readonly T[] => Ar
  * @see SymPy `sympy.solvers.ode.ode.dsolve`
  * @example
  * ```ts
- * import { dsolve, ex, Function, symbols } from '@symjs/symjs';
+ * import { dsolve, ex, SymFunction, symbols } from '@symjs/symjs';
  *
  * const [x] = symbols('x');
- * const f = Function('f');
+ * const f = SymFunction('f');
  * dsolve(ex`Derivative(f(x), x, 2) + 9*f(x)`, f(x)); // => Eq(f(x), C1*sin(3*x) + C2*cos(3*x))
  * dsolve(ex`Derivative(f(x), x) - f(x)`, f(x), { ics: [[f(0), 2]] }); // => Eq(f(x), 2*exp(x))
  * ```

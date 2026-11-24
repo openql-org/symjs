@@ -892,13 +892,30 @@ function mulPowers(m: Mul): Map<bigint, bigint> {
 }
 
 /**
- * The prime factorization of n as a Map prime -> exponent in SymPy's order
- * (SymPy factorint). Negative n includes -1, factorint(0) is {0: 1}.
- * Options: `limit` (trial division bound), `useTrial`, `useRho`, `usePm1`,
- * `useEcm`, `multiple` (the list of factors), `visual` (an unevaluated
- * product). n may also be a Map of factors or an unevaluated Mul (factored
- * further; a Map gives the visual form unless `visual: false`) or an
- * unevaluated factorial(k).
+ * The prime factorization of an integer as a `Map` from each prime to its
+ * exponent, in SymPy's order. A negative number includes the factor `-1`, and
+ * `factorint(0)` is `{0: 1}`. The argument may also be a `Map` of factors, an
+ * unevaluated product or an unevaluated `factorial(k)`, which are factored
+ * further.
+ *
+ * @param nIn - The integer.
+ * @param opts - `limit` bounds the trial division (the result may then hold
+ *   composite factors); `useTrial`, `useRho`, `usePm1` and `useEcm` select the
+ *   methods; `multiple` gives the list of the factors; `visual` gives an
+ *   unevaluated product.
+ * @returns The factorization.
+ * @see SymPy `sympy.ntheory.factor_.factorint`
+ * @example
+ * ```ts
+ * import { factorint } from '@symjs/symjs';
+ *
+ * factorint(2000); // => {2: 4, 5: 3}
+ * factorint(65537); // => {65537: 1}
+ * factorint(-12); // => {2: 2, 3: 1, -1: 1}
+ * factorint(3n * 101n ** 7n, { limit: 5 }); // => {3: 1, 101: 7}
+ * factorint(24, { multiple: true }); // => [2, 2, 2, 3]
+ * factorint(4200, { visual: true }); // => 2**3*3**1*5**2*7**1
+ * ```
  */
 export function factorint(n: bigint | number, opts: FactorintOptions & { multiple: true }): bigint[];
 export function factorint(n: IntLike | ReadonlyMap<bigint | number, bigint | number>, opts: FactorintOptions & { multiple: true }): (bigint | Rational)[];

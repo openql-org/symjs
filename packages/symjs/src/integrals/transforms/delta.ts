@@ -199,8 +199,8 @@ function expandDiracDelta(self: Expr, wrt0: unknown): Expr {
   try {
     rs = rootsDict(arg, wrt);
   } catch {
-    // not a polynomial (PolynomialError) or roots not found (NotImplementedError): kept, where
-    // SymPy gives 0 for roots it cannot find (DiracDelta(x**5 - x - 1)), which is wrong
+    // not a polynomial (PolynomialError) or roots not in radicals (NotImplementedError): kept,
+    // where SymPy gives 0 for roots it cannot find (DiracDelta(x**5 - x - 1)), which is wrong
     return self;
   }
   const darg = abs(diff(arg, wrt));

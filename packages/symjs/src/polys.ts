@@ -39,7 +39,7 @@ export {
   toRationalCoeffs,
 } from './polys/sympoly';
 
-export { rootsDict as roots, type RootOptions } from './polys/poly';
+export { rootsInRadicals as roots, type RootOptions } from './polys/poly';
 export { dictFromExpr, parallelDictFromExpr } from './polys/polyutils';
 export type { DictFromExprOptions } from './polys/polyutils';
 export { bernoulliPoly, bernoulliCPoly, genocchiPoly, eulerPoly, andrePoly, dupBernoulli, dupBernoulliC, dupGenocchi, dupEuler, dupAndre } from './polys/appellseqs';

@@ -101,10 +101,26 @@ function floats(e: Expr): Float[] {
 
 
 /**
- * Find a simple closed form of a number (SymPy nsimplify): the value at 30
- * digits is identified by mpmath's identify (PSLQ) with the given constants;
- * with free symbols or `rational: true` the Floats are replaced by
- * Rationals. Ported from SymPy 1.14 simplify/simplify.py.
+ * Finds a simple closed form of a number: the value at 30 digits is identified
+ * by integer relation detection (PSLQ) with the given constants. With free
+ * symbols or `rational: true` the Floats are only replaced by Rationals.
+ *
+ * @param exIn - The number, or an expression with Floats.
+ * @param opts - `constants` to try, the `tolerance`, `full` for a wider
+ *   search, `rational` and `rationalConversion`.
+ * @returns The simplified number.
+ * @see SymPy `sympy.simplify.simplify.nsimplify`
+ * @example
+ * ```ts
+ * import { ex, nsimplify, pi, S } from '@symjs/symjs';
+ *
+ * nsimplify(ex`4/(1 + sqrt(5))`, { constants: [S.GoldenRatio] }); // => -2 + 2*GoldenRatio
+ * nsimplify(ex`1/(exp(3*pi*I/5) + 1)`); // => 1/2 - I*sqrt(sqrt(5)/10 + 1/4)
+ * nsimplify(ex`I**I`, { constants: [pi] }); // => exp(-pi/2)
+ * nsimplify(pi, { tolerance: 0.01 }); // => 22/7
+ * nsimplify(0.333333333333333, { rational: true }); // => 1/3
+ * nsimplify(0.333333333333333, { rational: true, rationalConversion: 'exact' }); // => 6004799503160655/18014398509481984
+ * ```
  */
 export function nsimplify(
   exIn: ExprLike,

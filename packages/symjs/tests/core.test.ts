@@ -23,3 +23,14 @@ it('public constructors evaluate by default and preserve explicit unevaluated ar
   expect(sj.Dummy().equals(sj.Dummy())).toBe(false);
   expect(sj.Dummy('d', { positive: true }).assumptions.positive).toBe(true);
 });
+
+it('Derivative computes the derivative with a last argument { evaluate: true }', () => {
+  const [x, y] = sj.symbols('x y');
+  const f = sj.SymFunction('f');
+  expect(String(sj.Derivative(sj.ex`x**2*y`, x, { evaluate: true }))).toBe('2*x*y');
+  expect(String(sj.Derivative(sj.ex`x**3*y**2`, [x, 2], y, { evaluate: true }))).toBe('12*x*y');
+  expect(String(sj.Derivative(f(x).pow(2), f(x), { evaluate: true }))).toBe('2*f(x)');
+  expect(String(sj.Derivative(sj.ex`x**2`, x, { evaluate: false }))).toBe('Derivative(x**2, x)');
+  // the options object must be the last argument
+  expect(() => sj.Derivative(sj.ex`x**2`, { evaluate: true }, x)).toThrow(TypeError);
+});
