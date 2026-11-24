@@ -101,8 +101,10 @@ const terms = (e: Expr): readonly Expr[] => (e instanceof Add ? sympyArgs(e) : [
 const isInfinite = (e: Expr): boolean => e instanceof Special && (e.name === 'oo' || e.name === '-oo');
 
 /**
- * SymPy dominant(expr, n): the term of the sum expr that dominates every
- * other one as n -> oo, or undefined when there is no unique such term.
+ * Searches for the unique term of a sum that dominates all the others as `n` tends to
+ * infinity. The public function returns `NoMatch` if it cannot identify such a term.
+ *
+ * @see SymPy `sympy.series.limitseq.dominant`
  */
 export function dominant(ex: ExprLike, n: Sym, depth = 0): Expr | undefined {
   // the algorithm recurses through dominant and limit_seq (SymPy until its recursion limit)

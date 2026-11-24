@@ -828,7 +828,7 @@ export function limit(ex: ExprLike, z: Sym, z0x: ExprLike, dir: '+' | '-' | '+-'
   return limitWithin(ex, z, z0x, dir, BUDGET);
 }
 
-/** limit() with at most `budget` nested limit computations per one-sided limit (internal; for tests). */
+/** Computes a limit with at most `budget` nested limit computations for each one-sided limit. */
 export function limitWithin(ex: ExprLike, z: Sym, z0x: ExprLike, dir: '+' | '-' | '+-', budget: number): Expr {
   // Floats are converted to exact numbers first, as in SymPy (limit(x**0.5, x, 16) = 4)
   const given = sympify(ex);

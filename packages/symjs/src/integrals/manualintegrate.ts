@@ -577,12 +577,13 @@ function sqrtLinear(f: Expr, a: Expr, b: Expr, n: number, x: Sym): Expr {
 }
 
 /**
- * SymPy sqrt_quadratic_rule: the integral of f = p(x)*sqrt(a + b*x + c*x**2)**n
- * for a polynomial p and n = 1 or n = -1. Real coefficients select asin
- * and asinh by their signs; symbolic coefficients retain degenerate cases.
- * Undefined otherwise.
+ * Looks for an antiderivative of a polynomial in `x` multiplied or divided by the square root
+ * of a quadratic in `x`. The signs of real coefficients determine when `asin` or `asinh`
+ * applies. Symbolic coefficients can give separate cases for a degenerate quadratic.
  *
  * It applies, for example, to `x*sqrt(x**2 + a*x + b)`.
+ *
+ * @see SymPy `sympy.integrals.manualintegrate.sqrt_quadratic_rule`
  */
 export function sqrtQuadraticRule(f: Expr, x: Sym, manual = false): Expr | undefined {
   const factors = f instanceof Mul ? f.args : [f];

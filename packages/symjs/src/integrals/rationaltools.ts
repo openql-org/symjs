@@ -444,9 +444,10 @@ function rootSumRadicals(q: Poly, t: Sym, h: Poly): Expr | undefined {
 }
 
 /**
- * n/d with the common factor of the polynomials n and d in x removed (SymPy
- * Poly.cancel(include=True) as risch_integrate applies it), as
- * coefficient*p/q.
+ * Cancels common polynomial factors in `n/d` with respect to `x` and returns the reduced
+ * expression with its scalar coefficient.
+ *
+ * @see SymPy `sympy.polys.polytools.Poly.cancel`
  */
 export function cancelFraction(n: Expr, d: Expr, x: Sym): Expr {
   const [c, p, q] = polyCancel(P(n, x), P(d, x));

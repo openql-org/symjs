@@ -38,7 +38,12 @@ function pivotSolution(eqs: readonly Expr[], vars: readonly Sym[]): Map<string, 
 
 const allZero = (s: ReadonlyMap<string, Expr>) => [...s.values()].every(isZero);
 
-/** SymPy minsolve_linear_system(system, *symbols, quick=...) for homogeneous linear equations (internal). */
+/**
+ * Searches for a nonzero solution of the homogeneous linear equations with as few nonzero
+ * coordinates as possible. Setting `quick` selects a heuristic search.
+ *
+ * @see SymPy `sympy.solvers.solvers.minsolve_linear_system`
+ */
 export function particularSolution(eqs: readonly Expr[], vars: readonly Sym[], quick: boolean): Map<string, Expr> {
   const s0 = pivotSolution(eqs, vars);
   // only the trivial solution of the pivots: SymPy returns it as it is
@@ -238,7 +243,10 @@ export function ratsimpmodprime(exprIn: ExprLike, G: readonly ExprLike[], genera
     return [...out, ...staircase(n - 1)];
   };
   const totalDegree = (e: Expr) => Poly.from(e, gens).totalDegree();
-  /** c_hat and d_hat at the solution, the variables it leaves free set to 1. */
+  /**
+   * Evaluates `cHat` and `dHat` at the solution, setting the remaining free variables in `ng`
+   * to one.
+   */
   const substitute = (cHat: Expr, dHat: Expr, sol: ReadonlyMap<string, Expr>, ng: readonly Sym[]): [Expr, Expr] => {
     const reps = [...sol].map(([k, v]): [Expr, Expr] => [defined(ng.find((u) => u.key === k)), v]);
     const ones = ng.map((u) => [u, S.One] as [Expr, Expr]);

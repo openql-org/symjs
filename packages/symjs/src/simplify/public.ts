@@ -82,7 +82,8 @@ export function sqrtBiquadraticDenest(expr: Pow, a: Expr, b: Expr, r: Expr, d2: 
 }
 
 /**
- * f(k + 1)/f(k) simplified, or NoMatch when f is not hypergeometric in k.
+ * Simplifies the successive-term ratio `f(k + 1)/f(k)` to a rational function of `k`,
+ * returning `NoMatch` when `f` is not hypergeometric in `k`.
  *
  * @param f - The function or expression to transform.
  * @param k - The index.

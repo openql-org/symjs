@@ -421,7 +421,7 @@ export function simplify(ex: ExprLike | AlgebraicNumber, opts: SimplifyOptions =
     return typeof m === 'number' ? m : m.toNumber();
   };
   const ratio = opts.ratio ?? 1.7;
-  /** SymPy shorter: the first choice of the smallest measure. */
+  /** Selects the first expression with the smallest value of the simplification measure. */
   const shorter = (...choices: Expr[]): Expr => {
     let best = first(choices);
     let bm: number | undefined;
@@ -433,7 +433,10 @@ export function simplify(ex: ExprLike | AlgebraicNumber, opts: SimplifyOptions =
     }
     return best;
   };
-  /** SymPy done: doit, and the Abs factors collected when that is shorter. */
+  /**
+   * Evaluates the expression according to the simplification options and collects
+   * absolute-value factors if that reduces the measure.
+   */
   const done = (e: Expr): Expr => {
     const rv = opts.doit !== false && impl.doit ? impl.doit(e) : reevaluate(e);
     const reduced = !rv.equals(e) && some(rv, t => t instanceof Fn && t.name === 'gamma') ? shorter(rv, combsimp(rv)) : rv;
@@ -724,7 +727,7 @@ function algebraicZero(e: Expr): boolean {
 }
 
 /**
- * mathematical equality, with an unknown result when undecidable.
+ * Tests mathematical equality, returning `'unknown'` when equality cannot be decided.
  *
  * @param lhs - The left-hand side.
  * @param rhs - The right-hand side.

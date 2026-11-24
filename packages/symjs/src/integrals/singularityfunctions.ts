@@ -53,8 +53,7 @@ export function singularityintegrate(f: ExprLike, x: Sym): Expr | NoMatchResult 
 }
 
 /**
- * singularityintegrate as integrate uses it: the integral of f, or undefined
- * when the method does not apply or leaves a part unevaluated.
+ * Looks for a fully evaluated antiderivative of `f` using singularity function integration.
  *
  * @internal
  */

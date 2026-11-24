@@ -81,8 +81,10 @@ export function printNode(node: Expr, options: TreeOptions = {}): string {
 }
 
 /**
- * SymPy `tree(node, assumptions=True)`: {@link printNode} of the node and,
- * below it, the trees of its arguments (SymPy's `args`, in SymPy's order).
+ * Formats the expression as a tree, with the {@link printNode} text for each node followed by
+ * its argument subtrees in SymPy argument order.
+ *
+ * @see SymPy `sympy.printing.tree.tree`
  */
 export function tree(node: Expr, options: TreeOptions = {}): string {
   return viewTree(basicView(node), options.assumptions ?? true);

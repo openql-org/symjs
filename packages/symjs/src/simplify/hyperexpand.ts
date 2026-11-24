@@ -69,7 +69,7 @@ function removeOne(xs: Expr[], e: Expr): void {
 const isBad = (e: Expr): boolean => some(e, (n) => n instanceof Special && ['nan', 'oo', '-oo', 'zoo'].includes(n.name));
 const countHyper = (e: Expr): number => (e instanceof Hyper ? 1 : 0) + e.args.reduce((s, a) => s + countHyper(a), 0);
 
-/** x mod 1, keeping the symbolic part (SymPy _mod1). */
+/** Reduces the rational part of `x` modulo one, preserving its symbolic terms. */
 export function mod1(x: Expr): Expr {
   const m = (c: Rational): Rational => Rational.of(((c.p % c.q) + c.q) % c.q, c.q);
   if (isRat(x)) return m(x);
@@ -1094,8 +1094,10 @@ function hyperexpandSpecial(ap: readonly Expr[], bq: readonly Expr[], z0: Expr):
 const replaceHyperSpecial = (e: Expr): Expr => mapBottomUp(e, (t) => (t instanceof Hyper ? hyperexpandSpecial(t.ap, t.bq, t.argument) : t));
 
 /**
- * SymPy unpolarify: it rebuilds every node, so hyper.eval drops the polar factors of an argument
- * at which the function is not branched (Hyper nodes are rebuilt here for that).
+ * Projects polar quantities onto the complex plane where branch information permits it and
+ * reevaluates hypergeometric functions at the resulting arguments.
+ *
+ * @see SymPy `sympy.functions.elementary.complexes.unpolarify`
  */
 export function unpolarifyEval(e: Expr, opts: { subs?: Substitution } = {}): Expr {
   return mapBottomUp(unpolarify(e, opts), (t) => (t instanceof Hyper ? hyper(t.ap, t.bq, t.argument) : t));

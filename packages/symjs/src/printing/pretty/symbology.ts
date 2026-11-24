@@ -23,8 +23,10 @@ import { splitSuperSub } from '../conventions';
 const state: { useUnicode: boolean; mulSymbol: string | undefined } = { useUnicode: true, mulSymbol: undefined };
 
 /**
- * SymPy `pretty_use_unicode(flag=None)`: with no argument return whether
- * unicode is used; otherwise set it and return the previous value.
+ * Returns the current Unicode printing setting. Supplying `flag` changes the setting and
+ * returns its previous value.
+ *
+ * @see SymPy `sympy.printing.pretty.pretty_symbology.pretty_use_unicode`
  */
 export function prettyUseUnicode(flag?: boolean): boolean {
   const prev = state.useUnicode;
@@ -33,8 +35,9 @@ export function prettyUseUnicode(flag?: boolean): boolean {
 }
 
 /**
- * SymPy `pretty_try_use_unicode`: use unicode when the output supports it.
- * JavaScript strings always do, so unicode is switched on.
+ * Enables Unicode output for the pretty printer.
+ *
+ * @see SymPy `sympy.printing.pretty.pretty_symbology.pretty_try_use_unicode`
  */
 export function prettyTryUseUnicode(): void {
   state.useUnicode = true;
@@ -64,7 +67,11 @@ function buildGreek(): ReadonlyMap<string, string> {
   return m;
 }
 
-/** SymPy `greek_unicode`: greek letter name -> character (`alpha` -> α, `Gamma` -> Γ). */
+/**
+ * Maps Greek letter names to Unicode characters, such as `alpha` to α and `Gamma` to Γ.
+ *
+ * @see SymPy `sympy.printing.pretty.pretty_symbology.greek_unicode`
+ */
 export const greekUnicode: ReadonlyMap<string, string> = /* @__PURE__ */ buildGreek();
 
 const BOLD_GREEK_EXTRA: Readonly<Record<string, string>> = { varsigma: '\u{1d6d3}' };
@@ -82,7 +89,11 @@ function boldLetter(c: string): string | undefined {
 // Sub- and superscripts
 // ---------------------------------------------------------------------------
 
-/** SymPy `sub`: symbol -> unicode subscript. */
+/**
+ * Maps symbols to their Unicode subscripts.
+ *
+ * @see SymPy `sympy.printing.pretty.pretty_symbology.sub`
+ */
 export const sub: ReadonlyMap<string, string> = /* @__PURE__ */ new Map([
   ['a', 'ₐ'], ['e', 'ₑ'], ['i', 'ᵢ'], ['o', 'ₒ'], ['r', 'ᵣ'], ['u', 'ᵤ'], ['v', 'ᵥ'],
   ['x', 'ₓ'], ['h', 'ₕ'], ['k', 'ₖ'], ['l', 'ₗ'], ['m', 'ₘ'], ['n', 'ₙ'], ['p', 'ₚ'],
@@ -92,7 +103,11 @@ export const sub: ReadonlyMap<string, string> = /* @__PURE__ */ new Map([
   ['(', '₍'], [')', '₎'],
 ]);
 
-/** SymPy `sup`: symbol -> unicode superscript. */
+/**
+ * Maps symbols to their Unicode superscripts.
+ *
+ * @see SymPy `sympy.printing.pretty.pretty_symbology.sup`
+ */
 export const sup: ReadonlyMap<string, string> = /* @__PURE__ */ new Map([
   ['i', 'ⁱ'], ['n', 'ⁿ'], ['0', '⁰'], ['1', '¹'], ['2', '²'], ['3', '³'], ['4', '⁴'],
   ['5', '⁵'], ['6', '⁶'], ['7', '⁷'], ['8', '⁸'], ['9', '⁹'], ['+', '⁺'], ['-', '⁻'],
@@ -190,8 +205,11 @@ const XOBJ_ASCII: Readonly<Record<string, XObj>> = {
 };
 
 /**
- * SymPy `xobj(symb, length)`: a spatial object (bracket, integral sign, ...)
- * of the given length, as one string (length 1) or a list of lines.
+ * Builds an extensible symbol, such as a bracket or integral sign. A symbol of length one is a
+ * string. Longer symbols are arrays of parts, with the requested length rounded up to an odd
+ * number if a middle piece is required.
+ *
+ * @see SymPy `sympy.printing.pretty.pretty_symbology.xobj`
  */
 export function xobj(symb: string, length: number): string | string[] {
   if (length <= 0) throw new RangeError('Length should be greater than 0');
@@ -238,17 +256,29 @@ export function xobj(symb: string, length: number): string | string[] {
 
 const asLines = (x: string | string[]): string[] => (typeof x === 'string' ? Array.from(x) : x);
 
-/** SymPy `vobj`: vertical object of the given height (lines joined by newlines). */
+/**
+ * Stacks the parts of a vertical symbol for the requested height, joining them with newlines.
+ *
+ * @see SymPy `sympy.printing.pretty.pretty_symbology.vobj`
+ */
 export function vobj(symb: string, height: number): string {
   return asLines(xobj(symb, height)).join('\n');
 }
 
-/** SymPy `hobj`: horizontal object of the given width. */
+/**
+ * Joins the parts of a horizontal symbol for the requested width.
+ *
+ * @see SymPy `sympy.printing.pretty.pretty_symbology.hobj`
+ */
 export function hobj(symb: string, width: number): string {
   return asLines(xobj(symb, width)).join('');
 }
 
-/** SymPy `root`: single-character radicals. */
+/**
+ * Maps the root indices 2, 3 and 4 to their Unicode radical signs.
+ *
+ * @see SymPy `sympy.printing.pretty.pretty_symbology.root`
+ */
 export const nthRoot: ReadonlyMap<number, string> = /* @__PURE__ */ new Map([
   [2, '√'],
   [3, '∛'],
@@ -284,7 +314,11 @@ export function prettyMulSymbol(symbol: string | undefined): string | undefined 
   return prev;
 }
 
-/** SymPy `xsym`: symbology for an operator character. */
+/**
+ * Returns the operator symbol for the current pretty-printing settings.
+ *
+ * @see SymPy `sympy.printing.pretty.pretty_symbology.xsym`
+ */
 export function xsym(sym: string): string {
   if (sym === '*' && state.mulSymbol !== undefined) return state.mulSymbol;
   const op = XSYM[sym];
@@ -343,9 +377,10 @@ const ATOMS: Readonly<Record<string, string>> = {
 };
 
 /**
- * SymPy `annotated(letter)`: the picture of the F of hyper or the G of
- * meijerg, as (size, top, bottom, add, picture). The picture has `size`
- * lines; `top` and `bottom` lines of it belong above and below.
+ * Returns the drawing and annotation offsets for the hypergeometric F or Meijer G symbol as
+ * `[size, top, bottom, add, picture]`.
+ *
+ * @see SymPy `sympy.printing.pretty.pretty_symbology.annotated`
  */
 export function annotated(letter: 'F' | 'G'): [number, number, number, number, string] {
   if (state.useUnicode) return letter === 'F' ? [2, 0, 2, 0, '┌─\n├─\n╵'] : [3, 0, 3, 1, '╭─╮\n│╶┐\n╰─╯'];
@@ -353,9 +388,10 @@ export function annotated(letter: 'F' | 'G'): [number, number, number, number, s
 }
 
 /**
- * SymPy `pretty_atom(atom_name, default)`: the unicode form of an atom, or
- * `fallback` in ASCII mode. Undefined when there is no form (SymPy raises
- * KeyError and the printer falls back to the str form).
+ * Looks up the Unicode representation of an atom by name. In ASCII mode it uses the supplied
+ * `fallback`.
+ *
+ * @see SymPy `sympy.printing.pretty.pretty_symbology.pretty_atom`
  */
 export function prettyAtom(name: string, fallback?: string, imaginaryUnit: 'i' | 'j' = 'i'): string | undefined {
   if (state.useUnicode) {
@@ -369,7 +405,11 @@ export function prettyAtom(name: string, fallback?: string, imaginaryUnit: 'i' |
 // Symbol names
 // ---------------------------------------------------------------------------
 
-/** SymPy `split_super_sub` (sympy.printing.conventions). */
+/**
+ * Splits a symbol name into its base name, superscripts and subscripts.
+ *
+ * @see SymPy `sympy.printing.conventions.split_super_sub`
+ */
 export { splitSuperSub } from '../conventions';
 
 function translateName(s: string, bold: boolean): string {
@@ -404,7 +444,11 @@ function prettyList(items: readonly string[], mapping: ReadonlyMap<string, strin
   return result;
 }
 
-/** SymPy `pretty_symbol`: the printed form of a symbol name (`alpha_1` -> α₁ in unicode). */
+/**
+ * Formats a symbol name for the current output mode, rendering `alpha_1` as α₁ in Unicode.
+ *
+ * @see SymPy `sympy.printing.pretty.pretty_symbology.pretty_symbol`
+ */
 export function prettySymbol(symbName: string, boldName = false): string {
   if (!state.useUnicode) return symbName;
   const [name0, sups, subs] = splitSuperSub(symbName);
@@ -439,20 +483,34 @@ export function isSubscriptableInUnicode(subscript: string): boolean {
 // Widths and centering
 // ---------------------------------------------------------------------------
 
-/** SymPy `is_combining`: is the character a combining modifier (zero width)? */
+/**
+ * Tests whether a character is a combining mark that the pretty printer treats as zero-width.
+ *
+ * @see SymPy `sympy.printing.pretty.pretty_symbology.is_combining`
+ */
 export function isCombining(ch: string): boolean {
   const c = ch.codePointAt(0) ?? 0;
   return (c >= 0x300 && c < 0x36f) || (c >= 0x20d0 && c < 0x20f0);
 }
 
-/** SymPy `line_width`: number of code points, combining characters excluded. */
+/**
+ * Counts the code points in a line, excluding combining marks recognized by the pretty
+ * printer.
+ *
+ * @see SymPy `sympy.printing.pretty.pretty_symbology.line_width`
+ */
 export function lineWidth(line: string): number {
   let n = 0;
   for (const ch of line) if (!isCombining(ch)) n++;
   return n;
 }
 
-/** SymPy `center_pad`: left and right padding to center a width in a target width. */
+/**
+ * Returns the left and right padding needed to center text of width `wstring` within `wtarget`
+ * columns.
+ *
+ * @see SymPy `sympy.printing.pretty.pretty_symbology.center_pad`
+ */
 export function centerPad(wstring: number, wtarget: number, fillchar = ' '): [string, string] {
   if (wstring > wtarget) throw new RangeError('not enough space for string');
   const wdelta = wtarget - wstring;

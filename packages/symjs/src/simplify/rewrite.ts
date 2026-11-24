@@ -62,7 +62,7 @@ const div = (a: ExprLike, b: ExprLike): Expr => mul(a, pow(b, -1));
 /** An unevaluated function application (SymPy evaluate=False). */
 const raw = (name: Fn['name'], ...args: Expr[]): Expr => new Fn(name, args);
 
-/** SymPy class name of a node, used to look up rules and patterns. */
+/** Returns the SymPy class name used to look up rewrite rules and patterns for this node. */
 export function className(e: Expr): string {
   if (isExp(e)) return 'exp';
   if (e instanceof Constant && e.name === 'E') return 'Exp1';

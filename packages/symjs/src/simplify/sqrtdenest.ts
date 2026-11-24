@@ -165,7 +165,8 @@ const hasZeroOrNaN = (e: Expr): boolean =>
   (e instanceof Rational && e.isZero) || (e instanceof Special && NAN_OR_ZOO.has(e.name)) || e.args.some(hasZeroOrNaN);
 
 /**
- * rationalize den = a*sqrt(g) + b step by step.
+ * Rationalizes a denominator of the form `a*sqrt(g) + b` by successively multiplying the
+ * numerator and denominator by conjugate factors.
  *
  * @remarks
  * For `rad_rationalize(sqrt(3), 1 + sqrt(2)/3)`, SymPy displays `(-sqrt(3) + sqrt(6)/3, -7/9)`.
@@ -188,8 +189,8 @@ export function radRationalize(numIn: Expr, den: Expr): [Expr, Expr] {
 }
 
 /**
- * rationalize the denominator, removing square roots (up to
- * four radical terms; symbolic radicands unless `symbolic` is false).
+ * Rationalizes a denominator containing square roots. By default it handles up to four radical
+ * terms and allows symbolic radicands.
  *
  * @param exIn - The input expression.
  * @param opts - `symbolic` permits symbolic radicands and `maxTerms` bounds the number of radical terms.
@@ -390,7 +391,7 @@ function powersOf(e: Expr): Expr[] {
 // ---- sqrtdenest -------------------------------------------------------------------
 
 /**
- * denest the square roots of an expression (at most maxIter passes).
+ * Denests square roots in the expression in at most `maxIter` passes.
  *
  * @param exIn - The input expression.
  * @param maxIter - The maximum number of denesting passes.

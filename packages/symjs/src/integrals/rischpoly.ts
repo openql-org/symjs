@@ -54,7 +54,11 @@ export class KPoly {
     );
   }
 
-  /** e as a polynomial in gen, or undefined when it is not one (SymPy as_poly). */
+  /**
+   * Attempts to express `eIn` as a polynomial in `gen`.
+   *
+   * @see SymPy `sympy.core.expr.Expr.as_poly`
+   */
   static tryOf(eIn: ExprLike, gen: Sym): KPoly | undefined {
     const e = sympify(eIn);
     if (!e.has(gen)) return new KPoly(gen, [kNorm(e)]);
@@ -67,7 +71,12 @@ export class KPoly {
     return new KPoly(gen, cs);
   }
 
-  /** e as a polynomial in gen (SymPy Poly(e, gen)); PolynomialError when it is not one. */
+  /**
+   * Constructs a polynomial in `gen` from `eIn`.
+   *
+   * @throws PolynomialError when the expression is not a polynomial in `gen`.
+   * @see SymPy `sympy.polys.polytools.Poly`
+   */
   static of(e: ExprLike, gen: Sym): KPoly {
     const p = KPoly.tryOf(e, gen);
     if (p === undefined) throw new PolynomialError(`${String(sympify(e))} is not a polynomial in ${gen.name}`);
@@ -82,7 +91,7 @@ export class KPoly {
     return new KPoly(gen, [S.One]);
   }
 
-  /** c*gen**k. */
+  /** Constructs the monomial `c*gen**k`. */
   static monomial(c: ExprLike, k: number, gen: Sym): KPoly {
     const cs: Expr[] = Array.from({ length: k + 1 }, () => S.Zero);
     cs[k] = kNorm(sympify(c));
@@ -272,7 +281,12 @@ export class KPoly {
     return this.mul(o).quo(this.gcd(o)).monic();
   }
 
-  /** SymPy half_gcdex: [s, h] with s*f = h (mod g), h the monic gcd. */
+  /**
+   * Computes `[s, h]`, where `h` is the monic greatest common divisor of this polynomial `f`
+   * and `o`, and `s*f` is congruent to `h` modulo `o`.
+   *
+   * @see SymPy `sympy.polys.polytools.Poly.half_gcdex`
+   */
   halfGcdex(o: KPoly): [KPoly, KPoly] {
     let f: KPoly = this;
     let g: KPoly = o;
@@ -382,7 +396,12 @@ export class KPoly {
     return [coeff, result];
   }
 
-  /** SymPy sqf_list_include: the leading coefficient is merged into the first factor. */
+  /**
+   * Returns square-free factors paired with their multiplicities, including the leading
+   * coefficient in the factor of multiplicity one.
+   *
+   * @see SymPy `sympy.polys.polytools.Poly.sqf_list_include`
+   */
   sqfListInclude(all = false): [KPoly, number][] {
     const [coeff, factors] = this.sqfList(all);
     const f0 = factors[0];
@@ -390,7 +409,12 @@ export class KPoly {
     return [[KPoly.fromCoeffs([coeff], this.gen), 1], ...factors];
   }
 
-  /** SymPy transform(p, q) with p = 1 and q = gen: the reversal q**n*f(1/q). */
+  /**
+   * Reverses the coefficients through degree `n`. For a polynomial `f` of degree at most `n`,
+   * the result is `gen**n*f(1/gen)`.
+   *
+   * @see SymPy `sympy.polys.polytools.Poly.transform`
+   */
   reverse(n: number): KPoly {
     const cs: Expr[] = Array.from({ length: n + 1 }, (_, k) => this.nth(n - k));
     return KPoly.fromCoeffs(cs, this.gen);
@@ -401,7 +425,11 @@ export class KPoly {
   }
 }
 
-/** f/g as a pair of polynomials without a common factor (SymPy f.cancel(g, include=True)). */
+/**
+ * Reduces `f/g` to a pair of coprime numerator and denominator polynomials.
+ *
+ * @see SymPy `sympy.polys.polytools.Poly.cancel`
+ */
 export function kCancel(f: KPoly, g: KPoly): [KPoly, KPoly] {
   const e = cancel(mul(f.asExpr(), pow(g.asExpr(), -1)));
   const [n0, d0] = fraction(e);

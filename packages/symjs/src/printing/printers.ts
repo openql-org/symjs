@@ -130,7 +130,7 @@ export class StrPrinter {
     return sstr(expr, this.settings);
   }
   /**
-   * SymPy's fallback printer for strings, expressions and scalar values.
+   * Formats strings, expressions and scalar values when no specialized printer applies.
    *
    * @param expr - The value to format.
    * @returns The formatted text.

@@ -18,7 +18,12 @@ import { DefinedFunctionCall } from '../core/defun';
 import { at } from '../core/guard';
 import { BoolOp } from '../core/boolalg';
 
-/** SymPy precedence values. */
+/**
+ * The precedence levels used to place parentheses around relations, sums, products, powers,
+ * functions and atoms.
+ *
+ * @see SymPy `sympy.printing.precedence.PRECEDENCE`
+ */
 export const PREC = { REL: 35, ADD: 40, MUL: 50, POW: 60, FUNC: 70, ATOM: 1000 } as const;
 
 /**
@@ -47,7 +52,11 @@ export const REL_SYMBOL = { Lt: '<', Le: '<=', Gt: '>', Ge: '>=' } as const;
 
 const isExp = (e: Expr): boolean => e instanceof Pow && e.base instanceof Constant && e.base.name === 'E';
 
-/** SymPy `could_extract_minus_sign` for printing purposes. */
+/**
+ * Tests whether the printer renders a numeric value or a product with a leading minus sign.
+ *
+ * @see SymPy `sympy.core.expr.Expr.could_extract_minus_sign`
+ */
 export function startsNegative(e: Expr): boolean {
   if (isNum(e)) return e.isNegative;
   if (e instanceof Special) return e.name === '-oo';
@@ -110,7 +119,7 @@ export function floatString(f: Float, stripZeros = false): string {
   return floatToString(f.mpf, f.prec, stripZeros);
 }
 
-/** SymPy `_keep_coeff`: c*rest without re-evaluation (no distribution over sums). */
+/** Forms the product of `c` and `rest` without distributing the coefficient over a sum. */
 export function keepCoeff(c: Rational | Float, rest: Expr): Expr {
   if (c instanceof Rational && c.isOne) return rest;
   return new Mul([c, ...(rest instanceof Mul ? rest.args : [rest])]);
@@ -210,7 +219,12 @@ interface NumberSettings {
 }
 let numberSettings: NumberSettings = {};
 
-/** f() printed with the StrPrinter setting full_prec (SymPy sstr(expr, full_prec=...)). @internal */
+/**
+ * Runs `f` with temporary settings for printing numbers and restores the previous settings
+ * afterward.
+ *
+ * @internal
+ */
 export function withFullPrec<T>(setting: boolean | 'auto' | NumberSettings, f: () => T): T {
   const saved = numberSettings;
   numberSettings = typeof setting === 'object' ? setting : { fullPrec: setting };
@@ -224,7 +238,12 @@ export function withFullPrec<T>(setting: boolean | 'auto' | NumberSettings, f: (
 /** The printer setting perm_cyclic of the print in progress (Permutations in cycle notation, the default). */
 let permCyclicSetting = true;
 
-/** f() printed with the printer setting perm_cyclic (undefined keeps the current one). @internal */
+/**
+ * Runs `f` with the requested permutation cycle notation setting. Passing `undefined` keeps
+ * the current setting.
+ *
+ * @internal
+ */
 export function withPermCyclic<T>(setting: boolean | undefined, f: () => T): T {
   const saved = permCyclicSetting;
   permCyclicSetting = setting ?? saved;

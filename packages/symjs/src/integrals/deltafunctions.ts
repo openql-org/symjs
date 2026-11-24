@@ -34,8 +34,10 @@ function linearRoot(arg: Expr, x: Sym): [Expr, Expr] {
 }
 
 /**
- * SymPy change_mul: splits a product into a simple DiracDelta factor and the
- * rest, or (without one) expands its DiracDelta factors.
+ * Separates a simple Dirac delta factor from the remaining product. If no such factor is
+ * found, it tries to expand the delta factors instead.
+ *
+ * @see SymPy `sympy.integrals.deltafunctions.change_mul`
  */
 export function changeMul(node: Expr, x: Sym): [Expr | undefined, Expr | undefined] {
   // the commutative factors sorted (to collapse the same delta every time); the others keep their order
@@ -76,15 +78,16 @@ export function integrateDeltas(e: Expr, x: Sym): Expr {
 }
 
 /**
- * SymPy deltaintegrate: the indefinite integral in x of an expression
- * containing DiracDelta, or undefined when the method does not apply.
+ * Computes an antiderivative with respect to `x` using the Dirac delta factors in the
+ * integrand. The public function returns `NoMatch` when the method does not apply.
  *
- * Deliberate difference: after repeated integration by parts SymPy returns
- * r*DiracDelta(x, m - 1) for a delta at a point p, which is wrong unless p = 0;
- * the result here is r*DiracDelta(x - p, m - 1). The integral of
- * DiracDelta(c*x + d, k) divides by the coefficient c of x, where SymPy
- * divides by the leading coefficient of the polynomial in all its symbols.
+ * @remarks
+ * After repeated integration by parts at a point `p`, the delta term is
+ * `r*DiracDelta(x - p, m - 1)`. SymPy gives `r*DiracDelta(x, m - 1)`.
+ * For `DiracDelta(c*x + d, k)` with positive `k`, the antiderivative divides
+ * by `c`. SymPy uses the leading coefficient in all polynomial variables.
  *
+ * @see SymPy `sympy.integrals.deltafunctions.deltaintegrate`
  * @internal
  */
 export function deltaintegrate(f: Expr, x: Sym): Expr | undefined {
@@ -127,8 +130,7 @@ export function deltaintegrate(f: Expr, x: Sym): Expr | undefined {
 }
 
 /**
- * deltaintegrate as integrate uses it: the integral of f, or undefined when
- * a part is left unevaluated.
+ * Looks for a fully evaluated antiderivative of `f` using Dirac delta integration.
  *
  * @internal
  */

@@ -30,7 +30,11 @@ import { besselLocalExpansion } from '../functions/special/bessel';
 /** A series that the expansion cannot compute (SymPy raises NotImplementedError or ValueError). */
 export class SeriesError extends NotImplementedError {}
 
-/** exp(g) with g -> oo along t -> 0+ (g has a term c*t**e, e < 0, with c not negative): no power series. */
+/**
+ * Signals that the Puiseux series algorithm cannot expand `exp(g)` as `t` approaches zero
+ * from the right. The exponent `g` has a pole whose leading coefficient cannot be shown
+ * to be negative.
+ */
 export class EssentialSingularity extends SeriesError {
   constructor(readonly coeff: Expr) {
     super('essential singularity');

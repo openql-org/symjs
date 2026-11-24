@@ -58,7 +58,10 @@ export const trigsimpHooks: { ratsimpmodprime?: (e: Expr, G: readonly Expr[], ge
 export interface TrigsimpOptions {
   /** 'matching' (futrig, the default), 'groebner', 'combined', 'fu' or 'old'. */
   method?: 'matching' | 'groebner' | 'combined' | 'fu' | 'old';
-  /** SymPy's old algorithm (trigsimp_old), with its options deep, recursive and method. */
+  /**
+   * Whether to use the legacy trigonometric simplification algorithm with its `deep` and
+   * `method` options.
+   */
   old?: boolean;
   /** Old algorithm: simplify inside the arguments of functions too. */
   deep?: boolean;
@@ -315,9 +318,9 @@ const FAMS: readonly Fam[] = [
 const F = (name: FnName, a: ExprLike): Expr => fn(name, [a]);
 
 /**
- * simplification modulo the ideal of the
- * trigonometric relations (sin**2 + cos**2 = 1, tan*cos = sin, the
- * multiple-angle formulas) with ratsimpmodprime.
+ * Uses `ratsimpmodprime` to simplify a rational expression modulo the ideal of trigonometric
+ * identities, including `sin(x)**2 + cos(x)**2 = 1`, `tan(x)*cos(x) = sin(x)` and
+ * multiple-angle formulas.
  *
  * @param exprIn - The input expression.
  * @param opts - The generators, monomial order and search settings in {@link TrigsimpOptions}.

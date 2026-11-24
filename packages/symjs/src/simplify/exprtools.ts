@@ -37,7 +37,10 @@ function rawAdd(args: Expr[]): Expr {
   return new Add(args);
 }
 
-/** SymPy _keep_coeff(coeff, factors, clear, sign). */
+/**
+ * Multiplies a numeric coefficient by an expression, preserving a factored sum according to
+ * the `clear` and `sign` options.
+ */
 export function keepCoeff(coeffIn: Expr, factorsIn: Expr, clear = true, sign = false): Expr {
   let coeff = coeffIn;
   let factors = factorsIn;
@@ -73,7 +76,7 @@ export function keepCoeff(coeffIn: Expr, factorsIn: Expr, clear = true, sign = f
 }
 
 /**
- * expr = base**e with integer e.
+ * Decomposes the expression into a base and an integer exponent.
  *
  * @remarks
  * For `decompose_power(x)`, SymPy displays `(x, 1)`. For `decompose_power(x**2)`, SymPy displays `(x, 2)`.
@@ -116,9 +119,8 @@ export function decomposePower(eIn: ExprLike): [Expr, number] {
 }
 
 /**
- * expr = base**e with a rational e when the
- * exponent of expr is rational, else with the integer coefficient of the
- * exponent (decompose_power).
+ * Decomposes the expression into a base and a rational exponent. If the original exponent is
+ * symbolic, {@link decomposePower} extracts its integer factor.
  *
  * @remarks
  * For `decompose_power_rat(sqrt(x))`, SymPy displays `(x, 1/2)`. For `decompose_power_rat(exp(-3*x/2))`, SymPy displays `(exp(x/2), -3)`.
@@ -295,7 +297,7 @@ function gcdTermsCore(terms0: Expr[], isprimitive: boolean, fraction: boolean): 
 }
 
 /**
- * factor out common terms of a sum, recursing into other nodes.
+ * Recursively extracts common factors from the terms of sums in the expression.
  *
  * @param termsIn - The terms in.
  * @param opts - `isprimitive` indicates primitive input, `clear` clears coefficient denominators and `fraction` allows a common denominator.
@@ -322,7 +324,11 @@ export function gcdTerms(termsIn: ExprLike, opts: { isprimitive?: boolean; clear
   return rebuild(terms, terms.args.map((a) => gcdTerms(a, opts)));
 }
 
-/** gcd_terms applied to a list of terms (an Add that has not been combined). */
+/**
+ * Extracts the greatest common factor from a list of terms before combining them into a sum.
+ *
+ * @see SymPy `sympy.core.exprtools.gcd_terms`
+ */
 export function gcdTermsOf(termsList: readonly Expr[], opts: { isprimitive?: boolean; clear?: boolean; fraction?: boolean } = {}): Expr {
   const isprimitive = opts.isprimitive ?? false;
   const clear = opts.clear ?? true;
@@ -359,7 +365,7 @@ export function gcdTermsOf(termsList: readonly Expr[], opts: { isprimitive?: boo
 }
 
 /**
- * pull out common factors and content from terms, recursively.
+ * Recursively extracts common factors and numeric content from the terms of an expression.
  *
  * @param exprIn - The input expression.
  * @param opts - `radical` extracts common radicals, `clear` clears rational coefficients, `fraction` combines denominators and `sign` extracts a common minus sign.
@@ -568,7 +574,10 @@ function orderedEntries(terms: Map<string, [Expr, Expr[]]>): [Expr, Expr[]][] {
 }
 
 
-/** SymPy _unevaluated_Add: flatten, collect numbers first, keep products unevaluated. */
+/**
+ * Builds a sum by flattening nested sums and collecting numeric constants first, preserving
+ * unevaluated products.
+ */
 export function unevaluatedAdd(argsIn: Expr[]): Expr {
   const args = [...argsIn];
   const out: Expr[] = [];
@@ -584,7 +593,7 @@ export function unevaluatedAdd(argsIn: Expr[]): Expr {
 }
 
 /**
- * write sums with a leading minus sign as -(...).
+ * Normalizes signs in sums by extracting a leading minus sign where possible.
  *
  * @param exprIn - The input expression.
  * @param evaluate - Whether to evaluate the transformation.

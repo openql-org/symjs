@@ -52,8 +52,8 @@ const hasFn = (e: Expr, names: readonly string[]): boolean => some(e, (n) => (n 
 const sameExpr = (a: Expr, b: Expr): boolean => a.key === b.key;
 
 /**
- * SymPy _laplace_deep_collect: write every subexpression that is a
- * polynomial in t as a polynomial (so that f(w*t - t) becomes f((w - 1)*t)).
+ * Collects powers of `t` throughout the expression, including in function arguments. For
+ * example, `f(w*t - t)` becomes `f((w - 1)*t)`.
  */
 export function laplaceDeepCollect(f: Expr, t: Expr): Expr {
   if (f instanceof Rel || f instanceof BoolOp || f instanceof BoolAtom) return f;
@@ -740,8 +740,8 @@ function laplaceApplyProgRules(f: Expr, t: Sym, s: Sym): LaplaceTriple | undefin
 }
 
 /**
- * SymPy _piecewise_to_heaviside: a Piecewise in t written with Heaviside
- * functions (exact for the Laplace transform).
+ * Rewrites supported piecewise conditions in `t` using Heaviside functions while preserving
+ * the Laplace transform.
  */
 export function piecewiseToHeaviside(f: Expr, t: Sym): Expr {
   if (isReal(t) !== true) {
@@ -812,8 +812,8 @@ function laplaceTransformIntegration(f: Expr, t: Sym, s: Expr): LaplaceTriple | 
 }
 
 /**
- * SymPy _laplace_transform: the front end that applies the rules
- * recursively to every term.
+ * Applies the Laplace transform rules term by term and combines the transformed terms, their
+ * convergence abscissas and their validity conditions.
  */
 export function laplaceTransformImpl(fn: Expr, t: Sym, s: Expr, simplify: boolean): LaplaceTriple {
   const { sym: sv, back } = asSymbolVariable(s);
