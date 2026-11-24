@@ -20,6 +20,7 @@ import { AccumBounds } from '../../core/accumbounds';
 import { Product } from '../../core/concrete';
 import { add, mul, pow, sqrt, sympify } from '../../core/ops';
 import { factorInt } from '../../core/numbers';
+import { numAdd, numMul } from '../../core/num';
 import { expandMul } from '../../simplify/expand';
 import { cos, evaluators, fn, forEachEntry, log } from '../elementary/elementary';
 import { bernoulliNumber, ceiling as ceilingFn, floor as floorFn, gamma } from '../special/special';
@@ -51,6 +52,25 @@ function binom(n: number, k: number): bigint {
 /** Bernoulli number with SymPy's convention B_1 = +1/2. */
 function bernoulliPlus(n: number): Rational {
   return n === 1 ? R(1, 2) : (bernoulliNumber(n));
+}
+
+/**
+ * Genocchi polynomial G_n(x) = 2 (B_n(x) - 2^n B_n((x + 1)/2)) with integer
+ * coefficients, kept in powers of x as SymPy genocchi_poly.
+ */
+function genocchiPoly(n: number, x: Expr): Expr {
+  const b = (k: number): Rational => k === 1 ? R(-1, 2) : bernoulliNumber(k);
+  const terms: Expr[] = [];
+  for (let j = 0; j <= n; j++) {
+    let c = numMul(R(binom(n, j)), b(n - j));
+    for (let k = 0; k <= n - j; k++) {
+      const bk = b(k);
+      if (bk.isZero) continue;
+      c = numAdd(c, numMul(R(-binom(n, k) * binom(n - k, j) * 2n ** BigInt(k)), bk));
+    }
+    if (!c.isZero) terms.push(mul(numMul(c, R(2)), pow(x, j)));
+  }
+  return add(...terms);
 }
 
 /** Bernoulli polynomial B_n(x) = sum C(n,k) B_k x^(n-k) with B_1 = -1/2. */
@@ -315,10 +335,7 @@ const EVAL: Partial<Record<FnName, (...a: Expr[]) => Expr | undefined>> = {
     }
     if (k < 0n) return undefined;
     const kk = Number(k);
-    if (x !== undefined) {
-      const half = mul(R(1, 2), add(x, 1));
-      return expandMul(mul(2, add(bernoulliPoly(kk, x), mul(-1, R(2n ** k), bernoulliPoly(kk, half)))));
-    }
+    if (x !== undefined) return genocchiPoly(kk, x);
     return mul(2, add(1, mul(-1, R(2n ** k))), bernoulliPlus(kk));
   },
   andre: (n) => {
