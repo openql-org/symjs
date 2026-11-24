@@ -66,7 +66,7 @@ export function numDiv(a: Num, b: Num): Num {
   return mkFloat(F.div(toMpf(a, prec), toMpf(b, prec), prec), prec);
 }
 
-/** a^n for integer n. */
+/** Raises a number to the integer power `n`. */
 export function numPowInt(a: Rational, n: bigint): Rational;
 export function numPowInt(a: Num, n: bigint): Num;
 export function numPowInt(a: Num, n: bigint): Num {
@@ -93,13 +93,13 @@ export function numAbs(a: Num): Num {
   return a.isNegative ? numNeg(a) : a;
 }
 
-/** floor(a) for a rational. */
+/** Computes the greatest integer less than or equal to the rational number `a`. */
 export function ratFloor(a: Rational): bigint {
   const q = a.p / a.q;
   return a.p < 0n && q * a.q !== a.p ? q - 1n : q;
 }
 
-/** a mod m for rationals, result in [0, m). */
+/** Computes the rational remainder `a - m*floor(a/m)` for a nonzero modulus `m`. */
 export function ratMod(a: Rational, m: Rational): Rational {
   const k = ratFloor(Rational.of(a.p * m.q, a.q * m.p));
   return numAdd(a, numNeg(numMul(Rational.of(k), m)));

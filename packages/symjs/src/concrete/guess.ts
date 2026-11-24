@@ -303,9 +303,9 @@ function asSym(X: Expr): Sym {
 
 /** Options of guess. */
 export interface GuessOptions {
-  /** true: go on with the next iterations after formulas are found (default false). */
+  /** `true` to continue searching after an iteration finds a formula. Defaults to `false`. */
   all?: boolean;
-  /** false: leave the products unevaluated (default true). */
+  /** `false` to leave products in the guessed formulas unevaluated. Defaults to `true`. */
   evaluate?: boolean;
   /** The number of iterations (default 2, at most the length of the sequence minus 1). */
   niter?: number;

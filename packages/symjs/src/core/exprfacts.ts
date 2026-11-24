@@ -50,7 +50,7 @@ interface FactState {
 
 const states = new WeakMap<Expr, FactState>();
 
-/** SymPy `expr.is_<name>` for an assumption fact name such as 'positive' or 'extended_real'. */
+/** Queries a named assumption about an expression, such as `positive` or `extended_real`. */
 export function fact(e: Expr, name: string): V {
   // (SymPy Pow sets is_commutative directly, outside the facts; it has no handler for it)
   if (name === 'commutative' && e instanceof Pow) return e.isCommutative;
@@ -306,11 +306,9 @@ const signDummy = (name: 'pos' | 'nneg' | 'neg' | 'npos'): Expr =>
   new Dummy(name, name === 'pos' ? { positive: true } : name === 'nneg' ? { nonnegative: true } : name === 'neg' ? { negative: true } : { nonpositive: true });
 
 /**
- * SymPy _monotonic_sign: the value closest to 0 that the expression may have
- * when all its symbols are signed and its sign is the same for all their
- * values (a signed symbol for a value that is only known by its sign), or
- * undefined. The roots of the derivative of a univariate polynomial are not
- * computed here; such a polynomial is only decided when it is linear.
+ * Finds a bound nearest zero for an expression whose sign is fixed by assumptions on its symbols.
+ * A signed symbol represents a bound known only by sign. The univariate polynomial test requires
+ * a constant derivative.
  */
 export function monotonicSign(self: Expr): Expr | undefined {
   if (!is(self, 'extended_real')) return undefined;

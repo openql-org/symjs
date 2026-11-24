@@ -24,7 +24,7 @@ export type Coeffs = Expr[];
 
 const big = (cs: readonly bigint[]): Coeffs => cs.map((c) => Rational.of(c));
 
-/** p(x) from its coefficients (lowest power first). */
+/** Constructs a polynomial in `x` from its coefficients in ascending order of degree. */
 export function coeffsExpr(cs: readonly Expr[], x: Expr): Expr {
   return add(...cs.map((c, k) => mul(c, pow(x, k))));
 }

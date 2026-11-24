@@ -15,7 +15,7 @@ import { defined } from '../../core/guard';
 // Exponentials are powers and use interval arithmetic. Other monotone functions such as
 // atan and sinh stay unevaluated (SymPy keeps atan(AccumBounds(0, 1)) as it is).
 
-/** f([a, b]) for a function of one AccumBounds argument; undefined when it is not handled. */
+/** Evaluates a supported unary function on an `AccumBounds` interval. */
 export function accumBoundsFunction(name: FnName, iv: Expr, apply: (name: FnName, x: Expr) => Expr): Expr | undefined {
   const ab = defined(impl.accumBounds, 'AccumBounds support');
   const [lo, hi] = ab.bounds(iv);

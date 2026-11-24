@@ -289,7 +289,11 @@ function diffIndexed(e: Expr, x: Indexed): Expr {
   return add(...terms);
 }
 
-/** n-th derivative of e with respect to x. */
+/**
+ * Differentiates `ex` with respect to `x` to the given order, which defaults to one.
+ *
+ * @see SymPy `sympy.core.function.diff`
+ */
 export function diff(ex: ExprLike, x: Expr, order: ExprLike = 1): Expr {
   const count = derivativeCount(order);
   let e = sympify(ex);

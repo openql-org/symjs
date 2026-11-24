@@ -135,20 +135,19 @@ export interface Assumptions {
   readonly positive?: boolean;
   /** Whether the symbol is nonnegative. */
   readonly nonnegative?: boolean;
-  /** true for an integer symbol; false for a symbol known not to be an integer (SymPy integer=False). */
+  /** Whether the symbol represents an integer. */
   readonly integer?: boolean;
   /** Whether the symbol is negative. */
   readonly negative?: boolean;
   /** Whether the symbol is nonpositive. */
   readonly nonpositive?: boolean;
-  /** false for non-commutative symbols (operators). */
+  /** Whether multiplication by the symbol is commutative. Set to `false` for a noncommutative operator. */
   readonly commutative?: boolean;
-  /** a point on the Riemann surface of the logarithm (SymPy polar=True). */
+  /** Whether the symbol represents a point on the Riemann surface of the logarithm. */
   readonly polar?: boolean;
   /**
-   * false for a symbol known to be nonzero (SymPy zero=False), implied by positive, negative and
-   * integer=false; true for a symbol known to be zero (SymPy zero=True), which implies integer,
-   * nonnegative and nonpositive.
+   * Whether the symbol is zero. Zero implies an integer that is both nonnegative and nonpositive. A
+   * positive, negative or noninteger symbol is nonzero.
    */
   readonly zero?: boolean;
 }
@@ -341,9 +340,16 @@ export interface Impl {
   isReal?(e: Expr): boolean | undefined;
   rationalFromFloat?(f: Float): Rational;
   couldExtractMinusSign?(e: Expr): boolean;
-  /** SymPy sort_key order (a.sort_key() < b.sort_key() gives a negative number). */
+  /**
+   * Compares the canonical sort keys of two expressions, returning a negative value when `a` sorts
+   * before `b`.
+   */
   compareSortKey?(a: Expr, b: Expr): number;
-  /** SymPy collect (registered by simplify/radsimp). */
+  /**
+   * Collects terms with matching powers of the specified expressions.
+   *
+   * @see SymPy `sympy.simplify.radsimp.collect`
+   */
   collect?(e: Expr, syms: readonly Expr[]): Expr;
   /** Leading term [c, e] of e ~ c*x**e as x -> 0+ (registered by series/series). */
   leadterm?(e: Expr, x: Sym): [Expr, Expr];
@@ -358,22 +364,40 @@ export interface Impl {
   /** Pattern matching (registered by core/match). */
   match?(e: Expr, pattern: Expr): Map<Sym, Expr> | undefined;
   /**
-   * SymPy Expr.equals(0) for a number: true when simplify gives 0 or the
-   * minimal polynomial of an algebraic number is x, else undefined
-   * (registered by simplify/simplify).
+   * Checks whether a number equals zero by simplifying it or testing whether its minimal polynomial
+   * is `x`.
+   *
+   * @see SymPy `sympy.core.expr.Expr.equals`
    */
   equalsZero?(e: Expr): true | undefined;
-  /** SymPy radsimp (registered by simplify/sqrtdenest). */
+  /**
+   * Simplifies radicals in a denominator by rationalizing it when possible.
+   *
+   * @see SymPy `sympy.simplify.radsimp.radsimp`
+   */
   radsimp?(e: Expr): Expr;
   /** A node of the same type with new arguments, re-canonicalized (registered by core/traverse). */
   rebuild: (e: Expr, args: readonly Expr[]) => Expr;
   /** A named function applied with automatic evaluation (registered by functions/elementary). */
   fn?(this: void, name: FnName, args: readonly Expr[]): Expr;
-  /** expand with only the mul hint (registered by simplify/expand). */
+  /**
+   * Expands products over sums using only the multiplication expansion rule.
+   *
+   * @see SymPy `sympy.core.function.expand_mul`
+   */
   expandMul?(e: Expr): Expr;
-  /** as_real_imag of exp and functions (registered by simplify/expand). */
+  /**
+   * Computes the real and imaginary parts of exponentials and other functions by expanding them.
+   *
+   * @see SymPy `sympy.core.expr.Expr.as_real_imag`
+   */
   asRealImagExpand?(e: Expr): [Expr, Expr];
-  /** SymPy Pow.as_real_imag of a rational power (undefined: as re() and im() give them). */
+  /**
+   * Computes the real and imaginary parts of a rational power when possible. Other cases fall back
+   * to `re` and `im`.
+   *
+   * @see SymPy `sympy.core.power.Pow.as_real_imag`
+   */
   powRealImag?(e: Expr): [Expr, Expr] | undefined;
   /**
    * Arithmetic of nodes that define their own operators (SymPy _op_priority,
@@ -404,12 +428,23 @@ export interface Impl {
   heaviside?(x: Expr): Expr;
   /** A set node rebuilt from new arguments, evaluated (registered by sets/sets). */
   rebuildSet?: (e: Expr, args: readonly Expr[]) => Expr;
-  /** SymPy Set._eval_subs: a set that binds a variable (ImageSet, ConditionSet) substituted, or undefined for the generic rule. */
+  /**
+   * Substitutes into sets such as image sets and condition sets while respecting the scope of their
+   * bound variables.
+   */
   subsSet?: (e: Expr, old: Expr, nw: Expr, subs: (x: Expr) => Expr) => Expr | undefined;
   piecewiseFold?: (e: Expr) => Expr;
-  /** SymPy factor (set by the polys module). */
+  /**
+   * Factors a polynomial expression into irreducible factors over its coefficient domain.
+   *
+   * @see SymPy `sympy.polys.polytools.factor`
+   */
   factor?(e: Expr): Expr;
-  /** SymPy fraction (registered by simplify/rational). */
+  /**
+   * Separates an expression into its numerator and denominator.
+   *
+   * @see SymPy `sympy.simplify.radsimp.fraction`
+   */
   fraction?(e: Expr, options?: { exact?: boolean }): [Expr, Expr];
   conjugate(e: Expr): Expr;
   abs(e: Expr): Expr;
@@ -418,9 +453,17 @@ export interface Impl {
   integrate(e: Expr, x: Sym, limits?: [ExprLike, ExprLike]): Expr;
   /** Evaluate unevaluated objects when the calculus entry point is loaded. */
   doit?(e: Expr): Expr;
-  /** SymPy as_set of a boolean expression (registered by the solvers entry point). */
+  /**
+   * Returns the set of real values for which the Boolean expression is true.
+   *
+   * @see SymPy `sympy.logic.boolalg.Boolean.as_set`
+   */
   asSet?(e: Expr): Expr;
-  /** SymPy is_hypergeometric (registered by the simplify entry point). */
+  /**
+   * Tests whether the ratio of consecutive terms is a rational function of the index `k`.
+   *
+   * @see SymPy `sympy.core.basic.Basic.is_hypergeometric`
+   */
   isHypergeometric?(e: Expr, k: Expr): boolean;
   limit(e: Expr, z: Sym, z0: ExprLike, dir?: '+' | '-' | '+-'): Expr;
   series(e: Expr, x: Sym, x0?: ExprLike, n?: number, dir?: '+' | '-', opts?: { logx?: Expr; local?: boolean }): Expr;
@@ -1117,7 +1160,7 @@ export abstract class Expr {
 // Atoms
 // ---------------------------------------------------------------------------
 
-/** e as a Rational; throws InvariantError when it is not one (what names the value in the message). */
+/** Returns `e` as a rational number, or throws an `InvariantError` naming `what` if the type check fails. */
 export function asRational(e: Expr, what = 'value'): Rational {
   if (!(e instanceof Rational)) throw new InvariantError(`${what} is not a Rational`);
   return e;
@@ -1526,24 +1569,23 @@ export class Sym extends Expr {
     return this.name;
   }
 
-  /** SymPy class name in the sort key (a coordinate symbol, SymPy BaseScalar, sorts as its own class). */
+  /** The class name used to sort the symbol. Coordinate symbols use their own class name. */
   get sortClass(): string {
     return 'Symbol';
   }
 
-  /** SymPy class_key priority in the sort key: 2 for an Atom, 5 for a Basic such as SymPy RandomSymbol. */
+  /** The numeric class priority in the sort key. Ordinary symbols use 2 and random symbols use 5. */
   get sortPriority(): number {
     return 2;
   }
 
   /**
-   * subs and xreplace inside a symbol-like node that carries arguments
-   * (SymPy RandomSymbol(symbol, pspace) substitutes in its probability
-   * space), given the substitution of a subexpression; undefined for a plain
-   * symbol, which has nothing inside.
+   * Applies a substitution or exact replacement to expressions embedded in a symbol-like node. For
+   * example, a random symbol can transform its probability space. A plain symbol has no embedded
+   * expressions.
    *
    * @param _f - The transformation to apply to embedded expressions.
-   * @returns The specialized substitution or `undefined` to use ordinary symbol substitution.
+   * @returns The transformed node when the symbol provides a specialized substitution.
    */
   substituteInner(_f: (e: Expr) => Expr): Expr | undefined {
     return undefined;
@@ -1582,7 +1624,12 @@ export class Sym extends Expr {
   }
 }
 
-/** SymPy Dummy: a symbol that is distinct from every other symbol, printed with a leading underscore. */
+/**
+ * Represents a symbol whose index distinguishes it from other symbols with the same name. Its printed
+ * name starts with an underscore.
+ *
+ * @see SymPy `sympy.core.symbol.Dummy`
+ */
 export class Dummy extends Sym {
   private static counter = 0;
   /** The unique index distinguishing this dummy from other symbols of the same name. */
@@ -2533,9 +2580,17 @@ export const isFn = (e: Expr, name?: FnName): e is Fn =>
  */
 export const isInteger = (e: Expr): e is Rational => e instanceof Rational && e.q === 1n;
 
-/** SymPy is_Add: a sum, or a node whose SymPy class derives from Add (MatAdd). */
+/**
+ * Tests whether the expression is a sum, including a matrix sum.
+ *
+ * @see SymPy `sympy.core.expr.Expr.is_Add`
+ */
 export const isAddLike = (e: Expr): boolean => e instanceof Add || (e instanceof ExtensionExpr && e.assocOp === 'Add');
-/** SymPy is_Mul: a product, or a node whose SymPy class derives from Mul (MatMul). */
+/**
+ * Tests whether the expression is a product, including a matrix product.
+ *
+ * @see SymPy `sympy.core.expr.Expr.is_Mul`
+ */
 export const isMulLike = (e: Expr): boolean => e instanceof Mul || (e instanceof ExtensionExpr && e.assocOp === 'Mul');
 
 /**

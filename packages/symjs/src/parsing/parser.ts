@@ -33,18 +33,16 @@ export interface ParseOptions {
   symbols?: Readonly<Record<string, Expr>> | readonly Sym[];
   /** Assumptions for symbols created implicitly by the parser. */
   assumptions?: Assumptions;
-  /** false: keep the arithmetic unevaluated (SymPy evaluate=False). */
+  /** `false` to keep arithmetic expressions unevaluated. */
   evaluate?: boolean;
-  /** false: '^' is logical Xor instead of power (SymPy convert_xor=False). */
+  /** `false` to interpret `^` as logical exclusive OR. By default, `^` denotes exponentiation. */
   convertXor?: boolean;
   /**
-   * SymPy parse_expr transformations: 'implicit' allows implicit
-   * multiplication (2x, x y, x(y + 1)), function application without
-   * parentheses (sin x) and function exponentiation (sin**2(x) is
-   * sin(x)**2); 'all' also splits unknown names into one-letter symbols
-   * (xyz is x*y*z; names of Greek letters and names with an underscore are
-   * kept, as SymPy's split_symbols does). A list of transformations enables
-   * them one by one.
+   * Selects the syntax transformations used while parsing. The `'implicit'` preset allows
+   * multiplication such as `2x`, function application such as `sin x`, and function powers such as
+   * `sin**2(x)`. The `'all'` preset also splits unknown names such as `xyz` into one-letter factors,
+   * preserving Greek letter names and names with underscores. An array enables individual
+   * transformations.
    */
   transformations?: 'standard' | 'implicit' | 'all' | readonly ParseTransformation[];
   /**
@@ -52,7 +50,7 @@ export interface ParseOptions {
    * a predicate replacing tokenSplittable, which also enables splitting.
    */
   splitSymbols?: (name: string) => boolean;
-  /** true: '=' is an equation (SymPy's convert_equals_signs transformation): 1*2 = x is Eq(2, x). */
+  /** `true` to parse `=` as an equation, so `1*2 = x` gives `Eq(2, x)`. */
   convertEqualsSigns?: boolean;
   /**
    * Names to use while parsing (SymPy locals / local_dict): an expression
@@ -417,9 +415,18 @@ function integral(args: readonly Arg[]): Expr {
  * (registered by those modules). @internal
  */
 export const parserHooks: {
-  /** SymPy Order(e, *variables, point), the argument reduced to its leading term. */
+  /**
+   * Constructs an order term from the leading behavior of `e` as the given variables approach the
+   * expansion point.
+   *
+   * @see SymPy `sympy.series.order.Order`
+   */
   order?: (e: Expr, variables: readonly Sym[], point: Expr) => Expr;
-  /** SymPy limit(e, z, z0, dir), the evaluated limit. */
+  /**
+   * Evaluates the limit of `e` as `z` approaches `z0` from the direction `dir`.
+   *
+   * @see SymPy `sympy.series.limits.limit`
+   */
   limit?: (e: Expr, z: Sym, z0: Expr, dir: '+' | '-' | '+-') => Expr;
   /** Classes of higher layers called by name, e.g. Quaternion(1, 2, 3, 4) (SymPy sympify of the class name). */
   readonly constructors: Map<string, (args: readonly Expr[]) => Expr>;

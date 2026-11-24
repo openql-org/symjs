@@ -720,8 +720,8 @@ impl.xreplace = xreplace;
 impl.freeSymbols = freeSymbols;
 
 /**
- * func applied to the subexpressions at depth
- * `level` (0 is the expression itself); atoms above that depth are kept.
+ * Applies `func` to each subexpression at depth `level`, counting the root as zero. Atoms at shallower
+ * depths are preserved.
  *
  * @param e - The input expression.
  * @param func - The transformation to apply to each selected subexpression.
@@ -829,10 +829,9 @@ export function preorderTraversal(node: ExprLike, keys: boolean | ((e: Expr) => 
 export const piecewiseFoldHooks: { normalizeIte?: (condition: Expr) => Expr } = {};
 
 /**
- * SymPy piecewise_fold (sympy/functions/elementary/piecewise.py): an
- * expression with Piecewise arguments as one Piecewise whose branches are
- * the expression at each branch of the arguments. Extension nodes and
- * boolean connectives are not folded (their arguments are).
+ * Combines piecewise arguments into one piecewise expression by evaluating the enclosing expression on
+ * each branch. For extension nodes and Boolean connectives, folding takes place only within their
+ * arguments.
  *
  * @param e - The input expression.
  * @returns An equivalent piecewise expression with combined branch conditions.

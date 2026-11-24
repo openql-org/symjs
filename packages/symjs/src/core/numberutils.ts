@@ -264,7 +264,7 @@ export function igcdex(aIn: bigint, bIn: bigint): [bigint, bigint, bigint] {
 }
 
 /**
- * floor(sqrt(n)) of a nonnegative integer.
+ * Computes the floor of the square root of a nonnegative value.
  *
  * @param value - The value to examine.
  * @returns The integer part of the square root.

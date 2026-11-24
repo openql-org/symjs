@@ -187,7 +187,12 @@ export class Concrete extends Expr {
   }
 }
 
-/** SymPy AddWithLimits._eval_factor, applied from the innermost sum out. @internal */
+/**
+ * Moves commutative factors independent of the summation index outside each sum, starting with the
+ * innermost sum.
+ *
+ * @internal
+ */
 export function factorConcreteSum(sum: Concrete, factor: (term: Expr) => Expr): Expr {
   const limits = sum.limits;
   const [k, a, b] = at(limits, limits.length - 1);

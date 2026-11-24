@@ -957,10 +957,9 @@ export function cgamma(z: C): C {
 }
 
 /**
- * loggamma(z), the analytic continuation of log(gamma(z)) to the plane cut
- * along the negative real axis (mpmath loggamma): not the principal log of
- * gamma(z). The recurrence loggamma(z) = loggamma(z + 1) - log(z) with
- * principal logs shifts to Re(w) >= 8, where Stirling's series is used.
+ * Computes the complex log-gamma function on the plane cut along the negative real axis. For nonreal
+ * arguments, the recurrence `loggamma(z) = loggamma(z + 1) - log(z)` shifts the argument to real part
+ * at least 8 before applying Stirling's series.
  */
 export function cloggamma(z: C): C {
   if (z.im === 0 && z.re > 0) return cx(Math.log(Math.abs(cgamma(z).re)));
@@ -2248,9 +2247,8 @@ funcExpanders.erf2 = (args) => {
 };
 
 /**
- * SymPy _eval_expand_func of the functions defined in other modules, by
- * function (or extension node) name: the expanded form, or undefined when
- * the function stays.
+ * Maps function and extension node names to rules for expanding special functions when an expansion is
+ * available.
  */
 export const expandFuncRules: Partial<Record<string, (e: Expr) => Expr | undefined>> = {};
 

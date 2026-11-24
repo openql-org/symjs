@@ -202,7 +202,7 @@ export class NoMatchResult {
  */
 export const NoMatch: NoMatchResult = new NoMatchResult();
 /**
- * v is NoMatch.
+ * Tests whether the value is the `NoMatch` singleton.
  *
  * @param v - The value to examine.
  * @returns Whether the value is the `NoMatch` singleton.
@@ -228,7 +228,7 @@ export class UnsolvedResult {
  */
 export const Unsolved: UnsolvedResult = new UnsolvedResult();
 /**
- * v is Unsolved.
+ * Tests whether the value is the `Unsolved` singleton.
  *
  * @param v - The value to examine.
  * @returns Whether the value is the `Unsolved` singleton.

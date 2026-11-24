@@ -9,7 +9,7 @@ import { rebuild } from '../core/traverse';
 import { parse } from './parser';
 
 /**
- * parse with simplification, retaining numeric multiples of parenthesized sums.
+ * Parses and simplifies an expression while preserving numeric multiples of parenthesized sums.
  *
  * @param source - The source text to parse.
  * @returns The expression with grouped numeric multiples preserved.
