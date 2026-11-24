@@ -379,7 +379,7 @@ class Radicals {
   /** positive integer base -> exponents */
   private readonly bases = new Map<bigint, Rational[]>();
   private coeff: Rational = S.One;
-  /** exponent of -1 */
+  /** The accumulated exponent of minus one from negative radical bases. */
   negOne: Rational = S.Zero;
 
   addPower(baseIn: Rational, exp: Rational): void {

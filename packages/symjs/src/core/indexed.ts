@@ -21,7 +21,8 @@ function isExplicitArray(base: Expr): base is Expr & { get(...index: number[]): 
 }
 
 /**
- * args are [base symbol, ...indices]; printed base[i, j].
+ * Represents an indexed element such as `base[i, j]`. Its arguments are the base symbol followed by the
+ * indices.
  *
  * @see SymPy `sympy.tensor.indexed.Indexed`
  * @example

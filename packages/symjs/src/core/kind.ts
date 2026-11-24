@@ -74,9 +74,10 @@ export const UndefinedKind: Kind = new NamedKind('UndefinedKind');
 const arrayKinds = new Map<Kind, ArrayKindNode>();
 
 /**
- * SymPy ArrayKind(element_kind): the kind of N-dimensional arrays whose
- * elements have `elementKind`. Use `ArrayKind(k)` (cached, so equal kinds
- * are the same object, as in SymPy).
+ * Represents the kind of an N-dimensional array whose elements have kind `elementKind`. The factory
+ * `ArrayKind(k)` returns the same object for repeated calls with the same element kind.
+ *
+ * @see SymPy `sympy.tensor.array.ndim_array.ArrayKind`
  */
 export class ArrayKindNode extends Kind {
   constructor(readonly elementKind: Kind = NumberKind) {
@@ -92,8 +93,8 @@ export class ArrayKindNode extends Kind {
     return k;
   }
   /**
-   * SymPy ArrayKind._union: ArrayKind of the common kind of the elements,
-   * or ArrayKind(UndefinedKind) when they differ.
+   * Returns the array kind for the shared element kind, or `ArrayKind(UndefinedKind)` if the kinds
+   * differ or the list is empty.
    */
   static union(kinds: readonly Kind[]): ArrayKindNode {
     const set = new Set(kinds);

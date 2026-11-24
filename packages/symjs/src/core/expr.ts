@@ -12,7 +12,7 @@ function isPolyLike(a: unknown): a is { asExpr(): Expr; gens: readonly Expr[] } 
 }
 
 /**
- * construction preserves the function and its arguments.
+ * Tests whether applying a constructor preserves the function and its arguments.
  *
  * @param func - The callable to inspect.
  * @param args - The arguments in positional order.

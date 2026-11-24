@@ -24,7 +24,7 @@ export const first = <T>(xs: ArrayLike<T>): T => at(xs, 0);
 /** The last element; throws for an empty sequence. */
 export const last = <T>(xs: ArrayLike<T>): T => at(xs, -1);
 
-/** v itself; throws when it is undefined or null (what names the value in the message). */
+/** Returns `v` if present. A null or undefined value raises an `InvariantError` that names `what`. */
 export function defined<T>(v: T | undefined | null, what = 'value'): T {
   if (v === undefined || v === null) throw new InvariantError(`${what} is missing`);
   return v;
@@ -38,7 +38,7 @@ export function getOrThrow<K, V>(m: ReadonlyMap<K, V>, key: K): V {
   return v as V;
 }
 
-/** v as an instance of cls; throws when it is not one. */
+/** Returns `v` as an instance of `cls`, or throws an `InvariantError` if the instance check fails. */
 export function cast<T>(v: unknown, cls: abstract new (...args: never[]) => T, what?: string): T {
   if (!(v instanceof cls)) throw new InvariantError(`${what ?? 'value'} is not a ${cls.name}`);
   return v;

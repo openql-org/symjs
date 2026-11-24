@@ -123,18 +123,20 @@ const literals = (s: string): [string, boolean][] => s.split(' ').filter(Boolean
 const lit = (k: string, v: boolean): string => (v ? k : `!${k}`);
 
 /**
- * SymPy `FactKB.deduce_all_facts` of a new knowledge base: the given facts
- * and all their consequences, in a map from the fact name to its value.
- * Contradicting facts throw a RangeError (SymPy InconsistentAssumptions, a ValueError).
+ * Builds a new map from fact names to truth values, including the given facts and their logical
+ * consequences. Contradictory facts raise a `RangeError`.
+ *
+ * @see SymPy `sympy.core.facts.FactKB.deduce_all_facts`
  */
 export function deduceAllFacts(facts: Readonly<Record<string, boolean>>): Map<string, boolean> {
   return deduceFacts(new Map(), Object.entries(facts));
 }
 
 /**
- * SymPy `FactKB.deduce_all_facts` of an existing knowledge base: adds the
- * facts and all their consequences to kb (in place) and returns it.
- * Contradicting facts throw a RangeError and leave kb partly updated.
+ * Adds facts and their logical consequences to `kb` in place and returns the same map. A contradiction
+ * raises a `RangeError` and leaves earlier deductions in the map.
+ *
+ * @see SymPy `sympy.core.facts.FactKB.deduce_all_facts`
  */
 export function deduceFacts(kb: Map<string, boolean>, facts: readonly (readonly [string, boolean])[]): Map<string, boolean> {
   const tell = (k: string, v: boolean): boolean => {
@@ -161,8 +163,7 @@ export function deduceFacts(kb: Map<string, boolean>, facts: readonly (readonly 
 }
 
 /**
- * SymPy `_assume_rules.prereq`: for each fact, the facts whose values can
- * determine it (those that imply it or its negation), in sorted order.
+ * Maps each fact to the sorted names of facts that can imply it or its negation.
  */
 export const FACT_PREREQUISITES: ReadonlyMap<string, readonly string[]> = /* @__PURE__ */ (() => {
   const prereq = new Map<string, Set<string>>();

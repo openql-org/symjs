@@ -101,8 +101,8 @@ export const FunctionClass = /* @__PURE__ */ withInstanceCheck(
 );
 
 /**
- * keeps its argument from combining with the rest
- * (x*UnevaluatedExpr(1/x) stays x*1/x); doit removes it.
+ * Wraps an expression to prevent it from combining with surrounding terms or factors. Calling `doit`
+ * removes the wrapper.
  *
  * @see SymPy `sympy.core.expr.UnevaluatedExpr`
  * @example

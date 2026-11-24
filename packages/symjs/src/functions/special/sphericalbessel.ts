@@ -47,7 +47,8 @@ const scale = (p: Poly, c: bigint): Poly => p.map((x) => x * c);
 const sub = (p: Poly, q: Poly): Poly => p.map((x, i) => x - (q[i] ?? 0n));
 
 /**
- * fn(0) = 1/z, fn(1) = 1/z**2, fn(n - 1) + fn(n + 1) = (2n + 1)/z fn(n).
+ * Computes the spherical Bessel coefficient polynomial in `1/z`. Its first values are `f(0) = 1/z` and
+ * `f(1) = 1/z**2`, with `f(n - 1) + f(n + 1) = (2*n + 1)*f(n)/z`.
  *
  * @param n - The spherical Bessel order.
  * @param z - The argument of the function.
@@ -228,7 +229,7 @@ registerRewrite('airybiprime', 'hyper', (args) => {
 // ---- public API ---------------------------------------------------------------------
 
 /**
- * spherical Hankel function of the first kind.
+ * Returns the spherical Hankel function of the first kind of order `n` at `z`.
  *
  * @param n - The spherical Bessel order.
  * @param z - The argument of the function.
@@ -243,7 +244,7 @@ registerRewrite('airybiprime', 'hyper', (args) => {
  */
 export const hn1 = (n: ExprLike, z: ExprLike): Expr => fn('hn1', [n, z]);
 /**
- * spherical Hankel function of the second kind.
+ * Returns the spherical Hankel function of the second kind of order `n` at `z`.
  *
  * @param n - The spherical Bessel order.
  * @param z - The argument of the function.

@@ -50,7 +50,8 @@ export function uniquelyNamedSymbol(xname: string | Sym | readonly [string | Sym
 }
 
 /**
- * unique printed names, replacing Dummy symbols by ordinary symbols.
+ * Gives distinct symbols unique printed names across the expressions and replaces dummy symbols with
+ * ordinary symbols.
  *
  * @param exprs - The expressions to process.
  * @returns The expressions with conflicting symbol names distinguished.

@@ -24,7 +24,10 @@ const all = (xs: readonly Expr[], f: (e: Expr) => Tri): Tri => {
 /** Max and Min are one of their arguments (SymPy MinMaxBase): a property every argument has or none has. */
 export const isMinMax = (e: Expr): e is Fn => e instanceof Fn && (e.name === 'Max' || e.name === 'Min');
 
-/** SymPy _torf: true when every value is true, false when every value is false, else unknown. */
+/**
+ * Returns the shared truth value when all predicate results agree. Mixed or unknown results give
+ * an unknown result. An empty input gives true.
+ */
 export function torf(xs: readonly Expr[], f: (e: Expr) => Tri): Tri {
   const vs = xs.map(f);
   if (vs.every((v) => v === true)) return true;
@@ -398,8 +401,11 @@ export function isNonZero(e: Expr): Tri {
 }
 
 /**
- * SymPy is_polar: polar symbols, exp_polar, polar_lift and principal_branch, powers of a polar
- * base and products of polar and positive factors with at least one polar factor.
+ * Tests whether an expression is known to be polar. This includes polar symbols, `exp_polar`,
+ * `polar_lift`, `principal_branch`, powers of polar bases, and products of polar and positive factors
+ * with at least one polar factor.
+ *
+ * @see SymPy `sympy.core.expr.Expr.is_polar`
  */
 export function isPolar(e: Expr): boolean {
   if (e instanceof Sym) return e.assumptions.polar === true;

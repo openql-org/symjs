@@ -35,7 +35,7 @@ function nodeCount(e: Expr): number {
 }
 
 /**
- * by node count, then default_sort_key.
+ * Sorts expressions by node count, breaking ties with the default sort key.
  *
  * @param xs - The operands, in order.
  * @returns The expressions in canonical order.
@@ -716,7 +716,11 @@ export function countOps(exprIn: ExprLike, opts: { visual?: boolean } = {}): num
   return n;
 }
 
-/** SymPy count_ops(expr, visual=True): e.g. 2*ADD + SIN. */
+/**
+ * Counts operations by type and expresses the counts symbolically, as in `2*ADD + SIN`.
+ *
+ * @see SymPy `sympy.core.function.count_ops`
+ */
 export function countOpsVisual(exprIn: ExprLike): Expr {
   const terms = [...countOpsMap(exprIn)].map(([k, v]) => mul(v, new Sym(k)));
   return add(...terms);

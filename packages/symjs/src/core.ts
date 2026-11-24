@@ -524,8 +524,8 @@ export const Derivative = /* @__PURE__ */ callableClass(
 export type Derivative = DerivativeNode;
 
 /**
- * SymPy `Piecewise((expr, cond), ...)` with `[expr, cond]` pairs. Also the
- * node class (`e instanceof Piecewise`).
+ * Constructs a piecewise expression from ordered `[expr, cond]` pairs. The first true condition selects
+ * the value. Use `e instanceof Piecewise` to recognize a piecewise node.
  *
  * @param args - Expression-condition pairs in priority order, followed by optional evaluation settings.
  * @returns The value of the first applicable branch or a symbolic piecewise expression.

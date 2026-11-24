@@ -50,7 +50,7 @@ const isZeroE = (e: Expr) => e instanceof Rational && e.isZero;
 const addArgs = (e: Expr): readonly Expr[] => (isAddLike(e) ? e.args : [e]);
 const mulArgs = (e: Expr): readonly Expr[] => (isMulLike(e) ? e.args : [e]);
 
-/** SymPy `_keep_coeff`: coeff*factors without distributing a Rational over a sum. */
+/** Multiplies a coefficient by the remaining factors, keeping a rational coefficient outside a sum. */
 export function keepCoeff(coeffIn: Expr, factorsIn: Expr): Expr {
   let coeff = coeffIn;
   let factors = factorsIn;
@@ -76,7 +76,8 @@ export function keepCoeff(coeffIn: Expr, factorsIn: Expr): Expr {
 }
 
 /**
- * commutative factors (a negative coefficient is split into -1 and its absolute value).
+ * Lists the commutative factors of the expression. By default, a negative leading coefficient
+ * contributes a factor of minus one.
  *
  * @remarks
  * For `(-oo).args_cnc() # -oo is a singleton`, SymPy displays `[[-1, oo], []]`. For `(-2*x*y).args_cnc()`, SymPy displays `[[-1, 2, x, y], []]`.
@@ -96,7 +97,12 @@ export function argsCnc(e: Expr, split1 = true): Expr[] {
   return argsCncSplit(e, split1)[0];
 }
 
-/** SymPy `args_cnc`: [commutative factors, non-commutative factors in order]. */
+/**
+ * Separates commutative and noncommutative factors into two lists, preserving the order of the
+ * noncommutative factors.
+ *
+ * @see SymPy `sympy.core.expr.Expr.args_cnc`
+ */
 export function argsCncSplit(e: Expr, split1 = true): [Expr[], Expr[]] {
   const all = [...mulArgs(e)];
   const nc = all.filter((a) => !a.isCommutative);
@@ -498,7 +504,12 @@ function splitAddRational(e: Expr): [Rational, Expr] {
   return [S.Zero, e];
 }
 
-/** SymPy `extract_multiplicatively(c)`; undefined when not possible. */
+/**
+ * Extracts `cIn` as a factor of `eIn` when possible. For example, extracting 2 from `6*x` gives
+ * `3*x`, while extracting 4 would introduce a fractional coefficient and fails.
+ *
+ * @see SymPy `sympy.core.expr.Expr.extract_multiplicatively`
+ */
 export function extractMultiplicatively(eIn: ExprLike, cIn: ExprLike): Expr | undefined {
   const e = sympify(eIn);
   let c = sympify(cIn);
@@ -590,7 +601,12 @@ export function extractMultiplicatively(eIn: ExprLike, cIn: ExprLike): Expr | un
 
 const isPos = (e: Expr) => isNum(e) && e.isPositive;
 
-/** SymPy `extract_additively(c)` (main cases). */
+/**
+ * Subtracts `cIn` from `eIn` when the matching numeric coefficients move toward zero without
+ * changing sign.
+ *
+ * @see SymPy `sympy.core.expr.Expr.extract_additively`
+ */
 export function extractAdditively(eIn: ExprLike, cIn: ExprLike): Expr | undefined {
   const e = sympify(eIn);
   const c = sympify(cIn);
@@ -662,7 +678,12 @@ export function extractAdditively(eIn: ExprLike, cIn: ExprLike): Expr | undefine
   return add(...coeffs);
 }
 
-/** SymPy `as_coefficient(expr)`. */
+/**
+ * Finds the nonzero coefficient independent of `x` when the whole expression can be written as that
+ * coefficient times `x`.
+ *
+ * @see SymPy `sympy.core.expr.Expr.as_coefficient`
+ */
 export function asCoefficient(e: ExprLike, x: ExprLike): Expr | undefined {
   const r = extractMultiplicatively(e, x);
   if (r !== undefined && !isZeroE(r) && !r.has(sympify(x))) return r;
@@ -786,8 +807,8 @@ export function isConstant(eIn: ExprLike, wrt: readonly Sym[] = []): boolean {
 }
 
 /**
- * SymPy's fuzzy constancy check. An undecided zero denominator leaves a
- * derivative-based proof inconclusive because the original expression can have poles.
+ * Tests whether an expression is constant with respect to the specified variables, or all its free
+ * symbols by default. A possible zero denominator can leave a derivative-based test inconclusive.
  *
  * @param eIn - The input expression.
  * @param wrt - The variable or variables with respect to which to perform the operation.
@@ -977,9 +998,8 @@ export function atoms(eIn: ExprLike, pred: (a: Expr) => boolean = () => true): E
 
 
 /**
- * does the expression contain any of the
- * patterns as a free subexpression (a free symbol, an applied function of
- * the given name, or a subexpression)?
+ * Tests whether a symbol, a named function application or another subexpression occurs free in the
+ * expression.
  *
  * @param eIn - The input expression.
  * @param patterns - The expressions to search for.
@@ -1070,7 +1090,7 @@ export function asCoeffExponent(eIn: ExprLike, x: Expr): [Expr, Expr] {
 }
 
 /**
- * base -> exponent of the factors of a product.
+ * Maps each base in a product to the sum of its exponents.
  *
  * @param eIn - The input expression.
  * @returns A map from bases to exponents.
@@ -1087,7 +1107,8 @@ export function asPowersDict(eIn: ExprLike): ExprMap<Expr> {
 }
 
 /**
- * term -> coefficient.
+ * Maps the terms of an expression to their coefficients, optionally collecting factors independent of
+ * the given generators into the coefficients.
  *
  * @remarks
  * For `(3*a*x).as_coefficients_dict()`, SymPy displays `defaultdict(<class 'int'>, {a*x: 3})`.
@@ -1156,11 +1177,11 @@ export function asTwoTerms(eIn: ExprLike): [Expr, Expr] {
 }
 
 /**
- * does any given expression occur as a node?
+ * Tests whether any of the supplied expressions matches a node of the expression tree exactly.
  *
  * @param eIn - The input expression.
  * @param items - The expressions to search for.
- * @returns True if any requested expression occurs exactly as a free node.
+ * @returns True if any requested expression occurs exactly as a node.
  * @see SymPy `sympy.core.basic.Basic.has_xfree`
  * @example
  * ```ts
@@ -1177,7 +1198,8 @@ export function hasXfree(eIn: ExprLike, items: readonly Expr[]): boolean {
 }
 
 /**
- * built from the symbols with +, *, and rational powers.
+ * Tests whether the expression is built from the given generators and independent coefficients using
+ * addition, multiplication and rational powers.
  *
  * @param eIn - The input expression.
  * @param syms - The generators to consider.
@@ -1204,7 +1226,8 @@ export function isAlgebraicExpr(eIn: ExprLike, syms: readonly Expr[] = []): bool
 }
 
 /**
- * normalize bound indices, then rename a single free dummy.
+ * Compares two expressions after normalizing bound indices and, when possible, matching a free dummy to
+ * a single symbol.
  *
  * @param aIn - The first operand.
  * @param bIn - The second operand.
@@ -1288,7 +1311,11 @@ function isZeroValue(e: Expr): boolean | undefined {
   return isZeroQ(e);
 }
 
-/** SymPy is_meromorphic(x, a): true/false/undefined. */
+/**
+ * Tests whether an expression is meromorphic in `x` at the point `a`.
+ *
+ * @see SymPy `sympy.core.expr.Expr.is_meromorphic`
+ */
 export function isMeromorphic(eIn: ExprLike, x: Expr, a: ExprLike): boolean | undefined {
   const e = sympify(eIn);
   const point = sympify(a);
@@ -1362,9 +1389,8 @@ const BESSEL_FUNCTIONS = new Set(['besselj', 'bessely', 'besseli', 'besselk', 'h
 const BESSEL_INTEGER_MEROMORPHIC = new Set(['besselj', 'besseli', 'jn', 'yn', 'hn1', 'hn2']);
 
 /**
- * structural equality where the numbers
- * are compared with `approx` when it is given (e.g. equalValued). Objects
- * other than expressions (matrices) compare by their own isSame.
+ * Tests for structural equality, using `approx` to compare numbers when supplied. Objects such as
+ * matrices can provide their own `isSame` method.
  *
  * @param a - The first operand.
  * @param b - The second operand.
@@ -1401,7 +1427,8 @@ function exactRational(e: Expr): Rational | undefined {
 }
 
 /**
- * two numbers with exactly the same value (Float(2.0) and 2).
+ * Tests for exact numerical equality across representations, so a float and an integer can have the
+ * same value.
  *
  * @param x - The argument of the function.
  * @param y - The second argument.
@@ -1698,7 +1725,8 @@ export function asExpr(e: ExprLike, ..._gens: readonly Expr[]): Expr {
 }
 
 /**
- * expressions are immutable, so the expression itself.
+ * Returns the expression itself because expressions are immutable. Numeric inputs are converted to
+ * expressions.
  *
  * @param e - The input expression.
  * @returns The expression itself.
@@ -1708,7 +1736,11 @@ export function copy(e: ExprLike): Expr {
   return sympify(e);
 }
 
-/** SymPy `getO()`: the additive order term O(...) of e, or undefined when there is none. */
+/**
+ * Finds the additive order term `O(...)` in a series expression when present.
+ *
+ * @see SymPy `sympy.core.expr.Expr.getO`
+ */
 export function getO(eIn: ExprLike): Expr | undefined {
   const e = sympify(eIn);
   if (e instanceof Order) return e;
@@ -1717,7 +1749,7 @@ export function getO(eIn: ExprLike): Expr | undefined {
 }
 
 /**
- * e without its additive order term.
+ * Removes the additive order term from an expression.
  *
  * @param eIn - The input expression.
  * @returns The expression with its additive order term removed.
@@ -1730,7 +1762,8 @@ export function removeO(eIn: ExprLike): Expr {
 }
 
 /**
- * n/d of as_numer_denom, with a numeric denominator kept as a coefficient.
+ * Reconstructs the quotient of the numerator and denominator, keeping a numeric denominator's
+ * reciprocal as a coefficient.
  *
  * @param eIn - The input expression.
  * @returns The quotient reconstructed from the numerator and denominator.
@@ -1797,10 +1830,9 @@ export function nseries(
 const isCallableExpr = (e: Expr): e is Expr & { call(...args: (ExprLike | null)[]): Expr } => 'call' in e && typeof e.call === 'function';
 
 /**
- * applies the callable parts of the expression to args
- * (`rcall(x + Lambda(y, 2*y), z)` is `x + 2*z`), the abuse of notation for
- * operators. A null argument leaves that tensor slot uncontracted when the
- * callable supports partial contractions (sympy.diffgeom).
+ * Applies the callable parts of an expression to `args`. For example, `rcall(x + Lambda(y, 2*y), z)`
+ * gives `x + 2*z`. A null argument leaves the corresponding tensor slot uncontracted for callables that
+ * support partial contraction.
  *
  * @param eIn - The input expression.
  * @param args - The arguments in positional order.
@@ -1821,7 +1853,7 @@ export function rcall(eIn: ExprLike, ...args: (ExprLike | null)[]): Expr {
 }
 
 /**
- * start times the product of the items of a.
+ * Multiplies `start` by every factor in the iterable.
  *
  * @param a - The iterable of factors.
  * @param start - The initial multiplicative factor.

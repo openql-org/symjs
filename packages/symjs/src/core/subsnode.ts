@@ -190,8 +190,10 @@ export class SubsNode extends ExtensionExpr {
 const asList = (x: ExprLike | readonly ExprLike[]): readonly ExprLike[] => (x instanceof Expr || typeof x !== 'object' ? [x] : x);
 
 /**
- * SymPy `Subs(expr, variables, point)`: one variable and point, or arrays
- * of them (unevaluated; `doit` performs the substitution).
+ * Represents an unevaluated substitution of one variable or an array of variables at the corresponding
+ * points. Calling `doit` performs the substitution.
+ *
+ * @see SymPy `sympy.core.function.Subs`
  */
 export function Subs(exprIn: ExprLike, variables: ExprLike | readonly ExprLike[], point: ExprLike | readonly ExprLike[]): Expr {
   const expr = sympify(exprIn);

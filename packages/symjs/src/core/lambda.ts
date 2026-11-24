@@ -139,7 +139,11 @@ export class LambdaNode extends ExtensionExpr {
   }
 }
 
-/** SymPy Lambda(variables, expr) with one variable or an array of them. */
+/**
+ * Constructs a symbolic function with the given variable or array of variables and body `expr`.
+ *
+ * @see SymPy `sympy.core.function.Lambda`
+ */
 export function Lambda(variables: Expr | readonly Expr[], expr: ExprLike): LambdaNode {
   const vs = variables instanceof Expr ? [variables] : variables;
   return new LambdaNode([...vs, sympify(expr)]);

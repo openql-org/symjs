@@ -107,7 +107,7 @@ export class BoolOp extends Expr {
     }
   }
   /**
-   * SymPy LatexPrinter: x \wedge y, x \vee y, x \veebar y, \neg x, \operatorname{ITE}(c, a, b).
+   * Formats a Boolean expression in LaTeX using logical connectives or function notation for `ITE`.
    *
    * @param p - The expression printer for child nodes.
    * @returns The LaTeX representation.
@@ -126,7 +126,8 @@ export class BoolOp extends Expr {
     return this.args.map(paren).join(sep);
   }
   /**
-   * SymPy StrPrinter: args sorted by default_sort_key, joined by & or |.
+   * Formats a Boolean expression using `&`, `|`, `^`, `~` or `ITE`, with parentheses around compound
+   * operands where needed.
    *
    * @param p - The expression printer for child nodes.
    * @returns The formatted expression.

@@ -51,7 +51,8 @@ function orWithComplements(c: Expr): Expr {
 }
 
 /**
- * args are [z, ...ap, ...bq].
+ * Represents a generalized hypergeometric function with arguments stored as `[z, ...ap, ...bq]`, where
+ * `ap` and `bq` are the upper and lower parameters.
  *
  * @see SymPy `sympy.functions.special.hyper.hyper`
  * @example
@@ -307,7 +308,8 @@ export function gaussAtOne(h: Hyper): Expr | undefined {
 }
 
 /**
- * args are [z, ...an, ...ap, ...bm, ...bq].
+ * Represents a Meijer G-function with the argument `z` followed by the four parameter groups `an`,
+ * `aother`, `bm` and `bother` in flattened order.
  *
  * @see SymPy `sympy.functions.special.hyper.meijerg`
  * @example

@@ -1517,7 +1517,7 @@ function decide(prop: Expr, d: Decider): Tri {
  */
 let expressionFacts = false;
 
-/** ask for a fact of an expression itself (SymPy expr.is_<fact>). */
+/** Evaluates a proposition using the assumption facts of the expression it describes. */
 export function askExpressionFact(proposition: Expr): Truth {
   const outer = expressionFacts;
   expressionFacts = true;

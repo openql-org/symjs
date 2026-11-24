@@ -41,7 +41,7 @@ const REL_CLASSES: Readonly<Record<RelOp, string>> = {
   Ge: 'GreaterThan',
 };
 
-/** SymPy's class name of an expression (`type(e).__name__`). */
+/** Returns the class name that SymPy uses for the expression. */
 export function sympyClassName(e: Expr): string {
   if (e instanceof Rational) {
     if (e.isZero) return 'Zero';
@@ -115,7 +115,7 @@ function hashableContent(e: Expr): Content[] {
 }
 
 /**
- * class names, then the length and items of the hashable content.
+ * Orders expressions by class name, then by the length and contents of their hashable data.
  *
  * @param a - The first operand.
  * @param b - The second operand.
@@ -145,7 +145,12 @@ export function basicCompare(a: Expr, b: Expr): number {
   return 0;
 }
 
-/** SymPy's `expr.args`: exp(x) has the argument x; sums and products are in Basic.compare order. */
+/**
+ * Lists the expression's arguments in SymPy order. For `exp(x)` the sole argument is `x`. Terms of sums
+ * and commutative factors of products follow `basicCompare` order.
+ *
+ * @see SymPy `sympy.core.basic.Basic.args`
+ */
 export function sympyArgs(e: Expr): readonly Expr[] {
   if (isExp(e)) return [at(e.args, 1)];
   if (e instanceof Add) return [...e.args].sort(basicCompare);

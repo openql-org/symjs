@@ -325,7 +325,7 @@ export function getO(e: ExprLike): Expr | NoMatchResult {
 }
 
 /**
- * e/c when it is "simpler", else NoMatch.
+ * Extracts `c` as a factor of `e` and returns the remaining quotient, or `NoMatch` if extraction fails.
  *
  * @param e - The input expression.
  * @param c - The factor to remove.
@@ -342,7 +342,8 @@ export function extractMultiplicatively(e: ExprLike, c: ExprLike): Expr | NoMatc
   return orNoMatch(M.extractMultiplicatively(e, c));
 }
 /**
- * e - c when it is "simpler", else NoMatch.
+ * Subtracts `c` from `e` when the matching numeric coefficients move toward zero without changing
+ * sign. Returns `NoMatch` when extraction fails.
  *
  * @param e - The input expression.
  * @param c - The term to subtract.

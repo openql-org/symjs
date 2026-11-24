@@ -861,7 +861,12 @@ function productDeep(f: Expr, limits: readonly [Sym, ExprLike, ExprLike][]): Exp
   return e;
 }
 
-/** doit() for a Concrete node. */
+/**
+ * Evaluates a symbolic sum or product over its limits.
+ *
+ * @see SymPy `sympy.concrete.summations.Sum.doit`
+ * @see SymPy `sympy.concrete.products.Product.doit`
+ */
 export function doitConcrete(c: Concrete): Expr {
   if (c.hasEmptySequence === true) return c.kind2 === 'Sum' ? S.Zero : S.One;
   const lims = c.limits.map(([k, a, b]): [Sym, Expr, Expr] => [cast(k, Sym, 'limit variable'), a, b]);
@@ -932,7 +937,14 @@ function fractionOf(f: Expr): [Expr, Expr] {
   return [mul(...num), mul(...den)];
 }
 
-/** SymPy Sum.is_convergent for common series tests (divergence, p-series, ratio, alternating). */
+/**
+ * Tests a sum for convergence using the divergence, p-series, ratio, root and alternating series tests.
+ * For an infinite product, it checks whether the factors approach one and tests the sum of their
+ * logarithms for convergence.
+ *
+ * @see SymPy `sympy.concrete.summations.Sum.is_convergent`
+ * @see SymPy `sympy.concrete.products.Product.is_convergent`
+ */
 export function sumIsConvergent(c: Concrete): boolean | undefined {
   const [kE, a, b] = first(c.limits);
   const k0 = cast(kE, Sym, 'limit variable');
