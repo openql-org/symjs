@@ -72,16 +72,16 @@ export class FiniteDistributionHandmade extends SingleFiniteDistribution {
     super('FiniteDistributionHandmade', [cast(at(args, 0), DictNode, 'density dict')]);
   }
   /**
-   * The mapping from outcomes to their probabilities.
+   * Associates each outcome with its probability mass.
    *
-   * @returns The mapping from outcomes to their probabilities.
+   * @returns The finite density map.
    * @see SymPy `sympy.stats.frv_types.FiniteDistributionHandmade.dict`
    */
   override get dict(): DensityResult {
     return new FiniteDensity(cast(this.arg(0), DictNode).items());
   }
   /**
-   * Lambda(x, Piecewise((v, Eq(k, x)), ..., (0, True))) (applied to x).
+   * Selects the stored probability for a matching value, using zero outside the finite support.
    *
    * @param xIn - Outcome at which to evaluate the probability mass.
    * @returns The probability of the supplied outcome.
@@ -93,9 +93,9 @@ export class FiniteDistributionHandmade extends SingleFiniteDistribution {
     return f.call(xIn);
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
-   * @returns The support of the distribution.
+   * @returns The distribution's support.
    * @see SymPy `sympy.stats.frv_types.FiniteDistributionHandmade.set`
    */
   override get set(): SetExpr {
@@ -116,12 +116,13 @@ export class FiniteDistributionHandmade extends SingleFiniteDistribution {
 }
 
 /**
- * A finite random variable with the given values and probabilities (SymPy FiniteRV(name, density)); not checked unless `check` is true.
+ * Constructs a random variable from the specified finite probability masses, validating them when
+ * requested.
  *
  * @param name - Name of the symbol.
  * @param densityIn - Pairs of outcomes and probabilities, or a map from outcomes to their probabilities.
  * @param opts - Set `check` to true to verify normalization.
- * @returns A finite random variable with the given values and probabilities.
+ * @returns The finite random symbol.
  * @throws RangeError when checking is enabled and the probabilities are invalid or do not sum to one.
  * @see SymPy `sympy.stats.frv_types.FiniteRV`
  * @example
@@ -173,34 +174,34 @@ export class DiscreteUniformDistribution extends SingleFiniteDistribution {
     }
   }
   /**
-   * The probability of each value.
+   * Gives the mass assigned to each equally likely outcome.
    *
-   * @returns The probability of each value.
+   * @returns The common probability.
    * @see SymPy `sympy.stats.frv_types.DiscreteUniformDistribution.p`
    */
   get p(): Expr {
     return Rational.of(1, this.args.length);
   }
   /**
-   * The mapping from outcomes to their probabilities.
+   * Associates each outcome with its probability mass.
    *
-   * @returns The mapping from outcomes to their probabilities.
+   * @returns The finite density map.
    * @see SymPy `sympy.stats.frv_types.DiscreteUniformDistribution.dict`
    */
   override get dict(): DensityResult {
     return new FiniteDensity(cast(this.set, FiniteSet).args.map((k) => [k, this.p] as const));
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
-   * @returns The support of the distribution.
+   * @returns The distribution's support.
    * @see SymPy `sympy.stats.frv_types.DiscreteUniformDistribution.set`
    */
   override get set(): SetExpr {
     return finiteSet(...this.args);
   }
   /**
-   * The probability mass at the supplied outcome.
+   * Evaluates the probability mass function at one outcome.
    *
    * @param xIn - Outcome at which to evaluate the probability mass.
    * @returns The probability of the supplied outcome.
@@ -213,7 +214,7 @@ export class DiscreteUniformDistribution extends SingleFiniteDistribution {
 }
 
 /**
- * Uniform distribution over the items.
+ * Constructs a finite random variable assigning equal probability to the supplied outcomes.
  *
  * @param name - Name of the symbol.
  * @param items - Equally likely outcomes.
@@ -254,9 +255,9 @@ export class DieDistribution extends SingleFiniteDistribution {
     super('DieDistribution', args);
   }
   /**
-   * Positive integer number of faces.
+   * Counts the faces of the die.
    *
-   * @returns Positive integer number of faces.
+   * @returns The positive number of sides.
    * @see SymPy `sympy.stats.frv_types.DieDistribution.sides`
    */
   get sides(): Expr {
@@ -272,36 +273,36 @@ export class DieDistribution extends SingleFiniteDistribution {
     valueCheck([isPositive(this.sides), isIntegerValued(this.sides)], 'number of sides must be a positive integer.');
   }
   /**
-   * Whether the distribution is symbolic.
+   * Indicates whether the distribution depends on symbolic parameters.
    *
-   * @returns Whether the distribution is symbolic.
+   * @returns The symbolic-distribution flag.
    * @see SymPy `sympy.stats.frv_types.DieDistribution.is_symbolic`
    */
   override get isSymbolic(): boolean {
     return !this.sides.isNumber;
   }
   /**
-   * The largest possible outcome.
+   * Identifies the upper endpoint of the possible outcomes.
    *
-   * @returns The largest possible outcome.
+   * @returns The largest outcome.
    * @see SymPy `sympy.stats.frv_types.DieDistribution.high`
    */
   override get high(): Expr {
     return this.sides;
   }
   /**
-   * The smallest possible outcome.
+   * Identifies the lower endpoint of the possible outcomes.
    *
-   * @returns The smallest possible outcome.
+   * @returns The smallest outcome.
    * @see SymPy `sympy.stats.frv_types.DieDistribution.low`
    */
   override get low(): Expr {
     return S.One;
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
-   * @returns The support of the distribution.
+   * @returns The distribution's support.
    * @see SymPy `sympy.stats.frv_types.DieDistribution.set`
    */
   override get set(): SetExpr {
@@ -309,7 +310,7 @@ export class DieDistribution extends SingleFiniteDistribution {
     return finiteSet(...Array.from({ length: Number(asRational(this.sides).p) }, (_, i) => int(i + 1)));
   }
   /**
-   * The probability mass at the supplied outcome.
+   * Evaluates the probability mass function at one outcome.
    *
    * @param xIn - Outcome at which to evaluate the probability mass.
    * @returns The probability of the supplied outcome.
@@ -324,7 +325,7 @@ export class DieDistribution extends SingleFiniteDistribution {
 }
 
 /**
- * A fair die with the given number of sides.
+ * Constructs a fair die with the supplied number of sides.
  *
  * @param name - Name of the symbol.
  * @param sides - Positive integer number of faces.
@@ -365,27 +366,27 @@ export class BernoulliDistribution extends SingleFiniteDistribution {
     super('BernoulliDistribution', args);
   }
   /**
-   * Probability of success.
+   * Gives the chance that the trial succeeds.
    *
-   * @returns Probability of success.
+   * @returns The success probability.
    * @see SymPy `sympy.stats.frv_types.BernoulliDistribution.p`
    */
   get p(): Expr {
     return this.arg(0);
   }
   /**
-   * Value on success.
+   * Identifies the outcome assigned to a successful trial.
    *
-   * @returns Value on success.
+   * @returns The success value.
    * @see SymPy `sympy.stats.frv_types.BernoulliDistribution.succ`
    */
   get succ(): Expr {
     return this.arg(1);
   }
   /**
-   * Value on failure.
+   * Identifies the outcome assigned to a failed trial.
    *
-   * @returns Value on failure.
+   * @returns The failure value.
    * @see SymPy `sympy.stats.frv_types.BernoulliDistribution.fail`
    */
   get fail(): Expr {
@@ -401,16 +402,16 @@ export class BernoulliDistribution extends SingleFiniteDistribution {
     valueCheck([Ge(this.p, 0), Le(this.p, 1)], 'p should be in range [0, 1].');
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
-   * @returns The support of the distribution.
+   * @returns The distribution's support.
    * @see SymPy `sympy.stats.frv_types.BernoulliDistribution.set`
    */
   override get set(): SetExpr {
     return finiteSet(this.succ, this.fail);
   }
   /**
-   * The probability mass at the supplied outcome.
+   * Evaluates the probability mass function at one outcome.
    *
    * @param xIn - Outcome at which to evaluate the probability mass.
    * @returns The probability of the supplied outcome.
@@ -427,7 +428,7 @@ export class BernoulliDistribution extends SingleFiniteDistribution {
 }
 
 /**
- * Bernoulli distribution: succ with probability p, fail otherwise.
+ * Constructs a Bernoulli variable with the specified success probability and two outcome values.
  *
  * @param name - Name of the symbol.
  * @param p - Probability of success.
@@ -449,7 +450,7 @@ export function Bernoulli(name: string | Sym, p: ExprLike, succ: ExprLike | stri
 }
 
 /**
- * A coin with outcomes H and T, H with probability p.
+ * Constructs a coin that gives heads with the specified probability and tails otherwise.
  *
  * @param name - Name of the symbol.
  * @param p - Probability of heads.
@@ -491,9 +492,9 @@ export class BinomialDistribution extends SingleFiniteDistribution {
     super('BinomialDistribution', args);
   }
   /**
-   * Probability of success on each trial.
+   * Gives the chance of success on each independent trial.
    *
-   * @returns Probability of success on each trial.
+   * @returns The per-trial probability.
    * @see SymPy `sympy.stats.frv_types.BinomialDistribution.p`
    */
   get p(): Expr {
@@ -510,36 +511,36 @@ export class BinomialDistribution extends SingleFiniteDistribution {
     valueCheck([Le(this.p, 1), Ge(this.p, 0)], 'p should be in range [0, 1].');
   }
   /**
-   * The largest possible outcome.
+   * Identifies the upper endpoint of the possible outcomes.
    *
-   * @returns The largest possible outcome.
+   * @returns The largest outcome.
    * @see SymPy `sympy.stats.frv_types.BinomialDistribution.high`
    */
   override get high(): Expr {
     return this.arg(0);
   }
   /**
-   * The smallest possible outcome.
+   * Identifies the lower endpoint of the possible outcomes.
    *
-   * @returns The smallest possible outcome.
+   * @returns The smallest outcome.
    * @see SymPy `sympy.stats.frv_types.BinomialDistribution.low`
    */
   override get low(): Expr {
     return S.Zero;
   }
   /**
-   * Whether the distribution is symbolic.
+   * Indicates whether the distribution depends on symbolic parameters.
    *
-   * @returns Whether the distribution is symbolic.
+   * @returns The symbolic-distribution flag.
    * @see SymPy `sympy.stats.frv_types.BinomialDistribution.is_symbolic`
    */
   override get isSymbolic(): boolean {
     return !this.arg(0).isNumber;
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
-   * @returns The support of the distribution.
+   * @returns The distribution's support.
    * @see SymPy `sympy.stats.frv_types.BinomialDistribution.set`
    */
   override get set(): SetExpr {
@@ -547,7 +548,7 @@ export class BinomialDistribution extends SingleFiniteDistribution {
     return finiteSet(...cast(this.dict, FiniteDensity).keys());
   }
   /**
-   * The probability mass at the supplied outcome.
+   * Evaluates the probability mass function at one outcome.
    *
    * @param xIn - Outcome at which to evaluate the probability mass.
    * @returns The probability of the supplied outcome.
@@ -561,9 +562,9 @@ export class BinomialDistribution extends SingleFiniteDistribution {
     return piecewise([mul(binomial(n, x), pow(p, x), pow(sub(1, p), sub(n, x))), cond], [S.Zero, true]);
   }
   /**
-   * The mapping from outcomes to their probabilities.
+   * Associates each outcome with its probability mass.
    *
-   * @returns The mapping from outcomes to their probabilities.
+   * @returns The finite density map.
    * @see SymPy `sympy.stats.frv_types.BinomialDistribution.dict`
    */
   override get dict(): DensityResult {
@@ -575,7 +576,7 @@ export class BinomialDistribution extends SingleFiniteDistribution {
 }
 
 /**
- * Binomial distribution of n trials with success probability p.
+ * Constructs the distribution of the number of successes in the specified Bernoulli trials.
  *
  * @param name - Name of the symbol.
  * @param n - Nonnegative integer number of trials.
@@ -631,36 +632,36 @@ export class BetaBinomialDistribution extends SingleFiniteDistribution {
     valueCheck(Gt(beta, 0), `'beta' must be: beta > 0 . beta = ${beta.toString()}`);
   }
   /**
-   * The largest possible outcome.
+   * Identifies the upper endpoint of the possible outcomes.
    *
-   * @returns The largest possible outcome.
+   * @returns The largest outcome.
    * @see SymPy `sympy.stats.frv_types.BetaBinomialDistribution.high`
    */
   override get high(): Expr {
     return this.arg(0);
   }
   /**
-   * The smallest possible outcome.
+   * Identifies the lower endpoint of the possible outcomes.
    *
-   * @returns The smallest possible outcome.
+   * @returns The smallest outcome.
    * @see SymPy `sympy.stats.frv_types.BetaBinomialDistribution.low`
    */
   override get low(): Expr {
     return S.Zero;
   }
   /**
-   * Whether the distribution is symbolic.
+   * Indicates whether the distribution depends on symbolic parameters.
    *
-   * @returns Whether the distribution is symbolic.
+   * @returns The symbolic-distribution flag.
    * @see SymPy `sympy.stats.frv_types.BetaBinomialDistribution.is_symbolic`
    */
   override get isSymbolic(): boolean {
     return !this.arg(0).isNumber;
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
-   * @returns The support of the distribution.
+   * @returns The distribution's support.
    * @see SymPy `sympy.stats.frv_types.BetaBinomialDistribution.set`
    */
   override get set(): SetExpr {
@@ -668,7 +669,7 @@ export class BetaBinomialDistribution extends SingleFiniteDistribution {
     return finiteSet(...Array.from({ length: Number(asRational(this.arg(0)).p) + 1 }, (_, i) => int(i)));
   }
   /**
-   * The probability mass at the supplied outcome.
+   * Evaluates the probability mass function at one outcome.
    *
    * @param kIn - Outcome at which to evaluate the probability mass.
    * @returns The probability of the supplied outcome.
@@ -682,7 +683,7 @@ export class BetaBinomialDistribution extends SingleFiniteDistribution {
 }
 
 /**
- * Beta-binomial distribution.
+ * Constructs a random variable with the Beta-binomial distribution.
  *
  * @param name - Name of the symbol.
  * @param n - Number of trials.
@@ -738,18 +739,18 @@ export class HypergeometricDistribution extends SingleFiniteDistribution {
     valueCheck([isIntegerValued(m), isNonNegative(m)], `'m' must be nonnegative integer. m = ${m.toString()}.`);
   }
   /**
-   * Whether the distribution is symbolic.
+   * Indicates whether the distribution depends on symbolic parameters.
    *
-   * @returns Whether the distribution is symbolic.
+   * @returns The symbolic-distribution flag.
    * @see SymPy `sympy.stats.frv_types.HypergeometricDistribution.is_symbolic`
    */
   override get isSymbolic(): boolean {
     return !this.args.every((x) => x.isNumber);
   }
   /**
-   * The largest possible outcome.
+   * Identifies the upper endpoint of the possible outcomes.
    *
-   * @returns The largest possible outcome.
+   * @returns The largest outcome.
    * @see SymPy `sympy.stats.frv_types.HypergeometricDistribution.high`
    */
   override get high(): Expr {
@@ -757,9 +758,9 @@ export class HypergeometricDistribution extends SingleFiniteDistribution {
     return piecewise([n, Lt(n, m) !== S.false], [m, true]);
   }
   /**
-   * The smallest possible outcome.
+   * Identifies the lower endpoint of the possible outcomes.
    *
-   * @returns The smallest possible outcome.
+   * @returns The smallest outcome.
    * @see SymPy `sympy.stats.frv_types.HypergeometricDistribution.low`
    */
   override get low(): Expr {
@@ -767,9 +768,9 @@ export class HypergeometricDistribution extends SingleFiniteDistribution {
     return piecewise([0, Gt(0, sub(add(n, m), N)) !== S.false], [sub(add(n, m), N), true]);
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
-   * @returns The support of the distribution.
+   * @returns The distribution's support.
    * @see SymPy `sympy.stats.frv_types.HypergeometricDistribution.set`
    */
   override get set(): SetExpr {
@@ -781,7 +782,7 @@ export class HypergeometricDistribution extends SingleFiniteDistribution {
     return finiteSet(...Array.from({ length: Math.max(0, hi - lo + 1) }, (_, i) => int(lo + i)));
   }
   /**
-   * The probability mass at the supplied outcome.
+   * Evaluates the probability mass function at one outcome.
    *
    * @param kIn - Outcome at which to evaluate the probability mass.
    * @returns The probability of the supplied outcome.
@@ -795,7 +796,8 @@ export class HypergeometricDistribution extends SingleFiniteDistribution {
 }
 
 /**
- * Hypergeometric distribution: n draws from N items of which m are successes.
+ * Constructs the distribution of successes in a sample of `n` draws without replacement from `N` items
+ * containing `m` successes.
  *
  * @param name - Name of the symbol.
  * @param N - Population size.
@@ -838,16 +840,16 @@ export class RademacherDistribution extends SingleFiniteDistribution {
     super('RademacherDistribution', args);
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
-   * @returns The support of the distribution.
+   * @returns The distribution's support.
    * @see SymPy `sympy.stats.frv_types.RademacherDistribution.set`
    */
   override get set(): SetExpr {
     return finiteSet(-1, 1);
   }
   /**
-   * The probability mass at the supplied outcome.
+   * Evaluates the probability mass function at one outcome.
    *
    * @param xIn - Outcome at which to evaluate the probability mass.
    * @returns The probability of the supplied outcome.
@@ -860,7 +862,7 @@ export class RademacherDistribution extends SingleFiniteDistribution {
 }
 
 /**
- * Rademacher distribution (SymPy Rademacher(name)).
+ * Constructs a random variable with the Rademacher distribution.
  *
  * @param name - Name of the symbol.
  * @returns The random symbol with the specified law.
@@ -903,9 +905,9 @@ export class IdealSolitonDistribution extends SingleFiniteDistribution {
     super('IdealSolitonDistribution', args);
   }
   /**
-   * Number of source blocks.
+   * Specifies how many source blocks the soliton distribution covers.
    *
-   * @returns Number of source blocks.
+   * @returns The source block count.
    * @see SymPy `sympy.stats.frv_types.IdealSolitonDistribution.k`
    */
   get k(): Expr {
@@ -922,36 +924,36 @@ export class IdealSolitonDistribution extends SingleFiniteDistribution {
     valueCheck(pyAnd(isIntegerValued(k), isPositive(k)), "'k' must be a positive integer.");
   }
   /**
-   * The smallest possible outcome.
+   * Identifies the lower endpoint of the possible outcomes.
    *
-   * @returns The smallest possible outcome.
+   * @returns The smallest outcome.
    * @see SymPy `sympy.stats.frv_types.IdealSolitonDistribution.low`
    */
   override get low(): Expr {
     return S.One;
   }
   /**
-   * The largest possible outcome.
+   * Identifies the upper endpoint of the possible outcomes.
    *
-   * @returns The largest possible outcome.
+   * @returns The largest outcome.
    * @see SymPy `sympy.stats.frv_types.IdealSolitonDistribution.high`
    */
   override get high(): Expr {
     return this.k;
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
-   * @returns The support of the distribution.
+   * @returns The distribution's support.
    * @see SymPy `sympy.stats.frv_types.IdealSolitonDistribution.set`
    */
   override get set(): SetExpr {
     return finiteSet(...Array.from({ length: Number(asRational(this.k).p) }, (_, i) => int(i + 1)));
   }
   /**
-   * The mapping from outcomes to their probabilities.
+   * Associates each outcome with its probability mass.
    *
-   * @returns The mapping from outcomes to their probabilities.
+   * @returns The finite density map.
    * @see SymPy `sympy.stats.frv_types.IdealSolitonDistribution.dict`
    */
   override get dict(): DensityResult {
@@ -962,7 +964,7 @@ export class IdealSolitonDistribution extends SingleFiniteDistribution {
     return new FiniteDensity(entries);
   }
   /**
-   * The probability mass at the supplied outcome.
+   * Evaluates the probability mass function at one outcome.
    *
    * @param xIn - Outcome at which to evaluate the probability mass.
    * @returns The probability of the supplied outcome.
@@ -990,7 +992,7 @@ function idealRho(x: Expr, k: Expr): Expr {
 }
 
 /**
- * Ideal soliton distribution.
+ * Constructs a random variable with the ideal soliton distribution.
  *
  * @param name - Name of the symbol.
  * @param k - Number of source blocks.
@@ -1031,27 +1033,27 @@ export class RobustSolitonDistribution extends SingleFiniteDistribution {
     super('RobustSolitonDistribution', args);
   }
   /**
-   * Number of source blocks.
+   * Specifies how many source blocks the soliton distribution covers.
    *
-   * @returns Number of source blocks.
+   * @returns The source block count.
    * @see SymPy `sympy.stats.frv_types.RobustSolitonDistribution.k`
    */
   get k(): Expr {
     return this.arg(0);
   }
   /**
-   * Allowed decoding failure probability.
+   * Specifies the permitted probability of decoding failure.
    *
-   * @returns Allowed decoding failure probability.
+   * @returns The failure tolerance.
    * @see SymPy `sympy.stats.frv_types.RobustSolitonDistribution.delta`
    */
   get delta(): Expr {
     return this.arg(1);
   }
   /**
-   * Positive scaling constant.
+   * Sets the positive scale of the robust soliton distribution.
    *
-   * @returns Positive scaling constant.
+   * @returns The scale parameter.
    * @see SymPy `sympy.stats.frv_types.RobustSolitonDistribution.c`
    */
   get c(): Expr {
@@ -1070,18 +1072,18 @@ export class RobustSolitonDistribution extends SingleFiniteDistribution {
     valueCheck(isPositive(c), "'c' must be a positive real number.");
   }
   /**
-   * The cutoff parameter `c*log(k/delta)*sqrt(k)` of the robust soliton distribution.
+   * Computes the cutoff `c*log(k/delta)*sqrt(k)` for the robust soliton distribution.
    *
-   * @returns The cutoff parameter `c*log(k/delta)*sqrt(k)` of the robust soliton distribution.
+   * @returns The cutoff parameter.
    * @see SymPy `sympy.stats.frv_types.RobustSolitonDistribution.R`
    */
   get R(): Expr {
     return mul(this.c, log(mul(this.k, pow(this.delta, -1))), pow(this.k, new Float(0.5)));
   }
   /**
-   * The normalization.
+   * Computes the factor normalizing the robust soliton probabilities.
    *
-   * @returns The normalization.
+   * @returns The normalization constant.
    * @see SymPy `sympy.stats.frv_types.RobustSolitonDistribution.Z`
    */
   get Z(): Expr {
@@ -1092,43 +1094,43 @@ export class RobustSolitonDistribution extends SingleFiniteDistribution {
     return add(1, mul(z, this.R, pow(this.k, -1)));
   }
   /**
-   * The smallest possible outcome.
+   * Identifies the lower endpoint of the possible outcomes.
    *
-   * @returns The smallest possible outcome.
+   * @returns The smallest outcome.
    * @see SymPy `sympy.stats.frv_types.RobustSolitonDistribution.low`
    */
   override get low(): Expr {
     return S.One;
   }
   /**
-   * The largest possible outcome.
+   * Identifies the upper endpoint of the possible outcomes.
    *
-   * @returns The largest possible outcome.
+   * @returns The largest outcome.
    * @see SymPy `sympy.stats.frv_types.RobustSolitonDistribution.high`
    */
   override get high(): Expr {
     return this.k;
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
-   * @returns The support of the distribution.
+   * @returns The distribution's support.
    * @see SymPy `sympy.stats.frv_types.RobustSolitonDistribution.set`
    */
   override get set(): SetExpr {
     return finiteSet(...Array.from({ length: Number(asRational(this.k).p) }, (_, i) => int(i + 1)));
   }
   /**
-   * Whether the distribution is symbolic.
+   * Indicates whether the distribution depends on symbolic parameters.
    *
-   * @returns Whether the distribution is symbolic.
+   * @returns The symbolic-distribution flag.
    * @see SymPy `sympy.stats.frv_types.RobustSolitonDistribution.is_symbolic`
    */
   override get isSymbolic(): boolean {
     return !(this.k.isNumber && this.c.isNumber && this.delta.isNumber);
   }
   /**
-   * The probability mass at the supplied outcome.
+   * Evaluates the probability mass function at one outcome.
    *
    * @param xIn - Outcome at which to evaluate the probability mass.
    * @returns The probability of the supplied outcome.
@@ -1155,7 +1157,7 @@ export function pyRound(e: Expr): number {
 }
 
 /**
- * Robust soliton distribution.
+ * Constructs a random variable with the robust soliton distribution.
  *
  * @param name - Name of the symbol.
  * @param k - Number of source blocks.

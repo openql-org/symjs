@@ -150,10 +150,10 @@ export function normal(e: Expr): Expr {
 }
 
 /**
- * The number of trigonometric functions.
+ * Counts occurrences of trigonometric functions in the expression.
  *
  * @param rv - The input expression.
- * @returns The number of trigonometric functions.
+ * @returns The trigonometric function count.
  * @see SymPy `sympy.simplify.fu.L`
  * @example
  * ```ts
@@ -310,7 +310,7 @@ export function greedy(tree: Tree, objective: (e: Expr) => Measured): Rule {
 // ---------------------------------------------------------------------------
 
 /**
- * TR0: simplification of rational polynomials (normal, factor, expand).
+ * Simplifies rational polynomial expressions by normalization, factorization, and expansion.
  *
  * @param rv - The input expression.
  * @returns The expression after applying the trigonometric identity.
@@ -321,7 +321,7 @@ export function TR0(rv: ExprLike): Expr {
 }
 
 /**
- * TR1: sec -> 1/cos, csc -> 1/sin.
+ * Rewrites secants and cosecants as reciprocals of cosines and sines.
  *
  * @param rv - The input expression.
  * @returns The expression after applying the trigonometric identity.
@@ -342,7 +342,7 @@ export function TR1(rv: ExprLike): Expr {
 }
 
 /**
- * TR2: tan -> sin/cos, cot -> cos/sin.
+ * Rewrites tangents and cotangents as quotients of sines and cosines.
  *
  * @param rv - The input expression.
  * @returns The expression after applying the trigonometric identity.
@@ -364,7 +364,7 @@ export function TR2(rv: ExprLike): Expr {
 }
 
 /**
- * TR2i: sin/cos -> tan (and, with half, sin/(1 + cos) -> tan of the half angle).
+ * Combines sine and cosine quotients into tangents, optionally recognizing half-angle forms.
  *
  * @param rv - The input expression.
  * @param half - Whether to use the tangent half-angle identity.
@@ -469,7 +469,7 @@ export function TR2i(rv: ExprLike, half = false): Expr {
 const cosArg = (k: Expr): Fn => cast(at(k.args, 1), Fn);
 
 /**
- * TR3: induced formulas, e.g. sin(-a) = -sin(a), and reduction to angles in [0, pi/4].
+ * Uses trigonometric symmetries to reduce arguments to simpler angles.
  *
  * @param rv - The input expression.
  * @returns The expression after applying the trigonometric identity.
@@ -498,7 +498,7 @@ export function TR3(rv: ExprLike): Expr {
 }
 
 /**
- * TR4: the values at special angles (applied by the automatic evaluation).
+ * Evaluates trigonometric functions at recognized special angles.
  *
  * @param rv - The input expression.
  * @returns The expression after applying the trigonometric identity.
@@ -543,7 +543,7 @@ export function TR56(rv: ExprLike, f: FnName, g: FnName, h: (x: Expr) => Expr, m
 }
 
 /**
- * TR5: sin**2 -> 1 - cos**2.
+ * Rewrites squared sines using the Pythagorean identity.
  *
  * @param rv - The input expression.
  * @param opts - `max` limits the exponent and `pow` restricts the power reductions to perfect powers where applicable.
@@ -562,7 +562,7 @@ export function TR5(rv: ExprLike, opts: { max?: number; pow?: boolean } = {}): E
 }
 
 /**
- * TR6: cos**2 -> 1 - sin**2.
+ * Rewrites squared cosines using the Pythagorean identity.
  *
  * @param rv - The input expression.
  * @param opts - `max` limits the exponent and `pow` restricts the power reductions to perfect powers where applicable.
@@ -581,7 +581,7 @@ export function TR6(rv: ExprLike, opts: { max?: number; pow?: boolean } = {}): E
 }
 
 /**
- * TR7: lowering the degree of cos(x)**2.
+ * Reduces the degree of a squared cosine using the double-angle identity.
  *
  * @param rv - The input expression.
  * @returns The expression after applying the trigonometric identity.
@@ -602,7 +602,7 @@ export function TR7(rv: ExprLike): Expr {
 }
 
 /**
- * TR8: products of sin and cos -> sums.
+ * Converts products of sines and cosines into sums.
  *
  * @param rv - The input expression.
  * @param first0 - Whether to perform the initial preprocessing pass.
@@ -705,7 +705,7 @@ function pairwise(rv: Expr, two: (a: Expr, b: Expr, rv: Expr) => Expr): Expr {
 }
 
 /**
- * TR9: sums of sin or cos -> products.
+ * Combines sums of sines or cosines into products.
  *
  * @param rv - The input expression.
  * @returns The expression after applying the trigonometric identity.
@@ -737,7 +737,7 @@ export function TR9(rv: ExprLike): Expr {
 }
 
 /**
- * TR10: sin and cos of sums -> sums of products.
+ * Expands the sine or cosine of a sum into products.
  *
  * @param rv - The input expression.
  * @param first0 - Whether to perform the initial preprocessing pass.
@@ -769,7 +769,7 @@ export function TR10(rv: ExprLike, first0 = true): Expr {
 }
 
 /**
- * TR10i: sums of products -> sin and cos of sums.
+ * Combines products into the sine or cosine of a sum.
  *
  * @param rv - The input expression.
  * @returns The expression after applying the trigonometric identity.
@@ -846,7 +846,7 @@ export function TR10i(rv: ExprLike): Expr {
 }
 
 /**
- * TR11: double angles -> products of the single angle.
+ * Rewrites double-angle functions in terms of the single angle.
  *
  * @param rv - The input expression.
  * @param base - The base of the power.
@@ -919,7 +919,7 @@ export function TR11Half(rv: ExprLike): Expr {
 const isBooleanNode = (e: Expr): boolean => e instanceof Rel || e instanceof BoolAtom || e instanceof BoolOp;
 
 /**
- * TR12: tan of sums -> quotients of tan.
+ * Expands the tangent of a sum into a quotient involving the individual tangents.
  *
  * @param rv - The input expression.
  * @param first0 - Whether to perform the initial preprocessing pass.
@@ -946,7 +946,7 @@ export function TR12(rv: ExprLike, first0 = true): Expr {
 }
 
 /**
- * TR12i: (tan(y) + tan(x))/(tan(x)*tan(y) - 1) -> -tan(x + y).
+ * Combines a quotient of tangent sums and products using the tangent addition identity.
  *
  * @param rv - The input expression.
  * @returns The expression after applying the trigonometric identity.
@@ -1073,7 +1073,7 @@ export function TR12i(rv: ExprLike): Expr {
 }
 
 /**
- * TR13: products of tan or cot -> sums.
+ * Rewrites products of tangents or cotangents as sums.
  *
  * @param rv - The input expression.
  * @returns The expression after applying the trigonometric identity.
@@ -1117,7 +1117,7 @@ export function TR13(rv: ExprLike): Expr {
 }
 
 /**
- * TRmorrie: cos(x)*cos(2*x)*...*cos(2**(k-1)*x) -> sin(2**k*x)/(2**k*sin(x)).
+ * Combines cosines at successively doubled angles using Morrie's identity.
  *
  * @param rv - The input expression.
  * @returns The expression after applying the trigonometric identity.
@@ -1192,7 +1192,7 @@ export function TRmorrie(rv: ExprLike): Expr {
 }
 
 /**
- * TR14: factored powers of sin or cos -> cos or sin powers, e.g. (1 - cos(x))*(1 + cos(x)) -> sin(x)**2.
+ * Combines factored trigonometric powers using the Pythagorean identity.
  *
  * @param rv - The input expression.
  * @param first0 - Whether to perform the initial preprocessing pass.
@@ -1302,7 +1302,7 @@ export function nodeCount(e: Expr): number {
 }
 
 /**
- * TR15: negative powers of sin -> cot powers.
+ * Rewrites negative powers of sine using cotangents.
  *
  * @param rv - The input expression.
  * @param opts - `max` limits the exponent and `pow` restricts the power reductions to perfect powers where applicable.
@@ -1320,7 +1320,7 @@ export function TR15(rv: ExprLike, opts: { max?: number; pow?: boolean } = {}): 
 }
 
 /**
- * TR16: negative powers of cos -> tan powers.
+ * Rewrites negative powers of cosine using tangents.
  *
  * @param rv - The input expression.
  * @param opts - `max` limits the exponent and `pow` restricts the power reductions to perfect powers where applicable.
@@ -1350,7 +1350,7 @@ function TR1516(rv: ExprLike, f: FnName, g: FnName, opts: { max?: number; pow?: 
 }
 
 /**
- * TR111: negative powers of sin, cos and tan -> positive powers of csc, sec and cot.
+ * Replaces negative powers of sine, cosine, and tangent with positive powers of their reciprocals.
  *
  * @param rv - The input expression.
  * @returns The expression after applying the trigonometric identity.
@@ -1375,7 +1375,7 @@ export function TR111(rv: ExprLike): Expr {
 }
 
 /**
- * TR22: tan**2 -> sec**2 - 1, cot**2 -> csc**2 - 1.
+ * Rewrites squared tangents and cotangents in terms of secants and cosecants.
  *
  * @param rv - The input expression.
  * @param opts - `max` limits the exponent and `pow` restricts the power reductions to perfect powers where applicable.
@@ -1400,7 +1400,7 @@ export function TR22(rv: ExprLike, opts: { max?: number; pow?: boolean } = {}): 
 }
 
 /**
- * TRpower: positive integer powers of sin and cos -> sums of multiple angles.
+ * Expresses positive integer powers of sines and cosines as sums of multiple-angle functions.
  *
  * @param rv - The input expression.
  * @returns The expression after applying the trigonometric identity.
@@ -1544,7 +1544,7 @@ export function processCommonAddends(rv: Expr, doit: Rule, key2?: (e: Expr) => s
 }
 
 /**
- * The rules of fu by name (SymPy FU).
+ * Indexes the named trigonometric transformations used by Fu's simplification algorithm.
  *
  * @param e - The expression passed to the selected transformation.
  * @returns The expression after applying the selected transformation.

@@ -82,12 +82,12 @@ function refine(coeffs: Expr[], z0: C, prec: number): Mpc {
 }
 
 /**
- * Numerical roots to n digits.
+ * Approximates the polynomial roots to the requested number of decimal digits.
  *
  * @param fIn - Polynomial to operate on.
  * @param n - Requested decimal precision.
  * @param x - Polynomial generator.
- * @returns Numerical roots to n digits.
+ * @returns The numerical root list.
  * @throws DomainError when a coefficient cannot be evaluated numerically.
  * @see SymPy `sympy.polys.polytools.nroots`
  * @example

@@ -139,11 +139,11 @@ function integerModgcd(f: PolyElement, g: PolyElement): Cofactors {
 }
 
 /**
- * GCD and cofactors in ZZ[x].
+ * Computes the GCD of two univariate integer polynomials and divides it out.
  *
  * @param f - Polynomial to operate on.
  * @param g - Second polynomial operand.
- * @returns GCD and cofactors in ZZ[x].
+ * @returns The GCD and both cofactors.
  * @see SymPy `sympy.polys.modulargcd.modgcd_univariate`
  * @remarks SymPy returns `(x - 1, x**4 + x**3 + x**2 + x + 1, 1)` with tuples for the fixed-length groups.
  * @example
@@ -157,11 +157,11 @@ function integerModgcd(f: PolyElement, g: PolyElement): Cofactors {
 export function modgcdUnivariate(f: PolyElement, g: PolyElement): Cofactors { return integerModgcd(f, g); }
 
 /**
- * GCD and cofactors in ZZ[x, y].
+ * Computes the GCD of two bivariate integer polynomials and divides it out.
  *
  * @param f - Polynomial to operate on.
  * @param g - Second polynomial operand.
- * @returns GCD and cofactors in ZZ[x, y].
+ * @returns The GCD and both cofactors.
  * @see SymPy `sympy.polys.modulargcd.modgcd_bivariate`
  * @remarks SymPy returns `(x + y, x - y, x + y)` with tuples for the fixed-length groups.
  * @example
@@ -201,11 +201,11 @@ function coprimeImages(f: ZPoly, g: ZPoly, n: number): boolean {
 }
 
 /**
- * GCD and cofactors in ZZ[x_1, ..., x_n].
+ * Computes the GCD of multivariate integer polynomials and divides it out.
  *
  * @param f - Polynomial to operate on.
  * @param g - Second polynomial operand.
- * @returns GCD and cofactors in ZZ[x_1, ..., x_n].
+ * @returns The GCD and both cofactors.
  * @throws DomainError when the coefficient domain is not the integers.
  * @see SymPy `sympy.polys.modulargcd.modgcd_multivariate`
  * @remarks SymPy returns `(x + y, x - y, x + y)` with tuples for the fixed-length groups.
@@ -233,12 +233,11 @@ export function modgcdMultivariate(f: PolyElement, g: PolyElement): Cofactors {
 }
 
 /**
- * Monic GCD and cofactors over an algebraic number field.
- * Exact arithmetic in the defining number field certifies every PRS step.
+ * Computes the monic polynomial GCD over the defining number field using exact arithmetic.
  *
  * @param f - Polynomial to operate on.
  * @param g - Second polynomial operand.
- * @returns Monic GCD and cofactors over an algebraic number field.
+ * @returns The GCD and both cofactors.
  * @throws DomainError when the coefficient domain is not algebraic.
  * @see SymPy `sympy.polys.modulargcd.func_field_modgcd`
  * @example

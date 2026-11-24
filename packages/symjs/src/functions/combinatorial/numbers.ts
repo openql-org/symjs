@@ -193,7 +193,8 @@ function partitionNumber(n: number): bigint {
 }
 
 /**
- * Primality test (deterministic Miller-Rabin for 64-bit, trial division otherwise).
+ * Tests primality using deterministic Miller–Rabin for 64-bit inputs and trial division for larger
+ * integers.
  *
  * @param nIn - The integer to test for primality.
  * @returns Whether the integer is prime.
@@ -212,7 +213,7 @@ export function isprime(nIn: ExprLike | bigint): boolean {
 }
 
 /**
- * Jacobi symbol (m/n) for odd positive n.
+ * Computes the Jacobi symbol for an odd positive denominator.
  *
  * @param m - The order.
  * @param n - The index.
@@ -251,11 +252,11 @@ function jacobiInt(mIn: bigint, nIn: bigint): number {
 }
 
 /**
- * Kronecker symbol (a/n).
+ * Computes the Kronecker symbol for the supplied integers.
  *
  * @param a - The first operand.
  * @param n - The index.
- * @returns The Kronecker symbol.
+ * @returns The quadratic character value.
  * @see SymPy `sympy.functions.combinatorial.numbers.kronecker_symbol`
  * @example
  * ```ts
@@ -946,7 +947,7 @@ export const fibonacci = (n: ExprLike, x?: ExprLike): Expr => fn('fibonacci', x 
  * Computes a Lucas number.
  *
  * @param n - The index.
- * @returns A Lucas number.
+ * @returns The Lucas number at the given index.
  * @see SymPy `sympy.functions.combinatorial.numbers.lucas`
  * @example
  * ```ts
@@ -975,7 +976,7 @@ export const tribonacci = (n: ExprLike, x?: ExprLike): Expr => fn('tribonacci', 
  * Counts the integer partitions of a nonnegative integer.
  *
  * @param n - The index.
- * @returns The number of integer partitions of a nonnegative integer.
+ * @returns The partition count.
  * @see SymPy `sympy.functions.combinatorial.numbers.partition`
  * @example
  * ```ts
@@ -996,7 +997,7 @@ function factoredExpr(n: FactoredInteger): Expr {
  * Counts the positive integers up to `n` that are coprime to `n`.
  *
  * @param n - The index.
- * @returns The number of positive integers up to `n` that are coprime to `n`.
+ * @returns Euler's totient at `n`.
  * @see SymPy `sympy.functions.combinatorial.numbers.totient`
  * @example
  * ```ts
@@ -1011,7 +1012,7 @@ export const totientFn = (n: FactoredInteger): Expr => fn('totient', [factoredEx
  * Computes the exponent of the multiplicative group of integers modulo `n`.
  *
  * @param n - The index.
- * @returns The exponent of the multiplicative group of integers modulo `n`.
+ * @returns The Carmichael function at `n`.
  * @see SymPy `sympy.functions.combinatorial.numbers.reduced_totient`
  * @example
  * ```ts
@@ -1026,7 +1027,7 @@ export const reducedTotient = (n: FactoredInteger): Expr => fn('reduced_totient'
  * Computes the Möbius function, zero for integers with a squared prime factor.
  *
  * @param n - The index.
- * @returns The Möbius function, zero for integers with a squared prime factor.
+ * @returns The Möbius value.
  * @see SymPy `sympy.functions.combinatorial.numbers.mobius`
  * @example
  * ```ts
@@ -1054,7 +1055,7 @@ export const mobius = (n: ExprLike): Expr => fn('mobius', [n]);
  */
 export const divisorSigma = (n: ExprLike, k?: ExprLike): Expr => fn('divisor_sigma', k === undefined ? [n] : [n, k]);
 /**
- * Sum of k-th powers of the unitary divisors of n.
+ * Sums the kth powers of the unitary divisors.
  *
  * @param n - The index.
  * @param k - The power to which each divisor is raised.
@@ -1088,7 +1089,7 @@ export const primenu = (n: ExprLike): Expr => fn('primenu', [n]);
  * Counts the prime factors of an integer with multiplicity.
  *
  * @param n - The index.
- * @returns The number of prime factors of an integer with multiplicity.
+ * @returns The prime factor count.
  * @see SymPy `sympy.functions.combinatorial.numbers.primeomega`
  * @example
  * ```ts
@@ -1103,7 +1104,7 @@ export const primeomega = (n: ExprLike): Expr => fn('primeomega', [n]);
  * Counts the primes less than or equal to the argument.
  *
  * @param n - The index.
- * @returns The number of primes less than or equal to the argument.
+ * @returns The prime counting function at the argument.
  * @see SymPy `sympy.functions.combinatorial.numbers.primepi`
  * @example
  * ```ts
@@ -1118,7 +1119,7 @@ export const primepiFn = (n: ExprLike): Expr => fn('primepi', [n]);
  *
  * @param x - The argument of the function.
  * @param p - The dimension.
- * @returns The multivariate gamma function in the given dimension.
+ * @returns The multivariate gamma value.
  * @see SymPy `sympy.functions.special.gamma_functions.multigamma`
  * @example
  * ```ts
@@ -1148,7 +1149,7 @@ export const multigamma = (x: ExprLike, p: ExprLike): Expr => fn('multigamma', [
 export const frac = (x: ExprLike): Expr => fn('frac', [x]);
 
 /**
- * Motzkin numbers M(0), ..., M(n-1) (SymPy motzkin.find_first_n_motzkins).
+ * Lists the first `n` Motzkin numbers, starting with index zero.
  *
  * @experimental May change in a minor release.
  * @param n - The number of terms to return.
@@ -1174,7 +1175,7 @@ export function firstMotzkins(n: number): bigint[] {
 }
 
 /**
- * Motzkin numbers in [x, y] (SymPy motzkin.find_motzkin_numbers_in_range).
+ * Lists the Motzkin numbers in the inclusive interval.
  *
  * @experimental May change in a minor release.
  * @param x - The lower endpoint.
@@ -1255,7 +1256,7 @@ export function motzkin(n: number): bigint {
 }
 
 /**
- * Euler zigzag numbers and their analytic continuation for symbolic inputs.
+ * Computes the Euler zigzag number or its analytic continuation for symbolic input.
  *
  * @param n - The index.
  * @returns The André number at the specified index.
@@ -1369,7 +1370,7 @@ const digitSum = (n: bigint, p: bigint) => {
 };
 
 /**
- * binomial(n, k) modulo m for nonnegative integers (prime-power moduli of moderate size).
+ * Reduces a binomial coefficient modulo an integer using its prime-power factors.
  *
  * @param nIn - The upper binomial argument.
  * @param kIn - The number selected.
@@ -1432,7 +1433,7 @@ function toBig(n: ExprLike | bigint | number): bigint {
 }
 
 /**
- * n is composite, squarefree and p - 1 | n - 1 for each prime p | n (Korselt).
+ * Tests Korselt's criterion for Carmichael numbers.
  *
  * @param nIn - The index.
  * @returns Whether the integer is a Carmichael number.
@@ -1446,11 +1447,11 @@ export function isCarmichael(nIn: ExprLike | bigint | number): boolean {
 }
 
 /**
- * The Carmichael numbers in [x, y).
+ * Finds Carmichael numbers from the lower bound up to the exclusive upper bound.
  *
  * @param x - The lower endpoint.
  * @param y - The upper endpoint.
- * @returns The Carmichael numbers in [x, y).
+ * @returns The numbers in ascending order.
  * @throws RangeError when the integer endpoints do not define a valid range.
  * @see SymPy `sympy.functions.combinatorial.numbers.carmichael.find_carmichael_numbers_in_range`
  */
@@ -1464,10 +1465,10 @@ export function findCarmichaelNumbersInRange(x: ExprLike | bigint | number, y: E
 }
 
 /**
- * The first n Carmichael numbers.
+ * Enumerates Carmichael numbers until the requested count is reached.
  *
  * @param n - The number of terms to return.
- * @returns The first n Carmichael numbers.
+ * @returns The first `n` Carmichael numbers.
  * @see SymPy `sympy.functions.combinatorial.numbers.carmichael.find_first_n_carmichaels`
  */
 export function findFirstNCarmichaels(n: number): bigint[] {
@@ -1530,7 +1531,7 @@ function selections(n: CountingInput, k: IntLike | undefined, replacement: boole
 }
 
 /**
- * Number of combinations of a multiset, optionally allowing replacement.
+ * Counts combinations of a multiset, optionally allowing replacement.
  *
  * @param n - The collection or size being counted.
  * @param k - The selection size.
@@ -1550,7 +1551,7 @@ export function nC(n: CountingInput, k?: IntLike, opts: { replacement?: boolean 
 }
 
 /**
- * Number of distinct ordered selections of a multiset.
+ * Counts distinct ordered selections from a multiset.
  *
  * @param n - The collection or size being counted.
  * @param k - The selection size.
@@ -1570,7 +1571,7 @@ export function nP(n: CountingInput, k?: IntLike, opts: { replacement?: boolean 
 }
 
 /**
- * Number of derangements; brute is accepted as an algorithm hint.
+ * Counts derangements using the optional algorithm hint.
  *
  * @param i - The collection or size being counted.
  * @param opts - `n` gives the size or `m` the multiplicities instead of a collection. `brute` is accepted as an algorithm hint.
@@ -1622,7 +1623,7 @@ export function nD(i?: CountingInput, opts: { brute?: boolean; n?: IntLike; m?: 
 }
 
 /**
- * Number of partitions of a multiset; an integer denotes identical items.
+ * Counts multiset partitions, treating an integer as a collection of identical items.
  *
  * @param n - The collection or size being counted.
  * @param k - The number of blocks.
@@ -1646,7 +1647,7 @@ export function nT(n: CountingInput, k?: IntLike): bigint {
 }
 
 /**
- * Stirling numbers of either kind, including signed and reduced variants.
+ * Computes Stirling numbers of either kind, including signed and reduced variants.
  *
  * @param nIn - The index.
  * @param kIn - The number of cycles or blocks.

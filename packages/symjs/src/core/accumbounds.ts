@@ -68,7 +68,7 @@ export class AccumBoundsNode extends ExtensionExpr {
     return accumBounds(at(args, 0), at(args, 1));
   }
   /**
-   * The lower bound.
+   * Gives the lower endpoint of the accumulation interval.
    *
    * @returns The lower bound.
    * @see SymPy `sympy.calculus.accumulationbounds.AccumulationBounds.min`
@@ -77,7 +77,7 @@ export class AccumBoundsNode extends ExtensionExpr {
     return at(this.args, 0);
   }
   /**
-   * The upper bound.
+   * Gives the upper endpoint of the accumulation interval.
    *
    * @returns The upper bound.
    * @see SymPy `sympy.calculus.accumulationbounds.AccumulationBounds.max`
@@ -86,7 +86,7 @@ export class AccumBoundsNode extends ExtensionExpr {
     return at(this.args, 1);
   }
   /**
-   * max - min (SymPy delta).
+   * Measures the width of the accumulation interval.
    *
    * @returns The interval width.
    * @see SymPy `sympy.calculus.accumulationbounds.AccumulationBounds.delta`
@@ -95,7 +95,7 @@ export class AccumBoundsNode extends ExtensionExpr {
     return add(this.max, mul(-1, this.min));
   }
   /**
-   * (min + max)/2 (SymPy mid).
+   * Averages the two endpoints of the accumulation interval.
    *
    * @returns The interval midpoint.
    * @see SymPy `sympy.calculus.accumulationbounds.AccumulationBounds.mid`
@@ -112,17 +112,17 @@ export class AccumBoundsNode extends ExtensionExpr {
     return true;
   }
   /**
-   * A real interval is its own conjugate and adjoint.
+   * Conjugates the interval, whose endpoints are real.
    *
-   * @returns A real interval is its own conjugate and adjoint.
+   * @returns The interval itself.
    */
   override conjugateSelf(): Expr {
     return this;
   }
   /**
-   * Computes the adjoint of this node.
+   * Takes the Hermitian adjoint of the real interval.
    *
-   * @returns The adjoint of this node.
+   * @returns The interval itself.
    */
   override adjointSelf(): Expr {
     return this;
@@ -137,7 +137,7 @@ export class AccumBoundsNode extends ExtensionExpr {
     return `\\left\\langle ${print(this.min)}, ${print(this.max)}\\right\\rangle`;
   }
   /**
-   * x lies in the interval (SymPy `x in AccumBounds(...)`).
+   * Tests whether the value belongs to the accumulation interval.
    *
    * @param x - The argument of the function.
    * @returns Whether the point belongs to the interval.
@@ -153,10 +153,10 @@ export class AccumBoundsNode extends ExtensionExpr {
     throw new TypeError('Cannot determine membership in AccumBounds');
   }
   /**
-   * The intersection with another AccumBounds, an Interval or a FiniteSet (SymPy intersection).
+   * Finds the values shared with another accumulation interval, interval, or finite set.
    *
    * @param other - The other operand.
-   * @returns The intersection with another AccumBounds, an Interval or a FiniteSet (SymPy intersection).
+   * @returns The intersection.
    * @see SymPy `sympy.calculus.accumulationbounds.AccumulationBounds.intersection`
    */
   intersection(other: Expr): Expr {
@@ -170,7 +170,7 @@ export class AccumBoundsNode extends ExtensionExpr {
     return impl.setIntersection(impl.interval(this.min, this.max), other);
   }
   /**
-   * The union with an overlapping AccumBounds (SymPy union).
+   * Merges this interval with an overlapping accumulation interval.
    *
    * @param other - The other operand.
    * @returns The resulting set.

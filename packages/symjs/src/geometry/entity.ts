@@ -104,9 +104,9 @@ export class GeometryEntity extends ExtensionExpr {
     return new GeometryEntity(this.name, args);
   }
   /**
-   * The entity is a point.
+   * Indicates whether this geometric entity represents a point.
    *
-   * @returns The entity is a point.
+   * @returns The point flag.
    * @see SymPy `sympy.geometry.entity.GeometryEntity.is_Point`
    */
   get isPoint(): boolean {
@@ -114,9 +114,9 @@ export class GeometryEntity extends ExtensionExpr {
   }
 
   /**
-   * The number of coordinates of the space the entity lives in.
+   * Counts the coordinates of the entity's ambient space.
    *
-   * @returns The number of coordinates of the space the entity lives in.
+   * @returns The ambient dimension.
    * @throws NotImplementedError when the entity does not specify its ambient dimension.
    * @see SymPy `sympy.geometry.entity.GeometryEntity.ambient_dimension`
    */
@@ -125,9 +125,9 @@ export class GeometryEntity extends ExtensionExpr {
   }
 
   /**
-   * The rectangle (xmin, ymin, xmax, ymax) bounding a 2D entity.
+   * Finds the axis-aligned bounding rectangle of a two-dimensional entity.
    *
-   * @returns The rectangle (xmin, ymin, xmax, ymax) bounding a 2D entity.
+   * @returns The bounds `[xmin, ymin, xmax, ymax]`.
    * @throws NotImplementedError when the entity does not define bounds.
    * @see SymPy `sympy.geometry.entity.GeometryEntity.bounds`
    */
@@ -136,7 +136,7 @@ export class GeometryEntity extends ExtensionExpr {
   }
 
   /**
-   * O is a part of the entity. The base rule only knows entities of the same class.
+   * Tests whether the operand is part of this entity.
    *
    * @param o - Point or entity tested for containment.
    * @returns Whether the operand belongs to the entity.
@@ -148,11 +148,10 @@ export class GeometryEntity extends ExtensionExpr {
   }
 
   /**
-   * The point lies inside the entity (true), outside or on it (false), or it cannot be decided
-   * ('unknown').
+   * Tests for strict interior membership, excluding the boundary.
    *
    * @param _p - Point used in the geometric construction or comparison.
-   * @returns The point lies inside the entity (true), outside or on it (false), or it cannot be decided ('unknown').
+   * @returns A truth value, possibly `'unknown'`.
    * @throws NotImplementedError when the entity has no enclosure test.
    */
   enclosesPoint(_p: PointInput): boolean | 'unknown' {
@@ -160,7 +159,7 @@ export class GeometryEntity extends ExtensionExpr {
   }
 
   /**
-   * O lies inside this entity (no point of o is outside or on the boundary).
+   * Tests whether the entire operand lies strictly inside this entity.
    *
    * @param o - Entity tested for strict enclosure.
    * @returns Whether the entity strictly encloses the operand.
@@ -171,8 +170,7 @@ export class GeometryEntity extends ExtensionExpr {
   }
 
   /**
-   * The part of SymPy GeometryEntity.encloses that depends on the class of the enclosed entity
-   * (points, segments, lines, ellipses and polygons override it).
+   * Tests enclosure using the geometry of the enclosed entity.
    *
    * @param _container - Geometric entity tested for enclosure.
    * @returns Whether the supplied entity encloses this one.
@@ -183,7 +181,7 @@ export class GeometryEntity extends ExtensionExpr {
   }
 
   /**
-   * The entities are the same (structural equality unless a class knows better).
+   * Tests whether the two entities represent the same geometry.
    *
    * @param o - Object to compare with this one.
    * @returns Whether the operands are equal.
@@ -194,10 +192,10 @@ export class GeometryEntity extends ExtensionExpr {
   }
 
   /**
-   * The shortest distance to o.
+   * Computes the minimum distance to the other entity.
    *
    * @param o - Entity to measure the distance to.
-   * @returns The shortest distance to o.
+   * @returns The shortest distance.
    * @throws TypeError when distance is undefined for the supplied entity.
    */
   distance(o: unknown): Expr {
@@ -205,10 +203,10 @@ export class GeometryEntity extends ExtensionExpr {
   }
 
   /**
-   * The entities that this entity and o have in common.
+   * Finds the geometry shared by this entity and the operand.
    *
    * @param _o - Entity to intersect with this one.
-   * @returns The entities that this entity and o have in common.
+   * @returns The intersection entities.
    * @throws NotImplementedError when the entity has no intersection rule.
    * @see SymPy `sympy.geometry.entity.GeometryEntity.intersection`
    */
@@ -217,10 +215,10 @@ export class GeometryEntity extends ExtensionExpr {
   }
 
   /**
-   * The entities are similar: one can be scaled uniformly to the other.
+   * Tests whether one entity can be scaled uniformly to the other.
    *
    * @param _other - Entity compared for similarity.
-   * @returns The entities are similar: one can be scaled uniformly to the other.
+   * @returns The similarity test result.
    * @throws NotImplementedError when the entity has no similarity test.
    * @see SymPy `sympy.geometry.entity.GeometryEntity.is_similar`
    */
@@ -229,10 +227,10 @@ export class GeometryEntity extends ExtensionExpr {
   }
 
   /**
-   * A point on the entity as a function of a parameter.
+   * Parametrizes a point on the entity.
    *
    * @param _parameter - Symbol or name used for the parametrization.
-   * @returns A point on the entity as a function of a parameter.
+   * @returns A point expressed in the parameter.
    * @throws NotImplementedError when the entity has no parametrization.
    */
   arbitraryPoint(_parameter?: string | Sym | null): Expr {
@@ -245,10 +243,10 @@ export class GeometryEntity extends ExtensionExpr {
   }
 
   /**
-   * The reflection of the entity in a 2D line.
+   * Reflects the entity across a line in the plane.
    *
    * @param line - Line defining the direction or reflection axis.
-   * @returns The reflection of the entity in a 2D line.
+   * @returns The reflected entity.
    * @see SymPy `sympy.geometry.entity.GeometryEntity.reflect`
    */
   reflect(line: ReflectionLine): GeometryEntity {
@@ -279,11 +277,11 @@ export class GeometryEntity extends ExtensionExpr {
   }
 
   /**
-   * The entity rotated counterclockwise by angle about pt (the origin by default).
+   * Rotates the entity counterclockwise about the specified point, defaulting to the origin.
    *
    * @param angle - Rotation angle in radians.
    * @param pt - Center of rotation, defaulting to the origin.
-   * @returns The entity rotated counterclockwise by angle about pt (the origin by default).
+   * @returns The rotated entity.
    * @see SymPy `sympy.geometry.entity.GeometryEntity.rotate`
    */
   rotate(angle: ExprLike, pt?: PointInput | null): GeometryEntity {
@@ -291,12 +289,12 @@ export class GeometryEntity extends ExtensionExpr {
   }
 
   /**
-   * The entity scaled by x and y about pt (the origin by default).
+   * Scales the entity along both axes about the specified point, defaulting to the origin.
    *
    * @param x - Scale factor along the x axis.
    * @param y - Scale factor along the y axis.
    * @param pt - Fixed point of the scaling, defaulting to the origin.
-   * @returns The entity scaled by x and y about pt (the origin by default).
+   * @returns The scaled entity.
    * @see SymPy `sympy.geometry.entity.GeometryEntity.scale`
    */
   scale(x: ExprLike = 1, y: ExprLike = 1, pt?: PointInput | null): GeometryEntity {
@@ -308,11 +306,11 @@ export class GeometryEntity extends ExtensionExpr {
   }
 
   /**
-   * The entity shifted by x and y.
+   * Translates the entity by the given coordinate offsets.
    *
    * @param x - Displacement along the x axis.
    * @param y - Displacement along the y axis.
-   * @returns The entity shifted by x and y.
+   * @returns The shifted entity.
    * @see SymPy `sympy.geometry.entity.GeometryEntity.translate`
    */
   translate(x: ExprLike = 0, y: ExprLike = 0): GeometryEntity {
@@ -340,7 +338,7 @@ export class GeometryEntity extends ExtensionExpr {
   }
 
   /**
-   * The entity with its coordinates evaluated numerically.
+   * Evaluates the entity's coordinates numerically.
    *
    * @param evalfArg - Function that evaluates an operand numerically.
    * @param _dps - Decimal digits of numerical precision.
@@ -396,9 +394,9 @@ export class GeometrySetNode extends SetExpr {
     this.args = [entity];
   }
   /**
-   * The class name used when printing the geometric set.
+   * Identifies the class name shown when the set is printed.
    *
-   * @returns The class name used when printing the geometric set.
+   * @returns The display name.
    */
   get className(): string {
     return this.entity.name;
@@ -425,7 +423,7 @@ export class GeometrySetNode extends SetExpr {
     return new GeometrySetNode(cast(at(args, 0), GeometryEntity));
   }
   /**
-   * A finite set is contained when all its points are.
+   * Tests whether every point in the finite set belongs to the entity.
    *
    * @param x - Candidate point of the set.
    * @returns The truth value, or `'unknown'` when the relation cannot be decided.
@@ -434,10 +432,10 @@ export class GeometrySetNode extends SetExpr {
     return x instanceof FiniteSet ? x.args.every((point) => this.entity.contains(point)) : this.entity.contains(x);
   }
   /**
-   * The common points as a finite set, with the other common entities.
+   * Combines common points into a finite set alongside other shared entities.
    *
    * @param other - Set whose common points with this entity are sought.
-   * @returns The common points as a finite set, with the other common entities.
+   * @returns The intersection as a set.
    */
   override intersectSelf(other: SetExpr): SetExpr | undefined {
     // (SymPy distributes the intersection over a union before this rule applies)
@@ -453,10 +451,10 @@ export class GeometrySetNode extends SetExpr {
     return union(...common.filter((e) => !e.isPoint).map((e) => new GeometrySetNode(e)), finiteSet(...common.filter((e) => e.isPoint)));
   }
   /**
-   * The points and the sets that this set contains are absorbed.
+   * Absorbs points and sets already contained in this geometric set.
    *
    * @param other - Set to combine with the points of this entity.
-   * @returns The points and the sets that this set contains are absorbed.
+   * @returns The simplified union when applicable.
    */
   override unionSelf(other: SetExpr): SetExpr | undefined {
     if (other instanceof FiniteSet) {
@@ -469,10 +467,10 @@ export class GeometrySetNode extends SetExpr {
 }
 
 /**
- * The set of the points of a geometric entity, for Union and Intersection.
+ * Represents the points of a geometric entity as a set for set operations.
  *
  * @param entity - Geometric entity whose points are considered.
- * @returns The set of the points of a geometric entity, for Union and Intersection.
+ * @returns A geometric set.
  */
 export function geometrySet(entity: GeometryEntity): SetExpr {
   return new GeometrySetNode(entity);

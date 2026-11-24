@@ -335,7 +335,7 @@ abstract class CFunctionBase extends ExtensionExpr {
  */
 export abstract class CFunction extends CFunctionBase {
   /**
-   * Whether the function supports Taylor expansion in its argument.
+   * Indicates whether the function admits Taylor expansion in its argument.
    *
    * @returns Whether a Taylor expansion in the argument is supported.
    */
@@ -351,7 +351,7 @@ export abstract class CFunction extends CFunctionBase {
  */
 export abstract class CBooleanFunction extends CFunctionBase {
   /**
-   * The set of values of the free symbol where the predicate holds.
+   * Finds the values of the free symbol that satisfy the predicate.
    *
    * @returns The set of real solutions.
    */
@@ -359,9 +359,9 @@ export abstract class CBooleanFunction extends CFunctionBase {
     return impl.asSet ? impl.asSet(this) : notLoaded('asSet', 'solvers');
   }
   /**
-   * The symbols used as booleans (none: the arguments are numbers).
+   * Lists the Boolean symbols in a call whose arguments are numeric.
    *
-   * @returns The symbols used as booleans (none: the arguments are numbers).
+   * @returns An empty symbol map.
    */
   get binarySymbols(): Map<string, Expr> {
     return binarySymbolsOf(this);
@@ -711,8 +711,7 @@ export const log10: CFunctionClass = /* @__PURE__ */ defineClass('log10', {
 });
 
 /**
- * The square root as a function (sqrt(x) is the power
- * x**(1/2)). Like SymPy, it stays unevaluated, also numerically.
+ * Represents the principal square root as an unevaluated function, including during numeric evaluation.
  *
  * @param args - The single numerical or symbolic argument.
  * @returns The symbolic root function.
@@ -734,8 +733,7 @@ export const Sqrt: CFunctionClass = /* @__PURE__ */ defineClass('Sqrt', {
 });
 
 /**
- * The cube root as a function, the principal value
- * x**(1/3). Like SymPy, it stays unevaluated, also numerically.
+ * Represents the principal cube root as an unevaluated function, including during numeric evaluation.
  *
  * @param args - The single numerical or symbolic argument.
  * @returns The symbolic root function.
@@ -784,7 +782,7 @@ export const hypot: CFunctionClass = /* @__PURE__ */ defineClass('hypot', {
 });
 
 /**
- * True for nan, false for any other number.
+ * Tests whether the argument is NaN.
  *
  * @param args - The single numerical or symbolic argument.
  * @returns The Boolean result or the unevaluated predicate.
@@ -803,7 +801,7 @@ export const isnan: CBooleanFunctionClass = /* @__PURE__ */ defineClass('isnan',
 });
 
 /**
- * True for an infinite x, false for a finite one.
+ * Tests whether the numeric argument is infinite.
  *
  * @param args - The single numerical or symbolic argument.
  * @returns The Boolean result or the unevaluated predicate.

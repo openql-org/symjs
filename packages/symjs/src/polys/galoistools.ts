@@ -523,12 +523,12 @@ function factorSqf(fIn: P, p: bigint, method: string = 'zassenhaus'): [bigint, P
 // ---------------------------------------------------------------------------
 
 /**
- * Chinese remainder theorem: the integer congruent to U[i] modulo M[i].
+ * Solves simultaneous congruences for the given residues and moduli.
  *
  * @param U - Residues to combine.
  * @param M - Pairwise coprime moduli.
  * @param _K - Integer coefficient domain, normally `ZZ`.
- * @returns Chinese remainder theorem: the integer congruent to U[i] modulo M[i].
+ * @returns The combined integer residue.
  * @see SymPy `sympy.polys.galoistools.gf_crt`
  * @example
  * ```ts
@@ -550,11 +550,11 @@ export function gfCrt(U: readonly IntLike[], M: readonly IntLike[], _K: Domain =
 }
 
 /**
- * The first part of the Chinese remainder theorem: [p, E, S].
+ * Precomputes the modulus products and inverses used in Chinese remainder reconstruction.
  *
  * @param M - Pairwise coprime moduli.
  * @param _K - Integer coefficient domain, normally `ZZ`.
- * @returns The first part of the Chinese remainder theorem: [p, E, S].
+ * @returns The product, complementary products, and inverses.
  * @see SymPy `sympy.polys.galoistools.gf_crt1`
  * @remarks SymPy returns `(912285, [9215, 9405, 9603], [62, 24, 12])` with tuples for the fixed-length groups.
  * @example
@@ -573,7 +573,7 @@ export function gfCrt1(M: readonly IntLike[], _K: Domain = ZZ): [bigint, bigint[
 }
 
 /**
- * The second part of the Chinese remainder theorem.
+ * Combines residues using the precomputed Chinese remainder data.
  *
  * @param U - Residues to combine.
  * @param M - Pairwise coprime moduli.
@@ -581,7 +581,7 @@ export function gfCrt1(M: readonly IntLike[], _K: Domain = ZZ): [bigint, bigint[
  * @param E - Partial products of the moduli.
  * @param S - Modular inverses of the partial products.
  * @param _K - Integer coefficient domain, normally `ZZ`.
- * @returns The second part of the Chinese remainder theorem.
+ * @returns The reconstructed residue.
  * @see SymPy `sympy.polys.galoistools.gf_crt2`
  * @example
  * ```ts
@@ -598,11 +598,11 @@ export function gfCrt2(U: readonly IntLike[], M: readonly IntLike[], p: IntLike,
 }
 
 /**
- * The symmetric representative of a modulo p, in (-p/2, p/2].
+ * Chooses the representative of the residue class in `(-p/2, p/2]`.
  *
  * @param a - Ground coefficient.
  * @param p - Prime modulus of the coefficient field.
- * @returns The symmetric representative of a modulo p, in (-p/2, p/2].
+ * @returns The symmetric integer residue.
  * @see SymPy `sympy.polys.galoistools.gf_int`
  * @example
  * ```ts
@@ -618,7 +618,7 @@ export function gfInt(a: IntLike, p: IntLike): bigint {
 }
 
 /**
- * The degree of f; -1 for the zero polynomial.
+ * Computes the polynomial degree, assigning minus one to the zero polynomial.
  *
  * @param f - Polynomial as coefficients in descending degree.
  * @returns The degree of f.
@@ -636,7 +636,7 @@ export function gfDegree(f: readonly IntLike[]): number {
 }
 
 /**
- * The leading coefficient.
+ * Extracts the coefficient of the leading term.
  *
  * @param f - Polynomial as coefficients in descending degree.
  * @param _K - Integer coefficient domain, normally `ZZ`.
@@ -654,7 +654,7 @@ export function gfLC(f: readonly IntLike[], _K: Domain = ZZ): bigint {
 }
 
 /**
- * The trailing coefficient.
+ * Extracts the coefficient of degree zero.
  *
  * @param f - Polynomial as coefficients in descending degree.
  * @param _K - Integer coefficient domain, normally `ZZ`.
@@ -672,7 +672,7 @@ export function gfTC(f: readonly IntLike[], _K: Domain = ZZ): bigint {
 }
 
 /**
- * f without leading zeros.
+ * Strips leading zeros from the coefficient list.
  *
  * @param f - Polynomial as coefficients in descending degree.
  * @returns The coefficient list, leading coefficient first.
@@ -689,7 +689,7 @@ export function gfStrip(f: readonly IntLike[]): bigint[] {
 }
 
 /**
- * f with its coefficients reduced modulo p.
+ * Reduces every polynomial coefficient modulo the prime.
  *
  * @param f - Polynomial as coefficients in descending degree.
  * @param p - Prime modulus of the coefficient field.
@@ -707,7 +707,7 @@ export function gfTrunc(f: readonly IntLike[], p: IntLike): bigint[] {
 }
 
 /**
- * f with its coefficients converted to K and reduced modulo p.
+ * Converts coefficients to the domain and reduces them modulo the prime.
  *
  * @param f - Polynomial as coefficients in descending degree.
  * @param p - Prime modulus of the coefficient field.
@@ -726,12 +726,12 @@ export function gfNormal(f: readonly IntLike[], p: IntLike, _K: Domain = ZZ): bi
 }
 
 /**
- * The polynomial of a {degree: coefficient} map, reduced modulo p.
+ * Converts degree-indexed integer coefficients to a dense polynomial modulo `p`.
  *
  * @param f - Polynomial as coefficients in descending degree.
  * @param p - Prime modulus of the coefficient field.
  * @param _K - Integer coefficient domain, normally `ZZ`.
- * @returns The polynomial of a {degree: coefficient} map, reduced modulo p.
+ * @returns The reduced coefficient list.
  * @see SymPy `sympy.polys.galoistools.gf_from_dict`
  * @example
  * ```ts
@@ -751,12 +751,12 @@ export function gfFromDict(f: ReadonlyMap<IntLike | readonly IntLike[], IntLike>
 }
 
 /**
- * The {degree: coefficient} map of f, with symmetric coefficients by default.
+ * Indexes the nonzero terms by degree using symmetric representatives by default.
  *
  * @param f - Polynomial as coefficients in descending degree.
  * @param p - Prime modulus of the coefficient field.
  * @param symmetric - Use signed representatives of residue classes.
- * @returns The {degree: coefficient} map of f, with symmetric coefficients by default.
+ * @returns A degree-to-coefficient map.
  * @see SymPy `sympy.polys.galoistools.gf_to_dict`
  * @example
  * ```ts
@@ -778,11 +778,11 @@ export function gfToDict(f: readonly IntLike[], p: IntLike, symmetric = true): M
 }
 
 /**
- * An integer polynomial reduced modulo p.
+ * Reduces an integer polynomial over the prime field.
  *
  * @param f - Polynomial as coefficients in descending degree.
  * @param p - Prime modulus of the coefficient field.
- * @returns An integer polynomial reduced modulo p.
+ * @returns The coefficient list modulo `p`.
  * @see SymPy `sympy.polys.galoistools.gf_from_int_poly`
  * @example
  * ```ts
@@ -796,12 +796,12 @@ export function gfFromIntPoly(f: readonly IntLike[], p: IntLike): bigint[] {
 }
 
 /**
- * The integer polynomial of f, with symmetric coefficients by default.
+ * Lifts finite-field coefficients to integers, using symmetric representatives by default.
  *
  * @param f - Polynomial as coefficients in descending degree.
  * @param p - Prime modulus of the coefficient field.
  * @param symmetric - Use signed representatives of residue classes.
- * @returns The integer polynomial of f, with symmetric coefficients by default.
+ * @returns The integer polynomial.
  * @see SymPy `sympy.polys.galoistools.gf_to_int_poly`
  * @example
  * ```ts
@@ -816,12 +816,12 @@ export function gfToIntPoly(f: readonly IntLike[], p: IntLike, symmetric = true)
 }
 
 /**
- * -f.
+ * Negates every coefficient of the polynomial.
  *
  * @param f - Polynomial as coefficients in descending degree.
  * @param p - Prime modulus of the coefficient field.
  * @param _K - Integer coefficient domain, normally `ZZ`.
- * @returns The coefficient list, leading coefficient first.
+ * @returns The additive inverse.
  * @see SymPy `sympy.polys.galoistools.gf_neg`
  * @example
  * ```ts
@@ -835,7 +835,7 @@ export function gfNeg(f: readonly IntLike[], p: IntLike, _K: Domain = ZZ): bigin
 }
 
 /**
- * f + a for a ground element a.
+ * Adds a ground element to the polynomial's constant term.
  *
  * @param f - Polynomial as coefficients in descending degree.
  * @param a - Ground coefficient.
@@ -855,7 +855,7 @@ export function gfAddGround(f: readonly IntLike[], a: IntLike, p: IntLike, _K: D
 }
 
 /**
- * f - a for a ground element a.
+ * Subtracts a ground element from the polynomial's constant term.
  *
  * @param f - Polynomial as coefficients in descending degree.
  * @param a - Ground coefficient.
@@ -875,7 +875,7 @@ export function gfSubGround(f: readonly IntLike[], a: IntLike, p: IntLike, _K: D
 }
 
 /**
- * f * a for a ground element a.
+ * Multiplies all coefficients by a ground element.
  *
  * @param f - Polynomial as coefficients in descending degree.
  * @param a - Ground coefficient.
@@ -895,7 +895,7 @@ export function gfMulGround(f: readonly IntLike[], a: IntLike, p: IntLike, _K: D
 }
 
 /**
- * f / a for a ground element a.
+ * Divides all coefficients by a nonzero ground element.
  *
  * @param f - Polynomial as coefficients in descending degree.
  * @param a - Ground coefficient.
@@ -916,13 +916,13 @@ export function gfQuoGround(f: readonly IntLike[], a: IntLike, p: IntLike, _K: D
 }
 
 /**
- * f + g.
+ * Adds the corresponding coefficients of two polynomials.
  *
  * @param f - Polynomial as coefficients in descending degree.
  * @param g - Polynomial operand as coefficients in descending degree.
  * @param p - Prime modulus of the coefficient field.
  * @param _K - Integer coefficient domain, normally `ZZ`.
- * @returns The coefficient list, leading coefficient first.
+ * @returns The sum polynomial.
  * @see SymPy `sympy.polys.galoistools.gf_add`
  * @example
  * ```ts
@@ -936,13 +936,13 @@ export function gfAdd(f: readonly IntLike[], g: readonly IntLike[], p: IntLike, 
 }
 
 /**
- * f - g.
+ * Subtracts the second polynomial from the first.
  *
  * @param f - Polynomial as coefficients in descending degree.
  * @param g - Polynomial operand as coefficients in descending degree.
  * @param p - Prime modulus of the coefficient field.
  * @param _K - Integer coefficient domain, normally `ZZ`.
- * @returns The coefficient list, leading coefficient first.
+ * @returns The difference polynomial.
  * @see SymPy `sympy.polys.galoistools.gf_sub`
  * @example
  * ```ts
@@ -956,7 +956,7 @@ export function gfSub(f: readonly IntLike[], g: readonly IntLike[], p: IntLike, 
 }
 
 /**
- * f * g.
+ * Multiplies polynomials over the prime field.
  *
  * @param f - Polynomial as coefficients in descending degree.
  * @param g - Polynomial operand as coefficients in descending degree.
@@ -976,12 +976,12 @@ export function gfMul(f: readonly IntLike[], g: readonly IntLike[], p: IntLike, 
 }
 
 /**
- * f**2.
+ * Multiplies the polynomial by itself.
  *
  * @param f - Polynomial as coefficients in descending degree.
  * @param p - Prime modulus of the coefficient field.
  * @param _K - Integer coefficient domain, normally `ZZ`.
- * @returns The coefficient list, leading coefficient first.
+ * @returns The squared polynomial.
  * @see SymPy `sympy.polys.galoistools.gf_sqr`
  * @example
  * ```ts
@@ -995,14 +995,14 @@ export function gfSqr(f: readonly IntLike[], p: IntLike, _K: Domain = ZZ): bigin
 }
 
 /**
- * f + g*h.
+ * Adds the product of the last two polynomials to the first.
  *
  * @param f - Polynomial as coefficients in descending degree.
  * @param g - Polynomial operand as coefficients in descending degree.
  * @param h - Polynomial operand as coefficients in descending degree.
  * @param p - Prime modulus of the coefficient field.
  * @param _K - Integer coefficient domain, normally `ZZ`.
- * @returns The coefficient list, leading coefficient first.
+ * @returns The polynomial `f + g*h`.
  * @see SymPy `sympy.polys.galoistools.gf_add_mul`
  * @example
  * ```ts
@@ -1017,14 +1017,14 @@ export function gfAddMul(f: readonly IntLike[], g: readonly IntLike[], h: readon
 }
 
 /**
- * f - g*h.
+ * Subtracts the product of the last two polynomials from the first.
  *
  * @param f - Polynomial as coefficients in descending degree.
  * @param g - Polynomial operand as coefficients in descending degree.
  * @param h - Polynomial operand as coefficients in descending degree.
  * @param p - Prime modulus of the coefficient field.
  * @param _K - Integer coefficient domain, normally `ZZ`.
- * @returns The coefficient list, leading coefficient first.
+ * @returns The polynomial `f - g*h`.
  * @see SymPy `sympy.polys.galoistools.gf_sub_mul`
  * @example
  * ```ts
@@ -1039,12 +1039,12 @@ export function gfSubMul(f: readonly IntLike[], g: readonly IntLike[], h: readon
 }
 
 /**
- * The product of a factorization [[f, k], ...] or [lc, [[f, k], ...]].
+ * Multiplies the factors to their specified powers and applies the optional leading coefficient.
  *
  * @param F - Factor and multiplicity pairs, optionally preceded by a leading coefficient.
  * @param p - Prime modulus of the coefficient field.
  * @param _K - Integer coefficient domain, normally `ZZ`.
- * @returns The product of a factorization [[f, k], ...] or [lc, [[f, k], ...]].
+ * @returns The expanded polynomial.
  * @see SymPy `sympy.polys.galoistools.gf_expand`
  * @example
  * ```ts
@@ -1062,13 +1062,13 @@ export function gfExpand(F: GFFactorization | readonly [IntLike, GFFactorization
 }
 
 /**
- * Division with remainder: [quotient, remainder].
+ * Divides polynomials over the prime field.
  *
  * @param f - Polynomial as coefficients in descending degree.
  * @param g - Polynomial operand as coefficients in descending degree.
  * @param p - Prime modulus of the coefficient field.
  * @param _K - Integer coefficient domain, normally `ZZ`.
- * @returns Division with remainder: [quotient, remainder].
+ * @returns The quotient and remainder.
  * @throws RangeError when the divisor is zero.
  * @see SymPy `sympy.polys.galoistools.gf_div`
  * @remarks SymPy returns `([1, 1], [1])` with tuples for the fixed-length groups.
@@ -1084,13 +1084,13 @@ export function gfDiv(f: readonly IntLike[], g: readonly IntLike[], p: IntLike, 
 }
 
 /**
- * The remainder of f / g.
+ * Computes what remains after dividing `f` by `g` over the prime field.
  *
  * @param f - Polynomial as coefficients in descending degree.
  * @param g - Polynomial operand as coefficients in descending degree.
  * @param p - Prime modulus of the coefficient field.
  * @param _K - Integer coefficient domain, normally `ZZ`.
- * @returns The remainder of f / g.
+ * @returns The remainder polynomial.
  * @throws RangeError when the divisor is zero.
  * @see SymPy `sympy.polys.galoistools.gf_rem`
  * @example
@@ -1105,13 +1105,13 @@ export function gfRem(f: readonly IntLike[], g: readonly IntLike[], p: IntLike, 
 }
 
 /**
- * The quotient of f / g.
+ * Retains the quotient when dividing `f` by `g` over the prime field.
  *
  * @param f - Polynomial as coefficients in descending degree.
  * @param g - Polynomial operand as coefficients in descending degree.
  * @param p - Prime modulus of the coefficient field.
  * @param _K - Integer coefficient domain, normally `ZZ`.
- * @returns The quotient of f / g.
+ * @returns The quotient polynomial.
  * @throws RangeError when the divisor is zero.
  * @see SymPy `sympy.polys.galoistools.gf_quo`
  * @example
@@ -1127,7 +1127,7 @@ export function gfQuo(f: readonly IntLike[], g: readonly IntLike[], p: IntLike, 
 }
 
 /**
- * The exact quotient f / g; throws ExactQuotientFailed when g does not divide f.
+ * Divides exactly over the prime field, raising `ExactQuotientFailed` for a nonzero remainder.
  *
  * @param f - Polynomial as coefficients in descending degree.
  * @param g - Polynomial operand as coefficients in descending degree.
@@ -1151,7 +1151,7 @@ export function gfExquo(f: readonly IntLike[], g: readonly IntLike[], p: IntLike
 }
 
 /**
- * f * x**n.
+ * Shifts the polynomial by multiplying by a power of its generator.
  *
  * @param f - Polynomial as coefficients in descending degree.
  * @param n - Nonnegative integer exponent or shift.
@@ -1171,12 +1171,12 @@ export function gfLshift(f: readonly IntLike[], n: IntLike, _K: Domain = ZZ): bi
 }
 
 /**
- * [f // x**n, f % x**n].
+ * Splits the polynomial into its quotient and remainder on division by `x**n`.
  *
  * @param f - Polynomial as coefficients in descending degree.
  * @param n - Nonnegative integer exponent or shift.
  * @param _K - Integer coefficient domain, normally `ZZ`.
- * @returns [f // x**n, f % x**n].
+ * @returns The shifted polynomial and its low-degree tail.
  * @see SymPy `sympy.polys.galoistools.gf_rshift`
  * @remarks SymPy returns `([1, 2], [3, 4, 0])` with tuples for the fixed-length groups.
  * @example
@@ -1193,7 +1193,7 @@ export function gfRshift(f: readonly IntLike[], n: IntLike, _K: Domain = ZZ): [b
 }
 
 /**
- * f**n by repeated squaring.
+ * Raises the polynomial to an integer power by repeated squaring.
  *
  * @param f - Polynomial as coefficients in descending degree.
  * @param n - Nonnegative integer exponent or shift.
@@ -1213,12 +1213,12 @@ export function gfPow(f: readonly IntLike[], n: IntLike, p: IntLike, _K: Domain 
 }
 
 /**
- * The powers x**(i*p) modulo g, i = 0 .. deg(g) - 1.
+ * Computes `x**(i*p)` modulo `g` for each basis degree below the degree of `g`.
  *
  * @param g - Polynomial operand as coefficients in descending degree.
  * @param p - Prime modulus of the coefficient field.
  * @param _K - Integer coefficient domain, normally `ZZ`.
- * @returns The powers x**(i*p) modulo g, i = 0 .. deg(g) - 1.
+ * @returns The Frobenius images of the monomials.
  * @see SymPy `sympy.polys.galoistools.gf_frobenius_monomial_base`
  * @example
  * ```ts
@@ -1232,7 +1232,7 @@ export function gfFrobeniusMonomialBase(g: readonly IntLike[], p: IntLike, _K: D
 }
 
 /**
- * f**p modulo g from the Frobenius monomial base b.
+ * Applies the Frobenius map modulo the polynomial using the supplied monomial images.
  *
  * @param f - Polynomial as coefficients in descending degree.
  * @param g - Polynomial operand as coefficients in descending degree.
@@ -1253,7 +1253,7 @@ export function gfFrobeniusMap(f: readonly IntLike[], g: readonly IntLike[], b: 
 }
 
 /**
- * f**n modulo g.
+ * Raises the polynomial to the specified power modulo the divisor.
  *
  * @param f - Polynomial as coefficients in descending degree.
  * @param n - Nonnegative integer exponent or shift.
@@ -1276,13 +1276,13 @@ export function gfPowMod(f: readonly IntLike[], n: IntLike, g: readonly IntLike[
 }
 
 /**
- * The monic gcd.
+ * Computes the greatest common divisor over the prime field with leading coefficient one.
  *
  * @param f - Polynomial as coefficients in descending degree.
  * @param g - Polynomial operand as coefficients in descending degree.
  * @param p - Prime modulus of the coefficient field.
  * @param _K - Integer coefficient domain, normally `ZZ`.
- * @returns The monic gcd.
+ * @returns The monic GCD.
  * @see SymPy `sympy.polys.galoistools.gf_gcd`
  * @example
  * ```ts
@@ -1296,13 +1296,13 @@ export function gfGcd(f: readonly IntLike[], g: readonly IntLike[], p: IntLike, 
 }
 
 /**
- * The monic lcm.
+ * Computes the least common multiple over the prime field with leading coefficient one.
  *
  * @param f - Polynomial as coefficients in descending degree.
  * @param g - Polynomial operand as coefficients in descending degree.
  * @param p - Prime modulus of the coefficient field.
  * @param _K - Integer coefficient domain, normally `ZZ`.
- * @returns The monic lcm.
+ * @returns The monic LCM.
  * @see SymPy `sympy.polys.galoistools.gf_lcm`
  * @example
  * ```ts
@@ -1318,13 +1318,13 @@ export function gfLcm(f: readonly IntLike[], g: readonly IntLike[], p: IntLike, 
 }
 
 /**
- * [gcd, f / gcd, g / gcd].
+ * Factors out the monic GCD of the two inputs.
  *
  * @param f - Polynomial as coefficients in descending degree.
  * @param g - Polynomial operand as coefficients in descending degree.
  * @param p - Prime modulus of the coefficient field.
  * @param _K - Integer coefficient domain, normally `ZZ`.
- * @returns [gcd, f / gcd, g / gcd].
+ * @returns The GCD and both quotients.
  * @see SymPy `sympy.polys.galoistools.gf_cofactors`
  * @remarks SymPy returns `([1, 3], [3, 3], [2, 1])` with tuples for the fixed-length groups.
  * @example
@@ -1342,13 +1342,13 @@ export function gfCofactors(f: readonly IntLike[], g: readonly IntLike[], p: Int
 }
 
 /**
- * The extended Euclidean algorithm: [s, t, h] with s*f + t*g = h = gcd(f, g).
+ * Finds Bézout coefficients expressing the monic GCD as `s*f + t*g`.
  *
  * @param f - Polynomial as coefficients in descending degree.
  * @param g - Polynomial operand as coefficients in descending degree.
  * @param p - Prime modulus of the coefficient field.
  * @param _K - Integer coefficient domain, normally `ZZ`.
- * @returns The extended Euclidean algorithm: [s, t, h] with s*f + t*g = h = gcd(f, g).
+ * @returns The triple `[s, t, gcd]`.
  * @see SymPy `sympy.polys.galoistools.gf_gcdex`
  * @remarks SymPy returns `([5, 6], [6], [1, 7])` with tuples for the fixed-length groups.
  * @example
@@ -1383,12 +1383,12 @@ export function gfGcdex(f: readonly IntLike[], g: readonly IntLike[], p: IntLike
 }
 
 /**
- * [lc, f / lc].
+ * Separates the leading coefficient from the monic polynomial.
  *
  * @param f - Polynomial as coefficients in descending degree.
  * @param p - Prime modulus of the coefficient field.
  * @param _K - Integer coefficient domain, normally `ZZ`.
- * @returns [lc, f / lc].
+ * @returns The leading coefficient and monic part.
  * @see SymPy `sympy.polys.galoistools.gf_monic`
  * @remarks SymPy returns `(3, [1, 4, 3])` with tuples for the fixed-length groups.
  * @example
@@ -1403,7 +1403,7 @@ export function gfMonic(f: readonly IntLike[], p: IntLike, _K: Domain = ZZ): [bi
 }
 
 /**
- * The derivative.
+ * Differentiates the element with respect to its polynomial variable.
  *
  * @param f - Polynomial as coefficients in descending degree.
  * @param p - Prime modulus of the coefficient field.
@@ -1422,13 +1422,13 @@ export function gfDiff(f: readonly IntLike[], p: IntLike, _K: Domain = ZZ): bigi
 }
 
 /**
- * f(a) by Horner's scheme.
+ * Evaluates the polynomial over the prime field using Horner's rule.
  *
  * @param f - Polynomial as coefficients in descending degree.
  * @param a - Evaluation point.
  * @param p - Prime modulus of the coefficient field.
  * @param _K - Integer coefficient domain, normally `ZZ`.
- * @returns F(a) by Horner's scheme.
+ * @returns The value modulo the prime.
  * @see SymPy `sympy.polys.galoistools.gf_eval`
  * @example
  * ```ts
@@ -1442,7 +1442,7 @@ export function gfEval(f: readonly IntLike[], a: IntLike, p: IntLike, _K: Domain
 }
 
 /**
- * f at every point of A.
+ * Evaluates the polynomial at every supplied point.
  *
  * @param f - Polynomial as coefficients in descending degree.
  * @param A - Points at which to evaluate the polynomial.
@@ -1463,13 +1463,13 @@ export function gfMultiEval(f: readonly IntLike[], A: readonly IntLike[], p: Int
 }
 
 /**
- * The composition f(g).
+ * Substitutes the second polynomial into the first.
  *
  * @param f - Polynomial as coefficients in descending degree.
  * @param g - Polynomial operand as coefficients in descending degree.
  * @param p - Prime modulus of the coefficient field.
  * @param _K - Integer coefficient domain, normally `ZZ`.
- * @returns The composition f(g).
+ * @returns The composition `f(g)`.
  * @see SymPy `sympy.polys.galoistools.gf_compose`
  * @example
  * ```ts
@@ -1488,14 +1488,14 @@ export function gfCompose(f: readonly IntLike[], g: readonly IntLike[], p: IntLi
 }
 
 /**
- * The composition g(h) modulo f.
+ * Composes `g` with `h` and reduces the result modulo `f`.
  *
  * @param g - Polynomial operand as coefficients in descending degree.
  * @param h - Polynomial operand as coefficients in descending degree.
  * @param f - Polynomial as coefficients in descending degree.
  * @param p - Prime modulus of the coefficient field.
  * @param _K - Integer coefficient domain, normally `ZZ`.
- * @returns The composition g(h) modulo f.
+ * @returns The reduced composition.
  * @see SymPy `sympy.polys.galoistools.gf_compose_mod`
  * @example
  * ```ts
@@ -1509,7 +1509,7 @@ export function gfComposeMod(g: readonly IntLike[], h: readonly IntLike[], f: re
 }
 
 /**
- * The trace map [a(b**(p**n)) ... ] modulo f used by Shoup's algorithm.
+ * Computes the modular composition and accumulated trace used in Shoup's algorithm.
  *
  * @param a - Polynomial whose iterated Frobenius images are summed.
  * @param b - Image of the generator under the Frobenius map.
@@ -1518,7 +1518,7 @@ export function gfComposeMod(g: readonly IntLike[], h: readonly IntLike[], f: re
  * @param f - Polynomial as coefficients in descending degree.
  * @param p - Prime modulus of the coefficient field.
  * @param _K - Integer coefficient domain, normally `ZZ`.
- * @returns The trace map [a(b**(p**n)) ... ] modulo f used by Shoup's algorithm.
+ * @returns The iterated image and trace polynomial.
  * @see SymPy `sympy.polys.galoistools.gf_trace_map`
  * @remarks SymPy returns `([1, 3], [1, 3])` with tuples for the fixed-length groups.
  * @example
@@ -1533,13 +1533,14 @@ export function gfTraceMap(a: readonly IntLike[], b: readonly IntLike[], c: read
 }
 
 /**
- * A random monic polynomial of degree n; `random` returns integers in [0, bound).
+ * Generates a random monic polynomial of the specified degree using the supplied bounded integer
+ * sampler.
  *
  * @param n - Degree of the polynomial to generate.
  * @param p - Prime modulus of the coefficient field.
  * @param _K - Integer coefficient domain, normally `ZZ`.
  * @param random - Sampler returning an integer residue below the supplied bound.
- * @returns A random monic polynomial of degree n.
+ * @returns The sampled polynomial.
  * @see SymPy `sympy.polys.galoistools.gf_random`
  * @example
  * ```ts
@@ -1553,13 +1554,13 @@ export function gfRandom(n: IntLike, p: IntLike, _K: Domain = ZZ, random: (bound
 }
 
 /**
- * A random monic irreducible polynomial of degree n.
+ * Samples a monic irreducible polynomial of the requested degree.
  *
  * @param n - Degree of the polynomial to generate.
  * @param p - Prime modulus of the coefficient field.
  * @param K - Integer coefficient domain, normally `ZZ`.
  * @param random - Sampler returning an integer residue below the supplied bound.
- * @returns A random monic irreducible polynomial of degree n.
+ * @returns An irreducible polynomial over the prime field.
  * @see SymPy `sympy.polys.galoistools.gf_irreducible`
  * @example
  * ```ts
@@ -1577,7 +1578,7 @@ export function gfIrreducible(n: IntLike, p: IntLike, K: Domain = ZZ, random?: (
 }
 
 /**
- * Ben-Or's irreducibility test.
+ * Tests irreducibility using Ben-Or's criterion.
  *
  * @param f - Polynomial as coefficients in descending degree.
  * @param p - Prime modulus of the coefficient field.
@@ -1597,7 +1598,7 @@ export function gfIrredPBenOr(f: readonly IntLike[], p: IntLike, _K: Domain = ZZ
 }
 
 /**
- * Rabin's irreducibility test.
+ * Tests irreducibility using Rabin's criterion.
  *
  * @param f - Polynomial as coefficients in descending degree.
  * @param p - Prime modulus of the coefficient field.
@@ -1617,13 +1618,13 @@ export function gfIrredPRabin(f: readonly IntLike[], p: IntLike, _K: Domain = ZZ
 }
 
 /**
- * Whether f is irreducible over GF(p).
+ * Tests a polynomial for irreducibility over the prime field.
  *
  * @param f - Polynomial as coefficients in descending degree.
  * @param p - Prime modulus of the coefficient field.
  * @param _K - Integer coefficient domain, normally `ZZ`.
  * @param method - Algorithm to use.
- * @returns Whether f is irreducible over GF(p).
+ * @returns True for an irreducible polynomial.
  * @throws RangeError when the algorithm name is unrecognized.
  * @see SymPy `sympy.polys.galoistools.gf_irreducible_p`
  * @example
@@ -1641,12 +1642,12 @@ export function gfIrreducibleP(f: readonly IntLike[], p: IntLike, _K: Domain = Z
 }
 
 /**
- * Whether f is square-free.
+ * Checks that the polynomial has no repeated irreducible factors.
  *
  * @param f - Polynomial as coefficients in descending degree.
  * @param p - Prime modulus of the coefficient field.
  * @param _K - Integer coefficient domain, normally `ZZ`.
- * @returns Whether f is square-free.
+ * @returns True for a square-free polynomial.
  * @see SymPy `sympy.polys.galoistools.gf_sqf_p`
  * @example
  * ```ts
@@ -1663,7 +1664,7 @@ export function gfSqfP(f: readonly IntLike[], p: IntLike, _K: Domain = ZZ): bool
 }
 
 /**
- * The square-free part.
+ * Removes repeated irreducible factors from the polynomial.
  *
  * @param f - Polynomial as coefficients in descending degree.
  * @param p - Prime modulus of the coefficient field.
@@ -1683,13 +1684,13 @@ export function gfSqfPart(f: readonly IntLike[], p: IntLike, _K: Domain = ZZ): b
 }
 
 /**
- * The square-free decomposition [lc, [[factor, multiplicity], ...]].
+ * Groups factors over the prime field by multiplicity.
  *
  * @param f - Polynomial as coefficients in descending degree.
  * @param p - Prime modulus of the coefficient field.
  * @param _K - Integer coefficient domain, normally `ZZ`.
  * @param opts - Controls `all` (inclusion of all multiplicities).
- * @returns The square-free decomposition [lc, [[factor, multiplicity], ...]].
+ * @returns The leading coefficient and square-free factor–multiplicity pairs.
  * @throws RangeError when the `all` option is true.
  * @see SymPy `sympy.polys.galoistools.gf_sqf_list`
  * @remarks SymPy returns `(1, [([1, 1], 11)])` with tuples for the fixed-length groups.
@@ -1706,7 +1707,7 @@ export function gfSqfList(f: readonly IntLike[], p: IntLike, _K: Domain = ZZ, op
 }
 
 /**
- * Berlekamp's Q matrix.
+ * Constructs the matrix for the Frobenius action in Berlekamp's algorithm.
  *
  * @param f - Polynomial as coefficients in descending degree.
  * @param p - Prime modulus of the coefficient field.
@@ -1726,12 +1727,12 @@ export function gfQmatrix(f: readonly IntLike[], p: IntLike, _K: Domain = ZZ): b
 }
 
 /**
- * A basis of the kernel of Q - I.
+ * Finds the subspace fixed by Berlekamp's matrix.
  *
  * @param Q - Berlekamp matrix.
  * @param p - Prime modulus of the coefficient field.
  * @param _K - Integer coefficient domain, normally `ZZ`.
- * @returns A basis of the kernel of Q - I.
+ * @returns Basis vectors for the kernel of `Q - I`.
  * @see SymPy `sympy.polys.galoistools.gf_Qbasis`
  * @example
  * ```ts
@@ -1746,12 +1747,12 @@ export function gfQbasis(Q: readonly (readonly IntLike[])[], p: IntLike, _K: Dom
 }
 
 /**
- * Berlekamp's factorization of a square-free monic polynomial.
+ * Uses Berlekamp's algorithm to split a square-free monic polynomial.
  *
  * @param f - Polynomial as coefficients in descending degree.
  * @param p - Prime modulus of the coefficient field.
  * @param _K - Integer coefficient domain, normally `ZZ`.
- * @returns Berlekamp's factorization of a square-free monic polynomial.
+ * @returns The irreducible factors.
  * @see SymPy `sympy.polys.galoistools.gf_berlekamp`
  * @example
  * ```ts
@@ -1765,12 +1766,12 @@ export function gfBerlekamp(f: readonly IntLike[], p: IntLike, _K: Domain = ZZ):
 }
 
 /**
- * Distinct-degree factorization, Cantor-Zassenhaus.
+ * Groups irreducible factors by degree using Cantor–Zassenhaus distinct-degree factorization.
  *
  * @param f - Polynomial as coefficients in descending degree.
  * @param p - Prime modulus of the coefficient field.
  * @param _K - Integer coefficient domain, normally `ZZ`.
- * @returns Distinct-degree factorization, Cantor-Zassenhaus.
+ * @returns The factor products and their degrees.
  * @see SymPy `sympy.polys.galoistools.gf_ddf_zassenhaus`
  * @remarks SymPy returns `[([1, 0, 0, 0, 0, 10], 1), ([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1], 2)]` with tuples for the fixed-length groups.
  * @example
@@ -1785,13 +1786,13 @@ export function gfDdfZassenhaus(f: readonly IntLike[], p: IntLike, _K: Domain = 
 }
 
 /**
- * Equal-degree factorization, Cantor-Zassenhaus.
+ * Splits a product of equal-degree irreducibles using Cantor–Zassenhaus factorization.
  *
  * @param f - Polynomial as coefficients in descending degree.
  * @param n - Degree of the factors.
  * @param p - Prime modulus of the coefficient field.
  * @param _K - Integer coefficient domain, normally `ZZ`.
- * @returns Equal-degree factorization, Cantor-Zassenhaus.
+ * @returns The irreducible factors.
  * @see SymPy `sympy.polys.galoistools.gf_edf_zassenhaus`
  * @example
  * ```ts
@@ -1805,12 +1806,12 @@ export function gfEdfZassenhaus(f: readonly IntLike[], n: IntLike, p: IntLike, _
 }
 
 /**
- * Distinct-degree factorization, Kaltofen-Shoup.
+ * Groups irreducible factors by degree using the Kaltofen–Shoup algorithm.
  *
  * @param f - Polynomial as coefficients in descending degree.
  * @param p - Prime modulus of the coefficient field.
  * @param _K - Integer coefficient domain, normally `ZZ`.
- * @returns Distinct-degree factorization, Kaltofen-Shoup.
+ * @returns The factor products and their degrees.
  * @see SymPy `sympy.polys.galoistools.gf_ddf_shoup`
  * @remarks SymPy returns `[([1, 1, 0], 1), ([1, 1, 0, 1, 2], 2)]` with tuples for the fixed-length groups.
  * @example
@@ -1825,13 +1826,13 @@ export function gfDdfShoup(f: readonly IntLike[], p: IntLike, _K: Domain = ZZ): 
 }
 
 /**
- * Equal-degree factorization, Gathen-Shoup.
+ * Splits a product of equal-degree irreducibles using the Gathen–Shoup algorithm.
  *
  * @param f - Polynomial as coefficients in descending degree.
  * @param n - Degree of the factors.
  * @param p - Prime modulus of the coefficient field.
  * @param _K - Integer coefficient domain, normally `ZZ`.
- * @returns Equal-degree factorization, Gathen-Shoup.
+ * @returns The irreducible factors.
  * @see SymPy `sympy.polys.galoistools.gf_edf_shoup`
  * @example
  * ```ts
@@ -1845,12 +1846,12 @@ export function gfEdfShoup(f: readonly IntLike[], n: IntLike, p: IntLike, _K: Do
 }
 
 /**
- * Factorization of a square-free monic polynomial by Cantor-Zassenhaus.
+ * Factors a square-free monic polynomial by the Cantor–Zassenhaus algorithm.
  *
  * @param f - Polynomial as coefficients in descending degree.
  * @param p - Prime modulus of the coefficient field.
  * @param _K - Integer coefficient domain, normally `ZZ`.
- * @returns Factorization of a square-free monic polynomial by Cantor-Zassenhaus.
+ * @returns The irreducible factors.
  * @see SymPy `sympy.polys.galoistools.gf_zassenhaus`
  * @example
  * ```ts
@@ -1864,12 +1865,12 @@ export function gfZassenhaus(f: readonly IntLike[], p: IntLike, _K: Domain = ZZ)
 }
 
 /**
- * Factorization of a square-free monic polynomial by Shoup's method.
+ * Factors a square-free monic polynomial using Shoup's algorithm.
  *
  * @param f - Polynomial as coefficients in descending degree.
  * @param p - Prime modulus of the coefficient field.
  * @param _K - Integer coefficient domain, normally `ZZ`.
- * @returns Factorization of a square-free monic polynomial by Shoup's method.
+ * @returns The irreducible factors.
  * @see SymPy `sympy.polys.galoistools.gf_shoup`
  * @example
  * ```ts
@@ -1883,13 +1884,13 @@ export function gfShoup(f: readonly IntLike[], p: IntLike, _K: Domain = ZZ): big
 }
 
 /**
- * Factorization of a square-free polynomial: [lc, factors].
+ * Factors a square-free polynomial over the prime field.
  *
  * @param f - Polynomial as coefficients in descending degree.
  * @param p - Prime modulus of the coefficient field.
  * @param _K - Integer coefficient domain, normally `ZZ`.
  * @param method - Algorithm to use.
- * @returns Factorization of a square-free polynomial: [lc, factors].
+ * @returns The leading coefficient and monic factors.
  * @see SymPy `sympy.polys.galoistools.gf_factor_sqf`
  * @remarks SymPy returns `(3, [[1, 1], [1, 3]])` with tuples for the fixed-length groups.
  * @example
@@ -1904,13 +1905,13 @@ export function gfFactorSqf(f: readonly IntLike[], p: IntLike, _K: Domain = ZZ, 
 }
 
 /**
- * Factorization into irreducibles: [lc, [[factor, multiplicity], ...]].
+ * Finds the irreducible factors over the prime field and counts their multiplicities.
  *
  * @param f - Polynomial as coefficients in descending degree.
  * @param p - Prime modulus of the coefficient field.
  * @param _K - Integer coefficient domain, normally `ZZ`.
  * @param method - Algorithm to use.
- * @returns Factorization into irreducibles: [lc, [[factor, multiplicity], ...]].
+ * @returns The leading coefficient and factor–multiplicity pairs.
  * @see SymPy `sympy.polys.galoistools.gf_factor`
  * @remarks SymPy returns `(5, [([1, 2], 1), ([1, 8], 2)])` with tuples for the fixed-length groups.
  * @example
@@ -1930,11 +1931,11 @@ export function gfFactor(f: readonly IntLike[], p: IntLike, _K: Domain = ZZ, met
 }
 
 /**
- * f(a) over the integers.
+ * Evaluates the polynomial at an integer using integer arithmetic.
  *
  * @param f - Polynomial as coefficients in descending degree.
  * @param a - Evaluation point.
- * @returns F(a) over the integers.
+ * @returns The integer value.
  * @see SymPy `sympy.polys.galoistools.gf_value`
  * @example
  * ```ts

@@ -35,10 +35,10 @@ const sameShape = (a: readonly Expr[], b: readonly Expr[]): boolean => a.length 
 const isExpressionShape = (value: unknown): value is readonly (Expr | number)[] => Array.isArray(value) && value.every((d: unknown) => d instanceof Expr || typeof d === 'number');
 
 /**
- * The shape of an array expression, explicit array, matrix or scalar.
+ * Finds the dimensions of an array, array expression, matrix, or scalar.
  *
  * @param expr - Symbolic expression on which to operate.
- * @returns The shape of an array expression, explicit array, matrix or scalar.
+ * @returns The axis lengths in order.
  * @see SymPy `sympy.tensor.array.expressions.array_expressions.get_shape`
  */
 export function getShape(expr: Expr): readonly Expr[] {
@@ -48,10 +48,10 @@ export function getShape(expr: Expr): readonly Expr[] {
   return [];
 }
 /**
- * Number of axes (scalars have rank zero).
+ * Counts the axes of an expression, assigning rank zero to a scalar.
  *
  * @param expr - Symbolic expression on which to operate.
- * @returns Number of axes (scalars have rank zero).
+ * @returns The expression rank.
  * @see SymPy `sympy.tensor.array.expressions.array_expressions.get_rank`
  */
 export function getRank(expr: Expr): number { return getShape(expr).length; }
@@ -78,9 +78,9 @@ export abstract class ArrayExpr extends ExtensionExpr {
    */
   abstract asExplicit(): Expr;
   /**
-   * The number of axes.
+   * Counts the axes of the array expression.
    *
-   * @returns The number of axes.
+   * @returns The array rank.
    */
   rank(): number { return this.shape.length; }
   /**

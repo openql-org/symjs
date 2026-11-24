@@ -18,13 +18,12 @@ import type { IntLike } from '../../ntheory/intutil';
 import { asInt } from '../../ntheory/intutil';
 
 /**
- * [u, g] with u_1*x_1 + ... + u_n*x_n = g = gcd(x_1, ..., x_n),
- * the extended Euclidean algorithm for several integers.
+ * Computes Bézout coefficients expressing the GCD of several integers as their linear combination.
  *
  * @remarks
  * For `migcdex(4)`, SymPy displays `((1,), 4)`. For `migcdex(4, 6)`, SymPy displays `((-1, 1), 2)`.
  * @param xIn - The integers in the Bézout identity.
- * @returns [u, g] with u_1*x_1 + ... + u_n*x_n = g = gcd(x_1, ..., x_n), the extended Euclidean algorithm for several integers.
+ * @returns The coefficient vector and GCD.
  * @see SymPy `sympy.functions.elementary._trigonometric_special.migcdex`
  * @example
  * ```ts
@@ -72,10 +71,10 @@ export function ipartfrac(...denomsIn: IntLike[]): bigint[] {
 }
 
 /**
- * The distinct Fermat primes whose product is n, or NoMatch (SymPy None).
+ * Factors the integer into distinct Fermat primes when possible.
  *
  * @param nIn - The index.
- * @returns The distinct Fermat primes whose product is n, or NoMatch (SymPy None).
+ * @returns The prime factors or `NoMatch`.
  * @see SymPy `sympy.functions.elementary._trigonometric_special.fermat_coords`
  */
 export function fermatCoords(nIn: IntLike): number[] | NoMatchResult {
@@ -92,7 +91,7 @@ export function fermatCoords(nIn: IntLike): number[] | NoMatchResult {
 }
 
 /**
- * The exact value of `cos(pi/3)` in radicals.
+ * Expresses the cosine of `pi/3` exactly in radicals.
  *
  * @returns The exact cosine expressed using rational arithmetic and square roots.
  * @see SymPy `sympy.functions.elementary._trigonometric_special.cos_3`
@@ -102,7 +101,7 @@ export function cos3(): Expr {
 }
 
 /**
- * The exact value of `cos(pi/5)` in radicals.
+ * Expresses the cosine of `pi/5` exactly in radicals.
  *
  * @returns The exact cosine expressed using rational arithmetic and square roots.
  * @see SymPy `sympy.functions.elementary._trigonometric_special.cos_5`
@@ -112,7 +111,7 @@ export function cos5(): Expr {
 }
 
 /**
- * The exact value of `cos(pi/17)` in radicals.
+ * Expresses the cosine of `pi/17` exactly in radicals.
  *
  * @returns The exact cosine expressed using rational arithmetic and square roots.
  * @see SymPy `sympy.functions.elementary._trigonometric_special.cos_17`
@@ -124,7 +123,7 @@ export function cos17(): Expr {
 }
 
 /**
- * The exact value of `cos(pi/257)` in radicals.
+ * Expresses the cosine of `pi/257` exactly in radicals.
  *
  * @returns The exact cosine expressed using rational arithmetic and square roots.
  * @see SymPy `sympy.functions.elementary._trigonometric_special.cos_257`
@@ -164,7 +163,7 @@ export function cos257(): Expr {
 }
 
 /**
- * Lazy Fermat-prime cosine table (SymPy cos_table).
+ * Builds a table of deferred exact cosine values for Fermat-prime denominators.
  *
  * @returns A map from Fermat primes to functions computing the corresponding cosine.
  * @see SymPy `sympy.functions.elementary._trigonometric_special.cos_table`

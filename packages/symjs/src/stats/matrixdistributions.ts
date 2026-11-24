@@ -106,43 +106,43 @@ export class MatrixPSpace extends PSpace {
     super([symbolConverter(at(args, 0)), cast(at(args, 1), MatrixDistribution, 'matrix distribution'), n, m], 'MatrixPSpace');
   }
   /**
-   * The underlying symbol naming the random variable.
+   * Identifies the ordinary symbol that names the random variable.
    *
-   * @returns The underlying symbol naming the random variable.
+   * @returns The underlying symbol.
    * @see SymPy `sympy.stats.matrix_distributions.MatrixPSpace.symbol`
    */
   get symbol(): Sym {
     return symbolConverter(at(this.args, 0));
   }
   /**
-   * The probability law governing the random variable.
+   * Identifies the law of the random variable in this space.
    *
-   * @returns The probability law governing the random variable.
+   * @returns The distribution object.
    * @see SymPy `sympy.stats.matrix_distributions.MatrixPSpace.distribution`
    */
   get distribution(): MatrixDistribution {
     return cast(at(this.args, 1), MatrixDistribution);
   }
   /**
-   * The domain of outcomes of this probability space.
+   * Describes the possible outcomes of this probability space.
    *
-   * @returns The domain of outcomes of this probability space.
+   * @returns The outcome domain.
    * @see SymPy `sympy.stats.matrix_distributions.MatrixPSpace.domain`
    */
   override get domain(): MatrixDomain {
     return new MatrixDomain([this.symbol, this.distribution.set]);
   }
   /**
-   * The random matrix symbol of the space.
+   * Constructs the matrix-valued random symbol belonging to this space.
    *
-   * @returns The random matrix symbol of the space.
+   * @returns The random matrix symbol.
    * @see SymPy `sympy.stats.matrix_distributions.MatrixPSpace.value`
    */
   get value(): RandomMatrixSymbol {
     return new RandomMatrixSymbol(this.symbol, at(this.args, 2), at(this.args, 3), this);
   }
   /**
-   * Whether this space supplies a density for its random symbol.
+   * Indicates whether the space defines a density for its random symbol.
    *
    * @returns `true` for this space.
    */
@@ -150,15 +150,15 @@ export class MatrixPSpace extends PSpace {
     return true;
   }
   /**
-   * The density associated with the random symbol of the space.
+   * Identifies the probability density of the space's random symbol.
    *
-   * @returns The density associated with the random symbol of the space.
+   * @returns The value density.
    */
   override get valueDensity(): Expr {
     return this.distribution;
   }
   /**
-   * The distribution of the expression on this probability space.
+   * Computes the distribution induced by the expression on this space.
    *
    * @param expr - Expression to evaluate.
    * @returns The probability distribution of the expression.
@@ -210,23 +210,23 @@ export abstract class MatrixDistribution extends Distribution {
    */
   abstract check(): void;
   /**
-   * The shape of the random matrices.
+   * Specifies the numbers of rows and columns of the random matrices.
    *
-   * @returns The shape of the random matrices.
+   * @returns The matrix shape.
    */
   abstract get dimension(): [Expr, Expr];
   /**
-   * The density at a matrix (SymPy pdf; a nested array is a matrix).
+   * Evaluates the density at a matrix, accepting nested arrays as matrix inputs.
    *
    * @param x - Outcome at which to evaluate the density.
    * @returns The density evaluated at the supplied outcome.
    */
   abstract override pdf(x: MatrixInput): Expr;
   /**
-   * The density at a matrix.
+   * Evaluates the matrix-variate density at the supplied matrix.
    *
    * @param x - Outcome at which to evaluate the density.
-   * @returns The density at a matrix.
+   * @returns The density value.
    * @see SymPy `sympy.stats.matrix_distributions.MatrixDistribution.__call__`
    */
   override call(x: MatrixInput): Expr {
@@ -253,27 +253,27 @@ export class MatrixGammaDistribution extends MatrixDistribution {
     super('MatrixGammaDistribution', args.map((a) => toMatrixArg(a)));
   }
   /**
-   * Positive shape parameter.
+   * Specifies the distribution's positive shape parameter.
    *
-   * @returns Positive shape parameter.
+   * @returns The shape value.
    * @see SymPy `sympy.stats.matrix_distributions.MatrixGammaDistribution.alpha`
    */
   get alpha(): Expr {
     return this.arg(0);
   }
   /**
-   * Positive scale parameter.
+   * Sets the positive scale of the distribution.
    *
-   * @returns Positive scale parameter.
+   * @returns The scale parameter.
    * @see SymPy `sympy.stats.matrix_distributions.MatrixGammaDistribution.beta`
    */
   get beta(): Expr {
     return this.arg(1);
   }
   /**
-   * Positive definite scale matrix.
+   * Defines multivariate scale by a positive definite matrix.
    *
-   * @returns Positive definite scale matrix.
+   * @returns The scale matrix.
    * @see SymPy `sympy.stats.matrix_distributions.MatrixGammaDistribution.scale_matrix`
    */
   get scaleMatrix(): Expr {
@@ -292,9 +292,9 @@ export class MatrixGammaDistribution extends MatrixDistribution {
     valueCheck(isPositive(this.beta), 'Scale parameter should be positive.');
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
-   * @returns The support of the distribution.
+   * @returns The distribution's support.
    * @see SymPy `sympy.stats.matrix_distributions.MatrixGammaDistribution.set`
    */
   get set(): SetExpr {
@@ -302,16 +302,16 @@ export class MatrixGammaDistribution extends MatrixDistribution {
     return this.matrixSet(k, k);
   }
   /**
-   * The dimensions of a matrix in the support.
+   * Describes the shape of a matrix-valued outcome.
    *
-   * @returns The dimensions of a matrix in the support.
+   * @returns The row and column dimensions.
    * @see SymPy `sympy.stats.matrix_distributions.MatrixGammaDistribution.dimension`
    */
   get dimension(): [Expr, Expr] {
     return shapeOf(this.scaleMatrix);
   }
   /**
-   * The probability density at the supplied value.
+   * Evaluates the probability density at the supplied outcome.
    *
    * @param xIn - Outcome at which to evaluate the density.
    * @returns The density evaluated at the supplied outcome.
@@ -330,7 +330,7 @@ export class MatrixGammaDistribution extends MatrixDistribution {
 }
 
 /**
- * Matrix gamma distribution.
+ * Constructs a random variable with the matrix gamma distribution.
  *
  * @param symbol - Name or symbol for the random variable.
  * @param alpha - Positive shape parameter.
@@ -366,18 +366,18 @@ export class WishartDistribution extends MatrixDistribution {
     super('WishartDistribution', args.map((a) => toMatrixArg(a)));
   }
   /**
-   * The degrees of freedom (SymPy n; `n` is evalf on expressions).
+   * Specifies the degrees of freedom of the matrix distribution.
    *
-   * @returns The degrees of freedom.
+   * @returns The degrees-of-freedom parameter.
    * @see SymPy `sympy.stats.matrix_distributions.WishartDistribution.n`
    */
   get dof(): Expr {
     return this.arg(0);
   }
   /**
-   * Positive definite scale matrix.
+   * Defines multivariate scale by a positive definite matrix.
    *
-   * @returns Positive definite scale matrix.
+   * @returns The scale matrix.
    * @see SymPy `sympy.stats.matrix_distributions.WishartDistribution.scale_matrix`
    */
   get scaleMatrix(): Expr {
@@ -395,9 +395,9 @@ export class WishartDistribution extends MatrixDistribution {
     valueCheck(isPositive(this.dof), 'Shape parameter should be positive.');
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
-   * @returns The support of the distribution.
+   * @returns The distribution's support.
    * @see SymPy `sympy.stats.matrix_distributions.WishartDistribution.set`
    */
   get set(): SetExpr {
@@ -405,16 +405,16 @@ export class WishartDistribution extends MatrixDistribution {
     return this.matrixSet(k, k);
   }
   /**
-   * The dimensions of a matrix in the support.
+   * Describes the shape of a matrix-valued outcome.
    *
-   * @returns The dimensions of a matrix in the support.
+   * @returns The row and column dimensions.
    * @see SymPy `sympy.stats.matrix_distributions.WishartDistribution.dimension`
    */
   get dimension(): [Expr, Expr] {
     return shapeOf(this.scaleMatrix);
   }
   /**
-   * The probability density at the supplied value.
+   * Evaluates the probability density at the supplied outcome.
    *
    * @param xIn - Outcome at which to evaluate the density.
    * @returns The density evaluated at the supplied outcome.
@@ -434,7 +434,7 @@ export class WishartDistribution extends MatrixDistribution {
 }
 
 /**
- * Wishart distribution.
+ * Constructs a random variable with the Wishart distribution.
  *
  * @param symbol - Name or symbol for the random variable.
  * @param n - Degrees of freedom.
@@ -469,27 +469,27 @@ export class MatrixNormalDistribution extends MatrixDistribution {
     super('MatrixNormalDistribution', args.map((a) => toMatrixArg(a)));
   }
   /**
-   * Matrix of means.
+   * Specifies the mean of each matrix entry.
    *
-   * @returns Matrix of means.
+   * @returns The location matrix.
    * @see SymPy `sympy.stats.matrix_distributions.MatrixNormalDistribution.location_matrix`
    */
   get locationMatrix(): Expr {
     return this.arg(0);
   }
   /**
-   * Row covariance matrix.
+   * Describes covariance along the row dimension.
    *
-   * @returns Row covariance matrix.
+   * @returns The row covariance matrix.
    * @see SymPy `sympy.stats.matrix_distributions.MatrixNormalDistribution.scale_matrix_1`
    */
   get scaleMatrix1(): Expr {
     return this.arg(1);
   }
   /**
-   * Column covariance matrix.
+   * Describes covariance along the column dimension.
    *
-   * @returns Column covariance matrix.
+   * @returns The column covariance matrix.
    * @see SymPy `sympy.stats.matrix_distributions.MatrixNormalDistribution.scale_matrix_2`
    */
   get scaleMatrix2(): Expr {
@@ -512,9 +512,9 @@ export class MatrixNormalDistribution extends MatrixDistribution {
     valueCheck(sameDim(at(shapeOf(V), 0), p), `Scale matrix 2 should be of shape ${p.toString()} x ${p.toString()}`);
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
-   * @returns The support of the distribution.
+   * @returns The distribution's support.
    * @see SymPy `sympy.stats.matrix_distributions.MatrixNormalDistribution.set`
    */
   get set(): SetExpr {
@@ -522,16 +522,16 @@ export class MatrixNormalDistribution extends MatrixDistribution {
     return this.matrixSet(n, p);
   }
   /**
-   * The dimensions of a matrix in the support.
+   * Describes the shape of a matrix-valued outcome.
    *
-   * @returns The dimensions of a matrix in the support.
+   * @returns The row and column dimensions.
    * @see SymPy `sympy.stats.matrix_distributions.MatrixNormalDistribution.dimension`
    */
   get dimension(): [Expr, Expr] {
     return shapeOf(this.locationMatrix);
   }
   /**
-   * The probability density at the supplied value.
+   * Evaluates the probability density at the supplied outcome.
    *
    * @param xIn - Outcome at which to evaluate the density.
    * @returns The density evaluated at the supplied outcome.
@@ -550,7 +550,7 @@ export class MatrixNormalDistribution extends MatrixDistribution {
 }
 
 /**
- * Matrix normal distribution.
+ * Constructs a random variable with the matrix normal distribution.
  *
  * @param symbol - Name or symbol for the random variable.
  * @param locationMatrix - Matrix of means.
@@ -586,36 +586,36 @@ export class MatrixStudentTDistribution extends MatrixDistribution {
     super('MatrixStudentTDistribution', args.map((a) => toMatrixArg(a)));
   }
   /**
-   * Degrees of freedom.
+   * Specifies the distribution's degrees of freedom.
    *
-   * @returns Degrees of freedom.
+   * @returns The degrees-of-freedom parameter.
    * @see SymPy `sympy.stats.matrix_distributions.MatrixStudentTDistribution.nu`
    */
   get nu(): Expr {
     return this.arg(0);
   }
   /**
-   * Location matrix.
+   * Sets the location of the matrix-variate distribution.
    *
-   * @returns Location matrix.
+   * @returns The location matrix.
    * @see SymPy `sympy.stats.matrix_distributions.MatrixStudentTDistribution.location_matrix`
    */
   get locationMatrix(): Expr {
     return this.arg(1);
   }
   /**
-   * First positive definite scale matrix.
+   * Specifies the first positive definite scaling matrix.
    *
-   * @returns First positive definite scale matrix.
+   * @returns The first scale matrix.
    * @see SymPy `sympy.stats.matrix_distributions.MatrixStudentTDistribution.scale_matrix_1`
    */
   get scaleMatrix1(): Expr {
     return this.arg(2);
   }
   /**
-   * Second positive definite scale matrix.
+   * Specifies the second positive definite scaling matrix.
    *
-   * @returns Second positive definite scale matrix.
+   * @returns The second scale matrix.
    * @see SymPy `sympy.stats.matrix_distributions.MatrixStudentTDistribution.scale_matrix_2`
    */
   get scaleMatrix2(): Expr {
@@ -640,9 +640,9 @@ export class MatrixStudentTDistribution extends MatrixDistribution {
     valueCheck(isPositive(nu) !== false, 'Degrees of freedom must be positive');
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
-   * @returns The support of the distribution.
+   * @returns The distribution's support.
    * @see SymPy `sympy.stats.matrix_distributions.MatrixStudentTDistribution.set`
    */
   get set(): SetExpr {
@@ -650,16 +650,16 @@ export class MatrixStudentTDistribution extends MatrixDistribution {
     return this.matrixSet(n, p);
   }
   /**
-   * The dimensions of a matrix in the support.
+   * Describes the shape of a matrix-valued outcome.
    *
-   * @returns The dimensions of a matrix in the support.
+   * @returns The row and column dimensions.
    * @see SymPy `sympy.stats.matrix_distributions.MatrixStudentTDistribution.dimension`
    */
   get dimension(): [Expr, Expr] {
     return shapeOf(this.locationMatrix);
   }
   /**
-   * The probability density at the supplied value.
+   * Evaluates the probability density at the supplied outcome.
    *
    * @param xIn - Outcome at which to evaluate the density.
    * @returns The density evaluated at the supplied outcome.
@@ -685,7 +685,7 @@ export class MatrixStudentTDistribution extends MatrixDistribution {
 }
 
 /**
- * Matrix Student's t distribution.
+ * Constructs a random variable with the matrix Student's t distribution.
  *
  * @param symbol - Name or symbol for the random variable.
  * @param nu - Degrees of freedom.

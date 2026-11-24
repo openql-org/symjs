@@ -23,7 +23,7 @@ export interface ProcessLike extends Expr {
   /** The set of possible process values. */
   readonly stateSpace: SetExpr;
   /**
-   * The probability that the event holds.
+   * Computes the probability assigned to the event.
    *
    * @param condition - Condition on the random variables.
    * @param givenCondition - Additional event assumed to hold.
@@ -32,12 +32,12 @@ export interface ProcessLike extends Expr {
    */
   probability(condition: Expr, givenCondition?: Expr, opts?: ComputeOptions): Expr;
   /**
-   * The expected value of the expression in this process.
+   * Computes the mean of the expression under the process law.
    *
    * @param expr - Expression to evaluate.
    * @param condition - Condition on the random variables.
    * @param opts - Evaluation controls for integrals, sums and compound distributions.
-   * @returns The expected value of the expression in this process.
+   * @returns The expectation.
    */
   expectation(expr: Expr, condition?: Expr, opts?: ComputeOptions): Expr;
 }
@@ -60,7 +60,7 @@ export class UnspecifiedDistribution extends Distribution {
     super('Distribution', args);
   }
   /**
-   * The probability density at the supplied value.
+   * Evaluates the probability density at the supplied outcome.
    *
    * @returns The density evaluated at the supplied outcome.
    * @throws TypeError when the probability law is unspecified.
@@ -69,9 +69,9 @@ export class UnspecifiedDistribution extends Distribution {
     throw new TypeError('the distribution is not specified');
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
-   * @returns The support of the distribution.
+   * @returns The distribution's support.
    * @throws TypeError when the probability law is unspecified.
    */
   get set(): SetExpr {
@@ -98,7 +98,7 @@ export class StochasticPSpace extends ProductPSpace {
     super([symbolConverter(at(args, 0)), process, args[2] ?? new UnspecifiedDistribution()], 'StochasticPSpace');
   }
   /**
-   * Whether the probability space is stochastic.
+   * Tests whether this is a stochastic process probability space.
    *
    * @returns `true` for this space.
    */
@@ -106,59 +106,59 @@ export class StochasticPSpace extends ProductPSpace {
     return true;
   }
   /**
-   * The stochastic process.
+   * Identifies the stochastic process governing this space.
    *
-   * @returns The stochastic process.
+   * @returns The process object.
    * @see SymPy `sympy.stats.stochastic_process.StochasticPSpace.process`
    */
   get process(): ProcessLike {
     return expectType(at(this.args, 1), isProcess, 'process');
   }
   /**
-   * The product of the index set and the state space.
+   * Combines the process time indices with the possible states.
    *
-   * @returns The product of the index set and the state space.
+   * @returns The product domain.
    * @see SymPy `sympy.stats.stochastic_process.StochasticPSpace.domain`
    */
   override get domain(): RandomDomain {
     return new ProductDomain([this.process.indexSet, this.process.stateSpace]);
   }
   /**
-   * The underlying symbol naming the random variable.
+   * Identifies the ordinary symbol that names the random variable.
    *
-   * @returns The underlying symbol naming the random variable.
+   * @returns The underlying symbol.
    * @see SymPy `sympy.stats.stochastic_process.StochasticPSpace.symbol`
    */
   get symbol(): Expr {
     return at(this.args, 0);
   }
   /**
-   * The probability law governing the random variable.
+   * Identifies the law of the random variable in this space.
    *
-   * @returns The probability law governing the random variable.
+   * @returns The distribution object.
    * @see SymPy `sympy.stats.stochastic_process.StochasticPSpace.distribution`
    */
   get distribution(): Distribution {
     return cast(at(this.args, 2), Distribution, 'distribution');
   }
   /**
-   * The probability of the event under the additional condition.
+   * Computes the chance of the event subject to the given condition.
    *
    * @param condition - Condition on the random variables.
    * @param givenCondition - Additional event assumed to hold.
    * @param opts - Evaluation controls for integrals, sums and compound distributions.
-   * @returns The probability of the event under the additional condition.
+   * @returns The conditional probability.
    */
   override probabilityGiven(condition: Expr, givenCondition: Expr | undefined, opts: ComputeOptions = {}): Expr {
     return this.process.probability(condition, givenCondition, opts);
   }
   /**
-   * The expected value under the conditioning event.
+   * Computes the mean of the expression under the supplied condition.
    *
    * @param expr - Expression to evaluate.
    * @param condition - Condition on the random variables.
    * @param opts - Evaluation controls for integrals, sums and compound distributions.
-   * @returns The expected value under the conditioning event.
+   * @returns The conditional expectation.
    */
   override expectationGiven(expr: Expr, condition: Expr | undefined, opts: ComputeOptions = {}): Expr {
     return this.process.expectation(expr, condition, opts);

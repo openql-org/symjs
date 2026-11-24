@@ -63,19 +63,19 @@ export class DiscreteDistributionHandmade extends SingleDiscreteDistribution {
     super('DiscreteDistributionHandmade', args.length === 1 ? [at(args, 0), Integers] : args);
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
-   * @returns The support of the distribution.
+   * @returns The distribution's support.
    * @see SymPy `sympy.stats.drv_types.DiscreteDistributionHandmade.set`
    */
   override get set(): SetExpr {
     return cast(this.arg(1), SetExpr);
   }
   /**
-   * The probability mass at the supplied outcome.
+   * Evaluates the probability mass function at one outcome.
    *
    * @param x - Outcome at which to evaluate the probability mass.
-   * @returns The probability mass at the supplied outcome.
+   * @returns The outcome probability.
    * @see SymPy `sympy.stats.drv_types.DiscreteDistributionHandmade.pdf`
    */
   pdf(x: ExprLike): Expr {
@@ -132,9 +132,9 @@ export class FlorySchulzDistribution extends SingleDiscreteDistribution {
     super('FlorySchulzDistribution', args);
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
-   * @returns The support of the distribution.
+   * @returns The distribution's support.
    * @see SymPy `sympy.stats.drv_types.FlorySchulzDistribution.set`
    */
   override get set(): SetExpr {
@@ -151,10 +151,10 @@ export class FlorySchulzDistribution extends SingleDiscreteDistribution {
     valueCheck([Lt(0, a), Lt(a, 1)], 'a must be between 0 and 1');
   }
   /**
-   * The probability mass at the supplied outcome.
+   * Evaluates the probability mass function at one outcome.
    *
    * @param kIn - Outcome at which to evaluate the probability mass.
-   * @returns The probability mass at the supplied outcome.
+   * @returns The outcome probability.
    * @see SymPy `sympy.stats.drv_types.FlorySchulzDistribution.pdf`
    */
   pdf(kIn: ExprLike): Expr {
@@ -173,7 +173,7 @@ export class FlorySchulzDistribution extends SingleDiscreteDistribution {
 }
 
 /**
- * Flory-Schulz distribution.
+ * Constructs a random variable with the Flory-Schulz distribution.
  *
  * @param name - Name of the symbol.
  * @param a - Shape parameter between zero and one.
@@ -207,9 +207,9 @@ export class GeometricDistribution extends SingleDiscreteDistribution {
     super('GeometricDistribution', args);
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
-   * @returns The support of the distribution.
+   * @returns The distribution's support.
    * @see SymPy `sympy.stats.drv_types.GeometricDistribution.set`
    */
   override get set(): SetExpr {
@@ -226,10 +226,10 @@ export class GeometricDistribution extends SingleDiscreteDistribution {
     valueCheck([Lt(0, p), Ge(1, p)], 'p must be between 0 and 1');
   }
   /**
-   * The probability mass at the supplied outcome.
+   * Evaluates the probability mass function at one outcome.
    *
    * @param kIn - Outcome at which to evaluate the probability mass.
-   * @returns The probability mass at the supplied outcome.
+   * @returns The outcome probability.
    * @see SymPy `sympy.stats.drv_types.GeometricDistribution.pdf`
    */
   pdf(kIn: ExprLike): Expr {
@@ -248,7 +248,7 @@ export class GeometricDistribution extends SingleDiscreteDistribution {
 }
 
 /**
- * Geometric distribution.
+ * Constructs a random variable with the geometric distribution.
  *
  * @param name - Name of the symbol.
  * @param p - Probability of success on each trial.
@@ -283,9 +283,9 @@ export class HermiteDistribution extends SingleDiscreteDistribution {
     super('HermiteDistribution', args);
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
-   * @returns The support of the distribution.
+   * @returns The distribution's support.
    * @see SymPy `sympy.stats.drv_types.HermiteDistribution.set`
    */
   override get set(): SetExpr {
@@ -302,10 +302,10 @@ export class HermiteDistribution extends SingleDiscreteDistribution {
     valueCheck(isNonNegative(this.arg(1)), 'Parameter a2 must be >= 0.');
   }
   /**
-   * The probability mass at the supplied outcome.
+   * Evaluates the probability mass function at one outcome.
    *
    * @param kIn - Outcome at which to evaluate the probability mass.
-   * @returns The probability mass at the supplied outcome.
+   * @returns The outcome probability.
    * @see SymPy `sympy.stats.drv_types.HermiteDistribution.pdf`
    */
   pdf(kIn: ExprLike): Expr {
@@ -328,7 +328,7 @@ export class HermiteDistribution extends SingleDiscreteDistribution {
 }
 
 /**
- * Hermite distribution.
+ * Constructs a random variable with the Hermite distribution.
  *
  * @param name - Name of the symbol.
  * @param a1 - Mean of the first Poisson component.
@@ -363,9 +363,9 @@ export class LogarithmicDistribution extends SingleDiscreteDistribution {
     super('LogarithmicDistribution', args);
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
-   * @returns The support of the distribution.
+   * @returns The distribution's support.
    * @see SymPy `sympy.stats.drv_types.LogarithmicDistribution.set`
    */
   override get set(): SetExpr {
@@ -382,10 +382,10 @@ export class LogarithmicDistribution extends SingleDiscreteDistribution {
     valueCheck([Gt(p, 0), Lt(p, 1)], 'p should be between 0 and 1');
   }
   /**
-   * The probability mass at the supplied outcome.
+   * Evaluates the probability mass function at one outcome.
    *
    * @param kIn - Outcome at which to evaluate the probability mass.
-   * @returns The probability mass at the supplied outcome.
+   * @returns The outcome probability.
    * @see SymPy `sympy.stats.drv_types.LogarithmicDistribution.pdf`
    */
   pdf(kIn: ExprLike): Expr {
@@ -404,7 +404,7 @@ export class LogarithmicDistribution extends SingleDiscreteDistribution {
 }
 
 /**
- * Logarithmic distribution.
+ * Constructs a random variable with the logarithmic distribution.
  *
  * @param name - Name of the symbol.
  * @param p - Distribution parameter between zero and one.
@@ -439,9 +439,9 @@ export class NegativeBinomialDistribution extends SingleDiscreteDistribution {
     super('NegativeBinomialDistribution', args);
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
-   * @returns The support of the distribution.
+   * @returns The distribution's support.
    * @see SymPy `sympy.stats.drv_types.NegativeBinomialDistribution.set`
    */
   override get set(): SetExpr {
@@ -459,10 +459,10 @@ export class NegativeBinomialDistribution extends SingleDiscreteDistribution {
     valueCheck([Gt(p, 0), Lt(p, 1)], 'p should be between 0 and 1');
   }
   /**
-   * The probability mass at the supplied outcome.
+   * Evaluates the probability mass function at one outcome.
    *
    * @param kIn - Outcome at which to evaluate the probability mass.
-   * @returns The probability mass at the supplied outcome.
+   * @returns The outcome probability.
    * @see SymPy `sympy.stats.drv_types.NegativeBinomialDistribution.pdf`
    */
   pdf(kIn: ExprLike): Expr {
@@ -481,7 +481,7 @@ export class NegativeBinomialDistribution extends SingleDiscreteDistribution {
 }
 
 /**
- * Negative binomial distribution.
+ * Constructs a random variable with the negative binomial distribution.
  *
  * @param name - Name of the symbol.
  * @param r - Positive shape, equal to the target number of successes for integer values.
@@ -518,18 +518,18 @@ export class PoissonDistribution extends SingleDiscreteDistribution {
     super('PoissonDistribution', args);
   }
   /**
-   * Positive mean event count.
+   * Specifies the expected number of events in the Poisson distribution.
    *
-   * @returns Positive mean event count.
+   * @returns The positive mean count.
    * @see SymPy `sympy.stats.drv_types.PoissonDistribution.lamda`
    */
   get lamda(): Expr {
     return this.arg(0);
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
-   * @returns The support of the distribution.
+   * @returns The distribution's support.
    * @see SymPy `sympy.stats.drv_types.PoissonDistribution.set`
    */
   override get set(): SetExpr {
@@ -545,10 +545,10 @@ export class PoissonDistribution extends SingleDiscreteDistribution {
     valueCheck(Gt(this.lamda, 0), 'Lambda must be positive');
   }
   /**
-   * The probability mass at the supplied outcome.
+   * Evaluates the probability mass function at one outcome.
    *
    * @param kIn - Outcome at which to evaluate the probability mass.
-   * @returns The probability mass at the supplied outcome.
+   * @returns The outcome probability.
    * @see SymPy `sympy.stats.drv_types.PoissonDistribution.pdf`
    */
   pdf(kIn: ExprLike): Expr {
@@ -562,12 +562,12 @@ export class PoissonDistribution extends SingleDiscreteDistribution {
     return exp(mul(this.lamda, sub(exp(t), 1)));
   }
   /**
-   * E(X) = lamda and E(ff(X, n)) = lamda**n.
+   * Computes the Poisson expectation using its mean and factorial moments.
    *
    * @param expr - Expression to evaluate.
    * @param v - Symbol distributed according to this law.
    * @param opts - Evaluation controls for integrals, sums and compound distributions.
-   * @returns The expected value of the expression in this process.
+   * @returns The expected value.
    * @see SymPy `sympy.stats.drv_types.PoissonDistribution.expectation`
    */
   override expectation(expr: Expr, v: Sym, opts: ComputeOptions = {}): Expr {
@@ -582,7 +582,7 @@ export class PoissonDistribution extends SingleDiscreteDistribution {
 }
 
 /**
- * Poisson distribution.
+ * Constructs a random variable with the Poisson distribution.
  *
  * @param name - Name of the symbol.
  * @param lamda - Positive mean event count.
@@ -628,10 +628,10 @@ export class SkellamDistribution extends SingleDiscreteDistribution {
     valueCheck(Ge(this.arg(1), 0), 'Parameter mu2 must be >= 0');
   }
   /**
-   * The probability mass at the supplied outcome.
+   * Evaluates the probability mass function at one outcome.
    *
    * @param kIn - Outcome at which to evaluate the probability mass.
-   * @returns The probability mass at the supplied outcome.
+   * @returns The outcome probability.
    * @see SymPy `sympy.stats.drv_types.SkellamDistribution.pdf`
    */
   pdf(kIn: ExprLike): Expr {
@@ -655,7 +655,7 @@ export class SkellamDistribution extends SingleDiscreteDistribution {
 }
 
 /**
- * Skellam distribution.
+ * Constructs a random variable with the Skellam distribution.
  *
  * @param name - Name of the symbol.
  * @param mu1 - Mean of the first Poisson variable.
@@ -692,9 +692,9 @@ export class YuleSimonDistribution extends SingleDiscreteDistribution {
     super('YuleSimonDistribution', args);
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
-   * @returns The support of the distribution.
+   * @returns The distribution's support.
    * @see SymPy `sympy.stats.drv_types.YuleSimonDistribution.set`
    */
   override get set(): SetExpr {
@@ -710,10 +710,10 @@ export class YuleSimonDistribution extends SingleDiscreteDistribution {
     valueCheck(Gt(this.arg(0), 0), 'rho should be positive');
   }
   /**
-   * The probability mass at the supplied outcome.
+   * Evaluates the probability mass function at one outcome.
    *
    * @param kIn - Outcome at which to evaluate the probability mass.
-   * @returns The probability mass at the supplied outcome.
+   * @returns The outcome probability.
    * @see SymPy `sympy.stats.drv_types.YuleSimonDistribution.pdf`
    */
   pdf(kIn: ExprLike): Expr {
@@ -736,7 +736,7 @@ export class YuleSimonDistribution extends SingleDiscreteDistribution {
 }
 
 /**
- * Yule-Simon distribution.
+ * Constructs a random variable with the Yule-Simon distribution.
  *
  * @param name - Name of the symbol.
  * @param rho - Positive shape parameter.
@@ -770,9 +770,9 @@ export class ZetaDistribution extends SingleDiscreteDistribution {
     super('ZetaDistribution', args);
   }
   /**
-   * The support of the distribution.
+   * Specifies the set on which the probability law is supported.
    *
-   * @returns The support of the distribution.
+   * @returns The distribution's support.
    * @see SymPy `sympy.stats.drv_types.ZetaDistribution.set`
    */
   override get set(): SetExpr {
@@ -788,10 +788,10 @@ export class ZetaDistribution extends SingleDiscreteDistribution {
     valueCheck(Gt(this.arg(0), 1), 's should be greater than 1');
   }
   /**
-   * The probability mass at the supplied outcome.
+   * Evaluates the probability mass function at one outcome.
    *
    * @param kIn - Outcome at which to evaluate the probability mass.
-   * @returns The probability mass at the supplied outcome.
+   * @returns The outcome probability.
    * @see SymPy `sympy.stats.drv_types.ZetaDistribution.pdf`
    */
   pdf(kIn: ExprLike): Expr {
@@ -808,7 +808,7 @@ export class ZetaDistribution extends SingleDiscreteDistribution {
 }
 
 /**
- * Zeta distribution.
+ * Constructs a random variable with the Zeta distribution.
  *
  * @param name - Name of the symbol.
  * @param s - Exponent greater than one.

@@ -26,7 +26,7 @@ import { PuiseuxPoly, PuiseuxRing, addExponents as plus, multiplyExponents as ti
 /** An ordinary or Puiseux polynomial used in truncated series arithmetic. */
 export type SeriesPoly = PolyElement | PuiseuxPoly;
 /**
- * An operation on a polynomial series truncated in a specified generator.
+ * Computes a polynomial series truncated in the specified generator.
  *
  * @param p - Input polynomial series.
  * @param x - Expansion variable.
@@ -120,7 +120,7 @@ export function rsTrunc(p: SeriesPoly, x: SeriesPoly, prec: ExprLike): SeriesPol
  */
 export function rsMul(p: SeriesPoly, q: SeriesPoly, x: SeriesPoly, prec: ExprLike): SeriesPoly { return restore(p, product(lift(p), lift(q), index(p, x), rat(prec))); }
 /**
- * Square modulo O(x**prec).
+ * Squares the series, discarding terms of degree at least the requested precision.
  *
  * @param p - Input series.
  * @param x - Generator with respect to which the series is expanded.
@@ -193,11 +193,12 @@ export function powXin(p: SeriesPoly, iIn: IntLike, n: ExprLike): SeriesPoly {
   return restore(p, q.ring.fromDict(q.terms().map(([m, c]) => [m.map((e, j) => j === i ? times(e, exponent) : e), c])));
 }
 /**
- * A nonintegral exponent in x; negative integer powers are not regular.
+ * Checks for nonintegral exponents, rejecting negative integer powers that would make the series
+ * nonregular.
  *
  * @param p - Input series.
  * @param x - Generator with respect to which the series is expanded.
- * @returns A nonintegral exponent in x.
+ * @returns True when a Puiseux exponent occurs.
  * @throws RangeError when the series is not regular in the expansion variable.
  * @see SymPy `sympy.polys.ring_series.rs_is_puiseux`
  * @example
@@ -269,7 +270,7 @@ function integerPower(p: PuiseuxPoly, n: bigint, i: number, prec: Rational): Pui
   return shift(result, i, offset);
 }
 /**
- * Integer or rational power, retaining the requested final precision.
+ * Raises the series to an integer or rational power at the requested precision.
  *
  * @param p - Input series.
  * @param n - Exponent.
@@ -290,7 +291,7 @@ export function rsPow(p: SeriesPoly, n: ExprLike, x: SeriesPoly, prec: ExprLike)
   return restore(p, e.isInteger && !e.isNegative ? integerPower(q, e.p, i, order) : rationalPower(q, e, i, order));
 }
 /**
- * Laurent/Puiseux reciprocal with a scalar leading coefficient.
+ * Inverts a Laurent or Puiseux series with a scalar leading coefficient.
  *
  * @param p - Input series.
  * @param x - Generator with respect to which the series is expanded.
@@ -360,7 +361,7 @@ function analytic(p: SeriesPoly, x: SeriesPoly, prec: ExprLike, name: AnalyticNa
   }));
 }
 /**
- * Exponential series.
+ * Computes the exponential series to the requested precision.
  *
  * @param p - Input series.
  * @param x - Generator with respect to which the series is expanded.
@@ -377,7 +378,7 @@ function analytic(p: SeriesPoly, x: SeriesPoly, prec: ExprLike, name: AnalyticNa
  */
 export function rsExp(p: SeriesPoly, x: SeriesPoly, prec: ExprLike): SeriesPoly { return analytic(p, x, prec, 'exp'); }
 /**
- * Sine series.
+ * Computes the sine series to the requested precision.
  *
  * @param p - Input series.
  * @param x - Generator with respect to which the series is expanded.
@@ -395,7 +396,7 @@ export function rsExp(p: SeriesPoly, x: SeriesPoly, prec: ExprLike): SeriesPoly 
  */
 export function rsSin(p: SeriesPoly, x: SeriesPoly, prec: ExprLike): SeriesPoly { return analytic(p, x, prec, 'sin'); }
 /**
- * Cosine series.
+ * Computes the cosine series to the requested precision.
  *
  * @param p - Input series.
  * @param x - Generator with respect to which the series is expanded.
@@ -412,7 +413,7 @@ export function rsSin(p: SeriesPoly, x: SeriesPoly, prec: ExprLike): SeriesPoly 
  */
 export function rsCos(p: SeriesPoly, x: SeriesPoly, prec: ExprLike): SeriesPoly { return analytic(p, x, prec, 'cos'); }
 /**
- * Hyperbolic sine series.
+ * Computes the hyperbolic sine series to the requested precision.
  *
  * @param p - Input series.
  * @param x - Generator with respect to which the series is expanded.
@@ -429,7 +430,7 @@ export function rsCos(p: SeriesPoly, x: SeriesPoly, prec: ExprLike): SeriesPoly 
  */
 export function rsSinh(p: SeriesPoly, x: SeriesPoly, prec: ExprLike): SeriesPoly { return analytic(p, x, prec, 'sinh'); }
 /**
- * Hyperbolic cosine series.
+ * Computes the hyperbolic cosine series to the requested precision.
  *
  * @param p - Input series.
  * @param x - Generator with respect to which the series is expanded.
@@ -446,7 +447,7 @@ export function rsSinh(p: SeriesPoly, x: SeriesPoly, prec: ExprLike): SeriesPoly
  */
 export function rsCosh(p: SeriesPoly, x: SeriesPoly, prec: ExprLike): SeriesPoly { return analytic(p, x, prec, 'cosh'); }
 /**
- * Arcsine series.
+ * Computes the arcsine series to the requested precision.
  *
  * @param p - Input series.
  * @param x - Generator with respect to which the series is expanded.
@@ -463,7 +464,7 @@ export function rsCosh(p: SeriesPoly, x: SeriesPoly, prec: ExprLike): SeriesPoly
  */
 export function rsAsin(p: SeriesPoly, x: SeriesPoly, prec: ExprLike): SeriesPoly { return analytic(p, x, prec, 'asin'); }
 /**
- * Inverse hyperbolic sine series.
+ * Computes the inverse hyperbolic sine series to the requested precision.
  *
  * @param p - Input series.
  * @param x - Generator with respect to which the series is expanded.
@@ -480,7 +481,7 @@ export function rsAsin(p: SeriesPoly, x: SeriesPoly, prec: ExprLike): SeriesPoly
  */
 export function rsAsinh(p: SeriesPoly, x: SeriesPoly, prec: ExprLike): SeriesPoly { return analytic(p, x, prec, 'asinh'); }
 /**
- * Arctangent series.
+ * Computes the arctangent series to the requested precision.
  *
  * @param p - Input series.
  * @param x - Generator with respect to which the series is expanded.
@@ -497,7 +498,7 @@ export function rsAsinh(p: SeriesPoly, x: SeriesPoly, prec: ExprLike): SeriesPol
  */
 export function rsAtan(p: SeriesPoly, x: SeriesPoly, prec: ExprLike): SeriesPoly { return analytic(p, x, prec, 'atan'); }
 /**
- * Inverse hyperbolic tangent series.
+ * Computes the inverse hyperbolic tangent series to the requested precision.
  *
  * @param p - Input series.
  * @param x - Generator with respect to which the series is expanded.
@@ -514,7 +515,7 @@ export function rsAtan(p: SeriesPoly, x: SeriesPoly, prec: ExprLike): SeriesPoly
  */
 export function rsAtanh(p: SeriesPoly, x: SeriesPoly, prec: ExprLike): SeriesPoly { return analytic(p, x, prec, 'atanh'); }
 /**
- * Principal Lambert W series at zero.
+ * Computes the principal lambert w series at zero to the requested precision.
  *
  * @param p - Input series.
  * @param x - Generator with respect to which the series is expanded.
@@ -531,7 +532,7 @@ export function rsAtanh(p: SeriesPoly, x: SeriesPoly, prec: ExprLike): SeriesPol
  */
 export function rsLambertW(p: SeriesPoly, x: SeriesPoly, prec: ExprLike): SeriesPoly { return analytic(p, x, prec, 'LambertW'); }
 /**
- * Tangent series.
+ * Computes the tangent series to the requested precision.
  *
  * @param p - Input series.
  * @param x - Generator with respect to which the series is expanded.
@@ -548,7 +549,7 @@ export function rsLambertW(p: SeriesPoly, x: SeriesPoly, prec: ExprLike): Series
  */
 export function rsTan(p: SeriesPoly, x: SeriesPoly, prec: ExprLike): SeriesPoly { return tangent(p, x, prec, false); }
 /**
- * Hyperbolic tangent series.
+ * Computes the hyperbolic tangent series to the requested precision.
  *
  * @param p - Input series.
  * @param x - Generator with respect to which the series is expanded.
@@ -602,7 +603,7 @@ function tangent(p: SeriesPoly, x: SeriesPoly, prec: ExprLike, hyperbolic: boole
   return restore(template, product(c.add(t), rationalPower(denominator, minusOne, i, order), i, order));
 }
 /**
- * Cotangent Laurent series, computing enough terms before inversion.
+ * Expands the cotangent as a Laurent series, retaining enough terms before inversion.
  *
  * @param p - Input series.
  * @param x - Generator with respect to which the series is expanded.
@@ -623,7 +624,7 @@ export function rsCot(p: SeriesPoly, x: SeriesPoly, prec: ExprLike): SeriesPoly 
   return rsSeriesInversion(rsTan(p, x, order), x, prec);
 }
 /**
- * Logarithmic series for a nonzero ground constant.
+ * Expands the logarithm of a series with nonzero ground constant.
  *
  * @param p - Input series.
  * @param x - Generator with respect to which the series is expanded.
@@ -648,7 +649,7 @@ export function rsLog(p: SeriesPoly, x: SeriesPoly, prec: ExprLike): SeriesPoly 
 }
 
 /**
- * Finite composition sum(c[k]*p**k) with truncation.
+ * Evaluates a finite polynomial in a series, truncating to the requested precision.
  *
  * @param p - Input series.
  * @param c - Coefficients in ascending powers of the input series.
@@ -716,7 +717,8 @@ export function rsSubs(p: SeriesPoly, rules: ReadonlyMap<SeriesPoly, SeriesPoly>
   return restore(p, result);
 }
 /**
- * Revert p(x)=y with a scalar nonzero coefficient of x.
+ * Reverts a series with nonzero scalar linear coefficient to express the generator in terms of its
+ * image.
  *
  * @param p - Input series.
  * @param x - Generator with respect to which the series is expanded.
@@ -801,7 +803,7 @@ export function rsFun(p: SeriesPoly, f: SeriesFunction, x: SeriesPoly, prec: Exp
   return restore(p, lift(rsSeriesFromList(tail, Array.from({ length: Math.max(1, count) }, (_, k) => expansion.get([k])), at(q.ring.gens, i), prec)));
 }
 /**
- * Coefficientwise division/multiplication by factorials.
+ * Scales the series coefficients by multiplying or dividing by their factorials.
  *
  * @param p - Input series.
  * @param inverse - Multiply by factorials instead of dividing by them.
@@ -828,7 +830,7 @@ export function rsHadamardExp(p: SeriesPoly, inverse = false): SeriesPoly {
   })));
 }
 /**
- * Newton power-sum generating series of a univariate polynomial.
+ * Constructs the generating series of Newton power sums for a univariate polynomial.
  *
  * @param p - Input series.
  * @param x - Generator with respect to which the series is expanded.
@@ -851,7 +853,7 @@ export function rsNewton(p: PolyElement, x: PolyElement, prec: ExprLike): Series
   return restore(p, q.ring.groundNew(degree).sub(lift(rsMul(rsDiff(reversed, x), rsSeriesInversion(reversed, x, prec), x, prec)).mul(lift(x))));
 }
 /**
- * Polynomial whose roots are all pairwise sums of roots.
+ * Constructs a polynomial whose roots are the pairwise sums of roots of the input polynomials.
  *
  * @param p - Input series.
  * @param q - Second input series.
@@ -907,12 +909,12 @@ export function rsSeries(expr: ExprLike, x: Sym, prec: IntLike): SeriesPoly {
 }
 
 /**
- * Cosine and sine series to the same precision.
+ * Expands sine and cosine to a common precision.
  *
  * @param p - Input series.
  * @param x - Generator with respect to which the series is expanded.
  * @param prec - Truncation order in the series variable.
- * @returns Cosine and sine series to the same precision.
+ * @returns The cosine and sine series, in that order.
  * @see SymPy `sympy.polys.ring_series.rs_cos_sin`
  * @remarks SymPy returns `(-1/2*x**2*y**2 - x**2*y - 1/2*x**2 + 1, -1/6*x**3*y**3 - 1/2*x**3*y**2 - 1/2*x**3*y - 1/6*x**3 + x*y + x)` with tuples for the fixed-length groups.
  * @example
@@ -927,12 +929,12 @@ export function rsCosSin(p: SeriesPoly, x: SeriesPoly, prec: ExprLike): [SeriesP
   return cosineSine(p, x, prec, false);
 }
 /**
- * Hyperbolic cosine and sine series.
+ * Expands the two hyperbolic functions to the specified precision.
  *
  * @param p - Input series.
  * @param x - Generator with respect to which the series is expanded.
  * @param prec - Truncation order in the series variable.
- * @returns Hyperbolic cosine and sine series.
+ * @returns The hyperbolic cosine and sine series.
  * @see SymPy `sympy.polys.ring_series.rs_cosh_sinh`
  * @remarks SymPy returns `(1/2*x**2*y**2 + x**2*y + 1/2*x**2 + 1, 1/6*x**3*y**3 + 1/2*x**3*y**2 + 1/2*x**3*y + 1/6*x**3 + x*y + x)` with tuples for the fixed-length groups.
  * @example

@@ -29,12 +29,12 @@ const applied = (symbol: ExprLike, fact: ExprLike, expr: ExprLike): Expr[] => {
 };
 
 /**
- * The fact (in symbol) holds for all the arguments of expr.
+ * Substitutes each argument for the placeholder and conjoins the resulting facts.
  *
  * @param symbol - Placeholder replaced by each argument of the expression.
  * @param fact - Boolean relation between the predicates.
  * @param expr - Expression to evaluate.
- * @returns The fact (in symbol) holds for all the arguments of expr.
+ * @returns A conjunction of the argument conditions.
  * @see SymPy `sympy.assumptions.sathandlers.allargs`
  * @example
  * ```ts
@@ -49,12 +49,12 @@ export function allargs(symbol: ExprLike, fact: ExprLike, expr: ExprLike): Expr 
 }
 
 /**
- * The fact (in symbol) holds for some argument of expr.
+ * Substitutes each argument for the placeholder and disjoins the resulting facts.
  *
  * @param symbol - Placeholder replaced by each argument of the expression.
  * @param fact - Boolean relation between the predicates.
  * @param expr - Expression to evaluate.
- * @returns The fact (in symbol) holds for some argument of expr.
+ * @returns A disjunction of the argument conditions.
  * @see SymPy `sympy.assumptions.sathandlers.anyarg`
  * @example
  * ```ts
@@ -69,12 +69,12 @@ export function anyarg(symbol: ExprLike, fact: ExprLike, expr: ExprLike): Expr {
 }
 
 /**
- * The fact (in symbol) holds for exactly one argument of expr.
+ * Builds the condition that exactly one argument satisfies the given fact.
  *
  * @param symbol - Placeholder replaced by each argument of the expression.
  * @param fact - Boolean relation between the predicates.
  * @param expr - Expression to evaluate.
- * @returns The fact (in symbol) holds for exactly one argument of expr.
+ * @returns A Boolean expression.
  * @see SymPy `sympy.assumptions.sathandlers.exactlyonearg`
  * @example
  * ```ts
@@ -90,14 +90,14 @@ export function exactlyonearg(symbol: ExprLike, fact: ExprLike, expr: ExprLike):
 }
 
 /**
- * A callback supplying a fact about an expression.
+ * Supplies one fact about an expression.
  *
  * @param expr - Expression to evaluate.
  * @returns A boolean expression known to hold for the input.
  */
 export type FactHandler = (expr: Expr) => Expr;
 /**
- * A callback supplying several facts about an expression.
+ * Supplies several facts about an expression.
  *
  * @param expr - Expression to evaluate.
  * @returns Boolean expressions known to hold for the input.
@@ -161,7 +161,7 @@ export class ClassFactRegistry {
     return handler;
   }
   /**
-   * The single-fact and multiple-fact handlers that apply to expr (SymPy registry[type(expr)]).
+   * Finds the single-fact and multiple-fact handlers registered for the expression's class.
    *
    * @param expr - Expression to evaluate.
    * @returns The single-fact and multiple-fact handlers that apply to expr.

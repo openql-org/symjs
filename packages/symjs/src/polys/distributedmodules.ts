@@ -37,11 +37,11 @@ const keyOf = (O: SdmOrder): ((m: readonly number[]) => MonomialKey) => (typeof 
 const mkey = (m: SdmMonomial): string => m.join(',');
 
 /**
- * X*M: the polynomial monomial X times the module monomial M.
+ * Multiplies a module monomial by a polynomial monomial.
  *
  * @param M - Exponent vector.
  * @param X - Exponents of the polynomial monomial multiplying the module monomial.
- * @returns X*M: the polynomial monomial X times the module monomial M.
+ * @returns The resulting module monomial.
  * @see SymPy `sympy.polys.distributedmodules.sdm_monomial_mul`
  * @remarks SymPy returns `(1, 2, 3)` with tuples for the fixed-length groups.
  * @example
@@ -56,10 +56,10 @@ export function sdmMonomialMul(M: SdmMonomial, X: readonly number[]): number[] {
 }
 
 /**
- * The total degree of the polynomial part of M.
+ * Sums the exponents in the polynomial part of the module monomial.
  *
  * @param M - Exponent vector.
- * @returns The total degree of the polynomial part of M.
+ * @returns The total degree.
  * @see SymPy `sympy.polys.distributedmodules.sdm_monomial_deg`
  * @example
  * ```ts
@@ -73,11 +73,11 @@ export function sdmMonomialDeg(M: SdmMonomial): number {
 }
 
 /**
- * The lcm of the polynomial parts of A and B, with A's generator.
+ * Takes the LCM of the polynomial parts while retaining the first module generator.
  *
  * @param A - First exponent vector.
  * @param B - Second exponent vector.
- * @returns The lcm of the polynomial parts of A and B, with A's generator.
+ * @returns The module monomial LCM.
  * @see SymPy `sympy.polys.distributedmodules.sdm_monomial_lcm`
  * @remarks SymPy returns `(1, 2, 5)` with tuples for the fixed-length groups.
  * @example
@@ -111,11 +111,11 @@ export function sdmMonomialDivides(A: SdmMonomial, B: SdmMonomial): boolean {
 }
 
 /**
- * The leading coefficient (zero for the zero element; SymPy sdm_LC).
+ * Selects the leading coefficient of a sparse module element.
  *
  * @param f - Sparse module element as ordered monomial and coefficient pairs.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The leading coefficient (zero for the zero element.
+ * @returns The coefficient or zero for the zero element.
  * @see SymPy `sympy.polys.distributedmodules.sdm_LC`
  */
 export function sdmLC(f: Sdm, K: Domain): unknown {
@@ -123,10 +123,10 @@ export function sdmLC(f: Sdm, K: Domain): unknown {
 }
 
 /**
- * The terms as a Map {monomial: coefficient}.
+ * Indexes the module terms by their monomials.
  *
  * @param f - Sparse module element as ordered monomial and coefficient pairs.
- * @returns The terms as a Map {monomial: coefficient}.
+ * @returns A monomial-to-coefficient map.
  * @see SymPy `sympy.polys.distributedmodules.sdm_to_dict`
  */
 export function sdmToDict(f: Sdm): Map<SdmMonomial, unknown> {
@@ -134,11 +134,11 @@ export function sdmToDict(f: Sdm): Map<SdmMonomial, unknown> {
 }
 
 /**
- * The terms sorted by O, largest first.
+ * Orders module terms by decreasing monomial order.
  *
  * @param f - Sparse module element as ordered monomial and coefficient pairs.
  * @param O - Monomial ordering used to compare terms.
- * @returns The terms sorted by O, largest first.
+ * @returns The sorted term list.
  * @see SymPy `sympy.polys.distributedmodules.sdm_sort`
  */
 export function sdmSort(f: Sdm, O: SdmOrder): SdmTerm[] {
@@ -147,10 +147,10 @@ export function sdmSort(f: Sdm, O: SdmOrder): SdmTerm[] {
 }
 
 /**
- * The terms with nonzero coefficients.
+ * Removes zero-coefficient terms from the module element.
  *
  * @param f - Sparse module element as ordered monomial and coefficient pairs.
- * @returns The terms with nonzero coefficients.
+ * @returns The remaining terms.
  * @see SymPy `sympy.polys.distributedmodules.sdm_strip`
  */
 export function sdmStrip(f: Sdm): SdmTerm[] {
@@ -158,11 +158,11 @@ export function sdmStrip(f: Sdm): SdmTerm[] {
 }
 
 /**
- * The element of the terms of a Map {monomial: coefficient}.
+ * Builds a sparse module element from its monomial-to-coefficient map.
  *
  * @param d - Map from module monomials to coefficients.
  * @param O - Monomial ordering used to compare terms.
- * @returns The element of the terms of a Map {monomial: coefficient}.
+ * @returns The ordered terms.
  * @see SymPy `sympy.polys.distributedmodules.sdm_from_dict`
  * @remarks SymPy returns `[((1, 1, 0), 1), ((1, 0, 0), 2)]` with tuples for the fixed-length groups.
  * @example
@@ -177,13 +177,13 @@ export function sdmFromDict(d: ReadonlyMap<SdmMonomial, unknown>, O: SdmOrder): 
 }
 
 /**
- * f + g.
+ * Combines like terms when adding two sparse module elements.
  *
  * @param f - Sparse module element as ordered monomial and coefficient pairs.
  * @param g - Sparse module element as ordered monomial and coefficient pairs.
  * @param O - Monomial ordering used to compare terms.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns F + g.
+ * @returns The ordered terms of the sum.
  * @see SymPy `sympy.polys.distributedmodules.sdm_add`
  * @remarks SymPy returns `[((2, 0, 0), 1), ((1, 1, 1), 1)]` with tuples for the fixed-length groups.
  * @example
@@ -210,10 +210,10 @@ export function sdmAdd(f: Sdm, g: Sdm, O: SdmOrder, K: Domain): SdmTerm[] {
 }
 
 /**
- * The leading monomial of a nonzero element.
+ * Selects the largest monomial of a nonzero module element.
  *
  * @param f - Sparse module element as ordered monomial and coefficient pairs.
- * @returns The leading monomial of a nonzero element.
+ * @returns The leading monomial.
  * @see SymPy `sympy.polys.distributedmodules.sdm_LM`
  * @remarks SymPy returns `(4, 0, 1)` with tuples for the fixed-length groups.
  * @example
@@ -228,10 +228,10 @@ export function sdmLM(f: Sdm): SdmMonomial {
 }
 
 /**
- * The leading term of a nonzero element.
+ * Selects the term with the largest monomial in a nonzero module element.
  *
  * @param f - Sparse module element as ordered monomial and coefficient pairs.
- * @returns The leading term of a nonzero element.
+ * @returns The leading monomial and coefficient.
  * @see SymPy `sympy.polys.distributedmodules.sdm_LT`
  * @remarks SymPy returns `((4, 0, 1), 3)` with tuples for the fixed-length groups.
  * @example
@@ -246,13 +246,13 @@ export function sdmLT(f: Sdm): SdmTerm {
 }
 
 /**
- * f times the polynomial term [X, c].
+ * Multiplies the sparse module element by a polynomial term.
  *
  * @param f - Sparse module element as ordered monomial and coefficient pairs.
  * @param term - Monomial and coefficient of the term.
  * @param _O - Monomial ordering used to compare terms.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns F times the polynomial term [X, c].
+ * @returns The scaled module element.
  * @see SymPy `sympy.polys.distributedmodules.sdm_mul_term`
  * @example
  * ```ts
@@ -270,9 +270,9 @@ export function sdmMulTerm(f: Sdm, term: readonly [readonly number[], unknown], 
 }
 
 /**
- * The zero element.
+ * Constructs the additive identity of the sparse module.
  *
- * @returns The zero element.
+ * @returns The empty term list.
  * @see SymPy `sympy.polys.distributedmodules.sdm_zero`
  */
 export function sdmZero(): SdmTerm[] {
@@ -280,10 +280,10 @@ export function sdmZero(): SdmTerm[] {
 }
 
 /**
- * The largest total degree of the terms of a nonzero element.
+ * Finds the maximum total degree among terms of a nonzero module element.
  *
  * @param f - Sparse module element as ordered monomial and coefficient pairs.
- * @returns The largest total degree of the terms of a nonzero element.
+ * @returns The module degree.
  * @see SymPy `sympy.polys.distributedmodules.sdm_deg`
  * @example
  * ```ts
@@ -329,13 +329,13 @@ function polyDict(e: Expr, gens: readonly Expr[]): [number[], Expr][] {
 }
 
 /**
- * The element of a vector of polynomial expressions.
+ * Converts a vector of polynomials into sparse module form.
  *
  * @param vecIn - Entries of the vector of polynomial expressions.
  * @param O - Monomial ordering used to compare terms.
  * @param K - Coefficient domain for the polynomial arithmetic.
  * @param opts - Controls `gens` (the ordered generators).
- * @returns The element of a vector of polynomial expressions.
+ * @returns The module element.
  * @see SymPy `sympy.polys.distributedmodules.sdm_from_vector`
  * @remarks SymPy returns `[(1, 0, 0, 1), (0, 2, 0, 0), (0, 0, 2, 0)]` with tuples for the fixed-length groups.
  * @example
@@ -356,13 +356,13 @@ export function sdmFromVector(vecIn: readonly Expr[], O: SdmOrder, K: Domain, op
 }
 
 /**
- * The vector of polynomial expressions of an element, of length n.
+ * Expands a sparse module element in the specified number of components.
  *
  * @param f - Sparse module element as ordered monomial and coefficient pairs.
  * @param gens - Polynomial generators in the desired order.
  * @param K - Coefficient domain for the polynomial arithmetic.
  * @param n - Length of the output vector.
- * @returns The vector of polynomial expressions of an element, of length n.
+ * @returns A vector of polynomial expressions.
  * @see SymPy `sympy.polys.distributedmodules.sdm_to_vector`
  * @example
  * ```ts
@@ -381,13 +381,14 @@ export function sdmToVector(f: Sdm, gens: readonly Expr[], K: Domain, n?: number
 }
 
 /**
- * The S-polynomial of f and g, or [S(f, g), the same combination of the phantom pair].
+ * Cancels the leading terms of two module elements, applying the same combination to an optional
+ * phantom pair.
  *
  * @param f - Sparse module element as ordered monomial and coefficient pairs.
  * @param g - Sparse module element as ordered monomial and coefficient pairs.
  * @param O - Monomial ordering used to compare terms.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The S-polynomial of f and g, or [S(f, g), the same combination of the phantom pair].
+ * @returns The S-polynomial.
  * @see SymPy `sympy.polys.distributedmodules.sdm_spoly`
  * @example
  * ```ts
@@ -399,14 +400,15 @@ export function sdmToVector(f: Sdm, gens: readonly Expr[], K: Domain, n?: number
  */
 export function sdmSpoly(f: Sdm, g: Sdm, O: SdmOrder, K: Domain): SdmTerm[];
 /**
- * The S-polynomial of f and g, or [S(f, g), the same combination of the phantom pair].
+ * Cancels the leading terms of two module elements, applying the same combination to an optional
+ * phantom pair.
  *
  * @param f - Sparse module element as ordered monomial and coefficient pairs.
  * @param g - Sparse module element as ordered monomial and coefficient pairs.
  * @param O - Monomial ordering used to compare terms.
  * @param K - Coefficient domain for the polynomial arithmetic.
  * @param phantom - Companion module elements to transform with the same reduction steps.
- * @returns The S-polynomial of f and g, or [S(f, g), the same combination of the phantom pair].
+ * @returns The S-polynomial and the corresponding combination of the phantom pair.
  * @see SymPy `sympy.polys.distributedmodules.sdm_spoly`
  */
 export function sdmSpoly(f: Sdm, g: Sdm, O: SdmOrder, K: Domain, phantom: readonly [Sdm, Sdm]): [SdmTerm[], SdmTerm[]];
@@ -426,7 +428,7 @@ export function sdmSpoly(f: Sdm, g: Sdm, O: SdmOrder, K: Domain, phantom?: reado
 }
 
 /**
- * Sdm_deg(f) - the degree of the leading monomial.
+ * Subtracts the leading monomial degree from the maximum term degree.
  *
  * @param f - Sparse module element as ordered monomial and coefficient pairs.
  * @returns The total degree minus the total degree of the leading monomial.
@@ -444,7 +446,7 @@ export function sdmEcart(f: Sdm): number {
 }
 
 /**
- * A normal form function (sdmNfMora, sdmNfBuchberger).
+ * Computes a normal form of a sparse module element.
  *
  * @param f - Module element to reduce.
  * @param G - Basis used for reduction.
@@ -459,25 +461,25 @@ export type SdmNormalForm = {
 };
 
 /**
- * A weak normal form of f with respect to G by the generalized Mora algorithm (any order; SymPy sdm_nf_mora).
+ * Reduces a module element by Mora's algorithm for an arbitrary monomial order.
  *
  * @param f - Sparse module element as ordered monomial and coefficient pairs.
  * @param G - Basis polynomials.
  * @param O - Monomial ordering used to compare terms.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns A weak normal form of f with respect to G by the generalized Mora algorithm (any order.
+ * @returns The weak normal form, with the transformed companion when supplied.
  * @see SymPy `sympy.polys.distributedmodules.sdm_nf_mora`
  */
 export function sdmNfMora(f: Sdm, G: readonly Sdm[], O: SdmOrder, K: Domain): SdmTerm[];
 /**
- * A weak normal form of f with respect to G by the generalized Mora algorithm (any order; SymPy sdm_nf_mora).
+ * Reduces a module element by Mora's algorithm for an arbitrary monomial order.
  *
  * @param f - Sparse module element as ordered monomial and coefficient pairs.
  * @param G - Basis polynomials.
  * @param O - Monomial ordering used to compare terms.
  * @param K - Coefficient domain for the polynomial arithmetic.
  * @param phantom - Companion module elements to transform with the same reduction steps.
- * @returns A weak normal form of f with respect to G by the generalized Mora algorithm (any order.
+ * @returns The weak normal form, with the transformed companion when supplied.
  * @see SymPy `sympy.polys.distributedmodules.sdm_nf_mora`
  */
 export function sdmNfMora(f: Sdm, G: readonly Sdm[], O: SdmOrder, K: Domain, phantom: readonly [Sdm, readonly Sdm[]]): [SdmTerm[], SdmTerm[]];
@@ -501,25 +503,25 @@ export function sdmNfMora(f: Sdm, G: readonly Sdm[], O: SdmOrder, K: Domain, pha
 }
 
 /**
- * A weak normal form of f with respect to G by Buchberger's algorithm (global orders; SymPy sdm_nf_buchberger).
+ * Reduces a module element by Buchberger's algorithm for a global order.
  *
  * @param f - Sparse module element as ordered monomial and coefficient pairs.
  * @param G - Basis polynomials.
  * @param O - Monomial ordering used to compare terms.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns A weak normal form of f with respect to G by Buchberger's algorithm (global orders.
+ * @returns The weak normal form, with the transformed companion when supplied.
  * @see SymPy `sympy.polys.distributedmodules.sdm_nf_buchberger`
  */
 export function sdmNfBuchberger(f: Sdm, G: readonly Sdm[], O: SdmOrder, K: Domain): SdmTerm[];
 /**
- * A weak normal form of f with respect to G by Buchberger's algorithm (global orders; SymPy sdm_nf_buchberger).
+ * Reduces a module element by Buchberger's algorithm for a global order.
  *
  * @param f - Sparse module element as ordered monomial and coefficient pairs.
  * @param G - Basis polynomials.
  * @param O - Monomial ordering used to compare terms.
  * @param K - Coefficient domain for the polynomial arithmetic.
  * @param phantom - Companion module elements to transform with the same reduction steps.
- * @returns A weak normal form of f with respect to G by Buchberger's algorithm (global orders.
+ * @returns The weak normal form, with the transformed companion when supplied.
  * @see SymPy `sympy.polys.distributedmodules.sdm_nf_buchberger`
  */
 export function sdmNfBuchberger(f: Sdm, G: readonly Sdm[], O: SdmOrder, K: Domain, phantom: readonly [Sdm, readonly Sdm[]]): [SdmTerm[], SdmTerm[]];
@@ -537,13 +539,13 @@ export function sdmNfBuchberger(f: Sdm, G: readonly Sdm[], O: SdmOrder, K: Domai
 }
 
 /**
- * The reduced normal form of f with respect to G (global orders; SymPy sdm_nf_buchberger_reduced).
+ * Computes a reduced normal form with respect to the given generators in a global order.
  *
  * @param f - Sparse module element as ordered monomial and coefficient pairs.
  * @param G - Basis polynomials.
  * @param O - Monomial ordering used to compare terms.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The reduced normal form of f with respect to G (global orders.
+ * @returns The reduced element, with the transformed companion when supplied.
  * @see SymPy `sympy.polys.distributedmodules.sdm_nf_buchberger_reduced`
  */
 export function sdmNfBuchbergerReduced(f: Sdm, G: readonly Sdm[], O: SdmOrder, K: Domain): SdmTerm[] {
@@ -562,30 +564,28 @@ export function sdmNfBuchbergerReduced(f: Sdm, G: readonly Sdm[], O: SdmOrder, K
 type Pair = readonly [number, number, number, readonly number[]];
 
 /**
- * A minimal standard basis of G with respect to O, using the normal form NF
- * and the sugar strategy; with `extended`, also the
- * coefficient vectors expressing the basis in terms of G.
+ * Computes a minimal standard basis in the given order using the specified normal form and sugar
+ * strategy.
  *
  * @param G - Basis polynomials.
  * @param NF - Normal-form reduction function.
  * @param O - Monomial ordering used to compare terms.
  * @param K - Coefficient domain for the polynomial arithmetic.
  * @param extended - Track the representations in the original generators.
- * @returns A minimal standard basis of G with respect to O, using the normal form NF and the sugar strategy; with `extended`, also the coefficient vectors expressing the basis in terms of G.
+ * @returns The minimal standard basis.
  * @see SymPy `sympy.polys.distributedmodules.sdm_groebner`
  */
 export function sdmGroebner(G: readonly Sdm[], NF: SdmNormalForm, O: SdmOrder, K: Domain, extended?: false): SdmTerm[][];
 /**
- * A minimal standard basis of G with respect to O, using the normal form NF
- * and the sugar strategy; with `extended`, also the
- * coefficient vectors expressing the basis in terms of G.
+ * Computes a minimal standard basis in the given order using the specified normal form and sugar
+ * strategy.
  *
  * @param G - Basis polynomials.
  * @param NF - Normal-form reduction function.
  * @param O - Monomial ordering used to compare terms.
  * @param K - Coefficient domain for the polynomial arithmetic.
  * @param extended - Track the representations in the original generators.
- * @returns A minimal standard basis of G with respect to O, using the normal form NF and the sugar strategy; with `extended`, also the coefficient vectors expressing the basis in terms of G.
+ * @returns The basis and its coefficient vectors in the input generators.
  * @see SymPy `sympy.polys.distributedmodules.sdm_groebner`
  */
 export function sdmGroebner(G: readonly Sdm[], NF: SdmNormalForm, O: SdmOrder, K: Domain, extended: true): [SdmTerm[][], SdmTerm[][]];

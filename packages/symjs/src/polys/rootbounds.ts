@@ -13,11 +13,11 @@ import { IntegerRing, RationalField } from './domains';
 import { Poly } from './sympoly';
 
 /**
- * Cauchy upper bound on the absolute values of all complex roots.
+ * Bounds the moduli of all complex polynomial roots from above using Cauchy's bound.
  *
  * @param f - Polynomial to operate on.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns Cauchy upper bound on the absolute values of all complex roots.
+ * @returns The upper root bound.
  * @throws PolynomialError when the polynomial has no roots.
  * @see SymPy `sympy.polys.rootisolation.dup_cauchy_upper_bound`
  */
@@ -39,11 +39,11 @@ export function dupCauchyUpperBound(f: readonly ExprLike[], K: Domain): Rational
 }
 
 /**
- * Cauchy lower bound on the absolute values of nonzero roots.
+ * Bounds the moduli of all nonzero roots from below using Cauchy's bound.
  *
  * @param f - Polynomial to operate on.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns Cauchy lower bound on the absolute values of nonzero roots.
+ * @returns The lower root bound.
  * @throws PolynomialError when there are no nonzero roots.
  * @see SymPy `sympy.polys.rootisolation.dup_cauchy_lower_bound`
  */
@@ -56,11 +56,11 @@ export function dupCauchyLowerBound(f: readonly ExprLike[], K: Domain): Rational
 }
 
 /**
- * Square of Mignotte's lower bound on separation of distinct roots.
+ * Computes the square of Mignotte's separation bound for distinct roots.
  *
  * @param f - Polynomial to operate on.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns Square of Mignotte's lower bound on separation of distinct roots.
+ * @returns The squared lower bound.
  * @throws PolynomialError when the polynomial degree is less than two.
  * @see SymPy `sympy.polys.rootisolation.dup_mignotte_sep_bound_squared`
  */

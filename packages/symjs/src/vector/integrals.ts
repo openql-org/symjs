@@ -89,18 +89,18 @@ export class ParametricIntegralNode extends ExtensionExpr {
     return parametricIntegral(at(args, 0), cast(at(args, 1), ParametricRegionNode, 'ParametricRegion'));
   }
   /**
-   * Field to evaluate or differentiate.
+   * Identifies the field to be integrated over the region.
    *
-   * @returns Field to evaluate or differentiate.
+   * @returns The integrand field.
    * @see SymPy `sympy.vector.integrals.ParametricIntegral.field`
    */
   get field(): Expr {
     return at(this.args, 0);
   }
   /**
-   * The parametric region of integration.
+   * Identifies the parametric domain of integration.
    *
-   * @returns The parametric region of integration.
+   * @returns The integration region.
    * @see SymPy `sympy.vector.integrals.ParametricIntegral.parametricregion`
    */
   get parametricregion(): ParametricRegionNode {
@@ -148,7 +148,7 @@ function parametricIntegral(fieldIn: ExprLike, region: ParametricRegionNode): Ex
 }
 
 /**
- * The integral of a scalar or vector field over a parametrized region.
+ * Constructs the integral of a scalar or vector field over a parametrized region.
  *
  * @param field - Field to evaluate or differentiate.
  * @param region - Region or integration limits.
@@ -169,12 +169,11 @@ export type ParametricIntegral = ParametricIntegralNode;
 export type IntegrationLimit = Sym | readonly [Sym, ExprLike, ExprLike] | TupleNode;
 
 /**
- * The integral of a field over a parametric, implicit or geometric region, or with respect to
- * variables (with their limits).
+ * Integrates the field over a specified region or with respect to variables and their limits.
  *
  * @param fieldIn - Scalar or vector field on the region.
  * @param region - Region or integration limits.
- * @returns The integral of a field over a parametric, implicit or geometric region, or with respect to variables (with their limits).
+ * @returns The field integral.
  * @throws TypeError when a limit does not specify a variable and bounds.
  * @see SymPy `sympy.vector.integrals.vector_integrate`
  * @example

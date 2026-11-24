@@ -34,33 +34,33 @@ export class DelNode extends DelBase {
     return this;
   }
   /**
-   * The gradient of a scalar field (unevaluated unless doit).
+   * Forms the gradient of a scalar field, evaluating the derivatives when requested.
    *
    * @param scalarField - Scalar field to differentiate.
    * @param opts - Settings described by {@link OperatorOptions}.
-   * @returns The gradient of a scalar field (unevaluated unless doit).
+   * @returns The gradient vector.
    * @see SymPy `sympy.vector.deloperator.Del.gradient`
    */
   gradient(scalarField: ExprLike, opts: OperatorOptions = {}): Expr {
     return gradient(scalarField, { doit: opts.doit ?? false });
   }
   /**
-   * The divergence of a vector field.
+   * Applies the divergence operator to a vector field.
    *
    * @param vect - Vector field to which the operator is applied.
    * @param opts - Settings described by {@link OperatorOptions}.
-   * @returns The divergence of a vector field.
+   * @returns The scalar divergence.
    * @see SymPy `sympy.vector.deloperator.Del.dot`
    */
   dot(vect: ExprLike, opts: OperatorOptions = {}): Expr {
     return divergence(vect, { doit: opts.doit ?? false });
   }
   /**
-   * The curl of a vector field.
+   * Applies the curl operator to a vector field.
    *
    * @param vect - Vector field to which the operator is applied.
    * @param opts - Settings described by {@link OperatorOptions}.
-   * @returns The curl of a vector field.
+   * @returns The curl vector.
    * @see SymPy `sympy.vector.deloperator.Del.cross`
    */
   cross(vect: ExprLike, opts: OperatorOptions = {}): Expr {
@@ -85,7 +85,7 @@ export class DelNode extends DelBase {
 }
 
 /**
- * The vector differential operator used to form gradients, curls and divergences.
+ * Constructs the vector differential operator used to form gradients, curls and divergences.
  *
  * @returns The resulting `Del` expression.
  * @see SymPy `sympy.vector.deloperator.Del`

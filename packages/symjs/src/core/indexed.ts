@@ -46,32 +46,32 @@ export class Indexed extends ExtensionExpr {
     super('Indexed', [base instanceof Sym ? new IndexedBase(base) : base, ...args.slice(1)]);
   }
   /**
-   * The number of subscripts.
+   * Counts the indices applied to the base.
    *
-   * @returns The number of subscripts.
+   * @returns The tensor rank.
    * @see SymPy `sympy.tensor.indexed.Indexed.rank`
    */
   get rank(): number { return this.args.length - 1; }
   /**
-   * The base to which the subscripts are applied.
+   * Identifies the object to which the indices apply.
    *
-   * @returns The base to which the subscripts are applied.
+   * @returns The indexed base.
    * @see SymPy `sympy.tensor.indexed.Indexed.base`
    */
   get base(): Expr {
     return at(this.args, 0);
   }
   /**
-   * The subscript expressions in axis order.
+   * Lists the subscripts in axis order.
    *
-   * @returns The subscript expressions in axis order.
+   * @returns The index expressions.
    * @see SymPy `sympy.tensor.indexed.Indexed.indices`
    */
   get indices(): Expr[] {
     return this.args.slice(1);
   }
   /**
-   * The known facts inherited from the base label.
+   * Collects the assumptions inherited from the base label.
    *
    * @returns The known facts keyed by their SymPy names.
    * @see SymPy `sympy.tensor.indexed.Indexed.assumptions0`
@@ -80,7 +80,7 @@ export class Indexed extends ExtensionExpr {
     return this.base instanceof IndexedBase ? this.base.assumptions0 : new Map();
   }
   /**
-   * The real-valuedness of the indexed object according to its label.
+   * Queries the indexed object's reality assumption through its label.
    *
    * @returns The known truth value, or `undefined` when the hook has no answer.
    */
@@ -149,8 +149,8 @@ export class Indexed extends ExtensionExpr {
     return `{${print(this.base)}}_{${this.indices.map(print).join(',')}}`;
   }
   /**
-   * The derivative with respect to a symbol inside A[i] (diff handles indexed variables):
-   * nan for an index (SymPy: d A[i]/d i is not defined), 0 for the label.
+   * Differentiates the indexed object with respect to its index or label, giving NaN for index
+   * differentiation and zero for the label.
    *
    * @param x - The differentiation variable.
    * @returns The derivative with respect to the specified expression.
@@ -173,7 +173,7 @@ export class Indexed extends ExtensionExpr {
  */
 export class IndexedBase extends ExtensionExpr {
   /**
-   * The constructor head of the expression.
+   * Identifies the constructor associated with the expression.
    *
    * @returns The callable expression head.
    * @see SymPy `sympy.tensor.indexed.IndexedBase.func`
@@ -203,7 +203,7 @@ export class IndexedBase extends ExtensionExpr {
     this.#assumptionSymbol = label instanceof Sym ? new Sym(label.name, { ...label.assumptions, ...assumptions }) : new Sym('IndexedBase_label', assumptions);
   }
   /**
-   * The known facts inherited from the base label.
+   * Collects the assumptions inherited from the base label.
    *
    * @returns The known facts keyed by their SymPy names.
    * @see SymPy `sympy.tensor.indexed.IndexedBase.assumptions0`
@@ -218,7 +218,7 @@ export class IndexedBase extends ExtensionExpr {
     return this.#assumptionSymbol.isCommutative;
   }
   /**
-   * The real-valuedness of the indexed object according to its label.
+   * Queries the indexed object's reality assumption through its label.
    *
    * @returns The known truth value, or `undefined` when the hook has no answer.
    */
@@ -226,9 +226,9 @@ export class IndexedBase extends ExtensionExpr {
     return this.assumptions0.get('real');
   }
   /**
-   * The lengths of the declared axes, when specified.
+   * Reports the declared size of each axis.
    *
-   * @returns The lengths of the declared axes, when specified.
+   * @returns The axis lengths or `NoMatch`.
    * @see SymPy `sympy.tensor.indexed.IndexedBase.shape`
    */
   get shape(): readonly Expr[] | NoMatchResult {
@@ -254,16 +254,16 @@ export class IndexedBase extends ExtensionExpr {
     return other instanceof IndexedBase && this.key === other.key;
   }
   /**
-   * The real assumption inherited from the base label.
+   * Reads the reality assumption from the base label.
    *
-   * @returns The real assumption inherited from the base label.
+   * @returns The truth value of the assumption.
    * @see SymPy `sympy.tensor.indexed.IndexedBase.is_real`
    */
   get isReal(): boolean | 'unknown' {
     return this.assumptions0.get('real') ?? 'unknown';
   }
   /**
-   * A[i, j]
+   * Applies subscripts to this base to form an indexed component.
    *
    * @param indices - The subscripts in axis order.
    * @returns The indexed component of the base.

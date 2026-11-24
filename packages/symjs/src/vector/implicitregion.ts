@@ -119,7 +119,7 @@ export class ImplicitRegionNode extends ExtensionExpr {
     return new ImplicitRegionNode(cast(at(args, 0), TupleNode, 'variables'), at(args, 1));
   }
   /**
-   * The variables that map to the base scalars.
+   * Lists the variables corresponding to the base scalars.
    *
    * @returns The differentiation variables in their original order.
    * @see SymPy `sympy.vector.implicitregion.ImplicitRegion.variables`
@@ -128,18 +128,18 @@ export class ImplicitRegionNode extends ExtensionExpr {
     return at(this.args, 0).args.map((v) => cast(v, Sym, 'variable'));
   }
   /**
-   * Implicit equation defining the region.
+   * Specifies the equation whose zero set defines the region.
    *
-   * @returns Implicit equation defining the region.
+   * @returns The defining expression.
    * @see SymPy `sympy.vector.implicitregion.ImplicitRegion.equation`
    */
   get equation(): Expr {
     return at(this.args, 1);
   }
   /**
-   * The total degree of the equation.
+   * Computes the total polynomial degree of the defining equation.
    *
-   * @returns The total degree of the equation.
+   * @returns The region degree.
    * @see SymPy `sympy.vector.implicitregion.ImplicitRegion.degree`
    */
   get degree(): number {
@@ -147,9 +147,9 @@ export class ImplicitRegionNode extends ExtensionExpr {
   }
 
   /**
-   * A point on the region.
+   * Finds a nonsingular point on the implicit region.
    *
-   * @returns A point on the region.
+   * @returns The point coordinates.
    * @throws NotImplementedError when a regular point cannot be found.
    * @see SymPy `sympy.vector.implicitregion.ImplicitRegion.regular_point`
    */
@@ -184,9 +184,9 @@ export class ImplicitRegionNode extends ExtensionExpr {
   }
 
   /**
-   * The points of the region where all partial derivatives vanish.
+   * Finds points where the defining equation and all first partial derivatives vanish.
    *
-   * @returns The points of the region where all partial derivatives vanish.
+   * @returns The singular points.
    * @see SymPy `sympy.vector.implicitregion.ImplicitRegion.singular_points`
    */
   singularPoints(): SetExpr {
@@ -197,11 +197,10 @@ export class ImplicitRegionNode extends ExtensionExpr {
   }
 
   /**
-   * The multiplicity of a point of the region (the lowest total degree of the equation shifted to
-   * the point).
+   * Finds the lowest total degree after translating the defining equation to the point.
    *
    * @param pointIn - Point at which to evaluate the operation.
-   * @returns The multiplicity of a point of the region (the lowest total degree of the equation shifted to the point).
+   * @returns The point multiplicity.
    * @see SymPy `sympy.vector.implicitregion.ImplicitRegion.multiplicity`
    */
   multiplicity(pointIn: GeometryEntity | readonly ExprLike[] | TupleNode): number {
@@ -216,12 +215,12 @@ export class ImplicitRegionNode extends ExtensionExpr {
   }
 
   /**
-   * A rational parametrization of the region, from a regular point of a conic (`regPoint` when none
-   * is found) or a point of multiplicity degree - 1.
+   * Parametrizes a conic from a regular point or a higher-degree region from a point of multiplicity one
+   * below its degree.
    *
    * @param parametersIn - Parameter symbols or names.
    * @param opts - `regPoint`.
-   * @returns A rational parametrization of the region, from a regular point of a conic (`regPoint` when none is found) or a point of multiplicity degree - 1.
+   * @returns The rational coordinate expressions.
    * @throws NotImplementedError when the region has more than three variables or the region is linear in three variables or the region does not satisfy the monoid parametrization criterion.
    * @see SymPy `sympy.vector.implicitregion.ImplicitRegion.rational_parametrization`
    */
@@ -408,7 +407,7 @@ function regularPointEllipse(a: Expr, b: Expr, c: Expr, d: Expr, e: Expr, f: Exp
 }
 
 /**
- * The locus where a scalar expression in the supplied variables vanishes.
+ * Constructs the locus where a scalar expression in the supplied variables vanishes.
  *
  * @param variables - Variables in the order they are supplied.
  * @param equation - Implicit equation defining the region.

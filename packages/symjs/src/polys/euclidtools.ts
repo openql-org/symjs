@@ -23,11 +23,11 @@ import type { ZPoly, ZTerm } from './wang';
 import type { PolyElement } from './rings';
 
 /**
- * Euclidean remainder sequence over a coefficient field.
+ * Builds a remainder sequence by Euclidean division over a coefficient field.
  *
  * @param fIn - Polynomial to operate on.
  * @param gIn - Second polynomial operand.
- * @returns Euclidean remainder sequence over a coefficient field.
+ * @returns The Euclidean remainder polynomials.
  * @see SymPy `sympy.polys.euclidtools.dup_euclidean_prs`
  * @example
  * ```ts
@@ -50,11 +50,11 @@ export function dupEuclideanPrs(fIn: PolyElement, gIn: PolyElement): PolyElement
 }
 
 /**
- * Primitive pseudo-remainder sequence over a coefficient ring.
+ * Builds a sequence of primitive pseudo-remainders over a coefficient ring.
  *
  * @param fIn - Polynomial to operate on.
  * @param gIn - Second polynomial operand.
- * @returns Primitive pseudo-remainder sequence over a coefficient ring.
+ * @returns The primitive remainder polynomials.
  * @see SymPy `sympy.polys.euclidtools.dup_primitive_prs`
  * @example
  * ```ts

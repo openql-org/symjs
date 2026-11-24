@@ -302,37 +302,37 @@ export class FormalPowerSeries extends SeriesBase {
     return old.has(this.x) ? this : undefined;
   }
   /**
-   * The leading term of the represented function.
+   * Extracts the first term of the represented function's expansion.
    *
    * @returns The first nonzero asymptotic term.
    * @see SymPy `sympy.series.formal.FormalPowerSeries.as_leading_term`
    */
   asLeadingTerm(): Expr { return asLeadingTerm(this.fn, this.x); }
   /**
-   * The inclusive interval of term indices.
+   * Specifies the index range of the terms, including both endpoints.
    *
-   * @returns The inclusive interval of term indices.
+   * @returns The index interval.
    * @see SymPy `sympy.series.formal.FormalPowerSeries.interval`
    */
   override get interval(): SetExpr { return interval(0, S.Infinity); }
   /**
-   * The first index of the series or sequence.
+   * Identifies the first index at which a term is defined.
    *
-   * @returns The first index of the series or sequence.
+   * @returns The starting index.
    * @see SymPy `sympy.series.formal.FormalPowerSeries.start`
    */
   override get start(): Expr { return S.Zero; }
   /**
-   * The last index of the series or sequence.
+   * Identifies the final index in the series or sequence.
    *
-   * @returns The last index of the series or sequence.
+   * @returns The ending index.
    * @see SymPy `sympy.series.formal.FormalPowerSeries.stop`
    */
   override get stop(): Expr { return S.Infinity; }
   /**
-   * The number of terms, possibly infinite.
+   * Counts the terms in the index interval, allowing an infinite range.
    *
-   * @returns The number of terms, possibly infinite.
+   * @returns The term count or infinity.
    * @see SymPy `sympy.series.formal.FormalPowerSeries.length`
    */
   override get length(): Expr { return S.Infinity; }
@@ -357,9 +357,9 @@ export class FormalPowerSeries extends SeriesBase {
     return print(this.infinite);
   }
   /**
-   * The coefficient sum, including the terms before the recurrence starts.
+   * Combines the recurrent coefficient sum with the terms preceding the recurrence.
    *
-   * @returns The coefficient sum, including the terms before the recurrence starts.
+   * @returns The full series expression.
    * @throws NotImplementedError when no coefficient formula is available.
    * @see SymPy `sympy.series.formal.FormalPowerSeries.infinite`
    */
@@ -376,7 +376,7 @@ export class FormalPowerSeries extends SeriesBase {
     return add(this.withSymb(subs(independent, [[this.x, shift]])), new Concrete('Sum', [term, k, Rational.of(start), S.Infinity]));
   }
   /**
-   * The series up to O((x - x0)**n).
+   * Truncates the series at the requested order about the expansion point.
    *
    * @param n - Truncation order.
    * @returns The truncated expansion.
@@ -406,10 +406,10 @@ export class FormalPowerSeries extends SeriesBase {
     return add(this.polynomial(n), O(this.withSymb(pow(xk, n)), this.x, this.x0));
   }
   /**
-   * The truncated series without the Order term.
+   * Truncates the series and drops the asymptotic order term.
    *
    * @param n - Truncation order.
-   * @returns The truncated series without the Order term.
+   * @returns The truncated polynomial.
    * @see SymPy `sympy.series.formal.FormalPowerSeries.polynomial`
    */
   polynomial(n = 6): Expr {
@@ -420,7 +420,7 @@ export class FormalPowerSeries extends SeriesBase {
     return this.symb.key === S.One.key ? t : powsimp(mul(factorTerms(t), this.symb));
   }
   /**
-   * The coefficient of (x - x0)**k.
+   * Extracts the coefficient of the specified power about the expansion point.
    *
    * @param k - Coefficient index.
    * @returns The coefficient of the specified power.
@@ -434,10 +434,10 @@ export class FormalPowerSeries extends SeriesBase {
     return this.withSymb(mul(c, Rational.of(1n, f)));
   }
   /**
-   * The first n nonzero terms.
+   * Collects the first requested nonzero terms of the series.
    *
    * @param n - Number of terms to use.
-   * @returns The first n nonzero terms.
+   * @returns The leading terms.
    */
   terms(n: number): Expr[] {
     const out: Expr[] = [];
@@ -457,10 +457,10 @@ export class FormalPowerSeries extends SeriesBase {
     if (this.x0.key !== other.x0.key) throw new RangeError('Both series should be calculated about the same point.');
   }
   /**
-   * The sum with the other operand.
+   * Adds the series to the other operand.
    *
    * @param other - Other operand.
-   * @returns The sum with the other operand.
+   * @returns The sum.
    * @throws RangeError when the expansion points or directions differ.
    */
   override add(other: ExprLike): Expr {
@@ -470,11 +470,11 @@ export class FormalPowerSeries extends SeriesBase {
     return sum.has(this.x) ? new FormalPowerSeries(sum, this.x, this.x0, this.direction) : sum;
   }
   /**
-   * The series of the product of the functions.
+   * Forms the formal power series of the product of the underlying functions.
    *
    * @param other - Other operand.
    * @param x - Variable of the expansion.
-   * @returns The series of the product of the functions.
+   * @returns The product series.
    * @throws RangeError when the expansion variables, points or directions differ.
    * @see SymPy `sympy.series.formal.FormalPowerSeries.product`
    * @example
@@ -491,11 +491,11 @@ export class FormalPowerSeries extends SeriesBase {
     return new FormalPowerSeries(mul(this.fn, other.fn), this.x, this.x0, this.direction);
   }
   /**
-   * The series of the composition f(g(x)) with the inner series g without constant term.
+   * Substitutes an inner series with zero constant term into the outer series.
    *
    * @param other - Other operand.
    * @param x - Variable of the expansion.
-   * @returns The series of the composition f(g(x)) with the inner series g without constant term.
+   * @returns The composite series.
    * @throws RangeError when the expansions have incompatible variables, points or directions, or the inner series has a nonzero constant term.
    * @see SymPy `sympy.series.formal.FormalPowerSeries.compose`
    * @example
@@ -513,7 +513,7 @@ export class FormalPowerSeries extends SeriesBase {
     return new FormalPowerSeries(subs(this.fn, [[this.x, other.fn]]), this.x, this.x0, this.direction);
   }
   /**
-   * The series of 1/f, for a series with a constant term (SymPy FormalPowerSeries.inverse; its symbol argument is not used).
+   * Inverts a formal power series with a nonzero constant term.
    *
    * @returns The series of 1/f, for a series with a constant term.
    * @throws RangeError when the constant term is zero.
@@ -532,12 +532,11 @@ export class FormalPowerSeries extends SeriesBase {
     return new FormalPowerSeries(pow(this.fn, -1), this.x, this.x0, this.direction);
   }
   /**
-   * The series of the antiderivative, or
-   * with limits the definite integral of the function.
+   * Integrates the series term by term or evaluates the integral over supplied limits.
    *
    * @param x - Variable of the expansion.
    * @param limits - Lower and upper endpoints of the interval.
-   * @returns The series of the antiderivative, or with limits the definite integral of the function.
+   * @returns The antiderivative series or definite integral.
    * @see SymPy `sympy.series.formal.FormalPowerSeries.integrate`
    */
   override integrate(x?: Sym): FormalPowerSeries;
@@ -548,7 +547,7 @@ export class FormalPowerSeries extends SeriesBase {
     return new FormalPowerSeries(integrate(this.fn, v), this.x, this.x0, this.direction);
   }
   /**
-   * The string representation of this expression.
+   * Formats the series as a string.
    *
    * @returns The formatted expression.
    */
@@ -623,8 +622,8 @@ export class FormalPowerSeries extends SeriesBase {
 }
 
 /**
- * The formal power series of f about x0. Without x, the
- * only free symbol of f is the variable, and f without free symbols is returned as it is.
+ * Expands the function about the given point, inferring a sole free variable when omitted and
+ * preserving constant inputs.
  *
  * @param ex - Expression to expand or evaluate.
  * @param x - Variable of the expansion.

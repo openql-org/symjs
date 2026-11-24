@@ -29,7 +29,7 @@ import { getCompositePredicates } from './facts';
 export type PredicateLike = Expr | Predicate;
 
 /**
- * The structural key of an expression or of an unapplied predicate.
+ * Builds a structural comparison key for either an expression or an unapplied predicate.
  *
  * @param p - Predicate to look up.
  * @returns A structural key suitable for comparing literals.
@@ -75,16 +75,16 @@ export class Literal {
     }
   }
   /**
-   * The expression or predicate.
+   * Identifies the operand of this literal before any negation.
    *
-   * @returns The expression or predicate.
+   * @returns The underlying expression or predicate.
    * @see SymPy `sympy.assumptions.cnf.Literal.arg`
    */
   get arg(): PredicateLike {
     return this.lit;
   }
   /**
-   * Structural key.
+   * Encodes the object's structure for comparison.
    *
    * @returns A stable key for structural comparisons.
    */
@@ -92,7 +92,7 @@ export class Literal {
     return `${this.isNot ? '~' : ''}${predicateLikeKey(this.lit)}`;
   }
   /**
-   * The predicate applied to expr; the literal must hold an unapplied predicate.
+   * Applies the literal's unapplied predicate to the given expression.
    *
    * @param expr - Expression to evaluate.
    * @returns The formula with each predicate applied to the expression.
@@ -105,7 +105,7 @@ export class Literal {
     return new Literal(lit(expr), this.isNot);
   }
   /**
-   * The negated literal (SymPy ~).
+   * Reverses the polarity of the literal.
    *
    * @returns The negated formula.
    * @see SymPy `sympy.assumptions.cnf.Literal.__invert__`
@@ -114,7 +114,7 @@ export class Literal {
     return new Literal(this.lit, !this.isNot);
   }
   /**
-   * Structural equality (SymPy ==).
+   * Tests whether both operands have the same structure.
    *
    * @param other - Other operand.
    * @returns Whether both objects have the same structure.
@@ -159,16 +159,16 @@ export class OR {
     this.rawArgs = args;
   }
   /**
-   * The arguments sorted by their str form.
+   * Orders the operands by their printed forms.
    *
-   * @returns The arguments sorted by their str form.
+   * @returns The sorted operand list.
    * @see SymPy `sympy.assumptions.cnf.OR.args`
    */
   get args(): NNF[] {
     return sortedByStr(this.rawArgs);
   }
   /**
-   * Each argument applied to expr.
+   * Applies each operand to the expression.
    *
    * @param expr - Expression to evaluate.
    * @returns The formula with each predicate applied to the expression.
@@ -178,7 +178,7 @@ export class OR {
     return new OR(...this.rawArgs.map((a) => a.rcall(expr)));
   }
   /**
-   * The negation: an AND of the negated arguments (SymPy ~).
+   * Negates the disjunction using De Morgan's law.
    *
    * @returns The negated formula.
    * @see SymPy `sympy.assumptions.cnf.OR.__invert__`
@@ -187,7 +187,7 @@ export class OR {
     return new AND(...this.rawArgs.map((a) => a.invert()));
   }
   /**
-   * Structural key.
+   * Encodes the object's structure for comparison.
    *
    * @returns A stable key for structural comparisons.
    */
@@ -195,7 +195,7 @@ export class OR {
     return `OR(${this.args.map(nnfKey).join(',')})`;
   }
   /**
-   * Structural equality (SymPy ==).
+   * Tests whether both operands have the same structure.
    *
    * @param other - Other operand.
    * @returns Whether both objects have the same structure.
@@ -204,7 +204,7 @@ export class OR {
     return this.key === other.key;
   }
   /**
-   * (a | b).
+   * Prints the operands as a parenthesized disjunction.
    *
    * @returns The formatted expression.
    */
@@ -234,16 +234,16 @@ export class AND {
     this.rawArgs = args;
   }
   /**
-   * The arguments sorted by their str form.
+   * Orders the operands by their printed forms.
    *
-   * @returns The arguments sorted by their str form.
+   * @returns The sorted operand list.
    * @see SymPy `sympy.assumptions.cnf.AND.args`
    */
   get args(): NNF[] {
     return sortedByStr(this.rawArgs);
   }
   /**
-   * Each argument applied to expr.
+   * Applies each operand to the expression.
    *
    * @param expr - Expression to evaluate.
    * @returns The formula with each predicate applied to the expression.
@@ -253,7 +253,7 @@ export class AND {
     return new AND(...this.rawArgs.map((a) => a.rcall(expr)));
   }
   /**
-   * The negation: an OR of the negated arguments (SymPy ~).
+   * Negates the conjunction using De Morgan's law.
    *
    * @returns The negated formula.
    * @see SymPy `sympy.assumptions.cnf.AND.__invert__`
@@ -262,7 +262,7 @@ export class AND {
     return new OR(...this.rawArgs.map((a) => a.invert()));
   }
   /**
-   * Structural key.
+   * Encodes the object's structure for comparison.
    *
    * @returns A stable key for structural comparisons.
    */
@@ -270,7 +270,7 @@ export class AND {
     return `AND(${this.args.map(nnfKey).join(',')})`;
   }
   /**
-   * Structural equality (SymPy ==).
+   * Tests whether both operands have the same structure.
    *
    * @param other - Other operand.
    * @returns Whether both objects have the same structure.
@@ -279,7 +279,7 @@ export class AND {
     return this.key === other.key;
   }
   /**
-   * (a & b).
+   * Prints the operands as a parenthesized conjunction.
    *
    * @returns The formatted expression.
    */
@@ -319,10 +319,8 @@ function xorClauses(args: readonly Expr[], cmap: CompositeMap): AND {
 }
 
 /**
- * The negation normal form of a boolean expression in terms
- * of AND, OR and Literal. Relations become the predicates Q.eq, Q.gt, ...;
- * the predicates of `compositeMap` are decomposed into their primitive
- * predicates.
+ * Converts a Boolean formula to negation normal form, replacing relations by predicates and decomposing
+ * composite predicates into their primitive conditions.
  *
  * @param exprIn - Expression to evaluate.
  * @param compositeMap - Primitive predicates whose disjunction defines each composite predicate.
@@ -380,8 +378,7 @@ const clauseKey = (c: Iterable<Literal>): string =>
 const uniqueLiterals = (c: Iterable<Literal>): Literal[] => [...new Map([...c].map((l) => [l.key, l] as const)).values()];
 
 /**
- * The CNF of an expression in negation
- * normal form.
+ * Converts negation normal form into conjunctive normal form.
  *
  * @param expr - Expression to evaluate.
  * @returns Equivalent clauses in conjunctive normal form.
@@ -423,7 +420,7 @@ export class CNF {
     this.addClauses(clauses);
   }
   /**
-   * The clauses (SymPy clauses, a set of frozensets of literals).
+   * Lists the sets of literals making up this formula.
    *
    * @returns The clauses.
    * @see SymPy `sympy.assumptions.cnf.CNF.clauses`
@@ -432,9 +429,9 @@ export class CNF {
     return [...this.map.values()];
   }
   /**
-   * The number of clauses.
+   * Counts the clauses in this formula.
    *
-   * @returns The number of clauses.
+   * @returns The clause count.
    */
   get size(): number {
     return this.map.size;
@@ -460,7 +457,7 @@ export class CNF {
     return this;
   }
   /**
-   * A copy.
+   * Copies the formula.
    *
    * @returns An independent copy.
    * @see SymPy `sympy.assumptions.cnf.CNF.copy`
@@ -481,10 +478,10 @@ export class CNF {
     }
   }
   /**
-   * The CNF of a proposition.
+   * Converts a proposition to conjunctive normal form.
    *
    * @param prop - Proposition to include.
-   * @returns The CNF of a proposition.
+   * @returns An equivalent CNF.
    * @see SymPy `sympy.assumptions.cnf.CNF.from_prop`
    */
   static fromProp(prop: PredicateLike | ExprLike | boolean): CNF {
@@ -504,9 +501,9 @@ export class CNF {
     return this;
   }
   /**
-   * The expressions and predicates of the literals.
+   * Collects the distinct operands appearing in the clauses.
    *
-   * @returns The expressions and predicates of the literals.
+   * @returns The literal operands.
    * @see SymPy `sympy.assumptions.cnf.CNF.all_predicates`
    */
   allPredicates(): PredicateLike[] {
@@ -515,10 +512,10 @@ export class CNF {
     return [...out.values()];
   }
   /**
-   * The disjunction with another CNF.
+   * Combines this formula with another by logical OR.
    *
    * @param cnf - Formula in conjunctive normal form.
-   * @returns The disjunction with another CNF.
+   * @returns The disjunction in CNF.
    * @see SymPy `sympy.assumptions.cnf.CNF._or`
    */
   or(cnf: CNF): CNF {
@@ -527,10 +524,10 @@ export class CNF {
     return new CNF(clauses);
   }
   /**
-   * The conjunction with another CNF.
+   * Combines this formula with another by logical AND.
    *
    * @param cnf - Formula in conjunctive normal form.
-   * @returns The conjunction with another CNF.
+   * @returns The conjunction in CNF.
    * @see SymPy `sympy.assumptions.cnf.CNF._and`
    */
   and(cnf: CNF): CNF {
@@ -559,7 +556,7 @@ export class CNF {
     return ll;
   }
   /**
-   * Every predicate applied to expr.
+   * Applies every predicate in the formula to the expression.
    *
    * @param expr - Expression to evaluate.
    * @returns The formula with each predicate applied to the expression.
@@ -570,11 +567,11 @@ export class CNF {
     return distributeANDOverOR(new AND(...clauseList));
   }
   /**
-   * The disjunction of CNFs.
+   * Joins the supplied formulas by logical OR.
    *
    * @param head - First formula.
    * @param rest - Remaining formulas.
-   * @returns The disjunction of CNFs.
+   * @returns The disjunction in CNF.
    * @see SymPy `sympy.assumptions.cnf.CNF.all_or`
    */
   static allOr(head: CNF, ...rest: CNF[]): CNF {
@@ -583,11 +580,11 @@ export class CNF {
     return b;
   }
   /**
-   * The conjunction of CNFs.
+   * Joins the supplied formulas by logical AND.
    *
    * @param head - First formula.
    * @param rest - Remaining formulas.
-   * @returns The conjunction of CNFs.
+   * @returns The conjunction in CNF.
    * @see SymPy `sympy.assumptions.cnf.CNF.all_and`
    */
   static allAnd(head: CNF, ...rest: CNF[]): CNF {
@@ -596,20 +593,20 @@ export class CNF {
     return b;
   }
   /**
-   * The CNF of a proposition, with the composite predicates decomposed.
+   * Expands composite predicates and converts the proposition to conjunctive normal form.
    *
    * @param expr - Expression to evaluate.
-   * @returns The CNF of a proposition, with the composite predicates decomposed.
+   * @returns An equivalent CNF.
    * @see SymPy `sympy.assumptions.cnf.CNF.to_CNF`
    */
   static toCNF(expr: PredicateLike | ExprLike | boolean): CNF {
     return distributeANDOverOR(toNNF(expr, getCompositePredicates()));
   }
   /**
-   * The CNF as a boolean expression of the same form.
+   * Builds a Boolean expression from the clauses of a CNF.
    *
    * @param cnf - Formula in conjunctive normal form.
-   * @returns The CNF as a boolean expression of the same form.
+   * @returns A conjunction of disjunctions.
    * @throws TypeError when a literal is an unapplied predicate.
    * @see SymPy `sympy.assumptions.cnf.CNF.CNF_to_cnf`
    */
@@ -622,7 +619,7 @@ export class CNF {
     return and(...cnf.clauses.map((clause) => or(...clause.map(removeLiteral))));
   }
   /**
-   * (a | b) & (c).
+   * Prints the formula as a conjunction of parenthesized clauses.
    *
    * @returns The formatted expression.
    */
@@ -670,34 +667,34 @@ export class EncodedCNF {
     this.data = cnf.clauses.map((clause) => this.encode(clause));
   }
   /**
-   * The expressions and predicates in the order of their numbers.
+   * Lists the encoded operands in variable-number order.
    *
-   * @returns The expressions and predicates in the order of their numbers.
+   * @returns The ordered expressions and predicates.
    * @see SymPy `sympy.assumptions.cnf.EncodedCNF.symbols`
    */
   get symbols(): PredicateLike[] {
     return [...this.codes.values()].map(([p]) => p);
   }
   /**
-   * The variable numbers 1..n.
+   * Lists the consecutive variable numbers assigned by this encoding.
    *
-   * @returns The variable numbers 1..n.
+   * @returns The integers from 1 through the variable count.
    * @see SymPy `sympy.assumptions.cnf.EncodedCNF.variables`
    */
   get variables(): number[] {
     return Array.from({ length: this.codes.size }, (_v, i) => i + 1);
   }
   /**
-   * The number of each expression and predicate.
+   * Associates each encoded operand with its variable number.
    *
-   * @returns The number of each expression and predicate.
+   * @returns A map from operands to numbers.
    * @see SymPy `sympy.assumptions.cnf.EncodedCNF.encoding`
    */
   get encoding(): Map<PredicateLike, number> {
     return new Map([...this.codes.values()].map(([p, n]) => [p, n] as const));
   }
   /**
-   * The number of an expression or predicate (SymPy encoding[p]).
+   * Looks up the variable number assigned to an expression or predicate.
    *
    * @param p - Predicate to look up.
    * @returns The number of an expression or predicate.
@@ -706,7 +703,7 @@ export class EncodedCNF {
     return getOrThrow(this.codes, predicateLikeKey(p))[1];
   }
   /**
-   * A copy.
+   * Copies the formula.
    *
    * @returns An independent copy.
    * @see SymPy `sympy.assumptions.cnf.EncodedCNF.copy`
@@ -736,10 +733,10 @@ export class EncodedCNF {
     this.data.push(...cnf.clauses.map((clause) => this.encode(clause)));
   }
   /**
-   * The signed number of a literal, numbering a new expression.
+   * Encodes a literal, assigning a variable number on its first occurrence.
    *
    * @param arg - Argument expression.
-   * @returns The signed number of a literal, numbering a new expression.
+   * @returns The signed literal number.
    * @see SymPy `sympy.assumptions.cnf.EncodedCNF.encode_arg`
    */
   encodeArg(arg: Literal): number {
@@ -752,10 +749,10 @@ export class EncodedCNF {
     return arg.isNot ? -entry[1] : entry[1];
   }
   /**
-   * The clause as signed numbers, a false literal as 0.
+   * Encodes each literal of a clause, using zero for false.
    *
    * @param clause - Literals of one disjunction.
-   * @returns The clause as signed numbers, a false literal as 0.
+   * @returns The set of literal codes.
    * @see SymPy `sympy.assumptions.cnf.EncodedCNF.encode`
    */
   encode(clause: Iterable<Literal>): Set<number> {

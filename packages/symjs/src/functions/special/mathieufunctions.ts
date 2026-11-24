@@ -48,12 +48,12 @@ for (const name of ['mathieus', 'mathieuc', 'mathieusprime', 'mathieucprime'] as
 }
 
 /**
- * The Mathieu sine function.
+ * Evaluates the odd Mathieu function.
  *
  * @param a - The characteristic value.
  * @param q - The Mathieu parameter.
  * @param z - The argument of the function.
- * @returns The Mathieu sine function.
+ * @returns The Mathieu sine expression.
  * @see SymPy `sympy.functions.special.mathieu_functions.mathieus`
  * @example
  * ```ts
@@ -65,12 +65,12 @@ for (const name of ['mathieus', 'mathieuc', 'mathieusprime', 'mathieucprime'] as
  */
 export const mathieus = (a: ExprLike, q: ExprLike, z: ExprLike): Expr => fn('mathieus', [a, q, z]);
 /**
- * The Mathieu cosine function.
+ * Evaluates the even Mathieu function.
  *
  * @param a - The characteristic value.
  * @param q - The Mathieu parameter.
  * @param z - The argument of the function.
- * @returns The Mathieu cosine function.
+ * @returns The Mathieu cosine expression.
  * @see SymPy `sympy.functions.special.mathieu_functions.mathieuc`
  * @example
  * ```ts
@@ -82,12 +82,12 @@ export const mathieus = (a: ExprLike, q: ExprLike, z: ExprLike): Expr => fn('mat
  */
 export const mathieuc = (a: ExprLike, q: ExprLike, z: ExprLike): Expr => fn('mathieuc', [a, q, z]);
 /**
- * The derivative of the Mathieu sine function.
+ * Differentiates the Mathieu sine function with respect to its argument.
  *
  * @param a - The characteristic value.
  * @param q - The Mathieu parameter.
  * @param z - The argument of the function.
- * @returns The derivative of the Mathieu sine function.
+ * @returns The sine derivative.
  * @see SymPy `sympy.functions.special.mathieu_functions.mathieusprime`
  * @example
  * ```ts
@@ -99,12 +99,12 @@ export const mathieuc = (a: ExprLike, q: ExprLike, z: ExprLike): Expr => fn('mat
  */
 export const mathieusprime = (a: ExprLike, q: ExprLike, z: ExprLike): Expr => fn('mathieusprime', [a, q, z]);
 /**
- * The derivative of the Mathieu cosine function.
+ * Differentiates the Mathieu cosine function with respect to its argument.
  *
  * @param a - The characteristic value.
  * @param q - The Mathieu parameter.
  * @param z - The argument of the function.
- * @returns The derivative of the Mathieu cosine function.
+ * @returns The cosine derivative.
  * @see SymPy `sympy.functions.special.mathieu_functions.mathieucprime`
  * @example
  * ```ts

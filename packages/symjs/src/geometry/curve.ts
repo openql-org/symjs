@@ -70,7 +70,7 @@ export class CurveNode extends GeometrySet {
   }
 
   /**
-   * The coordinate functions.
+   * Lists the expressions that give the curve's coordinates.
    *
    * @returns The coordinate functions.
    * @see SymPy `sympy.geometry.curve.Curve.functions`
@@ -80,9 +80,9 @@ export class CurveNode extends GeometrySet {
   }
 
   /**
-   * The limits (t, a, b).
+   * Specifies the curve parameter and its range.
    *
-   * @returns The limits (t, a, b).
+   * @returns The triple `[parameter, lower, upper]`.
    * @see SymPy `sympy.geometry.curve.Curve.limits`
    */
   get limits(): TupleNode {
@@ -90,9 +90,9 @@ export class CurveNode extends GeometrySet {
   }
 
   /**
-   * The parameter t.
+   * Identifies the variable that parametrizes the curve.
    *
-   * @returns The parameter t.
+   * @returns The curve parameter.
    * @see SymPy `sympy.geometry.curve.Curve.parameter`
    */
   get parameter(): Sym {
@@ -100,9 +100,9 @@ export class CurveNode extends GeometrySet {
   }
 
   /**
-   * The number of coordinates in the surrounding space.
+   * Counts the coordinates needed to describe a point in the ambient space.
    *
-   * @returns The number of coordinates in the surrounding space.
+   * @returns The ambient dimension.
    * @see SymPy `sympy.geometry.curve.Curve.ambient_dimension`
    */
   get ambientDimension(): number {
@@ -110,9 +110,9 @@ export class CurveNode extends GeometrySet {
   }
 
   /**
-   * The free symbols other than the parameter.
+   * Collects the symbols left free after binding the curve parameter.
    *
-   * @returns The free symbols other than the parameter.
+   * @returns The set of free symbols.
    * @see SymPy `sympy.geometry.curve.Curve.free_symbols`
    */
   override freeSymbols(): Set<Expr> {
@@ -123,7 +123,7 @@ export class CurveNode extends GeometrySet {
   }
 
   /**
-   * The point of the curve at the value f of the parameter.
+   * Evaluates the parametric curve at the supplied parameter value.
    *
    * @param f - Parameter value at which to evaluate the curve.
    * @returns The point on the curve at `f`.
@@ -134,7 +134,7 @@ export class CurveNode extends GeometrySet {
   }
 
   /**
-   * Substituting the parameter gives the point of the curve.
+   * Substitutes into the curve, evaluating the point when the parameter is replaced.
    *
    * @param old - Expression to replace.
    * @param nw - Expression to substitute in its place.
@@ -147,7 +147,7 @@ export class CurveNode extends GeometrySet {
   }
 
   /**
-   * The functions and limits evaluated numerically.
+   * Evaluates the curve's coordinates and parameter bounds numerically.
    *
    * @param evalfArg - Function that evaluates an operand numerically.
    * @param _dps - Decimal digits of numerical precision.
@@ -160,11 +160,11 @@ export class CurveNode extends GeometrySet {
   }
 
   /**
-   * The point of the curve in terms of a parameter (the curve's own one by default; null keeps the
-   * functions as they are).
+   * Constructs a point from the coordinate functions, using the requested parameter or retaining the
+   * original expressions when passed `null`.
    *
    * @param parameter - Symbol or name used for the parametrization.
-   * @returns The point of the curve in terms of a parameter (the curve's own one by default; null keeps the functions as they are).
+   * @returns A parametrized point.
    * @throws RangeError when the requested parameter name already occurs in the entity.
    * @see SymPy `sympy.geometry.curve.Curve.arbitrary_point`
    */
@@ -179,7 +179,7 @@ export class CurveNode extends GeometrySet {
   }
 
   /**
-   * The arc length.
+   * Computes the length along the curve over its parameter interval.
    *
    * @returns The arc length.
    * @see SymPy `sympy.geometry.curve.Curve.length`
@@ -192,10 +192,10 @@ export class CurveNode extends GeometrySet {
   }
 
   /**
-   * The parameter interval [t, a, b] used for plotting.
+   * Specifies the plotting variable and the range over which to draw the curve.
    *
    * @param parameter - Symbol or name used for the parametrization.
-   * @returns The parameter interval [t, a, b] used for plotting.
+   * @returns The parameter and its endpoints.
    * @see SymPy `sympy.geometry.curve.Curve.plot_interval`
    */
   plotInterval(parameter: string | Sym = 't'): [Sym, Expr, Expr] {
@@ -205,11 +205,11 @@ export class CurveNode extends GeometrySet {
   }
 
   /**
-   * The curve rotated counterclockwise by angle about pt.
+   * Rotates the curve counterclockwise about the given point.
    *
    * @param angle - Rotation angle in radians.
    * @param pt - Center of rotation, defaulting to the origin.
-   * @returns The curve rotated counterclockwise by angle about pt.
+   * @returns The rotated curve.
    * @see SymPy `sympy.geometry.curve.Curve.rotate`
    */
   override rotate(angle: ExprLike = 0, pt?: PointInput | null): CurveNode {
@@ -222,12 +222,12 @@ export class CurveNode extends GeometrySet {
   }
 
   /**
-   * The curve scaled by x and y about pt.
+   * Scales the curve independently along each axis about the given point.
    *
    * @param x - Scale factor along the x axis.
    * @param y - Scale factor along the y axis.
    * @param pt - Fixed point of the scaling, defaulting to the origin.
-   * @returns The curve scaled by x and y about pt.
+   * @returns The scaled curve.
    * @see SymPy `sympy.geometry.curve.Curve.scale`
    */
   override scale(x: ExprLike = 1, y: ExprLike = 1, pt?: PointInput | null): CurveNode {
@@ -240,11 +240,11 @@ export class CurveNode extends GeometrySet {
   }
 
   /**
-   * The curve shifted by x and y.
+   * Translates the curve by the given coordinate offsets.
    *
    * @param x - Displacement along the x axis.
    * @param y - Displacement along the y axis.
-   * @returns The curve shifted by x and y.
+   * @returns The shifted curve.
    * @see SymPy `sympy.geometry.curve.Curve.translate`
    */
   override translate(x: ExprLike = 0, y: ExprLike = 0): CurveNode {
@@ -266,7 +266,7 @@ function newCurve(fs: readonly ExprLike[] | TupleNode, ls: readonly ExprLike[] |
 }
 
 /**
- * A plane curve specified by two coordinate functions over a parameter interval.
+ * Constructs a plane curve specified by two coordinate functions over a parameter interval.
  *
  * @param functions - Coordinate functions in parameter order.
  * @param limits - Bound variables and their inclusive limits.

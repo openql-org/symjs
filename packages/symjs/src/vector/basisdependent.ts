@@ -34,56 +34,56 @@ export interface BasisFamily {
   /** Symbolic name. */
   readonly name: 'Vector' | 'Dyadic';
   /**
-   * A member of the family (SymPy isinstance(e, Vector)).
+   * Tests whether the expression belongs to this vector or dyadic family.
    *
    * @param e - Expression to inspect.
-   * @returns A member of the family (SymPy isinstance(e, Vector)).
+   * @returns True for a family member.
    */
   is(e: Expr): e is BasisDependent;
   /**
-   * A base instance (BaseVector, BaseDyadic).
+   * Tests whether the expression is a basis vector or basis dyadic of this family.
    *
    * @param e - Expression to inspect.
-   * @returns A base instance (BaseVector, BaseDyadic).
+   * @returns True for a basis element.
    */
   isBase(e: Expr): boolean;
   /**
-   * A scalar multiple of a base instance (VectorMul, DyadicMul).
+   * Recognizes a scalar multiple of one of the family's basis elements.
    *
    * @param e - Expression to inspect.
-   * @returns A scalar multiple of a base instance (VectorMul, DyadicMul).
+   * @returns True for a product node.
    */
   isMul(e: Expr): boolean;
   /**
-   * A sum (VectorAdd, DyadicAdd).
+   * Recognizes an additive combination in this family.
    *
    * @param e - Expression to inspect.
-   * @returns A sum (VectorAdd, DyadicAdd).
+   * @returns True for a sum node.
    */
   isAdd(e: Expr): boolean;
   /**
-   * The zero (VectorZero, DyadicZero).
+   * Tests whether the expression is the additive identity of the family.
    *
    * @param e - Expression to inspect.
-   * @returns The zero (VectorZero, DyadicZero).
+   * @returns True for the zero element.
    */
   isZero(e: Expr): boolean;
   /** The zero instance (Vector.zero, Dyadic.zero). */
   readonly zero: BasisDependent;
   /**
-   * The sum node of at least two terms with their components (no evaluation).
+   * Constructs an unevaluated sum from at least two terms and their known components.
    *
    * @param terms - Terms of the sum.
    * @param components - Coefficients indexed by basis elements.
-   * @returns The sum node of at least two terms with their components (no evaluation).
+   * @returns The family sum node.
    */
   addNode(terms: readonly Expr[], components: ExprMap<Expr>): BasisDependent;
   /**
-   * The product node measure*base (no evaluation).
+   * Constructs an unevaluated scalar multiple of a basis element.
    *
    * @param measure - Scalar coefficient.
    * @param base - Base points of the permutation group.
-   * @returns The product node measure*base (no evaluation).
+   * @returns The family product node.
    */
   mulNode(measure: Expr, base: BasisDependent): BasisDependent;
 }
@@ -102,33 +102,32 @@ export function registerFamily(f: BasisFamily): void {
  */
 export abstract class BasisDependent extends ExtensionExpr {
   /**
-   * The family (vectors or dyadics) of this quantity.
+   * Identifies whether the quantity belongs to the vector or dyadic family.
    *
-   * @returns The family (vectors or dyadics) of this quantity.
+   * @returns The family descriptor.
    */
   abstract get family(): BasisFamily;
 
   /**
-   * The components: a map from the base instances (BaseVector, BaseDyadic) to their measure
-   * numbers.
+   * Associates each basis vector or dyadic with its scalar measure number.
    *
    * @returns The scalar coefficients keyed by basis element.
    */
   abstract get components(): ExprMap<Expr>;
 
   /**
-   * The label used by the pretty printer.
+   * Supplies the label used in pretty-printed expressions.
    *
-   * @returns The label used by the pretty printer.
+   * @returns The display label.
    */
   get prettyForm(): string {
     return String(this);
   }
 
   /**
-   * Whether this expression represents a scalar.
+   * Indicates whether the expression represents a scalar.
    *
-   * @returns Whether this expression represents a scalar.
+   * @returns The scalar flag.
    * @see SymPy `sympy.vector.basisdependent.BasisDependent.is_scalar`
    */
   override get isScalar(): boolean {
@@ -136,10 +135,10 @@ export abstract class BasisDependent extends ExtensionExpr {
   }
 
   /**
-   * The quantity rebuilt from the components mapped by f (each component times its base instance).
+   * Applies the function to each component and recombines the results with their basis elements.
    *
    * @param f - Function applied to each scalar coefficient.
-   * @returns The quantity rebuilt from the components mapped by f (each component times its base instance).
+   * @returns The transformed quantity.
    */
   mapComponents(f: (v: Expr) => Expr): Expr {
     return basisAdd(
@@ -149,7 +148,7 @@ export abstract class BasisDependent extends ExtensionExpr {
   }
 
   /**
-   * Trigsimp of each component.
+   * Applies trigonometric simplification to each component.
    *
    * @param opts - Settings described by {@link TrigsimpOptions}.
    * @returns The vector or dyadic with its coefficients trigonometrically simplified.
@@ -171,7 +170,7 @@ export abstract class BasisDependent extends ExtensionExpr {
   }
 
   /**
-   * Doit of each component.
+   * Evaluates each component with `doit`.
    *
    * @returns The vector or dyadic with its coefficients evaluated.
    * @see SymPy `sympy.vector.basisdependent.BasisDependent.doit`
@@ -181,9 +180,9 @@ export abstract class BasisDependent extends ExtensionExpr {
   }
 
   /**
-   * The quantity over 1.
+   * Represents the quantity as a fraction with unit denominator.
    *
-   * @returns The quantity over 1.
+   * @returns The pair `[quantity, 1]`.
    * @see SymPy `sympy.vector.basisdependent.BasisDependent.as_numer_denom`
    */
   asNumerDenom(): [Expr, Expr] {
@@ -191,9 +190,9 @@ export abstract class BasisDependent extends ExtensionExpr {
   }
 
   /**
-   * The coefficient 1 and the quantity.
+   * Splits off a unit scalar coefficient from the quantity.
    *
-   * @returns The coefficient 1 and the quantity.
+   * @returns The pair `[1, quantity]`.
    * @see SymPy `sympy.vector.basisdependent.BasisDependent.as_coeff_mul`
    */
   asCoeffMul(): [Expr, Expr] {
@@ -201,7 +200,7 @@ export abstract class BasisDependent extends ExtensionExpr {
   }
 
   /**
-   * 0 and the terms (each component times its base instance).
+   * Separates the additive constant and the terms in the basis expansion.
    *
    * @returns Zero and the list of scalar multiples of individual basis elements.
    * @see SymPy `sympy.vector.basisdependent.BasisDependent.as_coeff_add`
@@ -211,7 +210,7 @@ export abstract class BasisDependent extends ExtensionExpr {
   }
 
   /**
-   * Division by a scalar (a quantity cannot be a divisor).
+   * Divides the quantity by a scalar.
    *
    * @param o - Divisor.
    * @returns The vector or dyadic with its coefficients divided by the scalar.
@@ -227,7 +226,7 @@ export abstract class BasisDependent extends ExtensionExpr {
   }
 
   /**
-   * The derivative of each component.
+   * Differentiates the scalar coefficient of every basis component.
    *
    * @param x - Variable of differentiation.
    * @param d - Derivative function for individual operands.
@@ -241,7 +240,7 @@ export abstract class BasisDependent extends ExtensionExpr {
   }
 
   /**
-   * Trigsimp of each component.
+   * Applies trigonometric simplification to each component.
    *
    * @param trigsimp - Trigonometric simplification function for individual components.
    * @returns The specialized result when the hook handles the operands.
@@ -252,7 +251,7 @@ export abstract class BasisDependent extends ExtensionExpr {
   }
 
   /**
-   * Simplify of each component.
+   * Simplifies the coefficients in the basis expansion.
    *
    * @param simplify - Simplification function for individual components.
    * @returns The specialized result when the hook handles the operands.
@@ -263,8 +262,7 @@ export abstract class BasisDependent extends ExtensionExpr {
   }
 
   /**
-   * The unevaluated integral of each component (SymPy integrate(v, x) returns it as it is; doit
-   * evaluates the components).
+   * Forms the unevaluated integral of each component.
    *
    * @param x - Variable of integration.
    * @param limits - Bound variables and their inclusive limits.
@@ -276,7 +274,7 @@ export abstract class BasisDependent extends ExtensionExpr {
   }
 
   /**
-   * Evalf of each component.
+   * Evaluates the scalar components to the requested numerical precision.
    *
    * @param evalfArg - Function that evaluates an operand numerically.
    * @returns The numerically evaluated expression.
@@ -287,7 +285,7 @@ export abstract class BasisDependent extends ExtensionExpr {
   }
 
   /**
-   * The conjugate of each component (the base instances are real).
+   * Conjugates each component, retaining the real basis elements.
    *
    * @returns The specialized result when the hook handles the operands.
    * @see SymPy `sympy.vector.basisdependent.BasisDependent._eval_conjugate`
@@ -297,7 +295,7 @@ export abstract class BasisDependent extends ExtensionExpr {
   }
 
   /**
-   * The components evaluated.
+   * Evaluates the components of the quantity.
    *
    * @returns The evaluated expression.
    */

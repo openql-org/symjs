@@ -249,13 +249,13 @@ export function dupRshift(f: DensePoly, n: number, _K: Domain): unknown[] {
 }
 
 /**
- * The sum of the polynomial and the term `c*x**i`.
+ * Adds a monomial term to the polynomial.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param c - Coefficient of the monomial to add, subtract or multiply.
  * @param i - Exponent of the term in the main variable.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The sum of the polynomial and the term `c*x**i`.
+ * @returns The sum with `c*x**i`.
  * @see SymPy `sympy.polys.densearith.dup_add_term`
  * @example
  * ```ts
@@ -267,13 +267,13 @@ export function dupRshift(f: DensePoly, n: number, _K: Domain): unknown[] {
 export function dupAddTerm(f: DensePoly, c: unknown, i: number, K: Domain): unknown[] { return term(f, c, integer(i), 0, K); }
 
 /**
- * The difference between the polynomial and the term `c*x**i`.
+ * Subtracts a monomial term from the polynomial.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param c - Coefficient of the monomial to add, subtract or multiply.
  * @param i - Exponent of the term in the main variable.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The difference between the polynomial and the term `c*x**i`.
+ * @returns The difference polynomial.
  * @see SymPy `sympy.polys.densearith.dup_sub_term`
  * @example
  * ```ts
@@ -285,13 +285,13 @@ export function dupAddTerm(f: DensePoly, c: unknown, i: number, K: Domain): unkn
 export function dupSubTerm(f: DensePoly, c: unknown, i: number, K: Domain): unknown[] { return term(f, c, integer(i), 0, K, true); }
 
 /**
- * The product of the polynomial and the term `c*x**i`.
+ * Multiplies the polynomial by a monomial term.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param c - Coefficient of the monomial to add, subtract or multiply.
  * @param i - Exponent of the term in the main variable.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The product of the polynomial and the term `c*x**i`.
+ * @returns The product with `c*x**i`.
  * @see SymPy `sympy.polys.densearith.dup_mul_term`
  * @example
  * ```ts
@@ -303,12 +303,12 @@ export function dupSubTerm(f: DensePoly, c: unknown, i: number, K: Domain): unkn
 export function dupMulTerm(f: DensePoly, c: unknown, i: number, K: Domain): unknown[] { return mulTerm(f, c, integer(i), 0, K); }
 
 /**
- * The polynomial with the ground coefficient added to its constant term.
+ * Adds a ground value to the constant coefficient.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param c - Coefficient of the term.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The polynomial with the ground coefficient added to its constant term.
+ * @returns The updated polynomial.
  * @see SymPy `sympy.polys.densearith.dup_add_ground`
  * @example
  * ```ts
@@ -320,12 +320,12 @@ export function dupMulTerm(f: DensePoly, c: unknown, i: number, K: Domain): unkn
 export function dupAddGround(f: DensePoly, c: unknown, K: Domain): unknown[] { return term(f, dmpGround(c, 0 - 1), 0, 0, K); }
 
 /**
- * The polynomial with the ground coefficient subtracted from its constant term.
+ * Subtracts a ground value from the constant coefficient.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param c - Coefficient of the term.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The polynomial with the ground coefficient subtracted from its constant term.
+ * @returns The updated polynomial.
  * @see SymPy `sympy.polys.densearith.dup_sub_ground`
  * @example
  * ```ts
@@ -337,12 +337,12 @@ export function dupAddGround(f: DensePoly, c: unknown, K: Domain): unknown[] { r
 export function dupSubGround(f: DensePoly, c: unknown, K: Domain): unknown[] { return term(f, dmpGround(c, 0 - 1), 0, 0, K, true); }
 
 /**
- * The polynomial scaled by a ground coefficient.
+ * Multiplies every coefficient by the ground scalar.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param c - Coefficient of the term.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The polynomial scaled by a ground coefficient.
+ * @returns The scaled polynomial.
  * @see SymPy `sympy.polys.densearith.dup_mul_ground`
  * @example
  * ```ts
@@ -354,12 +354,12 @@ export function dupSubGround(f: DensePoly, c: unknown, K: Domain): unknown[] { r
 export function dupMulGround(f: DensePoly, c: unknown, K: Domain): unknown[] { return mulGround(f, c, 0, K); }
 
 /**
- * The polynomial obtained by dividing each coefficient by the ground divisor.
+ * Divides each polynomial coefficient by a ground element.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param c - Coefficient of the term.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The polynomial obtained by dividing each coefficient by the ground divisor.
+ * @returns The quotient polynomial.
  * @throws RangeError when the divisor is zero.
  * @see SymPy `sympy.polys.densearith.dup_quo_ground`
  * @example
@@ -372,12 +372,12 @@ export function dupMulGround(f: DensePoly, c: unknown, K: Domain): unknown[] { r
 export function dupQuoGround(f: DensePoly, c: unknown, K: Domain): unknown[] { return quoGround(f, c, 0, K, false); }
 
 /**
- * The polynomial obtained by exact division of every coefficient by the ground divisor.
+ * Divides every coefficient exactly by a ground element.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param c - Coefficient of the term.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The polynomial obtained by exact division of every coefficient by the ground divisor.
+ * @returns The exact quotient polynomial.
  * @throws RangeError when the divisor is zero.
  * @throws ExactQuotientFailed when the division leaves a nonzero remainder.
  * @see SymPy `sympy.polys.densearith.dup_exquo_ground`
@@ -391,11 +391,11 @@ export function dupQuoGround(f: DensePoly, c: unknown, K: Domain): unknown[] { r
 export function dupExquoGround(f: DensePoly, c: unknown, K: Domain): unknown[] { return quoGround(f, c, 0, K, true); }
 
 /**
- * The polynomial formed from the absolute values of its coefficients.
+ * Applies absolute value to each polynomial coefficient.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The polynomial formed from the absolute values of its coefficients.
+ * @returns The transformed polynomial.
  * @see SymPy `sympy.polys.densearith.dup_abs`
  * @example
  * ```ts
@@ -407,11 +407,11 @@ export function dupExquoGround(f: DensePoly, c: unknown, K: Domain): unknown[] {
 export function dupAbs(f: DensePoly, K: Domain): unknown[] { return mapGround(f, 0, (c) => absolute(c, K)); }
 
 /**
- * The additive inverse of the polynomial.
+ * Negates every coefficient of the polynomial.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The additive inverse of the polynomial.
+ * @returns The additive inverse.
  * @see SymPy `sympy.polys.densearith.dup_neg`
  * @example
  * ```ts
@@ -423,12 +423,12 @@ export function dupAbs(f: DensePoly, K: Domain): unknown[] { return mapGround(f,
 export function dupNeg(f: DensePoly, K: Domain): unknown[] { return mapGround(f, 0, (c) => domainNeg(K, c)); }
 
 /**
- * The sum of the polynomials.
+ * Adds the corresponding coefficients of two polynomials.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param g - Second polynomial in dense, leading-coefficient-first representation.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The sum of the polynomials.
+ * @returns The sum polynomial.
  * @see SymPy `sympy.polys.densearith.dup_add`
  * @example
  * ```ts
@@ -440,12 +440,12 @@ export function dupNeg(f: DensePoly, K: Domain): unknown[] { return mapGround(f,
 export function dupAdd(f: DensePoly, g: DensePoly, K: Domain): unknown[] { return [...list(sum(f, g, 0, K))]; }
 
 /**
- * The difference of the polynomials.
+ * Subtracts the second polynomial from the first.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param g - Second polynomial in dense, leading-coefficient-first representation.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The difference of the polynomials.
+ * @returns The difference polynomial.
  * @see SymPy `sympy.polys.densearith.dup_sub`
  * @example
  * ```ts
@@ -457,12 +457,12 @@ export function dupAdd(f: DensePoly, g: DensePoly, K: Domain): unknown[] { retur
 export function dupSub(f: DensePoly, g: DensePoly, K: Domain): unknown[] { return [...list(sum(f, g, 0, K, true))]; }
 
 /**
- * The product of the polynomials.
+ * Multiplies all the supplied polynomial factors.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param g - Second polynomial in dense, leading-coefficient-first representation.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The product of the polynomials.
+ * @returns Their product.
  * @see SymPy `sympy.polys.densearith.dup_mul`
  * @example
  * ```ts
@@ -474,7 +474,7 @@ export function dupSub(f: DensePoly, g: DensePoly, K: Domain): unknown[] { retur
 export function dupMul(f: DensePoly, g: DensePoly, K: Domain): unknown[] { return [...list(product(f, g, 0, K))]; }
 
 /**
- * The polynomial `f + g*h`.
+ * Adds the product of the last two polynomials to the first.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param g - Second polynomial in dense, leading-coefficient-first representation.
@@ -492,7 +492,7 @@ export function dupMul(f: DensePoly, g: DensePoly, K: Domain): unknown[] { retur
 export function dupAddMul(f: DensePoly, g: DensePoly, h: DensePoly, K: Domain): unknown[] { return [...list(sum(f, product(g, h, 0, K), 0, K))]; }
 
 /**
- * The polynomial `f - g*h`.
+ * Subtracts the product of the last two polynomials from the first.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param g - Second polynomial in dense, leading-coefficient-first representation.
@@ -510,11 +510,11 @@ export function dupAddMul(f: DensePoly, g: DensePoly, h: DensePoly, K: Domain): 
 export function dupSubMul(f: DensePoly, g: DensePoly, h: DensePoly, K: Domain): unknown[] { return [...list(sum(f, product(g, h, 0, K), 0, K, true))]; }
 
 /**
- * The square of the polynomial.
+ * Multiplies the polynomial by itself.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The square of the polynomial.
+ * @returns The squared polynomial.
  * @see SymPy `sympy.polys.densearith.dup_sqr`
  * @example
  * ```ts
@@ -526,12 +526,12 @@ export function dupSubMul(f: DensePoly, g: DensePoly, h: DensePoly, K: Domain): 
 export function dupSqr(f: DensePoly, K: Domain): unknown[] { return [...list(product(f, f, 0, K))]; }
 
 /**
- * The polynomial raised to the nonnegative integer power `n`.
+ * Raises the polynomial to a nonnegative integer power.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param n - Exponent or degree.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The polynomial raised to the nonnegative integer power `n`.
+ * @returns The polynomial power.
  * @throws RangeError when the exponent is negative.
  * @see SymPy `sympy.polys.densearith.dup_pow`
  * @example
@@ -544,12 +544,12 @@ export function dupSqr(f: DensePoly, K: Domain): unknown[] { return [...list(pro
 export function dupPow(f: DensePoly, n: number, K: Domain): unknown[] { return [...list(power(f, integer(n), 0, K))]; }
 
 /**
- * The pseudo-quotient and pseudo-remainder in the main variable.
+ * Performs pseudo-division in the main variable.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param g - Second polynomial in dense, leading-coefficient-first representation.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The quotient and remainder.
+ * @returns The pseudo-quotient and pseudo-remainder.
  * @throws RangeError when the divisor is zero.
  * @see SymPy `sympy.polys.densearith.dup_pdiv`
  * @remarks SymPy returns `([2, 4], [20])` with tuples for the fixed-length groups.
@@ -563,12 +563,12 @@ export function dupPow(f: DensePoly, n: number, K: Domain): unknown[] { return [
 export function dupPdiv(f: DensePoly, g: DensePoly, K: Domain): [unknown[], unknown[]] { return divide(f, g, 0, K, false, true); }
 
 /**
- * The pseudo-remainder in the main variable.
+ * Performs pseudo-division in the main variable and retains the remainder.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param g - Second polynomial in dense, leading-coefficient-first representation.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The pseudo-remainder in the main variable.
+ * @returns The pseudo-remainder.
  * @throws RangeError when the divisor is zero.
  * @see SymPy `sympy.polys.densearith.dup_prem`
  * @example
@@ -581,12 +581,12 @@ export function dupPdiv(f: DensePoly, g: DensePoly, K: Domain): [unknown[], unkn
 export function dupPrem(f: DensePoly, g: DensePoly, K: Domain): unknown[] { return divide(f, g, 0, K, false, true)[1]; }
 
 /**
- * The pseudo-quotient in the main variable.
+ * Performs pseudo-division in the main variable and retains the quotient.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param g - Second polynomial in dense, leading-coefficient-first representation.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The pseudo-quotient in the main variable.
+ * @returns The pseudo-quotient.
  * @throws RangeError when the divisor is zero.
  * @see SymPy `sympy.polys.densearith.dup_pquo`
  * @example
@@ -600,12 +600,12 @@ export function dupPrem(f: DensePoly, g: DensePoly, K: Domain): unknown[] { retu
 export function dupPquo(f: DensePoly, g: DensePoly, K: Domain): unknown[] { return divide(f, g, 0, K, false, true)[0]; }
 
 /**
- * The exact pseudo-quotient in the main variable.
+ * Performs exact pseudo-division in the main variable.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param g - Second polynomial in dense, leading-coefficient-first representation.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The exact pseudo-quotient in the main variable.
+ * @returns The exact pseudo-quotient.
  * @throws RangeError when the divisor is zero.
  * @throws ExactQuotientFailed when the division leaves a nonzero remainder.
  * @see SymPy `sympy.polys.densearith.dup_pexquo`
@@ -619,12 +619,12 @@ export function dupPquo(f: DensePoly, g: DensePoly, K: Domain): unknown[] { retu
 export function dupPexquo(f: DensePoly, g: DensePoly, K: Domain): unknown[] { return exactQuotient(divide(f, g, 0, K, false, true), 0); }
 
 /**
- * The quotient and remainder using division in the coefficient ring.
+ * Divides polynomials using arithmetic in the coefficient ring.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param g - Second polynomial in dense, leading-coefficient-first representation.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The quotient and remainder using division in the coefficient ring.
+ * @returns The quotient and remainder.
  * @throws RangeError when the divisor is zero.
  * @throws PolynomialDivisionFailed when inexact coefficient arithmetic prevents a reduction in degree.
  * @see SymPy `sympy.polys.densearith.dup_rr_div`
@@ -639,12 +639,12 @@ export function dupPexquo(f: DensePoly, g: DensePoly, K: Domain): unknown[] { re
 export function dupRrDiv(f: DensePoly, g: DensePoly, K: Domain): [unknown[], unknown[]] { return divide(f, g, 0, K, false); }
 
 /**
- * The quotient and remainder using division in the coefficient field.
+ * Divides polynomials using arithmetic in the coefficient field.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param g - Second polynomial in dense, leading-coefficient-first representation.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The quotient and remainder using division in the coefficient field.
+ * @returns The quotient and remainder.
  * @throws RangeError when the divisor is zero.
  * @throws PolynomialDivisionFailed when inexact coefficient arithmetic prevents a reduction in degree.
  * @see SymPy `sympy.polys.densearith.dup_ff_div`
@@ -658,12 +658,12 @@ export function dupRrDiv(f: DensePoly, g: DensePoly, K: Domain): [unknown[], unk
 export function dupFfDiv(f: DensePoly, g: DensePoly, K: Domain): [unknown[], unknown[]] { return divide(f, g, 0, K, true); }
 
 /**
- * The quotient and remainder of polynomial division.
+ * Divides one polynomial by another in the given domain.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param g - Second polynomial in dense, leading-coefficient-first representation.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The quotient and remainder of polynomial division.
+ * @returns The quotient and remainder.
  * @throws RangeError when the divisor is zero.
  * @throws PolynomialDivisionFailed when inexact coefficient arithmetic prevents a reduction in degree.
  * @see SymPy `sympy.polys.densearith.dup_div`
@@ -678,12 +678,12 @@ export function dupFfDiv(f: DensePoly, g: DensePoly, K: Domain): [unknown[], unk
 export function dupDiv(f: DensePoly, g: DensePoly, K: Domain): [unknown[], unknown[]] { return divide(f, g, 0, K, K.isField); }
 
 /**
- * The remainder after dividing `f` by `g`.
+ * Finds what remains after polynomial division by `g`.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param g - Second polynomial in dense, leading-coefficient-first representation.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The remainder after dividing `f` by `g`.
+ * @returns The remainder of `f`.
  * @throws RangeError when the divisor is zero.
  * @throws PolynomialDivisionFailed when inexact coefficient arithmetic prevents a reduction in degree.
  * @see SymPy `sympy.polys.densearith.dup_rem`
@@ -697,12 +697,12 @@ export function dupDiv(f: DensePoly, g: DensePoly, K: Domain): [unknown[], unkno
 export function dupRem(f: DensePoly, g: DensePoly, K: Domain): unknown[] { return divide(f, g, 0, K, K.isField)[1]; }
 
 /**
- * The quotient of polynomial division.
+ * Divides the polynomials and retains the quotient.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param g - Second polynomial in dense, leading-coefficient-first representation.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The quotient of polynomial division.
+ * @returns The quotient polynomial.
  * @throws RangeError when the divisor is zero.
  * @throws PolynomialDivisionFailed when inexact coefficient arithmetic prevents a reduction in degree.
  * @see SymPy `sympy.polys.densearith.dup_quo`
@@ -716,7 +716,7 @@ export function dupRem(f: DensePoly, g: DensePoly, K: Domain): unknown[] { retur
 export function dupQuo(f: DensePoly, g: DensePoly, K: Domain): unknown[] { return divide(f, g, 0, K, K.isField)[0]; }
 
 /**
- * The exact polynomial quotient.
+ * Finds the quotient when the divisor divides the dividend exactly.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param g - Second polynomial in dense, leading-coefficient-first representation.
@@ -736,11 +736,11 @@ export function dupQuo(f: DensePoly, g: DensePoly, K: Domain): unknown[] { retur
 export function dupExquo(f: DensePoly, g: DensePoly, K: Domain): unknown[] { return exactQuotient(divide(f, g, 0, K, K.isField), 0); }
 
 /**
- * The largest absolute value of the coefficients.
+ * Computes the maximum norm of the coefficient vector.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The largest absolute value of the coefficients.
+ * @returns The largest absolute coefficient.
  * @see SymPy `sympy.polys.densearith.dup_max_norm`
  * @example
  * ```ts
@@ -752,11 +752,11 @@ export function dupExquo(f: DensePoly, g: DensePoly, K: Domain): unknown[] { ret
 export function dupMaxNorm(f: DensePoly, K: Domain): unknown { return norm(f, 0, K, 'max'); }
 
 /**
- * The sum of the absolute values of the coefficients.
+ * Computes the polynomial's L1 norm.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The sum of the absolute values of the coefficients.
+ * @returns The sum of absolute coefficients.
  * @see SymPy `sympy.polys.densearith.dup_l1_norm`
  * @example
  * ```ts
@@ -768,11 +768,11 @@ export function dupMaxNorm(f: DensePoly, K: Domain): unknown { return norm(f, 0,
 export function dupL1Norm(f: DensePoly, K: Domain): unknown { return norm(f, 0, K, 'l1'); }
 
 /**
- * The sum of the squares of the coefficients.
+ * Computes the squared Euclidean norm of the coefficient vector.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The sum of the squares of the coefficients.
+ * @returns The sum of squared coefficients.
  * @see SymPy `sympy.polys.densearith.dup_l2_norm_squared`
  * @example
  * ```ts
@@ -784,14 +784,14 @@ export function dupL1Norm(f: DensePoly, K: Domain): unknown { return norm(f, 0, 
 export function dupL2NormSquared(f: DensePoly, K: Domain): unknown { return norm(f, 0, K, 'l2'); }
 
 /**
- * The sum of the polynomial and the term `c*x**i`.
+ * Adds a monomial term to the polynomial.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param c - Coefficient of the monomial to add, subtract or multiply.
  * @param i - Exponent of the term in the main variable.
  * @param u - Number of variables minus one.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The sum of the polynomial and the term `c*x**i`.
+ * @returns The sum with `c*x**i`.
  * @see SymPy `sympy.polys.densearith.dmp_add_term`
  * @example
  * ```ts
@@ -803,14 +803,14 @@ export function dupL2NormSquared(f: DensePoly, K: Domain): unknown { return norm
 export function dmpAddTerm(f: DensePoly, c: unknown, i: number, u: number, K: Domain): unknown[] { return term(f, c, integer(i), integer(u), K); }
 
 /**
- * The difference between the polynomial and the term `c*x**i`.
+ * Subtracts a monomial term from the polynomial.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param c - Coefficient of the monomial to add, subtract or multiply.
  * @param i - Exponent of the term in the main variable.
  * @param u - Number of variables minus one.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The difference between the polynomial and the term `c*x**i`.
+ * @returns The difference polynomial.
  * @see SymPy `sympy.polys.densearith.dmp_sub_term`
  * @example
  * ```ts
@@ -822,14 +822,14 @@ export function dmpAddTerm(f: DensePoly, c: unknown, i: number, u: number, K: Do
 export function dmpSubTerm(f: DensePoly, c: unknown, i: number, u: number, K: Domain): unknown[] { return term(f, c, integer(i), integer(u), K, true); }
 
 /**
- * The product of the polynomial and the term `c*x**i`.
+ * Multiplies the polynomial by a monomial term.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param c - Coefficient of the monomial to add, subtract or multiply.
  * @param i - Exponent of the term in the main variable.
  * @param u - Number of variables minus one.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The product of the polynomial and the term `c*x**i`.
+ * @returns The product with `c*x**i`.
  * @see SymPy `sympy.polys.densearith.dmp_mul_term`
  * @example
  * ```ts
@@ -841,13 +841,13 @@ export function dmpSubTerm(f: DensePoly, c: unknown, i: number, u: number, K: Do
 export function dmpMulTerm(f: DensePoly, c: unknown, i: number, u: number, K: Domain): unknown[] { return mulTerm(f, c, integer(i), integer(u), K); }
 
 /**
- * The polynomial with the ground coefficient added to its constant term.
+ * Adds a ground value to the constant coefficient.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param c - Coefficient of the term.
  * @param u - Number of variables minus one.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The polynomial with the ground coefficient added to its constant term.
+ * @returns The updated polynomial.
  * @see SymPy `sympy.polys.densearith.dmp_add_ground`
  * @example
  * ```ts
@@ -859,13 +859,13 @@ export function dmpMulTerm(f: DensePoly, c: unknown, i: number, u: number, K: Do
 export function dmpAddGround(f: DensePoly, c: unknown, u: number, K: Domain): unknown[] { return term(f, dmpGround(c, integer(u) - 1), 0, integer(u), K); }
 
 /**
- * The polynomial with the ground coefficient subtracted from its constant term.
+ * Subtracts a ground value from the constant coefficient.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param c - Coefficient of the term.
  * @param u - Number of variables minus one.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The polynomial with the ground coefficient subtracted from its constant term.
+ * @returns The updated polynomial.
  * @see SymPy `sympy.polys.densearith.dmp_sub_ground`
  * @example
  * ```ts
@@ -877,13 +877,13 @@ export function dmpAddGround(f: DensePoly, c: unknown, u: number, K: Domain): un
 export function dmpSubGround(f: DensePoly, c: unknown, u: number, K: Domain): unknown[] { return term(f, dmpGround(c, integer(u) - 1), 0, integer(u), K, true); }
 
 /**
- * The polynomial scaled by a ground coefficient.
+ * Multiplies every coefficient by the ground scalar.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param c - Coefficient of the term.
  * @param u - Number of variables minus one.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The polynomial scaled by a ground coefficient.
+ * @returns The scaled polynomial.
  * @see SymPy `sympy.polys.densearith.dmp_mul_ground`
  * @example
  * ```ts
@@ -895,13 +895,13 @@ export function dmpSubGround(f: DensePoly, c: unknown, u: number, K: Domain): un
 export function dmpMulGround(f: DensePoly, c: unknown, u: number, K: Domain): unknown[] { return mulGround(f, c, integer(u), K); }
 
 /**
- * The polynomial obtained by dividing each coefficient by the ground divisor.
+ * Divides each polynomial coefficient by a ground element.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param c - Coefficient of the term.
  * @param u - Number of variables minus one.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The polynomial obtained by dividing each coefficient by the ground divisor.
+ * @returns The quotient polynomial.
  * @throws RangeError when the divisor is zero.
  * @see SymPy `sympy.polys.densearith.dmp_quo_ground`
  * @example
@@ -914,13 +914,13 @@ export function dmpMulGround(f: DensePoly, c: unknown, u: number, K: Domain): un
 export function dmpQuoGround(f: DensePoly, c: unknown, u: number, K: Domain): unknown[] { return quoGround(f, c, integer(u), K, false); }
 
 /**
- * The polynomial obtained by exact division of every coefficient by the ground divisor.
+ * Divides every coefficient exactly by a ground element.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param c - Coefficient of the term.
  * @param u - Number of variables minus one.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The polynomial obtained by exact division of every coefficient by the ground divisor.
+ * @returns The exact quotient polynomial.
  * @throws RangeError when the divisor is zero.
  * @throws ExactQuotientFailed when the division leaves a nonzero remainder.
  * @see SymPy `sympy.polys.densearith.dmp_exquo_ground`
@@ -934,12 +934,12 @@ export function dmpQuoGround(f: DensePoly, c: unknown, u: number, K: Domain): un
 export function dmpExquoGround(f: DensePoly, c: unknown, u: number, K: Domain): unknown[] { return quoGround(f, c, integer(u), K, true); }
 
 /**
- * The polynomial formed from the absolute values of its coefficients.
+ * Applies absolute value to each polynomial coefficient.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param u - Number of variables minus one.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The polynomial formed from the absolute values of its coefficients.
+ * @returns The transformed polynomial.
  * @see SymPy `sympy.polys.densearith.dmp_abs`
  * @example
  * ```ts
@@ -951,12 +951,12 @@ export function dmpExquoGround(f: DensePoly, c: unknown, u: number, K: Domain): 
 export function dmpAbs(f: DensePoly, u: number, K: Domain): unknown[] { return mapGround(f, integer(u), (c) => absolute(c, K)); }
 
 /**
- * The additive inverse of the polynomial.
+ * Negates every coefficient of the polynomial.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param u - Number of variables minus one.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The additive inverse of the polynomial.
+ * @returns The additive inverse.
  * @see SymPy `sympy.polys.densearith.dmp_neg`
  * @example
  * ```ts
@@ -968,13 +968,13 @@ export function dmpAbs(f: DensePoly, u: number, K: Domain): unknown[] { return m
 export function dmpNeg(f: DensePoly, u: number, K: Domain): unknown[] { return mapGround(f, integer(u), (c) => domainNeg(K, c)); }
 
 /**
- * The sum of the polynomials.
+ * Adds the corresponding coefficients of two polynomials.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param g - Second polynomial in dense, leading-coefficient-first representation.
  * @param u - Number of variables minus one.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The sum of the polynomials.
+ * @returns The sum polynomial.
  * @see SymPy `sympy.polys.densearith.dmp_add`
  * @example
  * ```ts
@@ -986,13 +986,13 @@ export function dmpNeg(f: DensePoly, u: number, K: Domain): unknown[] { return m
 export function dmpAdd(f: DensePoly, g: DensePoly, u: number, K: Domain): unknown[] { return [...list(sum(f, g, integer(u), K))]; }
 
 /**
- * The difference of the polynomials.
+ * Subtracts the second polynomial from the first.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param g - Second polynomial in dense, leading-coefficient-first representation.
  * @param u - Number of variables minus one.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The difference of the polynomials.
+ * @returns The difference polynomial.
  * @see SymPy `sympy.polys.densearith.dmp_sub`
  * @example
  * ```ts
@@ -1004,13 +1004,13 @@ export function dmpAdd(f: DensePoly, g: DensePoly, u: number, K: Domain): unknow
 export function dmpSub(f: DensePoly, g: DensePoly, u: number, K: Domain): unknown[] { return [...list(sum(f, g, integer(u), K, true))]; }
 
 /**
- * The product of the polynomials.
+ * Multiplies all the supplied polynomial factors.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param g - Second polynomial in dense, leading-coefficient-first representation.
  * @param u - Number of variables minus one.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The product of the polynomials.
+ * @returns Their product.
  * @see SymPy `sympy.polys.densearith.dmp_mul`
  * @example
  * ```ts
@@ -1022,7 +1022,7 @@ export function dmpSub(f: DensePoly, g: DensePoly, u: number, K: Domain): unknow
 export function dmpMul(f: DensePoly, g: DensePoly, u: number, K: Domain): unknown[] { return [...list(product(f, g, integer(u), K))]; }
 
 /**
- * The polynomial `f + g*h`.
+ * Adds the product of the last two polynomials to the first.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param g - Second polynomial in dense, leading-coefficient-first representation.
@@ -1041,7 +1041,7 @@ export function dmpMul(f: DensePoly, g: DensePoly, u: number, K: Domain): unknow
 export function dmpAddMul(f: DensePoly, g: DensePoly, h: DensePoly, u: number, K: Domain): unknown[] { return [...list(sum(f, product(g, h, integer(u), K), integer(u), K))]; }
 
 /**
- * The polynomial `f - g*h`.
+ * Subtracts the product of the last two polynomials from the first.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param g - Second polynomial in dense, leading-coefficient-first representation.
@@ -1060,12 +1060,12 @@ export function dmpAddMul(f: DensePoly, g: DensePoly, h: DensePoly, u: number, K
 export function dmpSubMul(f: DensePoly, g: DensePoly, h: DensePoly, u: number, K: Domain): unknown[] { return [...list(sum(f, product(g, h, integer(u), K), integer(u), K, true))]; }
 
 /**
- * The square of the polynomial.
+ * Multiplies the polynomial by itself.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param u - Number of variables minus one.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The square of the polynomial.
+ * @returns The squared polynomial.
  * @see SymPy `sympy.polys.densearith.dmp_sqr`
  * @example
  * ```ts
@@ -1077,13 +1077,13 @@ export function dmpSubMul(f: DensePoly, g: DensePoly, h: DensePoly, u: number, K
 export function dmpSqr(f: DensePoly, u: number, K: Domain): unknown[] { return [...list(product(f, f, integer(u), K))]; }
 
 /**
- * The polynomial raised to the nonnegative integer power `n`.
+ * Raises the polynomial to a nonnegative integer power.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param n - Exponent or degree.
  * @param u - Number of variables minus one.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The polynomial raised to the nonnegative integer power `n`.
+ * @returns The polynomial power.
  * @throws RangeError when the exponent is negative.
  * @see SymPy `sympy.polys.densearith.dmp_pow`
  * @example
@@ -1096,13 +1096,13 @@ export function dmpSqr(f: DensePoly, u: number, K: Domain): unknown[] { return [
 export function dmpPow(f: DensePoly, n: number, u: number, K: Domain): unknown[] { return [...list(power(f, integer(n), integer(u), K))]; }
 
 /**
- * The pseudo-quotient and pseudo-remainder in the main variable.
+ * Performs pseudo-division in the main variable.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param g - Second polynomial in dense, leading-coefficient-first representation.
  * @param u - Number of variables minus one.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The quotient and remainder.
+ * @returns The pseudo-quotient and pseudo-remainder.
  * @throws RangeError when the divisor is zero.
  * @see SymPy `sympy.polys.densearith.dmp_pdiv`
  * @remarks SymPy returns `([[2], [2, -2]], [[-4, 4]])` with tuples for the fixed-length groups.
@@ -1116,13 +1116,13 @@ export function dmpPow(f: DensePoly, n: number, u: number, K: Domain): unknown[]
 export function dmpPdiv(f: DensePoly, g: DensePoly, u: number, K: Domain): [unknown[], unknown[]] { return divide(f, g, integer(u), K, false, true); }
 
 /**
- * The pseudo-remainder in the main variable.
+ * Performs pseudo-division in the main variable and retains the remainder.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param g - Second polynomial in dense, leading-coefficient-first representation.
  * @param u - Number of variables minus one.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The pseudo-remainder in the main variable.
+ * @returns The pseudo-remainder.
  * @throws RangeError when the divisor is zero.
  * @see SymPy `sympy.polys.densearith.dmp_prem`
  * @example
@@ -1135,13 +1135,13 @@ export function dmpPdiv(f: DensePoly, g: DensePoly, u: number, K: Domain): [unkn
 export function dmpPrem(f: DensePoly, g: DensePoly, u: number, K: Domain): unknown[] { return divide(f, g, integer(u), K, false, true)[1]; }
 
 /**
- * The pseudo-quotient in the main variable.
+ * Performs pseudo-division in the main variable and retains the quotient.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param g - Second polynomial in dense, leading-coefficient-first representation.
  * @param u - Number of variables minus one.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The pseudo-quotient in the main variable.
+ * @returns The pseudo-quotient.
  * @throws RangeError when the divisor is zero.
  * @see SymPy `sympy.polys.densearith.dmp_pquo`
  * @example
@@ -1155,13 +1155,13 @@ export function dmpPrem(f: DensePoly, g: DensePoly, u: number, K: Domain): unkno
 export function dmpPquo(f: DensePoly, g: DensePoly, u: number, K: Domain): unknown[] { return divide(f, g, integer(u), K, false, true)[0]; }
 
 /**
- * The exact pseudo-quotient in the main variable.
+ * Performs exact pseudo-division in the main variable.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param g - Second polynomial in dense, leading-coefficient-first representation.
  * @param u - Number of variables minus one.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The exact pseudo-quotient in the main variable.
+ * @returns The exact pseudo-quotient.
  * @throws RangeError when the divisor is zero.
  * @throws ExactQuotientFailed when the division leaves a nonzero remainder.
  * @see SymPy `sympy.polys.densearith.dmp_pexquo`
@@ -1175,13 +1175,13 @@ export function dmpPquo(f: DensePoly, g: DensePoly, u: number, K: Domain): unkno
 export function dmpPexquo(f: DensePoly, g: DensePoly, u: number, K: Domain): unknown[] { return exactQuotient(divide(f, g, integer(u), K, false, true), integer(u)); }
 
 /**
- * The quotient and remainder using division in the coefficient ring.
+ * Divides polynomials using arithmetic in the coefficient ring.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param g - Second polynomial in dense, leading-coefficient-first representation.
  * @param u - Number of variables minus one.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The quotient and remainder using division in the coefficient ring.
+ * @returns The quotient and remainder.
  * @throws RangeError when the divisor is zero.
  * @throws PolynomialDivisionFailed when inexact coefficient arithmetic prevents a reduction in degree.
  * @see SymPy `sympy.polys.densearith.dmp_rr_div`
@@ -1196,13 +1196,13 @@ export function dmpPexquo(f: DensePoly, g: DensePoly, u: number, K: Domain): unk
 export function dmpRrDiv(f: DensePoly, g: DensePoly, u: number, K: Domain): [unknown[], unknown[]] { return divide(f, g, integer(u), K, false); }
 
 /**
- * The quotient and remainder using division in the coefficient field.
+ * Divides polynomials using arithmetic in the coefficient field.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param g - Second polynomial in dense, leading-coefficient-first representation.
  * @param u - Number of variables minus one.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The quotient and remainder using division in the coefficient field.
+ * @returns The quotient and remainder.
  * @throws RangeError when the divisor is zero.
  * @throws PolynomialDivisionFailed when inexact coefficient arithmetic prevents a reduction in degree.
  * @see SymPy `sympy.polys.densearith.dmp_ff_div`
@@ -1216,13 +1216,13 @@ export function dmpRrDiv(f: DensePoly, g: DensePoly, u: number, K: Domain): [unk
 export function dmpFfDiv(f: DensePoly, g: DensePoly, u: number, K: Domain): [unknown[], unknown[]] { return divide(f, g, integer(u), K, true); }
 
 /**
- * The quotient and remainder of polynomial division.
+ * Divides one polynomial by another in the given domain.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param g - Second polynomial in dense, leading-coefficient-first representation.
  * @param u - Number of variables minus one.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The quotient and remainder of polynomial division.
+ * @returns The quotient and remainder.
  * @throws RangeError when the divisor is zero.
  * @throws PolynomialDivisionFailed when inexact coefficient arithmetic prevents a reduction in degree.
  * @see SymPy `sympy.polys.densearith.dmp_div`
@@ -1237,13 +1237,13 @@ export function dmpFfDiv(f: DensePoly, g: DensePoly, u: number, K: Domain): [unk
 export function dmpDiv(f: DensePoly, g: DensePoly, u: number, K: Domain): [unknown[], unknown[]] { return divide(f, g, integer(u), K, K.isField); }
 
 /**
- * The remainder after dividing `f` by `g`.
+ * Finds what remains after polynomial division by `g`.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param g - Second polynomial in dense, leading-coefficient-first representation.
  * @param u - Number of variables minus one.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The remainder after dividing `f` by `g`.
+ * @returns The remainder of `f`.
  * @throws RangeError when the divisor is zero.
  * @throws PolynomialDivisionFailed when inexact coefficient arithmetic prevents a reduction in degree.
  * @see SymPy `sympy.polys.densearith.dmp_rem`
@@ -1257,13 +1257,13 @@ export function dmpDiv(f: DensePoly, g: DensePoly, u: number, K: Domain): [unkno
 export function dmpRem(f: DensePoly, g: DensePoly, u: number, K: Domain): unknown[] { return divide(f, g, integer(u), K, K.isField)[1]; }
 
 /**
- * The quotient of polynomial division.
+ * Divides the polynomials and retains the quotient.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param g - Second polynomial in dense, leading-coefficient-first representation.
  * @param u - Number of variables minus one.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The quotient of polynomial division.
+ * @returns The quotient polynomial.
  * @throws RangeError when the divisor is zero.
  * @throws PolynomialDivisionFailed when inexact coefficient arithmetic prevents a reduction in degree.
  * @see SymPy `sympy.polys.densearith.dmp_quo`
@@ -1277,7 +1277,7 @@ export function dmpRem(f: DensePoly, g: DensePoly, u: number, K: Domain): unknow
 export function dmpQuo(f: DensePoly, g: DensePoly, u: number, K: Domain): unknown[] { return divide(f, g, integer(u), K, K.isField)[0]; }
 
 /**
- * The exact polynomial quotient.
+ * Finds the quotient when the divisor divides the dividend exactly.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param g - Second polynomial in dense, leading-coefficient-first representation.
@@ -1298,12 +1298,12 @@ export function dmpQuo(f: DensePoly, g: DensePoly, u: number, K: Domain): unknow
 export function dmpExquo(f: DensePoly, g: DensePoly, u: number, K: Domain): unknown[] { return exactQuotient(divide(f, g, integer(u), K, K.isField), integer(u)); }
 
 /**
- * The largest absolute value of the coefficients.
+ * Computes the maximum norm of the coefficient vector.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param u - Number of variables minus one.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The largest absolute value of the coefficients.
+ * @returns The largest absolute coefficient.
  * @see SymPy `sympy.polys.densearith.dmp_max_norm`
  * @example
  * ```ts
@@ -1315,12 +1315,12 @@ export function dmpExquo(f: DensePoly, g: DensePoly, u: number, K: Domain): unkn
 export function dmpMaxNorm(f: DensePoly, u: number, K: Domain): unknown { return norm(f, integer(u), K, 'max'); }
 
 /**
- * The sum of the absolute values of the coefficients.
+ * Computes the polynomial's L1 norm.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param u - Number of variables minus one.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The sum of the absolute values of the coefficients.
+ * @returns The sum of absolute coefficients.
  * @see SymPy `sympy.polys.densearith.dmp_l1_norm`
  * @example
  * ```ts
@@ -1332,12 +1332,12 @@ export function dmpMaxNorm(f: DensePoly, u: number, K: Domain): unknown { return
 export function dmpL1Norm(f: DensePoly, u: number, K: Domain): unknown { return norm(f, integer(u), K, 'l1'); }
 
 /**
- * The sum of the squares of the coefficients.
+ * Computes the squared Euclidean norm of the coefficient vector.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param u - Number of variables minus one.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The sum of the squares of the coefficients.
+ * @returns The sum of squared coefficients.
  * @see SymPy `sympy.polys.densearith.dmp_l2_norm_squared`
  * @example
  * ```ts

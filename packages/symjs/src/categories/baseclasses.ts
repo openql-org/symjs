@@ -18,15 +18,15 @@ import { EmptySet, FiniteSet, SetExpr, containsQ, finiteSet, union } from '../se
  */
 export class SymObject extends Sym {
   /**
-   * The name used by the expression printer.
+   * Supplies the name the printer displays for this expression.
    *
-   * @returns The name used by the expression printer.
+   * @returns The display name.
    */
   override get printName(): string { return `Object(${JSON.stringify(this.name)})`; }
   /**
-   * The class name used for canonical ordering.
+   * Identifies the class used to sort this expression.
    *
-   * @returns The class name used for canonical ordering.
+   * @returns The ordering class name.
    */
   override get sortClass(): string { return 'Object'; }
   protected override computeKey(): string { return `Object(${super.computeKey()})`; }
@@ -59,16 +59,16 @@ export abstract class Morphism extends ExtensionExpr {
     if (new.target === Morphism) throw new NotImplementedError('Cannot instantiate Morphism; use a derived class.');
   }
   /**
-   * Returns the domain of the morphism.
+   * Identifies the object at which the arrow starts.
    *
-   * @returns The domain of the morphism.
+   * @returns The source object.
    * @see SymPy `sympy.categories.baseclasses.Morphism.domain`
    */
   get domain(): Expr { return first(this.args); }
   /**
-   * Returns the codomain of the morphism.
+   * Identifies the object at which the arrow ends.
    *
-   * @returns The codomain of the morphism.
+   * @returns The target object.
    * @see SymPy `sympy.categories.baseclasses.Morphism.codomain`
    */
   get codomain(): Expr { return at(this.args, 1); }
@@ -100,9 +100,9 @@ export abstract class Morphism extends ExtensionExpr {
    */
   override mul(other: ExprLike): Morphism { return this.compose(cast(other, Morphism, 'composition requires a morphism')); }
   /**
-   * Whether this expression represents a scalar.
+   * Indicates whether the expression represents a scalar.
    *
-   * @returns Whether this expression represents a scalar.
+   * @returns The scalar flag.
    */
   override get isScalar(): boolean { return false; }
   protected override computeCommutative(): boolean { return false; }
@@ -121,9 +121,9 @@ export class IdentityMorphismNode extends Morphism {
    */
   constructor(domain: Expr) { super('IdentityMorphism', [domain]); }
   /**
-   * Returns the codomain of the morphism.
+   * Identifies the object at which the arrow ends.
    *
-   * @returns The codomain of the morphism.
+   * @returns The target object.
    * @see SymPy `sympy.categories.baseclasses.IdentityMorphism.codomain`
    */
   override get codomain(): Expr { return this.domain; }
@@ -143,7 +143,7 @@ export class IdentityMorphismNode extends Morphism {
   withArgs(args: readonly Expr[]): Expr { return new IdentityMorphismNode(first(args)); }
 }
 /**
- * The identity arrow from an object to itself.
+ * Constructs the identity arrow of the supplied object.
  *
  * @param domain - Object at the source of the arrow.
  * @returns The resulting `IdentityMorphism` expression.
@@ -194,7 +194,7 @@ export class NamedMorphismNode extends Morphism {
    */
   override printStr(print: (e: Expr) => string): string { return `NamedMorphism(${print(this.domain)}, ${print(this.codomain)}, ${JSON.stringify(this.name)})`; }
   /**
-   * The name like a symbol's (f_{1}), then the arrow.
+   * Formats the morphism name as a symbol followed by its arrow.
    *
    * @param print - Formatter for a child expression.
    * @returns The formatted LaTeX.
@@ -202,7 +202,7 @@ export class NamedMorphismNode extends Morphism {
   override printLatex(print: (e: Expr) => string): string { return `${print(new Sym(this.name))}:${print(this.domain)}\\rightarrow ${print(this.codomain)}`; }
 }
 /**
- * A named arrow from its domain to its codomain.
+ * Constructs a named arrow between the supplied objects.
  *
  * @param domain - Object at the source of the arrow.
  * @param codomain - Object at the target of the arrow.
@@ -241,16 +241,16 @@ export class CompositeMorphismNode extends Morphism {
      */
     readonly components: readonly Morphism[]) { super('CompositeMorphism', [Tuple(...components)]); }
   /**
-   * Returns the domain of this composite morphism.
+   * Identifies the source of the first arrow in the composition.
    *
-   * @returns The domain of this composite morphism.
+   * @returns The source object.
    * @see SymPy `sympy.categories.baseclasses.CompositeMorphism.domain`
    */
   override get domain(): Expr { return first(this.components).domain; }
   /**
-   * Returns the codomain of this composite morphism.
+   * Identifies the target of the final arrow in the composition.
    *
-   * @returns The codomain of this composite morphism.
+   * @returns The target object.
    * @see SymPy `sympy.categories.baseclasses.CompositeMorphism.codomain`
    */
   override get codomain(): Expr { return last(this.components).codomain; }
@@ -290,7 +290,7 @@ function compositeMorphism(components: readonly Morphism[]): Morphism {
   return normalized.length > 1 ? new CompositeMorphismNode(normalized) : first(normalized.length ? normalized : components);
 }
 /**
- * A composition of arrows in the order in which they act.
+ * Composes arrows in the order in which they act.
  *
  * @param components - Composable arrows in the order they act, separately or as a list.
  * @returns The composite arrow, simplified by removing identities and flattening nested composites.
@@ -364,9 +364,9 @@ export class CategoryNode extends ExtensionExpr {
     super(name, [new CategoryClass(objects), commutativeDiagrams]);
   }
   /**
-   * Returns the class of objects of this category.
+   * Identifies the objects belonging to this category.
    *
-   * @returns The class of objects of this category.
+   * @returns The object class.
    * @see SymPy `sympy.categories.baseclasses.Category.objects`
    */
   get objects(): CategoryClass { return cast(first(this.args), CategoryClass); }
@@ -409,7 +409,7 @@ export class CategoryNode extends ExtensionExpr {
   allMorphisms(): never { throw new NotImplementedError('Obtaining the class of morphisms is not implemented in Category, as in SymPy.'); }
 }
 /**
- * A named category with a class of objects and a set of commutative diagrams.
+ * Constructs a named category from its objects and commutative diagrams.
  *
  * @param name - Symbolic name.
  * @param objects - Objects belonging to the category or subdiagram.
@@ -516,7 +516,8 @@ export class DiagramNode extends ExtensionExpr {
    */
   withArgs(args: readonly Expr[]): Expr { return new DiagramNode(cast(first(args), DictNode), cast(at(args, 1), DictNode)); }
   /**
-   * The premises, then the conclusions after an arrow; an empty diagram is the empty set.
+   * Formats the premises and conclusions on either side of an arrow, displaying an empty diagram as the
+   * empty set.
    *
    * @param print - Formatter for a child expression.
    * @returns The formatted LaTeX.
@@ -527,11 +528,11 @@ export class DiagramNode extends ExtensionExpr {
     return this.conclusions.args.length ? `${premises}\\Longrightarrow ${print(this.conclusions)}` : premises;
   }
   /**
-   * The morphisms from the source object to the target object.
+   * Finds the arrows from the source to the target in both parts of the diagram.
    *
    * @param a - Source object.
    * @param b - Target object.
-   * @returns The morphisms from the source object to the target object.
+   * @returns The premise and conclusion morphism sets.
    * @see SymPy `sympy.categories.baseclasses.Diagram.hom`
    */
   hom(a: Expr, b: Expr): [SetExpr, SetExpr] {
@@ -539,10 +540,10 @@ export class DiagramNode extends ExtensionExpr {
     return [arrows(this.premises), arrows(this.conclusions)];
   }
   /**
-   * Whether the supplied diagram is contained in this one.
+   * Tests whether this diagram includes the supplied diagram and its morphism properties.
    *
    * @param diagram - Diagram to lay out or draw.
-   * @returns Whether the supplied diagram is contained in this one.
+   * @returns True if it is a subdiagram.
    * @see SymPy `sympy.categories.baseclasses.Diagram.is_subdiagram`
    */
   isSubdiagram(diagram: DiagramNode): boolean {
@@ -565,7 +566,7 @@ export class DiagramNode extends ExtensionExpr {
   }
 }
 /**
- * A collection of morphisms and properties divided into premises and conclusions.
+ * Constructs a diagram from its premise and conclusion morphisms and their properties.
  *
  * @param premises - Arrows and properties assumed in the diagram.
  * @param conclusions - Arrows and properties asserted by the diagram.

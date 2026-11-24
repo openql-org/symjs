@@ -56,10 +56,10 @@ const ground = (name: string | undefined): Domain => defined(GROUNDS[defined(nam
 const symbolsOf = (s: string | undefined): Sym[] => defined(s).split(',').map((g) => expectType(parse(g.trim()), (e): e is Sym => e instanceof Sym, 'generator'));
 
 /**
- * A domain from its specification: a domain, or a string such as 'ZZ', 'QQ[x,y]', 'GF(5)' or 'QQ<sqrt(2)>'.
+ * Resolves a coefficient domain from a domain object or its string specification.
  *
  * @param domain - Coefficient domain.
- * @returns A domain from its specification: a domain, or a string such as 'ZZ', 'QQ[x,y]', 'GF(5)' or 'QQ<sqrt(2)>'.
+ * @returns The coefficient domain.
  * @throws NotImplementedError when the requested floating-point precision is unsupported.
  * @throws OptionError when the domain specification is unrecognized.
  * @see SymPy `sympy.polys.polyoptions.Domain.preprocess`
@@ -286,27 +286,27 @@ export class Options extends Map<string, unknown> {
     for (const option of ORDER) spec(option).postprocess?.(this);
   }
   /**
-   * An option's value, or its default when it is not set.
+   * Looks up the option and uses its default if unset.
    *
    * @param name - Name of the option.
-   * @returns An option's value, or its default when it is not set.
+   * @returns The effective option value.
    */
   option(name: string): unknown {
     return this.has(name) ? this.get(name) : (spec(name).default?.() ?? null);
   }
   /**
-   * The generators.
+   * Lists the generators in their defining order.
    *
-   * @returns The generators.
+   * @returns The generator sequence.
    * @see SymPy `sympy.polys.polyoptions.Options.gens`
    */
   get gens(): Expr[] {
     return [...cast(this.option('gens'), TupleNode).args];
   }
   /**
-   * The coefficient domain.
+   * Identifies the coefficient domain selected by the options.
    *
-   * @returns The coefficient domain.
+   * @returns The configured domain, if supplied.
    * @see SymPy `sympy.polys.polyoptions.Options.domain`
    */
   get domain(): Domain | null {
@@ -314,18 +314,18 @@ export class Options extends Map<string, unknown> {
     return d instanceof Domain ? d : null;
   }
   /**
-   * Whether to prefer a field for the coefficients.
+   * Indicates whether the options request field coefficients.
    *
-   * @returns Whether to prefer a field for the coefficients.
+   * @returns The field preference.
    * @see SymPy `sympy.polys.polyoptions.Options.field`
    */
   get field(): boolean {
     return this.option('field') === true;
   }
   /**
-   * The algebraic extensions to include in the coefficient domain.
+   * Specifies which algebraic extensions to use in the coefficient domain.
    *
-   * @returns The algebraic extensions to include in the coefficient domain.
+   * @returns The extension selection.
    * @see SymPy `sympy.polys.polyoptions.Options.extension`
    */
   get extension(): boolean | Expr[] | null {
@@ -333,9 +333,9 @@ export class Options extends Map<string, unknown> {
     return e === true || (Array.isArray(e) ? e.map(asExpr) : null);
   }
   /**
-   * Whether the coefficient domain may contain polynomial or rational-function generators.
+   * Controls whether coefficient domains may contain polynomial or rational-function generators.
    *
-   * @returns Whether the coefficient domain may contain polynomial or rational-function generators.
+   * @returns The composite-domain preference.
    * @see SymPy `sympy.polys.polyoptions.Options.composite`
    */
   get composite(): boolean | null {
@@ -343,19 +343,19 @@ export class Options extends Map<string, unknown> {
     return typeof c === 'boolean' ? c : null;
   }
   /**
-   * Whether to convert the coefficient domain automatically.
+   * Indicates whether to convert the coefficient domain automatically.
    *
-   * @returns Whether to convert the coefficient domain automatically.
+   * @returns The automatic-conversion flag.
    * @see SymPy `sympy.polys.polyoptions.Options.auto`
    */
   get auto(): boolean {
     return this.option('auto') === true;
   }
   /**
-   * A copy with some options replaced.
+   * Copies the options and applies the specified replacements.
    *
    * @param updates - Option values to replace.
-   * @returns A copy with some options replaced.
+   * @returns The updated options object.
    * @see SymPy `sympy.polys.polyoptions.Options.clone`
    */
   clone(updates: OptionArgs = {}): Options {
@@ -365,9 +365,9 @@ export class Options extends Map<string, unknown> {
     return o;
   }
   /**
-   * The options that are not flags, except gens.
+   * Collects the non-flag options while excluding the generators.
    *
-   * @returns The options that are not flags, except gens.
+   * @returns A map of option names to values.
    * @see SymPy `sympy.polys.polyoptions.Options.args`
    */
   get args(): Map<string, unknown> {
@@ -376,11 +376,11 @@ export class Options extends Map<string, unknown> {
 }
 
 /**
- * The options from gens and args, or args.opt when it is the only argument.
+ * Builds options from generators and keywords, reusing a sole options object when supplied.
  *
  * @param gens - Polynomial generators in the desired order.
  * @param args - Polynomial options keyed by name.
- * @returns The options from gens and args, or args.opt when it is the only argument.
+ * @returns The resolved options.
  * @see SymPy `sympy.polys.polyoptions.build_options`
  */
 export function buildOptions(gens: readonly unknown[], args: OptionArgs): Options {

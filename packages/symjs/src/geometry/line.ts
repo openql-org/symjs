@@ -67,16 +67,16 @@ export function pyMax(xs: readonly Expr[]): Expr {
  */
 export abstract class LinearEntity extends GeometrySet {
   /**
-   * The first defining point.
+   * Identifies the first point defining the linear entity.
    *
-   * @returns The first defining point.
+   * @returns The first endpoint or reference point.
    * @see SymPy `sympy.geometry.line.LinearEntity.p1`
    */
   get p1(): PointNode {
     return asPoint(at(this.args, 0));
   }
   /**
-   * The second defining point.
+   * Identifies the second point defining the linear entity.
    *
    * @returns The second defining point.
    * @see SymPy `sympy.geometry.line.LinearEntity.p2`
@@ -85,9 +85,9 @@ export abstract class LinearEntity extends GeometrySet {
     return asPoint(at(this.args, 1));
   }
   /**
-   * The defining points.
+   * Collects the two points that determine the linear entity.
    *
-   * @returns The defining points.
+   * @returns The defining point pair.
    * @see SymPy `sympy.geometry.line.LinearEntity.points`
    */
   get points(): [PointNode, PointNode] {
@@ -95,9 +95,9 @@ export abstract class LinearEntity extends GeometrySet {
   }
 
   /**
-   * The number of coordinates in the surrounding space.
+   * Counts the coordinates needed to describe a point in the ambient space.
    *
-   * @returns The number of coordinates in the surrounding space.
+   * @returns The ambient dimension.
    * @see SymPy `sympy.geometry.line.LinearEntity.ambient_dimension`
    */
   get ambientDimension(): number {
@@ -105,9 +105,9 @@ export abstract class LinearEntity extends GeometrySet {
   }
 
   /**
-   * The direction vector p2 - p1.
+   * Subtracts the first defining point from the second.
    *
-   * @returns The direction vector p2 - p1.
+   * @returns The direction vector.
    * @see SymPy `sympy.geometry.line.LinearEntity.direction`
    */
   get direction(): PointNode {
@@ -115,9 +115,9 @@ export abstract class LinearEntity extends GeometrySet {
   }
 
   /**
-   * The length: infinite unless a segment.
+   * Measures the extent of the linear entity, which is infinite for lines and rays.
    *
-   * @returns The length: infinite unless a segment.
+   * @returns The length.
    * @see SymPy `sympy.geometry.line.LinearEntity.length`
    */
   get length(): Expr {
@@ -125,10 +125,10 @@ export abstract class LinearEntity extends GeometrySet {
   }
 
   /**
-   * 0 for p1, 1 for a point in the direction of the entity, -1 behind it.
+   * Classifies the point's position relative to the first defining point and the forward direction.
    *
    * @param other - Point to locate relative to the first defining point.
-   * @returns Zero at the first point, one in the forward direction, and minus one otherwise.
+   * @returns `0` at the starting point, `1` ahead, or `-1` behind.
    * @see SymPy `sympy.geometry.line.LinearEntity._span_test`
    */
   spanTest(other: PointNode): number {
@@ -149,19 +149,19 @@ export abstract class LinearEntity extends GeometrySet {
   }
 
   /**
-   * The entity contains the point or linear entity.
+   * Tests whether the entire point or linear entity lies in this entity.
    *
    * @param other - Point or entity to test for inclusion.
-   * @returns The entity contains the point or linear entity.
+   * @returns True for containment.
    * @see SymPy `sympy.geometry.line.LinearEntity.contains`
    */
   abstract containsQ(other: unknown): boolean;
 
   /**
-   * The angle between the direction vectors.
+   * Computes the angle between the two direction vectors.
    *
    * @param l2 - Other line.
-   * @returns The angle between the direction vectors.
+   * @returns The angle in radians.
    * @see SymPy `sympy.geometry.line.LinearEntity.angle_between`
    */
   angleBetween(l2: LinearEntity): Expr {
@@ -170,10 +170,10 @@ export abstract class LinearEntity extends GeometrySet {
   }
 
   /**
-   * The smallest angle between the lines.
+   * Selects the smaller angle formed by the lines.
    *
    * @param l2 - Other line.
-   * @returns The smallest angle between the lines.
+   * @returns The minimum angle.
    * @see SymPy `sympy.geometry.line.LinearEntity.smallest_angle_between`
    */
   smallestAngleBetween(l2: LinearEntity): Expr {
@@ -182,10 +182,10 @@ export abstract class LinearEntity extends GeometrySet {
   }
 
   /**
-   * The point p1 + t*(p2 - p1) with the real parameter t.
+   * Parametrizes the entity starting at the first point and following the direction vector.
    *
    * @param parameter - Symbol or name used for the parametrization.
-   * @returns The point p1 + t*(p2 - p1) with the real parameter t.
+   * @returns A point at parameter `t`.
    * @throws RangeError when the requested parameter name already occurs in the entity.
    * @see SymPy `sympy.geometry.line.LinearEntity.arbitrary_point`
    */
@@ -198,7 +198,7 @@ export abstract class LinearEntity extends GeometrySet {
   }
 
   /**
-   * All the linear entities have exactly one point in common.
+   * Tests whether all the linear entities share exactly one point.
    *
    * @param lines - Linear entities to test.
    * @returns Whether the entities share a point.
@@ -212,10 +212,10 @@ export abstract class LinearEntity extends GeometrySet {
   }
 
   /**
-   * The entities this one has in common with other.
+   * Finds the geometry shared by the two entities.
    *
    * @param otherIn - Entity to intersect with this one.
-   * @returns The entities this one has in common with other.
+   * @returns The intersection entities.
    * @see SymPy `sympy.geometry.line.LinearEntity.intersection`
    */
   override intersection(otherIn: unknown): GeometryEntity[] {
@@ -259,10 +259,10 @@ export abstract class LinearEntity extends GeometrySet {
   }
 
   /**
-   * The direction vectors are parallel.
+   * Tests the direction vectors for parallelism.
    *
    * @param l2 - Other line.
-   * @returns The direction vectors are parallel.
+   * @returns True for parallel directions.
    * @see SymPy `sympy.geometry.line.LinearEntity.is_parallel`
    */
   isParallel(l2: LinearEntity): boolean {
@@ -270,10 +270,10 @@ export abstract class LinearEntity extends GeometrySet {
   }
 
   /**
-   * The direction vectors are perpendicular.
+   * Tests the direction vectors for orthogonality.
    *
    * @param l2 - Other line.
-   * @returns The direction vectors are perpendicular.
+   * @returns True for perpendicular directions.
    * @see SymPy `sympy.geometry.line.LinearEntity.is_perpendicular`
    */
   isPerpendicular(l2: LinearEntity): boolean {
@@ -281,10 +281,10 @@ export abstract class LinearEntity extends GeometrySet {
   }
 
   /**
-   * The entities lie on the same line.
+   * Tests whether both linear entities lie on the same line.
    *
    * @param other - Entity compared for similarity.
-   * @returns The entities lie on the same line.
+   * @returns True for collinear entities.
    * @see SymPy `sympy.geometry.line.LinearEntity.is_similar`
    */
   override isSimilar(other: GeometryEntity): boolean {
@@ -292,10 +292,10 @@ export abstract class LinearEntity extends GeometrySet {
   }
 
   /**
-   * The line through p parallel to this one.
+   * Constructs the parallel to this entity through the given point.
    *
    * @param pIn - Point used in the geometric construction or comparison.
-   * @returns The line through p parallel to this one.
+   * @returns A line through the point.
    * @see SymPy `sympy.geometry.line.LinearEntity.parallel_line`
    */
   parallelLine(pIn: PointInput): LineNode {
@@ -304,7 +304,7 @@ export abstract class LinearEntity extends GeometrySet {
   }
 
   /**
-   * The line through p perpendicular to this one.
+   * Constructs the perpendicular line through the given point.
    *
    * @param pIn - Point used in the geometric construction or comparison.
    * @returns The perpendicular line through the given point.
@@ -317,10 +317,10 @@ export abstract class LinearEntity extends GeometrySet {
   }
 
   /**
-   * The segment from p perpendicular to this line, or p itself when it lies on the line.
+   * Drops a perpendicular from the point to this line.
    *
    * @param pIn - Point used in the geometric construction or comparison.
-   * @returns The segment from p perpendicular to this line, or p itself when it lies on the line.
+   * @returns The segment or the point itself if on the line.
    * @see SymPy `sympy.geometry.line.LinearEntity.perpendicular_segment`
    */
   perpendicularSegment(pIn: PointInput): PointNode | SegmentNode {
@@ -332,10 +332,10 @@ export abstract class LinearEntity extends GeometrySet {
   }
 
   /**
-   * The projection of a point or linear entity onto this line.
+   * Projects a point or linear entity orthogonally onto this line.
    *
    * @param otherIn - Operand to project.
-   * @returns The projection of a point or linear entity onto this line.
+   * @returns The projected geometry.
    * @throws GeometryError when the projection is undefined for the supplied entity.
    * @see SymPy `sympy.geometry.line.LinearEntity.projection`
    */
@@ -360,10 +360,10 @@ export abstract class LinearEntity extends GeometrySet {
   }
 
   /**
-   * A random point of the entity; the same for the same integer seed.
+   * Samples a point on the entity using the optional seed for repeatability.
    *
    * @param seed - Seed for reproducible sampling.
-   * @returns A random point of the entity; the same for the same integer seed.
+   * @returns The sampled point.
    * @see SymPy `sympy.geometry.line.LinearEntity.random_point`
    */
   randomPoint(seed?: number | bigint): PointNode {
@@ -377,10 +377,10 @@ export abstract class LinearEntity extends GeometrySet {
   }
 
   /**
-   * The two perpendicular lines through the intersection that bisect the angles.
+   * Bisects the angles at the intersection of the two lines.
    *
    * @param other - Second linear entity defining the angles.
-   * @returns The two perpendicular lines through the intersection that bisect the angles.
+   * @returns The angle-bisecting lines.
    * @throws GeometryError when the lines do not intersect or the argument is not a linear entity.
    * @see SymPy `sympy.geometry.line.LinearEntity.bisectors`
    */
@@ -404,10 +404,10 @@ export abstract class LinearEntity extends GeometrySet {
   }
 
   /**
-   * The parameter interval of the arbitrary point used for plotting.
+   * Specifies the parameter range used to plot a parametrized point.
    *
    * @param parameter - Symbol or name used for the parametrization.
-   * @returns The parameter interval of the arbitrary point used for plotting.
+   * @returns The plotting variable and endpoints.
    */
   abstract plotInterval(parameter?: string | Sym): [Sym, Expr, Expr];
 }
@@ -487,10 +487,10 @@ export class LineNode extends LinearEntity {
   }
 
   /**
-   * The line contains the point or linear entity.
+   * Tests whether the line contains the given point or linear entity.
    *
    * @param otherIn - Point or entity to test for inclusion.
-   * @returns The line contains the point or linear entity.
+   * @returns True for containment.
    * @see SymPy `sympy.geometry.line.Line.contains`
    */
   containsQ(otherIn: unknown): boolean {
@@ -501,10 +501,10 @@ export class LineNode extends LinearEntity {
   }
 
   /**
-   * The shortest distance to a point.
+   * Measures the minimum separation from the specified point.
    *
    * @param otherIn - Entity to measure the distance to.
-   * @returns The shortest distance to a point.
+   * @returns The shortest distance.
    * @see SymPy `sympy.geometry.line.Line.distance`
    */
   override distance(otherIn: unknown): Expr {
@@ -515,7 +515,7 @@ export class LineNode extends LinearEntity {
   }
 
   /**
-   * The lines are the same set of points.
+   * Tests whether both lines describe the same point set.
    *
    * @param other - Object to compare with this one.
    * @returns Whether the operands are equal.
@@ -527,10 +527,10 @@ export class LineNode extends LinearEntity {
   }
 
   /**
-   * The plotting parameter and its lower and upper limits.
+   * Specifies the parameter and bounds for plotting the entity.
    *
    * @param parameter - Symbol or name used for the parametrization.
-   * @returns The plotting parameter and its lower and upper limits.
+   * @returns The triple `[parameter, lower, upper]`.
    * @see SymPy `sympy.geometry.line.Line.plot_interval`
    */
   plotInterval(parameter: string | Sym = 't'): [Sym, Expr, Expr] {
@@ -581,9 +581,9 @@ export class RayNode extends LinearEntity {
   }
 
   /**
-   * The source point.
+   * Identifies the endpoint from which the ray extends.
    *
-   * @returns The source point.
+   * @returns The ray's source.
    * @see SymPy `sympy.geometry.line.Ray.source`
    */
   get source(): PointNode {
@@ -591,10 +591,10 @@ export class RayNode extends LinearEntity {
   }
 
   /**
-   * The ray contains the point or linear entity.
+   * Tests whether the ray contains the given point or linear entity.
    *
    * @param otherIn - Point or entity to test for inclusion.
-   * @returns The ray contains the point or linear entity.
+   * @returns True for containment.
    * @see SymPy `sympy.geometry.line.Ray.contains`
    */
   containsQ(otherIn: unknown): boolean {
@@ -612,10 +612,10 @@ export class RayNode extends LinearEntity {
   }
 
   /**
-   * The shortest distance to a point.
+   * Measures the minimum separation from the specified point.
    *
    * @param otherIn - Entity to measure the distance to.
-   * @returns The shortest distance to a point.
+   * @returns The shortest distance.
    * @see SymPy `sympy.geometry.line.Ray.distance`
    */
   override distance(otherIn: unknown): Expr {
@@ -628,7 +628,7 @@ export class RayNode extends LinearEntity {
   }
 
   /**
-   * The rays have the same source and direction.
+   * Tests whether both rays share a source and direction.
    *
    * @param other - Object to compare with this one.
    * @returns Whether the operands are equal.
@@ -640,10 +640,10 @@ export class RayNode extends LinearEntity {
   }
 
   /**
-   * The plotting parameter and its lower and upper limits.
+   * Specifies the parameter and bounds for plotting the entity.
    *
    * @param parameter - Symbol or name used for the parametrization.
-   * @returns The plotting parameter and its lower and upper limits.
+   * @returns The triple `[parameter, lower, upper]`.
    * @see SymPy `sympy.geometry.line.Ray.plot_interval`
    */
   plotInterval(parameter: string | Sym = 't'): [Sym, Expr, Expr] {
@@ -694,10 +694,10 @@ export class SegmentNode extends LinearEntity {
   }
 
   /**
-   * The segment contains the point or segment.
+   * Tests whether the segment contains the point or the entire other segment.
    *
    * @param otherIn - Point or entity to test for inclusion.
-   * @returns The segment contains the point or segment.
+   * @returns True for containment.
    * @throws Undecidable when the containment predicate is undecidable.
    * @see SymPy `sympy.geometry.line.Segment.contains`
    */
@@ -727,7 +727,7 @@ export class SegmentNode extends LinearEntity {
   }
 
   /**
-   * The segments have the same end points.
+   * Tests whether both segments have the same endpoints.
    *
    * @param other - Object to compare with this one.
    * @returns Whether the operands are equal.
@@ -741,10 +741,10 @@ export class SegmentNode extends LinearEntity {
   }
 
   /**
-   * The shortest distance to a point.
+   * Measures the minimum separation from the specified point.
    *
    * @param otherIn - Entity to measure the distance to.
-   * @returns The shortest distance to a point.
+   * @returns The shortest distance.
    * @throws NotImplementedError when the distance to the supplied entity is unsupported.
    * @see SymPy `sympy.geometry.line.Segment.distance`
    */
@@ -763,9 +763,9 @@ export class SegmentNode extends LinearEntity {
   }
 
   /**
-   * The distance between the end points.
+   * Measures the separation of the segment's endpoints.
    *
-   * @returns The distance between the end points.
+   * @returns The segment length.
    * @see SymPy `sympy.geometry.line.Segment.length`
    */
   override get length(): Expr {
@@ -773,7 +773,7 @@ export class SegmentNode extends LinearEntity {
   }
 
   /**
-   * The midpoint.
+   * Finds the point halfway between the segment's endpoints.
    *
    * @returns The midpoint.
    * @see SymPy `sympy.geometry.line.Segment.midpoint`
@@ -783,10 +783,10 @@ export class SegmentNode extends LinearEntity {
   }
 
   /**
-   * The perpendicular bisector; with a point p on it, the segment from p to the midpoint.
+   * Bisects the segment at right angles, optionally joining a point on the bisector to the midpoint.
    *
    * @param p - Point used in the geometric construction or comparison.
-   * @returns The perpendicular bisector; with a point p on it, the segment from p to the midpoint.
+   * @returns The bisecting line or segment.
    * @see SymPy `sympy.geometry.line.Segment.perpendicular_bisector`
    */
   perpendicularBisector(p?: PointInput): LineNode | SegmentNode | PointNode {
@@ -799,10 +799,10 @@ export class SegmentNode extends LinearEntity {
   }
 
   /**
-   * The plotting parameter and its lower and upper limits.
+   * Specifies the parameter and bounds for plotting the entity.
    *
    * @param parameter - Symbol or name used for the parametrization.
-   * @returns The plotting parameter and its lower and upper limits.
+   * @returns The triple `[parameter, lower, upper]`.
    * @see SymPy `sympy.geometry.line.Segment.plot_interval`
    */
   plotInterval(parameter: string | Sym = 't'): [Sym, Expr, Expr] {
@@ -810,7 +810,7 @@ export class SegmentNode extends LinearEntity {
   }
 
   /**
-   * Both end points are enclosed.
+   * Checks whether the container encloses both endpoints.
    *
    * @param container - Geometric entity tested for enclosure.
    * @returns Whether the supplied entity encloses this one.
@@ -879,9 +879,9 @@ export class Line2DNode extends LineNode {
   }
 
   /**
-   * The bounding rectangle as `[xmin, ymin, xmax, ymax]`.
+   * Finds the axis-aligned bounding rectangle.
    *
-   * @returns Return a tuple (xmin, ymin, xmax, ymax) representing the bounding rectangle for the geometric figure.
+   * @returns The bounds `[xmin, ymin, xmax, ymax]`.
    * @see SymPy `sympy.geometry.line.Line2D.bounds`
    */
   override get bounds(): [Expr, Expr, Expr, Expr] {
@@ -889,9 +889,9 @@ export class Line2DNode extends LineNode {
   }
 
   /**
-   * The slope: oo for a vertical line.
+   * Computes the rise over run of the line.
    *
-   * @returns The slope: oo for a vertical line.
+   * @returns The slope or `oo` for a vertical line.
    * @see SymPy `sympy.geometry.line.Line2D.slope`
    */
   get slope(): Expr {
@@ -910,9 +910,9 @@ export class Line2DNode extends LineNode {
   }
 
   /**
-   * The coefficients (a, b, c) of the equation a*x + b*y + c = 0.
+   * Extracts the coefficients of the line equation `a*x + b*y + c = 0`.
    *
-   * @returns The coefficients (a, b, c) of the equation a*x + b*y + c = 0.
+   * @returns The triple `[a, b, c]`.
    * @see SymPy `sympy.geometry.line.Line2D.coefficients`
    */
   get coefficients(): [Expr, Expr, Expr] {
@@ -924,11 +924,11 @@ export class Line2DNode extends LineNode {
   }
 
   /**
-   * The equation a*x + b*y + c of the line in real symbols x and y.
+   * Forms the Cartesian equation of the line in real coordinates.
    *
    * @param x - Symbol for the x coordinate.
    * @param y - Symbol for the y coordinate.
-   * @returns The equation a*x + b*y + c of the line in real symbols x and y.
+   * @returns The expression `a*x + b*y + c`.
    * @see SymPy `sympy.geometry.line.Line2D.equation`
    */
   equation(x: string | Sym = 'x', y: string | Sym = 'y'): Expr {
@@ -974,9 +974,9 @@ export class Ray2DNode extends RayNode {
   }
 
   /**
-   * The bounding rectangle as `[xmin, ymin, xmax, ymax]`.
+   * Finds the axis-aligned bounding rectangle.
    *
-   * @returns Return a tuple (xmin, ymin, xmax, ymax) representing the bounding rectangle for the geometric figure.
+   * @returns The bounds `[xmin, ymin, xmax, ymax]`.
    * @see SymPy `sympy.geometry.line.Ray2D.bounds`
    */
   override get bounds(): [Expr, Expr, Expr, Expr] {
@@ -984,9 +984,9 @@ export class Ray2DNode extends RayNode {
   }
 
   /**
-   * The slope: oo for a vertical ray.
+   * Computes the rise over run of the ray.
    *
-   * @returns The slope: oo for a vertical ray.
+   * @returns The slope or `oo` for a vertical ray.
    * @see SymPy `sympy.geometry.line.Ray2D.slope`
    */
   get slope(): Expr {
@@ -1005,9 +1005,9 @@ export class Ray2DNode extends RayNode {
   }
 
   /**
-   * The x direction: oo, 0 or -oo.
+   * Indicates the direction of travel along the x-axis.
    *
-   * @returns The x direction: oo, 0 or -oo.
+   * @returns Positive infinity, zero, or negative infinity.
    * @see SymPy `sympy.geometry.line.Ray2D.xdirection`
    */
   get xdirection(): Expr {
@@ -1015,9 +1015,9 @@ export class Ray2DNode extends RayNode {
   }
 
   /**
-   * The y direction: oo, 0 or -oo.
+   * Indicates the direction of travel along the y-axis.
    *
-   * @returns The y direction: oo, 0 or -oo.
+   * @returns Positive infinity, zero, or negative infinity.
    * @see SymPy `sympy.geometry.line.Ray2D.ydirection`
    */
   get ydirection(): Expr {
@@ -1025,10 +1025,10 @@ export class Ray2DNode extends RayNode {
   }
 
   /**
-   * The angle by which r2 must be rotated counterclockwise to have the direction of this ray.
+   * Computes the counterclockwise rotation that aligns the other ray with this ray.
    *
    * @param r2 - Ray relative to which to measure the closing angle.
-   * @returns The angle by which r2 must be rotated counterclockwise to have the direction of this ray.
+   * @returns The rotation angle.
    * @throws TypeError when either operand is not a two-dimensional ray.
    * @see SymPy `sympy.geometry.line.Ray2D.closing_angle`
    */
@@ -1084,9 +1084,9 @@ export class Segment2DNode extends SegmentNode {
   }
 
   /**
-   * The bounding rectangle as `[xmin, ymin, xmax, ymax]`.
+   * Finds the axis-aligned bounding rectangle.
    *
-   * @returns Return a tuple (xmin, ymin, xmax, ymax) representing the bounding rectangle for the geometric figure.
+   * @returns The bounds `[xmin, ymin, xmax, ymax]`.
    * @see SymPy `sympy.geometry.line.Segment2D.bounds`
    */
   override get bounds(): [Expr, Expr, Expr, Expr] {
@@ -1094,9 +1094,9 @@ export class Segment2DNode extends SegmentNode {
   }
 
   /**
-   * The slope: oo for a vertical segment.
+   * Computes the rise over run of the segment.
    *
-   * @returns The slope: oo for a vertical segment.
+   * @returns The slope or `oo` for a vertical segment.
    * @see SymPy `sympy.geometry.line.Segment2D.slope`
    */
   get slope(): Expr {
@@ -1155,7 +1155,7 @@ export class Line3DNode extends LineNode {
   }
 
   /**
-   * The direction ratios.
+   * Computes the coordinate ratios of the direction vector.
    *
    * @returns The direction ratios.
    * @see SymPy `sympy.geometry.line.Line3D.direction_ratio`
@@ -1165,7 +1165,7 @@ export class Line3DNode extends LineNode {
   }
 
   /**
-   * The direction cosines.
+   * Normalizes the direction vector to obtain its cosines with the axes.
    *
    * @returns The direction cosines.
    * @see SymPy `sympy.geometry.line.Line3D.direction_cosine`
@@ -1175,12 +1175,12 @@ export class Line3DNode extends LineNode {
   }
 
   /**
-   * The equations of the line as the two planes through it, in real symbols x, y and z.
+   * Describes the line as the intersection of two planes in real coordinates.
    *
    * @param x - Symbol for the x coordinate.
    * @param y - Symbol for the y coordinate.
    * @param z - Symbol for the z coordinate.
-   * @returns The equations of the line as the two planes through it, in real symbols x, y and z.
+   * @returns The two plane equations.
    * @see SymPy `sympy.geometry.line.Line3D.equation`
    */
   equation(x: string | Sym = 'x', y: string | Sym = 'y', z: string | Sym = 'z'): TupleNode {
@@ -1196,10 +1196,10 @@ export class Line3DNode extends LineNode {
   }
 
   /**
-   * The shortest distance to a point, line or plane.
+   * Measures the minimum separation from a point, line, or plane.
    *
    * @param otherIn - Entity to measure the distance to.
-   * @returns The shortest distance to a point, line or plane.
+   * @returns The shortest distance.
    * @throws NotImplementedError when the operand type has no implementation of this operation.
    * @see SymPy `sympy.geometry.line.Line3D.distance`
    */
@@ -1267,7 +1267,7 @@ export class Ray3DNode extends RayNode {
   }
 
   /**
-   * The direction ratios.
+   * Computes the coordinate ratios of the direction vector.
    *
    * @returns The direction ratios.
    * @see SymPy `sympy.geometry.line.Ray3D.direction_ratio`
@@ -1277,7 +1277,7 @@ export class Ray3DNode extends RayNode {
   }
 
   /**
-   * The direction cosines.
+   * Normalizes the direction vector to obtain its cosines with the axes.
    *
    * @returns The direction cosines.
    * @see SymPy `sympy.geometry.line.Ray3D.direction_cosine`
@@ -1287,27 +1287,27 @@ export class Ray3DNode extends RayNode {
   }
 
   /**
-   * The x direction: oo, 0 or -oo.
+   * Indicates the direction of travel along the x-axis.
    *
-   * @returns The x direction: oo, 0 or -oo.
+   * @returns Positive infinity, zero, or negative infinity.
    * @see SymPy `sympy.geometry.line.Ray3D.xdirection`
    */
   get xdirection(): Expr {
     return direction(this.p1.coordinate(0), this.p2.coordinate(0));
   }
   /**
-   * The y direction: oo, 0 or -oo.
+   * Indicates the direction of travel along the y-axis.
    *
-   * @returns The y direction: oo, 0 or -oo.
+   * @returns Positive infinity, zero, or negative infinity.
    * @see SymPy `sympy.geometry.line.Ray3D.ydirection`
    */
   get ydirection(): Expr {
     return direction(this.p1.coordinate(1), this.p2.coordinate(1));
   }
   /**
-   * The z direction: oo, 0 or -oo.
+   * Indicates the direction of travel along the z-axis.
    *
-   * @returns The z direction: oo, 0 or -oo.
+   * @returns Positive infinity, zero, or negative infinity.
    * @see SymPy `sympy.geometry.line.Ray3D.zdirection`
    */
   get zdirection(): Expr {
@@ -1348,7 +1348,7 @@ export class Segment3DNode extends SegmentNode {
   }
 
   /**
-   * The direction ratios.
+   * Computes the coordinate ratios of the direction vector.
    *
    * @returns The direction ratios.
    * @see SymPy `sympy.geometry.line.Segment3D.direction_ratio`
@@ -1358,7 +1358,7 @@ export class Segment3DNode extends SegmentNode {
   }
 
   /**
-   * The direction cosines.
+   * Normalizes the direction vector to obtain its cosines with the axes.
    *
    * @returns The direction cosines.
    * @see SymPy `sympy.geometry.line.Segment3D.direction_cosine`
@@ -1644,7 +1644,7 @@ function segment3D(p1In: PointInput, p2In: PointInput): Segment3DNode | PointNod
 type LineArg = PointInput | LinearEntity | LineOptions | Expr;
 
 /**
- * The infinite line determined by two points, a direction or a linear equation.
+ * Constructs the infinite line determined by two points, a direction or a linear equation.
  *
  * @param args - Two points, another linear entity, or a line equation with optional coordinate names or direction options.
  * @returns The resulting `Line` expression.
@@ -1664,7 +1664,7 @@ export const Line = /* @__PURE__ */ callableClass(LineNode, (...args: LineArg[])
 export type Line = LineNode;
 
 /**
- * An infinite line in the plane.
+ * Constructs an infinite line in the plane.
  *
  * @param args - Defining points or a point with a slope.
  * @returns The resulting `Line2D` expression.
@@ -1685,7 +1685,7 @@ export const Line2D = /* @__PURE__ */ callableClass(Line2DNode, (...args: LineAr
 export type Line2D = Line2DNode;
 
 /**
- * An infinite 3D line in space.
+ * Constructs an infinite 3D line in space.
  *
  * @param args - Defining points or a point with direction ratios.
  * @returns The resulting `Line3D` expression.
@@ -1708,7 +1708,8 @@ export type Line3D = Line3DNode;
 type RayArg = PointInput | RayOptions;
 
 /**
- * A half-line extending from its source through a second point or along a specified direction.
+ * Constructs a half-line extending from its source through a second point or along a specified
+ * direction.
  *
  * @param args - Source and second point, or source and direction options.
  * @returns The resulting `Ray` expression.
@@ -1728,7 +1729,7 @@ export const Ray = /* @__PURE__ */ callableClass(RayNode, (...args: RayArg[]): R
 export type Ray = RayNode;
 
 /**
- * A half-line in the plane given by its source and direction.
+ * Constructs a half-line in the plane given by its source and direction.
  *
  * @param args - Source and second point or angular direction.
  * @returns The resulting `Ray2D` expression.
@@ -1748,7 +1749,7 @@ export const Ray2D = /* @__PURE__ */ callableClass(Ray2DNode, (...args: RayArg[]
 export type Ray2D = Ray2DNode;
 
 /**
- * A half-line in three-dimensional space given by its source and direction.
+ * Constructs a half-line in three-dimensional space given by its source and direction.
  *
  * @param args - Source and second point or direction ratios.
  * @returns The resulting `Ray3D` expression.
@@ -1769,7 +1770,7 @@ export const Ray3D = /* @__PURE__ */ callableClass(Ray3DNode, (...args: (RayArg 
 export type Ray3D = Ray3DNode;
 
 /**
- * The closed segment joining two points.
+ * Constructs the closed segment joining two points.
  *
  * @param p1 - First defining point.
  * @param p2 - Second defining point.
@@ -1786,7 +1787,7 @@ export const Segment = /* @__PURE__ */ callableClass(SegmentNode, (p1: PointInpu
 export type Segment = SegmentNode;
 
 /**
- * A line segment in 2D space.
+ * Constructs a line segment in 2D space.
  *
  * @param p1 - First defining point.
  * @param p2 - Second defining point.
@@ -1803,7 +1804,7 @@ export const Segment2D = /* @__PURE__ */ callableClass(Segment2DNode, (p1: Point
 export type Segment2D = Segment2DNode;
 
 /**
- * A line segment in a 3D space.
+ * Constructs a line segment in a 3D space.
  *
  * @param p1 - First defining point.
  * @param p2 - Second defining point.

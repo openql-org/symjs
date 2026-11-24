@@ -88,10 +88,10 @@ export class TensorManagerClass {
     this.#symbols = new Map([0, 1, 2].map((i) => [sympify(i).key, i]));
   }
   /**
-   * The number of a commutation group (a new one for a new name).
+   * Looks up a commutation group by name, allocating a number for a new group.
    *
    * @param i - First commutation group.
-   * @returns The number of a commutation group (a new one for a new name).
+   * @returns The group number.
    * @see SymPy `sympy.tensor.tensor._TensorManager.comm_symbols2i`
    */
   commSymbols2i(i: CommGroup): number {
@@ -188,16 +188,16 @@ export class TensorIndexTypeNode extends ExtensionExpr {
     super('TensorIndexType', [new Sym(name), new Sym(dummyName), dim, options.epsDim === undefined ? dim : sympify(options.epsDim), msym === null ? Tuple() : sympify(msym), new Sym(options.metricName ?? 'metric')]);
   }
   /**
-   * The name of the tensor index type.
+   * Identifies the type to which tensor indices belong by name.
    *
-   * @returns The name of the tensor index type.
+   * @returns The index type name.
    * @see SymPy `sympy.tensor.tensor.TensorIndexType.name`
    */
   get typeName(): string {
     return cast(first(this.args), Sym).name;
   }
   /**
-   * Prefix for automatically named dummy indices.
+   * Supplies the naming prefix for automatically generated dummy indices.
    *
    * @returns The formatted text.
    * @see SymPy `sympy.tensor.tensor.TensorIndexType.dummy_name`
@@ -206,44 +206,44 @@ export class TensorIndexTypeNode extends ExtensionExpr {
     return cast(at(this.args, 1), Sym).name;
   }
   /**
-   * Dimension of the index type.
+   * Specifies the dimension of the tensor index space.
    *
-   * @returns Dimension of the index type.
+   * @returns The index dimension.
    * @see SymPy `sympy.tensor.tensor.TensorIndexType.dim`
    */
   get dim(): Expr {
     return at(this.args, 2);
   }
   /**
-   * The dimension used for the Levi-Civita tensor.
+   * Specifies the dimension of the alternating tensor for this index type.
    *
-   * @returns The dimension used for the Levi-Civita tensor.
+   * @returns The Levi-Civita dimension.
    * @see SymPy `sympy.tensor.tensor.TensorIndexType.eps_dim`
    */
   get epsDim(): Expr {
     return at(this.args, 3);
   }
   /**
-   * 1 symmetric, -1 antisymmetric, 0 no symmetry, null no metric.
+   * Describes the symmetry of the metric tensor when the index type has one.
    *
-   * @returns The metric symmetry code, or `null` for an index type without a metric.
+   * @returns 1 for symmetric, −1 for antisymmetric, 0 for no symmetry, or `null` for no metric.
    */
   get metricSymmetry(): 1 | 0 | -1 | null {
     const m = at(this.args, 4);
     return m.equals(1) ? 1 : m.equals(-1) ? -1 : m.equals(0) ? 0 : null;
   }
   /**
-   * The name of the metric tensor.
+   * Identifies the metric tensor by its symbolic name.
    *
-   * @returns The name of the metric tensor.
+   * @returns The metric name.
    */
   get metricName(): string {
     return cast(at(this.args, 5), Sym).name;
   }
   /**
-   * The metric tensor head (throws when the type has no metric).
+   * Obtains the tensor head for this index type's metric, raising an error if no metric exists.
    *
-   * @returns The metric tensor head (throws when the type has no metric).
+   * @returns The metric tensor head.
    * @throws TypeError when the index type has no metric.
    * @see SymPy `sympy.tensor.tensor.TensorIndexType.metric`
    */
@@ -254,18 +254,18 @@ export class TensorIndexTypeNode extends ExtensionExpr {
     return this.#metric;
   }
   /**
-   * The Kronecker delta KD.
+   * Constructs the identity tensor on this index type.
    *
-   * @returns The Kronecker delta KD.
+   * @returns The Kronecker delta head.
    * @see SymPy `sympy.tensor.tensor.TensorIndexType.delta`
    */
   get delta(): TensorHeadNode {
     return new TensorHeadNode('KD', [this, this], TensorSymmetry.fullySymmetric(2));
   }
   /**
-   * The Levi-Civita tensor Eps (throws when eps_dim is not an integer).
+   * Obtains the alternating tensor for an integer Levi-Civita dimension.
    *
-   * @returns The Levi-Civita tensor Eps (throws when eps_dim is not an integer).
+   * @returns The Levi-Civita tensor head.
    * @throws TypeError when the dimension of the alternating tensor is not an integer.
    * @see SymPy `sympy.tensor.tensor.TensorIndexType.epsilon`
    */
@@ -301,7 +301,7 @@ export class TensorIndexTypeNode extends ExtensionExpr {
   }
 }
 /**
- * A type of tensor indices.
+ * Constructs an index type for tensors.
  *
  * @param name - Symbolic name.
  * @param options - Settings described by {@link TensorIndexTypeOptions}.
@@ -346,36 +346,36 @@ export class TensorIndexNode extends ExtensionExpr {
     super(className, [new Sym(n), tensorIndexType, isUp ? S.true : S.false, ...extra]);
   }
   /**
-   * The name of the tensor index without its variance sign.
+   * Gives the name of the index independently of its variance.
    *
-   * @returns The name of the tensor index without its variance sign.
+   * @returns The unsigned index name.
    * @see SymPy `sympy.tensor.tensor.TensorIndex.name`
    */
   get indexName(): string {
     return cast(first(this.args), Sym).name;
   }
   /**
-   * The type determining the dimension and metric of the index.
+   * Identifies the type supplying the dimension and metric for the index.
    *
-   * @returns The type determining the dimension and metric of the index.
+   * @returns The tensor index type.
    * @see SymPy `sympy.tensor.tensor.TensorIndex.tensor_index_type`
    */
   get tensorIndexType(): TensorIndexTypeNode {
     return cast(at(this.args, 1), TensorIndexTypeNode);
   }
   /**
-   * Whether the index is contravariant.
+   * Indicates whether the tensor index is raised.
    *
-   * @returns Whether the index is contravariant.
+   * @returns True for a contravariant index.
    * @see SymPy `sympy.tensor.tensor.TensorIndex.is_up`
    */
   get isUp(): boolean {
     return at(this.args, 2) === S.true;
   }
   /**
-   * The index with the opposite variance.
+   * Reverses the variance of the tensor index.
    *
-   * @returns The index with opposite variance.
+   * @returns The raised or lowered index.
    * @see SymPy `sympy.tensor.tensor.TensorIndex.__neg__`
    */
   override neg(): TensorIndexNode {
@@ -410,7 +410,7 @@ export class TensorIndexNode extends ExtensionExpr {
     return `${this.isUp ? '' : '-'}${this.indexName}`;
   }
   /**
-   * {}^{i} or {}_{i}.
+   * Formats the index as a LaTeX superscript or subscript according to its variance.
    *
    * @param print - Formatter for a child expression.
    * @returns The formatted LaTeX.
@@ -419,7 +419,7 @@ export class TensorIndexNode extends ExtensionExpr {
     return `{}${this.isUp ? '^' : '_'}{${print(first(this.args))}}`;
   }
   /**
-   * Structural key for the index label independent of variance.
+   * Identifies the index label independently of its variance.
    *
    * @returns The formatted text.
    * @internal
@@ -428,7 +428,7 @@ export class TensorIndexNode extends ExtensionExpr {
     return `${this.tensorIndexType.key}:${this.indexName}`;
   }
   /**
-   * A plain index matches only itself.
+   * Tests for an exact match to a plain tensor index.
    *
    * @param expr - Symbolic expression on which to operate.
    * @returns Bindings for the wildcard matches, or `NoMatch` if the pattern fails.
@@ -439,7 +439,7 @@ export class TensorIndexNode extends ExtensionExpr {
   }
 }
 /**
- * A named covariant or contravariant index of a specified tensor index type.
+ * Constructs a covariant or contravariant index of the supplied type.
  *
  * @param name - Symbolic name.
  * @param type - Type of the tensor indices.
@@ -527,44 +527,44 @@ export class TensorSymmetry extends ExtensionExpr {
     super('TensorSymmetry', [Tuple(...bsgs[0].map((x) => sympify(x))), Tuple(...bsgs[1])]);
   }
   /**
-   * Base points of the permutation group.
+   * Lists the points in the permutation group's base.
    *
-   * @returns Base points of the permutation group.
+   * @returns The base point array.
    * @see SymPy `sympy.tensor.tensor.TensorSymmetry.base`
    */
   get base(): number[] {
     return first(this.args).args.map((x) => Number(asRational(x).p));
   }
   /**
-   * Strong generating permutations of the slot symmetry group.
+   * Lists permutations that strongly generate the slot symmetry group.
    *
-   * @returns The strong generators of the slot symmetry group.
+   * @returns The strong generators.
    * @see SymPy `sympy.tensor.tensor.TensorSymmetry.generators`
    */
   get generators(): Permutation[] {
     return at(this.args, 1).args.map((g) => cast(g, Permutation));
   }
   /**
-   * The number of free index slots.
+   * Counts the unbound index slots.
    *
-   * @returns The number of free index slots.
+   * @returns The tensor rank.
    * @see SymPy `sympy.tensor.tensor.TensorSymmetry.rank`
    */
   get rank(): number {
     return first(this.generators).size - 2;
   }
   /**
-   * The symmetric group of the slots (antisymmetric for a negative rank).
+   * Constructs full slot symmetry for a nonnegative rank or antisymmetry for a negative rank.
    *
    * @param rank - Number of tensor slots.
-   * @returns The symmetric group of the slots (antisymmetric for a negative rank).
+   * @returns The tensor symmetry.
    * @see SymPy `sympy.tensor.tensor.TensorSymmetry.fully_symmetric`
    */
   static fullySymmetric(rank: number): TensorSymmetry {
     return new TensorSymmetry(...symmetryBsgs.full(rank));
   }
   /**
-   * Independent (anti)symmetric groups of consecutive slots.
+   * Constructs independent symmetric or antisymmetric groups on consecutive slots.
    *
    * @param ranks - Signed ranks of the symmetric or antisymmetric slot groups.
    * @returns The symmetry of the concatenated slot groups.
@@ -581,9 +581,9 @@ export class TensorSymmetry extends ExtensionExpr {
     return new TensorSymmetry(base, gens.map(toPermutation));
   }
   /**
-   * The monoterm symmetries of the Riemann tensor.
+   * Constructs the monoterm slot symmetries of a Riemann tensor.
    *
-   * @returns The monoterm symmetries of the Riemann tensor.
+   * @returns The Riemann tensor symmetry.
    * @see SymPy `sympy.tensor.tensor.TensorSymmetry.riemann`
    */
   static riemann(): TensorSymmetry {
@@ -591,7 +591,7 @@ export class TensorSymmetry extends ExtensionExpr {
     return new TensorSymmetry(base, gens.map(toPermutation));
   }
   /**
-   * TensorSymmetry object for `rank` indices with no symmetry.
+   * Constructs the trivial slot symmetry for the specified rank.
    *
    * @param rank - Number of tensor slots.
    * @returns The trivial slot symmetry for the specified rank.
@@ -646,52 +646,52 @@ export class TensorHeadNode extends ExtensionExpr {
     super(className, [new Sym(name), Tuple(...indexTypes), sym, commExpr(comm), ...extra]);
   }
   /**
-   * The symbolic name of the tensor head.
+   * Identifies the tensor head by its symbolic name.
    *
-   * @returns The symbolic name of the tensor head.
+   * @returns The tensor name.
    * @see SymPy `sympy.tensor.tensor.TensorHead.name`
    */
   get tensorName(): string {
     return cast(first(this.args), Sym).name;
   }
   /**
-   * The index type at each tensor slot.
+   * Lists the index types required by successive tensor slots.
    *
-   * @returns The index type at each tensor slot.
+   * @returns The ordered index types.
    * @see SymPy `sympy.tensor.tensor.TensorHead.index_types`
    */
   get indexTypes(): TensorIndexTypeNode[] {
     return at(this.args, 1).args.map((t) => cast(t, TensorIndexTypeNode));
   }
   /**
-   * Permutation symmetries of the tensor slots.
+   * Describes the allowed permutations of the tensor slots.
    *
-   * @returns The permutation symmetry of the tensor slots.
+   * @returns The slot symmetry object.
    * @see SymPy `sympy.tensor.tensor.TensorHead.symmetry`
    */
   get symmetry(): TensorSymmetry {
     return cast(at(this.args, 2), TensorSymmetry);
   }
   /**
-   * The number of the commutation group.
+   * Identifies the commutation group of the tensor.
    *
-   * @returns The number of the commutation group.
+   * @returns The group number.
    * @see SymPy `sympy.tensor.tensor.TensorHead.comm`
    */
   get comm(): number {
     return TensorManager.commSymbols2i(at(this.args, 3));
   }
   /**
-   * The number of free index slots.
+   * Counts the unbound index slots.
    *
-   * @returns The number of free index slots.
+   * @returns The tensor rank.
    * @see SymPy `sympy.tensor.tensor.TensorHead.rank`
    */
   get rank(): number {
     return this.indexTypes.length;
   }
   /**
-   * Power of the metric norm with explicit component data.
+   * Raises the metric norm to the given power when explicit components are supplied.
    *
    * @param exponent - Power to which the operand is raised.
    * @param replacements - Tensor or index replacements.
@@ -713,7 +713,8 @@ export class TensorHeadNode extends ExtensionExpr {
     return TensorManager.getComm(this.comm, other.comm);
   }
   /**
-   * The tensor with these indices (a string '-j' is a covariant index).
+   * Applies the tensor head to the supplied indices, interpreting a leading minus sign as a covariant
+   * index.
    *
    * @param indices - Indices in slot order.
    * @returns The tensor with the given indices.
@@ -748,7 +749,7 @@ export class TensorHeadNode extends ExtensionExpr {
   }
 }
 /**
- * A tensor symbol with an ordered list of index types, slot symmetry and commutation group.
+ * Constructs a tensor symbol with an ordered list of index types, slot symmetry and commutation group.
  *
  * @param name - Symbolic name.
  * @param types - Index types in tensor slot order.
@@ -979,30 +980,30 @@ export type ArrayReplacements = ReadonlyMap<Expr, ArrayInput>;
  */
 export abstract class TensExpr extends ExtensionExpr {
   /**
-   * All indices, dummies included, in slot order.
+   * Lists all indices in slot order, including contracted indices.
    *
    * @returns The ordered tensor indices.
    * @see SymPy `sympy.tensor.tensor.TensExpr.get_indices`
    */
   abstract getIndices(): TensorIndexNode[];
   /**
-   * The free indices in slot order.
+   * Lists the uncontracted indices in slot order.
    *
    * @returns The uncontracted indices.
    * @see SymPy `sympy.tensor.tensor.TensExpr.get_free_indices`
    */
   abstract getFreeIndices(): TensorIndexNode[];
   /**
-   * The scalar coefficient.
+   * Extracts the scalar factor multiplying the tensor part.
    *
    * @returns The scalar coefficient.
    * @see SymPy `sympy.tensor.tensor.TensExpr.coeff`
    */
   abstract get coEff(): Expr;
   /**
-   * The expression without its coefficient.
+   * Removes the overall coefficient from the tensor expression.
    *
-   * @returns The expression without its coefficient.
+   * @returns The coefficient-free expression.
    * @see SymPy `sympy.tensor.tensor.TensExpr.nocoeff`
    */
   abstract get nocoeff(): Expr;
@@ -1030,9 +1031,9 @@ export abstract class TensExpr extends ExtensionExpr {
    */
   abstract doitShallow(): Expr;
   /**
-   * The canonical form under the slot symmetries, dummy renaming and commutation.
+   * Canonicalizes the tensor under slot permutations, dummy renaming, and commutation rules.
    *
-   * @returns The canonical form under the slot symmetries, dummy renaming and commutation.
+   * @returns The canonical expression.
    */
   abstract canonBp(): Expr;
   /**
@@ -1094,10 +1095,10 @@ export abstract class TensExpr extends ExtensionExpr {
     return limits.length ? new Concrete('Sum', [body, ...limits]) : body;
   }
   /**
-   * The deprecated name of substituteIndices.
+   * Substitutes tensor indices using the supplied old and new index pairs.
    *
    * @param indexTuples - Pairs of old and replacement indices.
-   * @returns The deprecated name of substituteIndices.
+   * @returns The expression with substituted indices.
    * @see SymPy `sympy.tensor.tensor.TensExpr.fun_eval`
    */
   funEval(...indexTuples: [TensorIndexNode, TensorIndexNode][]): Expr {
@@ -1146,8 +1147,8 @@ export abstract class TensExpr extends ExtensionExpr {
     return expandTens(this);
   }
   /**
-   * The component array of the expression from arrays of its tensors (and metrics of the index
-   * types), with the axes in the order of `indices`.
+   * Builds the expression's component array from tensor and metric arrays, ordering the output axes by
+   * the supplied indices.
    *
    * @param replacements - Tensor or index replacements.
    * @param indices - Indices in slot order.
@@ -1180,21 +1181,21 @@ export abstract class TensExpr extends ExtensionExpr {
     return matchIndicesWithOtherTensor(array, idx, retIndices, repl)[1];
   }
   /**
-   * The matching of a tensor pattern in replace, find and count.
+   * Matches the tensor pattern against an expression for pattern-based operations.
    *
    * @param expr - Symbolic expression on which to operate.
-   * @returns The matching of a tensor pattern in replace, find and count.
+   * @returns The bindings or `false` on mismatch.
    */
   override matchesSelf(expr: Expr): ReadonlyMap<Expr, Expr> | false {
     const m = this.matches(expr);
     return isNoMatch(m) ? false : m;
   }
   /**
-   * The replacements making this pattern equal to expr, or NoMatch.
+   * Matches the tensor pattern to the expression.
    *
    * @param expr - Symbolic expression on which to operate.
    * @param replDict - Bindings already fixed in the match.
-   * @returns Bindings for the wildcard matches, or `NoMatch` if the pattern fails.
+   * @returns The replacement map or `NoMatch`.
    * @see SymPy `sympy.tensor.tensor.TensExpr.matches`
    */
   matches(expr: ExprLike, replDict?: ReadonlyMap<Expr, Expr>): ExprMap<Expr> | NoMatchResult {
@@ -1287,25 +1288,25 @@ export class Tensor extends TensExpr {
     this.isCanonBp = isCanonBp;
   }
   /**
-   * The tensor head defining this factor.
+   * Identifies the tensor head applied in this factor.
    *
-   * @returns The tensor head defining this factor.
+   * @returns The tensor head.
    * @see SymPy `sympy.tensor.tensor.Tensor.head`
    */
   get head(): TensorHeadNode {
     return cast(first(this.args), TensorHeadNode);
   }
   /**
-   * The tensor head defining this factor.
+   * Identifies the tensor head applied in this factor.
    *
-   * @returns The tensor head defining this factor.
+   * @returns The tensor head.
    * @see SymPy `sympy.tensor.tensor.Tensor.component`
    */
   get component(): TensorHeadNode {
     return this.head;
   }
   /**
-   * Tensor heads of the factors in order.
+   * Lists tensor heads in the order of their factors.
    *
    * @returns The tensor heads in factor order.
    * @see SymPy `sympy.tensor.tensor.Tensor.components`
@@ -1314,79 +1315,79 @@ export class Tensor extends TensExpr {
     return [this.head];
   }
   /**
-   * The index type at each tensor slot.
+   * Lists the index types required by successive tensor slots.
    *
-   * @returns The index type at each tensor slot.
+   * @returns The ordered index types.
    * @see SymPy `sympy.tensor.tensor.Tensor.index_types`
    */
   get indexTypes(): TensorIndexTypeNode[] { return this.head.indexTypes; }
   /**
-   * The indices in the order of the tensor or array slots.
+   * Lists indices in the order of the tensor or array slots.
    *
-   * @returns The indices in the order of the tensor or array slots.
+   * @returns The ordered indices.
    * @see SymPy `sympy.tensor.tensor.Tensor.indices`
    */
   get indices(): TensorIndexNode[] {
     return at(this.args, 1).args.map((i) => cast(i, TensorIndexNode));
   }
   /**
-   * The uncontracted indices paired with their slot positions.
+   * Locates each uncontracted index in the expression's slots.
    *
-   * @returns The uncontracted indices paired with their slot positions.
+   * @returns The free index–position pairs.
    * @see SymPy `sympy.tensor.tensor.Tensor.free`
    */
   get free(): Free[] {
     return [...this.indexStructure.free];
   }
   /**
-   * Pairs of slot positions joined by dummy-index contractions.
+   * Identifies the slots linked by each dummy contraction.
    *
-   * @returns Pairs of slot positions joined by dummy-index contractions.
+   * @returns The contracted slot pairs.
    * @see SymPy `sympy.tensor.tensor.Tensor.dum`
    */
   get dum(): Dum[] {
     return [...this.indexStructure.dum];
   }
   /**
-   * The number of index slots before contraction.
+   * Counts index slots before dummy indices are contracted.
    *
-   * @returns The number of index slots before contraction.
+   * @returns The external rank.
    * @see SymPy `sympy.tensor.tensor.Tensor.ext_rank`
    */
   get extRank(): number {
     return this.indexStructure.extRank;
   }
   /**
-   * The scalar coefficient of the tensor expression.
+   * Extracts the numerical or symbolic scalar factor of the tensor expression.
    *
-   * @returns The scalar coefficient of the tensor expression.
+   * @returns The scalar coefficient.
    * @see SymPy `sympy.tensor.tensor.Tensor.coeff`
    */
   get coEff(): Expr {
     return S.One;
   }
   /**
-   * The tensor expression with its scalar coefficient removed.
+   * Factors out the scalar multiplier of the tensor expression.
    *
-   * @returns The tensor expression with its scalar coefficient removed.
+   * @returns The coefficient-free tensor expression.
    * @see SymPy `sympy.tensor.tensor.Tensor.nocoeff`
    */
   get nocoeff(): Expr {
     return this;
   }
   /**
-   * The number of free indices.
+   * Counts the indices left uncontracted.
    *
-   * @returns The number of free indices.
+   * @returns The free rank.
    * @see SymPy `sympy.tensor.tensor.Tensor.rank`
    */
   get rank(): number {
     return this.indexStructure.free.length;
   }
   /**
-   * The free indices sorted.
+   * Orders the free indices canonically.
    *
-   * @returns The free indices sorted.
+   * @returns The sorted free indices.
    * @see SymPy `sympy.tensor.tensor.Tensor.free_args`
    */
   get freeArgs(): TensorIndexNode[] {
@@ -1474,7 +1475,7 @@ export class Tensor extends TensExpr {
     return [this];
   }
   /**
-   * A single tensor is already in component order.
+   * Preserves the component order of an individual tensor.
    *
    * @returns The tensor expression with components in canonical order.
    * @see SymPy `sympy.tensor.tensor.Tensor.sorted_components`
@@ -1558,9 +1559,9 @@ export class Tensor extends TensExpr {
     return matchIndicesWithOtherTensor(array, this.getFreeIndices(), other.getFreeIndices(), repl);
   }
   /**
-   * The tensor under all its slot symmetries (with signs).
+   * Enumerates the signed forms obtained from the tensor's slot symmetries.
    *
-   * @returns The tensor under all its slot symmetries (with signs).
+   * @returns The symmetry-related expressions.
    */
   symmetrizedForms(): Expr[] {
     const gens = this.component.symmetry.generators;
@@ -1599,7 +1600,7 @@ export class Tensor extends TensExpr {
     return NoMatch;
   }
   /**
-   * The indices matched slot by slot.
+   * Matches the tensor indices in corresponding slots.
    *
    * @param expr - Symbolic expression on which to operate.
    * @param replIn - Existing replacement map.
@@ -1633,7 +1634,7 @@ export class Tensor extends TensExpr {
     return this.component.rank > 0 ? `${this.component.tensorName}(${this.indices.map(print).join(', ')})` : this.component.tensorName;
   }
   /**
-   * The name followed by the runs of upper and lower indices (A{}^{ij}{}_{k}).
+   * Formats the tensor name followed by runs of upper and lower indices.
    *
    * @param print - Formatter for a child expression.
    * @returns The formatted LaTeX.
@@ -1768,9 +1769,9 @@ export class TensMul extends TensExpr {
     }));
   }
   /**
-   * The index type at each tensor slot.
+   * Lists the index types required by successive tensor slots.
    *
-   * @returns The index type at each tensor slot.
+   * @returns The ordered index types.
    * @see SymPy `sympy.tensor.tensor.TensMul.index_types`
    */
   get indexTypes(): TensorIndexTypeNode[] { return [...this.indexStructure.indexTypes]; }
@@ -1812,25 +1813,25 @@ export class TensMul extends TensExpr {
     this.isCanonBp = isCanonBp;
   }
   /**
-   * The scalar coefficient of the tensor expression.
+   * Extracts the numerical or symbolic scalar factor of the tensor expression.
    *
-   * @returns The scalar coefficient of the tensor expression.
+   * @returns The scalar coefficient.
    * @see SymPy `sympy.tensor.tensor.TensMul.coeff`
    */
   get coEff(): Expr {
     return mul(...this.args.filter((a) => !isTens(a)));
   }
   /**
-   * The tensor expression with its scalar coefficient removed.
+   * Factors out the scalar multiplier of the tensor expression.
    *
-   * @returns The tensor expression with its scalar coefficient removed.
+   * @returns The coefficient-free tensor expression.
    * @see SymPy `sympy.tensor.tensor.TensMul.nocoeff`
    */
   get nocoeff(): Expr {
     return tensMul(...this.args, pow(this.coEff, -1));
   }
   /**
-   * The tensor heads of the factors (sums excluded).
+   * Collects tensor heads from the factors, excluding sums.
    *
    * @returns The tensor heads in factor order.
    * @see SymPy `sympy.tensor.tensor.TensMul.components`
@@ -1839,45 +1840,45 @@ export class TensMul extends TensExpr {
     return this.args.flatMap((a) => (a instanceof Tensor ? [a.component] : []));
   }
   /**
-   * The uncontracted indices paired with their slot positions.
+   * Locates each uncontracted index in the expression's slots.
    *
-   * @returns The uncontracted indices paired with their slot positions.
+   * @returns The free index–position pairs.
    * @see SymPy `sympy.tensor.tensor.TensMul.free`
    */
   get free(): Free[] {
     return [...this.indexStructure.free];
   }
   /**
-   * Pairs of slot positions joined by dummy-index contractions.
+   * Identifies the slots linked by each dummy contraction.
    *
-   * @returns Pairs of slot positions joined by dummy-index contractions.
+   * @returns The contracted slot pairs.
    * @see SymPy `sympy.tensor.tensor.TensMul.dum`
    */
   get dum(): Dum[] {
     return [...this.indexStructure.dum];
   }
   /**
-   * The number of index slots before contraction.
+   * Counts index slots before dummy indices are contracted.
    *
-   * @returns The number of index slots before contraction.
+   * @returns The external rank.
    * @see SymPy `sympy.tensor.tensor.TensMul.ext_rank`
    */
   get extRank(): number {
     return this.indexStructure.extRank;
   }
   /**
-   * The number of free indices.
+   * Counts the indices left uncontracted.
    *
-   * @returns The number of free indices.
+   * @returns The free rank.
    * @see SymPy `sympy.tensor.tensor.TensMul.rank`
    */
   get rank(): number {
     return this.indexStructure.free.length;
   }
   /**
-   * The free indices sorted.
+   * Orders the free indices canonically.
    *
-   * @returns The free indices sorted.
+   * @returns The sorted free indices.
    * @see SymPy `sympy.tensor.tensor.TensMul.free_args`
    */
   get freeArgs(): TensorIndexNode[] {
@@ -2000,7 +2001,7 @@ export class TensMul extends TensExpr {
     return new TensMul(contractIndices(all, true).args, this.isCanonBp);
   }
   /**
-   * The factors, the coefficient on the first one.
+   * Lists the factors with the scalar coefficient on the first factor.
    *
    * @returns The tensor factors with the scalar coefficient attached to the first factor.
    * @see SymPy `sympy.tensor.tensor.TensMul.split`
@@ -2017,7 +2018,7 @@ export class TensMul extends TensExpr {
     return out;
   }
   /**
-   * (anti)commuting factors sorted by index types and names.
+   * Orders commuting or anticommuting tensor factors by index type and name.
    *
    * @returns The tensor expression with components in canonical order.
    * @see SymPy `sympy.tensor.tensor.TensMul.sorted_components`
@@ -2212,7 +2213,7 @@ export class TensMul extends TensExpr {
     return sign + args.map((a) => (precedence(a) <= PREC.MUL ? `(${print(a)})` : print(a))).join('*');
   }
   /**
-   * The sign and the factors side by side (-3A{}^{i}, \\left(x + 1\\right)A{}^{i}).
+   * Formats the product's sign and factors side by side.
    *
    * @param print - Formatter for a child expression.
    * @returns The formatted LaTeX.
@@ -2228,7 +2229,7 @@ export class TensMul extends TensExpr {
     return sign + args.map((a) => (precedence(a) <= PREC.MUL ? `\\left(${print(a)}\\right)` : print(a))).join('');
   }
   /**
-   * A TensMul binds like a Mul.
+   * Uses multiplication precedence for the tensor product.
    *
    * @returns The text printer’s precedence for this node.
    */
@@ -2248,10 +2249,10 @@ export function tensMul(...args: ExprLike[]): Expr {
 }
 
 /**
- * The product of the arguments.
+ * Multiplies the supplied tensor expressions.
  *
  * @param a - Tensor or scalar factors in multiplication order.
- * @returns The product of the arguments.
+ * @returns The tensor product expression.
  * @see SymPy `sympy.tensor.tensor.tensor_mul`
  */
 export function tensorMul(...a: ExprLike[]): Expr {
@@ -2287,27 +2288,27 @@ export class TensAdd extends TensExpr {
     super('TensAdd', args);
   }
   /**
-   * The scalar coefficient of the tensor expression.
+   * Extracts the numerical or symbolic scalar factor of the tensor expression.
    *
-   * @returns The scalar coefficient of the tensor expression.
+   * @returns The scalar coefficient.
    * @see SymPy `sympy.tensor.tensor.TensAdd.coeff`
    */
   get coEff(): Expr {
     return S.One;
   }
   /**
-   * The tensor expression with its scalar coefficient removed.
+   * Factors out the scalar multiplier of the tensor expression.
    *
-   * @returns The tensor expression with its scalar coefficient removed.
+   * @returns The coefficient-free tensor expression.
    * @see SymPy `sympy.tensor.tensor.TensAdd.nocoeff`
    */
   get nocoeff(): Expr {
     return this;
   }
   /**
-   * The number of free indices.
+   * Counts the indices left uncontracted.
    *
-   * @returns The number of free indices.
+   * @returns The free rank.
    * @see SymPy `sympy.tensor.tensor.TensAdd.rank`
    */
   get rank(): number {
@@ -2375,7 +2376,7 @@ export class TensAdd extends TensExpr {
     return expr instanceof TensAdd ? super.matchInternal(expr, repl) : NoMatch;
   }
   /**
-   * Binding strength used to decide where the text printer needs parentheses.
+   * Specifies when the text printer must parenthesize the expression.
    *
    * @returns The text printer’s precedence for this node.
    */
@@ -2434,7 +2435,7 @@ export class TensAdd extends TensExpr {
     return this.args.map(print).join(' + ').replaceAll('+ -', '- ');
   }
   /**
-   * The terms in the order of their LaTeX text.
+   * Orders the terms by their LaTeX representation.
    *
    * @param print - Formatter for a child expression.
    * @returns The formatted LaTeX.
@@ -2526,12 +2527,12 @@ function canonicalForm(self: Tensor | TensMul): Expr {
 }
 
 /**
- * The tensor with its indices permuted by g (negated when g changes the sign).
+ * Permutes the tensor indices by `g` and applies its sign.
  *
  * @param t - Tensor expression to transform.
  * @param g - Index permutation in array form, including its sign slots.
  * @param isCanonBp - Whether the input is already in canonical index order.
- * @returns The tensor with its indices permuted by g (negated when g changes the sign).
+ * @returns The signed permuted tensor.
  * @see SymPy `sympy.tensor.tensor.perm2tensor`
  */
 export function perm2tensor(t: Tensor | TensMul, g: Af, isCanonBp = false): Expr {
@@ -2541,10 +2542,10 @@ export function perm2tensor(t: Tensor | TensMul, g: Af, isCanonBp = false): Expr
 }
 
 /**
- * The canonical form of a tensor expression (other expressions unchanged).
+ * Canonicalizes tensor expressions while preserving other expression types.
  *
  * @param p - Tensor expression to canonicalize.
- * @returns The canonical form of a tensor expression (other expressions unchanged).
+ * @returns The resulting expression.
  * @see SymPy `sympy.tensor.tensor.canon_bp`
  */
 export function canonBp(p: Expr): Expr {
@@ -2613,7 +2614,7 @@ export function riemannCyclicReplace(tR: Tensor | TensMul): Expr {
 }
 
 /**
- * Riemann tensors replaced by their cyclic-identity form, canonicalized.
+ * Replaces Riemann tensors by their cyclic-identity form and canonicalizes the result.
  *
  * @param t2 - Tensor expression containing Riemann factors.
  * @returns The canonical tensor expression after applying the cyclic identity.
@@ -2730,34 +2731,34 @@ export class TensorElementNode extends TensExpr {
     super('TensorElement', [expr, indexMap]);
   }
   /**
-   * The underlying expression on which this operation acts.
+   * Identifies the operand of this tensor operation.
    *
-   * @returns The underlying expression on which this operation acts.
+   * @returns The underlying expression.
    * @see SymPy `sympy.tensor.tensor.TensorElement.expr`
    */
   get expr(): Tensor {
     return cast(first(this.args), Tensor);
   }
   /**
-   * The uncontracted indices paired with their slot positions.
+   * Locates each uncontracted index in the expression's slots.
    *
-   * @returns The uncontracted indices paired with their slot positions.
+   * @returns The free index–position pairs.
    * @see SymPy `sympy.tensor.tensor.TensorElement.free`
    */
   get free(): Free[] {
     return IndexStructure.fromIndices(this.freeIndices).free;
   }
   /**
-   * Pairs of slot positions joined by dummy-index contractions.
+   * Identifies the slots linked by each dummy contraction.
    *
-   * @returns Pairs of slot positions joined by dummy-index contractions.
+   * @returns The contracted slot pairs.
    * @see SymPy `sympy.tensor.tensor.TensorElement.dum`
    */
   get dum(): Dum[] {
     return IndexStructure.fromIndices(this.freeIndices).dum;
   }
   /**
-   * Component values keyed by the indices to fix.
+   * Associates fixed indices with their supplied component values.
    *
    * @returns The fixed component values keyed by index.
    * @see SymPy `sympy.tensor.tensor.TensorElement.index_map`
@@ -2766,18 +2767,18 @@ export class TensorElementNode extends TensExpr {
     return cast(at(this.args, 1), DictNode);
   }
   /**
-   * The scalar coefficient of the tensor expression.
+   * Extracts the numerical or symbolic scalar factor of the tensor expression.
    *
-   * @returns The scalar coefficient of the tensor expression.
+   * @returns The scalar coefficient.
    * @see SymPy `sympy.tensor.tensor.TensorElement.coeff`
    */
   get coEff(): Expr {
     return S.One;
   }
   /**
-   * The tensor expression with its scalar coefficient removed.
+   * Factors out the scalar multiplier of the tensor expression.
    *
-   * @returns The tensor expression with its scalar coefficient removed.
+   * @returns The coefficient-free tensor expression.
    * @see SymPy `sympy.tensor.tensor.TensorElement.nocoeff`
    */
   get nocoeff(): Expr {
@@ -2855,7 +2856,7 @@ export class TensorElementNode extends TensExpr {
     return this;
   }
   /**
-   * The indices of the tensor with their fixed values (K{}^{i=3,j}).
+   * Formats the tensor indices together with their fixed values.
    *
    * @param print - Formatter for a child expression.
    * @returns The formatted LaTeX.
@@ -2900,7 +2901,7 @@ function makeTensorElement(expr: Expr, items: readonly (readonly [Expr, Expr])[]
 }
 
 /**
- * The tensor with some free indices fixed to values.
+ * Fixes selected free indices of the tensor to specified values.
  *
  * @param expr - Symbolic expression on which to operate.
  * @param indexMap - Component values keyed by the indices to fix.
@@ -2945,9 +2946,9 @@ export class WildTensorHeadNode extends TensorHeadNode {
     super(name, indexTypes, sym, comm, 'WildTensorHead', [unorderedIndices ? S.true : S.false]);
   }
   /**
-   * Whether wildcard matching permits a permutation of the index slots.
+   * Indicates whether a wildcard can match permuted index slots.
    *
-   * @returns Whether wildcard matching permits a permutation of the index slots.
+   * @returns The unordered-index flag.
    * @see SymPy `sympy.tensor.tensor.WildTensorHead.unordered_indices`
    */
   get unorderedIndices(): boolean {
@@ -2980,7 +2981,7 @@ export class WildTensorHeadNode extends TensorHeadNode {
   }
 }
 /**
- * A tensor head for patterns with wildcard tensor factors.
+ * Constructs a tensor head for patterns with wildcard tensor factors.
  *
  * @param name - Symbolic name.
  * @param options - `indexTypes` specifies the slots, `symmetry` their symmetry, `comm` the commutation group, and `unorderedIndices` permits reordered matches.
@@ -3037,9 +3038,9 @@ export class WildTensor extends Tensor {
     );
   }
   /**
-   * The tensor head defining this factor.
+   * Identifies the tensor head applied in this factor.
    *
-   * @returns The tensor head defining this factor.
+   * @returns The tensor head.
    * @see SymPy `sympy.tensor.tensor.WildTensor.head`
    */
   override get head(): WildTensorHeadNode {
@@ -3058,8 +3059,7 @@ export class WildTensor extends Tensor {
     );
   }
   /**
-   * A wild head bound by a match (a _WildTensExpr) is that expression called with this tensor's
-   * indices.
+   * Applies a matched wildcard tensor expression to this tensor's indices.
    *
    * @param old - Expression to replace.
    * @param nw - Expression to substitute in its place.
@@ -3164,9 +3164,9 @@ export class WildTensorIndexNode extends TensorIndexNode {
     super(name, tensorIndexType, isUp, 'WildTensorIndex', [ignoreUpdown ? S.true : S.false]);
   }
   /**
-   * Whether wildcard matching ignores index variance.
+   * Indicates whether the wildcard disregards raised and lowered index positions.
    *
-   * @returns Whether wildcard matching ignores index variance.
+   * @returns The variance-matching flag.
    * @see SymPy `sympy.tensor.tensor.WildTensorIndex.ignore_updown`
    */
   get ignoreUpdown(): boolean {
@@ -3214,7 +3214,7 @@ export class WildTensorIndexNode extends TensorIndexNode {
   }
 }
 /**
- * A pattern index that binds a tensor index of the same type.
+ * Constructs a pattern index that matches an index of the same type.
  *
  * @param name - Symbolic name.
  * @param type - Type of the tensor indices.
@@ -3262,10 +3262,10 @@ export class WildTensExpr extends ExtensionExpr {
     super('_WildTensExpr', [expr]);
   }
   /**
-   * The matched expression with its free indices replaced by `indices`.
+   * Replaces the free indices of the matched expression with the supplied indices.
    *
    * @param indices - Indices in slot order.
-   * @returns The matched expression with its free indices replaced by `indices`.
+   * @returns The relabeled expression.
    * @see SymPy `sympy.tensor.tensor._WildTensExpr.__call__`
    */
   call(...indices: TensorIndexNode[]): Expr {

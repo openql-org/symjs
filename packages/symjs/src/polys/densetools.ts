@@ -65,12 +65,12 @@ function rising(i: number, m: number): number {
 }
 
 /**
- * Computes the indefinite integral of f in x_0.
+ * Integrates `m` times in the principal generator.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param m - Number of integrations.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The indefinite integral of f in x_0.
+ * @returns The antiderivative in `x_0`.
  * @see SymPy `sympy.polys.densetools.dup_integrate`
  * @example
  * ```ts
@@ -88,13 +88,13 @@ export function dupIntegrate(f: DensePoly, m: number, K: Domain): unknown[] {
 }
 
 /**
- * Computes the indefinite integral of f in x_0.
+ * Integrates `m` times in the principal generator.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param m - Number of integrations.
  * @param u - Number of variables minus one.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The indefinite integral of f in x_0.
+ * @returns The antiderivative in `x_0`.
  * @see SymPy `sympy.polys.densetools.dmp_integrate`
  * @example
  * ```ts
@@ -124,14 +124,14 @@ function recIn(g: DensePoly, v: number, i: number, j: number, op: (h: DensePoly,
 }
 
 /**
- * Computes the indefinite integral of f in x_j.
+ * Integrates `m` times with respect to the selected generator.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param m - Number of integrations.
  * @param j - Index of the polynomial variable.
  * @param u - Number of variables minus one.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The indefinite integral of f in x_j.
+ * @returns The antiderivative in `x_j`.
  * @see SymPy `sympy.polys.densetools.dmp_integrate_in`
  * @example
  * ```ts
@@ -147,12 +147,12 @@ export function dmpIntegrateIn(f: DensePoly, m: number, j: number, u: number, K:
 }
 
 /**
- * The m-th order derivative of f in x_0.
+ * Differentiates the polynomial `m` times in its principal variable.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param m - Number of differentiations.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The m-th order derivative of f in x_0.
+ * @returns The derivative polynomial.
  * @see SymPy `sympy.polys.densetools.dup_diff`
  * @example
  * ```ts
@@ -176,13 +176,13 @@ export function dupDiff(f: DensePoly, m: number, K: Domain): unknown[] {
 }
 
 /**
- * The m-th order derivative of f in x_0.
+ * Differentiates the polynomial `m` times in its principal variable.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param m - Number of differentiations.
  * @param u - Number of variables minus one.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The m-th order derivative of f in x_0.
+ * @returns The derivative polynomial.
  * @see SymPy `sympy.polys.densetools.dmp_diff`
  * @example
  * ```ts
@@ -208,14 +208,14 @@ export function dmpDiff(f: DensePoly, m: number, u: number, K: Domain): unknown[
 }
 
 /**
- * The m-th order derivative of f in x_j.
+ * Differentiates the polynomial `m` times in the specified variable.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param m - Number of differentiations.
  * @param j - Index of the polynomial variable.
  * @param u - Number of variables minus one.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The m-th order derivative of f in x_j.
+ * @returns The partial derivative.
  * @see SymPy `sympy.polys.densetools.dmp_diff_in`
  * @example
  * ```ts
@@ -254,13 +254,13 @@ export function dupEval(f: DensePoly, a: unknown, K: Domain): unknown {
 }
 
 /**
- * Evaluate f at x_0 = a with Horner's scheme.
+ * Uses Horner's rule to substitute the given value for the principal variable.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param a - Value substituted for the generator.
  * @param u - Number of variables minus one.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns Evaluate f at x_0 = a with Horner's scheme.
+ * @returns The specialized polynomial or ground value.
  * @see SymPy `sympy.polys.densetools.dmp_eval`
  * @example
  * ```ts
@@ -279,14 +279,14 @@ export function dmpEval(f: DensePoly, a: unknown, u: number, K: Domain): unknown
 }
 
 /**
- * Evaluate f at x_j = a.
+ * Substitutes the supplied value for the selected generator.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param a - Value substituted for the generator.
  * @param j - Index of the polynomial variable.
  * @param u - Number of variables minus one.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns Evaluate f at x_j = a.
+ * @returns The specialized polynomial or ground value.
  * @see SymPy `sympy.polys.densetools.dmp_eval_in`
  * @example
  * ```ts
@@ -309,13 +309,13 @@ function recEvalTail(g: DensePoly, i: number, A: readonly unknown[], u: number, 
 }
 
 /**
- * Evaluate f at x_k = a_k for the last variables x_k.
+ * Substitutes the supplied values for successive trailing generators.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param A - Values for successive trailing variables.
  * @param u - Number of variables minus one.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns Evaluate f at x_k = a_k for the last variables x_k.
+ * @returns The specialized polynomial or ground value.
  * @see SymPy `sympy.polys.densetools.dmp_eval_tail`
  * @example
  * ```ts
@@ -334,7 +334,7 @@ export function dmpEvalTail(f: DensePoly, A: readonly unknown[], u: number, K: D
 }
 
 /**
- * Differentiate m times in x_j and evaluate at x_j = a.
+ * Evaluates the mth partial derivative at the supplied generator value.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param m - Number of differentiations.
@@ -342,7 +342,7 @@ export function dmpEvalTail(f: DensePoly, A: readonly unknown[], u: number, K: D
  * @param j - Index of the polynomial variable.
  * @param u - Number of variables minus one.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns Differentiate m times in x_j and evaluate at x_j = a.
+ * @returns The specialized derivative.
  * @throws RangeError when the variable index is outside the polynomial levels.
  * @see SymPy `sympy.polys.densetools.dmp_diff_eval_in`
  * @example
@@ -477,11 +477,11 @@ export function dmpGroundMonic(f: DensePoly, u: number, K: Domain): unknown[] {
 }
 
 /**
- * The GCD of the coefficients of f.
+ * Computes the content of a univariate polynomial.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The GCD of the coefficients of f.
+ * @returns The coefficient GCD.
  * @see SymPy `sympy.polys.densetools.dup_content`
  * @example
  * ```ts
@@ -505,12 +505,12 @@ function groundContent(f: DensePoly, u: number, K: Domain): unknown {
 }
 
 /**
- * The GCD of the ground coefficients of f.
+ * Computes the content in the ground domain.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param u - Number of variables minus one.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The GCD of the ground coefficients of f.
+ * @returns The ground coefficient GCD.
  * @see SymPy `sympy.polys.densetools.dmp_ground_content`
  * @example
  * ```ts
@@ -524,11 +524,11 @@ export function dmpGroundContent(f: DensePoly, u: number, K: Domain): unknown {
 }
 
 /**
- * The content and the primitive part of f.
+ * Factors the coefficient GCD out of the polynomial.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The content and the primitive part of f.
+ * @returns The content and primitive part.
  * @see SymPy `sympy.polys.densetools.dup_primitive`
  * @remarks SymPy returns `(2, [3, 4, 6])` with tuples for the fixed-length groups.
  * @example
@@ -543,12 +543,12 @@ export function dupPrimitive(f: DensePoly, K: Domain): [unknown, unknown[]] {
 }
 
 /**
- * The content and the primitive part of f in K[X].
+ * Separates the multivariate polynomial from its ground content.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param u - Number of variables minus one.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The content and the primitive part of f in K[X].
+ * @returns The content and primitive part.
  * @see SymPy `sympy.polys.densetools.dmp_ground_primitive`
  * @remarks SymPy returns `(2, [[1, 3], [2, 6]])` with tuples for the fixed-length groups.
  * @example
@@ -566,12 +566,12 @@ export function dmpGroundPrimitive(f: DensePoly, u: number, K: Domain): [unknown
 }
 
 /**
- * Extract the common content of f and g.
+ * Divides both inputs by their common content.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param g - Second polynomial in dense, leading-coefficient-first representation.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns Extract the common content of f and g.
+ * @returns The common content and both quotients.
  * @see SymPy `sympy.polys.densetools.dup_extract`
  * @remarks SymPy returns `(2, [3, 6, 9], [2, 4, 6])` with tuples for the fixed-length groups.
  * @example
@@ -586,13 +586,13 @@ export function dupExtract(f: DensePoly, g: DensePoly, K: Domain): [unknown, unk
 }
 
 /**
- * Extract the common ground content of f and g.
+ * Divides both inputs by their common ground content.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param g - Second polynomial in dense, leading-coefficient-first representation.
  * @param u - Number of variables minus one.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns Extract the common ground content of f and g.
+ * @returns The common ground content and both quotients.
  * @see SymPy `sympy.polys.densetools.dmp_ground_extract`
  * @remarks SymPy returns `(2, [[3, 6], [9]], [[2, 4], [6]])` with tuples for the fixed-length groups.
  * @example
@@ -610,11 +610,11 @@ export function dmpGroundExtract(f: DensePoly, g: DensePoly, u: number, K: Domai
 }
 
 /**
- * The real and imaginary parts of f(x + I*y) as polynomials in x and y.
+ * Substitutes `x + I*y` and separates the real and imaginary parts.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The real and imaginary parts of f(x + I*y) as polynomials in x and y.
+ * @returns Two polynomials in `x` and `y`.
  * @throws DomainError when the coefficients are outside the supported real domains.
  * @see SymPy `sympy.polys.densetools.dup_real_imag`
  * @remarks SymPy returns `([[1], [1], [-3, 0, 1], [-1, 0, 1]], [[3, 0], [2, 0], [-1, 0, 1, 0]])` with tuples for the fixed-length groups.
@@ -645,7 +645,7 @@ export function dupRealImag(f: DensePoly, K: Domain): [unknown[], unknown[]] {
 }
 
 /**
- * f(-x).
+ * Negates the indeterminate of the polynomial.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param K - Coefficient domain for the polynomial arithmetic.
@@ -665,7 +665,7 @@ export function dupMirror(f: DensePoly, K: Domain): unknown[] {
 }
 
 /**
- * f(a*x).
+ * Scales the polynomial's argument by a ground factor.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param a - Factor multiplying the generator.
@@ -690,7 +690,7 @@ export function dupScale(f: DensePoly, a: unknown, K: Domain): unknown[] {
 }
 
 /**
- * f(x + a).
+ * Translates the polynomial's argument by the supplied value.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param a - Translation added to the generator or generators.
@@ -713,7 +713,7 @@ export function dupShift(f: DensePoly, a: unknown, K: Domain): unknown[] {
 }
 
 /**
- * f(X + A).
+ * Translates each generator by the corresponding supplied shift.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param a - Translation added to the generator or generators.
@@ -743,7 +743,7 @@ export function dmpShift(f: DensePoly, a: readonly unknown[], u: number, K: Doma
 }
 
 /**
- * q**n * f(p/q) for n = deg(f).
+ * Substitutes the ratio of two polynomials and clears the denominator to the input degree.
  *
  * @param f - Polynomial in the original generator.
  * @param p - Numerator of the rational substitution.
@@ -770,7 +770,7 @@ export function dupTransform(f: DensePoly, p: DensePoly, q: DensePoly, K: Domain
 }
 
 /**
- * f(g).
+ * Substitutes the second polynomial into the first.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param g - Second polynomial in dense, leading-coefficient-first representation.
@@ -793,7 +793,7 @@ export function dupCompose(f: DensePoly, g: DensePoly, K: Domain): unknown[] {
 }
 
 /**
- * f(g) in K[X].
+ * Composes univariate polynomials over the coefficient domain.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param g - Second polynomial in dense, leading-coefficient-first representation.
@@ -864,11 +864,11 @@ function decomposeOnce(f: DensePoly, K: Domain): [unknown[], unknown[]] | undefi
 }
 
 /**
- * The functional decomposition f = f_1(f_2(...f_n)) of a univariate polynomial.
+ * Writes a univariate polynomial as a composition of polynomial functions.
  *
  * @param fIn - Polynomial in dense, leading-coefficient-first representation.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The functional decomposition f = f_1(f_2(...f_n)) of a univariate polynomial.
+ * @returns The components in composition order.
  * @see SymPy `sympy.polys.densetools.dup_decompose`
  * @example
  * ```ts
@@ -924,12 +924,12 @@ export function dmpAlgInject(f: DensePoly, u: number, K: Domain): [unknown[], nu
 }
 
 /**
- * The polynomial over K.dom whose roots include those of f over an algebraic field K.
+ * Lifts the polynomial from an algebraic extension to its ground domain while retaining its roots.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param u - Number of variables minus one.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The polynomial over K.dom whose roots include those of f over an algebraic field K.
+ * @returns The lifted polynomial.
  * @see SymPy `sympy.polys.densetools.dmp_lift`
  * @example
  * ```ts
@@ -951,11 +951,11 @@ export function dmpLift(f: DensePoly, u: number, K: Domain): unknown[] {
 }
 
 /**
- * The number of sign variations of the coefficients of f.
+ * Counts the changes of sign in the sequence of nonzero coefficients.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The number of sign variations of the coefficients of f.
+ * @returns The sign variation count.
  * @throws DomainError when the coefficients do not admit sign comparisons.
  * @see SymPy `sympy.polys.densetools.dup_sign_variations`
  * @example
@@ -1016,13 +1016,13 @@ function commonDenominator(g: DensePoly, v: number, K0: Domain, K1: Domain): unk
 }
 
 /**
- * Clear the denominators: [common, common*f].
+ * Clears denominators using their least common multiple.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param K0 - Source coefficient domain.
  * @param K1 - Target coefficient domain.
  * @param convert - Convert the resulting coefficients to the associated ring.
- * @returns Clear the denominators: [common, common*f].
+ * @returns The common denominator and scaled polynomial.
  * @see SymPy `sympy.polys.densetools.dup_clear_denoms`
  * @example
  * ```ts
@@ -1040,14 +1040,14 @@ export function dupClearDenoms(f: DensePoly, K0: Domain, K1?: Domain, convert = 
 }
 
 /**
- * Clear the denominators: [common, common*f] in K[X].
+ * Clears denominators of the ground coefficients.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param u - Number of variables minus one.
  * @param K0 - Source coefficient domain.
  * @param K1 - Target coefficient domain.
  * @param convert - Convert the resulting coefficients to the associated ring.
- * @returns Clear the denominators: [common, common*f] in K[X].
+ * @returns The common denominator and scaled polynomial.
  * @see SymPy `sympy.polys.densetools.dmp_clear_denoms`
  * @example
  * ```ts
@@ -1066,12 +1066,12 @@ export function dmpClearDenoms(f: DensePoly, u: number, K0: Domain, K1?: Domain,
 }
 
 /**
- * The inverse g of f modulo x**n by Newton iteration: f*g = 1 mod x**n.
+ * Uses Newton iteration to invert the polynomial modulo `x**n`.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param n - Truncation order of the inverse series.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The inverse g of f modulo x**n by Newton iteration: f*g = 1 mod x**n.
+ * @returns The truncated reciprocal.
  * @throws NotReversible when the constant coefficient is not a unit.
  * @see SymPy `sympy.polys.densetools.dup_revert`
  * @example
@@ -1097,13 +1097,13 @@ export function dupRevert(f: DensePoly, n: number, K: Domain): unknown[] {
 }
 
 /**
- * The inverse of f modulo x**n for a univariate f.
+ * Finds the multiplicative inverse of a univariate polynomial modulo `x**n`.
  *
  * @param f - Polynomial in dense, leading-coefficient-first representation.
  * @param g - Truncation order of the inverse series.
  * @param u - Number of variables minus one.
  * @param K - Coefficient domain for the polynomial arithmetic.
- * @returns The inverse of f modulo x**n for a univariate f.
+ * @returns The truncated reciprocal.
  * @throws MultivariatePolynomialError when the operation requires a univariate polynomial.
  * @see SymPy `sympy.polys.densetools.dmp_revert`
  * @example

@@ -35,17 +35,17 @@ export class Concrete extends Expr {
     super();
   }
   /**
-   * The summand or product factor.
+   * Identifies the expression evaluated at each index.
    *
-   * @returns The summand or product factor.
+   * @returns The summand or factor.
    */
   get function(): Expr {
     return at(this.args, 0);
   }
   /**
-   * Whether this expression represents a number.
+   * Indicates whether the expression represents a number.
    *
-   * @returns Whether the expression represents a number.
+   * @returns The numeric flag.
    */
   override get isNumber(): boolean {
     return this.freeSymbols().size === 0;
@@ -70,9 +70,9 @@ export class Concrete extends Expr {
     return new Set(free.values());
   }
   /**
-   * The index, lower bound and upper bound of each limit, innermost first.
+   * Lists the iterated bounds from the innermost limit outward.
    *
-   * @returns The index, lower bound and upper bound of each limit, innermost first.
+   * @returns Index and endpoint triples.
    */
   get limits(): [Expr, Expr, Expr][] {
     const out: [Expr, Expr, Expr][] = [];
@@ -87,10 +87,10 @@ export class Concrete extends Expr {
     return new Concrete(this.kind2, [f, ...limits.flat()]);
   }
   /**
-   * The position of the limit of variable x (which must occur once).
+   * Locates the unique limit bound to the given variable.
    *
    * @param x - The argument of the function.
-   * @returns The position of the limit of variable x (which must occur once).
+   * @returns The limit index.
    * @throws RangeError when the variable does not occur in exactly one limit.
    * @see SymPy `sympy.concrete.expr_with_intlimits.ExprWithIntLimits.index`
    */
@@ -101,12 +101,12 @@ export class Concrete extends Expr {
     return vars.indexOf(v.key);
   }
   /**
-   * The limits at positions x and y
-   * interchanged, when neither depends on a summation variable (else a ReorderError).
+   * Swaps two limits whose bounds are independent of all index variables. Dependent bounds raise
+   * `ReorderError`.
    *
    * @param x - A zero-based limit position to interchange.
    * @param y - A zero-based limit position to interchange.
-   * @returns The limits at positions x and y interchanged, when neither depends on a summation variable (else a ReorderError).
+   * @returns The reordered sum or product.
    * @throws ReorderError when the dependence of the limits prevents their interchange.
    * @see SymPy `sympy.concrete.expr_with_intlimits.ExprWithIntLimits.reorder_limit`
    */
@@ -122,11 +122,10 @@ export class Concrete extends Expr {
     );
   }
   /**
-   * The limits interchanged pair by pair; a
-   * pair names the limits by position or by variable.
+   * Interchanges successive pairs of limits identified by position or variable.
    *
    * @param pairs - The pairs of limit positions or variables to interchange.
-   * @returns The limits interchanged pair by pair; a pair names the limits by position or by variable.
+   * @returns The reordered sum or product.
    * @throws RangeError when a pair does not identify two limits.
    * @throws ReorderError when the limits cannot be interchanged.
    * @see SymPy `sympy.concrete.expr_with_intlimits.ExprWithIntLimits.reorder`
@@ -141,14 +140,13 @@ export class Concrete extends Expr {
     return e;
   }
   /**
-   * The variable var replaced by the
-   * linear transformation trafo = alpha*var + beta (alpha = 1 or -1, or a
-   * symbol), renamed newvar.
+   * Changes the bound index by a linear transformation with coefficient 1, −1, or symbolic slope and
+   * optionally renames the new variable.
    *
    * @param varIn - The index being changed.
    * @param trafoIn - The affine transformation of the index.
    * @param newvarIn - The replacement index symbol.
-   * @returns The variable var replaced by the linear transformation trafo = alpha*var + beta (alpha = 1 or -1, or a symbol), renamed newvar.
+   * @returns The transformed sum or product.
    * @throws RangeError when the change of variable does not yield a supported linear index.
    * @see SymPy `sympy.concrete.expr_with_intlimits.ExprWithIntLimits.change_index`
    */
@@ -171,8 +169,8 @@ export class Concrete extends Expr {
     return this.withLimits(f, limits);
   }
   /**
-   * Some limit (k, a, b) has
-   * a - b = 1 (an empty range); 'unknown' when undecided.
+   * Tests whether any limit has an empty range with its lower endpoint one greater than its upper
+   * endpoint.
    *
    * @returns The truth value, or `'unknown'` when it cannot be determined.
    */
@@ -234,9 +232,8 @@ function withProcessedLimits(kind: 'Sum' | 'Product', fIn: ExprLike, limits: rea
 }
 
 /**
- * An unevaluated sum of `f` over each limit `[k, a, b]` (or `[k, range]`),
- * from the innermost (first) to the outermost. `doit` or {@link summation}
- * evaluates it.
+ * Constructs an unevaluated sum over inclusive limits, processing the innermost limit first. Evaluate
+ * it with `doit` or {@link summation}.
  *
  * @param f - The summand.
  * @param limits - The indices with their bounds.
@@ -259,9 +256,8 @@ export function Sum(f: ExprLike, ...limits: ConcreteLimit[]): Expr {
 }
 
 /**
- * An unevaluated product of `f` over each limit `[k, a, b]` (or `[k, range]`),
- * from the innermost (first) to the outermost. `doit` or {@link product}
- * evaluates it.
+ * Constructs an unevaluated product over inclusive limits, processing the innermost limit first.
+ * Evaluate it with `doit` or {@link product}.
  *
  * @param f - The factor.
  * @param limits - The indices with their bounds.

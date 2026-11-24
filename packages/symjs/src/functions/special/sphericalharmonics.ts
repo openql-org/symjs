@@ -97,13 +97,13 @@ numericFns.Ynm = (args) => {
 // ---- public API ---------------------------------------------------------------------
 
 /**
- * The spherical harmonic Y_n^m.
+ * Evaluates the spherical harmonic of degree `n` and order `m`.
  *
  * @param n - The index.
  * @param m - The order.
  * @param theta - The polar angle in radians.
  * @param phi - The azimuthal angle in radians.
- * @returns The spherical harmonic Y_n^m.
+ * @returns The spherical harmonic expression.
  * @see SymPy `sympy.functions.special.spherical_harmonics.Ynm`
  * @example
  * ```ts
@@ -115,13 +115,13 @@ numericFns.Ynm = (args) => {
  */
 export const Ynm = (n: ExprLike, m: ExprLike, theta: ExprLike, phi: ExprLike): Expr => fn('Ynm', [n, m, theta, phi]);
 /**
- * The conjugate spherical harmonic.
+ * Computes the complex conjugate of a spherical harmonic.
  *
  * @param n - The index.
  * @param m - The order.
  * @param theta - The polar angle in radians.
  * @param phi - The azimuthal angle in radians.
- * @returns The conjugate spherical harmonic.
+ * @returns The conjugated harmonic.
  * @see SymPy `sympy.functions.special.spherical_harmonics.Ynm_c`
  * @example
  * ```ts
@@ -133,13 +133,13 @@ export const Ynm = (n: ExprLike, m: ExprLike, theta: ExprLike, phi: ExprLike): E
  */
 export const YnmC = (n: ExprLike, m: ExprLike, theta: ExprLike, phi: ExprLike): Expr => conjugate(Ynm(n, m, theta, phi));
 /**
- * The real spherical harmonic.
+ * Evaluates a real spherical harmonic of the given degree and order.
  *
  * @param n - The index.
  * @param m - The order.
  * @param theta - The polar angle in radians.
  * @param phi - The azimuthal angle in radians.
- * @returns The real spherical harmonic.
+ * @returns The real harmonic expression.
  * @see SymPy `sympy.functions.special.spherical_harmonics.Znm`
  * @example
  * ```ts

@@ -43,13 +43,13 @@ function asPiecewise(parts: readonly Expr[], knots: readonly Expr[], x: Expr, de
 }
 
 /**
- * The n-th B-spline of degree d on the given knot vector.
+ * Constructs the nth B-spline of the given degree on the knot vector.
  *
  * @param d - The degree of the spline.
  * @param knots - The knot sequence in nondecreasing order.
  * @param n - The zero-based basis index.
  * @param x - The argument of the function.
- * @returns The n-th B-spline of degree d on the given knot vector.
+ * @returns The spline basis function.
  * @throws RangeError when the degree or index is invalid for the supplied knots.
  * @see SymPy `sympy.functions.special.bsplines.bspline_basis`
  * @example
@@ -66,7 +66,7 @@ export function bsplineBasis(d: IntLike, knots: readonly ExprLike[], n: IntLike,
 }
 
 /**
- * All B-splines of degree d on the given knot vector.
+ * Constructs the full B-spline basis of the given degree on the knot vector.
  *
  * @param d - The degree of the spline.
  * @param knots - The knot sequence in nondecreasing order.
@@ -88,7 +88,7 @@ export function bsplineBasisSet(d: IntLike, knots: readonly ExprLike[], x: Expr)
 }
 
 /**
- * Spline of degree d interpolating strictly increasing real abscissae.
+ * Interpolates the data at strictly increasing real abscissae using a spline of the requested degree.
  *
  * @param d - The degree of the spline.
  * @param x - The argument of the function.

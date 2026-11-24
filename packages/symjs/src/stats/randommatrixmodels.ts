@@ -57,18 +57,18 @@ export class RandomMatrixEnsembleModel extends ExtensionExpr {
     super(name, [sym, dim]);
   }
   /**
-   * The underlying symbol naming the random variable.
+   * Identifies the ordinary symbol that names the random variable.
    *
-   * @returns The underlying symbol naming the random variable.
+   * @returns The underlying symbol.
    * @see SymPy `sympy.stats.random_matrix_models.RandomMatrixEnsembleModel.symbol`
    */
   get symbol(): Sym {
     return symbolConverter(at(this.args, 0));
   }
   /**
-   * The number of rows and columns of each square matrix in the ensemble.
+   * Specifies the common row and column count of each ensemble matrix.
    *
-   * @returns The number of rows and columns of each square matrix in the ensemble.
+   * @returns The matrix dimension.
    * @see SymPy `sympy.stats.random_matrix_models.RandomMatrixEnsembleModel.dimension`
    */
   get dimension(): Expr {
@@ -84,37 +84,37 @@ export class RandomMatrixEnsembleModel extends ExtensionExpr {
     return cast(Reflect.construct(this.constructor, [args]), Expr);
   }
   /**
-   * The density of a random matrix of the ensemble (SymPy density: unevaluated here).
+   * Forms the unevaluated density of a matrix drawn from the ensemble.
    *
    * @param expr - Expression to evaluate.
-   * @returns The density of a random matrix of the ensemble.
+   * @returns The density expression.
    * @see SymPy `sympy.stats.random_matrix_models.RandomMatrixEnsembleModel.density`
    */
   density(expr: Expr): Expr {
     return new Density([expr]);
   }
   /**
-   * The density.
+   * Evaluates the density for the supplied expression.
    *
    * @param expr - Expression to evaluate.
-   * @returns The density.
+   * @returns The density expression.
    */
   call(expr: Expr): Expr {
     return this.density(expr);
   }
   /**
-   * The joint distribution of the eigenvalues, a Lambda (SymPy joint_eigen_distribution of the ensembles that define it).
+   * Constructs the joint probability density of the ensemble eigenvalues.
    *
-   * @returns The joint distribution of the eigenvalues, a Lambda.
+   * @returns The eigenvalue density lambda.
    * @throws NotImplementedError when the ensemble defines no eigenvalue density.
    */
   jointEigenDistribution(): Expr {
     throw new NotImplementedError(`${this.name} has no joint eigenvalue distribution`);
   }
   /**
-   * The distribution of the spacing of adjacent eigenvalues, a Lambda (SymPy level_spacing_distribution of the Gaussian ensembles).
+   * Constructs the density of adjacent eigenvalue gaps in the Gaussian ensemble.
    *
-   * @returns The distribution of the spacing of adjacent eigenvalues, a Lambda.
+   * @returns The spacing density lambda.
    * @throws NotImplementedError when the ensemble defines no spacing law.
    */
   levelSpacingDistribution(): Expr {
@@ -190,9 +190,9 @@ export class GaussianUnitaryEnsembleModel extends GaussianEnsembleModel {
     super(args, 'GaussianUnitaryEnsembleModel');
   }
   /**
-   * 2**(n/2)*pi**(n**2/2).
+   * Computes the Gaussian ensemble normalization from the matrix dimension.
    *
-   * @returns The constant normalizing the ensemble density.
+   * @returns The normalization constant.
    * @see SymPy `sympy.stats.random_matrix_models.GaussianUnitaryEnsembleModel.normalization_constant`
    */
   get normalizationConstant(): Expr {
@@ -200,28 +200,28 @@ export class GaussianUnitaryEnsembleModel extends GaussianEnsembleModel {
     return mul(pow(2, mul(n, S.Half)), pow(S.Pi, mul(pow(n, 2), S.Half)));
   }
   /**
-   * The density of the random variable or expression.
+   * Computes the probability law of the supplied random variable or expression.
    *
    * @param expr - Expression to evaluate.
-   * @returns The density of the random variable or expression.
+   * @returns The resulting density.
    * @see SymPy `sympy.stats.random_matrix_models.GaussianUnitaryEnsembleModel.density`
    */
   override density(expr: Expr): Expr {
     return this.traceDensity(expr, mul(this.dimension, S.Half), this.normalizationConstant);
   }
   /**
-   * The joint density of the eigenvalues of a random matrix from the ensemble.
+   * Computes the joint law of the eigenvalues of an ensemble matrix.
    *
-   * @returns The joint density of the eigenvalues of a random matrix from the ensemble.
+   * @returns The joint eigenvalue density.
    * @see SymPy `sympy.stats.random_matrix_models.GaussianUnitaryEnsembleModel.joint_eigen_distribution`
    */
   override jointEigenDistribution(): Expr {
     return this.jointEigenDistributionOf(Rational.of(2n));
   }
   /**
-   * The density of the spacing between consecutive eigenvalues.
+   * Computes the law of the gaps between consecutive eigenvalues.
    *
-   * @returns The density of the spacing between consecutive eigenvalues.
+   * @returns The level-spacing density.
    * @see SymPy `sympy.stats.random_matrix_models.GaussianUnitaryEnsembleModel.level_spacing_distribution`
    */
   override levelSpacingDistribution(): Expr {
@@ -245,37 +245,37 @@ export class GaussianOrthogonalEnsembleModel extends GaussianEnsembleModel {
     super(args, 'GaussianOrthogonalEnsembleModel');
   }
   /**
-   * An unevaluated integral over the matrices.
+   * Forms the matrix integral defining the normalizing constant.
    *
-   * @returns An unevaluated integral over the matrices.
+   * @returns An unevaluated integral.
    * @see SymPy `sympy.stats.random_matrix_models.GaussianOrthogonalEnsembleModel.normalization_constant`
    */
   get normalizationConstant(): Expr {
     return traceIntegral(this.dimension, mul(this.dimension, Rational.of(1n, 4n)));
   }
   /**
-   * The density of the random variable or expression.
+   * Computes the probability law of the supplied random variable or expression.
    *
    * @param expr - Expression to evaluate.
-   * @returns The density of the random variable or expression.
+   * @returns The resulting density.
    * @see SymPy `sympy.stats.random_matrix_models.GaussianOrthogonalEnsembleModel.density`
    */
   override density(expr: Expr): Expr {
     return this.traceDensity(expr, mul(this.dimension, Rational.of(1n, 4n)), this.normalizationConstant);
   }
   /**
-   * The joint density of the eigenvalues of a random matrix from the ensemble.
+   * Computes the joint law of the eigenvalues of an ensemble matrix.
    *
-   * @returns The joint density of the eigenvalues of a random matrix from the ensemble.
+   * @returns The joint eigenvalue density.
    * @see SymPy `sympy.stats.random_matrix_models.GaussianOrthogonalEnsembleModel.joint_eigen_distribution`
    */
   override jointEigenDistribution(): Expr {
     return this.jointEigenDistributionOf(S.One);
   }
   /**
-   * The density of the spacing between consecutive eigenvalues.
+   * Computes the law of the gaps between consecutive eigenvalues.
    *
-   * @returns The density of the spacing between consecutive eigenvalues.
+   * @returns The level-spacing density.
    * @see SymPy `sympy.stats.random_matrix_models.GaussianOrthogonalEnsembleModel.level_spacing_distribution`
    */
   override levelSpacingDistribution(): Expr {
@@ -299,37 +299,37 @@ export class GaussianSymplecticEnsembleModel extends GaussianEnsembleModel {
     super(args, 'GaussianSymplecticEnsembleModel');
   }
   /**
-   * An unevaluated integral over the matrices.
+   * Forms the matrix integral defining the normalizing constant.
    *
-   * @returns An unevaluated integral over the matrices.
+   * @returns An unevaluated integral.
    * @see SymPy `sympy.stats.random_matrix_models.GaussianSymplecticEnsembleModel.normalization_constant`
    */
   get normalizationConstant(): Expr {
     return traceIntegral(this.dimension, this.dimension);
   }
   /**
-   * The density of the random variable or expression.
+   * Computes the probability law of the supplied random variable or expression.
    *
    * @param expr - Expression to evaluate.
-   * @returns The density of the random variable or expression.
+   * @returns The resulting density.
    * @see SymPy `sympy.stats.random_matrix_models.GaussianSymplecticEnsembleModel.density`
    */
   override density(expr: Expr): Expr {
     return this.traceDensity(expr, this.dimension, this.normalizationConstant);
   }
   /**
-   * The joint density of the eigenvalues of a random matrix from the ensemble.
+   * Computes the joint law of the eigenvalues of an ensemble matrix.
    *
-   * @returns The joint density of the eigenvalues of a random matrix from the ensemble.
+   * @returns The joint eigenvalue density.
    * @see SymPy `sympy.stats.random_matrix_models.GaussianSymplecticEnsembleModel.joint_eigen_distribution`
    */
   override jointEigenDistribution(): Expr {
     return this.jointEigenDistributionOf(Rational.of(4n));
   }
   /**
-   * The density of the spacing between consecutive eigenvalues.
+   * Computes the law of the gaps between consecutive eigenvalues.
    *
-   * @returns The density of the spacing between consecutive eigenvalues.
+   * @returns The level-spacing density.
    * @see SymPy `sympy.stats.random_matrix_models.GaussianSymplecticEnsembleModel.level_spacing_distribution`
    */
   override levelSpacingDistribution(): Expr {
@@ -350,11 +350,11 @@ function ensemble(cls: ModelClass, symIn: string | Sym, dimIn: ExprLike): Random
 }
 
 /**
- * A random matrix of the Gaussian ensemble (SymPy GaussianEnsemble(sym, dim)).
+ * Constructs a random matrix of the Gaussian ensemble.
  *
  * @param sym - Name or symbol for the random variable.
  * @param dim - Dimension of the square random matrix.
- * @returns A random matrix of the Gaussian ensemble.
+ * @returns The ensemble random matrix symbol.
  * @throws RangeError when the dimension is known not to be an integer.
  * @see SymPy `sympy.stats.random_matrix_models.GaussianEnsemble`
  */
@@ -363,11 +363,11 @@ export function GaussianEnsemble(sym: string | Sym, dim: ExprLike): RandomMatrix
 }
 
 /**
- * A random matrix of the Gaussian unitary ensemble (SymPy GaussianUnitaryEnsemble(sym, dim)).
+ * Constructs a random matrix of the Gaussian unitary ensemble.
  *
  * @param sym - Name or symbol for the random variable.
  * @param dim - Dimension of the square random matrix.
- * @returns A random matrix of the Gaussian unitary ensemble.
+ * @returns The ensemble random matrix symbol.
  * @throws RangeError when the dimension is known not to be an integer.
  * @see SymPy `sympy.stats.random_matrix_models.GaussianUnitaryEnsemble`
  * @example
@@ -383,11 +383,11 @@ export function GaussianUnitaryEnsemble(sym: string | Sym, dim: ExprLike): Rando
 }
 
 /**
- * A random matrix of the Gaussian orthogonal ensemble (SymPy GaussianOrthogonalEnsemble(sym, dim)).
+ * Constructs a random matrix of the Gaussian orthogonal ensemble.
  *
  * @param sym - Name or symbol for the random variable.
  * @param dim - Dimension of the square random matrix.
- * @returns A random matrix of the Gaussian orthogonal ensemble.
+ * @returns The ensemble random matrix symbol.
  * @throws RangeError when the dimension is known not to be an integer.
  * @see SymPy `sympy.stats.random_matrix_models.GaussianOrthogonalEnsemble`
  * @example
@@ -403,11 +403,11 @@ export function GaussianOrthogonalEnsemble(sym: string | Sym, dim: ExprLike): Ra
 }
 
 /**
- * A random matrix of the Gaussian symplectic ensemble (SymPy GaussianSymplecticEnsemble(sym, dim)).
+ * Constructs a random matrix of the Gaussian symplectic ensemble.
  *
  * @param sym - Name or symbol for the random variable.
  * @param dim - Dimension of the square random matrix.
- * @returns A random matrix of the Gaussian symplectic ensemble.
+ * @returns The ensemble random matrix symbol.
  * @throws RangeError when the dimension is known not to be an integer.
  * @see SymPy `sympy.stats.random_matrix_models.GaussianSymplecticEnsemble`
  * @example
@@ -442,10 +442,10 @@ export class CircularEnsembleModel extends RandomMatrixEnsembleModel {
     super(args, name);
   }
   /**
-   * SymPy: the Haar measure is not implemented, so the density cannot be computed.
+   * Raises an error because evaluating the circular ensemble density requires the Haar measure.
    *
    * @param _expr - Expression to evaluate.
-   * @returns The density of the random variable or expression.
+   * @returns This operation raises `NotImplementedError`.
    * @throws NotImplementedError when computing the density requires Haar measure.
    * @see SymPy `sympy.stats.random_matrix_models.CircularEnsembleModel.density`
    */
@@ -482,9 +482,9 @@ export class CircularUnitaryEnsembleModel extends CircularEnsembleModel {
     super(args, 'CircularUnitaryEnsembleModel');
   }
   /**
-   * The joint density of the eigenvalues of a random matrix from the ensemble.
+   * Computes the joint law of the eigenvalues of an ensemble matrix.
    *
-   * @returns The joint density of the eigenvalues of a random matrix from the ensemble.
+   * @returns The joint eigenvalue density.
    * @see SymPy `sympy.stats.random_matrix_models.CircularUnitaryEnsembleModel.joint_eigen_distribution`
    */
   override jointEigenDistribution(): Expr {
@@ -507,9 +507,9 @@ export class CircularOrthogonalEnsembleModel extends CircularEnsembleModel {
     super(args, 'CircularOrthogonalEnsembleModel');
   }
   /**
-   * The joint density of the eigenvalues of a random matrix from the ensemble.
+   * Computes the joint law of the eigenvalues of an ensemble matrix.
    *
-   * @returns The joint density of the eigenvalues of a random matrix from the ensemble.
+   * @returns The joint eigenvalue density.
    * @see SymPy `sympy.stats.random_matrix_models.CircularOrthogonalEnsembleModel.joint_eigen_distribution`
    */
   override jointEigenDistribution(): Expr {
@@ -532,9 +532,9 @@ export class CircularSymplecticEnsembleModel extends CircularEnsembleModel {
     super(args, 'CircularSymplecticEnsembleModel');
   }
   /**
-   * The joint density of the eigenvalues of a random matrix from the ensemble.
+   * Computes the joint law of the eigenvalues of an ensemble matrix.
    *
-   * @returns The joint density of the eigenvalues of a random matrix from the ensemble.
+   * @returns The joint eigenvalue density.
    * @see SymPy `sympy.stats.random_matrix_models.CircularSymplecticEnsembleModel.joint_eigen_distribution`
    */
   override jointEigenDistribution(): Expr {
@@ -543,11 +543,11 @@ export class CircularSymplecticEnsembleModel extends CircularEnsembleModel {
 }
 
 /**
- * A random matrix of the circular ensemble (SymPy CircularEnsemble(sym, dim)).
+ * Constructs a random matrix of the circular ensemble.
  *
  * @param sym - Name or symbol for the random variable.
  * @param dim - Dimension of the square random matrix.
- * @returns A random matrix of the circular ensemble.
+ * @returns The ensemble random matrix symbol.
  * @throws RangeError when the dimension is known not to be an integer.
  * @see SymPy `sympy.stats.random_matrix_models.CircularEnsemble`
  */
@@ -556,11 +556,11 @@ export function CircularEnsemble(sym: string | Sym, dim: ExprLike): RandomMatrix
 }
 
 /**
- * A random matrix of the circular unitary ensemble (SymPy CircularUnitaryEnsemble(sym, dim)).
+ * Constructs a random matrix of the circular unitary ensemble.
  *
  * @param sym - Name or symbol for the random variable.
  * @param dim - Dimension of the square random matrix.
- * @returns A random matrix of the circular unitary ensemble.
+ * @returns The ensemble random matrix symbol.
  * @throws RangeError when the dimension is known not to be an integer.
  * @see SymPy `sympy.stats.random_matrix_models.CircularUnitaryEnsemble`
  * @example
@@ -576,11 +576,11 @@ export function CircularUnitaryEnsemble(sym: string | Sym, dim: ExprLike): Rando
 }
 
 /**
- * A random matrix of the circular orthogonal ensemble (SymPy CircularOrthogonalEnsemble(sym, dim)).
+ * Constructs a random matrix of the circular orthogonal ensemble.
  *
  * @param sym - Name or symbol for the random variable.
  * @param dim - Dimension of the square random matrix.
- * @returns A random matrix of the circular orthogonal ensemble.
+ * @returns The ensemble random matrix symbol.
  * @throws RangeError when the dimension is known not to be an integer.
  * @see SymPy `sympy.stats.random_matrix_models.CircularOrthogonalEnsemble`
  * @example
@@ -596,11 +596,11 @@ export function CircularOrthogonalEnsemble(sym: string | Sym, dim: ExprLike): Ra
 }
 
 /**
- * A random matrix of the circular symplectic ensemble (SymPy CircularSymplecticEnsemble(sym, dim)).
+ * Constructs a random matrix of the circular symplectic ensemble.
  *
  * @param sym - Name or symbol for the random variable.
  * @param dim - Dimension of the square random matrix.
- * @returns A random matrix of the circular symplectic ensemble.
+ * @returns The ensemble random matrix symbol.
  * @throws RangeError when the dimension is known not to be an integer.
  * @see SymPy `sympy.stats.random_matrix_models.CircularSymplecticEnsemble`
  * @example
@@ -626,10 +626,10 @@ function modelOf(mat: Expr): RandomMatrixEnsembleModel {
 }
 
 /**
- * The joint distribution of the eigenvalues of a random matrix of an ensemble, a Lambda.
+ * Constructs the joint law of the eigenvalues of a matrix drawn from the ensemble.
  *
  * @param mat - Matrix whose eigenvalues are studied.
- * @returns The joint distribution of the eigenvalues of a random matrix of an ensemble, a Lambda.
+ * @returns The joint density lambda.
  * @see SymPy `sympy.stats.random_matrix_models.joint_eigen_distribution`
  * @example
  * ```ts
@@ -644,9 +644,7 @@ export function jointEigenDistribution(mat: Expr): Expr {
 }
 
 /**
- * The joint distribution of the eigenvalues of a matrix with random
- * entries (SymPy JointEigenDistribution): a JointDistributionHandmade of
- * the eigenvalues.
+ * Constructs the joint probability distribution of the eigenvalues of a matrix with random entries.
  *
  * @param mat - Matrix whose eigenvalues are studied.
  * @returns The joint distribution of the eigenvalues of a matrix with random entries.
@@ -668,10 +666,10 @@ export function JointEigenDistribution(mat: Matrix | Expr): JointDistributionHan
 }
 
 /**
- * The distribution of the spacing of adjacent eigenvalues of a random matrix of a Gaussian ensemble, a Lambda.
+ * Constructs the law of adjacent eigenvalue gaps in a Gaussian ensemble.
  *
  * @param mat - Matrix whose eigenvalues are studied.
- * @returns The distribution of the spacing of adjacent eigenvalues of a random matrix of a Gaussian ensemble, a Lambda.
+ * @returns The spacing density lambda.
  * @see SymPy `sympy.stats.random_matrix_models.level_spacing_distribution`
  * @example
  * ```ts

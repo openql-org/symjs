@@ -639,9 +639,9 @@ export class AlgebraicNumber {
   }
 
   /**
-   * The element was given an alias.
+   * Indicates whether the algebraic number has an assigned alias.
    *
-   * @returns The element was given an alias.
+   * @returns The alias flag.
    * @see SymPy `sympy.core.numbers.AlgebraicNumber.is_aliased`
    */
   get isAliased(): boolean {
@@ -649,9 +649,9 @@ export class AlgebraicNumber {
   }
 
   /**
-   * The minimal polynomial of the primitive element.
+   * Identifies the polynomial defining the field's primitive element.
    *
-   * @returns The minimal polynomial of the primitive element.
+   * @returns Its minimal polynomial.
    * @see SymPy `sympy.core.numbers.AlgebraicNumber.minpoly`
    */
   minpoly(): Poly {
@@ -659,7 +659,8 @@ export class AlgebraicNumber {
   }
 
   /**
-   * The minimal polynomial of this element; the same polynomial object on every call.
+   * Obtains the minimal polynomial of this field element, reusing the polynomial object on subsequent
+   * calls.
    *
    * @returns The minimal polynomial of this element.
    * @see SymPy `sympy.core.numbers.AlgebraicNumber.minpoly_of_element`
@@ -670,10 +671,10 @@ export class AlgebraicNumber {
   }
 
   /**
-   * The element of the same field with these coefficients.
+   * Constructs an element in the same field from the supplied coefficients.
    *
    * @param coeffs - Coefficients in generator order.
-   * @returns The element of the same field with these coefficients.
+   * @returns The new algebraic number.
    * @see SymPy `sympy.core.numbers.AlgebraicNumber.field_element`
    */
   fieldElement(coeffs: readonly ExprLike[]): AlgebraicNumber {
@@ -687,7 +688,7 @@ export class AlgebraicNumber {
   }
 
   /**
-   * The value as an expression.
+   * Expresses the algebraic number symbolically.
    *
    * @param x - Polynomial generator.
    * @returns The symbolic expression.
@@ -698,7 +699,7 @@ export class AlgebraicNumber {
   }
 
   /**
-   * The coefficient polynomial in an explicit generator or the field alias.
+   * Represents the element by its coefficient polynomial in the chosen generator or field alias.
    *
    * @param x - Polynomial generator.
    * @returns The polynomial, or `NoMatch` if conversion fails.
@@ -710,17 +711,17 @@ export class AlgebraicNumber {
   }
 
   /**
-   * An algebraic field element is a number even when its root is represented symbolically.
+   * Classifies an algebraic field element as numeric even when its root is symbolic.
    *
-   * @returns An algebraic field element is a number even when its root is represented symbolically.
+   * @returns `true`.
    * @see SymPy `sympy.core.numbers.AlgebraicNumber.is_Number`
    */
   get isNumber(): boolean { return true; }
 
   /**
-   * Whether this element equals the primitive root of its field.
+   * Tests whether the element equals the field's primitive root.
    *
-   * @returns Whether this element equals the primitive root of its field.
+   * @returns True for the primitive element.
    * @see SymPy `sympy.core.numbers.AlgebraicNumber.is_primitive_element`
    */
   get isPrimitiveElement(): boolean {
@@ -741,10 +742,10 @@ export class AlgebraicNumber {
   }
 
   /**
-   * The polynomial in the alias when there is one, else the value.
+   * Formats the element as a polynomial in its alias when present, otherwise by its value.
    *
    * @param print - Printer for the expression's arguments.
-   * @returns The polynomial in the alias when there is one, else the value.
+   * @returns The LaTeX string.
    */
   toLatex(print: (e: Expr) => string): string {
     const alias = this.alias;
@@ -754,9 +755,9 @@ export class AlgebraicNumber {
   }
 
   /**
-   * The value as an explicit root expression.
+   * Expresses the algebraic number in terms of a root.
    *
-   * @returns The value as an explicit root expression.
+   * @returns The root expression.
    * @see SymPy `sympy.core.numbers.AlgebraicNumber.to_root`
    */
   toRoot(): Expr {
@@ -764,9 +765,9 @@ export class AlgebraicNumber {
   }
 
   /**
-   * The primitive element theta.
+   * Obtains the primitive element generating the number field.
    *
-   * @returns The primitive element theta.
+   * @returns The generator `theta`.
    * @see SymPy `sympy.core.numbers.AlgebraicNumber.primitive_element`
    */
   primitiveElement(): Expr {
@@ -774,9 +775,9 @@ export class AlgebraicNumber {
   }
 
   /**
-   * Coefficients in the primitive element, highest power first.
+   * Lists the coefficients of powers of the primitive element in descending degree order.
    *
-   * @returns Coefficients in the primitive element, highest power first.
+   * @returns The coefficient array.
    * @see SymPy `sympy.core.numbers.AlgebraicNumber.coeffs`
    */
   coeffs(): Expr[] {

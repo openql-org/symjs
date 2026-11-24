@@ -91,7 +91,8 @@ export class PolyQuintic {
   }
 
   /**
-   * Sextic resolvent: a rational root characterizes solvability of an irreducible quintic.
+   * Constructs the sextic resolvent whose rational roots determine whether an irreducible quintic is
+   * solvable.
    *
    * @returns The sextic resolvent of the quintic.
    * @see SymPy `sympy.polys.polyquinticconst.PolyQuintic.f20`
@@ -102,9 +103,9 @@ export class PolyQuintic {
   }
 
   /**
-   * Coefficients in descending theta order; the first row is the empty index-zero row.
+   * Tabulates coefficients in decreasing powers of theta with an empty row at index zero.
    *
-   * @returns Coefficients in descending theta order; the first row is the empty index-zero row.
+   * @returns The indexed coefficient rows.
    * @see SymPy `sympy.polys.polyquinticconst.PolyQuintic.b`
    */
   get b(): Expr[][] {
@@ -113,56 +114,56 @@ export class PolyQuintic {
   }
 
   /**
-   * The `a` coefficients for evaluating the quintic resolvent formulas.
+   * Lists the coefficients of polynomial `a` in the quintic resolvent.
    *
-   * @returns The `a` coefficients for evaluating the quintic resolvent formulas.
+   * @returns The `a` coefficient array.
    * @see SymPy `sympy.polys.polyquinticconst.PolyQuintic.a`
    */
   get a(): Expr[] { return this.coefficients(B_TABLE.slice(0, 6)).map(c => mul(-1, c)); }
   /**
-   * The `o` coefficients for evaluating the quintic resolvent formulas.
+   * Lists the coefficients of polynomial `o` in the quintic resolvent.
    *
-   * @returns The `o` coefficients for evaluating the quintic resolvent formulas.
+   * @returns The `o` coefficient array.
    * @see SymPy `sympy.polys.polyquinticconst.PolyQuintic.o`
    */
   get o(): Expr[] { return this.coefficients(O_TABLE); }
   /**
-   * The `c` coefficients for evaluating the quintic resolvent formulas.
+   * Lists the coefficients of polynomial `c` in the quintic resolvent.
    *
-   * @returns The `c` coefficients for evaluating the quintic resolvent formulas.
+   * @returns The `c` coefficient array.
    * @see SymPy `sympy.polys.polyquinticconst.PolyQuintic.c`
    */
   get c(): Expr[] { return this.coefficients(C_TABLE); }
   /**
-   * The common denominator factor in the resolvent formulas.
+   * Identifies the denominator shared by the quintic resolvent formulas.
    *
-   * @returns The common denominator factor in the resolvent formulas.
+   * @returns The common factor `F`.
    * @see SymPy `sympy.polys.polyquinticconst.PolyQuintic.F`
    */
   get F(): Expr { return at(this.coefficients(F_TABLE), 0); }
   /**
-   * The four nontrivial fifth roots of unity.
+   * Lists the fifth roots of unity other than one.
    *
-   * @returns The four nontrivial fifth roots of unity.
+   * @returns The four roots.
    * @see SymPy `sympy.polys.polyquinticconst.PolyQuintic.zeta`
    */
   get zeta(): Expr[] { return [this.zeta1, this.zeta2, this.zeta3, this.zeta4]; }
 
   /**
-   * The value of the resolvent polynomial `a` at `theta`, divided by `F`.
+   * Evaluates the resolvent polynomial `a` at `theta` and divides by `F`.
    *
    * @param theta - Root of the sextic resolvent.
-   * @returns The value of the resolvent polynomial `a` at `theta`, divided by `F`.
+   * @returns The resolvent value `l0`.
    * @see SymPy `sympy.polys.polyquinticconst.PolyQuintic.l0`
    */
   l0(theta: ExprLike): Expr { return mul(horner(this.a, sympify(theta)), pow(this.F, -1)); }
 
   /**
-   * The auxiliary T values for the resolvent root.
+   * Computes the auxiliary T values at the resolvent root.
    *
    * @param theta - Root of the sextic resolvent.
    * @param d - Discriminant parameter in the resolvent formulas.
-   * @returns The auxiliary T values for the resolvent root.
+   * @returns The T invariants.
    * @see SymPy `sympy.polys.polyquinticconst.PolyQuintic.T`
    */
   T(theta: ExprLike, d: ExprLike): Expr[] {
@@ -175,11 +176,11 @@ export class PolyQuintic {
   }
 
   /**
-   * The numerical ordering invariant for the resolvent root.
+   * Computes the invariant used to order the resolvent roots numerically.
    *
    * @param theta - Root of the sextic resolvent.
    * @param d - Discriminant parameter in the resolvent formulas.
-   * @returns The numerical ordering invariant for the resolvent root.
+   * @returns The ordering value.
    * @see SymPy `sympy.polys.polyquinticconst.PolyQuintic.order`
    */
   order(theta: ExprLike, d: ExprLike): Expr {
@@ -187,11 +188,11 @@ export class PolyQuintic {
   }
 
   /**
-   * The pair of numerical invariants used to recover the quintic roots.
+   * Computes the numerical invariants used to recover the quintic roots.
    *
    * @param theta - Root of the sextic resolvent.
    * @param d - Discriminant parameter in the resolvent formulas.
-   * @returns The pair of numerical invariants used to recover the quintic roots.
+   * @returns The pair of invariants.
    * @see SymPy `sympy.polys.polyquinticconst.PolyQuintic.uv`
    */
   uv(theta: ExprLike, d: ExprLike): [Expr, Expr] {

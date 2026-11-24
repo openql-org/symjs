@@ -23,7 +23,7 @@ const above = (i: Expr): boolean => i instanceof Sym && i.assumptions.aboveFermi
 const below = (i: Expr): boolean => i instanceof Sym && i.assumptions.belowFermi === true;
 
 /**
- * The delta can be nonzero above / below the Fermi level.
+ * Tests whether the delta can be nonzero in the specified Fermi sector.
  *
  * @param e - The Kronecker delta to inspect.
  * @returns Whether the delta can be nonzero in the selected sector.
@@ -51,7 +51,7 @@ export function isAboveFermi(e: Expr): boolean { return !deltaIndices(e).some(be
  */
 export function isBelowFermi(e: Expr): boolean { return !deltaIndices(e).some(above); }
 /**
- * At least one index is restricted to the indicated Fermi sector.
+ * Tests whether at least one index is confined to the specified Fermi sector.
  *
  * @param e - The Kronecker delta to inspect.
  * @returns Whether the delta is confined to the selected sector.
@@ -79,7 +79,7 @@ export function isOnlyAboveFermi(e: Expr): boolean { return deltaIndices(e).some
  */
 export function isOnlyBelowFermi(e: Expr): boolean { return deltaIndices(e).some(below); }
 /**
- * Whether either index can be eliminated without losing a Fermi restriction.
+ * Checks whether eliminating either index preserves the Fermi restriction.
  *
  * @param e - The Kronecker delta to inspect.
  * @returns Whether both indices impose the same Fermi restrictions.
@@ -103,7 +103,7 @@ function preferredPosition(e: Expr): number {
   return 0;
 }
 /**
- * The index carrying the most information, with ties resolved by argument order.
+ * Selects the more informative index, breaking ties by argument order.
  *
  * @param e - The Kronecker delta to inspect.
  * @returns The index to retain in a substitution.
@@ -117,7 +117,7 @@ function preferredPosition(e: Expr): number {
  */
 export function preferredIndex(e: Expr): Expr { return at(deltaIndices(e), preferredPosition(e)); }
 /**
- * The index eliminated when the delta is applied.
+ * Selects the index to eliminate when the delta is applied.
  *
  * @param e - The Kronecker delta to inspect.
  * @returns The index to eliminate in a substitution.
@@ -176,11 +176,11 @@ const leviCivitaDefinition: FunctionDefinition = {
 const leviCivita = defineFunction('LeviCivita', leviCivitaDefinition);
 
 /**
- * The Levi-Civita symbol (SymPy LeviCivita): the sign of the permutation of
- * integer arguments, 0 for a repeated index, unevaluated otherwise.
+ * Computes the permutation sign for integer indices, giving zero for repetitions and retaining symbolic
+ * indices when needed.
  *
  * @param args - The arguments in positional order.
- * @returns The Levi-Civita symbol (SymPy LeviCivita): the sign of the permutation of integer arguments, 0 for a repeated index, unevaluated otherwise.
+ * @returns The Levi-Civita symbol.
  * @see SymPy `sympy.functions.special.tensor_functions.LeviCivita`
  * @example
  * ```ts
@@ -196,10 +196,10 @@ export function LeviCivita(...args: ExprLike[]): Expr {
 registerHeadResolver(LeviCivitaCall, () => leviCivita);
 
 /**
- * The Levi-Civita symbol, LeviCivita(*args).
+ * Evaluates the alternating Levi-Civita symbol on the supplied indices.
  *
  * @param args - The arguments in positional order.
- * @returns The Levi-Civita symbol, LeviCivita(*args).
+ * @returns The permutation-sign expression.
  * @see SymPy `sympy.functions.special.tensor_functions.Eijk`
  */
 export function Eijk(...args: ExprLike[]): Expr {

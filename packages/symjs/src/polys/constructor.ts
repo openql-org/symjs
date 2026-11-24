@@ -168,13 +168,11 @@ export interface ConstructDomainOptions {
 const isList = (o: unknown): o is readonly ExprLike[] => Array.isArray(o);
 
 /**
- * The smallest domain of coefficients and the coefficients as its elements
- * : a list gives a list, a single coefficient one
- * element.
+ * Finds the smallest common coefficient domain and converts the input into it.
  *
  * @param obj - An expression or array of coefficients from which to infer a common domain.
  * @param options - Use `field` to prefer a field, `extension` to adjoin algebraic coefficients and `composite` to allow composite domains.
- * @returns The smallest domain of coefficients and the coefficients as its elements : a list gives a list, a single coefficient one element.
+ * @returns The domain and converted coefficient or coefficient list.
  * @see SymPy `sympy.polys.constructor.construct_domain`
  * @example
  * ```ts

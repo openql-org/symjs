@@ -49,12 +49,12 @@ const binom = (n: bigint, k: bigint): bigint => {
 // ---- constructors ---------------------------------------------------------------------
 
 /**
- * The Lerch transcendent sum_n z**n/(n + a)**s.
+ * Evaluates the Lerch transcendent with exponent parameter `s`, shift `a`, and argument `z`.
  *
  * @param z - The argument of the function.
  * @param s - The complex order.
  * @param a - The shift parameter.
- * @returns The Lerch transcendent sum_n z**n/(n + a)**s.
+ * @returns The Lerch transcendent.
  * @see SymPy `sympy.functions.special.zeta_functions.lerchphi`
  * @example
  * ```ts
@@ -65,11 +65,11 @@ const binom = (n: bigint, k: bigint): bigint => {
  */
 export const lerchphi = (z: ExprLike, s: ExprLike, a: ExprLike): Expr => fn('lerchphi', [z, s, a]);
 /**
- * The polylogarithm sum_n z**n/n**s.
+ * Evaluates the polylogarithm of the given order at its argument.
  *
  * @param s - The complex order.
  * @param z - The argument of the function.
- * @returns The polylogarithm sum_n z**n/n**s.
+ * @returns The polylogarithm expression.
  * @see SymPy `sympy.functions.special.zeta_functions.polylog`
  * @example
  * ```ts
@@ -81,11 +81,11 @@ export const lerchphi = (z: ExprLike, s: ExprLike, a: ExprLike): Expr => fn('ler
  */
 export const polylog = (s: ExprLike, z: ExprLike): Expr => fn('polylog', [s, z]);
 /**
- * The alternating zeta function.
+ * Evaluates the alternating form of the Riemann zeta function.
  *
  * @param s - The complex order.
  * @param a - The shift parameter.
- * @returns The alternating zeta function.
+ * @returns The Dirichlet eta expression.
  * @see SymPy `sympy.functions.special.zeta_functions.dirichlet_eta`
  * @example
  * ```ts
@@ -96,10 +96,10 @@ export const polylog = (s: ExprLike, z: ExprLike): Expr => fn('polylog', [s, z])
  */
 export const dirichletEta = (s: ExprLike, a?: ExprLike): Expr => fn('dirichlet_eta', a === undefined ? [s] : [s, a]);
 /**
- * The Riemann Xi function s*(s - 1)*gamma(s/2)*zeta(s)/(2*pi**(s/2)).
+ * Evaluates the completed Riemann Xi function at `s`.
  *
  * @param s - The complex order.
- * @returns The Riemann Xi function s*(s - 1)*gamma(s/2)*zeta(s)/(2*pi**(s/2)).
+ * @returns The Xi expression.
  * @see SymPy `sympy.functions.special.zeta_functions.riemann_xi`
  * @example
  * ```ts
@@ -110,11 +110,12 @@ export const dirichletEta = (s: ExprLike, a?: ExprLike): Expr => fn('dirichlet_e
  */
 export const riemannXi = (s: ExprLike): Expr => fn('riemann_xi', [s]);
 /**
- * The (generalized) Stieltjes constants.
+ * Computes the Stieltjes constant of the requested order, optionally at a specified Hurwitz zeta
+ * parameter.
  *
  * @param n - The index.
  * @param a - The shift parameter.
- * @returns The (generalized) Stieltjes constants.
+ * @returns The requested Stieltjes constant.
  * @see SymPy `sympy.functions.special.zeta_functions.stieltjes`
  * @example
  * ```ts

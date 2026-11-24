@@ -85,17 +85,17 @@ export class ExpectationMatrixNode extends MatrixStatsNode {
     super('ExpectationMatrix', args);
   }
   /**
-   * The conditioning event, when one was supplied.
+   * Identifies the event used to restrict the domain or computation.
    *
-   * @returns The conditioning event, when one was supplied.
+   * @returns The conditioning expression, when present.
    */
   get condition(): Expr | undefined {
     return this.args[1];
   }
   /**
-   * The row and column dimensions of the matrix expression.
+   * Reports the dimensions of the matrix-valued expression.
    *
-   * @returns The row and column dimensions of the matrix expression.
+   * @returns The row and column counts.
    * @see SymPy `sympy.stats.symbolic_multivariate_probability.ExpectationMatrix.shape`
    */
   get shape(): [Expr, Expr] {
@@ -111,9 +111,9 @@ export class ExpectationMatrixNode extends MatrixStatsNode {
     return new ExpectationMatrixNode(args);
   }
   /**
-   * The expectations of the terms and of the random factors of products.
+   * Expands a matrix expectation over terms and random factors.
    *
-   * @returns The expectations of the terms and of the random factors of products.
+   * @returns The expanded expectation.
    * @see SymPy `sympy.stats.symbolic_multivariate_probability.ExpectationMatrix.expand`
    */
   override expand(): Expr {
@@ -142,10 +142,10 @@ export class ExpectationMatrixNode extends MatrixStatsNode {
     return this;
   }
   /**
-   * The expected value: entry by entry for an explicit matrix.
+   * Evaluates the expected value entry by entry for an explicit matrix.
    *
    * @param hints - Evaluation controls, including whether to evaluate nested expressions.
-   * @returns The expected value: entry by entry for an explicit matrix.
+   * @returns The matrix expectation.
    * @see SymPy `sympy.stats.symbolic_multivariate_probability.ExpectationMatrix.doit`
    */
   override doit(hints: { deep?: boolean } = {}): Expr {
@@ -171,7 +171,7 @@ export function makeExpectationMatrix(exprIn: ExprLike, conditionIn?: ExprLike):
 }
 
 /**
- * The expectation of a random vector or matrix.
+ * Constructs the expectation of a vector- or matrix-valued random expression.
  *
  * @param exprIn - Expression to evaluate.
  * @param conditionIn - Condition on the random variables.
@@ -222,17 +222,17 @@ export class VarianceMatrixNode extends MatrixStatsNode {
     super('VarianceMatrix', args);
   }
   /**
-   * The conditioning event, when one was supplied.
+   * Identifies the event used to restrict the domain or computation.
    *
-   * @returns The conditioning event, when one was supplied.
+   * @returns The conditioning expression, when present.
    */
   get condition(): Expr | undefined {
     return this.args[1];
   }
   /**
-   * The row and column dimensions of the matrix expression.
+   * Reports the dimensions of the matrix-valued expression.
    *
-   * @returns The row and column dimensions of the matrix expression.
+   * @returns The row and column counts.
    * @see SymPy `sympy.stats.symbolic_multivariate_probability.VarianceMatrix.shape`
    */
   get shape(): [Expr, Expr] {
@@ -249,9 +249,9 @@ export class VarianceMatrixNode extends MatrixStatsNode {
     return new VarianceMatrixNode(args);
   }
   /**
-   * The variances and cross-covariances of the terms.
+   * Expands the variance into individual variances and cross-covariances.
    *
-   * @returns The variances and cross-covariances of the terms.
+   * @returns The expanded variance.
    * @see SymPy `sympy.stats.symbolic_multivariate_probability.VarianceMatrix.expand`
    */
   override expand(): Expr {
@@ -282,7 +282,7 @@ export class VarianceMatrixNode extends MatrixStatsNode {
 }
 
 /**
- * The variance-covariance matrix of a random vector.
+ * Constructs the covariance matrix of a random vector.
  *
  * @param arg - Argument expression.
  * @param condition - Condition on the random variables.
@@ -334,17 +334,17 @@ export class CrossCovarianceMatrixNode extends MatrixStatsNode {
     super('CrossCovarianceMatrix', args);
   }
   /**
-   * The conditioning event, when one was supplied.
+   * Identifies the event used to restrict the domain or computation.
    *
-   * @returns The conditioning event, when one was supplied.
+   * @returns The conditioning expression, when present.
    */
   get condition(): Expr | undefined {
     return this.args[2];
   }
   /**
-   * The row and column dimensions of the matrix expression.
+   * Reports the dimensions of the matrix-valued expression.
    *
-   * @returns The row and column dimensions of the matrix expression.
+   * @returns The row and column counts.
    * @see SymPy `sympy.stats.symbolic_multivariate_probability.CrossCovarianceMatrix.shape`
    */
   get shape(): [Expr, Expr] {
@@ -361,9 +361,9 @@ export class CrossCovarianceMatrixNode extends MatrixStatsNode {
     return new CrossCovarianceMatrixNode(args);
   }
   /**
-   * The cross-covariances of the random terms.
+   * Distributes the cross-covariance over the random terms.
    *
-   * @returns The cross-covariances of the random terms.
+   * @returns The expanded cross-covariance.
    * @see SymPy `sympy.stats.symbolic_multivariate_probability.CrossCovarianceMatrix.expand`
    */
   override expand(): Expr {
@@ -400,7 +400,7 @@ function mulNonrvRv(m: Expr): [Expr, Expr] {
 }
 
 /**
- * The cross-covariance matrix of two random vectors.
+ * Constructs the cross-covariance matrix of two random vectors.
  *
  * @param arg1 - First random expression.
  * @param arg2 - Second random expression.

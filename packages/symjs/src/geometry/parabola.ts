@@ -62,9 +62,9 @@ export class ParabolaNode extends GeometrySet {
   }
 
   /**
-   * The number of coordinates in the surrounding space.
+   * Counts the coordinates needed to describe a point in the ambient space.
    *
-   * @returns The number of coordinates in the surrounding space.
+   * @returns The ambient dimension.
    * @see SymPy `sympy.geometry.parabola.Parabola.ambient_dimension`
    */
   get ambientDimension(): number {
@@ -72,7 +72,7 @@ export class ParabolaNode extends GeometrySet {
   }
 
   /**
-   * The focus.
+   * Locates the focal point of the parabola.
    *
    * @returns The focus.
    * @see SymPy `sympy.geometry.parabola.Parabola.focus`
@@ -82,7 +82,7 @@ export class ParabolaNode extends GeometrySet {
   }
 
   /**
-   * The directrix.
+   * Identifies the fixed line defining the parabola together with its focus.
    *
    * @returns The directrix.
    * @see SymPy `sympy.geometry.parabola.Parabola.directrix`
@@ -92,9 +92,9 @@ export class ParabolaNode extends GeometrySet {
   }
 
   /**
-   * The line through the focus perpendicular to the directrix.
+   * Constructs the line through the focus normal to the directrix.
    *
-   * @returns The line through the focus perpendicular to the directrix.
+   * @returns The symmetry axis.
    * @see SymPy `sympy.geometry.parabola.Parabola.axis_of_symmetry`
    */
   get axisOfSymmetry(): Line2DNode {
@@ -102,9 +102,9 @@ export class ParabolaNode extends GeometrySet {
   }
 
   /**
-   * The eccentricity: 1.
+   * Gives the eccentricity shared by all parabolas.
    *
-   * @returns The eccentricity: 1.
+   * @returns The integer one.
    * @see SymPy `sympy.geometry.parabola.Parabola.eccentricity`
    */
   get eccentricity(): Expr {
@@ -112,11 +112,11 @@ export class ParabolaNode extends GeometrySet {
   }
 
   /**
-   * The equation of the parabola in real symbols x and y.
+   * Forms the Cartesian equation of the parabola in real coordinates.
    *
    * @param x - Symbol for the x coordinate.
    * @param y - Symbol for the y coordinate.
-   * @returns The equation of the parabola in real symbols x and y.
+   * @returns An expression that vanishes on the parabola.
    * @see SymPy `sympy.geometry.parabola.Parabola.equation`
    */
   equation(x: string | Sym = 'x', y: string | Sym = 'y'): Expr {
@@ -139,7 +139,7 @@ export class ParabolaNode extends GeometrySet {
   }
 
   /**
-   * Half the distance from the focus to the directrix.
+   * Computes half the separation of the focus from the directrix.
    *
    * @returns The distance between the focus and the vertex.
    * @see SymPy `sympy.geometry.parabola.Parabola.focal_length`
@@ -149,9 +149,9 @@ export class ParabolaNode extends GeometrySet {
   }
 
   /**
-   * The signed focal length: positive when the parabola opens right or up.
+   * Measures the signed distance from vertex to focus, positive for rightward or upward opening.
    *
-   * @returns The signed focal length: positive when the parabola opens right or up.
+   * @returns The signed focal length.
    * @see SymPy `sympy.geometry.parabola.Parabola.p_parameter`
    */
   get pParameter(): Expr {
@@ -167,7 +167,7 @@ export class ParabolaNode extends GeometrySet {
   }
 
   /**
-   * The vertex.
+   * Locates the parabola's turning point.
    *
    * @returns The vertex.
    * @see SymPy `sympy.geometry.parabola.Parabola.vertex`
@@ -181,10 +181,10 @@ export class ParabolaNode extends GeometrySet {
   }
 
   /**
-   * The points or entities common to the parabola and o.
+   * Finds the geometry shared by the parabola and the other entity.
    *
    * @param o - Entity to intersect with this one.
-   * @returns The points or entities common to the parabola and o.
+   * @returns The intersection entities.
    * @throws TypeError when a three-dimensional entity is supplied to a planar operation or the operand is not a supported geometric entity.
    * @see SymPy `sympy.geometry.parabola.Parabola.intersection`
    */
@@ -220,7 +220,7 @@ function newParabola(focusIn: PointInput | undefined, directrixIn: unknown): Par
 }
 
 /**
- * The points in a plane equidistant from a focus and a directrix line.
+ * Constructs the parabola of points equidistant from the focus and directrix.
  *
  * @param focus - Focus of the parabola.
  * @param directrix - Line equidistant from each point of the parabola and its focus.

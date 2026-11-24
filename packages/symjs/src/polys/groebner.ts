@@ -252,9 +252,9 @@ export class GroebnerBasis {
     private readonly coefficientRing?: PolyRing,
   ) {}
   /**
-   * The basis elements as polynomial objects.
+   * Represents each Gröbner basis element as a polynomial object.
    *
-   * @returns The basis elements as polynomial objects.
+   * @returns The polynomial list.
    * @see SymPy `sympy.polys.polytools.GroebnerBasis.polys`
    */
   get polys(): Poly[] {
@@ -307,10 +307,10 @@ export class GroebnerBasis {
     return r instanceof Rational && r.isZero;
   }
   /**
-   * Division of f by the basis: [quotients, remainder].
+   * Reduces the input by division with the basis elements.
    *
    * @param f - Polynomial to operate on.
-   * @returns Division of f by the basis: [quotients, remainder].
+   * @returns The quotient list and remainder.
    * @see SymPy `sympy.polys.polytools.GroebnerBasis.reduce`
    * @example
    * ```ts
@@ -347,8 +347,7 @@ export class GroebnerBasis {
     return exponents.every((k) => k !== 0);
   }
   /**
-   * Each polynomial printed with its terms in the monomial order
-   * of the basis, over the generators in their default (sorted) order.
+   * Formats each basis polynomial in the basis monomial order with generators in default sorted order.
    *
    * @returns The formatted text.
    * @see SymPy `sympy.polys.polytools.GroebnerBasis.__str__`
@@ -468,13 +467,13 @@ impl.polyReduce = (f, g, gens) => {
 };
 
 /**
- * Multivariate division of f by G, returning [quotients, remainder].
+ * Divides a multivariate polynomial by the ordered divisors.
  *
  * @param f - Polynomial to operate on.
  * @param G - Basis polynomials.
  * @param gens - Polynomial generators in the desired order.
  * @param order - Monomial order used to compare terms.
- * @returns Multivariate division of f by G, returning [quotients, remainder].
+ * @returns The quotient list and remainder.
  * @see SymPy `sympy.polys.polytools.reduced`
  * @remarks SymPy returns `([2*x, 1], x**2 + y**2 + y)` with tuples for the fixed-length groups.
  * @example

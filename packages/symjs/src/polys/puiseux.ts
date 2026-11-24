@@ -104,7 +104,7 @@ export class PuiseuxRing {
     this.gens = this.polyRing.gens.map((p) => this.fromPoly(p));
   }
   /**
-   * The printable representation.
+   * Formats this object as text.
    *
    * @returns The formatted text.
    */
@@ -112,7 +112,7 @@ export class PuiseuxRing {
     return `PuiseuxRing((${this.symbols.map((s) => str(s)).join(', ')}${this.ngens === 1 ? ',' : ''}), ${String(this.domain)})`;
   }
   /**
-   * Whether the operand represents the same value.
+   * Checks whether both operands represent the same value.
    *
    * @param other - Operand to combine or compare with this value.
    * @returns Whether the comparison holds.
@@ -122,43 +122,43 @@ export class PuiseuxRing {
     return other instanceof PuiseuxRing && this.polyRing.equals(other.polyRing);
   }
   /**
-   * Multiply rational exponent vectors componentwise as monomials.
+   * Multiplies Puiseux monomials by adding corresponding rational exponents.
    *
    * @param a - First operand.
    * @param b - Second operand.
-   * @returns Multiply rational exponent vectors componentwise as monomials.
+   * @returns The product exponent vector.
    * @see SymPy `sympy.polys.puiseux.PuiseuxRing.monomial_mul`
    */
   monomialMul(a: readonly ExprLike[], b: readonly ExprLike[]): Rational[] {
     return a.map((e, i) => addExponents(rationalExponent(e), rationalExponent(at(b, i))));
   }
   /**
-   * The additive identity.
+   * Represents zero in this ring.
    *
    * @returns The additive identity.
    * @see SymPy `sympy.polys.puiseux.PuiseuxRing.zero`
    */
   get zero(): PuiseuxPoly { return this.fromDict([]); }
   /**
-   * The multiplicative identity.
+   * Represents one in this ring.
    *
    * @returns The multiplicative identity.
    * @see SymPy `sympy.polys.puiseux.PuiseuxRing.one`
    */
   get one(): PuiseuxPoly { return this.groundNew(this.domain.one); }
   /**
-   * Embed an ordinary polynomial in the Puiseux ring.
+   * Embeds a polynomial with ordinary exponents into the Puiseux ring.
    *
    * @param p - Polynomial to operate on.
-   * @returns Embed an ordinary polynomial in the Puiseux ring.
+   * @returns The Puiseux polynomial.
    * @see SymPy `sympy.polys.puiseux.PuiseuxRing.from_poly`
    */
   fromPoly(p: PolyElement): PuiseuxPoly { return new PuiseuxPoly(p.setRing(this.polyRing), this); }
   /**
-   * Create a Puiseux polynomial from a dictionary of terms.
+   * Builds a Puiseux polynomial from its monomial-to-coefficient map.
    *
    * @param terms - Monomial and coefficient pairs.
-   * @returns Create a Puiseux polynomial from a dictionary of terms.
+   * @returns The polynomial in this ring.
    * @see SymPy `sympy.polys.puiseux.PuiseuxRing.from_dict`
    */
   fromDict(terms: Iterable<PuiseuxTerm>): PuiseuxPoly { return new PuiseuxPoly(terms, this); }
@@ -171,10 +171,10 @@ export class PuiseuxRing {
    */
   fromInt(n: number | bigint): PuiseuxPoly { return this.groundNew(n); }
   /**
-   * Coerce a value into the coefficient domain.
+   * Converts a value to the coefficient domain.
    *
    * @param value - Value to convert.
-   * @returns Coerce a value into the coefficient domain.
+   * @returns The ground element.
    * @see SymPy `sympy.polys.puiseux.PuiseuxRing.domain_new`
    */
   domainNew(value: ExprLike): Expr { return this.polyRing.domainNew(value); }
@@ -187,10 +187,10 @@ export class PuiseuxRing {
    */
   groundNew(value: ExprLike): PuiseuxPoly { return this.fromDict([[this.zeroMonom, value]]); }
   /**
-   * Coerce the value into this polynomial ring.
+   * Converts the input to an element of the polynomial ring.
    *
    * @param value - Value to convert.
-   * @returns Coerce the value into this polynomial ring.
+   * @returns The ring element.
    * @throws RangeError when the operands have different Puiseux rings.
    * @throws NotImplementedError when the element is supplied as a string.
    * @throws TypeError when the input is not a polynomial, term map or expression.
@@ -225,10 +225,10 @@ export class PuiseuxRing {
     return visit(sympify(value));
   }
   /**
-   * The position of a generator.
+   * Locates the generator in the ordered list of indeterminates.
    *
    * @param x - Polynomial generator.
-   * @returns The position of a generator.
+   * @returns The generator index.
    * @throws RangeError when the input is not a generator of this ring.
    * @see SymPy `sympy.polys.puiseux.PuiseuxRing.index`
    */
@@ -271,16 +271,16 @@ export class PuiseuxPoly {
     return { poly, monom, ns };
   }
   /**
-   * The underlying polynomial.
+   * Exposes the polynomial in the internal integer-exponent representation.
    *
    * @returns The underlying polynomial.
    * @see SymPy `sympy.polys.puiseux.PuiseuxPoly.poly`
    */
   get poly(): PolyElement { return this.representation().poly; }
   /**
-   * The monomial shift in the integer-exponent representation, or `NoMatch` if no shift is needed.
+   * Identifies the monomial shift used to represent the Puiseux powers.
    *
-   * @returns The monomial shift in the integer-exponent representation, or `NoMatch` if no shift is needed.
+   * @returns The shift vector or `NoMatch`.
    * @see SymPy `sympy.polys.puiseux.PuiseuxPoly.monom`
    */
   get monom(): readonly bigint[] | NoMatchResult {
@@ -288,9 +288,9 @@ export class PuiseuxPoly {
     return m.some((e) => e !== 0n) ? m : NoMatch;
   }
   /**
-   * The exponent denominators for each generator, or `NoMatch` if all are one.
+   * Lists the denominators needed to represent each generator's exponents.
    *
-   * @returns The exponent denominators for each generator, or `NoMatch` if all are one.
+   * @returns The denominator vector or `NoMatch` when all are one.
    * @see SymPy `sympy.polys.puiseux.PuiseuxPoly.ns`
    */
   get ns(): readonly bigint[] | NoMatchResult {
@@ -322,49 +322,49 @@ export class PuiseuxPoly {
     this.data = data;
   }
   /**
-   * Create a Puiseux polynomial from a dictionary of terms.
+   * Builds a Puiseux polynomial from its monomial-to-coefficient map.
    *
    * @param terms - Monomial and coefficient pairs.
    * @param ring - Polynomial ring supplying the generators and coefficient domain.
-   * @returns Create a Puiseux polynomial from a dictionary of terms.
+   * @returns The polynomial in this ring.
    * @see SymPy `sympy.polys.puiseux.PuiseuxPoly.from_dict`
    */
   static fromDict(terms: Iterable<PuiseuxTerm>, ring: PuiseuxRing): PuiseuxPoly { return ring.fromDict(terms); }
   /**
-   * The number of stored terms.
+   * Counts the terms stored in the polynomial.
    *
-   * @returns The number of stored terms.
+   * @returns The term count.
    * @see SymPy `sympy.polys.puiseux.PuiseuxPoly.__len__`
    */
   get length(): number { return this.data.size; }
   /**
-   * Whether the element is zero.
+   * Tests for equality with the domain's additive identity.
    *
-   * @returns Whether the element is zero.
+   * @returns True for zero.
    */
   get isZero(): boolean { return this.length === 0; }
   /**
-   * Whether the polynomial has exactly one nonzero term.
+   * Tests whether exactly one nonzero term occurs.
    *
-   * @returns Whether the polynomial has exactly one nonzero term.
+   * @returns True for a single term.
    * @see SymPy `sympy.polys.puiseux.PuiseuxPoly.is_term`
    */
   get isTerm(): boolean { return this.length === 1; }
   /**
-   * Whether the element is the multiplicative identity.
+   * Tests for equality with the domain's multiplicative identity.
    *
-   * @returns Whether the element is the multiplicative identity.
+   * @returns True for one.
    */
   get isOne(): boolean { return this.equals(this.ring.one); }
   /**
-   * The coefficient of the monomial, or zero if it is absent.
+   * Looks up a monomial in the polynomial.
    *
    * @param monom - Exponent vector of the monomial.
-   * @returns The coefficient of the monomial, or zero if it is absent.
+   * @returns Its coefficient or zero.
    */
   get(monom: readonly ExprLike[]): Expr { return this.data.get(monomKey(monom.map(rationalExponent)))?.[1] ?? this.ring.domain.zero; }
   /**
-   * Lookup of a stored monomial, as in SymPy indexing.
+   * Retrieves the coefficient of a stored monomial by its exponents.
    *
    * @param monom - Exponent vector of the monomial.
    * @returns The coefficient at the specified monomial.
@@ -384,28 +384,28 @@ export class PuiseuxPoly {
    */
   *[Symbol.iterator](): IterableIterator<PuiseuxMonom> { yield* this.monoms(); }
   /**
-   * Return a list of the terms of a Puiseux polynomial.
+   * Enumerates the terms of the Puiseux polynomial.
    *
-   * @returns A list of the terms of a Puiseux polynomial.
+   * @returns The exponent-vector and coefficient pairs.
    * @see SymPy `sympy.polys.puiseux.PuiseuxPoly.terms`
    */
   terms(): [PuiseuxMonom, Expr][] { return [...this.data.values()].map(([m, c]) => [[...m], c]); }
   /**
-   * Return a list of the monomials of a Puiseux polynomial.
+   * Lists the monomials in the Puiseux polynomial.
    *
-   * @returns A list of the monomials of a Puiseux polynomial.
+   * @returns The exponent vectors.
    * @see SymPy `sympy.polys.puiseux.PuiseuxPoly.monoms`
    */
   monoms(): PuiseuxMonom[] { return this.terms().map(([m]) => m); }
   /**
-   * Return a dictionary representation of a Puiseux polynomial.
+   * Indexes Puiseux coefficients by their rational exponent vectors.
    *
-   * @returns A dictionary representation of a Puiseux polynomial.
+   * @returns The term map.
    * @see SymPy `sympy.polys.puiseux.PuiseuxPoly.to_dict`
    */
   toDict(): Map<PuiseuxMonom, Expr> { return new Map(this.terms()); }
   /**
-   * Whether the operand represents the same value.
+   * Checks whether both operands represent the same value.
    *
    * @param other - Operand to combine or compare with this value.
    * @returns Whether the comparison holds.
@@ -420,35 +420,35 @@ export class PuiseuxPoly {
     return this.ring.equals(other.ring) && this.length === other.length && this.terms().every(([m, c]) => groundEq(c, other.get(m)));
   }
   /**
-   * The sum of the operands.
+   * Adds the two operands.
    *
    * @param other - Operand to combine or compare with this value.
-   * @returns The sum of the operands.
+   * @returns Their sum.
    * @see SymPy `sympy.polys.puiseux.PuiseuxPoly.__add__`
    */
   add(other: PuiseuxPoly | ExprLike): PuiseuxPoly {
     return this.ring.fromDict([...this.terms(), ...this.ring.ringNew(other).terms()]);
   }
   /**
-   * The additive inverse.
+   * Negates the element with respect to addition.
    *
    * @returns The additive inverse.
    * @see SymPy `sympy.polys.puiseux.PuiseuxPoly.__neg__`
    */
   neg(): PuiseuxPoly { return this.ring.fromDict(this.terms().map(([m, c]) => [m, this.ring.domain.neg(c)])); }
   /**
-   * The difference of the operands.
+   * Subtracts the second operand from the first.
    *
    * @param other - Operand to combine or compare with this value.
-   * @returns The difference of the operands.
+   * @returns Their difference.
    * @see SymPy `sympy.polys.puiseux.PuiseuxPoly.__sub__`
    */
   sub(other: PuiseuxPoly | ExprLike): PuiseuxPoly { return this.add(this.ring.ringNew(other).neg()); }
   /**
-   * The product of the operands.
+   * Multiplies the two operands.
    *
    * @param other - Operand to combine or compare with this value.
-   * @returns The product of the operands.
+   * @returns Their product.
    * @see SymPy `sympy.polys.puiseux.PuiseuxPoly.__mul__`
    */
   mul(other: PuiseuxPoly | ExprLike): PuiseuxPoly {
@@ -456,10 +456,10 @@ export class PuiseuxPoly {
     return this.ring.fromDict(this.terms().flatMap(([m, c]) => q.terms().map(([n, d]): PuiseuxTerm => [m.map((e, i) => addExponents(e, at(n, i))), this.ring.domain.mul(c, d)])));
   }
   /**
-   * The element raised to the specified exponent.
+   * Raises the element to the requested power.
    *
    * @param exponent - Power to which to raise the base.
-   * @returns The element raised to the specified exponent.
+   * @returns The exponentiated element.
    * @throws RangeError when a negative or fractional power is requested for a sum of terms or the coefficient does not admit the requested rational power or a coefficient to be inverted is not a unit.
    * @see SymPy `sympy.polys.puiseux.PuiseuxPoly.__pow__`
    */
@@ -484,10 +484,10 @@ export class PuiseuxPoly {
     return result;
   }
   /**
-   * The quotient of the two elements.
+   * Divides the first element by the second.
    *
    * @param other - Operand to combine or compare with this value.
-   * @returns The quotient of the two elements.
+   * @returns The quotient.
    * @throws RangeError when the divisor is zero or the divisor has more than one term or a coefficient to be inverted is not a unit.
    * @see SymPy `sympy.polys.puiseux.PuiseuxPoly.__truediv__`
    */
@@ -506,10 +506,10 @@ export class PuiseuxPoly {
     return this.ring.fromDict(this.terms().map(([m, c]) => [m.map((e, i) => addExponents(e, multiplyExponents(at(n, i), Rational.of(-1)))), groundQuo(this.ring.domain, c, d)]));
   }
   /**
-   * Differentiate a Puiseux polynomial with respect to a variable.
+   * Differentiates the Puiseux polynomial with respect to the selected generator.
    *
    * @param x - Polynomial generator.
-   * @returns Differentiate a Puiseux polynomial with respect to a variable.
+   * @returns The partial derivative.
    * @see SymPy `sympy.polys.puiseux.PuiseuxPoly.diff`
    */
   diff(x: PuiseuxPoly): PuiseuxPoly {
@@ -517,7 +517,7 @@ export class PuiseuxPoly {
     return this.ring.fromDict(this.terms().filter(([m]) => !at(m, i).isZero).map(([m, c]) => [m.map((e, j) => j === i ? addExponents(e, Rational.of(-1)) : e), this.ring.domain.mul(c, this.ring.domainNew(at(m, i)))]));
   }
   /**
-   * The corresponding symbolic expression.
+   * Expresses the element in terms of its generators.
    *
    * @returns The symbolic expression.
    * @see SymPy `sympy.polys.puiseux.PuiseuxPoly.as_expr`
@@ -526,7 +526,7 @@ export class PuiseuxPoly {
     return add(...this.terms().map(([m, c]) => mul(this.ring.domain.toSympy(c), ...m.map((e, i) => pow(at(this.ring.symbols, i), e)))));
   }
   /**
-   * The printable representation.
+   * Formats this object as text.
    *
    * @returns The formatted text.
    */

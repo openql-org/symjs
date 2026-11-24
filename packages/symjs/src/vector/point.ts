@@ -88,15 +88,15 @@ export class VectorPointNode extends ExtensionExpr {
     return new VectorPointNode(this.pointName, at(args, 0), parent instanceof VectorPointNode ? parent : undefined);
   }
   /**
-   * The position vector with respect to the parent point.
+   * Measures the offset from the parent point.
    *
-   * @returns The position vector with respect to the parent point.
+   * @returns The relative position vector.
    */
   get position(): Vector {
     return cast(at(this.args, 0), Vector, 'position');
   }
   /**
-   * The reference point for a displacement. A root point has no parent.
+   * Identifies the point relative to which the displacement is measured, when the point has a parent.
    *
    * @returns The reference point, when one is defined.
    */
@@ -105,20 +105,19 @@ export class VectorPointNode extends ExtensionExpr {
     return p instanceof VectorPointNode ? p : undefined;
   }
   /**
-   * The root of the tree of points.
+   * Follows parent points to the top of the hierarchy.
    *
-   * @returns The root of the tree of points.
+   * @returns The root point.
    */
   get root(): VectorPointNode {
     return this.#root;
   }
 
   /**
-   * The position vector of this point with respect to another point, or to the origin of a
-   * coordinate system.
+   * Measures the displacement from another point or coordinate-system origin to this point.
    *
    * @param otherIn - Reference point or coordinate system origin.
-   * @returns The position vector of this point with respect to another point, or to the origin of a coordinate system.
+   * @returns The relative position vector.
    * @throws TypeError when the reference is neither a vector point nor a coordinate system.
    * @see SymPy `sympy.vector.point.Point.position_wrt`
    */
@@ -141,11 +140,11 @@ export class VectorPointNode extends ExtensionExpr {
   }
 
   /**
-   * A new point at the given position with respect to this one.
+   * Creates a point displaced from this one by the supplied vector.
    *
    * @param name - Symbolic name.
    * @param position - Displacement from the reference point.
-   * @returns A new point at the given position with respect to this one.
+   * @returns The new point.
    * @see SymPy `sympy.vector.point.Point.locate_new`
    */
   locateNew(name: string, position: Expr): VectorPointNode {
@@ -153,10 +152,10 @@ export class VectorPointNode extends ExtensionExpr {
   }
 
   /**
-   * The coordinates of this point with respect to the origin of system.
+   * Resolves the displacement from the system origin along its coordinate axes.
    *
    * @param system - Coordinate system in which to express components.
-   * @returns The coordinates of this point with respect to the origin of system.
+   * @returns The point coordinates.
    * @see SymPy `sympy.vector.point.Point.express_coordinates`
    */
   expressCoordinates(system: CoordSysBase): [Expr, Expr, Expr] {
@@ -186,7 +185,7 @@ export class VectorPointNode extends ExtensionExpr {
 }
 
 /**
- * A named point with a vector displacement from its parent point.
+ * Constructs a named point with a vector displacement from its parent point.
  *
  * @param name - Symbolic name.
  * @param position - Displacement from the reference point.

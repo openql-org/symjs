@@ -98,16 +98,16 @@ export type PredicateName =
  */
 export class AppliedPredicate extends ExtensionExpr {
   /**
-   * The arguments of this applied predicate (SymPy AppliedPredicate.arguments).
+   * Lists the operands to which this predicate applies.
    *
-   * @returns The arguments of this applied predicate (SymPy AppliedPredicate.arguments).
+   * @returns The predicate arguments.
    * @see SymPy `sympy.assumptions.assume.AppliedPredicate.arguments`
    */
   get arguments(): readonly Expr[] { return this.args; }
   /**
-   * The predicate applied by this expression (SymPy AppliedPredicate.function).
+   * Identifies the predicate invoked by this application.
    *
-   * @returns The predicate applied by this expression (SymPy AppliedPredicate.function).
+   * @returns The predicate object.
    * @see SymPy `sympy.assumptions.assume.AppliedPredicate.function`
    */
   get function(): Predicate { return this.appliedFunction ?? Q[this.predicate] ?? Predicate(this.predicate); }
@@ -136,9 +136,9 @@ export class AppliedPredicate extends ExtensionExpr {
     return new AppliedPredicate(this.predicate, args, this.appliedFunction);
   }
   /**
-   * The (first) argument.
+   * Selects the first operand of the predicate application.
    *
-   * @returns The (first) argument.
+   * @returns The first argument.
    * @see SymPy `sympy.assumptions.assume.AppliedPredicate.arg`
    */
   get arg(): Expr {
@@ -154,7 +154,7 @@ export class AppliedPredicate extends ExtensionExpr {
     return `\\operatorname{Q}_{\\text{${this.predicate.replace(/_/g, '\\_')}}}(${this.args.map(print).join(', ')})`;
   }
   /**
-   * Conjunction (SymPy &).
+   * Combines the two predicates with logical AND.
    *
    * @param others - The callback applied to the selected expressions.
    * @returns The resulting logical expression.
@@ -163,7 +163,7 @@ export class AppliedPredicate extends ExtensionExpr {
     return and(this, ...others.flat());
   }
   /**
-   * Disjunction (SymPy |).
+   * Combines the two predicates with logical OR.
    *
    * @param others - The others.
    * @returns The resulting logical expression.
@@ -172,7 +172,7 @@ export class AppliedPredicate extends ExtensionExpr {
     return or(this, ...others);
   }
   /**
-   * Negation (SymPy ~).
+   * Negates the predicate.
    *
    * @returns The resulting logical expression.
    */
@@ -458,7 +458,7 @@ export class AssumptionsContext {
     this.items.clear();
   }
   /**
-   * The assumption is present.
+   * Tests whether the context contains the supplied assumption.
    *
    * @param assumption - The assumption.
    * @returns Whether the context contains the assumption.
@@ -467,9 +467,9 @@ export class AssumptionsContext {
     return this.items.has(assumption.key);
   }
   /**
-   * The number of assumptions in the context.
+   * Counts the assumptions currently in the context.
    *
-   * @returns The number of assumptions in the context.
+   * @returns The assumption count.
    */
   get size(): number {
     return this.items.size;
@@ -478,9 +478,9 @@ export class AssumptionsContext {
     return this.items.values();
   }
   /**
-   * The conjunction of the assumptions.
+   * Combines the context's assumptions by logical AND.
    *
-   * @returns The conjunction of the assumptions.
+   * @returns Their conjunction.
    */
   toExpr(): Expr {
     return and(...this.items.values());
@@ -1591,10 +1591,8 @@ function refineSignPowers(e: Expr, d: Decider): Expr {
 }
 
 /**
- * expr simplified under the assumptions,
- * e.g. refine(sqrt(x**2), Q.real(x)) = Abs(x),
- * refine(Abs(x), Q.positive(x)) = x; a predicate becomes true or false
- * when the assumptions decide it (refine(Q.real(x), Q.positive(x)) = true).
+ * Simplifies the expression using the supplied assumptions and evaluates predicates those assumptions
+ * decide.
  *
  * @param expr - The input expression.
  * @param assumptions - The facts to assume.

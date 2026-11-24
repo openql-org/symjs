@@ -41,27 +41,27 @@ export class RootSumNode extends ExtensionExpr {
     super('RootSum', args);
   }
   /**
-   * The underlying polynomial.
+   * Identifies the polynomial whose roots are summed over.
    *
-   * @returns The underlying polynomial.
+   * @returns The defining polynomial expression.
    * @see SymPy `sympy.polys.rootoftools.RootSum.poly`
    */
   get poly(): Expr {
     return at(this.args, 0);
   }
   /**
-   * The function applied to each root.
+   * Identifies the function summed over the polynomial's roots.
    *
-   * @returns The function applied to each root.
+   * @returns The root-sum lambda.
    * @see SymPy `sympy.polys.rootoftools.RootSum.fun`
    */
   get fun(): LambdaNode {
     return cast(at(this.args, 1), LambdaNode, 'RootSum function');
   }
   /**
-   * The polynomial variable bound by the root sum.
+   * Identifies the indeterminate bound by the root sum.
    *
-   * @returns The polynomial variable bound by the root sum.
+   * @returns The polynomial variable.
    */
   get variable(): Expr {
     return at(this.args, 2);
@@ -76,9 +76,9 @@ export class RootSumNode extends ExtensionExpr {
     return new RootSumNode(args, this.auto);
   }
   /**
-   * The variables bound in the root sum and their scopes.
+   * Describes the scope of each variable bound in the root sum.
    *
-   * @returns The variables bound in the root sum and their scopes.
+   * @returns The variable bindings.
    */
   override bindings(): { variables: readonly number[]; scope: readonly number[] } {
     return { variables: [2], scope: [0] };
@@ -107,9 +107,9 @@ export class RootSumNode extends ExtensionExpr {
     return `\\operatorname{RootSum} {\\left(${this.printArgs(print)}\\right)}`;
   }
   /**
-   * The sum over the roots (in radicals).
+   * Evaluates the function at roots expressible in radicals and sums the contributions.
    *
-   * @returns The sum over the roots (in radicals).
+   * @returns The evaluated root sum.
    */
   override doitSelf(): Expr {
     try {
@@ -120,11 +120,11 @@ export class RootSumNode extends ExtensionExpr {
     }
   }
   /**
-   * Differentiate the sum over the polynomial roots.
+   * Differentiates the sum of the function values over the polynomial roots.
    *
    * @param x - Variable of differentiation.
    * @param d - Function for differentiating a subexpression with respect to a variable.
-   * @returns Differentiate the sum over the polynomial roots.
+   * @returns The root-sum derivative.
    * @see SymPy `sympy.polys.rootoftools.RootSum._eval_derivative`
    */
   override diffSelf(x: Expr, d: (e: Expr, x: Expr) => Expr): Expr | undefined {
@@ -165,8 +165,7 @@ export class RootSumNode extends ExtensionExpr {
 
 
 /**
- * Linear factors of the polynomial are
- * evaluated, constant parts of the function are taken out.
+ * Sums a function over the polynomial's roots, evaluating linear factors and extracting constant parts.
  *
  * @param polyIn - Polynomial to represent or transform.
  * @param x - Polynomial generator.
@@ -258,11 +257,11 @@ function clearedFraction(c: Expr): Expr {
 export type PartfracTerm = [Expr | Expr[], LambdaNode, LambdaNode, number];
 
 /**
- * [common factor, polynomial part, rational terms] (Bronstein).
+ * Decomposes a rational function into Bronstein's structured partial fractions.
  *
  * @param fIn - Polynomial to operate on.
  * @param x - Polynomial generator.
- * @returns [common factor, polynomial part, rational terms] (Bronstein).
+ * @returns The common factor, polynomial part, rational terms, and variable.
  * @see SymPy `sympy.polys.partfrac.apart_list`
  * @example
  * ```ts
@@ -316,10 +315,10 @@ export function apartList(fIn: ExprLike, x: Sym): [Expr, Poly, PartfracTerm[], S
 }
 
 /**
- * The expression from an apart_list result.
+ * Reconstructs a rational expression from its structured partial fractions.
  *
  * @param list - Partial fraction decomposition from `apartList`.
- * @returns The expression from an apart_list result.
+ * @returns The assembled expression.
  * @see SymPy `sympy.polys.partfrac.assemble_partfrac_list`
  * @example
  * ```ts

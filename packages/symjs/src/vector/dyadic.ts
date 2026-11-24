@@ -29,16 +29,16 @@ import { prettyHooks } from '../printing/pretty/pretty';
  */
 export abstract class Dyadic extends BasisDependent {
   /**
-   * The operations shared by elements of this basis family.
+   * Identifies the operations common to this family of basis-dependent expressions.
    *
-   * @returns The operations shared by elements of this basis family.
+   * @returns The family descriptor.
    */
   override get family(): BasisFamily {
     return DYADIC;
   }
 
   /**
-   * The zero dyadic.
+   * Provides the additive identity for dyadics.
    *
    * @returns The zero dyadic.
    * @see SymPy `sympy.vector.dyadic.Dyadic.zero`
@@ -48,10 +48,10 @@ export abstract class Dyadic extends BasisDependent {
   }
 
   /**
-   * The inner product with a vector (a vector) or a dyadic (a dyadic).
+   * Contracts the dyadic with a vector or another dyadic.
    *
    * @param other - Other operand of the inner product.
-   * @returns The inner product with a vector (a vector) or a dyadic (a dyadic).
+   * @returns A vector or dyadic matching the operand.
    * @throws TypeError when the operand cannot form an inner product with a dyadic.
    * @see SymPy `sympy.vector.dyadic.Dyadic.dot`
    */
@@ -76,10 +76,10 @@ export abstract class Dyadic extends BasisDependent {
   }
 
   /**
-   * The cross product with a vector, a dyadic.
+   * Takes the cross product of the dyadic with a vector.
    *
    * @param other - Other operand of the cross product.
-   * @returns The cross product with a vector, a dyadic.
+   * @returns The resulting dyadic.
    * @throws TypeError when the operand cannot form a cross product with a dyadic.
    * @see SymPy `sympy.vector.dyadic.Dyadic.cross`
    */
@@ -92,12 +92,12 @@ export abstract class Dyadic extends BasisDependent {
   }
 
   /**
-   * The matrix of the dyadic with rows along the base vectors of system and columns along those of
-   * second_system (system by default).
+   * Expresses the dyadic in a row basis from the first system and a column basis from the second,
+   * defaulting to the first.
    *
    * @param system - Coordinate system in which to express components.
    * @param secondSystem - Basis for the second vector of the dyadic.
-   * @returns The matrix of the dyadic with rows along the base vectors of system and columns along those of second_system (system by default).
+   * @returns The component matrix.
    * @see SymPy `sympy.vector.dyadic.Dyadic.to_matrix`
    */
   toMatrix(system: CoordSysBase, secondSystem: CoordSysBase = system): Matrix {
@@ -150,7 +150,7 @@ export class BaseDyadicNode extends Dyadic implements ScaledBase {
     return BaseDyadic(at(args, 0), at(args, 1));
   }
   /**
-   * The scalar coefficients keyed by their basis dyadics.
+   * Associates each basis dyadic with its scalar coefficient.
    *
    * @returns The scalar coefficients keyed by basis element.
    * @see SymPy `sympy.vector.dyadic.BaseDyadic.components`
@@ -159,31 +159,31 @@ export class BaseDyadicNode extends Dyadic implements ScaledBase {
     return (this.#components ??= new ExprMap<Expr>([[this, S.One]]));
   }
   /**
-   * The scalar coefficient multiplying the basis element.
+   * Extracts the scalar weight of the basis element.
    *
-   * @returns The scalar coefficient multiplying the basis element.
+   * @returns The measure number.
    */
   get measureNumber(): Expr {
     return S.One;
   }
   /**
-   * The basis element carrying the scalar coefficient.
+   * Identifies the basis element multiplied by the scalar coefficient.
    *
-   * @returns The basis element carrying the scalar coefficient.
+   * @returns The basis factor.
    */
   get baseInstance(): BaseDyadicNode {
     return this;
   }
   /**
-   * The label used by the pretty printer.
+   * Supplies the label used in pretty-printed expressions.
    *
-   * @returns The label used by the pretty printer.
+   * @returns The display label.
    */
   get prettyForm(): string {
     return `(${this.vectors.map((v) => v.prettyForm).join('|')})`;
   }
   /**
-   * LaTeX representation of this basis element.
+   * Formats the basis element as LaTeX.
    *
    * @returns The formatted text.
    */
@@ -192,9 +192,9 @@ export class BaseDyadicNode extends Dyadic implements ScaledBase {
     return `\\left(${a.latexForm}{\\middle|}${b.latexForm}\\right)`;
   }
   /**
-   * The two base vectors.
+   * Identifies the two basis vectors forming the dyadic.
    *
-   * @returns The two base vectors.
+   * @returns The ordered vector pair.
    */
   get vectors(): [BaseVectorNode, BaseVectorNode] {
     return [guardCast(at(this.args, 0), BaseVectorNode, 'base vector'), guardCast(at(this.args, 1), BaseVectorNode, 'base vector')];
@@ -252,7 +252,7 @@ export class DyadicMulNode extends Dyadic implements ScaledBase {
     return basisMul(DYADIC, args);
   }
   /**
-   * The scalar coefficients keyed by their basis dyadics.
+   * Associates each basis dyadic with its scalar coefficient.
    *
    * @returns The scalar coefficients keyed by basis element.
    * @see SymPy `sympy.vector.dyadic.DyadicMul.components`
@@ -261,9 +261,9 @@ export class DyadicMulNode extends Dyadic implements ScaledBase {
     return new ExprMap<Expr>([[this.baseInstance, this.measureNumber]]);
   }
   /**
-   * The base dyadic of the product.
+   * Extracts the basis dyadic from the scalar multiple.
    *
-   * @returns The base dyadic of the product.
+   * @returns The dyadic factor.
    * @see SymPy `sympy.vector.dyadic.DyadicMul.base_dyadic`
    */
   get baseDyadic(): BaseDyadicNode {
@@ -307,7 +307,7 @@ export class DyadicAddNode extends Dyadic {
     return basisAdd(DYADIC, args);
   }
   /**
-   * The scalar coefficients keyed by their basis dyadics.
+   * Associates each basis dyadic with its scalar coefficient.
    *
    * @returns The scalar coefficients keyed by basis element.
    * @see SymPy `sympy.vector.dyadic.DyadicAdd.components`
@@ -316,7 +316,7 @@ export class DyadicAddNode extends Dyadic {
     return this.#components;
   }
   /**
-   * The terms in order of the printed base dyadics.
+   * Orders terms by the printed forms of their basis dyadics.
    *
    * @param print - Formatter for a child expression.
    * @returns The formatted expression.
@@ -348,7 +348,7 @@ export class DyadicZeroNode extends Dyadic {
     return ZERO;
   }
   /**
-   * The scalar coefficients keyed by their basis dyadics.
+   * Associates each basis dyadic with its scalar coefficient.
    *
    * @returns The scalar coefficients keyed by basis element.
    * @see SymPy `sympy.vector.dyadic.DyadicZero.components`
@@ -365,9 +365,9 @@ export class DyadicZeroNode extends Dyadic {
     return '0';
   }
   /**
-   * The label used by the pretty printer.
+   * Supplies the label used in pretty-printed expressions.
    *
-   * @returns The label used by the pretty printer.
+   * @returns The display label.
    * @see SymPy `sympy.vector.dyadic.DyadicZero._pretty_form`
    */
   get prettyForm(): string {
@@ -395,7 +395,7 @@ const DYADIC: BasisFamily = {
 registerDyadicFamily(DYADIC);
 
 /**
- * A basis dyadic formed by the outer product of two basis vectors.
+ * Constructs a basis dyadic formed by the outer product of two basis vectors.
  *
  * @param vector1In - First vector operand.
  * @param vector2In - Second vector operand.
@@ -414,7 +414,7 @@ export type BaseDyadic = BaseDyadicNode;
 vectorHooks.baseDyadic = (v1, v2) => BaseDyadic(v1, v2);
 
 /**
- * The sum of dyadics.
+ * Adds the supplied dyadic terms.
  *
  * @param args - Operands in their defining order.
  * @returns The resulting `DyadicAdd` expression.
@@ -424,7 +424,7 @@ export const DyadicAdd = /* @__PURE__ */ callableClass(DyadicAddNode, (...args: 
 export type DyadicAdd = DyadicAddNode;
 
 /**
- * The product of scalars and a dyadic.
+ * Constructs the product of scalars and a dyadic.
  *
  * @param args - Operands in their defining order.
  * @returns The resulting `DyadicMul` expression.
@@ -434,7 +434,7 @@ export const DyadicMul = /* @__PURE__ */ callableClass(DyadicMulNode, (...args: 
 export type DyadicMul = DyadicMulNode;
 
 /**
- * The zero dyadic.
+ * Provides the additive identity for dyadics.
  *
  * @returns The resulting `DyadicZero` expression.
  * @see SymPy `sympy.vector.dyadic.DyadicZero`

@@ -357,9 +357,9 @@ export class Poly {
   readonly pure: boolean;
 
   /**
-   * Free symbols of a polynomial; PurePoly binds its generators.
+   * Collects free symbols of the polynomial, treating the generators of a pure polynomial as bound.
    *
-   * @returns Free symbols of a polynomial; PurePoly binds its generators.
+   * @returns The free-symbol set.
    * @see SymPy `sympy.polys.polytools.Poly.free_symbols`
    */
   freeSymbols(): Set<Expr> {
@@ -367,16 +367,16 @@ export class Poly {
   }
 
   /**
-   * The principal generator.
+   * Identifies the polynomial's main indeterminate.
    *
    * @returns The principal generator.
    * @see SymPy `sympy.polys.polytools.Poly.gen`
    */
   get gen(): Expr { return first(this.gens); }
   /**
-   * The free symbols appearing in the coefficient domain.
+   * Collects the free symbols that occur in the coefficient domain.
    *
-   * @returns The free symbols appearing in the coefficient domain.
+   * @returns The domain's free-symbol set.
    * @see SymPy `sympy.polys.polytools.Poly.free_symbols_in_domain`
    */
   get freeSymbolsInDomain(): Set<Sym> {
@@ -385,81 +385,81 @@ export class Poly {
     return new Set(symbols.values());
   }
   /**
-   * Whether the polynomial is constant in its generators.
+   * Checks that the polynomial is independent of its generators.
    *
-   * @returns Whether the polynomial is constant in its generators.
+   * @returns True for a ground element.
    * @see SymPy `sympy.polys.polytools.Poly.is_ground`
    */
   get isGround(): boolean { return this.totalDegree() <= 0; }
   /**
-   * Whether all nonzero terms have the same total degree.
+   * Checks whether all nonzero monomials have the same total degree.
    *
-   * @returns Whether all nonzero terms have the same total degree.
+   * @returns True for a homogeneous polynomial.
    * @see SymPy `sympy.polys.polytools.Poly.is_homogeneous`
    */
   get isHomogeneous(): boolean {
     return this.termList.every((t) => t.monom.reduce((a, b) => a + b, 0) === this.totalDegree());
   }
   /**
-   * Whether the total degree is at most one.
+   * Checks whether the total degree is at most one.
    *
-   * @returns Whether the total degree is at most one.
+   * @returns The linearity flag.
    * @see SymPy `sympy.polys.polytools.Poly.is_linear`
    */
   get isLinear(): boolean { return this.totalDegree() <= 1; }
   /**
-   * Whether the total degree is at most two.
+   * Checks whether the total degree is at most two.
    *
-   * @returns Whether the total degree is at most two.
+   * @returns The quadratic flag.
    * @see SymPy `sympy.polys.polytools.Poly.is_quadratic`
    */
   get isQuadratic(): boolean { return this.totalDegree() <= 2; }
   /**
-   * Whether the leading coefficient is one.
+   * Tests whether the leading coefficient equals one.
    *
-   * @returns Whether the leading coefficient is one.
+   * @returns True for a monic polynomial.
    * @see SymPy `sympy.polys.polytools.Poly.is_monic`
    */
   get isMonic(): boolean { return this.LC().equals(S.One); }
   /**
-   * Whether the polynomial has at most one nonzero term.
+   * Tests whether the polynomial has at most one nonzero term.
    *
-   * @returns Whether the polynomial has at most one nonzero term.
+   * @returns True for zero or a single term.
    * @see SymPy `sympy.polys.polytools.Poly.is_monomial`
    */
   get isMonomial(): boolean { return this.termList.length <= 1; }
   /**
-   * Whether there is more than one generator.
+   * Checks whether there are at least two generators.
    *
-   * @returns Whether there is more than one generator.
+   * @returns True for a multivariate ring.
    * @see SymPy `sympy.polys.polytools.Poly.is_multivariate`
    */
   get isMultivariate(): boolean { return this.gens.length > 1; }
   /**
-   * Whether there is exactly one generator.
+   * Checks whether there is exactly one generator.
    *
-   * @returns Whether there is exactly one generator.
+   * @returns True for a univariate ring.
    * @see SymPy `sympy.polys.polytools.Poly.is_univariate`
    */
   get isUnivariate(): boolean { return this.gens.length === 1; }
   /**
-   * Whether the element is the multiplicative identity.
+   * Tests for equality with the domain's multiplicative identity.
    *
-   * @returns Whether the element is the multiplicative identity.
+   * @returns True for one.
    * @see SymPy `sympy.polys.polytools.Poly.is_one`
    */
   get isOne(): boolean { return this.isGround && this.LC().equals(S.One); }
   /**
-   * Whether the coefficients have unit content.
+   * Tests whether the coefficients have a unit as their GCD.
    *
-   * @returns Whether the coefficients have unit content.
+   * @returns True for a primitive polynomial.
    * @see SymPy `sympy.polys.polytools.Poly.is_primitive`
    */
   get isPrimitive(): boolean { return this.content().equals(S.One); }
   /**
-   * Whether the polynomial is irreducible in its coefficient domain.
+   * Tests for irreducibility over the coefficient domain.
    *
-   * @returns Whether the polynomial is irreducible in its coefficient domain.
+   * @returns True for an irreducible polynomial.
    * @see SymPy `sympy.polys.polytools.Poly.is_irreducible`
    */
   get isIrreducible(): boolean {
@@ -470,9 +470,9 @@ export class Poly {
     return factors.length === 1 && first(factors)[1] === 1;
   }
   /**
-   * Whether the polynomial is square-free.
+   * Checks whether all irreducible factors have multiplicity one.
    *
-   * @returns Whether the polynomial is square-free.
+   * @returns True for a square-free polynomial.
    * @see SymPy `sympy.polys.polytools.Poly.is_sqf`
    */
   get isSqf(): boolean {
@@ -556,9 +556,9 @@ export class Poly {
   }
 
   /**
-   * The coefficient domain, including its generators and defining relations.
+   * Identifies the domain of the coefficients together with its generators and relations.
    *
-   * @returns The coefficient domain, including its generators and defining relations.
+   * @returns The coefficient domain.
    * @see SymPy `sympy.polys.polytools.Poly.get_domain`
    */
   getDomain(): Domain {
@@ -582,7 +582,7 @@ export class Poly {
   }
 
   /**
-   * Equality with an optional strict comparison of coefficient domains.
+   * Tests polynomial equality, optionally requiring equal coefficient domains.
    *
    * @param other - Operand to combine or compare with this value.
    * @param opts - Controls `strict` (strict comparison).
@@ -755,7 +755,7 @@ export class Poly {
   }
 
   /**
-   * The corresponding symbolic expression.
+   * Expresses the element in terms of its generators.
    *
    * @returns The symbolic expression.
    * @see SymPy `sympy.polys.polytools.Poly.as_expr`
@@ -790,9 +790,9 @@ export class Poly {
   }
 
   /**
-   * Whether the element is zero.
+   * Tests for equality with the domain's additive identity.
    *
-   * @returns Whether the element is zero.
+   * @returns True for zero.
    * @see SymPy `sympy.polys.polytools.Poly.is_zero`
    */
   get isZero(): boolean {
@@ -823,13 +823,12 @@ export class Poly {
   }
 
   /**
-   * A polynomial with this domain from a dense representation:
-   * nested coefficient lists, highest degree first, one level per
-   * generator. `remove` drops the generator at that index.
+   * Builds a polynomial from recursively nested descending coefficient lists, optionally dropping a
+   * generator.
    *
    * @param rep - Dense coefficients in descending order.
    * @param opts - Controls `gens` (the ordered generators), `remove` (a generator index to remove).
-   * @returns A polynomial with this domain from a dense representation: nested coefficient lists, highest degree first, one level per generator.
+   * @returns The polynomial over this domain.
    * @throws PolynomialError when the coefficient list depth differs from the number of generators.
    * @see SymPy `sympy.polys.polytools.Poly.per`
    */
@@ -858,10 +857,10 @@ export class Poly {
   }
 
   /**
-   * [(monomial, coefficient)] in the selected monomial order.
+   * Orders the nonzero terms by the selected monomial order.
    *
    * @param opts - Controls `order` (the monomial order).
-   * @returns [(monomial, coefficient)] in the selected monomial order.
+   * @returns The exponent-vector and coefficient pairs.
    * @see SymPy `sympy.polys.polytools.Poly.terms`
    */
   terms(opts: { order?: 'lex' | 'grlex' | 'grevlex' } = {}): [number[], Expr][] {
@@ -869,29 +868,29 @@ export class Poly {
     return this.orderedTerms(opts).map((t) => [t.monom, t.coeff]);
   }
   /**
-   * The nonzero coefficients in the requested monomial order.
+   * Lists nonzero coefficients in the order of their monomials.
    *
    * @param opts - Controls `order` (the monomial order).
-   * @returns The nonzero coefficients in the requested monomial order.
+   * @returns The ordered coefficient list.
    * @see SymPy `sympy.polys.polytools.Poly.coeffs`
    */
   coeffs(opts: { order?: 'lex' | 'grlex' | 'grevlex' } = {}): Expr[] {
     return this.terms(opts).map(([, c]) => c);
   }
   /**
-   * The exponent vectors of the nonzero terms in the requested monomial order.
+   * Lists the monomials of nonzero terms in the requested order.
    *
    * @param opts - Controls `order` (the monomial order).
-   * @returns The exponent vectors of the nonzero terms in the requested monomial order.
+   * @returns The ordered exponent vectors.
    * @see SymPy `sympy.polys.polytools.Poly.monoms`
    */
   monoms(opts: { order?: 'lex' | 'grlex' | 'grevlex' } = {}): number[][] {
     return this.terms(opts).map(([m]) => m);
   }
   /**
-   * Dense coefficient list of a univariate polynomial, highest degree first.
+   * Lists all univariate coefficients from highest degree to constant term.
    *
-   * @returns Dense coefficient list of a univariate polynomial, highest degree first.
+   * @returns The dense coefficient array.
    * @throws PolynomialError when the polynomial is multivariate.
    * @see SymPy `sympy.polys.polytools.Poly.all_coeffs`
    */
@@ -919,20 +918,20 @@ export class Poly {
     return [...this.termList].sort((a, b) => degree(b.monom) - degree(a.monom) || (order === 'grlex' ? monomCmp(b.monom, a.monom) : monomCmp([...a.monom].reverse(), [...b.monom].reverse())));
   }
   /**
-   * Returns the leading coefficient of the polynomial.
+   * Extracts the coefficient of the leading term.
    *
    * @param opts - Controls `order` (the monomial order).
-   * @returns The leading coefficient of the polynomial.
+   * @returns The leading coefficient.
    * @see SymPy `sympy.polys.polytools.Poly.LC`
    */
   LC(opts: { order?: 'lex' | 'grlex' | 'grevlex' } = {}): Expr {
     return this.orderedTerms(opts)[0]?.coeff ?? S.Zero;
   }
   /**
-   * Returns the leading monomial of the polynomial.
+   * Selects the highest monomial in the specified term order.
    *
    * @param opts - Controls `order` (the monomial order).
-   * @returns The leading monomial of the polynomial.
+   * @returns The leading monomial expression.
    * @see SymPy `sympy.polys.polytools.Poly.LM`
    */
   LM(opts: { order?: 'lex' | 'grlex' | 'grevlex' } = {}): Expr {
@@ -940,10 +939,10 @@ export class Poly {
     return t ? mul(...t.monom.map((k, i) => pow(at(this.gens, i), k))) : S.One;
   }
   /**
-   * Returns the leading term of the polynomial.
+   * Selects the largest term under the specified ordering.
    *
    * @param opts - Controls `order` (the monomial order).
-   * @returns The leading term of the polynomial.
+   * @returns The leading exponent vector and coefficient.
    * @see SymPy `sympy.polys.polytools.Poly.LT`
    */
   LT(opts: { order?: 'lex' | 'grlex' | 'grevlex' } = {}): [number[], Expr] {
@@ -951,10 +950,10 @@ export class Poly {
     return t ? [t.monom, t.coeff] : [this.gens.map(() => 0), S.Zero];
   }
   /**
-   * The trailing monomial and coefficient in the selected ordering.
+   * Selects the last term under the chosen monomial order.
    *
    * @param opts - Controls `order` (the monomial order).
-   * @returns The trailing monomial and coefficient in the selected ordering.
+   * @returns The trailing monomial and coefficient.
    * @see SymPy `sympy.polys.polytools.Poly.ET`
    */
   ET(opts: { order?: 'lex' | 'grlex' | 'grevlex' } = {}): [number[], Expr] {
@@ -968,7 +967,8 @@ export class Poly {
     return i;
   }
   /**
-   * Degree in the given generator (first generator by default); -oo for zero.
+   * Computes the degree in the selected generator, defaulting to the first and giving negative infinity
+   * for zero.
    *
    * @param gen - Generator or its index.
    * @returns The degree in the selected generator, or `-Infinity` for zero.
@@ -980,18 +980,18 @@ export class Poly {
     return Math.max(...this.termList.map((t) => at(t.monom, i)));
   }
   /**
-   * Returns a list of degrees of the polynomial.
+   * Computes the degree separately in every generator.
    *
-   * @returns A list of degrees of the polynomial.
+   * @returns The degrees in generator order.
    * @see SymPy `sympy.polys.polytools.Poly.degree_list`
    */
   degreeList(): number[] {
     return this.gens.map((_, i) => this.degree(i));
   }
   /**
-   * Returns the total degree of the polynomial.
+   * Computes the maximum total degree of a term.
    *
-   * @returns The total degree of the polynomial.
+   * @returns The total degree.
    * @see SymPy `sympy.polys.polytools.Poly.total_degree`
    */
   totalDegree(): number {
@@ -1000,10 +1000,10 @@ export class Poly {
   }
 
   /**
-   * The sum of the operands.
+   * Adds the two operands.
    *
    * @param o - Operand to combine or compare with this value.
-   * @returns The sum of the operands.
+   * @returns Their sum.
    * @see SymPy `sympy.polys.polytools.Poly.add`
    */
   add(o: Poly | ExprLike): Poly {
@@ -1020,10 +1020,10 @@ export class Poly {
     return Poly.from(add(f.asExpr(), g.asExpr()), f.gens, { domain: f.coefficientDomain ?? f.domain, pure: f.pure });
   }
   /**
-   * The difference of the operands.
+   * Subtracts the second operand from the first.
    *
    * @param o - Operand to combine or compare with this value.
-   * @returns The difference of the operands.
+   * @returns Their difference.
    * @see SymPy `sympy.polys.polytools.Poly.sub`
    */
   sub(o: Poly | ExprLike): Poly {
@@ -1040,10 +1040,10 @@ export class Poly {
     return this.coefficientDomain?.isFiniteExtension ? this.like(expression) : Poly.from(expression, this.gens);
   }
   /**
-   * The product of the operands.
+   * Multiplies the two operands.
    *
    * @param o - Operand to combine or compare with this value.
-   * @returns The product of the operands.
+   * @returns Their product.
    * @see SymPy `sympy.polys.polytools.Poly.mul`
    */
   mul(o: Poly | ExprLike): Poly {
@@ -1056,10 +1056,10 @@ export class Poly {
     return Poly.from(mul(f.asExpr(), g.asExpr()), f.gens, { domain: f.coefficientDomain ?? f.domain });
   }
   /**
-   * The element raised to the specified exponent.
+   * Raises the element to the requested power.
    *
    * @param n - Exponent or degree.
-   * @returns The element raised to the specified exponent.
+   * @returns The exponentiated element.
    * @see SymPy `sympy.polys.polytools.Poly.pow`
    */
   pow(n: number): Poly {
@@ -1067,7 +1067,7 @@ export class Poly {
     return Poly.from(pow(this.asExpr(), n), this.gens);
   }
   /**
-   * The additive inverse.
+   * Negates the element with respect to addition.
    *
    * @returns The additive inverse.
    * @see SymPy `sympy.polys.polytools.Poly.neg`
@@ -1138,10 +1138,10 @@ export class Poly {
   }
 
   /**
-   * Division with remainder (univariate over the field of fractions).
+   * Divides with remainder, using the fraction field for univariate division.
    *
    * @param o - Operand to combine or compare with this value.
-   * @returns Division with remainder (univariate over the field of fractions).
+   * @returns The quotient and remainder.
    * @throws RangeError when the divisor is zero.
    * @see SymPy `sympy.polys.polytools.Poly.div`
    */
@@ -1196,7 +1196,7 @@ export class Poly {
     return p;
   }
   /**
-   * Polynomial division with optional promotion to a field.
+   * Divides polynomials with optional promotion to a field.
    *
    * @param o - Operand to combine or compare with this value.
    * @param auto - Allow promotion to a field for division.
@@ -1225,11 +1225,11 @@ export class Poly {
     return [Q, R];
   }
   /**
-   * The remainder after division.
+   * Computes the remainder upon division by the second operand.
    *
    * @param o - Operand to combine or compare with this value.
    * @param auto - Allow promotion to a field for division.
-   * @returns The remainder after division.
+   * @returns The remainder.
    * @see SymPy `sympy.polys.polytools.Poly.rem`
    */
   rem(o: Poly, auto = true): Poly {
@@ -1237,11 +1237,11 @@ export class Poly {
     return this.toRingIfExact(this.div(o)[1], this.domain === 'ZZ' && o.domain === 'ZZ');
   }
   /**
-   * The quotient in the coefficient domain.
+   * Divides by the supplied polynomial and retains the quotient.
    *
    * @param o - Operand to combine or compare with this value.
    * @param auto - Allow promotion to a field for division.
-   * @returns The quotient in the coefficient domain.
+   * @returns The polynomial quotient.
    * @see SymPy `sympy.polys.polytools.Poly.quo`
    */
   quo(o: Poly, auto = true): Poly {
@@ -1249,7 +1249,8 @@ export class Poly {
     return this.toRingIfExact(this.div(o)[0], this.domain === 'ZZ' && o.domain === 'ZZ');
   }
   /**
-   * Pseudo-remainder: the remainder of LC(g)**(deg f - deg g + 1)*f.
+   * Computes the remainder after scaling the dividend by the appropriate power of the divisor's leading
+   * coefficient.
    *
    * @param o - Operand to combine or compare with this value.
    * @returns The pseudo-remainder.
@@ -1280,10 +1281,10 @@ export class Poly {
     return Poly.from(expand(mul(pow(lg, N), r.asExpr())), this.gens);
   }
   /**
-   * Subresultant PRS, univariate.
+   * Generates the univariate subresultant remainder sequence.
    *
    * @param o - Operand to combine or compare with this value.
-   * @returns Subresultant PRS, univariate.
+   * @returns The subresultant polynomials.
    * @see SymPy `sympy.polys.polytools.Poly.subresultants`
    */
   subresultants(o: Poly): Poly[] {
@@ -1322,7 +1323,7 @@ export class Poly {
     return R;
   }
   /**
-   * Pseudo-quotient.
+   * Performs pseudo-division in the main variable and retains the quotient.
    *
    * @param o - Operand to combine or compare with this value.
    * @returns The pseudo-quotient.
@@ -1343,10 +1344,10 @@ export class Poly {
     return Poly.from(defined(divExact(expand(add(scaled, mul(-1, this.prem(o).asExpr()))), o.asExpr(), [x]), 'pseudo-quotient'), this.gens);
   }
   /**
-   * The exact quotient, requiring divisibility.
+   * Divides the operands exactly, requiring the divisor to divide the dividend.
    *
    * @param o - Operand to combine or compare with this value.
-   * @returns The exact quotient, requiring divisibility.
+   * @returns The exact quotient.
    * @throws ExactQuotientFailed when the divisor does not divide the dividend exactly.
    * @see SymPy `sympy.polys.polytools.Poly.exquo`
    */
@@ -1362,10 +1363,10 @@ export class Poly {
   }
 
   /**
-   * The greatest common divisor.
+   * Computes a greatest common divisor of the operands.
    *
    * @param o - Operand to combine or compare with this value.
-   * @returns The greatest common divisor.
+   * @returns Their GCD.
    * @see SymPy `sympy.polys.polytools.Poly.gcd`
    */
   gcd(o: Poly): Poly {
@@ -1399,10 +1400,10 @@ export class Poly {
     return h.isZero ? h : h.monic();
   }
   /**
-   * The least common multiple.
+   * Computes a least common multiple of the operands.
    *
    * @param o - Operand to combine or compare with this value.
-   * @returns The least common multiple.
+   * @returns Their LCM.
    * @see SymPy `sympy.polys.polytools.Poly.lcm`
    */
   lcm(o: Poly): Poly {
@@ -1439,9 +1440,9 @@ export class Poly {
     return Poly.from(mul(this.asExpr(), pow(lc, -1)), this.gens, { domain: dom });
   }
   /**
-   * [content, primitive part] over the integers.
+   * Separates the integer content from the primitive polynomial.
    *
-   * @returns [content, primitive part] over the integers.
+   * @returns The content and primitive part.
    * @see SymPy `sympy.polys.polytools.Poly.primitive`
    */
   primitive(): [Expr, Poly] {
@@ -1450,9 +1451,9 @@ export class Poly {
     return [c, Poly.from(mul(this.asExpr(), pow(c, -1)), this.gens)];
   }
   /**
-   * Returns the GCD of polynomial coefficients.
+   * Computes the polynomial content as the GCD of its coefficients.
    *
-   * @returns The GCD of polynomial coefficients.
+   * @returns The content.
    * @see SymPy `sympy.polys.polytools.Poly.content`
    */
   content(): Expr {
@@ -1464,10 +1465,10 @@ export class Poly {
   }
 
   /**
-   * Computes partial derivative of the polynomial.
+   * Differentiates with respect to the specified generator.
    *
    * @param x - Polynomial generator.
-   * @returns Partial derivative of the polynomial.
+   * @returns The partial derivative.
    * @see SymPy `sympy.polys.polytools.Poly.diff`
    */
   diff(x?: Expr): Poly {
@@ -1481,10 +1482,10 @@ export class Poly {
     return Poly.from(d, this.gens);
   }
   /**
-   * The antiderivative in a generator, term by term.
+   * Integrates each term with respect to the selected generator.
    *
    * @param x - Polynomial generator.
-   * @returns The antiderivative in a generator, term by term.
+   * @returns The polynomial antiderivative.
    * @see SymPy `sympy.polys.polytools.Poly.integrate`
    */
   integrate(x?: Expr): Poly {
@@ -1508,12 +1509,12 @@ export class Poly {
     return this.like(add(...terms),this.gens,domain);
   }
   /**
-   * Evaluate at gen = a (first generator by default).
+   * Substitutes a value for the selected generator, defaulting to the first.
    *
    * @param a - Value substituted for the generator.
    * @param gen - Generator or its index.
    * @param auto - Allow promotion to a field for division.
-   * @returns Evaluate at gen = a (first generator by default).
+   * @returns The evaluated expression or remaining polynomial.
    * @throws DomainError when the evaluation point is incompatible with the coefficient domain.
    * @see SymPy `sympy.polys.polytools.Poly.eval`
    */
@@ -1547,9 +1548,9 @@ export class Poly {
   }
 
   /**
-   * (content, [(factor, multiplicity)]) with primitive integer factors.
+   * Extracts the content and factors the primitive integer polynomial.
    *
-   * @returns (content, [(factor, multiplicity)]) with primitive integer factors.
+   * @returns The content and factor–multiplicity pairs.
    * @see SymPy `sympy.polys.polytools.Poly.factor_list`
    */
   factorList(): [Expr, [Poly, number][]] {
@@ -1567,9 +1568,9 @@ export class Poly {
     return [c, fs.map(([f, k]) => [Poly.from(f, this.gens), k] as [Poly, number])];
   }
   /**
-   * Returns a list of square-free factors of the polynomial.
+   * Groups polynomial factors by multiplicity.
    *
-   * @returns A list of square-free factors of the polynomial.
+   * @returns The coefficient and square-free factor–multiplicity pairs.
    * @see SymPy `sympy.polys.polytools.Poly.sqf_list`
    */
   sqfList(): [Rational, [Poly, number][]] {
@@ -1660,12 +1661,12 @@ export class Poly {
     return add(...cs.map((c, i) => mul(Rational.of(c / g), pow(first(this.gens), n - i))));
   }
   /**
-   * Isolating intervals of the real roots with multiplicities in [inf, sup], each narrower than eps; with all, also the isolating rectangles [lower-left, upper-right corner]
-   * of the non-real roots of a polynomial with one square-free factor.
+   * Isolates real roots in the requested bounds to the given tolerance, optionally including nonreal
+   * roots for a single square-free factor.
    *
    * @param eps - Maximum width of the isolating interval.
    * @param opts - Use `inf` and `sup` for bounds, `fast` for accelerated refinement and `all` to include complex roots.
-   * @returns Isolating intervals of the real roots with multiplicities in [inf, sup], each narrower than eps; with all, also the isolating rectangles [lower-left, upper-right corner] of the non-real roots of a polynomial with one square-free factor.
+   * @returns Real intervals with multiplicities and, when requested, complex rectangles.
    * @throws DomainError when the coefficients belong to a finite domain.
    * @throws RangeError when the requested tolerance is not a positive rational.
    * @throws NotImplementedError when the requested square-free case is unsupported.
@@ -1673,12 +1674,12 @@ export class Poly {
    */
   intervals(eps?: Rational, opts?: IntervalsOptions & { all?: false }): [[Rational, Rational], number][];
   /**
-   * Isolating intervals of the real roots with multiplicities in [inf, sup], each narrower than eps; with all, also the isolating rectangles [lower-left, upper-right corner]
-   * of the non-real roots of a polynomial with one square-free factor.
+   * Isolates real roots in the requested bounds to the given tolerance, optionally including nonreal
+   * roots for a single square-free factor.
    *
    * @param eps - Maximum width of the isolating interval.
    * @param opts - Use `inf` and `sup` for bounds, `fast` for accelerated refinement and `all` to include complex roots.
-   * @returns Isolating intervals of the real roots with multiplicities in [inf, sup], each narrower than eps; with all, also the isolating rectangles [lower-left, upper-right corner] of the non-real roots of a polynomial with one square-free factor.
+   * @returns Real intervals with multiplicities and, when requested, complex rectangles.
    * @throws DomainError when the coefficients belong to a finite domain.
    * @throws RangeError when the requested tolerance is not a positive rational.
    * @throws NotImplementedError when the requested square-free case is unsupported.
@@ -1701,14 +1702,14 @@ export class Poly {
     return [real, complex];
   }
   /**
-   * Refine the isolating interval (s, t) of a real root.
+   * Narrows the given isolating interval around a real root.
    *
    * @param s - Left endpoint.
    * @param t - Right endpoint.
    * @param eps - Maximum width of the isolating interval.
    * @param steps - Number of refinement steps.
    * @param fast - Use accelerated interval refinement.
-   * @returns Refine the isolating interval (s, t) of a real root.
+   * @returns The refined interval.
    * @throws DomainError when the coefficients belong to a finite domain.
    * @throws RangeError when the requested tolerance is not a positive rational.
    * @see SymPy `sympy.polys.polytools.Poly.refine_root`
@@ -1743,7 +1744,7 @@ export class Poly {
     return this.like(add(...this.termList.map((t) => this.termExpr({ monom: t.monom, coeff: f(t.coeff) }))), this.gens, domain);
   }
   /**
-   * Make all coefficients in `f` positive.
+   * Takes the absolute value of each polynomial coefficient.
    *
    * @returns The polynomial with its coefficients replaced by their absolute values.
    * @see SymPy `sympy.polys.polytools.Poly.abs`
@@ -1752,9 +1753,9 @@ export class Poly {
     return this.mapCoeffs((c) => (c instanceof Rational && c.isNegative ? mul(-1, c) : c));
   }
   /**
-   * The square of the polynomial.
+   * Multiplies the polynomial by itself.
    *
-   * @returns The square of the polynomial.
+   * @returns The squared polynomial.
    * @see SymPy `sympy.polys.polytools.Poly.sqr`
    */
   sqr(): Poly {
@@ -1795,7 +1796,7 @@ export class Poly {
     return this.like(mul(this.asExpr(), c));
   }
   /**
-   * Coefficient-wise quotient (floor division over ZZ).
+   * Divides every coefficient by the scalar, using floor division over the integers.
    *
    * @param c - Coefficient of the term.
    * @returns The polynomial obtained by dividing its coefficients by the ground element.
@@ -1815,10 +1816,10 @@ export class Poly {
     return this.mapCoeffs((x) => mul(x, pow(k, -1)));
   }
   /**
-   * Exact quotient of the polynomial by an element of the ground domain.
+   * Divides every coefficient exactly by a ground element.
    *
    * @param c - Coefficient of the term.
-   * @returns The exact coefficientwise quotient.
+   * @returns The exact quotient polynomial.
    * @throws ExactQuotientFailed when the divisor does not divide the dividend exactly.
    * @see SymPy `sympy.polys.polytools.Poly.exquo_ground`
    */
@@ -1830,9 +1831,9 @@ export class Poly {
     return r;
   }
   /**
-   * Returns all monomials from a univariate polynomial `f`.
+   * Lists univariate monomials from the degree down to zero.
    *
-   * @returns All monomials from a univariate polynomial `f`.
+   * @returns The descending exponent vectors.
    * @see SymPy `sympy.polys.polytools.Poly.all_monoms`
    */
   allMonoms(): number[][] {
@@ -1840,18 +1841,18 @@ export class Poly {
     return Array.from({ length: Math.max(d, 0) + 1 }, (_, i) => [Math.max(d, 0) - i]);
   }
   /**
-   * Returns all terms from a univariate polynomial `f`.
+   * Lists all univariate terms, including terms with zero coefficients.
    *
-   * @returns All terms from a univariate polynomial `f`.
+   * @returns The monomial–coefficient pairs.
    * @see SymPy `sympy.polys.polytools.Poly.all_terms`
    */
   allTerms(): [number[], Expr][] {
     return this.allMonoms().map((m) => [m, this.coeffMonomial(m)]);
   }
   /**
-   * Switch to a `dict` representation.
+   * Represents the nonzero terms by their exponent vectors and coefficients.
    *
-   * @returns Switch to a `dict` representation.
+   * @returns An array of monomial–coefficient pairs.
    * @see SymPy `sympy.polys.polytools.Poly.as_dict`
    */
   asDict(): [number[], Expr][] {
@@ -1875,10 +1876,10 @@ export class Poly {
     return expand(xreplace(this.asExpr(), reps));
   }
   /**
-   * (gcd, f/gcd, g/gcd).
+   * Divides each polynomial by their greatest common divisor.
    *
    * @param o - Operand to combine or compare with this value.
-   * @returns (gcd, f/gcd, g/gcd).
+   * @returns The GCD and both cofactors.
    * @see SymPy `sympy.polys.polytools.Poly.cofactors`
    */
   cofactors(o: Poly): [Poly, Poly, Poly] {
@@ -1886,20 +1887,20 @@ export class Poly {
     return [h, this.exquo(h), o.exquo(h)];
   }
   /**
-   * Cancel common factors in a ratio while preserving the coefficient domain.
+   * Reduces a polynomial ratio over its coefficient domain.
    *
    * @param other - Operand to combine or compare with this value.
    * @param include - Incorporate the scalar factors in the reduced numerator and denominator. If false, return the scalars separately.
-   * @returns Cancel common factors in a ratio while preserving the coefficient domain.
+   * @returns The reduced numerator and denominator.
    * @see SymPy `sympy.polys.polytools.Poly.cancel`
    */
   cancel(other: Poly, include: true): [Poly, Poly];
   /**
-   * Cancel common factors in a ratio while preserving the coefficient domain.
+   * Reduces a polynomial ratio over its coefficient domain.
    *
    * @param other - Operand to combine or compare with this value.
    * @param include - Incorporate the scalar factors in the reduced numerator and denominator. If false, return the scalars separately.
-   * @returns Cancel common factors in a ratio while preserving the coefficient domain.
+   * @returns The scalar factor, reduced numerator, and reduced denominator.
    * @see SymPy `sympy.polys.polytools.Poly.cancel`
    */
   cancel(other: Poly, include?: false): [Expr, Poly, Poly];
@@ -1929,10 +1930,10 @@ export class Poly {
     return [coefficient, P, Q];
   }
   /**
-   * Computes the functional composition of the polynomial and `g`.
+   * Substitutes the other polynomial into this one.
    *
    * @param o - Operand to combine or compare with this value.
-   * @returns The functional composition of the polynomial and `g`.
+   * @returns The composite polynomial.
    * @see SymPy `sympy.polys.polytools.Poly.compose`
    */
   compose(o: Poly): Poly {
@@ -1942,7 +1943,7 @@ export class Poly {
   /**
    * Computes the discriminant of the polynomial.
    *
-   * @returns The discriminant of the polynomial.
+   * @returns The discriminant value.
    * @see SymPy `sympy.polys.polytools.Poly.discriminant`
    */
   discriminant(): Expr {
@@ -1976,7 +1977,7 @@ export class Poly {
     return resultant(this.asExpr(), o.asExpr(), this.univariate());
   }
   /**
-   * Last coefficient in term order.
+   * Selects the coefficient of the last term in monomial order.
    *
    * @param opts - Controls `order` (the monomial order).
    * @returns The coefficient of the last nonzero term in the requested order.
@@ -1986,7 +1987,7 @@ export class Poly {
     return this.ET(opts)[1];
   }
   /**
-   * Last monomial in lexicographic term order.
+   * Selects the last monomial in lexicographic order.
    *
    * @param opts - Controls `order` (the monomial order).
    * @returns The monomial of the last nonzero term in the requested order.
@@ -1996,7 +1997,7 @@ export class Poly {
     return mul(...this.ET(opts)[0].map((n, i) => pow(at(this.gens, i), n)));
   }
   /**
-   * Constant term.
+   * Extracts the coefficient of the unit monomial.
    *
    * @returns The trailing coefficient.
    * @see SymPy `sympy.polys.polytools.Poly.TC`
@@ -2005,7 +2006,7 @@ export class Poly {
     return this.coeffMonomial(this.gens.map(() => 0));
   }
   /**
-   * Coefficient of gens**N.
+   * Looks up the monomial coefficient for the supplied generator exponents.
    *
    * @param N - Exponent vector of the requested coefficient.
    * @returns The coefficient at the specified exponents.
@@ -2015,27 +2016,27 @@ export class Poly {
     return this.coeffMonomial(N);
   }
   /**
-   * The number of stored terms.
+   * Counts the terms stored in the polynomial.
    *
-   * @returns The number of stored terms.
+   * @returns The term count.
    * @see SymPy `sympy.polys.polytools.Poly.length`
    */
   length(): number {
     return this.termList.length;
   }
   /**
-   * Returns l1 norm of the polynomial.
+   * Computes the polynomial's L1 norm.
    *
-   * @returns L1 norm of the polynomial.
+   * @returns The sum of absolute coefficients.
    * @see SymPy `sympy.polys.polytools.Poly.l1_norm`
    */
   l1Norm(): Expr {
     return add(...this.termList.map((t) => (t.coeff instanceof Rational && t.coeff.isNegative ? mul(-1, t.coeff) : t.coeff)));
   }
   /**
-   * Returns maximum norm of the polynomial.
+   * Computes the maximum norm of the coefficient vector.
    *
-   * @returns Maximum norm of the polynomial.
+   * @returns The largest absolute coefficient.
    * @see SymPy `sympy.polys.polytools.Poly.max_norm`
    */
   maxNorm(): Expr {
@@ -2047,10 +2048,10 @@ export class Poly {
     return m;
   }
   /**
-   * Evaluate several generators at once (dict or tuple of leading values).
+   * Substitutes values for several generators using a mapping or leading values in order.
    *
    * @param values - Values to substitute, in generator order.
-   * @returns Evaluate several generators at once (dict or tuple of leading values).
+   * @returns The specialized polynomial or expression.
    * @see SymPy `sympy.polys.polytools.Poly.eval`
    */
   evalMany(values: readonly (readonly [Expr, ExprLike])[]): Expr | Poly {
@@ -2069,10 +2070,10 @@ export class Poly {
     return this.like(this.asExpr(),keep.length ? keep : this.gens);
   }
   /**
-   * Return `True` if `Poly(f, *gens)` retains ground domain.
+   * Tests whether the supplied generators suffice to represent the polynomial over its ground domain.
    *
    * @param gens - Polynomial generators in the desired order.
-   * @returns `True` if `Poly(f, *gens)` retains ground domain.
+   * @returns True if the ground domain is retained.
    * @throws GeneratorsError when the specified generator or index is invalid.
    * @see SymPy `sympy.polys.polytools.Poly.has_only_gens`
    */
@@ -2081,9 +2082,9 @@ export class Poly {
     return this.gens.every((g, i) => gens.some((h) => h.key === g.key) || this.termList.every((t) => t.monom[i] === 0));
   }
   /**
-   * Total degree when homogeneous, else NoMatch.
+   * Computes the common total degree of a homogeneous polynomial.
    *
-   * @returns The matching value, or `NoMatch` when the requested form is unavailable.
+   * @returns The homogeneous degree or `NoMatch`.
    * @see SymPy `sympy.polys.polytools.Poly.homogeneous_order`
    */
   homogeneousOrder(): number | NoMatchResult {
@@ -2190,10 +2191,10 @@ export class Poly {
     return this.replace(from, to);
   }
   /**
-   * Pseudo-division: (pquo, prem).
+   * Performs pseudo-division of the polynomials.
    *
    * @param o - Operand to combine or compare with this value.
-   * @returns The quotient and remainder.
+   * @returns The pseudo-quotient and pseudo-remainder.
    * @see SymPy `sympy.polys.polytools.Poly.pdiv`
    */
   pdiv(o: Poly): [Poly, Poly] {
@@ -2219,7 +2220,7 @@ export class Poly {
     return [q.mul(scale), r.mul(scale)];
   }
   /**
-   * Polynomial exact pseudo-quotient of the polynomial by `g`.
+   * Performs exact pseudo-division in the main variable.
    *
    * @param o - Operand to combine or compare with this value.
    * @returns The exact pseudo-quotient.
@@ -2231,11 +2232,10 @@ export class Poly {
     if (!r.isZero) throw new ExactQuotientFailed('pexquo: inexact division');
     return q;
   }
-  /** f(x + a). */
   /**
-   * Greatest factorial factorization.
+   * Decomposes the polynomial into greatest factorial factors.
    *
-   * @returns Greatest factorial factorization.
+   * @returns The factors and their factorial lengths.
    * @throws PolynomialError when the polynomial is zero.
    * @see SymPy `sympy.polys.polytools.Poly.gff_list`
    */
@@ -2282,7 +2282,7 @@ export class Poly {
     return this.like(this.asExprAt(this.gens.map((g, i) => [g, add(g, at(values, i))] as const)));
   }
   /**
-   * Square-free part.
+   * Removes repeated irreducible factors from the polynomial.
    *
    * @returns The square-free part of the polynomial.
    * @see SymPy `sympy.polys.polytools.Poly.sqf_part`
@@ -2298,9 +2298,9 @@ export class Poly {
     return lc instanceof Rational && lc.isNegative ? prim.neg() : prim;
   }
   /**
-   * (gcd of the monomials, quotient).
+   * Extracts the largest monomial common to all terms.
    *
-   * @returns The expression with the common factors of its terms taken out.
+   * @returns The exponent vector and reduced polynomial.
    * @see SymPy `sympy.polys.polytools.Poly.terms_gcd`
    */
   termsGcd(): [number[], Poly] {
@@ -2309,9 +2309,9 @@ export class Poly {
     return [m, this.like(e)];
   }
   /**
-   * (gcd of the exponents per generator, deflated polynomial).
+   * Extracts a common exponent divisor for each generator.
    *
-   * @returns (gcd of the exponents per generator, deflated polynomial).
+   * @returns The divisor vector and deflated polynomial.
    * @see SymPy `sympy.polys.polytools.Poly.deflate`
    */
   deflate(): [number[], Poly] {
@@ -2330,9 +2330,9 @@ export class Poly {
     return this.like(this.asExpr(),this.gens,this.domain === 'ZZ' ? 'QQ' : this.domain);
   }
   /**
-   * The polynomial ring with the same generators and coefficient domain.
+   * Converts the polynomial coefficients to the associated ring.
    *
-   * @returns The polynomial ring with the same generators and coefficient domain.
+   * @returns The polynomial over that ring.
    * @throws DomainError when the finite field has no associated ring.
    * @see SymPy `sympy.polys.polytools.Poly.to_ring`
    */
@@ -2356,7 +2356,7 @@ export class Poly {
     return this.like(e,this.gens,this.domain === 'RR' ? 'QQ' : this.domain);
   }
   /**
-   * q**n * f(p/q).
+   * Substitutes a polynomial ratio and multiplies by the denominator to the degree of the input.
    *
    * @param p - Numerator of the rational substitution.
    * @param q - Denominator of the rational substitution.
@@ -2397,10 +2397,10 @@ export class Poly {
     });
   }
   /**
-   * Polynomials with common generators and coefficient domain.
+   * Converts the polynomials to a shared set of generators and coefficient domain.
    *
    * @param other - Operand to combine or compare with this value.
-   * @returns Polynomials with common generators and coefficient domain.
+   * @returns The compatible polynomial pair.
    * @see SymPy `sympy.polys.polytools.Poly.unify`
    */
   unify(other: Poly): [Poly, Poly] {
@@ -2431,10 +2431,10 @@ export class Poly {
     return [Poly.from(this.asExpr(), gens, { domain: coefficientDomain?.toString()===domain?coefficientDomain:domain, pure: this.pure }), Poly.from(other.asExpr(), gens, { domain: coefficientDomain?.toString()===domain?coefficientDomain:domain, pure: other.pure })];
   }
   /**
-   * Clear coefficient denominators while preserving the quotient f/g.
+   * Clears coefficient denominators in both polynomials without changing their ratio.
    *
    * @param other - Operand to combine or compare with this value.
-   * @returns Clear coefficient denominators while preserving the quotient f/g.
+   * @returns The scaled numerator and denominator.
    * @see SymPy `sympy.polys.polytools.Poly.rat_clear_denoms`
    */
   ratClearDenoms(other: Poly): [Poly, Poly] {
@@ -2444,9 +2444,9 @@ export class Poly {
     return [F.mulGround(b), G.mulGround(a)];
   }
   /**
-   * A translated polynomial and its square-free norm over the ground field.
+   * Translates the polynomial until its ground-field norm has no repeated factors.
    *
-   * @returns A translated polynomial and its square-free norm over the ground field.
+   * @returns The shift, translated polynomial, and norm.
    * @throws DomainError when the coefficient domain is not algebraic.
    * @throws PolynomialError when the polynomial is not square-free.
    * @see SymPy `sympy.polys.polytools.Poly.sqf_norm`
@@ -2469,10 +2469,10 @@ export class Poly {
   }
 
   /**
-   * (lcm of denominators, polynomial times it).
+   * Scales the polynomial by the least common multiple of its coefficient denominators.
    *
    * @param convert - Convert the resulting coefficients to the associated ring.
-   * @returns (lcm of denominators, polynomial times it).
+   * @returns The multiplier and scaled polynomial.
    * @see SymPy `sympy.polys.polytools.Poly.clear_denoms`
    */
   clearDenoms(convert = false): [Expr, Poly] {
@@ -2491,11 +2491,11 @@ export class Poly {
     return [Rational.of(l),this.like(e,this.gens,convert && this.domain==='QQ'?'ZZ':this.domain)];
   }
   /**
-   * Extended Euclid: (s, t, h) with s*f + t*g = h = gcd(f, g) (monic, over the coefficient field).
+   * Computes Bézout coefficients for the monic GCD over the coefficient field.
    *
    * @param o - Operand to combine or compare with this value.
    * @param auto - Allow promotion to a field for division.
-   * @returns Extended Euclid: (s, t, h) with s*f + t*g = h = gcd(f, g) (monic, over the coefficient field).
+   * @returns The triple `[s, t, gcd]`.
    * @throws RangeError when the divisor is zero.
    * @throws DomainError when the coefficient domain is not a field.
    * @see SymPy `sympy.polys.polytools.Poly.gcdex`
@@ -2527,7 +2527,7 @@ export class Poly {
     return [f(s0), f(t0), f(r0)];
   }
   /**
-   * Half extended Euclidean algorithm of the polynomial and `g`.
+   * Computes a Bézout coefficient and the GCD of the polynomials.
    *
    * @param o - Operand to combine or compare with this value.
    * @param auto - Allow promotion to a field for division.
@@ -2539,7 +2539,7 @@ export class Poly {
     return [s, h];
   }
   /**
-   * Inverse of f modulo g.
+   * Inverts the polynomial modulo the divisor.
    *
    * @param o - Operand to combine or compare with this value.
    * @returns The multiplicative inverse modulo the second polynomial.
@@ -2552,10 +2552,10 @@ export class Poly {
     return s;
   }
   /**
-   * Sturm sequence over the coefficient field.
+   * Builds the Sturm sequence using division in the coefficient field.
    *
    * @param auto - Allow promotion to a field for division.
-   * @returns Sturm sequence over the coefficient field.
+   * @returns The ordered Sturm polynomials.
    * @throws DomainError when the coefficient domain is not a field.
    * @see SymPy `sympy.polys.polytools.Poly.sturm`
    */
@@ -2598,7 +2598,7 @@ export class Poly {
     })), domain, this.pure));
   }
   /**
-   * Number of real roots in [a, b] (Sturm's theorem).
+   * Counts real roots within the supplied interval using Sturm's theorem.
    *
    * @param a - Lower endpoint or lower-left corner.
    * @param b - Upper endpoint or upper-right corner.
@@ -2652,10 +2652,10 @@ export class Poly {
     return this.sqfPart();
   }
   /**
-   * Rational roots with multiplicities.
+   * Finds the polynomial roots in the ground domain and counts their multiplicities.
    *
    * @param opts - Controls `extension` (algebraic coefficient extensions).
-   * @returns Rational roots with multiplicities.
+   * @returns The root–multiplicity pairs.
    * @see SymPy `sympy.polys.polytools.Poly.ground_roots`
    */
   groundRoots(opts: { extension?: boolean } = {}): [Expr, number][] {
@@ -2717,7 +2717,7 @@ export class Poly {
     return this.like(expand(g));
   }
   /**
-   * Polynomial whose roots are the n-th powers of the roots of f.
+   * Constructs the polynomial whose roots are the nth powers of the original roots.
    *
    * @param n - Positive integer power to which each root is raised.
    * @returns A polynomial whose roots are the specified powers of the input roots.
@@ -2790,11 +2790,10 @@ export class Poly {
     return this.algebraicNorm();
   }
   /**
-   * The product of the conjugates of a polynomial over an
-   * algebraic field QQ<a>, a polynomial over QQ. Like SymPy, other ground
-   * domains (ZZ, QQ, ZZ_I, EX) raise DomainError.
+   * Multiplies the conjugates over an algebraic extension of the rationals, raising `DomainError` for
+   * unsupported domains.
    *
-   * @returns The product of the conjugates of a polynomial over an algebraic field QQ<a>, a polynomial over QQ. Like SymPy, other ground domains (ZZ, QQ, ZZ_I, EX) raise DomainError.
+   * @returns The norm polynomial over `QQ`.
    * @throws DomainError when the coefficient domain is not algebraic.
    * @see SymPy `sympy.polys.polytools.Poly.norm`
    */
@@ -2852,9 +2851,9 @@ export class Poly {
     return N.termList.every((t) => t.coeff instanceof Rational) ? Poly.from(N.asExpr(), this.gens, { domain: 'QQ' }) : undefined;
   }
   /**
-   * [monic integer polynomial g, s] with g(x) = f(x/s)*s**n/LC(f).
+   * Scales the roots to obtain a monic integer polynomial of the same degree.
    *
-   * @returns [monic integer polynomial g, s] with g(x) = f(x/s)*s**n/LC(f).
+   * @returns The monic polynomial and root scale.
    * @throws DomainError when the coefficients are not rational.
    * @see SymPy `sympy.polys.polytools.Poly.make_monic_over_integers_by_scaling_roots`
    */
@@ -2874,9 +2873,9 @@ export class Poly {
     return [Poly.from(e, [x], { domain: 'ZZ' }), S_];
   }
   /**
-   * p of a polynomial over GF(p).
+   * Identifies the prime defining the polynomial's coefficient field.
    *
-   * @returns P of a polynomial over GF(p).
+   * @returns The modulus `p`.
    * @throws DomainError when the polynomial is not over a finite field.
    * @see SymPy `sympy.polys.polytools.Poly.get_modulus`
    */
@@ -2886,10 +2885,10 @@ export class Poly {
     return BigInt(defined(m[1], 'modulus'));
   }
   /**
-   * The polynomial over GF(p), coefficients in the symmetric range.
+   * Reduces coefficients to symmetric representatives in the prime field.
    *
    * @param p - Modulus of the new coefficient domain.
-   * @returns The polynomial over GF(p), coefficients in the symmetric range.
+   * @returns The polynomial over `GF(p)`.
    * @throws DomainError when the coefficients are not integers.
    * @see SymPy `sympy.polys.polytools.Poly.set_modulus`
    */
@@ -2939,9 +2938,9 @@ export class Poly {
     return Poly.from(this.asExpr(), gens, { domain: ground });
   }
   /**
-   * The norm over the ground field of an algebraic extension (ZZ_I -> ZZ, QQ<a> -> QQ).
+   * Lifts coefficients from an algebraic extension by taking the norm to its ground domain.
    *
-   * @returns The norm over the ground field of an algebraic extension (ZZ_I -> ZZ, QQ<a> -> QQ).
+   * @returns The ground-domain polynomial.
    * @throws DomainError when the coefficient domain is not algebraic.
    * @see SymPy `sympy.polys.polytools.Poly.lift`
    */
@@ -2952,10 +2951,10 @@ export class Poly {
     return Poly.from(N.asExpr(), this.gens, { domain: this.domain.startsWith('ZZ') ? 'ZZ' : 'QQ' });
   }
   /**
-   * Real roots (rational and quadratic surds), sorted, with multiplicity.
+   * Finds the real polynomial roots in order, repeating each root according to its multiplicity.
    *
    * @param opts - Controls `extension` (algebraic coefficient extensions), `radicals` (radical expressions for roots).
-   * @returns Real roots (rational and quadratic surds), sorted, with multiplicity.
+   * @returns The ordered real roots.
    * @throws PolynomialError when the generator is not a symbol.
    * @throws NotImplementedError when root isolation requires an unavailable coefficient extension.
    * @see SymPy `sympy.polys.polytools.Poly.real_roots`
@@ -2966,10 +2965,10 @@ export class Poly {
     return opts.extension ? this.radicalRoots(true) : this.rootsWhere(true, opts.radicals);
   }
   /**
-   * Return a list of real and complex roots with multiplicities.
+   * Enumerates the real and complex roots of the polynomial, retaining multiplicity.
    *
    * @param opts - Controls `extension` (algebraic coefficient extensions), `radicals` (radical expressions for roots).
-   * @returns A list of real and complex roots with multiplicities.
+   * @returns The ordered roots.
    * @throws NotImplementedError when root isolation requires an unavailable coefficient extension.
    * @see SymPy `sympy.polys.polytools.Poly.all_roots`
    */
@@ -3111,10 +3110,10 @@ export class Poly {
     return [K.toSympy(lc),factors];
   }
   /**
-   * The indexed root in the ordered list of all roots.
+   * Selects a root by its position in the ordered list of all roots.
    *
    * @param i - Zero-based index in the ordered list of roots.
-   * @returns The indexed root in the ordered list of all roots.
+   * @returns The indexed root expression.
    * @see SymPy `sympy.polys.polytools.Poly.root`
    */
   root(i: number): Expr {
@@ -3151,10 +3150,10 @@ export class Poly {
     return distanceSquared.p * epsilonSquared.q < epsilonSquared.p * distanceSquared.q;
   }
   /**
-   * Find roots of a square-free polynomial `f` from `candidates`.
+   * Filters the candidates to the roots of the square-free polynomial.
    *
    * @param cands - Candidate roots to test.
-   * @returns Roots of a square-free polynomial `f` from `candidates`.
+   * @returns The matching candidate roots.
    * @throws NotImplementedError when root counting is unavailable over the coefficient domain.
    * @see SymPy `sympy.polys.polytools.Poly.which_real_roots`
    */
@@ -3166,10 +3165,10 @@ export class Poly {
     return this.whichRoots(cands, this.countRoots());
   }
   /**
-   * Find roots of a square-free polynomial `f` from `candidates`.
+   * Filters the candidates to the roots of the square-free polynomial.
    *
    * @param cands - Candidate roots to test.
-   * @returns Roots of a square-free polynomial `f` from `candidates`.
+   * @returns The matching candidate roots.
    * @see SymPy `sympy.polys.polytools.Poly.which_all_roots`
    */
   whichAllRoots(cands: readonly Expr[]): Expr[] {
@@ -3197,9 +3196,9 @@ export class Poly {
     return out;
   }
   /**
-   * [(f, k)] with the content folded into the first factor.
+   * Factors the polynomial and absorbs the content into the first factor.
    *
-   * @returns [(f, k)] with the content folded into the first factor.
+   * @returns The factor–multiplicity pairs.
    * @see SymPy `sympy.polys.polytools.Poly.factor_list_include`
    */
   factorListInclude(): [Poly, number][] {
@@ -3210,10 +3209,10 @@ export class Poly {
     return fs;
   }
   /**
-   * Returns a list of square-free factors of the polynomial.
+   * Groups square-free factors by multiplicity and incorporates the coefficient into the factor list.
    *
    * @param all - Include factors of missing multiplicities.
-   * @returns A list of square-free factors of the polynomial.
+   * @returns The factor–multiplicity pairs.
    * @see SymPy `sympy.polys.polytools.Poly.sqf_list_include`
    */
   sqfListInclude(all = false): [Poly, number][] {
@@ -3227,10 +3226,11 @@ export class Poly {
     return out;
   }
   /**
-   * The square-free factorization including a factor for each multiplicity.
+   * Separates square-free factors by multiplicity, optionally including missing multiplicities with unit
+   * factors.
    *
    * @param all - Include factors of missing multiplicities.
-   * @returns The square-free factorization including a factor for each multiplicity.
+   * @returns The coefficient and factor–multiplicity pairs.
    */
   sqfListAll(all = false): [Rational, [Poly, number][]] {
     const [c, fs] = this.sqfList();
@@ -3242,7 +3242,7 @@ export class Poly {
   }
 
   /**
-   * Smallest domain containing the coefficients.
+   * Finds the smallest domain containing all coefficients.
    *
    * @param field - The target coefficient field.
    * @returns The polynomial over the inferred smaller coefficient domain.
@@ -3254,9 +3254,9 @@ export class Poly {
     return p;
   }
   /**
-   * Functional decomposition f = g1(g2(...)) of a univariate polynomial.
+   * Writes a univariate polynomial as nested polynomial compositions.
    *
-   * @returns Functional decomposition f = g1(g2(...)) of a univariate polynomial.
+   * @returns The components in composition order.
    * @see SymPy `sympy.polys.polytools.Poly.decompose`
    */
   decompose(): Poly[] {
@@ -3273,7 +3273,7 @@ export class Poly {
   }
 
   /**
-   * The printable representation.
+   * Formats this object as text.
    *
    * @returns The formatted text.
    * @see SymPy `sympy.polys.polytools.Poly.__str__`
@@ -3361,19 +3361,13 @@ export interface FactorListOptions {
 }
 
 /**
- * (content, [(factor, multiplicity)]).
- * The multiplicities are expressions: a power with a symbolic or fractional
- * exponent keeps it ((x + 1)**y -> (1, [(x + 1, y)])). Without gens every
- * non-rational part is a generator (sqrt(2), f(1), exp(y), ...); with gens the
- * factors are polynomials in them over the ring of the other parts, and the
- * parts free of the gens with an integer exponent make up the content. A
- * denominator is an error unless `frac` is set, which returns its factors as
- * a third element.
+ * Factors the expression into a scalar and factors with multiplicities, retaining symbolic and
+ * fractional exponents.
  *
  * @param e - Expression to convert.
  * @param gens - Polynomial generators in the desired order.
  * @param opts - Coefficient-domain and factorization settings, including algebraic or Gaussian extensions.
- * @returns The scalar coefficient and factors with multiplicities, plus denominator factors when `frac` is set.
+ * @returns The coefficient and factor–exponent pairs.
  * @throws PolynomialError when the input is not a polynomial.
  * @see SymPy `sympy.polys.polytools.factor_list`
  * @remarks SymPy returns `(2, [(x + y, 1), (x**2 + 1, 2)])` with tuples for the fixed-length groups.
@@ -3386,37 +3380,25 @@ export interface FactorListOptions {
  */
 export function factorListExpr(e: Expr, gens?: readonly Expr[], opts?: FactorListOptions & { frac?: false }): FactorList;
 /**
- * (content, [(factor, multiplicity)]).
- * The multiplicities are expressions: a power with a symbolic or fractional
- * exponent keeps it ((x + 1)**y -> (1, [(x + 1, y)])). Without gens every
- * non-rational part is a generator (sqrt(2), f(1), exp(y), ...); with gens the
- * factors are polynomials in them over the ring of the other parts, and the
- * parts free of the gens with an integer exponent make up the content. A
- * denominator is an error unless `frac` is set, which returns its factors as
- * a third element.
+ * Factors the expression into a scalar and factors with multiplicities, retaining symbolic and
+ * fractional exponents.
  *
  * @param e - Expression to convert.
  * @param gens - Polynomial generators in the desired order.
  * @param opts - Coefficient-domain and factorization settings, including algebraic or Gaussian extensions.
- * @returns The scalar coefficient and factors with multiplicities, plus denominator factors when `frac` is set.
+ * @returns The coefficient and factor–exponent pairs.
  * @throws PolynomialError when the input is not a polynomial.
  * @see SymPy `sympy.polys.polytools.factor_list`
  */
 export function factorListExpr(e: Expr, gens: readonly Expr[] | undefined, opts: FactorListOptions & { frac: true }): FactorListFrac;
 /**
- * (content, [(factor, multiplicity)]).
- * The multiplicities are expressions: a power with a symbolic or fractional
- * exponent keeps it ((x + 1)**y -> (1, [(x + 1, y)])). Without gens every
- * non-rational part is a generator (sqrt(2), f(1), exp(y), ...); with gens the
- * factors are polynomials in them over the ring of the other parts, and the
- * parts free of the gens with an integer exponent make up the content. A
- * denominator is an error unless `frac` is set, which returns its factors as
- * a third element.
+ * Factors the expression into a scalar and factors with multiplicities, retaining symbolic and
+ * fractional exponents.
  *
  * @param e - Expression to convert.
  * @param gens - Polynomial generators in the desired order.
  * @param opts - Coefficient-domain and factorization settings, including algebraic or Gaussian extensions.
- * @returns The scalar coefficient and factors with multiplicities, plus denominator factors when `frac` is set.
+ * @returns The coefficient and factor–exponent pairs.
  * @throws PolynomialError when the input is not a polynomial.
  * @see SymPy `sympy.polys.polytools.factor_list`
  */
@@ -3829,7 +3811,7 @@ const gensFor = (...fs: Expr[]): Expr[] => {
 };
 
 /**
- * Gcd of polynomials (expressions).
+ * Computes the greatest common divisor of the polynomial expressions.
  *
  * @param f - Polynomial to operate on.
  * @param g - Second polynomial operand.
@@ -3861,12 +3843,12 @@ export function polyGcd(f: Poly | ExprLike, g: Poly | ExprLike, opts: Polynomial
   return algebraicGcdLcm(a, b, 'gcd') ?? fieldGcdLcm(a, b, gens, 'gcd') ?? mgcd(a, b, gens);
 }
 /**
- * Compute LCM of the polynomial and `g`.
+ * Finds the least polynomial multiple common to both inputs.
  *
  * @param f - Polynomial to operate on.
  * @param g - Second polynomial operand.
  * @param opts - Set `domain` or `modulus` to choose the coefficient domain and `symmetric` for signed residues.
- * @returns LCM of the polynomial and `g`.
+ * @returns The LCM.
  * @see SymPy `sympy.polys.polytools.lcm`
  * @example
  * ```ts
@@ -3930,7 +3912,7 @@ function fieldGcdLcm(a: Expr, b: Expr, gens: readonly Expr[], op: 'gcd' | 'lcm')
 }
 
 /**
- * Degree of f in gen (default: the only/first generator).
+ * Computes the degree in the specified generator, defaulting to the first.
  *
  * @param f - Polynomial to operate on.
  * @param gen - Generator or its index.
@@ -3958,8 +3940,7 @@ export function degree(f: Poly | ExprLike, gen?: Expr | number): number {
 }
 
 /**
- * Division q, r with f = q*g + r, in the given generators or the free symbols;
- * multivariate polynomials are divided recursively in the first generator.
+ * Divides in the specified or inferred generators, using the first as the main variable.
  *
  * @param f - Dividend polynomial.
  * @param g - Divisor polynomial.
@@ -3985,7 +3966,7 @@ export function polyDiv(f: Poly | ExprLike, g: Poly | ExprLike, gens?: readonly 
 }
 
 /**
- * Terms_gcd: pull out the gcd of all terms (numeric content and common monomial).
+ * Extracts the content and common monomial of all terms.
  *
  * @param f - Polynomial to operate on.
  * @param rest - Generators followed by optional flags. `expand` expands products, `deep` processes nested expressions and `clear` controls extraction of rational denominators.
@@ -4084,7 +4065,7 @@ export interface TermsGcdOptions {
 const isOneExpr = (e: Expr) => e instanceof Rational && e.isOne;
 
 /**
- * Horner form: multivariate polynomials recurse on the coefficients.
+ * Writes the polynomial in nested Horner form, processing multivariate coefficients recursively.
  *
  * @param f - Polynomial to operate on.
  * @param x - Polynomial generator.
@@ -4113,7 +4094,7 @@ export function horner(f: ExprLike, x?: Sym): Expr {
 const isPoint = (d: readonly [ExprLike, ExprLike] | ExprLike): d is readonly [ExprLike, ExprLike] => Array.isArray(d);
 
 /**
- * Lagrange interpolating polynomial through points (x_i, y_i) or y-values at 1..n.
+ * Interpolates the supplied points, using consecutive positive abscissae when only values are given.
  *
  * @param data - Values or pairs of interpolation nodes and values.
  * @param x - Polynomial generator.
@@ -4151,10 +4132,7 @@ function rationalResultant(left: UPoly, right: UPoly): Rational {
 }
 
 /**
- * Resultant of two univariate polynomials by pseudo-remainder sequences:
- * Res(a, b) = (-1)**(da*db) * LC(b)**(da - dr) * Res(b, a mod b), with the
- * powers of LC(b) introduced by the pseudo-division divided out at the end
- * (no division by symbolic coefficients during the sequence).
+ * Eliminates the variable using the pseudo-remainder sequence of the two polynomials.
  *
  * @param f - Polynomial to operate on.
  * @param g - Second polynomial operand.
@@ -4199,11 +4177,11 @@ export function resultant(f: ExprLike, g: ExprLike, x: Sym): Expr {
 }
 
 /**
- * Compute discriminant of the polynomial.
+ * Computes the discriminant of the polynomial.
  *
  * @param f - Polynomial to operate on.
  * @param x - Polynomial generator.
- * @returns Discriminant of the polynomial.
+ * @returns The discriminant value.
  * @see SymPy `sympy.polys.polytools.discriminant`
  * @example
  * ```ts
@@ -4253,10 +4231,11 @@ function factorModulus(e: Expr, p: bigint, symmetric:boolean): Expr {
 }
 
 /**
- * Clear denominators, remove content and scale away removable coefficient generators.
+ * Simplifies a polynomial for root finding by clearing denominators, removing content, and scaling out
+ * removable coefficient generators.
  *
  * @param p - Polynomial to operate on.
- * @returns Clear denominators, remove content and scale away removable coefficient generators.
+ * @returns The root scale and transformed polynomial.
  * @see SymPy `sympy.polys.polyroots.preprocess_roots`
  */
 export function preprocessRoots(p:Poly): [Expr,Poly] {
@@ -4528,14 +4507,13 @@ export function factorNc(ex: ExprLike): Expr {
 }
 
 /**
- * [s, g, r] with g(x) = f(x - s*a) for the
- * primitive element a (the sum of the extension generators) and r = norm(g)
- * square-free over QQ.
+ * Shifts the argument by a multiple of the primitive element until the norm over the rationals is
+ * square-free.
  *
  * @param fIn - Polynomial to operate on.
  * @param x - Polynomial generator.
  * @param extension - Algebraic numbers to adjoin to the coefficient field.
- * @returns [s, g, r] with g(x) = f(x - s*a) for the primitive element a (the sum of the extension generators) and r = norm(g) square-free over QQ.
+ * @returns The shift, translated polynomial, and norm.
  * @see SymPy `sympy.polys.polytools.sqf_norm`
  * @remarks SymPy returns `([1], x**2 - 2*sqrt(3)*x + 4, x**4 - 4*x**2 + 16)` with tuples for the fixed-length groups.
  * @example
@@ -4589,9 +4567,7 @@ polyHooks.cancelDomain = (e, opts) => {
 };
 
 /**
- * a polynomial whose generators are only
- * placeholders, so that polynomials over different generators compare equal
- * (PurePoly(x**2 + 1).equals(PurePoly(y**2 + 1))).
+ * Constructs a polynomial whose generators act as placeholders in equality comparisons.
  *
  * @param ex - Expression to convert or manipulate.
  * @param gens - Polynomial generators in the desired order.
@@ -4609,12 +4585,11 @@ function commutativeOnly(e: Expr): Expr {
 }
 
 /**
- * e as a polynomial in gens (detected when not
- * given), or NoMatch when it is not one.
+ * Converts the expression to a polynomial in the supplied or inferred generators.
  *
  * @param ex - Expression to convert or manipulate.
  * @param generators - Polynomial generators and optional coefficient-domain settings.
- * @returns The polynomial, or `NoMatch` if conversion fails.
+ * @returns The polynomial or `NoMatch`.
  * @see SymPy `sympy.core.expr.Expr.as_poly`
  * @example
  * ```ts
@@ -4636,9 +4611,8 @@ export function asPoly(ex: ExprLike, ...generators: (Expr | { extension: true })
 }
 
 /**
- * The inverse of f modulo g (an integer modulo an
- * integer, or a polynomial modulo a polynomial); NotInvertible when f and g
- * have a common factor.
+ * Computes an integer or polynomial modular inverse, raising `NotInvertible` when the operands have a
+ * nonunit common factor.
  *
  * @param fIn - Polynomial to operate on.
  * @param gIn - Second polynomial operand.
@@ -4664,10 +4638,10 @@ export function invert(fIn: Poly | ExprLike, gIn: Poly | ExprLike, ...gens: Expr
 }
 
 /**
- * The greatest common divisor of the items of seq (0 for none).
+ * Computes the GCD of the sequence, using zero for empty input.
  *
  * @param seq - Sequence of polynomials.
- * @returns The greatest common divisor of the items of seq (0 for none).
+ * @returns The common divisor.
  * @see SymPy `sympy.polys.polytools.gcd_list`
  * @example
  * ```ts
@@ -4682,10 +4656,10 @@ export function gcdList(seq: readonly (Poly | ExprLike)[]): Expr {
 }
 
 /**
- * The least common multiple of the items of seq (1 for none).
+ * Computes the LCM of the sequence, using one for empty input.
  *
  * @param seq - Sequence of polynomials.
- * @returns The least common multiple of the items of seq (1 for none).
+ * @returns The common multiple.
  * @see SymPy `sympy.polys.polytools.lcm_list`
  * @example
  * ```ts
@@ -4700,13 +4674,11 @@ export function lcmList(seq: readonly (Poly | ExprLike)[]): Expr {
 }
 
 /**
- * The square-free factorization of f, the numerator and
- * the denominator of a rational function separately
- * (2*x**5 + 16*x**4 + ... -> 2*(x + 1)**2*(x + 2)**3).
+ * Collects square-free factors of the numerator and denominator separately.
  *
  * @param ex - Expression to convert or manipulate.
  * @param gens - Polynomial generators in the desired order.
- * @returns The square-free factorization of f, the numerator and the denominator of a rational function separately (2*x**5 + 16*x**4 + ... -> 2*(x + 1)**2*(x + 2)**3).
+ * @returns The square-free factored expression.
  * @see SymPy `sympy.polys.polytools.sqf`
  * @example
  * ```ts
@@ -4717,13 +4689,11 @@ export function lcmList(seq: readonly (Poly | ExprLike)[]): Expr {
  */
 export function sqf(ex: Poly, ...gens: Expr[]): Poly;
 /**
- * The square-free factorization of f, the numerator and
- * the denominator of a rational function separately
- * (2*x**5 + 16*x**4 + ... -> 2*(x + 1)**2*(x + 2)**3).
+ * Collects square-free factors of the numerator and denominator separately.
  *
  * @param ex - Expression to convert or manipulate.
  * @param gens - Polynomial generators in the desired order.
- * @returns The square-free factorization of f, the numerator and the denominator of a rational function separately (2*x**5 + 16*x**4 + ... -> 2*(x + 1)**2*(x + 2)**3).
+ * @returns The square-free factored expression.
  * @see SymPy `sympy.polys.polytools.sqf`
  */
 export function sqf(ex: ExprLike, ...gens: Expr[]): Expr;
@@ -4740,7 +4710,7 @@ function sqfProduct(factors: readonly [Expr, Expr][]): Expr {
 }
 
 /**
- * List of square-free factors and their multiplicities.
+ * Groups the factors of the expression by their multiplicities.
  *
  * @param ex - Expression to convert or manipulate.
  * @param gens - Polynomial generators in the desired order.

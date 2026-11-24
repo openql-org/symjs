@@ -17,7 +17,7 @@ import { Poly } from './sympoly';
 export type MonomialKey = number | readonly MonomialKey[];
 
 /**
- * Python's ordering of keys: numbers numerically, tuples lexicographically.
+ * Orders numeric keys by value and tuple keys lexicographically.
  *
  * @param a - First monomial comparison key.
  * @param b - Second monomial comparison key.
@@ -68,10 +68,10 @@ export class LexOrder extends Ordering {
    */
   readonly isGlobal: boolean = true;
   /**
-   * The comparison key for a monomial in this order.
+   * Encodes a monomial for comparison under this ordering.
    *
    * @param monomial - Exponent vector of the monomial.
-   * @returns The comparison key for a monomial in this order.
+   * @returns The monomial ordering key.
    * @see SymPy `sympy.polys.orderings.LexOrder.__call__`
    */
   key(monomial: readonly number[]): MonomialKey {
@@ -98,10 +98,10 @@ export class GradedLexOrder extends Ordering {
    */
   readonly isGlobal: boolean = true;
   /**
-   * The comparison key for a monomial in this order.
+   * Encodes a monomial for comparison under this ordering.
    *
    * @param monomial - Exponent vector of the monomial.
-   * @returns The comparison key for a monomial in this order.
+   * @returns The monomial ordering key.
    * @see SymPy `sympy.polys.orderings.GradedLexOrder.__call__`
    */
   key(monomial: readonly number[]): MonomialKey {
@@ -128,10 +128,10 @@ export class ReversedGradedLexOrder extends Ordering {
    */
   readonly isGlobal: boolean = true;
   /**
-   * The comparison key for a monomial in this order.
+   * Encodes a monomial for comparison under this ordering.
    *
    * @param monomial - Exponent vector of the monomial.
-   * @returns The comparison key for a monomial in this order.
+   * @returns The monomial ordering key.
    * @see SymPy `sympy.polys.orderings.ReversedGradedLexOrder.__call__`
    */
   key(monomial: readonly number[]): MonomialKey {
@@ -177,10 +177,10 @@ export class InverseOrder extends Ordering {
     this.isGlobal = false;
   }
   /**
-   * The comparison key for a monomial in this order.
+   * Encodes a monomial for comparison under this ordering.
    *
    * @param monomial - Exponent vector of the monomial.
-   * @returns The comparison key for a monomial in this order.
+   * @returns The monomial ordering key.
    * @see SymPy `sympy.polys.orderings.InverseOrder.__call__`
    */
   key(monomial: readonly number[]): MonomialKey {
@@ -288,29 +288,29 @@ export class ProductOrder {
     this.args = args;
   }
   /**
-   * The tuple of the keys of the selected exponents.
+   * Combines the ordering keys computed for the selected exponent groups.
    *
    * @param monomial - Exponent vector of the monomial.
-   * @returns The tuple of the keys of the selected exponents.
+   * @returns A tuple of component keys.
    * @see SymPy `sympy.polys.orderings.ProductOrder.__call__`
    */
   key(monomial: readonly number[]): MonomialKey[] {
     return this.args.map(([O, idx]) => O.key(idx.map((i) => at(monomial, i))));
   }
   /**
-   * Negative, zero or positive as a is smaller than, equal to or greater than b.
+   * Compares the exponent vectors using this monomial order.
    *
    * @param a - First operand.
    * @param b - Second operand.
-   * @returns A negative, zero or positive number according to the product order.
+   * @returns A negative, zero, or positive comparison result.
    */
   compare(a: readonly number[], b: readonly number[]): number {
     return compareMonomialKeys(this.key(a), this.key(b));
   }
   /**
-   * True when every ordering is global, false when none is, else 'unknown'.
+   * Tests the component orders for globality.
    *
-   * @returns True when every ordering is global, false when none is, else 'unknown'.
+   * @returns True if all are global, false if none are, otherwise `'unknown'`.
    * @see SymPy `sympy.polys.orderings.ProductOrder.is_global`
    */
   get isGlobal(): boolean | 'unknown' {
@@ -319,7 +319,7 @@ export class ProductOrder {
     return 'unknown';
   }
   /**
-   * The printable representation.
+   * Formats this object as text.
    *
    * @returns The formatted text.
    * @see SymPy `sympy.polys.orderings.ProductOrder.__str__`
@@ -330,13 +330,11 @@ export class ProductOrder {
 }
 
 /**
- * The product order of orderings
- * given by name, each on its own generators, e.g.
- * buildProductOrder([['grlex', x, y], ['grlex', z, t]], [x, y, z, t]).
+ * Combines named monomial orders on separate groups of generators.
  *
  * @param arg - Input value.
  * @param gens - Polynomial generators in the desired order.
- * @returns The product order of orderings given by name, each on its own generators, e.g. buildProductOrder([['grlex', x, y], ['grlex', z, t]], [x, y, z, t]).
+ * @returns The product order.
  * @throws RangeError when the specified generator or index is invalid or the requested monomial order is not recognized.
  * @see SymPy `sympy.polys.orderings.build_product_order`
  * @example
@@ -362,24 +360,22 @@ export function buildProductOrder(arg: readonly (readonly [string, ...Expr[]])[]
 }
 
 /**
- * The key function of an ordering given by name or object (SymPy
- * monomial_key): on exponent tuples, or, given generators, on expressions
- * (by the degrees of their polynomial in the generators).
+ * Constructs a comparison function for monomials or, when generators are supplied, for polynomial
+ * expressions.
  *
  * @param order - Monomial order used to compare terms.
- * @returns The key function of an ordering given by name or object (SymPy monomial_key): on exponent tuples, or, given generators, on expressions (by the degrees of their polynomial in the generators).
+ * @returns The ordering key function.
  * @throws RangeError when the requested monomial order is not recognized.
  * @see SymPy `sympy.polys.orderings.monomial_key`
  */
 export function monomialKey(order?: string | MonomialOrdering): (monomial: readonly number[]) => MonomialKey;
 /**
- * The key function of an ordering given by name or object (SymPy
- * monomial_key): on exponent tuples, or, given generators, on expressions
- * (by the degrees of their polynomial in the generators).
+ * Constructs a comparison function for monomials or, when generators are supplied, for polynomial
+ * expressions.
  *
  * @param order - Monomial order used to compare terms.
  * @param gens - Polynomial generators in the desired order.
- * @returns The key function of an ordering given by name or object (SymPy monomial_key): on exponent tuples, or, given generators, on expressions (by the degrees of their polynomial in the generators).
+ * @returns The ordering key function.
  * @throws RangeError when the requested monomial order is not recognized.
  * @see SymPy `sympy.polys.orderings.monomial_key`
  */
