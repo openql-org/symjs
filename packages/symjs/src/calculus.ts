@@ -291,3 +291,20 @@ import { at as _at_ } from './core/guard';
 _parserHooks_.constructors.set('Heaviside', (args) => _Heaviside_(_at_(args, 0), args[1]));
 _parserHooks_.constructors.set('DiracDelta', (args) => _DiracDelta_(_at_(args, 0), args[1]));
 _parserHooks_.constructors.set('SingularityFunction', (args) => _SingularityFunction_(_at_(args, 0), _at_(args, 1), _at_(args, 2)));
+// the unevaluated integral transforms in parsed strings
+import {
+  CosineTransform as _CosineTransform_, FourierTransform as _FourierTransform_, HankelTransform as _HankelTransform_,
+  InverseCosineTransform as _InverseCosineTransform_, InverseFourierTransform as _InverseFourierTransform_,
+  InverseHankelTransform as _InverseHankelTransform_, InverseLaplaceTransform as _InverseLaplaceTransform_,
+  InverseMellinTransform as _InverseMellinTransform_, InverseSineTransform as _InverseSineTransform_,
+  LaplaceTransform as _LaplaceTransform_, MellinTransform as _MellinTransform_, SineTransform as _SineTransform_,
+} from './integrals/transforms/index';
+for (const [name, Transform] of [
+  ['LaplaceTransform', _LaplaceTransform_], ['MellinTransform', _MellinTransform_], ['FourierTransform', _FourierTransform_],
+  ['InverseFourierTransform', _InverseFourierTransform_], ['SineTransform', _SineTransform_], ['InverseSineTransform', _InverseSineTransform_],
+  ['CosineTransform', _CosineTransform_], ['InverseCosineTransform', _InverseCosineTransform_],
+] as const) _parserHooks_.constructors.set(name, (args) => new Transform(_at_(args, 0), _at_(args, 1), _at_(args, 2)));
+_parserHooks_.constructors.set('HankelTransform', (args) => new _HankelTransform_(_at_(args, 0), _at_(args, 1), _at_(args, 2), _at_(args, 3)));
+_parserHooks_.constructors.set('InverseHankelTransform', (args) => new _InverseHankelTransform_(_at_(args, 0), _at_(args, 1), _at_(args, 2), _at_(args, 3)));
+_parserHooks_.constructors.set('InverseLaplaceTransform', (args) => new _InverseLaplaceTransform_(_at_(args, 0), _at_(args, 1), _at_(args, 2), args[3]));
+_parserHooks_.constructors.set('InverseMellinTransform', (args) => new _InverseMellinTransform_(_at_(args, 0), _at_(args, 1), _at_(args, 2), args[3], args[4]));

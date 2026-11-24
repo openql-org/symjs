@@ -757,3 +757,15 @@ it('dispatches powers to the base and keeps a unit term in an exponential', () =
   expect(pow(q, 2).equals(q.pow(2))).toBe(true);
   expect(String(sj.exp(add(1, x)))).toBe('exp(x + 1)');
 });
+
+describe('rational of JavaScript numbers', () => {
+  it('takes the exact binary value of a non-integer number, as SymPy Rational(float)', () => {
+    expect(String(rational(0.5))).toBe('1/2');
+    expect(String(rational(0.1))).toBe('3602879701896397/36028797018963968');
+    expect(String(rational(0.5, 3))).toBe('1/6');
+    expect(String(rational(1, 0.25))).toBe('4');
+    expect(String(rational(3n, 6))).toBe('1/2');
+    expect(() => rational(Number.NaN)).toThrow(RangeError);
+    expect(() => rational(1, 0)).toThrow(RangeError);
+  });
+});
