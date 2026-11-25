@@ -14,14 +14,15 @@ import { Add, Dummy, Expr, Integral, Order, Pow, Rational, Rel, S, Special, Sym 
 import type { ExprLike } from '../core/nodes';
 import { abs } from '../functions/elementary/elementary';
 import { add, exp, mul, pow, sympify } from '../core/ops';
-import { Eq, Ge, Le, piecewise, rel } from '../core/logic';
+import { Eq, Ge, Le, Lt, piecewise, rel } from '../core/logic';
+import { fact } from '../core/exprfacts';
 import { BoolOp, and } from '../core/boolalg';
 import { xreplace } from '../core/traverse';
 import { Lambda, LambdaNode } from '../core/lambda';
 import { NotImplementedError } from '../core/errors';
 import { asIndependent, isRationalFunction } from '../core/methods';
 import { at, cast, defined, first } from '../core/guard';
-import { EmptySet, FiniteSet, Interval, Reals, SetExpr, SetOp, asRelational, inf, interval, intersection, union } from '../sets/sets';
+import { EmptySet, FiniteSet, Interval, Reals, SetExpr, SetOp, asRelational, inf, interval, intersection, sup, union } from '../sets/sets';
 import { solveUnivariateInequality, solveset } from '../solvers/inequalities';
 import { integrate } from '../integrals/integrate';
 import { DiracDelta } from '../integrals/transforms/delta';
@@ -353,7 +354,11 @@ export abstract class SingleContinuousDistribution extends ContinuousDistributio
     const x = new Dummy('x', { real: true });
     const z = new Dummy('z', { real: true });
     const left = inf(this.set);
-    return Lambda(z, piecewise([integrateFromLeft(doit(this.pdf(x)), x, left, z), Ge(z, left)], [0, true]));
+    const right = sup(this.set);
+    const F = integrateFromLeft(doit(this.pdf(x)), x, left, z);
+    // the probability is complete above a finite upper end of the support
+    if (fact(right, 'finite') === true) return Lambda(z, piecewise([0, Lt(z, left)], [F, Le(z, right)], [1, true]));
+    return Lambda(z, piecewise([F, Ge(z, left)], [0, true]));
   }
   /**
    * Evaluates the cumulative distribution at the supplied value.

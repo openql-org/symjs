@@ -22,6 +22,8 @@ describe('Point of sympy.vector', () => {
     expect(str(p2)).toBe('p2');
     expect(latex(p2)).toBe('p2');
     expect(p2.parent).toBe(p1);
+    expect([p2.isRoot, N.origin.isRoot]).toEqual([false, true]);
+    expect(() => N.origin.parent).toThrow(RangeError);
     expect(p2.root).toBe(N.origin);
     expect(p2.position.key).toBe(mul(5, N.j).key);
     expect(str(p2.positionWrt(N.origin.locateNew('q', N.k)))).toBe('10*N.i + 5*N.j + (-1)*N.k');
@@ -43,7 +45,7 @@ describe('Point of sympy.vector', () => {
     const B = A.locateNew('B', A.i);
     const C = B.locateNew('C', A.j);
     const D = A.locateNew('D', A.k);
-    const parent = (s: InstanceType<typeof CoordSys3D>) => s.parentSystem;
+    const parent = (s: InstanceType<typeof CoordSys3D>) => (s.isRoot ? undefined : s.parentSystem);
     const root = (s: InstanceType<typeof CoordSys3D>) => s.rootSystem;
     const [i, path] = treePath(C, D, parent, root);
     expect(i).toBe(2);

@@ -306,7 +306,7 @@ export class DieDistribution extends SingleFiniteDistribution {
    * @see SymPy `sympy.stats.frv_types.DieDistribution.set`
    */
   override get set(): SetExpr {
-    if (this.isSymbolic) return intersection(Naturals0, interval(0, this.sides));
+    if (this.isSymbolic) return intersection(Naturals0, interval(1, this.sides));
     return finiteSet(...Array.from({ length: Number(asRational(this.sides).p) }, (_, i) => int(i + 1)));
   }
   /**

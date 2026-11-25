@@ -340,12 +340,30 @@ export class CoordSys3DNode extends CoordSysBase {
     return f.kind === 'rect' ? new TupleNode([new TupleNode(f.rotation.data), f.location]) : f.kind === 'name' ? f.name : f.lambda;
   }
   /**
-   * Identifies the coordinate system from which this one was constructed, when it has a parent.
+   * Tells whether the system was created without a parent, so that it is the root of its tree.
    *
-   * @returns The parent coordinate system, when present.
+   * @returns `true` when the system has no parent.
+   * @example
+   * ```ts
+   * import { CoordSys3D } from '@symjs/symjs';
+   *
+   * const A = CoordSys3D('A');
+   * A.isRoot; // => True
+   * A.locateNew('B', A.i).isRoot; // => False
+   * ```
+   */
+  override get isRoot(): boolean {
+    return this.#parent === undefined;
+  }
+  /**
+   * Identifies the coordinate system from which this one was constructed.
+   *
+   * @returns The parent coordinate system.
+   * @throws RangeError when the system is a root (see `isRoot`).
    * @see SymPy `sympy.vector.coordsysrect.CoordSys3D._parent`
    */
-  override get parentSystem(): CoordSys3DNode | undefined {
+  override get parentSystem(): CoordSys3DNode {
+    if (this.#parent === undefined) throw new RangeError(`${this.#name} is a root coordinate system and has no parent`);
     return this.#parent;
   }
   /**

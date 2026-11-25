@@ -49,6 +49,12 @@ export function treePath<T extends Expr>(from: T, to: T, parent: (t: T) => T | u
   return [index, fromPath];
 }
 
+/** The parent of a point, or undefined for a root. */
+function parentPoint(p: VectorPointNode): VectorPointNode | undefined {
+  const q = p.args[1];
+  return q instanceof VectorPointNode ? q : undefined;
+}
+
 /**
  * A point in 3-D space.
  *
@@ -95,13 +101,24 @@ export class VectorPointNode extends ExtensionExpr {
     return cast(at(this.args, 0), Vector, 'position');
   }
   /**
-   * Identifies the point relative to which the displacement is measured, when the point has a parent.
+   * Tells whether the point was created without a parent, so that it is the root of its tree.
    *
-   * @returns The reference point, when one is defined.
+   * @returns `true` when the point has no parent.
    */
-  get parent(): VectorPointNode | undefined {
-    const p = this.args[1];
-    return p instanceof VectorPointNode ? p : undefined;
+  get isRoot(): boolean {
+    return parentPoint(this) === undefined;
+  }
+  /**
+   * Identifies the point relative to which the displacement is measured.
+   *
+   * @returns The reference point.
+   * @throws RangeError when the point is a root (see `isRoot`).
+   * @see SymPy `sympy.vector.point.Point._parent`
+   */
+  get parent(): VectorPointNode {
+    const p = parentPoint(this);
+    if (p === undefined) throw new RangeError(`${String(this)} is a root point and has no parent`);
+    return p;
   }
   /**
    * Follows parent points to the top of the hierarchy.
@@ -124,12 +141,12 @@ export class VectorPointNode extends ExtensionExpr {
     if (!(otherIn instanceof VectorPointNode) && !(otherIn instanceof CoordSysBase)) throw new TypeError(`${String(otherIn)}is not a Point or CoordSys3D`);
     const o = cast(otherIn instanceof CoordSysBase ? otherIn.originPoint : otherIn, VectorPointNode, 'Point');
     if (o.key === this.key) return Vector.zero;
-    if (this.parent !== undefined && o.key === this.parent.key) return this.position;
-    if (o.parent !== undefined && o.parent.key === this.key) return mul(-1, o.position);
+    if (parentPoint(this)?.key === o.key) return this.position;
+    if (parentPoint(o)?.key === this.key) return mul(-1, o.position);
     const [rootIndex, path] = treePath<VectorPointNode>(
       this,
       o,
-      (p) => p.parent,
+      parentPoint,
       (p) => p.root,
     );
     let result: Expr = Vector.zero;

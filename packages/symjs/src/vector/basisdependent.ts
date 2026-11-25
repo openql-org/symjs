@@ -425,8 +425,10 @@ export abstract class CoordSysBase extends ExtensionExpr {
   abstract baseVectors(): readonly [BasisDependent, BasisDependent, BasisDependent];
   /** The base scalars x, y, z. */
   abstract baseScalars(): readonly [Sym, Sym, Sym];
-  /** The system this one is defined with respect to (SymPy _parent), or undefined for a root. */
-  abstract get parentSystem(): CoordSysBase | undefined;
+  /** Whether this system is a root, defined with respect to no other system. */
+  abstract get isRoot(): boolean;
+  /** The system this one is defined with respect to (SymPy _parent); a root has none and throws a RangeError. */
+  abstract get parentSystem(): CoordSysBase;
   /** The root of the tree of systems (SymPy _root). */
   abstract get rootSystem(): CoordSysBase;
   /** The origin of the system (a vector Point). */

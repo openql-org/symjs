@@ -494,6 +494,7 @@ describe('SymPy function names in parsed strings', () => {
     ['hyper((1, 2), (3,), x)', 'hyper((1, 2), (3,), x)'],
     ['chebyshevt_root(3, 0)', 'sqrt(3)/2'],
     ['motzkin(4)', '4'],
+    ['chebyshevu_root(3, 1)', '0'],
     ['adjoint(x)', 'conjugate(x)'],
     ['transpose(x)', 'x'],
   ])('%s', (src, expected) => {
@@ -504,5 +505,10 @@ describe('SymPy function names in parsed strings', () => {
   it('expands the parsed spherical Bessel function', () => {
     expect(sstr(sj.expandFunc(parse('jn(0, z)')))).toBe('sin(z)/z');
     expect(() => parse('hyper((1, 2), (3,), (x, y))')).toThrow(SyntaxError);
+    // (SymPy motzkin(n) of a symbol raises; the parse keeps it as a function)
+    expect(sstr(parse('motzkin(n)'))).toBe('motzkin(n)');
+    // SymPy: TypeError from Tuple(*ap)
+    expect(() => parse('hyper((1), (3,), x)')).toThrow(TypeError);
+    expect(() => parse('hyper((1, 2), 3, x)')).toThrow(TypeError);
   });
 });

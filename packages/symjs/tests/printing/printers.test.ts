@@ -10,6 +10,13 @@ import { sstr } from '../../src/printing/printers';
 const x = sj.symbol('x');
 
 describe('StrPrinter, sstrrepr, printLatex and multilineLatex', () => {
+  it('sstr of non-expression objects', () => {
+    // NoMatch is SymPy's None; other objects print through their own toString
+    expect(sstr(sj.NoMatch)).toBe('None');
+    expect(sstr([x, sj.NoMatch] as never)).toBe('[x, None]');
+    expect(sstr({ toString: () => 'obj' } as never)).toBe('obj');
+    expect(() => sstr({} as never)).toThrow(TypeError);
+  });
   it('StrPrinter and sstrrepr', () => {
     expect(new sj.StrPrinter().doprint(sj.add(x, 1))).toBe('x + 1');
     expect(new sj.StrPrinter({ order: 'lex' }).doprint([x, 'a', null])).toBe('[x, a, None]');

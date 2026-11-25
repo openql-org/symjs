@@ -48,7 +48,7 @@ describe('roundTwo', () => {
     // QQ<sqrt(2)/3> = QQ(sqrt(2)): the ring of integers ZZ[sqrt(2)] = ZZ[theta'/3] for theta' = 9*theta = 3*sqrt(2), discriminant 8
     // (SymPy builds a power basis of 9*x**2 - 2 and gets the discriminant 0)
     expect([String(ZK), String(dK)]).toEqual(['Submodule[[3, 0], [0, 1]]/3', '8']);
-    expect((ZK.parent as PowerBasis).K).toBe(K);
+    expect((ZK.parent as PowerBasis).numberField).toBe(K);
   });
   it('rejects polynomials that are not irreducible over ZZ or QQ', () => {
     const y = new Sym('y');

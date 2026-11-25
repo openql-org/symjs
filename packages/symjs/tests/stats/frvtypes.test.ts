@@ -99,7 +99,7 @@ describe('Die (SymPy test_dice)', () => {
     expect(dens).toBeInstanceOf(Density);
     expect(str(dens as Expr)).toBe('Density(DieDistribution(n))');
     expect(dictStr((dens as Density).subs(n, 4) instanceof Density ? ((dens as Density).subs(n, 4) as Density).compute() : undefined)).toBe('{1: 1/4, 2: 1/4, 3: 1/4, 4: 1/4}');
-    expect(str(dist(D).set)).toBe('Intersection(Interval(0, n), Naturals0)');
+    expect(str(dist(D).set)).toBe('Intersection(Interval(1, n), Naturals0)');
     expect(str(dist(D).low)).toBe('1');
     expect(str(dist(D).high)).toBe('n');
     // SymPy: Sum(Piecewise((k/n, k <= n), (0, True)), (k, 1, n)) (its Sum folds the Piecewise and its

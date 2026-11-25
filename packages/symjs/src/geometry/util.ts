@@ -21,7 +21,7 @@ import { ordered } from '../core/match';
 import { ExprMap } from '../core/exprmap';
 import { SymFunction } from '../core/undef';
 import { NotImplementedError } from '../core/errors';
-import { at, cast, defined, expectType, pair } from '../core/guard';
+import { at, cast, defined, pair } from '../core/guard';
 import { diff } from '../calculus/diff';
 import { nsimplify } from '../numeric/nfloat';
 import { precToDps } from '../numeric/mpf';
@@ -277,10 +277,11 @@ export function closestPoints(...args: PointInput[]): Set<[PointNode, PointNode]
 
 /**
  * Finds the smallest convex figure containing all the supplied points, segments and polygons.
- * With `polygon: false`, returns the upper and lower hull chains for a nondegenerate polygon.
+ * With `polygon: false`, returns the upper and lower hull chains; a hull that is a point or a
+ * segment is returned as that point or segment (SymPy returns it paired with `None`).
  *
  * @param args - Points or entities. Set `polygon` to false to obtain the upper and lower hull chains.
- * @returns The hull as a point, segment or polygon, or its chains when requested.
+ * @returns The hull as a point, segment or polygon, or the chains of a polygon hull when requested.
  * @throws NotImplementedError when a supplied entity has no supported hull construction.
  * @throws RangeError when the input is not planar.
  * @see SymPy `sympy.geometry.util.convex_hull`
@@ -291,11 +292,16 @@ export function closestPoints(...args: PointInput[]): Set<[PointNode, PointNode]
  * convexHull([1, 1], [1, 2], [3, 1], [-5, 2], [15, 4]); // => Polygon(Point2D(-5, 2), Point2D(1, 1), Point2D(3, 1), Point2D(15, 4))
  * ```
  */
-export function convexHull(...args: (GeometryEntity | PointInput | { polygon?: boolean })[]): GeometryEntity | [GeometryEntity | PointNode[], PointNode[] | undefined] {
+export function convexHull(...args: (GeometryEntity | PointInput | { polygon?: boolean })[]): GeometryEntity | [PointNode[], PointNode[]] {
   const last = args[args.length - 1];
   const optsObj = typeof last === 'object' && !(last instanceof Expr) && !Array.isArray(last) ? last : undefined;
   const polygon = !(optsObj !== undefined && 'polygon' in optsObj && optsObj.polygon === false);
-  const items = optsObj === undefined ? args : args.slice(0, -1);
+  const items = args.filter((a): a is GeometryEntity | PointInput => a !== optsObj);
+  return hullOrChains(items, polygon);
+}
+
+/** The convex hull, or with polygon false its upper and lower chains (a point or segment when degenerate). */
+function hullOrChains(items: readonly (GeometryEntity | PointInput)[], polygon: boolean): GeometryEntity | [PointNode[], PointNode[]] {
   const pts: PointNode[] = [];
   for (const a of items) {
     let e: GeometryEntity;
@@ -309,11 +315,8 @@ export function convexHull(...args: (GeometryEntity | PointInput | { polygon?: b
   let p = uniqPoints(pts);
   if (p.some((x) => x.args.length !== 2)) throw new RangeError('Can only compute the convex hull in two dimensions');
   const seg = (a: PointNode, b: PointNode): GeometryEntity => defined(utilClasses.segment, 'Segment')(a, b);
-  if (p.length === 1) return polygon ? at(p, 0) : [at(p, 0), undefined];
-  if (p.length === 2) {
-    const s = seg(at(p, 0), at(p, 1));
-    return polygon ? s : [s, undefined];
-  }
+  if (p.length === 1) return at(p, 0);
+  if (p.length === 2) return seg(at(p, 0), at(p, 1));
   const orientation = (a: PointNode, b: PointNode, c: PointNode): Expr =>
     add(mul(add(b.coordinate(1), mul(-1, a.coordinate(1))), add(c.coordinate(0), mul(-1, a.coordinate(0)))), mul(-1, add(b.coordinate(0), mul(-1, a.coordinate(0))), add(c.coordinate(1), mul(-1, a.coordinate(1)))));
   const U: PointNode[] = [];
@@ -327,10 +330,7 @@ export function convexHull(...args: (GeometryEntity | PointInput | { polygon?: b
   }
   U.reverse();
   const hull = [...L, ...U.slice(1, -1)];
-  if (hull.length === 2) {
-    const s = seg(at(hull, 0), at(hull, 1));
-    return polygon ? s : [s, undefined];
-  }
+  if (hull.length === 2) return seg(at(hull, 0), at(hull, 1));
   if (polygon) return defined(utilClasses.polygon, 'Polygon')(...hull);
   U.reverse();
   return [U, L];
@@ -355,13 +355,12 @@ export function farthestPoints(...args: PointInput[]): Set<[PointNode, PointNode
   const p = distinct2D(args);
   const hypot = hypotFor(p);
   const pairs: [PointNode, PointNode][] = [];
-  const [U, L] = expectType(convexHull(...p, { polygon: false }), (v): v is [GeometryEntity | PointNode[], PointNode[] | undefined] => Array.isArray(v), 'hull');
-  if (L === undefined) {
-    if (U instanceof PointNode) throw new RangeError('At least two distinct points must be given.');
-    const seg = cast(U, GeometryEntity, 'Segment');
-    pairs.push([toPoint(at(seg.args, 0)), toPoint(at(seg.args, 1))]);
+  const hull = hullOrChains(p, false);
+  if (hull instanceof GeometryEntity) {
+    if (hull instanceof PointNode) throw new RangeError('At least two distinct points must be given.');
+    pairs.push([toPoint(at(hull.args, 0)), toPoint(at(hull.args, 1))]);
   } else {
-    const up = expectType(U, (v): v is PointNode[] => Array.isArray(v), 'upper hull');
+    const [up, L] = hull;
     let i = 0;
     let j = L.length - 1;
     while (i < up.length - 1 || j > 0) {

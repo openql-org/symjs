@@ -844,10 +844,14 @@ export class InverseMellinTransform extends GenericIntegralTransform {
   /**
    * The lower and upper real-part bounds of the fundamental strip.
    *
-   * @returns The pair of bounds, with omitted endpoints left unspecified.
+   * @returns The pair of bounds; an omitted lower end is `-oo` and an omitted upper end is `oo`.
    * @see SymPy `sympy.integrals.transforms.InverseMellinTransform.fundamental_strip`
    */
-  get fundamentalStrip(): [Expr | undefined, Expr | undefined] {
+  get fundamentalStrip(): [Expr, Expr] {
+    const [a, b] = this.#stripOrUndefined();
+    return [a ?? S.NegativeInfinity, b ?? S.Infinity];
+  }
+  #stripOrUndefined(): [Expr | undefined, Expr | undefined] {
     const [a, b] = [at(this.args, 3), at(this.args, 4)];
     return [a === NONE_SENTINEL ? undefined : a, b === NONE_SENTINEL ? undefined : b];
   }
@@ -864,7 +868,7 @@ export class InverseMellinTransform extends GenericIntegralTransform {
     return new InverseMellinTransform(...transformArgs(args), args[3], args[4]);
   }
   protected withFunction(f: Expr): IntegralTransform {
-    const [a, b] = this.fundamentalStrip;
+    const [a, b] = this.#stripOrUndefined();
     return new InverseMellinTransform(f, this.functionVariable, this.transformVariable, a, b);
   }
   /**
@@ -882,7 +886,7 @@ export class InverseMellinTransform extends GenericIntegralTransform {
   protected computeTransform(F: Expr, s: Sym, x: Sym, hints: TransformHints): TransformResult {
     if (some(F, (n) => n instanceof Fn && n.has(s) && !ALLOWED.has(n.name))) throw new IntegralTransformError('Inverse Mellin', F, 'Component not recognised');
     if (some(F, (n) => n instanceof Pow && !isExpPow(n) && n.base.has(s) && !n.exp.has(s) && !isRat(n.exp))) throw new IntegralTransformError('Inverse Mellin', F, 'Component not recognised');
-    const r = inverseMellinTransformImpl(F, s, x, this.fundamentalStrip);
+    const r = inverseMellinTransformImpl(F, s, x, this.#stripOrUndefined());
     return hints.noconds === false ? r : r[0];
   }
 }

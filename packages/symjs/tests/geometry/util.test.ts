@@ -78,9 +78,10 @@ describe('convex hulls, centroids and point pairs', () => {
   it('convex_hull (SymPy test_convex_hull)', () => {
     expect(() => convexHull(Point(0, 0), 3 as never)).toThrow(TypeError);
     expect(s(convexHull([1, -1], [1, -2], [3, -1], [-5, -2], [15, -4], { polygon: false }))).toBe('[[Point2D(-5, -2), Point2D(1, -1), Point2D(3, -1), Point2D(15, -4)], [Point2D(-5, -2), Point2D(15, -4)]]');
-    expect(s(convexHull(Point(0, 0), Point(1, 1), Point(2, 2), { polygon: false }))).toBe('[Segment2D(Point2D(0, 0), Point2D(2, 2)), undefined]'.replace('undefined', 'undefined'));
-    expect(s(convexHull(Point(0, 0), { polygon: false }))).toBe('[Point2D(0, 0), undefined]');
-    expect(s(convexHull(Point(0, 0), Point(1, 0), { polygon: false }))).toBe('[Segment2D(Point2D(0, 0), Point2D(1, 0)), undefined]');
+    // SymPy returns the point or segment and None
+    expect(s(convexHull(Point(0, 0), Point(1, 1), Point(2, 2), { polygon: false }))).toBe('Segment2D(Point2D(0, 0), Point2D(2, 2))');
+    expect(s(convexHull(Point(0, 0), { polygon: false }))).toBe('Point2D(0, 0)');
+    expect(s(convexHull(Point(0, 0), Point(1, 0), { polygon: false }))).toBe('Segment2D(Point2D(0, 0), Point2D(1, 0))');
     expect(s(convexHull(Point(0, 0), Point(1, 1), Point(2, 2)))).toBe('Segment2D(Point2D(0, 0), Point2D(2, 2))');
     expect(() => convexHull(Point(0, 0, 0), Point(1, 1, 1))).toThrow('Can only compute the convex hull in two dimensions');
     expect(() => convexHull(Circle([0, 0], 1))).toThrow('Convex hull for Circle not implemented.');

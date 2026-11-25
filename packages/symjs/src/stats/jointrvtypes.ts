@@ -746,7 +746,7 @@ export function NormalGamma(sym: string | Sym, mu: ExprLike, lamda: ExprLike, al
  *
  * @see SymPy `sympy.stats.joint_rv_types.MultivariateBetaDistribution`
  */
-export class MultivariateBetaDistribution extends JointDistribution {
+export class MultivariateBetaDistribution extends JointDistributionWithMarginal {
   /**
    * Constructs a new `MultivariateBetaDistribution`.
    *
@@ -804,6 +804,28 @@ export class MultivariateBetaDistribution extends JointDistribution {
     const alpha = entries(this.alpha);
     const B = mul(...alpha.map((a) => gamma(a)), pow(gamma(add(...alpha)), -1));
     return mul(...alpha.map((a, i) => pow(sympify(at(syms, i)), sub(a, 1))), pow(B, -1));
+  }
+  /**
+   * The density of the selected proportions. The remaining categories are merged into one, so the
+   * selected proportions and their complement follow a Dirichlet law; one proportion follows
+   * `Beta(alpha_i, sum(alpha) - alpha_i)`.
+   *
+   * @param indices - Component indices to retain.
+   * @param sym - Name or symbol for the random vector.
+   * @returns The marginal density.
+   */
+  marginalDistributionOf(indices: readonly Expr[], sym: Sym): Expr {
+    const alpha = entries(this.alpha);
+    const flat = indices.flatMap((i) => (i instanceof TupleNode ? [...i.args] : [i]));
+    const kept = flat.map((i) => Number(i.toString()));
+    const v = flat.map((i) => new Indexed([sym, i]));
+    const rest = alpha.filter((_, i) => !kept.includes(i));
+    if (!rest.length) return Lambda(v, this.pdf(...alpha.map((_, i) => at(v, kept.indexOf(i)))));
+    const a = kept.map((i) => at(alpha, i));
+    const r = add(...rest);
+    const B = mul(...a.map((ai) => gamma(ai)), gamma(r), pow(gamma(add(...alpha)), -1));
+    const density = mul(...a.map((ai, j) => pow(at(v, j), sub(ai, 1))), pow(sub(1, add(...v)), sub(r, 1)), pow(B, -1));
+    return Lambda(v, density);
   }
 }
 

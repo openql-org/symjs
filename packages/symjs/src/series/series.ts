@@ -17,7 +17,7 @@ import { bernoulliNumber } from '../functions/special/special';
 import { besselLocalExpansion } from '../functions/special/bessel';
 import { EssentialSingularity, Expander, SeriesError, type PS, isE } from './puiseux';
 import { isNegative, isPositive, isReal, isZero } from '../core/assumptions';
-import { at, cast, first, getOrThrow, last } from '../core/guard';
+import { at, cacheSet, cast, first, getOrThrow, last } from '../core/guard';
 import { parserHooks } from '../parsing/parser';
 import { diffHooks } from '../calculus/diff';
 import { DefinedFunctionCall } from '../core/defun';
@@ -1144,8 +1144,7 @@ function leadingDecides(quotient: Expr, variable: Sym, point: Expr): boolean | u
   } catch {
     // Essential singularities require the limit algorithms.
   }
-  if (leadingCache.size >= 4096) leadingCache.clear();
-  leadingCache.set(key, decided);
+  cacheSet(leadingCache, key, decided, 4096);
   return decided;
 }
 

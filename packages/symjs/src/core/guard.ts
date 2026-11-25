@@ -54,3 +54,9 @@ export function expectType<T>(v: unknown, guard: (x: unknown) => x is T, what = 
 export function pair<T>(xs: ArrayLike<T>): [T, T] {
   return [at(xs, 0), at(xs, 1)];
 }
+
+/** Stores a value in a memo cache, emptying the cache first once it holds `max` entries. */
+export function cacheSet<K, V>(cache: Map<K, V>, key: K, value: V, max: number): void {
+  if (cache.size >= max) cache.clear();
+  cache.set(key, value);
+}

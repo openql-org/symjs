@@ -153,10 +153,8 @@ export { ff, rf } from './functions/combinatorial/factorials';
 // Mod, KroneckerDelta and LeviCivita in parsed strings: parsing may not import the special functions
 import { parserHooks as _parserHooks_ } from './parsing/parser';
 import { Mod as _Mod_ } from './functions/mod';
-import { KroneckerDelta as _KroneckerDelta_ } from './functions/special/hyper';
 import { LeviCivita as _LeviCivita_ } from './functions/special/tensorfunctions';
 _parserHooks_.constructors.set('Mod', (args) => _Mod_(...args));
-_parserHooks_.constructors.set('KroneckerDelta', (args) => _KroneckerDelta_(_at_(args, 0), _at_(args, 1), args[2]));
 _parserHooks_.constructors.set('LeviCivita', (args) => _LeviCivita_(...args));
 import { at as _at_ } from './core/guard';
 // hyper, the Chebyshev roots and motzkin in parsed strings
@@ -166,11 +164,12 @@ import { motzkin as _motzkin_ } from './functions/combinatorial/numbers';
 import { Rational as _Rational_, type Expr as _ExprT_ } from './core/nodes';
 import { SymFunction as _SymFunction_ } from './core/undef';
 const _isTuple_ = (a: _ExprT_ | readonly _ExprT_[]): a is readonly _ExprT_[] => Array.isArray(a);
-const _tuple_ = (a: _ExprT_ | readonly _ExprT_[]): readonly _ExprT_[] => (_isTuple_(a) ? a : [a]);
 _parserHooks_.tupleConstructors.set('hyper', (args) => {
-  const z = _at_(args, 2);
+  const [ap, bq, z] = [_at_(args, 0), _at_(args, 1), _at_(args, 2)];
+  // (SymPy: a TypeError from Tuple(*ap) for a parameter list that is not a tuple)
+  if (!_isTuple_(ap) || !_isTuple_(bq)) throw new TypeError('hyper() takes tuples as its first two arguments');
   if (_isTuple_(z)) throw new SyntaxError('hyper() takes an expression as its third argument');
-  return _hyper_(_tuple_(_at_(args, 0)), _tuple_(_at_(args, 1)), z);
+  return _hyper_(ap, bq, z);
 });
 _parserHooks_.constructors.set('chebyshevt_root', (args) => _chebyshevtRoot_(_at_(args, 0), _at_(args, 1)));
 _parserHooks_.constructors.set('chebyshevu_root', (args) => _chebyshevuRoot_(_at_(args, 0), _at_(args, 1)));

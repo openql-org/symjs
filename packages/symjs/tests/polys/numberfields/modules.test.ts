@@ -54,9 +54,11 @@ describe('PowerBasis and Submodule', () => {
   it('prints and multiplies basis elements', () => {
     expect([s(A), s(B), A.n, B.n]).toEqual([m.A, m.B, 4, 4]);
     expect(tab(A.multTab(), 4)).toEqual(m.multab);
-    expect(A.parent).toBeUndefined();
-    expect(A.numberField).toBeUndefined();
-    expect(B.numberField).toBeUndefined();
+    expect(A.isRoot).toBe(true);
+    expect(B.isRoot).toBe(false);
+    expect(() => A.parent).toThrow(RangeError);
+    expect(() => A.numberField).toThrow(RangeError);
+    expect(() => B.numberField).toThrow(RangeError);
     expect([A.startsWithUnity(), B.startsWithUnity(), C.startsWithUnity()]).toEqual([true, false, false]);
     expect(A.equals(new PowerBasis(poly('x**4 + x**3 + x**2 + x + 1')))).toBe(true);
     expect(A.equals(B)).toBe(false);

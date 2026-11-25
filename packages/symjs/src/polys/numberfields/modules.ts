@@ -109,13 +109,21 @@ export abstract class Module {
    */
   abstract multTab(): MultTab;
   /**
-   * Identifies the enclosing module, when present. A power basis is at the root of its module
-   * hierarchy.
+   * Tells whether the module is a power basis, the root of its module hierarchy.
    *
-   * @returns The containing module when one exists.
+   * @returns `true` for a power basis.
+   */
+  get isRoot(): boolean {
+    return false;
+  }
+  /**
+   * Identifies the enclosing module.
+   *
+   * @returns The containing module.
+   * @throws RangeError when the module is a power basis, which has no parent (see `isRoot`).
    * @see SymPy `sympy.polys.numberfields.modules.Module.parent`
    */
-  abstract get parent(): Module | undefined;
+  abstract get parent(): Module;
   /**
    * Expresses an element in the integral basis of this module.
    *
@@ -162,8 +170,7 @@ export abstract class Module {
    * @see SymPy `sympy.polys.numberfields.modules.Module.ancestors`
    */
   ancestors(includeSelf = false): Module[] {
-    const c = this.parent;
-    const a = c === undefined ? [] : c.ancestors(true);
+    const a = this.isRoot ? [] : this.parent.ancestors(true);
     if (includeSelf) a.push(this);
     return a;
   }
@@ -192,13 +199,14 @@ export abstract class Module {
     return nca;
   }
   /**
-   * The number field of the power basis at the root, if it was made from one.
+   * The number field of the power basis at the root.
    *
-   * @returns The associated algebraic field, when specified.
+   * @returns The algebraic field the power basis was made from.
+   * @throws RangeError when the power basis was made from a polynomial rather than a number field.
    * @see SymPy `sympy.polys.numberfields.modules.Module.number_field`
    */
-  get numberField(): AlgebraicField | undefined {
-    return this.powerBasisAncestor().K;
+  get numberField(): AlgebraicField {
+    return this.powerBasisAncestor().numberField;
   }
   /**
    * A column vector over ZZ of length n.
@@ -321,7 +329,8 @@ const isMonicOverZZ = (T: Poly): boolean => T.allCoeffs().every((c) => c instanc
  */
 export class PowerBasis extends Module {
   /**
-   * The number field, when the basis was made from one.
+   * @internal The number field, or undefined for a basis made from a polynomial; the public
+   * accessor is `numberField`.
    *
    * @see SymPy `sympy.polys.numberfields.modules.PowerBasis.K`
    */
@@ -368,22 +377,33 @@ export class PowerBasis extends Module {
     this.degree = this.T.degree();
   }
   /**
-   * Identifies the algebraic field from which the basis was constructed, when supplied.
+   * Identifies the algebraic field from which the basis was constructed.
    *
-   * @returns The associated algebraic field, when specified.
+   * @returns The associated algebraic field.
+   * @throws RangeError when the basis was made from a polynomial rather than a number field.
    * @see SymPy `sympy.polys.numberfields.modules.PowerBasis.number_field`
    */
-  get numberField(): AlgebraicField | undefined {
+  override get numberField(): AlgebraicField {
+    if (this.K === undefined) throw new RangeError('the power basis was made from a polynomial, not from a number field');
     return this.K;
+  }
+  /**
+   * A power basis is the root of the module hierarchy.
+   *
+   * @returns `true`.
+   */
+  override get isRoot(): boolean {
+    return true;
   }
   /**
    * A power basis is the root of the module hierarchy and has no parent.
    *
-   * @returns No enclosing module.
+   * @returns Never returns.
+   * @throws RangeError always.
    * @see SymPy `sympy.polys.numberfields.modules.PowerBasis.parent`
    */
-  get parent(): undefined {
-    return undefined;
+  get parent(): never {
+    throw new RangeError('a power basis is the root of its module hierarchy and has no parent');
   }
   /**
    * Locates the power basis at the root of the chain of parent modules.
@@ -1381,7 +1401,7 @@ export class PowerBasisElement extends ModuleElement {
    * @see SymPy `sympy.polys.numberfields.modules.PowerBasisElement.generator`
    */
   get generator(): Expr {
-    const K = this.module.numberField;
+    const K = this.module.K;
     return K?.ext.alias ?? first(this.T.gens);
   }
   /**
@@ -1392,7 +1412,7 @@ export class PowerBasisElement extends ModuleElement {
    * @see SymPy `sympy.polys.numberfields.modules.PowerBasisElement.as_expr`
    */
   asExpr(x?: Expr): Expr {
-    const alias = this.module.numberField?.ext.alias;
+    const alias = this.module.K?.ext.alias;
     if (x === undefined && alias !== undefined) return this.inFieldGenerator(alias);
     return this.poly(x ?? this.generator).asExpr();
   }
@@ -1455,7 +1475,7 @@ export class PowerBasisElement extends ModuleElement {
    * @see SymPy `sympy.polys.numberfields.modules.PowerBasisElement.to_alg_num`
    */
   toAlgNum(): AlgebraicNumber {
-    const K = this.module.numberField;
+    const K = this.module.K;
     if (K) return K.toAlgNum(this.toANP());
     throw new StructureError('No associated AlgebraicField');
   }

@@ -169,6 +169,8 @@ describe('CoordSys3D (SymPy test_coordsysrect)', () => {
     const A = CoordSys3D('a');
     const C = A.createNew('c', 'spherical');
     expect(C.parentSystem).toBe(A);
+    expect([A.isRoot, C.isRoot]).toEqual([true, false]);
+    expect(() => A.parentSystem).toThrow(RangeError);
     expect(tuple(C.transformationToParent())).toBe('(c.r*sin(c.theta)*cos(c.phi), c.r*sin(c.phi)*sin(c.theta), c.r*cos(c.theta))');
     expect(tuple(C.transformationFromParent())).toBe('(sqrt(a.x**2 + a.y**2 + a.z**2), acos(a.z/sqrt(a.x**2 + a.y**2 + a.z**2)), atan2(a.y, a.x))');
     expect(() => A.transformationFromParent()).toThrow('no parent coordinate system');

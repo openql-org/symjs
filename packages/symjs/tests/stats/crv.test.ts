@@ -44,7 +44,7 @@ describe('continuous probability spaces (SymPy crv) 1', () => {
   it("E evaluate False", () => expect(show(E(Xn, undefined, { evaluate: false }))).toBe("Expectation(x)"));
   it("E evaluate False doit", () => expect(show(rewrite(Expectation(Xn), 'Integral'))).toBe("Integral(sqrt(2)*x*exp(-x**2/2)/(2*sqrt(pi)), (x, -oo, oo))"));
   it("E exp", () => expect(show(E(exp(neg(Exponential('e', 1)))))).toBe("1/2"));
-  it("cdf computed", () => expect(show(ap(cdf(Reciprocal('r', 1, 2)), z))).toBe("Piecewise((log(z)/log(2), z >= 1), (0, True))"));
+  it("cdf computed", () => expect(show(ap(cdf(Reciprocal('r', 1, 2)), z))).toBe("Piecewise((0, z < 1), (log(z)/log(2), z <= 2), (1, True))"));
   it("quantile computed", () => expect(show(ap(quantile(PowerFunction('w', 2, 0, 1)), p))).toBe('Piecewise((Intersection({-sqrt(p), sqrt(p)}, Interval(0, 1)), (p >= 0) & (p <= 1)), (nan, True))'));
 });
 

@@ -140,7 +140,7 @@ describe('InverseLaplaceTransform object', () => {
     const T = new InverseLaplaceTransform(Ps('1/s'), s, t);
     expect(InverseLaplaceTransform.transformName).toBe('Inverse Laplace');
     expect(T.transformName).toBe('Inverse Laplace');
-    expect(T.fundamentalPlane).toBeUndefined();
+    expect(() => T.fundamentalPlane).toThrow(RangeError);
     expect(String(new InverseLaplaceTransform(Ps('1/s'), s, t, a).fundamentalPlane)).toBe('a');
     // SymPy: -I*Integral(exp(s*t)/s, (s, _c - oo*I, _c + oo*I))/(2*pi)
     expect(String(T.asIntegral)).toBe('-I*Integral(exp(s*t)/s, (s, _c - oo*I, _c + oo*I))/(2*pi)');

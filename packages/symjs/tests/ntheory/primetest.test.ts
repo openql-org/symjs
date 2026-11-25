@@ -51,7 +51,9 @@ describe('factor cache', () => {
   });
 
   it('LRU size limit and external source', () => {
+    expect(new FactorCache().maxsize).toBe(Infinity);
     const c = new FactorCache(2);
+    expect(c.maxsize).toBe(2);
     c.set(15, 5);
     c.set(21, 7);
     c.get(15);
@@ -61,6 +63,9 @@ describe('factor cache', () => {
     c.maxsize = 1;
     expect([...c.keys()]).toEqual([35n]);
     expect(() => (c.maxsize = 0)).toThrow(RangeError);
+    c.maxsize = Infinity;
+    expect(c.maxsize).toBe(Infinity);
+    c.maxsize = 1;
     c.cacheClear();
     expect(c.size).toBe(0);
     class Ext extends FactorCache {

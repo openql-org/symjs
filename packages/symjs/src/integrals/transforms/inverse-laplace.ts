@@ -84,12 +84,18 @@ export class InverseLaplaceTransform extends IntegralTransform {
     return '\\mathcal{L}^{-1}';
   }
   /**
-   * The optional real-part boundary of the Laplace convergence half-plane.
+   * The real-part boundary of the Laplace convergence half-plane given at construction.
    *
-   * @returns The convergence boundary when supplied.
+   * @returns The convergence boundary.
+   * @throws RangeError when no plane was given; the transform then infers it.
    * @see SymPy `sympy.integrals.laplace.InverseLaplaceTransform.fundamental_plane`
    */
-  get fundamentalPlane(): Expr | undefined {
+  get fundamentalPlane(): Expr {
+    const p = this.#planeOrUndefined();
+    if (p === undefined) throw new RangeError('no fundamental plane was given');
+    return p;
+  }
+  #planeOrUndefined(): Expr | undefined {
     const p = at(this.args, 3);
     return p === NONE_SENTINEL ? undefined : p;
   }
@@ -125,7 +131,7 @@ export class InverseLaplaceTransform extends IntegralTransform {
    */
   doit(hints: TransformHints = {}): Expr | InverseLaplacePair {
     const s = this.functionVariable;
-    const r: InverseLaplacePair = s instanceof Sym ? inverseLaplaceTransformImpl(this.function, s, this.transformVariable, this.fundamentalPlane, hints.simplify ?? false, true) : [this, S.true];
+    const r: InverseLaplacePair = s instanceof Sym ? inverseLaplaceTransformImpl(this.function, s, this.transformVariable, this.#planeOrUndefined(), hints.simplify ?? false, true) : [this, S.true];
     return hints.noconds === false ? r : r[0];
   }
 }

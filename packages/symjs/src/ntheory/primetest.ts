@@ -465,27 +465,26 @@ export class FactorCache {
   }
 
   /**
-   * Limits the number of entries retained in the cache. An omitted limit leaves its capacity
-   * unbounded.
+   * Limits the number of entries retained in the cache.
    *
-   * @returns The capacity of the cache, if bounded.
+   * @returns The capacity of the cache; `Infinity` when it is unbounded.
    * @see SymPy `sympy.ntheory.factor_.FactorCache.maxsize`
    */
-  get maxsize(): number | undefined {
-    return this.maxsizeValue;
+  get maxsize(): number {
+    return this.maxsizeValue ?? Infinity;
   }
 
   /**
    * Limits the number of entries retained in the cache. An omitted limit leaves its capacity
    * unbounded.
    *
-   * @param value - Positive capacity, or omit the value for an unbounded cache.
+   * @param value - Positive capacity; `Infinity` or `undefined` for an unbounded cache.
    * @throws RangeError when the specified cache size is not positive.
    * @see SymPy `sympy.ntheory.factor_.FactorCache.maxsize`
    */
   set maxsize(value: number | undefined) {
-    if (value !== undefined && value <= 0) throw new RangeError('maxsize must be None or a non-negative integer.');
-    this.maxsizeValue = value;
+    if (value !== undefined && !(value > 0)) throw new RangeError('maxsize must be None or a non-negative integer.');
+    this.maxsizeValue = value === Infinity ? undefined : value;
     if (value !== undefined) this.trim(value);
   }
 

@@ -764,6 +764,7 @@ describe('rational of JavaScript numbers', () => {
     expect(String(rational(0.1))).toBe('3602879701896397/36028797018963968');
     expect(String(rational(0.5, 3))).toBe('1/6');
     expect(String(rational(1, 0.25))).toBe('4');
+    expect(String(rational(3n, 0.5))).toBe('6');
     expect(String(rational(3n, 6))).toBe('1/2');
     expect(() => rational(Number.NaN)).toThrow(RangeError);
     expect(() => rational(1, 0)).toThrow(RangeError);

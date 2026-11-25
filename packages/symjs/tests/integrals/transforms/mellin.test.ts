@@ -418,3 +418,13 @@ it('transforms unevaluated one-argument Heaviside calls and their power weights'
   expect(transform(mul(step(above), exp(x.neg())))).toBe('(-(s*lowergamma(s, 1) - gamma(s + 1))/s, (-oo, oo), True)');
   expect(transform(mul(step(below), exp(x.neg())))).toBe('(lowergamma(s, 1), (0, oo), True)');
 });
+
+describe('InverseMellinTransform.fundamentalStrip', () => {
+  it('gives -oo and oo for omitted ends', () => {
+    const [s, x] = [new Sym('s'), new Sym('x')];
+    const F = parse('gamma(s)');
+    expect(new InverseMellinTransform(F, s, x, undefined, 1).fundamentalStrip.map(String)).toEqual(['-oo', '1']);
+    expect(new InverseMellinTransform(F, s, x, 0, undefined).fundamentalStrip.map(String)).toEqual(['0', 'oo']);
+    expect(new InverseMellinTransform(F, s, x, 0, 1).fundamentalStrip.map(String)).toEqual(['0', '1']);
+  });
+});

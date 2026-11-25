@@ -9,7 +9,7 @@
  * Stirling / Euler-Maclaurin expansions after shifting the argument.
  */
 
-import { at, expectType } from '../core/guard';
+import { at, cacheSet, expectType } from '../core/guard';
 import * as F from './mpf';
 import type { Mpf } from './mpf';
 import { ONE, ZERO } from './mpf';
@@ -179,9 +179,8 @@ export function cgamma(z: Mpc, prec: number): Mpc {
   const key = `${z[0].man.toString(16)},${z[0].exp},${z[1].man.toString(16)},${z[1].exp},${prec}`;
   const hit = gammaCache.get(key);
   if (hit) return hit;
-  if (gammaCache.size >= 4096) gammaCache.clear();
   const g = gammaUncached(z, prec);
-  gammaCache.set(key, g);
+  cacheSet(gammaCache, key, g, 4096);
   return g;
 }
 

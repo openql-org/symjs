@@ -1210,8 +1210,7 @@ function powSpecial(b: Expr, e: Expr): Expr | undefined {
 }
 
 /** The square root of a nonnegative rational when it is rational. */
-function rationalSqrt(v: Num): Rational | undefined {
-  if (!(v instanceof Rational) || v.isNegative) return undefined;
+function rationalSqrt(v: Rational): Rational | undefined {
   const p = iroot(v.p, 2n), q = iroot(v.q, 2n);
   return p * p === v.p && q * q === v.q ? Rational.of(p, q) : undefined;
 }

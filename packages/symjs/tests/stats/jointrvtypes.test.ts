@@ -198,7 +198,14 @@ describe('MultivariateBeta (SymPy test_MultivariateBeta)', () => {
     const mb = MultivariateBeta('B', [a1, a2]);
     const mbc = MultivariateBeta('C', a1, a2);
     expect(s(dens(mb, 1, 2))).toBe('2**(a2 - 1)*gamma(a1 + a2)/(gamma(a1)*gamma(a2))');
-    expect(s(marg(mbc, 0)(3))).toBe('3**(a1 - 1)*gamma(a1 + a2)/(a2*gamma(a1)*gamma(a2))');
+    // the marginal of C[0] is Beta(a1, a2) (SymPy integrates C[1] over [0, 1] instead)
+    expect(s(marg(mbc, 0)(S.Half))).toBe('(1/2)**(a1 - 1)*(1/2)**(a2 - 1)*gamma(a1 + a2)/(gamma(a1)*gamma(a2))');
+    // a subset of the proportions and their complement follow a Dirichlet law
+    const D3 = MultivariateBeta('D', 1, 2, 3);
+    expect(s(marginalDistribution(D3 as JointRandomSymbol, 0))).toBe('Lambda(D[0], 5*(1 - D[0])**4)');
+    expect(s(marginalDistribution(D3 as JointRandomSymbol, 0, 2))).toBe('Lambda((D[0], D[2]), 60*(-D[0] - D[2] + 1)*D[2]**2)');
+    // all the proportions: the joint density, with the arguments in the order given
+    expect(s(marg(D3, [2, 0, 1])(Rational.of(1n, 2n), Rational.of(1n, 6n), Rational.of(1n, 3n)))).toBe('5');
     expect(() => MultivariateBeta('b1', [a1f, a2])).toThrow(RangeError);
     expect(() => MultivariateBeta('b2', [a1, a2f])).toThrow(RangeError);
     expect(() => MultivariateBeta('b3', [0, 0])).toThrow(RangeError);

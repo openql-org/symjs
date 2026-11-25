@@ -7,7 +7,17 @@
 import { describe, expect, it } from 'vitest';
 import * as sj from '../../src';
 import { InvariantError } from '../../src/core/errors';
-import { at, cast, defined, expectType, getOrThrow, pair } from '../../src/core/guard';
+import { at, cacheSet, cast, defined, expectType, getOrThrow, pair } from '../../src/core/guard';
+
+describe('cacheSet', () => {
+  it('empties a full cache before storing', () => {
+    const c = new Map<number, number>();
+    cacheSet(c, 1, 1, 2);
+    cacheSet(c, 2, 2, 2);
+    cacheSet(c, 3, 3, 2);
+    expect([...c.keys()]).toEqual([3]);
+  });
+});
 
 describe('guard invariants', () => {
   it('throws InvariantError when a guarantee does not hold', () => {
