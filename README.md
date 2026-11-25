@@ -78,6 +78,21 @@ factor(ex`${a}^2 + 1`, { gaussian: true }).toString();                // '(a - I
 - Options left out take SymPy's defaults, so `{ mul: false }` turns off one hint and keeps the others on.
 - The accepted options of each function are listed in its type (`ExpandHints` for `expand`).
 
+### Differences from Python SymPy
+
+SymPy code mostly carries over, but JavaScript reads some of it differently, often without an error:
+
+| SymPy (Python) | In JavaScript | symjs |
+|---|---|---|
+| `x + 1`, `x**2` | `+` on an object converts it to a string (`x + 1` is `'x1'`) | `x.add(1)`, `add(x, 1)`, or ``ex`${x} + 1` `` |
+| `a == b` (structural equality) | `==` and `===` compare object identity: `factorial(10) == product(x, [x, 1, 10])` is `false` | `a.equals(b)` (`true`), or `Eq(a, b)` for the relation |
+| `summation(x, (x, 1, 10))` | `(x, 1, 10)` is the comma operator and evaluates to `10` | `summation(x, [x, 1, 10])` or `summation(x, x, [1, 10])`; tuples are arrays |
+| `expand(e, trig=True)` | an assignment to a variable `trig` | `expand(e, { trig: true })` |
+| `x + S(1)/2`, `Rational(1, 2)` | `1/2` is the double `0.5`, so `add(x, 1/2)` is `x + 0.5` | `rational(1, 2)`, or ``ex`${x} + 1/2` `` |
+| `if x.is_positive:` (`None` is falsy) | the undecided answer `'unknown'` is a non-empty string, so it is truthy | `isTrue(isPositive(x))`, `isFalse(...)` |
+| `Symbol`, `Function`, `Set` | the names of JavaScript globals | `Sym`, `SymFunction`, `SetExpr` |
+| `d[1]` on a dict result | `d[1]` reads a property | `d.get(1)` on the `ExprMap` (keys compare structurally) |
+
 ## Packages: base and extend modules
 
 symjs is a bun workspace monorepo. The general-purpose CAS is the **base module**; functionality for a specific application domain is published as separate **extend module** packages, so applications install only what they use:
@@ -209,12 +224,12 @@ converter connect, and the procedures, are in
 ## API design
 
 - Operations are available both as fluent methods (`x.add(1).pow(2)`) and as functions (`add(x, 1)`, `pow(x, 2)`).
-- Expressions are immutable. Equality is structural (`a.equals(b)`).
+- Expressions are immutable. Equality is structural (`a.equals(b)`); `==` and `===` compare object identity.
 - `symbols('x y')` infers a tuple type of the right length from a string literal.
 - SymPy tuples are arrays, in arguments and results: `summation(x, [x, 1, 10])` for SymPy's `summation(x, (x, 1, 10))`; `integrate`, `summation` and `product` also take `x, [1, 10]`. Written with parentheses, `(x, 1, 10)` is JavaScript's comma operator and evaluates to `10`.
 - Numbers may be given as `number` (integers become exact rationals, non-integers become `Float`) or `bigint`. Use `rational(1, 3)` for exact fractions.
 - Results are never `undefined` or `null`: undecidable answers are `'unknown'` (`Truth`), a missing form is `NoMatch`, no closed form is `Unsolved`, no solution is `EmptySet` (see [docs/api-policy.md](docs/api-policy.md)).
-- Names follow SymPy, converted to camelCase (`expand_log` -> `expandLog`); classes keep SymPy's names (`Symbol`, `Derivative`, `Piecewise`, `Interval`, ...). Results that are dicts in SymPy are `ExprMap`s, `Map`s whose expression keys compare structurally (`roots(f, x).get(1)`). See [docs/api-policy.md](docs/api-policy.md) and the generated [API report](packages/symjs/api-report.md) for the stability level of every export; renamed exports keep their old name as a deprecated alias during 0.x.
+- Names follow SymPy, converted to camelCase (`expand_log` -> `expandLog`); classes keep SymPy's names (`Derivative`, `Piecewise`, `Interval`, ...; `Sym` for `Symbol`). Results that are dicts in SymPy are `ExprMap`s, `Map`s whose expression keys compare structurally (`roots(f, x).get(1)`). See [docs/api-policy.md](docs/api-policy.md) and the generated [API report](packages/symjs/api-report.md) for the stability level of every export; renamed exports keep their old name as a deprecated alias during 0.x.
 
 ## Development
 
