@@ -1,0 +1,42 @@
+/* SPDX-License-Identifier: MIT */
+/* SPDX-FileCopyrightText: Copyright 2026 OpenQL Project */
+:root { color-scheme: light dark; --bg: #fff; --fg: #202b30; --panel: #f1f5f6; --line: #bdcdd0; --link: #075b70; }
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #171e22; --fg: #e1e9e9; --panel: #202b30; --line: #495c64; --link: #86d7e6; }
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font: 1rem/1.55 system-ui, sans-serif; margin: 0; display: grid; grid-template-columns: 13rem minmax(0, 1fr); }
+a { color: var(--link); text-underline-offset: .14em; }
+a:hover { text-decoration-thickness: .14em; }
+nav { background: var(--panel); padding: 1.25rem; position: sticky; top: 0; height: 100vh; overflow: auto; }
+nav > a, h1, h2, h3 { font-weight: 650; }
+nav details { margin-top: 1rem; }
+nav ul { list-style: none; padding: 0; }
+nav li { margin: .3rem 0; }
+main { padding: clamp(1rem, 4vw, 3rem); max-width: 84rem; width: 100%; overflow-wrap: anywhere; }
+p, dl, .exports { max-width: 85ch; }
+h1 { margin-top: 0; line-height: 1.2; }
+h2 { margin-top: 2rem; }
+h3, h4, dt, label { font-weight: 650; }
+pre { padding: 1rem; overflow: auto; background: var(--panel); border-radius: .3rem; font-size: .9rem; }
+pre code { white-space: pre; }
+article { border-top: 1px solid var(--line); padding-bottom: 1rem; }
+article:target { border-color: var(--link); }
+dd { margin-left: 1.2rem; }
+dd p { margin: .25rem 0 .75rem; }
+.notice { border-left: .25rem solid var(--link); padding: .5rem 1rem; background: var(--panel); }
+.exports { padding-left: 1.2rem; }
+.exports li, #results li { margin-bottom: .6rem; }
+.exports li > a:first-child { font-weight: 600; margin-right: .4rem; }
+label { display: block; }
+input { width: min(100%, 38rem); padding: .7rem; font: inherit; }
+th, td { text-align: left; padding: .4rem; border-bottom: 1px solid var(--line); }
+.skip { position: absolute; left: -100vw; }
+.skip:focus { left: 1rem; z-index: 1; background: var(--bg); }
+@media (max-width: 46rem) {
+  body { display: block; }
+  nav { position: static; height: auto; padding: .75rem 1rem; }
+  nav details { margin: 0; }
+  nav ul { display: flex; flex-wrap: wrap; gap: .3rem .75rem; max-height: 5rem; overflow: auto; }
+  nav li { margin: 0; }
+}

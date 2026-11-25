@@ -2,10 +2,11 @@
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 
 /**
- * @file Entry point `@symjs/symjs/printing`: 2D pretty printing (SymPy
+ * Entry point `@symjs/symjs/printing`: 2D pretty printing (SymPy
  * sympy.printing.pretty: pretty, pprint, pretty_print, pager_print), srepr,
  * the tree printers (print_tree, dotprint), MathML and TableForm. The str
  * and LaTeX printers are part of the core entry.
+ * @module
  */
 
 // every entry point brings the core with its registrations

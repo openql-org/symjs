@@ -1596,7 +1596,7 @@ function refineSignPowers(e: Expr, d: Decider): Expr {
  *
  * @param expr - The input expression.
  * @param assumptions - The facts to assume.
- * @param f - The entry transformation supplied to a matrix's `map` callback.
+ * @remarks For a matrix, `refine` applies the transformation to each entry through `map`.
  * @returns The expression or matrix simplified under the assumptions.
  * @see SymPy `sympy.assumptions.refine.refine`
  * @example

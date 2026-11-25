@@ -2,7 +2,8 @@
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 
 /**
- * @file Entry point `@symjs/symjs/tensor`: N-dimensional arrays and array operations (SymPy sympy.tensor.array) and Idx.
+ * Entry point `@symjs/symjs/tensor`: N-dimensional arrays and array operations (SymPy sympy.tensor.array) and Idx.
+ * @module
  */
 
 // every entry point brings the core with its registrations

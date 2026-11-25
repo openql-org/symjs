@@ -1117,7 +1117,7 @@ export class ComplexInterval {
  * conjugate first.
  *
  * @param f0 - Polynomial coefficients, leading coefficient first.
- * @param options - Use `eps` for the target width and `inf` and `sup` for coordinate bounds.
+ * @remarks The optional bounds object accepts `eps` for the target width and `inf` and `sup` for coordinate bounds.
  * @returns The isolating rectangles.
  * @throws RangeError when the rectangle is not a valid complex isolation rectangle.
  * @see SymPy `sympy.polys.rootisolation.dup_isolate_complex_roots_sqf`

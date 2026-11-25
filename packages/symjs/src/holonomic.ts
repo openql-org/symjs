@@ -2,10 +2,11 @@
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 
 /**
- * @file Entry point `@symjs/symjs/holonomic`: holonomic functions and
+ * Entry point `@symjs/symjs/holonomic`: holonomic functions and
  * sequences (SymPy sympy.holonomic): differential and recurrence operators,
  * their closure operations, series, recurrences and conversions from and to
  * expressions, hypergeometric and Meijer G-functions.
+ * @module
  */
 
 // every entry point brings the core with its registrations

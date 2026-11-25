@@ -2,8 +2,9 @@
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 
 /**
- * @file Entry point `@symjs/symjs/polys`: polynomials (factorization, roots,
+ * Entry point `@symjs/symjs/polys`: polynomials (factorization, roots,
  * Groebner bases, partial fractions, algebraic numbers).
+ * @module
  */
 
 // every entry point brings the core with its registrations

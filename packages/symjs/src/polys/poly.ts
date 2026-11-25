@@ -439,7 +439,7 @@ export function roots(ex: ExprLike, x: Sym, opts: FindRootOptions = {}): Expr[] 
 /** RootOptions with the internal choice of leaving out the factors that cannot be solved. */
 type FindRootOptions = RootOptions & { omitUnsolvable?: boolean };
 
-/** Options of {@link rootsDict | roots} (SymPy's flags of `roots`). */
+/** Options of {@link roots} (SymPy's flags of `roots`). */
 export interface RootOptions {
   /** Leave out the roots of irreducible factors of degree 5 or more; with Float coefficients, the roots are computed numerically. */
   skipQuintic?: boolean;

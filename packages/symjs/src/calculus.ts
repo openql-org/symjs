@@ -2,8 +2,9 @@
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 
 /**
- * @file Entry point `@symjs/symjs/calculus`: integration, limits, series,
+ * Entry point `@symjs/symjs/calculus`: integration, limits, series,
  * summations and products.
+ * @module
  */
 
 // every entry point brings the core with its registrations

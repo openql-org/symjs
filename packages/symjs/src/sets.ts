@@ -2,8 +2,9 @@
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 
 /**
- * @file Entry point `@symjs/symjs/sets`: sets (intervals, finite sets, image and
+ * Entry point `@symjs/symjs/sets`: sets (intervals, finite sets, image and
  * condition sets).
+ * @module
  */
 
 // every entry point brings the core with its registrations

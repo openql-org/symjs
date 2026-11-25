@@ -2,11 +2,12 @@
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 
 /**
- * @file Entry point `@symjs/symjs/vector`: vector calculus in 3-D
+ * Entry point `@symjs/symjs/vector`: vector calculus in 3-D
  * coordinate systems (SymPy sympy.vector: CoordSys3D with its base vectors
  * and scalars, vectors and dyadics, the Del operator, gradient, divergence
  * and curl, re-expression in other systems, orienters, points, and
  * integrals over parametric and implicit regions).
+ * @module
  */
 
 // every entry point brings the core with its registrations

@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 
 /**
- * @file Entry point `@symjs/symjs/stats`: probability and statistics with
+ * Entry point `@symjs/symjs/stats`: probability and statistics with
  * random symbols (SymPy sympy.stats): continuous, discrete and finite
  * distributions, compound distributions, the probability functions
  * (`P`, `expectation`, `density`, `given`, `where`, `cdf`, ...), moments
@@ -12,6 +12,7 @@
  * SymPy's `E` (the expectation) is exported as `expectation`, SymPy's own
  * name for it (`E` is Euler's number), and the Chi distribution as `ChiRV`
  * (`Chi` is the hyperbolic cosine integral); see docs/api-policy.md.
+ * @module
  */
 
 // every entry point brings the core with its registrations

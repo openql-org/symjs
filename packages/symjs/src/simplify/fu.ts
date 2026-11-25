@@ -1590,8 +1590,8 @@ export function processCommonAddends(rv: Expr, doit: Rule, key2?: (e: Expr) => s
 /**
  * Indexes the named trigonometric transformations used by Fu's simplification algorithm.
  *
- * @param e - The expression passed to the selected transformation.
- * @returns The expression after applying the selected transformation.
+ * @remarks Each transformation takes an expression and returns the
+ * transformed expression.
  * @see SymPy `sympy.simplify.fu.FU`
  * @example
  * ```ts

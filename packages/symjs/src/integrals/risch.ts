@@ -134,7 +134,7 @@ export interface DifferentialExtensionOptions {
  * A differential extension of K(x) containing an integrand (SymPy
  * DifferentialExtension): the monomials T = [x, t0, t1, ...], their
  * derivations D, the integrand as fa/fd in the top monomial, and the back
- * substitutions. A manual extension is given as an {@link ExtensionSpec}.
+ * substitutions. A manual extension is given as an `ExtensionSpec`.
  *
  * @see SymPy `sympy.integrals.risch.DifferentialExtension`
  */

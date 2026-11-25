@@ -240,6 +240,7 @@ Development uses [bun](https://bun.sh/) for installing dependencies and running 
 ```sh
 bun install
 bun run test                  # vitest (all packages; extend modules use the base module from source)
+bun run docs:build            # generate the API reference in site/api/
 bun run typecheck             # tsc --noEmit
 bun run lint                  # oxlint with type-aware rules (see docs/api-policy.md)
 bun run build                 # every package: ESM/CJS and matching .d.ts/.d.cts declaration graphs

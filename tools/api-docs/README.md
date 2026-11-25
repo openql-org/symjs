@@ -5,8 +5,13 @@ Checks of the documentation comments of `packages/symjs/src` against the rules o
 
 | Script | Purpose | Run with |
 |---|---|---|
+| `generate.ts` | Builds the offline HTML API reference from the emitted declarations and documentation comments | `bun run docs:build` |
 | `coverage.ts` | Emits the declarations with `tsc`, follows every entry point of `package.json` `exports` to the declaration of each export, and reports per source area which exports and public class members have a comment, `@param`/`@returns` for every signature, `@see SymPy` and `@example`. `--json <file>` writes one record per export (source file, members, missing parameters) | `bun run docs:coverage` (writes `docs/api-docs-coverage.md`) |
 | `examples.ts` | Extracts the fenced `ts` blocks of `@example`, type-checks them with `tsc` against the sources and runs them with `bun`; a statement followed by `// => result` must give `result` (a string as it is, a number by `String()`, any other value through `sstr`, which prints like SymPy's `str()`). Path arguments restrict the check to files or directories; `--no-run` only type-checks | `bun run docs:examples [paths...]` |
+
+Open `site/api/index.html` in a browser to browse or search the reference.
+`bun tools/api-docs/generate.ts --out <dir>` selects another output directory.
+`bun tools/api-docs/generate.ts --check` validates the reference in a temporary directory.
 
 ## Writing a comment
 

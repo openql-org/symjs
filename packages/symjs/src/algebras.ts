@@ -2,7 +2,8 @@
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 
 /**
- * @file Entry point `@symjs/symjs/algebras`: quaternions (SymPy sympy.algebras: Quaternion).
+ * Entry point `@symjs/symjs/algebras`: quaternions (SymPy sympy.algebras: Quaternion).
+ * @module
  */
 
 // every entry point brings the core with its registrations

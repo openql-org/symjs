@@ -2,7 +2,8 @@
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 
 /**
- * @file Entry point `@symjs/symjs/utilities`: iterable utilities (SymPy sympy.utilities.iterables).
+ * Entry point `@symjs/symjs/utilities`: iterable utilities (SymPy sympy.utilities.iterables).
+ * @module
  */
 
 // every entry point brings the core with its registrations

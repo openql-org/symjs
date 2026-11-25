@@ -2,7 +2,8 @@
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 
 /**
- * @file Entry point `@symjs/symjs/matrices`: matrices and linear algebra.
+ * Entry point `@symjs/symjs/matrices`: matrices and linear algebra.
+ * @module
  */
 
 // every entry point brings the core with its registrations

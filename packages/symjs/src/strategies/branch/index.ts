@@ -4,10 +4,11 @@
 // Copyright (c) 2006-2023 SymPy Development Team, BSD 3-Clause License.
 
 /**
- * @file SymPy sympy.strategies.branch: branching strategies, rules that map
+ * SymPy sympy.strategies.branch: branching strategies, rules that map
  * a value to a lazy sequence (generator) of values.
  */
 
+/** Traversals that apply a branching rule to a tree. */
 export * as traverse from './traverse';
 export { chain, condition, debug, doOne, exhaust, identity, multiplex, notempty, onaction, sfilter, yieldify } from './core';
 export type { BranchRule } from './core';

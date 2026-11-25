@@ -2,12 +2,13 @@
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 
 /**
- * @file Entry point of the base module `@symjs/symjs`: the whole computer
+ * Entry point of the base module `@symjs/symjs`: the whole computer
  * algebra system. Each feature area is also available as its own entry point
  * (`@symjs/symjs/core`, `/special`, `/simplify`, `/polys`, `/calculus`,
  * `/solvers`, `/sets`, `/matrices`, `/logic`, `/ntheory`, `/combinatorics`, `/utilities`,
  * `/tensor`, `/printing`, `/discrete`, `/algebras`, `/holonomic`, `/geometry`, `/vector`, `/stats`, `/categories`, `/crypto`, `/liealgebras`, `/codegen`) for smaller bundles. Domain-specific
  * extend modules are separate packages (packages/* in the repository).
+ * @module
  */
 
 export * from './core';

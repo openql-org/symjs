@@ -2,8 +2,9 @@
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 
 /**
- * @file Entry point `@symjs/symjs/solvers`: algebraic equations, inequalities,
+ * Entry point `@symjs/symjs/solvers`: algebraic equations, inequalities,
  * polynomial systems, recurrences and ordinary differential equations.
+ * @module
  */
 
 // every entry point brings the core with its registrations

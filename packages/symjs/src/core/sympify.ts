@@ -48,8 +48,8 @@ export interface Sympifiable {
  * sympy.core.sympify.converter), looked up along the prototype chain.
  *
  * @experimental May change in a minor release.
- * @param x - The instance passed to the registered converter.
- * @returns The converted value produced by the registered callback.
+ * @remarks A registered callback takes an instance of its class and returns
+ * the converted value.
  * @see SymPy `sympy.core.sympify.converter`
  */
 export const converter = new Map<Function, (x: never) => unknown>();

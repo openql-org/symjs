@@ -1855,7 +1855,7 @@ export class Pow extends Expr {
 /**
  * Application of a named function.
  *
- * @internal ctor
+ * The public class name is `AppliedFunction`.
  *
  * @experimental May change in a minor release.
  * @see SymPy `sympy.core.function.Function`

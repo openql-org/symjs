@@ -2,11 +2,12 @@
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 
 /**
- * @file Entry point `@symjs/symjs/geometry`: geometric entities in two and
+ * Entry point `@symjs/symjs/geometry`: geometric entities in two and
  * three dimensions (SymPy sympy.geometry: points, lines, rays, segments,
  * planes, polygons, triangles, ellipses, circles, curves and parabolas)
  * and the functions of several entities (intersection, convex hull,
  * centroid, similarity, implicit differentiation).
+ * @module
  */
 
 // every entry point brings the core with its registrations

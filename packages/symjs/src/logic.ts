@@ -2,11 +2,12 @@
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 
 /**
- * @file Entry point `@symjs/symjs/logic`: propositional logic (SymPy
+ * Entry point `@symjs/symjs/logic`: propositional logic (SymPy
  * sympy.logic: Implies, Equivalent, normal forms, simplify_logic,
  * satisfiable, ...) and the assumption helpers of SymPy sympy.assumptions
  * that are not part of the core (`allargs`, `anyarg`, `exactlyonearg`,
  * `isInfinite`, `isExtendedReal`, `isExtendedNonnegative`).
+ * @module
  */
 
 // every entry point brings the core with its registrations

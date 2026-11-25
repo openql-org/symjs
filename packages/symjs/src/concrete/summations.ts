@@ -59,7 +59,7 @@ registerRewrite('Concrete', 'Product', (args, self) => self instanceof Concrete 
  * Evaluate an infinite rational sum by residues, or return NoMatch.
  *
  * @param f - The summand.
- * @param limits - The triple `[k, a, b]` giving the index and inclusive endpoints.
+ * @remarks The triple `[k, a, b]` gives the index and inclusive endpoints.
  * @returns The value of the infinite sum, or `NoMatch` when the residue method does not apply.
  * @see SymPy `sympy.concrete.summations.eval_sum_residue`
  * @example

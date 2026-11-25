@@ -2,7 +2,8 @@
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 
 /**
- * @file Entry point `@symjs/symjs/combinatorics`: permutations and permutation groups, free and finitely presented groups, coset enumeration, polycyclic groups and group homomorphisms (SymPy sympy.combinatorics).
+ * Entry point `@symjs/symjs/combinatorics`: permutations and permutation groups, free and finitely presented groups, coset enumeration, polycyclic groups and group homomorphisms (SymPy sympy.combinatorics).
+ * @module
  */
 
 // every entry point brings the core with its registrations

@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 
 /**
- * @file Entry point `@symjs/symjs/core`: expression trees, arithmetic and
+ * Entry point `@symjs/symjs/core`: expression trees, arithmetic and
  * assumptions, symbols and undefined functions, elementary functions,
  * substitution and pattern matching, differentiation, expansion, numerical
  * evaluation, parsing and printing (str and LaTeX).
@@ -10,6 +10,7 @@
  * The core does not import any other feature area; features such as
  * simplification or integration are late-bound and become available when
  * their entry point (or the root `@symjs/symjs`) is imported.
+ * @module
  */
 
 import type { Assumptions, Expr as ExprNode, ExprLike as ExprLikeT } from './core/nodes';

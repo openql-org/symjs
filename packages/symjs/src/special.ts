@@ -2,8 +2,9 @@
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 
 /**
- * @file Entry point `@symjs/symjs/special`: special and combinatorial functions
+ * Entry point `@symjs/symjs/special`: special and combinatorial functions
  * (Gamma, zeta, error functions, Bessel and Airy functions, polar numbers, ...).
+ * @module
  */
 
 // every entry point brings the core with its registrations

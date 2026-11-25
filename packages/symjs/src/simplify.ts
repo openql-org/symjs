@@ -2,7 +2,8 @@
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 
 /**
- * @file Entry point `@symjs/symjs/simplify`: simplification and rewriting.
+ * Entry point `@symjs/symjs/simplify`: simplification and rewriting.
+ * @module
  */
 
 // every entry point brings the core with its registrations
