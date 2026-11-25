@@ -10,7 +10,7 @@ import { AccumBounds } from '../../core/accumbounds';
 import { piecewise } from '../../core/logic';
 import { asNumerDenom, asRealImag } from '../../core/methods';
 import { fact } from '../../core/exprfacts';
-import { expectType, first } from '../../core/guard';
+import { at, expectType, first } from '../../core/guard';
 import { precToDps } from '../../numeric/mpf';
 import { isIntegerQ, isNegative, isNonNegative, isNonZero, isPositive, isReal } from '../../core/assumptions';
 import type { ExprLike, FnName, Num } from '../../core/nodes';
@@ -423,8 +423,7 @@ const evalAbs: Evaluator = (x) => {
         if (isEven(e)) return x;
         if (b instanceof Rational && b.p === -1n && b.q === 1n) return S.One;
         // SymPy Abs._eval_power: Abs(b)**n = b**(n - 1)*Abs(b) for an odd integer n other than -1
-        if (e instanceof Rational && e.p > 1n) return mul(pow(b, Rational.of(e.p - 1n)), abs(b));
-        if (e instanceof Rational && e.p < -1n) return mul(pow(b, Rational.of(e.p + 1n)), pow(abs(b), -1));
+        if (e instanceof Rational && e.p !== -1n) return mul(pow(b, Rational.of(e.p - 1n)), abs(b));
         return pow(abs(b), e);
       }
       if (isNonNegative(b) === true) return pow(b, re(e));
@@ -445,7 +444,7 @@ const evalAbs: Evaluator = (x) => {
     if (fresh.length > 0 && fresh.every((c) => x.has(first(c.args)))) return undefined;
     if (conj.key === x.key || conj.key === neg(x).key) return undefined;
     const unknown = [...x.freeSymbols()].filter((v) => isReal(v) === undefined);
-    if (unknown.length > 0 && unknown.every((v) => conj.has(conjugate(v)))) return undefined;
+    if (unknown.length > 0 && unknown.every((v) => { const c = conjugate(v); return c.key !== v.key && conj.has(c); })) return undefined;
     return sqrt(mul(x, conj));
   }
   if (x instanceof Fn && (x.name === 'abs' || x.name === 'conjugate')) return abs(first(x.args));
@@ -462,8 +461,8 @@ const evalAbs: Evaluator = (x) => {
 
 /** A number a, a*I or a + b*I with numeric a, b. */
 const isNumericComplex = (e: Expr): boolean => {
-  const imaginary = (t: Expr): boolean => isI(t) || (t instanceof Mul && t.args.length === 2 && isNum(first(t.args)) && isI(t.args[1] ?? S.Zero));
-  return isNum(e) || imaginary(e) || (e instanceof Add && e.args.length === 2 && isNum(first(e.args)) && imaginary(e.args[1] ?? S.Zero));
+  const imaginary = (t: Expr): boolean => isI(t) || (t instanceof Mul && t.args.length === 2 && isNum(first(t.args)) && isI(at(t.args, 1)));
+  return isNum(e) || imaginary(e) || (e instanceof Add && e.args.length === 2 && isNum(first(e.args)) && imaginary(at(e.args, 1)));
 };
 
 /** A floating-point number somewhere in the expression. */
@@ -541,8 +540,8 @@ function powerParts(x: Expr): [Expr, Expr] | undefined {
   let [a, b] = baseRealImag(x.base);
   if (!e.isInteger) {
     if (b instanceof Rational && b.isZero && e.p === 1n && e.q === 2n) {
-      if (isNonNegative(a) === true) return [x, S.Zero];
-      if (isReal(a) === true && isPositive(a) === false) return [S.Zero, pow(neg(x.base), e)];
+      if (fact(a, 'extended_nonnegative') === true) return [x, S.Zero];
+      if (fact(a, 'extended_nonpositive') === true) return [S.Zero, pow(neg(x.base), e)];
     }
     const rp = pow(pow(add(pow(a, 2), pow(b, 2)), S.Half), e);
     const tp = mul(fn('atan2', [b, a]), e);
@@ -717,7 +716,8 @@ export function conjugate(xx: ExprLike): Expr {
     const r = x.conjugateSelf();
     if (r !== undefined) return r;
   }
-  if (isReal(x)) return x;
+  // SymPy Expr._eval_conjugate: an extended real expression is its own conjugate
+  if (isReal(x) || fact(x, 'extended_real') === true) return x;
   if (isI(x)) return neg(S.I);
   // SymPy Symbol._eval_conjugate: an imaginary symbol is its negated conjugate
   if (x instanceof Sym && x.assumptions.imaginary === true) return neg(x);

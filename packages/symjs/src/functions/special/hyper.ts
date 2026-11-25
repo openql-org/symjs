@@ -17,7 +17,7 @@ import { Ge, Gt, Le, Lt, Ne, canonicalRelation, piecewise, rel } from '../../cor
 import { BoolOp, and, or } from '../../core/boolalg';
 import { add, mul, pow, sympify } from '../../core/ops';
 import { fnPartials } from '../../calculus/diff';
-import { abs, conjugateRules, cos, evaluators, fn, re, sin } from '../elementary/elementary';
+import { abs, cos, evaluators, fn, re, sin } from '../elementary/elementary';
 import { numericFns } from '../../numeric/evalf';
 import { c as cx, cmul } from '../../numeric/complex';
 import { besselj, bessely } from './bessel';
@@ -769,7 +769,6 @@ function numericallyNonZero(d: Expr): boolean {
 }
 
 /** SymPy KroneckerDelta.eval: 1 or 0 when i - j is known to be zero or not, else the arguments in canonical order. */
-conjugateRules.KroneckerDelta = (args) => new Fn('KroneckerDelta', args);
 evaluators.KroneckerDelta = (i, j, range?: Expr) => {
   if (range !== undefined) {
     const [lower, upper] = pair(range.args);

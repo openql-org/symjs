@@ -112,6 +112,8 @@ it('keeps a root sum when its summand has poles at the roots or radicals are una
   const symbolic = new RootSumNode([parse('x**5+y*x+1'), lam(b, 'sin(b)'), x]);
   expect(symbolic.doitSelf()).toBe(symbolic);
   expect(String(symbolic.subs([[y, sj.S.One]]))).toBe('RootSum(x**5 + x + 1, Lambda(b, sin(b)))');
+  // SymPy RootSum(x**5 + y*x + 1, Lambda(b, sin(b)), x).subs('y', 2)
+  expect(String(symbolic.subs('y', 2))).toBe('RootSum(x**5 + 2*x + 1, Lambda(b, sin(b)))');
   expect(() => Reflect.apply(symbolic.subs.bind(symbolic), symbolic, [y])).toThrow(TypeError);
 });
 

@@ -8,7 +8,7 @@
 import { isIntegerQ, isNegative, isNonNegative, isNonZero, isPositive, isReal } from '../core/assumptions';
 import type { Expr, ExprLike } from '../core/nodes';
 import { Add, Constant, ExtensionExpr, Fn, Integral, Mul, Pow, Rational, S, Special, Sym, impl, isNum } from '../core/nodes';
-import { add, mul, pow, splitCoeff, sqrt, sympify } from '../core/ops';
+import { add, mul, pow, splitCoeff, sympify } from '../core/ops';
 import { cos, cosh, fn, im, log, re, sin, sinh, tan, tanh } from '../functions/elementary/elementary';
 import { rebuild } from '../core/traverse';
 import { at, defined, first } from '../core/guard';
@@ -66,20 +66,7 @@ function multinomialPow(b: Add, x: Rational): Expr | undefined {
 
 function expandMultinomial(e: Pow, force = false): Expr {
   const [base, exponent] = e.args;
-  if (base instanceof Add && exponent instanceof Rational) {
-    if (exponent.key === S.Half.key && base.isNumber) {
-      const real = re(base), imag = im(base);
-      if (real instanceof Rational && imag instanceof Rational && !imag.isZero) {
-        const norm = sqrt(add(pow(real, 2), pow(imag, 2)));
-        if (norm instanceof Rational) {
-          const a = sqrt(mul(S.Half, add(norm, real)));
-          const b = sqrt(mul(S.Half, add(norm, mul(-1, real))));
-          if (a instanceof Rational && b instanceof Rational) return add(a, mul(imag.isNegative ? -1 : 1, b, S.I));
-        }
-      }
-    }
-    return multinomialPow(base, exponent) ?? e;
-  }
+  if (base instanceof Add && exponent instanceof Rational) return multinomialPow(base, exponent) ?? e;
   if (isNum(base) && exponent instanceof Add && (force || !base.isZero || allNonnegOrNonpos(exponent))) {
     const numbers = exponent.args.filter(isNum);
     if (numbers.length) {

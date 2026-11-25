@@ -532,6 +532,38 @@ describe('elementary evaluation', () => {
     expect(String(abs(pow(r, 5)))).toBe('r**4*Abs(r)');
     expect(String(abs(pow(r, -1)))).toBe('1/Abs(r)');
     expect(String(abs(pow(r, 3)))).toBe('r**2*Abs(r)');
+    // SymPy Abs(g(1)**-3), Abs(g(1)**5) for a real function g and Abs(r**n) for an integer n
+    const g1 = sj.SymFunction('g', { assumptions: { real: true } })(1);
+    expect(String(abs(pow(g1, -3)))).toBe('Abs(g(1))/g(1)**4');
+    expect(String(abs(pow(g1, 5)))).toBe('g(1)**4*Abs(g(1))');
+    expect(String(abs(pow(r, new Sym('n', { integer: true }))))).toBe('Abs(r)**n');
+  });
+  it('Abs of a power of a complex base with symbols', () => {
+    // SymPy Abs((r + I)**3), Abs((r + w + I)**3) for an extended real w, Abs((conjugate(z) + I)**3), conjugate(w)
+    const w = new Sym('w', { extendedReal: true });
+    const z = new Sym('z');
+    expect(String(conjugate(w))).toBe('w');
+    expect(String(abs(pow(add(r, S.I), 3)))).toBe('sqrt((r - I)**3*(r + I)**3)');
+    expect(String(abs(pow(add(r, w, S.I), 3)))).toBe('sqrt((r + w - I)**3*(r + w + I)**3)');
+    expect(String(abs(pow(add(conjugate(z), S.I), 3)))).toBe('sqrt((z - I)**3*(conjugate(z) + I)**3)');
+    expect(String(abs(sj.sqrt(add(conjugate(z), S.I))))).toBe('Abs(sqrt(conjugate(z) + I))');
+    // SymPy Abs((conjugate(z) + I*z)**3) keeps Abs: the conjugate brings back conjugate(z)
+    expect(String(abs(pow(add(conjugate(z), mul(S.I, z)), 3)))).toBe('Abs((I*z + conjugate(z))**3)');
+  });
+  it('Abs of a nonreal number with floating-point parts', () => {
+    // SymPy Abs(sqrt(2) + 1.5*I), Abs(sqrt(3) + 2.0*I)
+    expect(String(parse('Abs(sqrt(2) + 1.5*I)'))).toBe('2.06155281280883');
+    expect(String(parse('Abs(sqrt(3) + 2.0*I)'))).toBe('2.64575131106459');
+    // SymPy Abs(f(1) + 1.0*I): the value is not a number
+    expect(String(parse('Abs(f(1) + 1.0*I)'))).toBe('Abs(f(1) + 1.0*I)');
+  });
+  it('re and im of the square root of an extended nonpositive base', () => {
+    // SymPy re(sqrt(-Abs(z) - 1)), im(sqrt(-Abs(z) - 1)), re(sqrt(Abs(z) + 1)), re(sqrt(exp(z)))
+    const root = sj.sqrt(parse('-Abs(z) - 1'));
+    expect(String(re(root))).toBe('0');
+    expect(String(sj.im(root))).toBe('sqrt(Abs(z) + 1)');
+    expect(String(re(sj.sqrt(parse('Abs(z) + 1'))))).toBe('sqrt(Abs(z) + 1)');
+    expect(String(re(sj.sqrt(parse('exp(z)'))))).toBe('(exp(2*re(z))*sin(im(z))**2 + exp(2*re(z))*cos(im(z))**2)**(1/4)*cos(atan2(exp(re(z))*sin(im(z)), exp(re(z))*cos(im(z)))/2)');
   });
   it('re with a real factor and I', () => {
     // SymPy re(2*r*I*y) = -2*r*im(y), im(2*r*I*y) = 2*r*re(y)

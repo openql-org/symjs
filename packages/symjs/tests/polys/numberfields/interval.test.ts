@@ -60,3 +60,14 @@ it('refines reciprocals near zero and preserves exact degenerate root intervals'
   expect(algebraicEnclosure(new Pow(cancelImaginary,Rational.of(1,3)),20)[1]).toEqual([S.Zero,S.Zero]);
   expect(compareAlgebraicReal(parse('1/(sqrt(2)-1414213562373095048801688724209698/10**33)'),S.Zero)).toBe(1);
 });
+it('encloses sines and cosines of rational multiples of atan2(y, x)',()=>{
+  const angle=new Fn('atan2',[S.One,Rational.of(2n)]),half=Rational.of(1n,2n);
+  // cos(atan2(1, 2)/2) = sqrt((1 + 2/sqrt(5))/2) ~ 0.97325, sin(atan2(1, 2)/2) ~ 0.22975
+  for(const [name,value] of [['cos',0.9732489894677302],['sin',0.2297529205473612],['tan',0.2360679774997897]] as const){
+    const [re,im]=algebraicEnclosure(new Fn(name,[new Mul([half,angle])]),24);
+    expect(Number(re[0].p)/Number(re[0].q)).toBeLessThanOrEqual(value);
+    expect(Number(re[1].p)/Number(re[1].q)).toBeGreaterThanOrEqual(value);
+    expect(im[0].p).toBe(0n);
+  }
+  expect(()=>algebraicEnclosure(new Fn('sin',[new Mul([S.Pi,angle])]),24)).toThrow(NotImplementedError);
+});

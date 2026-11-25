@@ -381,7 +381,7 @@ describe('core expansion gaps', () => {
 
 it('dispatches expansion hints and top level expansion through extension nodes', async () => {
   const { ExtensionExpr, S } = await import('../../src');
-  const { impl } = await import('../../src/core/nodes');
+  const { impl, Pow, Rational } = await import('../../src/core/nodes');
   class Expandable extends ExtensionExpr {
     constructor(readonly top = false) { super('Expandable', [x]); }
     withArgs(): Expr { return this; }
@@ -394,6 +394,8 @@ it('dispatches expansion hints and top level expansion through extension nodes',
   expect(String(expand(add(x, y), { other: true }))).toBe('x + y');
   expect(String(impl.expand?.(pow(add(x, 1), 2)))).toBe('x**2 + 2*x + 1');
   expect(impl.asRealImagExpand?.(x).map(String)).toEqual(['re(x)', 'im(x)']);
+  // a power the elementary splitter leaves alone falls back to re() and im()
+  expect(impl.asRealImagExpand?.(new Pow(symbol('r', { real: true }), Rational.of(3n))).map(String)).toEqual(['r**3', '0']);
 });
 
 it('expands exact numerators, reciprocal products, numeric powers, and logarithm ratios', () => {
