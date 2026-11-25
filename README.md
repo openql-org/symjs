@@ -211,6 +211,7 @@ converter connect, and the procedures, are in
 - Operations are available both as fluent methods (`x.add(1).pow(2)`) and as functions (`add(x, 1)`, `pow(x, 2)`).
 - Expressions are immutable. Equality is structural (`a.equals(b)`).
 - `symbols('x y')` infers a tuple type of the right length from a string literal.
+- SymPy tuples are arrays, in arguments and results: `summation(x, [x, 1, 10])` for SymPy's `summation(x, (x, 1, 10))`; `integrate`, `summation` and `product` also take `x, [1, 10]`. Written with parentheses, `(x, 1, 10)` is JavaScript's comma operator and evaluates to `10`.
 - Numbers may be given as `number` (integers become exact rationals, non-integers become `Float`) or `bigint`. Use `rational(1, 3)` for exact fractions.
 - Results are never `undefined` or `null`: undecidable answers are `'unknown'` (`Truth`), a missing form is `NoMatch`, no closed form is `Unsolved`, no solution is `EmptySet` (see [docs/api-policy.md](docs/api-policy.md)).
 - Names follow SymPy, converted to camelCase (`expand_log` -> `expandLog`); classes keep SymPy's names (`Symbol`, `Derivative`, `Piecewise`, `Interval`, ...). Results that are dicts in SymPy are `ExprMap`s, `Map`s whose expression keys compare structurally (`roots(f, x).get(1)`). See [docs/api-policy.md](docs/api-policy.md) and the generated [API report](packages/symjs/api-report.md) for the stability level of every export; renamed exports keep their old name as a deprecated alias during 0.x.

@@ -18,8 +18,9 @@
 import { isNegative as isNegativeQ, isNonZero, isPositive as isPositiveQ, isReal, isNegative, isPositive } from '../core/assumptions';
 import { AccumBounds } from '../core/accumbounds';
 import { Eq, Gt, Ne, piecewise, Le, Lt, rel } from '../core/logic';
-import type { Expr, ExprLike, RelOp } from '../core/nodes';
-import { Add, BoolAtom, Constant, Derivative, Dummy, ExtensionExpr, Float, Fn, Integral, Mul, Order, Piecewise, Pow, Rational, Rel, S, Special, Sym, UndefFn, impl, isNum } from '../core/nodes';
+import type { ExprLike, IntegrateLimitArg, IntegrateOptions, RelOp } from '../core/nodes';
+export type { IntegrateLimitArg, IntegrateOptions } from '../core/nodes';
+import { Add, BoolAtom, Expr, Constant, Derivative, Dummy, ExtensionExpr, Float, Fn, Integral, Mul, Order, Piecewise, Pow, Rational, Rel, S, Special, Sym, UndefFn, impl, isNum } from '../core/nodes';
 import { Concrete } from '../core/concrete';
 import { registerHandler } from '../core/refine';
 import { fact } from '../core/exprfacts';
@@ -1481,34 +1482,78 @@ export function integral(ex: ExprLike, ...limits: readonly (ExprLike | readonly 
 }
 
 /**
- * Integrates an expression with respect to a symbol: the antiderivative, or the
- * definite integral between `limits`. An integral that cannot be computed is
- * returned unevaluated as an `Integral`.
+ * Integrates an expression: the antiderivative, or the definite integral over a
+ * range. Each variable is a symbol `x` (an antiderivative), `x` followed by its
+ * range `[a, b]`, or the array `[x, a, b]` (SymPy's tuple `(x, a, b)`); several
+ * variables give an iterated integral, the first innermost. An integral that
+ * cannot be computed is returned unevaluated as an `Integral`.
  *
  * @param ex - The integrand.
- * @param x - The integration variable.
- * @param limits - The lower and upper limits of a definite integral.
- * @param opts - `conds: 'none'` drops the convergence conditions of a definite
+ * @param limits - The variables and their ranges, optionally followed by the
+ *   options: `conds: 'none'` drops the convergence conditions of a definite
  *   integral (`'piecewise'`, the default, returns them as a `Piecewise`);
  *   `heurisch: false` skips the heuristic Risch algorithm.
  * @returns The integral.
- * @throws RangeError when `x` is not a symbol.
+ * @throws RangeError when no variable is given or a limit has none of the forms.
  * @see SymPy `sympy.integrals.integrals.integrate`
  * @example
  * ```ts
  * import { ex, integrate, oo, symbols } from '@symjs/symjs';
  *
- * const [x, a] = symbols('x a');
+ * const [x, y, a] = symbols('x y a');
  * integrate(ex`x*y`, x); // => x**2*y/2
  * integrate(ex`log(x)`, x); // => x*log(x) - x
  * integrate(ex`log(x)`, x, [1, a]); // => a*log(a) - a + 1
+ * integrate(ex`log(x)`, [x, 1, a]); // => a*log(a) - a + 1
  * integrate(ex`sqrt(1 + x)`, x, [0, x]); // => 2*(x + 1)**(3/2)/3 - 2/3
+ * integrate(ex`x*y`, x, [0, 1], y, [0, 2]); // => 1
+ * integrate(ex`x*y`, x, y); // => x**2*y**2/4
  * integrate(ex`x**a*exp(-x)`, x, [0, oo]); // => Piecewise((gamma(a + 1), re(a) > -1), (Integral(x**a*exp(-x), (x, 0, oo)), True))
  * integrate(ex`x**a*exp(-x)`, x, [0, oo], { conds: 'none' }); // => gamma(a + 1)
  * ```
  */
-export function integrate(ex: ExprLike, x: Sym, limits?: readonly [ExprLike, ExprLike], opts: { conds?: 'piecewise' | 'none'; heurisch?: boolean } = {}): Expr {
-  if (!(x instanceof Sym)) throw new RangeError('integrate: the integration variable must be a symbol');
+export function integrate(ex: ExprLike, ...limits: (IntegrateLimitArg | IntegrateOptions | undefined)[]): Expr {
+  const given = limits.filter((a) => a !== undefined);
+  const last = given[given.length - 1];
+  const opts = isOptions(last) ? last : {};
+  const variables = integrationLimits(isOptions(last) ? given.slice(0, -1) : given);
+  // the first variable is the innermost integral, as in SymPy
+  return variables.reduce<Expr>((f, [v, range]) => integrateSym(f, v, range, opts), sympify(ex));
+}
+
+/** The options of integrate, as opposed to its limits. */
+const isOptions = (v: IntegrateLimitArg | IntegrateOptions | undefined): v is IntegrateOptions => typeof v === 'object' && !(v instanceof Expr) && !Array.isArray(v);
+
+/** The variables of integrate with their ranges (undefined for an antiderivative), innermost first. */
+function integrationLimits(args: readonly (IntegrateLimitArg | IntegrateOptions)[]): [Sym, readonly [ExprLike, ExprLike] | undefined][] {
+  const usage = 'integrate: each limit is a symbol x, x followed by [a, b], or [x, a, b]; options come last';
+  const out: [Sym, readonly [ExprLike, ExprLike] | undefined][] = [];
+  for (let i = 0; i < args.length; i++) {
+    const a = args[i];
+    if (a instanceof Sym) {
+      const next = args[i + 1];
+      const range = Array.isArray(next) && next.length === 2 ? next : undefined;
+      if (range) {
+        const [lo, hi]: readonly unknown[] = range;
+        if (!isExprLike(lo) || !isExprLike(hi)) throw new RangeError(usage);
+        out.push([a, [lo, hi]]);
+        i++;
+      } else out.push([a, undefined]);
+      continue;
+    }
+    // (JavaScript callers may pass any value here)
+    const parts: readonly unknown[] = Array.isArray(a) ? a : [];
+    const [v, lo, hi] = parts;
+    if (parts.length !== 3 || !(v instanceof Sym) || !isExprLike(lo) || !isExprLike(hi)) throw new RangeError(usage);
+    out.push([v, [lo, hi]]);
+  }
+  if (!out.length) throw new RangeError('integrate: the integration variable must be given');
+  return out;
+}
+
+const isExprLike = (v: unknown): v is ExprLike => v instanceof Expr || typeof v === 'number' || typeof v === 'bigint';
+
+function integrateSym(ex: ExprLike, x: Sym, limits: readonly [ExprLike, ExprLike] | undefined, opts: IntegrateOptions): Expr {
   let f = sympify(ex);
   if (f instanceof Integral && impl.doit) {
     // On an interval with nonnegative endpoints its interior variable is positive.
@@ -1745,7 +1790,7 @@ function definiteWithoutAntiderivative(f: Expr, x: Sym, a: Expr, b: Expr, opts: 
   return unevaluated;
 }
 
-impl.integrate = (e, x, limits) => integrate(e, x, limits);
+impl.integrate = (e, ...limits) => integrate(e, ...limits);
 
 /**
  * atan(c*tan(a) + d) jumps where tan(a) has a pole: SymPy's Integral.doit adds

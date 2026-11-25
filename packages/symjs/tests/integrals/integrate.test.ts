@@ -1011,3 +1011,32 @@ it('uses the order of the limits before testing for an undefined Piecewise segme
     expect(reverse.subs(y, end).equals(integrate(f, x, [end, 1]))).toBe(true);
   }
 });
+
+describe('limit forms of integrate', () => {
+  const x = new Sym('x');
+  it('takes x, [a, b] and [x, a, b]', () => {
+    expect(sstr(integrate(x, x, [0, 2]))).toBe('2');
+    expect(sstr(integrate(x, [x, 0, 2]))).toBe('2');
+    expect(sstr(integrate(parse('x**a*exp(-x)'), [x, 0, sj.oo], { conds: 'none' }))).toBe('gamma(a + 1)');
+    expect(sstr(integrate(x, x, { conds: 'none' }))).toBe('x**2/2');
+  });
+  it('integrates over several variables, the first innermost', () => {
+    const y = new Sym('y');
+    expect(sstr(integrate(parse('x*y'), x, [0, 1], y, [0, 2]))).toBe('1');
+    expect(sstr(integrate(parse('x*y'), [x, 0, 1], y, [0, 2]))).toBe('1');
+    expect(sstr(integrate(parse('x*y'), x, y))).toBe('x**2*y**2/4');
+    // the inner range depends on the outer variable
+    expect(sstr(integrate(parse('x*y'), y, [0, x], x, [0, 1]))).toBe('1/8');
+    expect(sstr(integrate(parse('exp(x**2*y)'), x, y))).toBe(sstr(integrate(integrate(parse('exp(x**2*y)'), x), y)));
+  });
+  it('rejects other forms with a RangeError', () => {
+    expect(() => integrate(x, [0, 1] as never)).toThrow(RangeError);
+    expect(() => integrate(x, [x, 1] as never)).toThrow(RangeError);
+    expect(() => integrate(x, 2 as never)).toThrow(RangeError);
+    expect(() => integrate(x)).toThrow(RangeError);
+    expect(sstr(integrate(x, x, [0n, 2n]))).toBe('2');
+    expect(() => integrate(x, x, [0, 'a'] as never)).toThrow(RangeError);
+    expect(() => integrate(x, [x, 'a', 1] as never)).toThrow(RangeError);
+    expect(() => integrate(x, { conds: 'none' })).toThrow(RangeError);
+  });
+});

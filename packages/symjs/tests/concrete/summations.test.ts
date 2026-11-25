@@ -748,3 +748,21 @@ it('uses the smooth primitive for a finite Euler–Maclaurin interval', () => {
   const term = parse('(5*k**4-1)/(k**5-k-1)');
   expect(eulerMaclaurin(new Concrete('Sum', [term, k, sj.S.Zero, sj.S.One]), 0, 0).map(String)).toEqual(['-3/2', '35/12']);
 });
+
+describe('limit forms of summation and product', () => {
+  const [k, n] = [new Sym('k', { integer: true }), new Sym('n', { integer: true })];
+  it('takes [k, a, b] and k, [a, b], mixed', () => {
+    expect(String(summation(k, [k, 1, 10]))).toBe('55');
+    expect(String(summation(k, k, [1, 10]))).toBe('55');
+    expect(String(summation(k, k, [0, n], [n, 0, 3]))).toBe(String(summation(k, [k, 0, n], [n, 0, 3])));
+    expect(String(product(k, k, [1, 5]))).toBe('120');
+    expect(String(product(k, k, [1, n]))).toBe('factorial(n)');
+  });
+  it('rejects other forms with a TypeError', () => {
+    // summation(k, (k, 1, 10)) in JavaScript is summation(k, 10)
+    expect(() => summation(k, 10 as never)).toThrow(TypeError);
+    expect(() => summation(k, k)).toThrow(TypeError);
+    expect(() => summation(k, k, [1, 2, 3] as never)).toThrow(TypeError);
+    expect(() => product(k, [1, 2] as never)).toThrow(TypeError);
+  });
+});

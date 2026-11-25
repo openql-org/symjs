@@ -76,7 +76,7 @@ const CASES = [
   // Meijer G derivatives, support intervals and branch-preserving integral rewrites.
   ['special', '*', 541],
   // The standalone simplify entry now loads doit, including integral/sum evaluation.
-  ['simplify', 'simplify', 1288],
+  ['simplify', 'simplify', 1289],
   // The polys entry re-exports the sparse domain matrices through a
   // side-effect-free module, and the matrices that number fields use call
   // simplify late-bound, so factor loads neither; the finite-domain Poly
@@ -84,11 +84,11 @@ const CASES = [
   ['polys', 'factor', 871],
   // Finite-domain Poly arithmetic/cancellation adds the shared GF algorithms
   // to consumers of the polynomial engine.
-  ['calculus', 'integrate', 1298],
-  ['solvers', 'solve', 1396],
-  ['solvers', 'dsolve', 1421],
+  ['calculus', 'integrate', 1300],
+  ['solvers', 'solve', 1398],
+  ['solvers', 'dsolve', 1422],
   ['sets', '*', 527],
-  ['matrices', 'Matrix', 1152],
+  ['matrices', 'Matrix', 1153],
   ['printing', 'pretty', 343],
   ['discrete', '*', 406],
   ['strategies', '*', 315],
@@ -98,14 +98,14 @@ const CASES = [
   // Matrices of numbers (quaternions, ciphers, Lie algebras) no longer bring
   // the simplification engine (measured 497/334/314 KiB, was 577/581/577).
   ['algebras', 'Quaternion', 740],
-  ['holonomic', 'exprToHolonomic', 1477],
+  ['holonomic', 'exprToHolonomic', 1478],
   ['geometry', '*', 1351],
-  ['vector', '*', 1462],
-  ['stats', '*', 1646],
+  ['vector', '*', 1464],
+  ['stats', '*', 1648],
   // Diagram layout, pretty grids and Xy-pic text generation.
   ['categories', '*', 575],
   // Numeric meshing plus symbolic discontinuities and finite-sum evaluation.
-  ['plotting', '*', 1337],
+  ['plotting', '*', 1339],
   ['crypto', '*', 475],
   ['liealgebras', '*', 455],
   // The C99 math function classes with SymPy's class members (assumption queries, matching, logic forms; measured 396 KiB).
@@ -118,9 +118,9 @@ const CASES = [
   // quadrature, exact cosine tables, symbolic acceleration and Sylow subgroups (measured 2730 KiB).
   // Tensor axis normalization, indexed broadcasting and matrix-array conversions.
   // Polynomial remainder sequences, Hensel lifting and module orders add up to 2 KiB.
-  ['index', '*', 3147],
+  ['index', '*', 3150],
   // Differential geometry includes symbolic inversion and curvature calculations.
-  ['diffgeom', '*', 1360],
+  ['diffgeom', '*', 1361],
 ];
 
 async function measure(entry, names) {

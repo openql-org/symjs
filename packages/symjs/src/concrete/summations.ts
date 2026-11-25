@@ -762,15 +762,39 @@ function evalProduct(term: Expr, k: Sym, a: Expr, n: Expr): Expr | undefined {
   return undefined;
 }
 
+/** A limit of summation or product: the array `[k, a, b]`, or the index `k` followed by the array `[a, b]`. */
+export type ConcreteLimitArg = Sym | readonly [Sym, ExprLike, ExprLike] | readonly [ExprLike, ExprLike];
+
+const isLimitTriple = (a: ConcreteLimitArg | undefined): a is readonly [Sym, ExprLike, ExprLike] => Array.isArray(a) && a.length === 3 && a[0] instanceof Sym;
+const isLimitRange = (a: ConcreteLimitArg | undefined): a is readonly [ExprLike, ExprLike] => Array.isArray(a) && a.length === 2;
+
+/** The limits `[k, a, b]` from triples and from indices followed by `[a, b]`. */
+function limitTriples(name: string, args: readonly ConcreteLimitArg[]): [Sym, ExprLike, ExprLike][] {
+  const out: [Sym, ExprLike, ExprLike][] = [];
+  for (let i = 0; i < args.length; i++) {
+    const a = args[i];
+    const range = args[i + 1];
+    if (isLimitTriple(a)) out.push([a[0], a[1], a[2]]);
+    else if (a instanceof Sym && isLimitRange(range)) {
+      out.push([a, range[0], range[1]]);
+      i++;
+    } else throw new TypeError(`${name}: each limit is [k, a, b], or k followed by [a, b] (a SymPy tuple (k, a, b) is an array)`);
+  }
+  return out;
+}
+
 /**
  * Computes the sum of `f` over each `[k, a, b]` of `limits`, from the
  * innermost (first) to the outermost. A sum that cannot be computed is
- * returned unevaluated as a `Sum`.
+ * returned unevaluated as a `Sum`. A limit is the array `[k, a, b]` (SymPy's
+ * tuple `(k, a, b)`) or the index followed by its range, `k, [a, b]`, as in
+ * `integrate`.
  *
  * @param f - The summand.
  * @param limits - The index and its lower and upper bounds, which may be
- *   infinite.
+ *   infinite: `[k, a, b]` or `k, [a, b]` for each sum.
  * @returns The sum.
+ * @throws TypeError when a limit has neither form.
  * @see SymPy `sympy.concrete.summations.summation`
  * @example
  * ```ts
@@ -782,13 +806,15 @@ function evalProduct(term: Expr, k: Sym, a: Expr, n: Expr): Expr | undefined {
  * summation(ex`1/2**${i}`, [i, 0, oo]); // => 2
  * summation(i, [i, 0, n], [n, 0, m]); // => m**3/6 + m**2/2 + m/3
  * summation(x.pow(n).div(factorial(n)), [n, 0, oo]); // => exp(x)
+ * summation(ex`2*${i} - 1`, i, [1, n]); // => n**2
  * ```
  */
-export function summation(f: ExprLike, ...limits: [Sym, ExprLike, ExprLike][]): Expr {
-  if (limits.length === 0) throw new RangeError('summation requires a definite limit');
+export function summation(f: ExprLike, ...limits: ConcreteLimitArg[]): Expr {
+  const triples = limitTriples('summation', limits);
+  if (triples.length === 0) throw new RangeError('summation requires a definite limit');
   let e = sympify(f);
-  if (new Concrete('Sum', [e, ...limits.flatMap(([k, a, b]) => [k, sympify(a), sympify(b)])]).hasEmptySequence === true) return S.Zero;
-  for (const [i, [k, a0, b0]] of limits.entries()) {
+  if (new Concrete('Sum', [e, ...triples.flatMap(([k, a, b]) => [k, sympify(a), sympify(b)])]).hasEmptySequence === true) return S.Zero;
+  for (const [i, [k, a0, b0]] of triples.entries()) {
     const [a, b] = [sympify(a0), sympify(b0)];
     // the summation variable has the signs of its limits (SymPy _dummy_with_inherited_properties_concrete)
     const d = inheritedDummy(k, a, b);
@@ -799,7 +825,7 @@ export function summation(f: ExprLike, ...limits: [Sym, ExprLike, ExprLike][]): 
     // the assumptions decide every condition, and the given function is kept otherwise
     if (r === undefined) {
       const decided = d !== undefined && !some(withDummy, (t) => t instanceof Piecewise);
-      return Sum(decided ? xreplace(withDummy, [[d, k]]) : e, [k, a, b], ...limits.slice(i + 1));
+      return Sum(decided ? xreplace(withDummy, [[d, k]]) : e, [k, a, b], ...triples.slice(i + 1));
     }
     e = d === undefined ? r : xreplace(r, [[d, k]]);
   }
@@ -827,11 +853,14 @@ function inheritedDummy(k: Sym, a: Expr, b: Expr): Dummy | undefined {
 /**
  * Computes the product of `f` over each `[k, a, b]` of `limits`, from the
  * innermost (first) to the outermost. A product that cannot be computed is
- * returned unevaluated as a `Product`.
+ * returned unevaluated as a `Product`. A limit is the array `[k, a, b]`
+ * (SymPy's tuple `(k, a, b)`) or the index followed by its range, `k, [a, b]`.
  *
  * @param f - The factor.
- * @param limits - The index and its lower and upper bounds.
+ * @param limits - The index and its lower and upper bounds: `[k, a, b]` or
+ *   `k, [a, b]` for each product.
  * @returns The product.
+ * @throws TypeError when a limit has neither form.
  * @see SymPy `sympy.concrete.products.product`
  * @example
  * ```ts
@@ -841,13 +870,15 @@ function inheritedDummy(k: Sym, a: Expr, b: Expr): Dummy | undefined {
  * product(i, [i, 1, k]); // => factorial(k)
  * product(m, [i, 1, k]); // => m**k
  * product(i, [i, 1, k], [k, 1, n]); // => Product(factorial(k), (k, 1, n))
+ * product(i, i, [1, k]); // => factorial(k)
  * ```
  */
-export function product(f: ExprLike, ...limits: [Sym, ExprLike, ExprLike][]): Expr {
+export function product(f: ExprLike, ...limits: ConcreteLimitArg[]): Expr {
+  const triples = limitTriples('product', limits);
   // SymPy product() is Product.doit(deep=False), which powsimps the result (2**(n*(n + 1)/2))
   // (a number times a sum is distributed, as SymPy's Mul does: 2**(-a**2/2 + a/2 + n**2/2 + n/2))
   const distribute = (e: Expr): Expr => (e instanceof Mul && e.args.length === 2 && isNum(at(e.args, 0)) && at(e.args, 1) instanceof Add ? expand(e) : e);
-  return mapBottomUp(powsimp(productDeep(sympify(f), limits)), distribute);
+  return mapBottomUp(powsimp(productDeep(sympify(f), triples)), distribute);
 }
 
 /** Product(...).doit(): the product without the final powsimp. */

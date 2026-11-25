@@ -18,6 +18,7 @@ export {
 export {
   integrate,
 } from './integrals/integrate';
+export type { IntegrateLimitArg, IntegrateOptions } from './integrals/integrate';
 export {
   transformIntegral,
   principalValue,
@@ -62,6 +63,7 @@ export {
   telescopicDirect,
   evalSumResidue,
 } from './concrete/summations';
+export type { ConcreteLimitArg } from './concrete/summations';
 export {
   series,
   O, asExprVariables,

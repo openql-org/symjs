@@ -48,6 +48,17 @@ export type ExprKind =
 /** Anything that can be turned into an expression. */
 export type ExprLike = Expr | number | bigint;
 
+/** A limit of `integrate`: a variable, a variable followed by `[a, b]`, or the array `[x, a, b]`. */
+export type IntegrateLimitArg = Sym | readonly [ExprLike, ExprLike] | readonly [Sym, ExprLike, ExprLike];
+
+/** The options of `integrate`. */
+export interface IntegrateOptions {
+  /** `'none'` drops the convergence conditions of a definite integral (`'piecewise'`, the default, returns them as a `Piecewise`). */
+  conds?: 'piecewise' | 'none';
+  /** `false` skips the heuristic Risch algorithm. */
+  heurisch?: boolean;
+}
+
 /** Complex number value used by numeric evaluation. */
 export interface ComplexValue {
   /** The real component. */
@@ -450,7 +461,7 @@ export interface Impl {
   abs(e: Expr): Expr;
   freeSymbols(e: Expr): Set<Expr>;
   div(a: ExprLike, b: ExprLike): Expr;
-  integrate(e: Expr, x: Sym, limits?: [ExprLike, ExprLike]): Expr;
+  integrate(e: Expr, ...limits: (IntegrateLimitArg | IntegrateOptions | undefined)[]): Expr;
   /** Evaluate unevaluated objects when the calculus entry point is loaded. */
   doit?(e: Expr): Expr;
   /**
@@ -920,13 +931,13 @@ export abstract class Expr {
   /**
    * Computes an antiderivative or a definite integral over the supplied limits, as in {@link integrate}.
    *
-   * @param x - The integration variable.
-   * @param limits - The lower and upper limits.
+   * @param limits - The variables and their ranges (`x`, `x, [a, b]` or `[x, a, b]`), optionally
+   *   followed by the options.
    * @returns The integral.
    * @see SymPy `sympy.core.expr.Expr.integrate`
    */
-  integrate(x: Sym, limits?: [ExprLike, ExprLike]): Expr {
-    return impl.integrate(this, x, limits);
+  integrate(...limits: (IntegrateLimitArg | IntegrateOptions | undefined)[]): Expr {
+    return impl.integrate(this, ...limits);
   }
   /**
    * Extracts the coefficient of `x**n` from the terms of the expression without expanding it.
