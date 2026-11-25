@@ -84,7 +84,7 @@ SymPy code mostly carries over, but JavaScript reads some of it differently, oft
 
 | SymPy (Python) | In JavaScript | symjs |
 |---|---|---|
-| `x + 1`, `x**2` | `+` on an object converts it to a string (`x + 1` is `'x1'`) | `x.add(1)`, `add(x, 1)`, or ``ex`${x} + 1` `` |
+| `x + 1`, `x**2`, `a * b` | operators convert the objects first: `+` to strings (`x + 1` is `'x1'`), `* - / **` and `< >` to doubles (`factorial2(50) * factorial2(49)` is `3.0414093201713376e+64`, so `Eq(factorial(50), ...)` is `False`) | `x.add(1)`, `add(x, 1)`, `mul(a, b)`, `a.mul(b)`, or ``ex`${a} * ${b}` `` |
 | `a == b` (structural equality) | `==` and `===` compare object identity: `factorial(10) == product(x, [x, 1, 10])` is `false` | `a.equals(b)` (`true`), or `Eq(a, b)` for the relation |
 | `summation(x, (x, 1, 10))` | `(x, 1, 10)` is the comma operator and evaluates to `10` | `summation(x, [x, 1, 10])` or `summation(x, x, [1, 10])`; tuples are arrays |
 | `expand(e, trig=True)` | an assignment to a variable `trig` | `expand(e, { trig: true })` |
